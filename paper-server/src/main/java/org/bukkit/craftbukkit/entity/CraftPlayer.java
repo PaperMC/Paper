@@ -785,18 +785,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             throw new IllegalArgumentException("Mode cannot be null");
         }
 
-        if (mode != getGameMode()) {
-            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this, mode);
-            server.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
-            }
-
-            getHandle().setSpectatorTarget(getHandle());
-            getHandle().playerInteractManager.setGameMode(EnumGamemode.getById(mode.getValue()));
-            getHandle().fallDistance = 0;
-            getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
-        }
+        getHandle().a(EnumGamemode.getById(mode.getValue()));
     }
 
     @Override

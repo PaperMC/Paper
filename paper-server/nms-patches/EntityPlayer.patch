@@ -1,12 +1,13 @@
 --- a/net/minecraft/server/EntityPlayer.java
 +++ b/net/minecraft/server/EntityPlayer.java
-@@ -12,6 +12,20 @@
+@@ -12,6 +12,22 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import com.google.common.base.Preconditions;
 +import org.bukkit.Bukkit;
++import org.bukkit.GameMode;
 +import org.bukkit.WeatherType;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -14,6 +15,7 @@
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.inventory.InventoryType;
 +import org.bukkit.event.player.PlayerChangedMainHandEvent;
++import org.bukkit.event.player.PlayerGameModeChangeEvent;
 +import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 +import org.bukkit.inventory.MainHand;
 +// CraftBukkit end
@@ -21,7 +23,7 @@
  public class EntityPlayer extends EntityHuman implements ICrafting {
  
      private static final Logger bR = LogManager.getLogger();
-@@ -44,6 +58,18 @@
+@@ -44,6 +60,18 @@
      public int ping;
      public boolean viewingCredits;
  
@@ -40,7 +42,7 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super(worldserver, gameprofile);
          playerinteractmanager.player = this;
-@@ -67,13 +93,18 @@
+@@ -67,13 +95,18 @@
  
          this.server = minecraftserver;
          this.bU = minecraftserver.getPlayerList().a((EntityHuman) this);
@@ -60,7 +62,7 @@
      }
  
      public void a(NBTTagCompound nbttagcompound) {
-@@ -86,6 +117,7 @@
+@@ -86,6 +119,7 @@
              }
          }
  
@@ -68,7 +70,7 @@
      }
  
      public static void a(DataConverterManager dataconvertermanager) {
-@@ -119,8 +151,33 @@
+@@ -119,8 +153,33 @@
              nbttagcompound1.set("Entity", nbttagcompound2);
              nbttagcompound.set("RootVehicle", nbttagcompound1);
          }
@@ -102,7 +104,7 @@
  
      public void levelDown(int i) {
          super.levelDown(i);
-@@ -151,6 +208,11 @@
+@@ -151,6 +210,11 @@
      }
  
      public void A_() {
@@ -114,7 +116,7 @@
          this.playerInteractManager.a();
          --this.invulnerableTicks;
          if (this.noDamageTicks > 0) {
-@@ -210,7 +272,7 @@
+@@ -210,7 +274,7 @@
              }
  
              if (this.getHealth() != this.lastHealthSent || this.cc != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.cd) {
@@ -123,7 +125,7 @@
                  this.lastHealthSent = this.getHealth();
                  this.cc = this.foodData.getFoodLevel();
                  this.cd = this.foodData.getSaturationLevel() == 0.0F;
-@@ -231,6 +293,12 @@
+@@ -231,6 +295,12 @@
                  this.a(IScoreboardCriteria.i, MathHelper.f((float) this.bX));
              }
  
@@ -136,7 +138,7 @@
              if (this.getArmorStrength() != this.bY) {
                  this.bY = this.getArmorStrength();
                  this.a(IScoreboardCriteria.j, MathHelper.f((float) this.bY));
-@@ -255,6 +323,16 @@
+@@ -255,6 +325,16 @@
                  this.o();
              }
  
@@ -153,7 +155,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Ticking player");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Player being ticked");
-@@ -265,12 +343,11 @@
+@@ -265,12 +345,11 @@
      }
  
      private void a(IScoreboardCriteria iscoreboardcriteria, int i) {
@@ -168,7 +170,7 @@
  
              scoreboardscore.setScore(i);
          }
-@@ -319,31 +396,61 @@
+@@ -319,31 +398,61 @@
          boolean flag = this.world.getGameRules().getBoolean("showDeathMessages");
  
          this.playerConnection.sendPacket(new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, flag));
@@ -244,7 +246,7 @@
  
              scoreboardscore.incrementScore();
          }
-@@ -402,13 +509,16 @@
+@@ -402,13 +511,16 @@
      }
  
      private boolean canPvP() {
@@ -263,7 +265,7 @@
              this.world.kill(this);
              if (!this.viewingCredits) {
                  this.viewingCredits = true;
-@@ -429,7 +539,10 @@
+@@ -429,7 +541,10 @@
                  this.b((Statistic) AchievementList.y);
              }
  
@@ -275,7 +277,7 @@
              this.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1032, BlockPosition.ZERO, 0, false));
              this.lastSentExp = -1;
              this.lastHealthSent = -1.0F;
-@@ -474,6 +587,7 @@
+@@ -474,6 +589,7 @@
      }
  
      public void a(boolean flag, boolean flag1, boolean flag2) {
@@ -283,7 +285,7 @@
          if (this.isSleeping()) {
              this.x().getTracker().sendPacketToEntity(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -552,23 +666,55 @@
+@@ -552,23 +668,55 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -342,7 +344,7 @@
          if (iinventory instanceof ILootable && ((ILootable) iinventory).b() != null && this.isSpectator()) {
              this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).setChatModifier((new ChatModifier()).setColor(EnumChatFormat.RED)), true);
          } else {
-@@ -582,18 +728,21 @@
+@@ -582,18 +730,21 @@
                  if (itileinventory.isLocked() && !this.a(itileinventory.getLock()) && !this.isSpectator()) {
                      this.playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("container.isLocked", new Object[] { iinventory.getScoreboardDisplayName()}), (byte) 2));
                      this.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(SoundEffects.Y, SoundCategory.BLOCKS, this.locX, this.locY, this.locZ, 1.0F, 1.0F));
@@ -366,7 +368,7 @@
  
              this.activeContainer.windowId = this.containerCounter;
              this.activeContainer.addSlotListener(this);
-@@ -601,8 +750,14 @@
+@@ -601,8 +752,14 @@
      }
  
      public void openTrade(IMerchant imerchant) {
@@ -382,7 +384,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
          InventoryMerchant inventorymerchant = ((ContainerMerchant) this.activeContainer).e();
-@@ -622,13 +777,20 @@
+@@ -622,13 +779,20 @@
      }
  
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -404,7 +406,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
      }
-@@ -665,6 +827,11 @@
+@@ -665,6 +829,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -416,7 +418,7 @@
      }
  
      public void setContainerData(Container container, int i, int j) {
-@@ -679,6 +846,7 @@
+@@ -679,6 +848,7 @@
      }
  
      public void closeInventory() {
@@ -424,7 +426,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.s();
      }
-@@ -760,7 +928,16 @@
+@@ -760,7 +930,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -441,24 +443,26 @@
  
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, (byte) (flag ? 2 : 0)));
-@@ -821,6 +998,8 @@
+@@ -821,6 +1000,18 @@
      }
  
      public void a(EnumGamemode enumgamemode) {
-+        getBukkitEntity().setGameMode(org.bukkit.GameMode.getByValue(enumgamemode.getId()));
-+        /* CraftBukkit start - defer to our setGameMode
++        // CraftBukkit start
++        if (enumgamemode == this.playerInteractManager.getGameMode()) {
++            return;
++        }
++
++        PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(getBukkitEntity(), GameMode.getByValue(enumgamemode.getId()));
++        world.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        // CraftBukkit end
++
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -831,6 +1010,7 @@
- 
-         this.updateAbilities();
-         this.cw();
-+        // CraftBukkit end */
-     }
- 
-     public boolean isSpectator() {
-@@ -846,6 +1026,7 @@
+@@ -846,6 +1037,7 @@
      }
  
      public boolean a(int i, String s) {
@@ -466,7 +470,7 @@
          if ("seed".equals(s) && !this.server.aa()) {
              return true;
          } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) && !"trigger".equals(s)) {
-@@ -859,6 +1040,15 @@
+@@ -859,6 +1051,15 @@
          } else {
              return true;
          }
@@ -482,7 +486,7 @@
      }
  
      public String A() {
-@@ -870,6 +1060,12 @@
+@@ -870,6 +1071,12 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -495,7 +499,7 @@
          this.locale = packetplayinsettings.a();
          this.cg = packetplayinsettings.c();
          this.ch = packetplayinsettings.d();
-@@ -931,7 +1127,7 @@
+@@ -931,7 +1138,7 @@
          this.cj = (Entity) (entity == null ? this : entity);
          if (entity1 != this.cj) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cj));
@@ -504,7 +508,7 @@
          }
  
      }
-@@ -958,7 +1154,7 @@
+@@ -958,7 +1165,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -513,7 +517,7 @@
      }
  
      public void a(EnumHand enumhand) {
-@@ -975,11 +1171,150 @@
+@@ -975,11 +1182,150 @@
      }
  
      public void M() {
