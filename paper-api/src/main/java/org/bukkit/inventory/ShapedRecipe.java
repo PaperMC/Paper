@@ -46,9 +46,13 @@ public class ShapedRecipe implements Recipe {
         Validate.notNull(shape, "Must provide a shape");
         Validate.isTrue(shape.length > 0 && shape.length < 4, "Crafting recipes should be 1, 2, 3 rows, not ", shape.length);
 
+        int lastLen = -1;
         for (String row : shape) {
             Validate.notNull(row, "Shape cannot have null rows");
             Validate.isTrue(row.length() > 0 && row.length() < 4, "Crafting rows should be 1, 2, or 3 characters, not ", row.length());
+
+            Validate.isTrue(lastLen == -1 || lastLen == row.length(), "Crafting recipes must be rectangular");
+            lastLen = row.length();
         }
         this.rows = new String[shape.length];
         for (int i = 0; i < shape.length; i++) {
