@@ -1,0 +1,185 @@
+From 178a45771ec9aadf2aaecf3bfa53513a35b8180b Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Searchndstroy@users.noreply.github.com>
+Date: Sun, 24 Apr 2016 01:23:11 -0700
+Subject: [PATCH] Add proper Entity/Player/OfflinePlayer equals and hashCode
+ specifications to Paper API
+
+Entity hashCode specifies that the implementation should implement the hash
+code only including the entity id (see Javadoc for the specifics).
+
+Entity equals specifies that the implementation should implemnet the equality
+algorithm by checking 'instanceof Entity' and entity id (see Javadoc).
+
+The Player interface uses the hashCode specification from OfflinePlayer to
+retain compatibility. To ensure that the Object.equals specification is not
+broken as well as possible backwards compatibility, the Player.equals specification
+aligns with the previous implementation of Player.equals.
+
+The OfflinePlayer interface equals and hashCode specification align with the
+(un-changed) direct OfflinePlayer implementation.
+
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index e98706a..15bfd03 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -115,4 +115,44 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      */
+     public Location getBedSpawnLocation();
+ 
++    // Paper start - define equals and hashCode for special case with Entity
++    /**
++     * Checks if this {@code OfflinePlayer} is equal to the other {@code Object}.
++     * <p>
++     *     This {@code OfflinePlayer} will be equal to the specified object if:
++     *     <ul>
++     *         <li>
++     *             The specified object is an instance of {@code OfflinePlayer}
++     *             and the uuids returned by {@link OfflinePlayer#getUniqueId()}
++     *             are equal.
++     *         </li>
++     *     </ul>
++     * </p>
++     *
++     * Sub-interfaces are allowed to change these specifications,
++     * but they must document the difference.
++     *
++     * @param other The specified object.
++     * @return {@code true} if this {@code OfflinePlayer} is equal to the specified
++     *     object, {@code false} otherwise.
++     *
++     * @see OfflinePlayer#getUniqueId()
++     */
++    @Override
++    boolean equals(final Object other);
++
++    /**
++     * The hash code for this class is defined as:
++     * <p>
++     *     {@code final int hash = (97 * 5) +
++     *     (getUniqueId() != null ? getUniqueId().hashCode() : 0);}
++     * </p>
++     * Sub-interfaces are allowed to change these specifications,
++     * but they must document the difference.
++     * @return The hash code for this object.
++     */
++    @Override
++    int hashCode();
++    // Paper end
++
+ }
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index ef6d467..03af980 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -374,6 +374,48 @@ public interface Entity extends Metadatable, CommandSender {
+      */
+     public boolean isInvulnerable();
+ 
++    // Paper start - Add equals and hashCode specifications
++    /**
++     * Checks if this {@code Entity} is equal to the other {@code Object}.
++     * <p>
++     *     This {@code Entity} will be equal to the specified object if:
++     *     <ul>
++     *         <li>
++     *             The specified object is an instance of {@code Entity}.
++     *         </li>
++     *         <li>
++     *             The entity ids are equal, returned by
++     *             {@link Entity#getEntityId()}.
++     *         </li>
++     *     </ul>
++     * </p>
++     * Sub-interfaces are allowed to change these specifications, but they must
++     * document the difference.
++     * @param other The specified object.
++     * @return {@code true} if this {@code Entity} is equal to the specified
++     *     object, {@code false} otherwise.
++     *
++     * @see Entity#getEntityId()
++     */
++    @Override
++    boolean equals(final Object other);
++
++    /**
++     * Returns the hash code for this {@code Entity}.
++     * The entity's hash code is defined to be as:
++     * <pre>
++     *     <code>    int hash = 7;
++     *         hash = (hash * 29) + getEntityId();
++     *     </code>
++     * </pre>
++     * Sub-interfaces are allowed to change these specifications,
++     * but they must document the difference.
++     * @return The hash code for this entity.
++     */
++    @Override
++    int hashCode();
++    // Paper end
++
+     // Spigot Start
+     public class Spigot
+     {
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index d636c63..738c118 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -1488,6 +1488,55 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
+     boolean hasResourcePack();
+     // Paper end
+ 
++    // Paper start
++    /*
++     * For backwards compatibility with old CraftPlayer.equals
++     */
++    /**
++     * Checks if this {@code Player} is equal to the specified object.
++     * <p>
++     *     This method will check for equality based upon the instance of the
++     *     specified object:
++     *     <ol>
++     *         <li>
++     *             If the instance is an instance of {@code Player}:
++     *             <ul>
++     *                 <li>
++     *                     If the entity ids and entity uuids are equal.
++     *                 </li>
++     *             </ul>
++     *         </li>
++     *         <li>
++     *             If the instance is an instance of {@code OfflinePlayer}
++     *             and not an instance of {@code Player}:
++     *             <ul>
++     *                 <li>
++     *                     If the uuids are equal, returned by
++     *                     {@link OfflinePlayer#getUniqueId()}.
++     *                 </li>
++     *             </ul>
++     *         </li>
++     *         <li>
++     *             Any other case will return {@code false}.
++     *         </li>
++     *     </ol>
++     * </p>
++     *
++     * Sub-interfaces are allowed to change these specifications,
++     * but they must document the difference.
++     *
++     * @param other The specified object.
++     * @return {@code true} if this {@code Player} is equal to the specified
++     *     object, {@code false} otherwise.
++     *
++     * @see Entity#getEntityId()
++     * @see Entity#getUniqueId()
++     * @see OfflinePlayer#getUniqueId()
++     */
++    @Override
++    boolean equals(final Object other);
++    // Paper end
++
+     // Spigot start
+     public class Spigot extends Entity.Spigot
+     {
+-- 
+2.5.0
+
