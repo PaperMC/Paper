@@ -1532,14 +1532,14 @@ public final class CraftServer implements Server {
         return warningState;
     }
 
-    public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message, BlockPosition pos) {
+    public List<String> tabComplete(net.minecraft.server.ICommandListener sender, String message, BlockPosition pos, boolean forceCommand) {
         if (!(sender instanceof EntityPlayer)) {
             return ImmutableList.of();
         }
 
         List<String> offers;
         Player player = ((EntityPlayer) sender).getBukkitEntity();
-        if (message.startsWith("/")) {
+        if (message.startsWith("/") || forceCommand) {
             offers = tabCompleteCommand(player, message, pos);
         } else {
             offers = tabCompleteChat(player, message);
@@ -1554,10 +1554,14 @@ public final class CraftServer implements Server {
     public List<String> tabCompleteCommand(Player player, String message, BlockPosition pos) {
         List<String> completions = null;
         try {
+            if (message.startsWith("/")) {
+                // Trim leading '/' if present (won't always be present in command blocks)
+                message = message.substring(1);
+            }
             if (pos == null) {
-                completions = getCommandMap().tabComplete(player, message.substring(1));
+                completions = getCommandMap().tabComplete(player, message);
             } else {
-                completions = getCommandMap().tabComplete(player, message.substring(1), new Location(player.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
+                completions = getCommandMap().tabComplete(player, message, new Location(player.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
             }
         } catch (CommandException ex) {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
