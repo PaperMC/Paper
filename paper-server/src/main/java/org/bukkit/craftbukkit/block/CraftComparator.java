@@ -4,9 +4,10 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityComparator;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.Comparator;
 import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftComparator extends CraftBlockState {
+public class CraftComparator extends CraftBlockState implements Comparator {
 
     private final CraftWorld world;
     private final TileEntityComparator comparator;
