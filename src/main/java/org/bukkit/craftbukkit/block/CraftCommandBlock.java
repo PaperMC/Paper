@@ -44,7 +44,7 @@ public class CraftCommandBlock extends CraftBlockState implements CommandBlock {
     }
 
     public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = (isPlaced()) ? super.update(force, applyPhysics) : true;
+        boolean result = super.update(force, applyPhysics);
 
         if (result) {
             commandBlock.getCommandBlock().setCommand(command);
