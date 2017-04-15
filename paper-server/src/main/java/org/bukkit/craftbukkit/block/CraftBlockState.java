@@ -151,7 +151,9 @@ public class CraftBlockState implements BlockState {
     }
 
     public boolean update(boolean force, boolean applyPhysics) {
-        requirePlaced();
+        if (!isPlaced()) {
+            return true;
+        }
         Block block = getBlock();
 
         if (block.getType() != getType()) {

@@ -4,10 +4,9 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityLightDetector;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.EnderChest;
 import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftDaylightDetector extends CraftBlockState implements EnderChest {
+public class CraftDaylightDetector extends CraftBlockState {
 
     private final CraftWorld world;
     private final TileEntityLightDetector detector;

@@ -4,10 +4,9 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityComparator;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.EnderChest;
 import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftComparator extends CraftBlockState implements EnderChest {
+public class CraftComparator extends CraftBlockState {
 
     private final CraftWorld world;
     private final TileEntityComparator comparator;
