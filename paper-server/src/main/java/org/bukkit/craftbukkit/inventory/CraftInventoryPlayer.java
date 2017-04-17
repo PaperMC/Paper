@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import java.util.Arrays;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.PacketPlayOutSetSlot;
@@ -25,9 +24,8 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getStorageContents() {
-        return Arrays.copyOfRange(getContents(), 0, getInventory().items.size());
+        return asCraftMirror(getInventory().items);
     }
-
 
     @Override
     public ItemStack getItemInMainHand() {
@@ -148,8 +146,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public ItemStack[] getArmorContents() {
-        int start = getInventory().items.size();
-        return Arrays.copyOfRange(getContents(), start, start + getInventory().armor.size());
+        return asCraftMirror(getInventory().armor);
     }
 
     private void setSlots(ItemStack[] items, int baseSlot, int length) {
@@ -179,8 +176,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getExtraContents() {
-        int start = getInventory().items.size() + getInventory().armor.size();
-        return Arrays.copyOfRange(getContents(), start, start + getInventory().extraSlots.size());
+        return asCraftMirror(getInventory().extraSlots);
     }
 
     @Override
