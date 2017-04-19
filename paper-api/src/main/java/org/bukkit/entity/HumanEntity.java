@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Inventory;
@@ -173,6 +174,37 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @param item The ItemStack which will end up in the hand
      */
     public void setItemOnCursor(ItemStack item);
+
+    /**
+     * Check whether a cooldown is active on the specified material.
+     *
+     * @param material the material to check
+     * @return if a cooldown is active on the material
+     */
+    public boolean hasCooldown(Material material);
+
+    /**
+     * Get the cooldown time in ticks remaining for the specified material.
+     *
+     * @param material the material to check
+     * @return the remaining cooldown time in ticks
+     */
+    public int getCooldown(Material material);
+
+    /**
+     * Set a cooldown on the specified material for a certain amount of ticks.
+     * ticks. 0 ticks will result in the removal of the cooldown.
+     * <p>
+     * Cooldowns are used by the server for items such as ender pearls and
+     * shields to prevent them from being used repeatedly.
+     * <p>
+     * Note that cooldowns will not by themselves stop an item from being used
+     * for attacking.
+     *
+     * @param material the material to set the cooldown for
+     * @param ticks the amount of ticks to set or 0 to remove
+     */
+    public void setCooldown(Material material, int ticks);
 
     /**
      * Returns whether this player is slumbering.
