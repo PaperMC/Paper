@@ -26,6 +26,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -415,5 +416,28 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public int getExpToLevel() {
         return getHandle().getExpToLevel();
+    }
+
+    @Override
+    public boolean hasCooldown(Material material) {
+        Preconditions.checkArgument(material != null, "material");
+
+        return getHandle().di().a(CraftMagicNumbers.getItem(material)); // PAIL: getCooldownTracker
+    }
+
+    @Override
+    public int getCooldown(Material material) {
+        Preconditions.checkArgument(material != null, "material");
+
+        ItemCooldown.Info cooldown = getHandle().di().a.get(CraftMagicNumbers.getItem(material));
+        return (cooldown == null) ? 0 : Math.max(0, cooldown.b - getHandle().di().b);
+    }
+
+    @Override
+    public void setCooldown(Material material, int ticks) {
+        Preconditions.checkArgument(material != null, "material");
+        Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
+
+        getHandle().di().a(CraftMagicNumbers.getItem(material), ticks);
     }
 }
