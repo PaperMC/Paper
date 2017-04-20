@@ -29,8 +29,9 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
     static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
     static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
-    static final int MAX_PAGE_LENGTH = Short.MAX_VALUE; // TODO: Check me
-    static final int MAX_TITLE_LENGTH = 0xffff;
+    static final int MAX_PAGES = 50;
+    static final int MAX_PAGE_LENGTH = 256;
+    static final int MAX_TITLE_LENGTH = 16;
 
     protected String title;
     protected String author;
@@ -68,7 +69,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         if (tag.hasKey(RESOLVED.NBT)) {
             resolved = tag.getBoolean(RESOLVED.NBT);
         }
-        
+
         if (tag.hasKey(GENERATION.NBT)) {
             generation = tag.getInt(GENERATION.NBT);
         }
@@ -106,7 +107,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
                 }
             }
         }
-        
+
         generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
     }
 
@@ -235,6 +236,10 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
     public void addPage(final String... pages) {
         for (String page : pages) {
+            if (this.pages.size() >= MAX_PAGES) {
+                return;
+            }
+
             if (page == null) {
                 page = "";
             } else if (page.length() > MAX_PAGE_LENGTH) {
@@ -342,7 +347,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
             }
             builder.put(BOOK_PAGES.BUKKIT, pagesString);
         }
-        
+
         if (generation != null) {
             builder.put(GENERATION.BUKKIT, generation);
         }
