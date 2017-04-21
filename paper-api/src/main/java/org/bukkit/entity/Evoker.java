@@ -7,7 +7,11 @@ public interface Evoker extends Monster {
 
     /**
      * Represents the current spell the Evoker is using.
+     *
+     * @deprecated future versions of Minecraft have additional spell casting
+     * entities.
      */
+    @Deprecated
     public enum Spell {
 
         /**
@@ -32,13 +36,20 @@ public interface Evoker extends Monster {
      * Gets the {@link Spell} the Evoker is currently using.
      *
      * @return the current spell
+     * @deprecated future versions of Minecraft have additional spell casting
+     * entities.
+     *
      */
+    @Deprecated
     Spell getCurrentSpell();
 
     /**
      * Sets the {@link Spell} the Evoker is currently using.
      *
      * @param spell the spell the evoker should be using
+     * @deprecated future versions of Minecraft have additional spell casting
+     * entities.
      */
+    @Deprecated
     void setCurrentSpell(Spell spell);
 }
