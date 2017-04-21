@@ -137,7 +137,7 @@ public final class SimplePluginManager implements PluginManager {
                     continue;
                 } else if (description.rawName.indexOf(' ') != -1) {
                     server.getLogger().warning(String.format(
-                        "Plugin `%s' uses the space-character (0x20) in its name `%s' - this is discouraged",
+                        "Plugin `%s' uses the space-character (0x20) in its name `%s' - this will not work in Minecraft 1.12",
                         description.getFullName(),
                         description.rawName
                         ));
