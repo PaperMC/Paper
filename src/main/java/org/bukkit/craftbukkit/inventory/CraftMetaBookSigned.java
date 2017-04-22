@@ -10,6 +10,7 @@ import net.minecraft.server.NBTTagList;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BookMeta;
 
 import com.google.common.collect.ImmutableMap.Builder;
@@ -34,7 +35,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
         }
 
         if (tag.hasKey(BOOK_PAGES.NBT)) {
-            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, 8);
+            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 
             for (int i = 0; i < pages.size(); i++) {
                 String page = pages.getString(i);
@@ -79,7 +80,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
                 ));
             }
             itemData.set(BOOK_PAGES.NBT, list);
-        }        
+        }
         itemData.setBoolean(RESOLVED.NBT, true);
 
         if (generation != null) {
