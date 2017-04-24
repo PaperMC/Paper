@@ -99,11 +99,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             throw new IllegalArgumentException("Health must be between 0 and " + getMaxHealth() + "(" + health + ")");
         }
 
+        getHandle().setHealth((float) health);
+
         if (health == 0) {
             getHandle().die(DamageSource.GENERIC);
         }
-
-        getHandle().setHealth((float) health);
     }
 
     public double getMaxHealth() {
