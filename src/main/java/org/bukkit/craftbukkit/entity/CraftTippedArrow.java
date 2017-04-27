@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import java.util.List;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.EntityType;
@@ -118,5 +119,15 @@ public class CraftTippedArrow extends CraftArrow implements TippedArrow {
     @Override
     public PotionData getBasePotionData() {
         return CraftPotionUtil.toBukkit(getHandle().getType());
+    }
+
+    @Override
+    public void setColor(Color color) {
+        getHandle().d(color.asRGB());
+    }
+
+    @Override
+    public Color getColor() {
+        return Color.fromRGB(getHandle().o());
     }
 }
