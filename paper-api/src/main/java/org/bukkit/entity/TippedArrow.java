@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import java.util.List;
 
+import org.bukkit.Color;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -21,6 +22,20 @@ public interface TippedArrow extends Arrow {
      * @return a PotionData object
      */
     PotionData getBasePotionData();
+
+    /**
+     * Gets the color of this arrow.
+     *
+     * @return arrow color
+     */
+    Color getColor();
+
+    /**
+     * Sets the color of this arrow. Will be applied as a tint to its particles.
+     *
+     * @param color arrow color
+     */
+    void setColor(Color color);
 
     /**
      * Checks for the presence of custom potion effects.
