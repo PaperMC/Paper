@@ -23,7 +23,7 @@
  public class EntityPlayer extends EntityHuman implements ICrafting {
  
      private static final Logger bR = LogManager.getLogger();
-@@ -44,6 +60,18 @@
+@@ -44,6 +60,19 @@
      public int ping;
      public boolean viewingCredits;
  
@@ -37,12 +37,13 @@
 +    public boolean keepLevel = false;
 +    public double maxHealthCache;
 +    public boolean joining = true;
++    public boolean sentListPacket = false;
 +    // CraftBukkit end
 +
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super(worldserver, gameprofile);
          playerinteractmanager.player = this;
-@@ -67,13 +95,18 @@
+@@ -67,13 +96,18 @@
  
          this.server = minecraftserver;
          this.bU = minecraftserver.getPlayerList().a((EntityHuman) this);
@@ -62,7 +63,7 @@
      }
  
      public void a(NBTTagCompound nbttagcompound) {
-@@ -86,6 +119,7 @@
+@@ -86,6 +120,7 @@
              }
          }
  
@@ -70,7 +71,7 @@
      }
  
      public static void a(DataConverterManager dataconvertermanager) {
-@@ -119,8 +153,33 @@
+@@ -119,8 +154,33 @@
              nbttagcompound1.set("Entity", nbttagcompound2);
              nbttagcompound.set("RootVehicle", nbttagcompound1);
          }
@@ -104,7 +105,7 @@
  
      public void levelDown(int i) {
          super.levelDown(i);
-@@ -151,6 +210,11 @@
+@@ -151,6 +211,11 @@
      }
  
      public void A_() {
@@ -116,7 +117,7 @@
          this.playerInteractManager.a();
          --this.invulnerableTicks;
          if (this.noDamageTicks > 0) {
-@@ -210,7 +274,7 @@
+@@ -210,7 +275,7 @@
              }
  
              if (this.getHealth() != this.lastHealthSent || this.cc != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.cd) {
@@ -125,7 +126,7 @@
                  this.lastHealthSent = this.getHealth();
                  this.cc = this.foodData.getFoodLevel();
                  this.cd = this.foodData.getSaturationLevel() == 0.0F;
-@@ -231,6 +295,12 @@
+@@ -231,6 +296,12 @@
                  this.a(IScoreboardCriteria.i, MathHelper.f((float) this.bX));
              }
  
@@ -138,7 +139,7 @@
              if (this.getArmorStrength() != this.bY) {
                  this.bY = this.getArmorStrength();
                  this.a(IScoreboardCriteria.j, MathHelper.f((float) this.bY));
-@@ -255,6 +325,16 @@
+@@ -255,6 +326,16 @@
                  this.o();
              }
  
@@ -155,7 +156,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Ticking player");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Player being ticked");
-@@ -265,12 +345,11 @@
+@@ -265,12 +346,11 @@
      }
  
      private void a(IScoreboardCriteria iscoreboardcriteria, int i) {
@@ -170,7 +171,7 @@
  
              scoreboardscore.setScore(i);
          }
-@@ -319,31 +398,61 @@
+@@ -319,31 +399,61 @@
          boolean flag = this.world.getGameRules().getBoolean("showDeathMessages");
  
          this.playerConnection.sendPacket(new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, flag));
@@ -246,7 +247,7 @@
  
              scoreboardscore.incrementScore();
          }
-@@ -402,13 +511,16 @@
+@@ -402,13 +512,16 @@
      }
  
      private boolean canPvP() {
@@ -265,7 +266,7 @@
              this.world.kill(this);
              if (!this.viewingCredits) {
                  this.viewingCredits = true;
-@@ -429,7 +541,10 @@
+@@ -429,7 +542,10 @@
                  this.b((Statistic) AchievementList.y);
              }
  
@@ -277,7 +278,7 @@
              this.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1032, BlockPosition.ZERO, 0, false));
              this.lastSentExp = -1;
              this.lastHealthSent = -1.0F;
-@@ -474,6 +589,7 @@
+@@ -474,6 +590,7 @@
      }
  
      public void a(boolean flag, boolean flag1, boolean flag2) {
@@ -285,7 +286,7 @@
          if (this.isSleeping()) {
              this.x().getTracker().sendPacketToEntity(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -552,23 +668,55 @@
+@@ -552,23 +669,55 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -344,7 +345,7 @@
          if (iinventory instanceof ILootable && ((ILootable) iinventory).b() != null && this.isSpectator()) {
              this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).setChatModifier((new ChatModifier()).setColor(EnumChatFormat.RED)), true);
          } else {
-@@ -582,18 +730,21 @@
+@@ -582,18 +731,21 @@
                  if (itileinventory.isLocked() && !this.a(itileinventory.getLock()) && !this.isSpectator()) {
                      this.playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("container.isLocked", new Object[] { iinventory.getScoreboardDisplayName()}), (byte) 2));
                      this.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(SoundEffects.Y, SoundCategory.BLOCKS, this.locX, this.locY, this.locZ, 1.0F, 1.0F));
@@ -368,7 +369,7 @@
  
              this.activeContainer.windowId = this.containerCounter;
              this.activeContainer.addSlotListener(this);
-@@ -601,8 +752,14 @@
+@@ -601,8 +753,14 @@
      }
  
      public void openTrade(IMerchant imerchant) {
@@ -384,7 +385,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
          InventoryMerchant inventorymerchant = ((ContainerMerchant) this.activeContainer).e();
-@@ -622,13 +779,20 @@
+@@ -622,13 +780,20 @@
      }
  
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -406,7 +407,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
      }
-@@ -665,6 +829,11 @@
+@@ -665,6 +830,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -418,7 +419,7 @@
      }
  
      public void setContainerData(Container container, int i, int j) {
-@@ -679,6 +848,7 @@
+@@ -679,6 +849,7 @@
      }
  
      public void closeInventory() {
@@ -426,7 +427,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.s();
      }
-@@ -760,7 +930,16 @@
+@@ -760,7 +931,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -443,7 +444,7 @@
  
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, (byte) (flag ? 2 : 0)));
-@@ -821,6 +1000,18 @@
+@@ -821,6 +1001,18 @@
      }
  
      public void a(EnumGamemode enumgamemode) {
@@ -462,7 +463,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -846,6 +1037,7 @@
+@@ -846,6 +1038,7 @@
      }
  
      public boolean a(int i, String s) {
@@ -470,7 +471,7 @@
          if ("seed".equals(s) && !this.server.aa()) {
              return true;
          } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) && !"trigger".equals(s)) {
-@@ -859,6 +1051,15 @@
+@@ -859,6 +1052,15 @@
          } else {
              return true;
          }
@@ -486,7 +487,7 @@
      }
  
      public String A() {
-@@ -870,6 +1071,12 @@
+@@ -870,6 +1072,12 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -499,7 +500,7 @@
          this.locale = packetplayinsettings.a();
          this.cg = packetplayinsettings.c();
          this.ch = packetplayinsettings.d();
-@@ -931,7 +1138,7 @@
+@@ -931,7 +1139,7 @@
          this.cj = (Entity) (entity == null ? this : entity);
          if (entity1 != this.cj) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cj));
@@ -508,7 +509,7 @@
          }
  
      }
-@@ -958,7 +1165,7 @@
+@@ -958,7 +1166,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -517,7 +518,7 @@
      }
  
      public void a(EnumHand enumhand) {
-@@ -975,11 +1182,151 @@
+@@ -975,11 +1183,151 @@
      }
  
      public void M() {
