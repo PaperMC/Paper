@@ -911,8 +911,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             entry.clear(getHandle());
         }
 
-        // Remove the hidden player from this player user list
-        if (!other.joining) {
+        // Remove the hidden player from this player user list, if they're on it
+        if (other.sentListPacket) {
             getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, other));
         }
     }
