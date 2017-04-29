@@ -1,3 +1,5 @@
 package org.bukkit.entity;
 
-public interface Shulker extends Golem {}
+import org.bukkit.material.Colorable;
+
+public interface Shulker extends Golem, Colorable {}
