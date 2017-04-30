@@ -1039,6 +1039,13 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static BlockPhysicsEvent callBlockPhysicsEvent(World world, BlockPosition blockposition) {
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+        BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getTypeId());
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
     public static boolean handleBlockFormEvent(World world, BlockPosition pos, net.minecraft.server.Block block, @Nullable Entity entity) {
         BlockState blockState = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState();
         blockState.setType(CraftMagicNumbers.getMaterial(block));
