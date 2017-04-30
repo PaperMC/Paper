@@ -32,7 +32,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
     static final int MAX_PAGES = 50;
     static final int MAX_PAGE_LENGTH = 256;
-    static final int MAX_TITLE_LENGTH = 16;
+    static final int MAX_TITLE_LENGTH = 32;
 
     protected String title;
     protected String author;
