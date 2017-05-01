@@ -226,7 +226,13 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     /**
      * An enum to specify the types of modifier
+     *
+     * @deprecated This API is responsible for a large number of implementation
+     * problems and is in general unsustainable to maintain. It is likely to be
+     * removed very soon in a subsequent release. Please see
+     * https://www.spigotmc.org/threads/194446/ for more information.
      */
+    @Deprecated
     public enum DamageModifier {
         /**
          * This represents the amount of damage being done, also known as the
