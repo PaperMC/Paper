@@ -1,0 +1,125 @@
+From 7c2676da97136793b6b5c32c9f7770cdd7433e7e Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 25 Nov 2016 20:35:05 +0000
+Subject: [PATCH] Optimise NetworkManager
+
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 184ef32a8..be14c0b25 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -62,8 +62,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+     };
+     private final EnumProtocolDirection h;
+-    private final Queue<NetworkManager.QueuedPacket> i = Queues.newConcurrentLinkedQueue();
+-    private final ReentrantReadWriteLock j = new ReentrantReadWriteLock();
++    // private final Queue<NetworkManager.QueuedPacket> i = Queues.newConcurrentLinkedQueue(); // Paper
++    // private final ReentrantReadWriteLock j = new ReentrantReadWriteLock(); // Paper
+     public Channel channel;
+     // Spigot Start // PAIL
+     public SocketAddress l;
+@@ -141,32 +141,36 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         if (this.isConnected()) {
+             this.m();
+             this.a(packet, (GenericFutureListener[]) null);
+-        } else {
+-            this.j.writeLock().lock();
+-
+-            try {
+-                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) null));
+-            } finally {
+-                this.j.writeLock().unlock();
+-            }
+         }
+-
++        // Paper start - Remove but force a conflict
++//        else {
++//            this.j.writeLock().lock();
++//
++//            try {
++//                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) null));
++//            } finally {
++//                this.j.writeLock().unlock();
++//            }
++//        }
++        // Paper end
+     }
+ 
+     public void sendPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
+         if (this.isConnected()) {
+             this.m();
+             this.a(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener));
+-        } else {
+-            this.j.writeLock().lock();
+-
+-            try {
+-                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener)));
+-            } finally {
+-                this.j.writeLock().unlock();
+-            }
+         }
+-
++        // Paper start - Remove but force a conflict
++//        else {
++//            this.j.writeLock().lock();
++//
++//            try {
++//                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener)));
++//            } finally {
++//                this.j.writeLock().unlock();
++//            }
++//        }
++        // Paper end
+     }
+ 
+     private void a(final Packet<?> packet, @Nullable final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener) {
+@@ -211,20 +215,22 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     private void m() {
+-        if (this.channel != null && this.channel.isOpen()) {
+-            this.j.readLock().lock();
+-
+-            try {
+-                while (!this.i.isEmpty()) {
+-                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
+-
+-                    this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
+-                }
+-            } finally {
+-                this.j.readLock().unlock();
+-            }
+-
+-        }
++        // Paper start - Remove but force a conflict
++//        if (this.channel != null && this.channel.isOpen()) {
++//            this.j.readLock().lock();
++//
++//            try {
++//                while (!this.i.isEmpty()) {
++//                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
++//
++//                    this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++//                }
++//            } finally {
++//                this.j.readLock().unlock();
++//            }
++//
++//        }
++        // Paper end
+     }
+ 
+     public void a() {
+@@ -317,7 +323,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 } else if (this.i() != null) {
+                     this.i().a(new ChatComponentText("Disconnected"));
+                 }
+-                this.i.clear(); // Free up packet queue.
++                 // this.i.clear(); // Free up packet queue. // Paper - remove unneeded packet queue
+             }
+ 
+         }
+-- 
+2.12.2
+
