@@ -26,15 +26,15 @@
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -131,6 +143,8 @@
-     private Leashable.LeashData leashData;
+@@ -132,6 +144,8 @@
      private BlockPos restrictCenter;
      private float restrictRadius;
-+
-+    public boolean aware = true; // CraftBukkit
  
++    public boolean aware = true; // CraftBukkit
++
      protected Mob(EntityType<? extends Mob> type, Level world) {
          super(type, world);
+         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
 @@ -160,6 +174,12 @@
  
      }
@@ -48,7 +48,7 @@
      protected void registerGoals() {}
  
      public static AttributeSupplier.Builder createMobAttributes() {
-@@ -264,13 +284,44 @@
+@@ -264,11 +284,42 @@
  
      @Nullable
      protected final LivingEntity getTargetFromBrain() {
@@ -60,8 +60,8 @@
 -        this.target = target;
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
-     }
- 
++    }
++
 +    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
 +        if (this.getTarget() == entityliving) return false;
 +        if (fireEvent) {
@@ -90,11 +90,9 @@
 +        this.target = entityliving;
 +        return true;
 +        // CraftBukkit end
-+    }
-+
+     }
+ 
      @Override
-     public boolean canAttackType(EntityType<?> type) {
-         return type != EntityType.GHAST;
 @@ -399,6 +450,12 @@
          return null;
      }
@@ -148,7 +146,19 @@
      }
  
      @Override
-@@ -623,23 +697,29 @@
+@@ -608,6 +682,11 @@
+                     ItemEntity entityitem = (ItemEntity) iterator.next();
+ 
+                     if (!entityitem.isRemoved() && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(worldserver, entityitem.getItem())) {
++                        // Paper start - Item#canEntityPickup
++                        if (!entityitem.canMobPickup) {
++                            continue;
++                        }
++                        // Paper end - Item#canEntityPickup
+                         this.pickUpItem(worldserver, entityitem);
+                     }
+                 }
+@@ -623,23 +702,29 @@
  
      protected void pickUpItem(ServerLevel world, ItemEntity itemEntity) {
          ItemStack itemstack = itemEntity.getItem();
@@ -182,7 +192,7 @@
  
          if (enumitemslot.isArmor() && !flag) {
              enumitemslot = EquipmentSlot.MAINHAND;
-@@ -647,14 +727,22 @@
+@@ -647,14 +732,22 @@
              flag = itemstack1.isEmpty();
          }
  
@@ -208,7 +218,7 @@
  
              this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack2);
              return itemstack2;
-@@ -768,25 +856,29 @@
+@@ -768,25 +861,29 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -253,7 +263,7 @@
                      this.noActionTime = 0;
                  }
              }
-@@ -799,6 +891,15 @@
+@@ -799,6 +896,15 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -269,7 +279,7 @@
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1338,7 +1439,7 @@
+@@ -1338,7 +1444,7 @@
          if (itemstack.getItem() instanceof SpawnEggItem) {
              if (this.level() instanceof ServerLevel) {
                  SpawnEggItem itemmonsteregg = (SpawnEggItem) itemstack.getItem();
@@ -278,7 +288,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1490,51 @@
+@@ -1389,28 +1495,51 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -336,7 +346,7 @@
                  }
  
                  return t0;
-@@ -1420,10 +1544,22 @@
+@@ -1420,10 +1549,22 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
@@ -360,7 +370,7 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,6 +1594,7 @@
+@@ -1458,6 +1599,7 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
@@ -368,7 +378,7 @@
              this.dropLeash();
          }
  
-@@ -1542,7 +1679,7 @@
+@@ -1542,7 +1684,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;

@@ -54,15 +54,16 @@
  
  public class ItemEntity extends Entity implements TraceableEntity {
  
-@@ -52,6 +59,7 @@
+@@ -52,6 +59,8 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
 +    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
++    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -133,12 +141,15 @@
+@@ -133,12 +142,15 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -82,7 +83,7 @@
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -188,9 +199,11 @@
+@@ -188,9 +200,11 @@
                  this.mergeWithNeighbours();
              }
  
@@ -94,7 +95,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,12 +214,40 @@
+@@ -201,14 +215,42 @@
                  }
              }
  
@@ -110,11 +111,11 @@
 +                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
              }
  
-+        }
-+    }
-+
+         }
+     }
+ 
 +    // Spigot start - copied from above
-+    @Override
+     @Override
 +    public void inactiveTick() {
 +        // CraftBukkit start - Use wall time for pickup and despawn timers
 +        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
@@ -131,13 +132,15 @@
 +            }
 +            // CraftBukkit end
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-         }
-     }
++        }
++    }
 +    // Spigot end
- 
-     @Override
++
++    @Override
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
-@@ -229,7 +270,10 @@
+         return this.getOnPos(0.999999F);
+     }
+@@ -229,7 +271,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -149,7 +152,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -259,7 +303,7 @@
+@@ -259,7 +304,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -158,7 +161,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +331,16 @@
+@@ -287,11 +332,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -176,7 +179,7 @@
          }
  
      }
-@@ -320,12 +369,17 @@
+@@ -320,12 +370,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -195,7 +198,7 @@
              }
  
              return true;
-@@ -382,22 +436,62 @@
+@@ -382,22 +437,62 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -212,7 +215,7 @@
              ItemStack itemstack = this.getItem();
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
- 
++
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
@@ -227,7 +230,7 @@
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
 +                }
-+
+ 
 +                // Call newer event afterwards
 +                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
@@ -261,7 +264,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -492,7 +586,7 @@
+@@ -492,7 +587,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
