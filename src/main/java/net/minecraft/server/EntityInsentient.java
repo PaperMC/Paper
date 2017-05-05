@@ -539,6 +539,11 @@ public abstract class EntityInsentient extends EntityLiving {
                 EntityItem entityitem = (EntityItem) iterator.next();
 
                 if (!entityitem.dead && !entityitem.getItemStack().isEmpty() && !entityitem.p() && this.i(entityitem.getItemStack())) {
+                    // Paper Start
+                    if (!entityitem.canMobPickup) {
+                        continue;
+                    }
+                    // Paper End
                     this.b(entityitem);
                 }
             }

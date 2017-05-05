@@ -20,6 +20,7 @@ public class EntityItem extends Entity {
     private UUID owner;
     public final float b;
     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+    public boolean canMobPickup = true; // Paper
 
     public EntityItem(EntityTypes<? extends EntityItem> entitytypes, World world) {
         super(entitytypes, world);
