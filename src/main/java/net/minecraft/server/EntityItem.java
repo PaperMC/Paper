@@ -336,6 +336,7 @@ public class EntityItem extends Entity {
             // CraftBukkit start - fire PlayerPickupItemEvent
             int canHold = entityhuman.inventory.canHold(itemstack);
             int remaining = i - canHold;
+            boolean flyAtPlayer = false; // Paper
 
             if (this.pickupDelay <= 0 && canHold > 0) {
                 itemstack.setCount(canHold);
@@ -343,8 +344,14 @@ public class EntityItem extends Entity {
                 PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
                 playerEvent.setCancelled(!entityhuman.canPickUpLoot);
                 this.world.getServer().getPluginManager().callEvent(playerEvent);
+                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
                 if (playerEvent.isCancelled()) {
                     itemstack.setCount(i); // SPIGOT-5294 - restore count
+                    // Paper Start
+                    if (flyAtPlayer) {
+                        entityhuman.receive(this, i);
+                    }
+                    // Paper End
                     return;
                 }
 
@@ -374,7 +381,11 @@ public class EntityItem extends Entity {
             // CraftBukkit end
 
             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
-                entityhuman.receive(this, i);
+                // Paper Start
+                if (flyAtPlayer) {
+                    entityhuman.receive(this, i);
+                }
+                // Paper End
                 if (itemstack.isEmpty()) {
                     this.die();
                     itemstack.setCount(i);
