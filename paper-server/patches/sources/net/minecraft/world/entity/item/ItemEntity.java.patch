@@ -198,7 +198,7 @@
              }
  
              return true;
-@@ -382,22 +437,62 @@
+@@ -382,22 +437,70 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -219,6 +219,7 @@
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
++            boolean flyAtPlayer = false; // Paper
 +
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                itemstack.setCount(canHold);
@@ -226,8 +227,14 @@
 +                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
 +                this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
++                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
 +                if (playerEvent.isCancelled()) {
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    // Paper start
++                    if (flyAtPlayer) {
++                        player.take(this, i);
++                    }
++                    // Paper end
 +                    return;
 +                }
  
@@ -257,6 +264,7 @@
 +            // CraftBukkit end
 +
              if (this.pickupDelay == 0 && (this.target == null || this.target.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
++                if (flyAtPlayer) // Paper - PlayerPickupItemEvent
                  player.take(this, i);
                  if (itemstack.isEmpty()) {
 -                    this.discard();
@@ -264,7 +272,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -492,7 +587,7 @@
+@@ -492,7 +595,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
