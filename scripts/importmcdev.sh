@@ -85,6 +85,7 @@ import PathfinderWater
 import PersistentVillage
 import PlayerConnectionUtils
 import RemoteControlListener
+import ScoreboardTeam
 import TileEntityEnderChest
 import TileEntityLootable
 import WorldGenStronghold
