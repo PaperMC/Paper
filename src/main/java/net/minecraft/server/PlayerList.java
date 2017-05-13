@@ -1086,10 +1086,15 @@ public abstract class PlayerList {
         entityplayer.playerInteractManager.b(worldserver.worldDataServer.getGameType()); // CraftBukkit
     }
 
+    // Paper start - Extract method to allow for restarting flag
     public void shutdown() {
+        this.shutdown(false);
+    }
+
+    public void shutdown(boolean isRestarting) {
         // CraftBukkit start - disconnect safely
         for (EntityPlayer player : this.players) {
-            player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+            player.playerConnection.disconnect(!isRestarting ? this.server.server.getShutdownMessage() : org.spigotmc.SpigotConfig.restartMessage); // CraftBukkit - add custom shutdown message // Paper - add isRestarting flag
         }
         // CraftBukkit end
 
@@ -1101,6 +1106,7 @@ public abstract class PlayerList {
         }
         // Paper end
     }
+    // Paper end
 
     // CraftBukkit start
     public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {

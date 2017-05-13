@@ -91,6 +91,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     public final Map<ResourceKey<World>, WorldServer> worldServer;
     private PlayerList playerList;
     private volatile boolean isRunning;
+    private volatile boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
     private boolean isStopped;
     private int ticks;
     protected final Proxy proxy;
@@ -739,7 +740,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         if (this.playerList != null) {
             MinecraftServer.LOGGER.info("Saving players");
             this.playerList.savePlayers();
-            this.playerList.shutdown();
+            this.playerList.shutdown(this.isRestarting); // Paper
             try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
         }
 
@@ -804,8 +805,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         return this.isRunning;
     }
 
+    // Paper start - allow passing of the intent to restart
     public void safeShutdown(boolean flag) {
+        this.safeShutdown(flag, false);
+    }
+    public void safeShutdown(boolean flag, boolean isRestarting) {
         this.isRunning = false;
+        this.isRestarting = isRestarting;
         if (flag) {
             try {
                 this.serverThread.join();
@@ -815,6 +821,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
 
     }
+    // Paper end
 
     // Spigot Start
     private static double calcTps(double avg, double exp, double tps)
