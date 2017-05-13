@@ -3,9 +3,35 @@ From: Zach Brown <1254957+zachbr@users.noreply.github.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
 
+The watchdog thread calls the server restart function asynchronously. Prior to
+this change, it attempted to do several non-safe operations from the watchdog
+thread, rather than the main. Specifically, because of a separate upstream change,
+it causes player entities to be ticked asynchronously, among other things.
 
+This is dangerous.
+
+This patch moves the old handling into a synchronous variant, for calls from the
+restart command, and adds separate handling for async calls, such as those from
+the watchdog thread.
+
+When calling from the watchdog thread, we cannot assume the main thread is in a
+tickable state; it may be completely deadlocked. Therefore, we kill that thread
+right then and there.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8df30e3d0..df3077c9d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+         return this.ab;
+     }
+ 
++    public final Thread getServerThread() { return this.aI(); } // Paper - OBFHELPER
+     public Thread aI() {
+         return this.serverThread;
+     }
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 49768734d..2361f96d0 100644
+index 49768734d..35c828805 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -0,0 +0,0 @@ public class RestartCommand extends Command
@@ -81,7 +107,7 @@ index 49768734d..2361f96d0 100644
 +        } else
 +        {
 +            closeSocket();
-+            MinecraftServer.getServer().safeShutdown();
++            MinecraftServer.getServer().getServerThread().stop();
 +        }
 +    }
 +
