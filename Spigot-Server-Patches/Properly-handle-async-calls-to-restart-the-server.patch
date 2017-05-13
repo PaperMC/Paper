@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <1254957+zachbr@users.noreply.github.com>
+Date: Fri, 12 May 2017 23:34:11 -0500
+Subject: [PATCH] Properly handle async calls to restart the server
+
+
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index 49768734d..2361f96d0 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -0,0 +0,0 @@ public class RestartCommand extends Command
+                 // Disable Watchdog
+                 WatchdogThread.doStop();
+ 
+-                // Kick all players
+-                for ( EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players )
+-                {
+-                    p.playerConnection.disconnect(SpigotConfig.restartMessage);
+-                }
+-                // Give the socket a chance to send the packets
+-                try
+-                {
+-                    Thread.sleep( 100 );
+-                } catch ( InterruptedException ex )
+-                {
+-                }
+-                // Close the socket so we can rebind with the new process
+-                MinecraftServer.getServer().getServerConnection().b();
+-
+-                // Give time for it to kick in
+-                try
+-                {
+-                    Thread.sleep( 100 );
+-                } catch ( InterruptedException ex )
+-                {
+-                }
+-
+-                // Actually shutdown
+-                try
+-                {
+-                    MinecraftServer.getServer().stop();
+-                } catch ( Throwable t )
+-                {
+-                }
++                shutdownServer(); // Paper - Moved to function that will handle sync and async
+ 
+                 // This will be done AFTER the server has completely halted
+                 Thread shutdownHook = new Thread()
+@@ -0,0 +0,0 @@ public class RestartCommand extends Command
+             ex.printStackTrace();
+         }
+     }
++
++    // Paper start - sync copied from above with minor changes, async added
++    private static void shutdownServer()
++    {
++        if (MinecraftServer.getServer().isMainThread())
++        {
++            // Kick all players
++            for ( EntityPlayer p : com.google.common.collect.ImmutableList.copyOf( MinecraftServer.getServer().getPlayerList().players ) )
++            {
++                p.playerConnection.disconnect(SpigotConfig.restartMessage);
++            }
++            // Give the socket a chance to send the packets
++            try
++            {
++                Thread.sleep( 100 );
++            } catch ( InterruptedException ex )
++            {
++            }
++
++            closeSocket();
++
++            // Actually shutdown
++            try
++            {
++                MinecraftServer.getServer().stop();
++            } catch ( Throwable t )
++            {
++            }
++        } else
++        {
++            closeSocket();
++            MinecraftServer.getServer().safeShutdown();
++        }
++    }
++
++    // Paper - Split from moved code
++    private static void closeSocket() {
++        // Close the socket so we can rebind with the new process
++        MinecraftServer.getServer().getServerConnection().b();
++
++        // Give time for it to kick in
++        try
++        {
++            Thread.sleep( 100 );
++        } catch ( InterruptedException ex )
++        {
++        }
++    }
++    // Paper end
+ }
+--
