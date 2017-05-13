@@ -1,0 +1,73 @@
+From ebfa9f8ac461512f7a829b120b14ebeceda6bf68 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 16 Oct 2016 23:19:30 -0700
+Subject: [PATCH] Add EntityZapEvent, replace PigZapEvent, include villagers
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPig.java b/src/main/java/net/minecraft/server/EntityPig.java
+index 7cee3de..816918e 100644
+--- a/src/main/java/net/minecraft/server/EntityPig.java
++++ b/src/main/java/net/minecraft/server/EntityPig.java
+@@ -139,7 +139,13 @@ public class EntityPig extends EntityAnimal {
+         if (!this.world.isClientSide && !this.dead) {
+             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
+ 
+-            // CraftBukkit start
++            // Paper start
++            if (CraftEventFactory.callEntityZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
++                return;
++            }
++            // Paper end
++
++            // CraftBukkit start - Paper - left in for compatibility
+             if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
+                 return;
+             }
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index 029b916..c3ec21a 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -566,6 +566,12 @@ public class EntityVillager extends EntityAgeable implements IMerchant, NPC {
+         if (!this.world.isClientSide && !this.dead) {
+             EntityWitch entitywitch = new EntityWitch(this.world);
+ 
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, entitylightning, entitywitch).isCancelled()) {
++                return;
++            }
++            // Paper end
++
+             entitywitch.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+             entitywitch.prepare(this.world.D(new BlockPosition(entitywitch)), (GroupDataEntity) null);
+             entitywitch.setAI(this.hasAI());
+@@ -574,7 +580,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, NPC {
+                 entitywitch.setCustomNameVisible(this.getCustomNameVisible());
+             }
+ 
+-            this.world.addEntity(entitywitch);
++            this.world.addEntity(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // Paper - Added lightning spawn reason for this entity
+             this.die();
+         }
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 949db83..a01f109 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -668,6 +668,14 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start
++    public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent (Entity entity, Entity lightning, Entity changedEntity) {
++        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent((org.bukkit.entity.Entity) entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (org.bukkit.entity.Entity) changedEntity.getBukkitEntity());
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static HorseJumpEvent callHorseJumpEvent(Entity horse, float power) {
+         HorseJumpEvent event = new HorseJumpEvent((Horse) horse.getBukkitEntity(), power);
+         horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+-- 
+2.10.0.windows.1
+
