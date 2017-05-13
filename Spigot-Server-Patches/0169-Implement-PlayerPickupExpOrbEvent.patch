@@ -1,0 +1,71 @@
+From c7d0062720edba09ab9c0230cdc6dab121c9afc6 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Tue, 23 Aug 2016 21:36:33 -0700
+Subject: [PATCH] Implement PlayerPickupExpOrbEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+index e8162b2..4c4f044 100644
+--- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+@@ -6,6 +6,12 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+ import org.bukkit.event.entity.EntityTargetEvent;
+ // CraftBukkit end
+ 
++// Paper start
++import com.destroystokyo.paper.event.player.PlayerPickupExpOrbEvent;
++import org.bukkit.entity.ExperienceOrb;
++import org.bukkit.entity.Player;
++// Papyer end
++
+ public class EntityExperienceOrb extends Entity {
+ 
+     public int a;
+@@ -160,23 +166,31 @@ public class EntityExperienceOrb extends Entity {
+     public void d(EntityHuman entityhuman) {
+         if (!this.world.isClientSide) {
+             if (this.c == 0 && entityhuman.bA == 0) {
+-                entityhuman.bA = 2;
+-                this.world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bk, SoundCategory.PLAYERS, 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
+-                entityhuman.receive(this, 1);
+-                ItemStack itemstack = EnchantmentManager.b(Enchantments.A, (EntityLiving) entityhuman);
++                // Paper start
++                PlayerPickupExpOrbEvent event = new PlayerPickupExpOrbEvent((Player) entityhuman.getBukkitEntity(), (ExperienceOrb) this.getBukkitEntity(), this.value);
++                this.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++                this.value = event.getChangedExperience();
+ 
+-                if (itemstack != null && itemstack.g()) {
+-                    int i = Math.min(this.d(this.value), itemstack.h());
++                if (!event.isCancelled()) {
++                    entityhuman.bA = 2;
++                    this.world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bk, SoundCategory.PLAYERS, 0.1F, 0.5F * ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.8F));
++                    entityhuman.receive(this, 1);
++                    ItemStack itemstack = EnchantmentManager.b(Enchantments.A, (EntityLiving) entityhuman);
+ 
+-                    this.value -= this.b(i);
+-                    itemstack.setData(itemstack.h() - i);
+-                }
++                    if (itemstack != null && itemstack.g()) {
++                        int i = Math.min(this.d(this.value), itemstack.h());
+ 
+-                if (this.value > 0) {
+-                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
+-                }
++                        this.value -= this.b(i);
++                        itemstack.setData(itemstack.h() - i);
++                    }
+ 
+-                this.die();
++                    if (this.value > 0) {
++                        entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
++                    }
++
++                    this.die();
++                }
++                // Paper end
+             }
+ 
+         }
+-- 
+2.9.2.windows.1
+
