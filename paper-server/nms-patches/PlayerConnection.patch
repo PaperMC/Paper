@@ -1156,7 +1156,7 @@
 +                if (packetplayinwindowclick.b() < -1 && packetplayinwindowclick.b() != -999) {
 +                    return;
 +                }
- 
++
 +                InventoryView inventory = this.player.activeContainer.getBukkitView();
 +                SlotType type = CraftInventoryView.getSlotType(inventory, packetplayinwindowclick.b());
 +
@@ -1412,7 +1412,7 @@
 +                            }
 +                            return;
 +                    }
-+
+ 
 +                    if (event instanceof CraftItemEvent) {
 +                        // Need to update the inventory on crafting to
 +                        // correctly support custom recipes
@@ -1649,25 +1649,43 @@
                          }
                      } else if ("MC|PickItem".equals(s)) {
                          packetdataserializer = packetplayincustompayload.b();
-@@ -1323,9 +2427,31 @@
+@@ -1321,11 +2425,49 @@
+                             this.player.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(this.player.inventory.itemInHandIndex));
+                         } catch (Exception exception7) {
                              PlayerConnection.LOGGER.error("Couldn\'t pick item", exception7);
++                            this.disconnect("Invalid pick item!"); // CraftBukkit
                          }
                      }
 +                    // CraftBukkit start
 +                    else if (packetplayincustompayload.a().equals("REGISTER")) {
-+                        String channels = packetplayincustompayload.b().toString(com.google.common.base.Charsets.UTF_8);
-+                        for (String channel : channels.split("\0")) {
-+                            getPlayer().addChannel(channel);
++                        try {
++                            String channels = packetplayincustompayload.b().toString(com.google.common.base.Charsets.UTF_8);
++                            for (String channel : channels.split("\0")) {
++                                getPlayer().addChannel(channel);
++                            }
++                        } catch (Exception ex) {
++                            PlayerConnection.LOGGER.error("Couldn\'t register custom payload", ex);
++                            this.disconnect("Invalid payload REGISTER!");
 +                        }
 +                    } else if (packetplayincustompayload.a().equals("UNREGISTER")) {
-+                        String channels = packetplayincustompayload.b().toString(com.google.common.base.Charsets.UTF_8);
-+                        for (String channel : channels.split("\0")) {
-+                            getPlayer().removeChannel(channel);
++                        try {
++                            String channels = packetplayincustompayload.b().toString(com.google.common.base.Charsets.UTF_8);
++                            for (String channel : channels.split("\0")) {
++                                getPlayer().removeChannel(channel);
++                            }
++                        } catch (Exception ex) {
++                            PlayerConnection.LOGGER.error("Couldn\'t unregister custom payload", ex);
++                            this.disconnect("Invalid payload UNREGISTER!");
 +                        }
 +                    } else {
-+                        byte[] data = new byte[packetplayincustompayload.b().readableBytes()];
-+                        packetplayincustompayload.b().readBytes(data);
-+                        server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.a(), data);
++                        try {
++                            byte[] data = new byte[packetplayincustompayload.b().readableBytes()];
++                            packetplayincustompayload.b().readBytes(data);
++                            server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.a(), data);
++                        } catch (Exception ex) {
++                            PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
++                            this.disconnect("Invalid custom payload!");
++                        }
 +                    }
 +                    // CraftBukkit end
                  }
