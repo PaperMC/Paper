@@ -1,0 +1,68 @@
+--- a/net/minecraft/server/AdvancementDataPlayer.java
++++ b/net/minecraft/server/AdvancementDataPlayer.java
+@@ -29,7 +29,7 @@
+ 
+     private static final Logger a = LogManager.getLogger();
+     private static final Gson b = (new GsonBuilder()).registerTypeAdapter(AdvancementProgress.class, new AdvancementProgress.a()).registerTypeAdapter(MinecraftKey.class, new MinecraftKey.a()).setPrettyPrinting().create();
+-    private static final TypeToken<Map<MinecraftKey, AdvancementProgress>> c = new TypeToken() {
++    private static final TypeToken<Map<MinecraftKey, AdvancementProgress>> c = new TypeToken<Map<MinecraftKey, AdvancementProgress>>() { // CraftBukkit - decompile error
+     };
+     private final MinecraftServer d;
+     private final File e;
+@@ -68,7 +68,7 @@
+         this.g.clear();
+         this.h.clear();
+         this.i.clear();
+-        this.k = true;
++        // this.k = true; // CraftBukkit - don't change flag on reload
+         this.g();
+     }
+ 
+@@ -88,7 +88,7 @@
+         Iterator iterator = this.data.entrySet().iterator();
+ 
+         while (iterator.hasNext()) {
+-            Entry entry = (Entry) iterator.next();
++            Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next(); // CraftBukkit - decompile error
+ 
+             if (((AdvancementProgress) entry.getValue()).isDone()) {
+                 arraylist.add(entry.getKey());
+@@ -124,13 +124,15 @@
+         if (this.e.isFile()) {
+             try {
+                 String s = Files.toString(this.e, StandardCharsets.UTF_8);
+-                Map map = (Map) ChatDeserializer.a(AdvancementDataPlayer.b, s, AdvancementDataPlayer.c.getType());
++                // CraftBukkit start
++                Map<MinecraftKey, AdvancementProgress> map = (Map) ChatDeserializer.a(AdvancementDataPlayer.b, s, AdvancementDataPlayer.c.getType());
+ 
+                 if (map == null) {
+                     throw new JsonParseException("Found null for advancements");
+                 }
+ 
+-                Stream stream = map.entrySet().stream().sorted(Comparator.comparing(apply<invokedynamic>()));
++                Stream stream = map.entrySet().stream().sorted(Comparator.comparing(Entry::getValue));
++                // CraftBukkit end
+                 Iterator iterator = ((List) stream.collect(Collectors.toList())).iterator();
+ 
+                 while (iterator.hasNext()) {
+@@ -138,7 +140,11 @@
+                     Advancement advancement = this.d.getAdvancementData().a((MinecraftKey) entry.getKey());
+ 
+                     if (advancement == null) {
+-                        AdvancementDataPlayer.a.warn("Ignored advancement \'" + entry.getKey() + "\' in progress file " + this.e + " - it doesn\'t exist anymore?");
++                        // CraftBukkit start
++                        if (((MinecraftKey) entry.getKey()).b().equals("minecraft")) {
++                            AdvancementDataPlayer.a.warn("Ignored advancement \'" + entry.getKey() + "\' in progress file " + this.e + " - it doesn\'t exist anymore?");
++                        }
++                        // CraftBukkit end
+                     } else {
+                         this.a(advancement, (AdvancementProgress) entry.getValue());
+                     }
+@@ -190,6 +196,7 @@
+             this.i.add(advancement);
+             flag = true;
+             if (!flag1 && advancementprogress.isDone()) {
++                this.player.world.getServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
+                 advancement.d().a(this.player);
+                 if (advancement.c() != null && advancement.c().i() && this.player.world.getGameRules().getBoolean("announceAdvancements")) {
+                     this.d.getPlayerList().sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[] { this.player.getScoreboardDisplayName(), advancement.j()}));

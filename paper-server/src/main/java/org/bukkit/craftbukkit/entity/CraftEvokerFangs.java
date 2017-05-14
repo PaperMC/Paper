@@ -30,7 +30,7 @@ public class CraftEvokerFangs extends CraftEntity implements EvokerFangs {
 
     @Override
     public LivingEntity getOwner() {
-        EntityLiving owner = getHandle().j(); // PAIL: rename
+        EntityLiving owner = getHandle().getOwner();
 
         return (owner == null) ? null : (LivingEntity) owner.getBukkitEntity();
     }

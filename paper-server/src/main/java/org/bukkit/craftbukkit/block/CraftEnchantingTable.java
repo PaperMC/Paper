@@ -38,6 +38,6 @@ public class CraftEnchantingTable extends CraftBlockState implements EnchantingT
 
     @Override
     public void setCustomName(String name) {
-        enchant.a(name); // PAIL: setCustomName
+        enchant.setCustomName(name);
     }
 }

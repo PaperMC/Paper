@@ -96,6 +96,6 @@ public class CraftBeacon extends CraftContainer implements Beacon {
 
     @Override
     public void setCustomName(String name) {
-        beacon.a(name); // PAIL: setCustomName
+        beacon.setCustomName(name);
     }
 }

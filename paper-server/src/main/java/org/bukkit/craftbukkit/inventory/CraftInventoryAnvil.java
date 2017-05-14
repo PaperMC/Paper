@@ -59,16 +59,16 @@ public class CraftInventoryAnvil extends CraftInventory implements AnvilInventor
 
     @Override
     public String getRenameText() {
-        return container.l; // PAIL: renameText
+        return container.renameText;
     }
 
     @Override
     public int getRepairCost() {
-        return container.a; // PAIL: levelCost
+        return container.levelCost;
     }
 
     @Override
     public void setRepairCost(int i) {
-        container.a = i; // PAIL:levelCost
+        container.levelCost = i;
     }
 }

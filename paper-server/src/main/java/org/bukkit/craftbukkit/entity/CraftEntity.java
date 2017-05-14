@@ -65,6 +65,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntityTameableAnimal) {
                         if (entity instanceof EntityWolf) { return new CraftWolf(server, (EntityWolf) entity); }
                         else if (entity instanceof EntityOcelot) { return new CraftOcelot(server, (EntityOcelot) entity); }
+                        else if (entity instanceof EntityParrot) { return new CraftParrot(server, (EntityParrot) entity); }
                     }
                     else if (entity instanceof EntitySheep) { return new CraftSheep(server, (EntitySheep) entity); }
                     else if (entity instanceof EntityHorseAbstract) {
@@ -109,9 +110,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         if (entity instanceof EntityGuardianElder) { return new CraftElderGuardian(server, (EntityGuardianElder) entity); }
                         else { return new CraftGuardian(server, (EntityGuardian) entity); }
                     }
-                    else if (entity instanceof EntityEvoker) { return new CraftEvoker(server, (EntityEvoker) entity); }
                     else if (entity instanceof EntityVex) { return new CraftVex(server, (EntityVex) entity); }
-                    else if (entity instanceof EntityVindicator) { return new CraftVindicator(server, (EntityVindicator) entity); }
+                    else if (entity instanceof EntityIllagerAbstract) {
+                        if (entity instanceof EntityIllagerWizard) {
+                            if (entity instanceof EntityEvoker) { return new CraftEvoker(server, (EntityEvoker) entity); }
+                            else if (entity instanceof EntityIllagerIllusioner) { return new CraftIllusioner(server, (EntityIllagerIllusioner) entity); }
+                            else {  return new CraftSpellcaster(server, (EntityIllagerWizard) entity); }
+                        }
+                        else if (entity instanceof EntityVindicator) { return new CraftVindicator(server, (EntityVindicator) entity); }
+                        else { return new CraftIllager(server, (EntityIllagerAbstract) entity); }
+                    }
 
                     else  { return new CraftMonster(server, (EntityMonster) entity); }
                 }
@@ -383,7 +391,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        getHandle().az(); // PAIL: rename
+        getHandle().leaveVehicle();
         return true;
     }
 
@@ -657,17 +665,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Set<String> getScoreboardTags() {
-        return getHandle().P(); // PAIL: getScoreboardTags
+        return getHandle().getScoreboardTags();
     }
 
     @Override
     public boolean addScoreboardTag(String tag) {
-        return getHandle().a(tag); // PAIL: addScoreboardTag
+        return getHandle().addScoreboardTag(tag);
     }
 
     @Override
     public boolean removeScoreboardTag(String tag) {
-        return getHandle().b(tag); // PAIL: removeScoreboardTag
+        return getHandle().removeScoreboardTag(tag);
+    }
+
+    protected NBTTagCompound save() {
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+        nbttagcompound.setString("id", getHandle().getSaveID());
+        getHandle().save(nbttagcompound);
+
+        return nbttagcompound;
     }
 
     private static PermissibleBase getPermissibleBase() {

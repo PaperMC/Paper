@@ -1,17 +1,17 @@
 --- a/net/minecraft/server/EntityZombieVillager.java
 +++ b/net/minecraft/server/EntityZombieVillager.java
-@@ -7,6 +7,7 @@
-     private static final DataWatcherObject<Boolean> b = DataWatcher.a(EntityZombieVillager.class, DataWatcherRegistry.h);
+@@ -9,6 +9,7 @@
      private static final DataWatcherObject<Integer> c = DataWatcher.a(EntityZombieVillager.class, DataWatcherRegistry.b);
      private int conversionTime;
+     private UUID by;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public EntityZombieVillager(World world) {
          super(world);
-@@ -54,6 +55,11 @@
-     public void A_() {
+@@ -60,6 +61,11 @@
+     public void B_() {
          if (!this.world.isClientSide && this.isConverting()) {
-             int i = this.dq();
+             int i = this.ds();
 +            // CraftBukkit start - Use wall time instead of ticks for villager conversion
 +            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +            this.lastTick = MinecraftServer.currentTick;
@@ -20,12 +20,12 @@
  
              this.conversionTime -= i;
              if (this.conversionTime <= 0) {
-@@ -116,7 +122,7 @@
+@@ -123,7 +129,7 @@
              entityvillager.setCustomNameVisible(this.getCustomNameVisible());
          }
  
 -        this.world.addEntity(entityvillager);
 +        this.world.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
-         entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0));
-         this.world.a((EntityHuman) null, 1027, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
-     }
+         EntityHuman entityhuman = this.world.b(this.by);
+ 
+         if (entityhuman instanceof EntityPlayer) {

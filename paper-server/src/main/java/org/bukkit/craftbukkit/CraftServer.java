@@ -114,12 +114,9 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 import org.apache.commons.lang.Validate;
 
-import com.avaje.ebean.config.DataSourceConfig;
-import com.avaje.ebean.config.ServerConfig;
-import com.avaje.ebean.config.dbplatform.SQLitePlatform;
-import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
@@ -130,6 +127,8 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
 import jline.console.ConsoleReader;
+import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.event.server.TabCompleteEvent;
 
 public final class CraftServer implements Server {
@@ -150,7 +149,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
-    private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+    private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().weakValues().makeMap();
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
     private final WorldMetadataStore worldMetadata = new WorldMetadataStore();
@@ -377,13 +376,6 @@ public final class CraftServer implements Server {
     @Override
     public String getBukkitVersion() {
         return bukkitVersion;
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public Player[] _INVALID_getOnlinePlayers() {
-        return getOnlinePlayers().toArray(EMPTY_PLAYER_ARRAY);
     }
 
     @Override
@@ -698,6 +690,7 @@ public final class CraftServer implements Server {
         pluginManager.clearPlugins();
         commandMap.clearCommands();
         resetRecipes();
+        reloadData();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
 
         int pollCount = 0;
@@ -727,6 +720,11 @@ public final class CraftServer implements Server {
         loadPlugins();
         enablePlugins(PluginLoadOrder.STARTUP);
         enablePlugins(PluginLoadOrder.POSTWORLD);
+    }
+
+    @Override
+    public void reloadData() {
+        console.reload();
     }
 
     private void loadIcon() {
@@ -832,7 +830,7 @@ public final class CraftServer implements Server {
             generator = getGenerator(name);
         }
 
-        Convertable converter = new WorldLoaderServer(getWorldContainer(), getHandle().getServer().getDataConverterManager());
+        Convertable converter = new WorldLoaderServer(getWorldContainer(), getHandle().getServer().dataConverterManager);
         if (converter.isConvertable(name)) {
             getLogger().info("Converting world '" + name + "'");
             converter.convert(name, new IProgressUpdate() {
@@ -865,7 +863,7 @@ public final class CraftServer implements Server {
         } while(used);
         boolean hardcore = false;
 
-        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().getDataConverterManager());
+        IDataManager sdm = new ServerNBTManager(getWorldContainer(), name, true, getHandle().getServer().dataConverterManager);
         WorldData worlddata = sdm.getWorldData();
         WorldSettings worldSettings = null;
         if (worlddata == null) {
@@ -1025,25 +1023,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public void configureDbConfig(ServerConfig config) {
-        Validate.notNull(config, "Config cannot be null");
-
-        DataSourceConfig ds = new DataSourceConfig();
-        ds.setDriver(configuration.getString("database.driver"));
-        ds.setUrl(configuration.getString("database.url"));
-        ds.setUsername(configuration.getString("database.username"));
-        ds.setPassword(configuration.getString("database.password"));
-        ds.setIsolationLevel(TransactionIsolation.getLevel(configuration.getString("database.isolation")));
-
-        if (ds.getDriver().contains("sqlite")) {
-            config.setDatabasePlatform(new SQLitePlatform());
-            config.getDatabasePlatform().getDbDdlSyntax().setIdentity("");
-        }
-
-        config.setDataSourceConfig(ds);
-    }
-
-    @Override
     public boolean addRecipe(Recipe recipe) {
         CraftRecipe toAdd;
         if (recipe instanceof CraftRecipe) {
@@ -1060,7 +1039,6 @@ public final class CraftServer implements Server {
             }
         }
         toAdd.addToCraftingManager();
-        CraftingManager.getInstance().sort();
         return true;
     }
 
@@ -1090,7 +1068,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void clearRecipes() {
-        CraftingManager.getInstance().recipes.clear();
+        CraftingManager.recipes = new RegistryMaterials();
         RecipesFurnace.getInstance().recipes.clear();
         RecipesFurnace.getInstance().customRecipes.clear();
         RecipesFurnace.getInstance().customExperience.clear();
@@ -1098,7 +1076,8 @@ public final class CraftServer implements Server {
 
     @Override
     public void resetRecipes() {
-        CraftingManager.getInstance().recipes = new CraftingManager().recipes;
+        CraftingManager.recipes = new RegistryMaterials();
+        CraftingManager.init();
         RecipesFurnace.getInstance().recipes = new RecipesFurnace().recipes;
         RecipesFurnace.getInstance().customRecipes.clear();
         RecipesFurnace.getInstance().customExperience.clear();
@@ -1672,6 +1651,14 @@ public final class CraftServer implements Server {
         Validate.notNull(uuid, "UUID cannot be null");
         net.minecraft.server.Entity entity = console.a(uuid); // PAIL: getEntity
         return entity == null ? null : entity.getBukkitEntity();
+    }
+
+    @Override
+    public org.bukkit.advancement.Advancement getAdvancement(NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "key");
+
+        Advancement advancement = console.getAdvancementData().a(CraftNamespacedKey.toMinecraft(key));
+        return (advancement == null) ? null : advancement.bukkit;
     }
 
     @Deprecated

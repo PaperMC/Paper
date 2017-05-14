@@ -29,6 +29,6 @@ public class CraftLootable extends CraftContainer implements Nameable {
 
     @Override
     public void setCustomName(String name) {
-        te.a(name); // PAIL: setCustomName
+        te.setCustomName(name);
     }
 }

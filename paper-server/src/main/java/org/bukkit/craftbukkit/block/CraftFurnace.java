@@ -60,7 +60,7 @@ public class CraftFurnace extends CraftContainer implements Furnace {
 
     @Override
     public void setCustomName(String name) {
-        furnace.a(name); // PAIL: setCustomName
+        furnace.setCustomName(name);
     }
 
     @Override

@@ -47,6 +47,8 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.advancement.CraftAdvancement;
+import org.bukkit.craftbukkit.advancement.CraftAdvancementProgress;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
@@ -559,29 +561,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void awardAchievement(Achievement achievement) {
-        Validate.notNull(achievement, "Achievement cannot be null");
-        if (achievement.hasParent() && !hasAchievement(achievement.getParent())) {
-            awardAchievement(achievement.getParent());
-        }
-        getHandle().getStatisticManager().setStatistic(getHandle(), CraftStatistic.getNMSAchievement(achievement), 1);
-        getHandle().getStatisticManager().updateStatistics(getHandle());
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
 
     @Override
     public void removeAchievement(Achievement achievement) {
-        Validate.notNull(achievement, "Achievement cannot be null");
-        for (Achievement achieve : Achievement.values()) {
-            if (achieve.getParent() == achievement && hasAchievement(achieve)) {
-                removeAchievement(achieve);
-            }
-        }
-        getHandle().getStatisticManager().setStatistic(getHandle(), CraftStatistic.getNMSAchievement(achievement), 0);
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
 
     @Override
     public boolean hasAchievement(Achievement achievement) {
-        Validate.notNull(achievement, "Achievement cannot be null");
-        return getHandle().getStatisticManager().hasAchievement(CraftStatistic.getNMSAchievement(achievement));
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
 
     @Override
@@ -752,15 +742,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean isBanned() {
         return server.getBanList(BanList.Type.NAME).isBanned(getName());
-    }
-
-    @Override
-    public void setBanned(boolean value) {
-        if (value) {
-            server.getBanList(BanList.Type.NAME).addBan(getName(), null, null, null);
-        } else {
-            server.getBanList(BanList.Type.NAME).pardon(getName());
-        }
     }
 
     @Override
@@ -1453,5 +1434,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(CraftParticle.toNMS(particle), true, (float) x, (float) y, (float) z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count, CraftParticle.toData(particle, data));
         getHandle().playerConnection.sendPacket(packetplayoutworldparticles);
 
+    }
+
+    @Override
+    public org.bukkit.advancement.AdvancementProgress getAdvancementProgress(org.bukkit.advancement.Advancement advancement) {
+        Preconditions.checkArgument(advancement != null, "advancement");
+
+        CraftAdvancement craft = (CraftAdvancement) advancement;
+        AdvancementDataPlayer data = getHandle().getAdvancementData();
+        AdvancementProgress progress = data.getProgress(craft.getHandle());
+
+        return new CraftAdvancementProgress(craft, data, progress);
     }
 }

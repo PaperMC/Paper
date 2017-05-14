@@ -333,6 +333,8 @@ public class CraftBlock implements Block {
         case REDSTONE_COMPARATOR_OFF:
         case REDSTONE_COMPARATOR_ON:
             return new CraftComparator(this);
+        case BED_BLOCK:
+            return new CraftBed(this);
         default:
             return new CraftBlockState(this);
         }
@@ -351,7 +353,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).a().toUpperCase(java.util.Locale.ENGLISH));
+        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
     }
 
     public static BiomeBase biomeToBiomeBase(Biome bio) {

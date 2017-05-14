@@ -21,7 +21,7 @@ public class SoundTest {
     @Test
     public void testReverse() {
         for (MinecraftKey effect : SoundEffect.a.keySet()) {
-            assertNotNull(effect + "", Sound.valueOf(effect.a().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)));
+            assertNotNull(effect + "", Sound.valueOf(effect.getKey().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)));
         }
     }
 

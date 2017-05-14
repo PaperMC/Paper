@@ -353,6 +353,8 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaBanner(item.getTag());
             case MONSTER_EGG:
                 return new CraftMetaSpawnEgg(item.getTag());
+            case KNOWLEDGE_BOOK:
+                return new CraftMetaKnowledgeBook(item.getTag());
             case FURNACE:
             case CHEST:
             case TRAPPED_CHEST:

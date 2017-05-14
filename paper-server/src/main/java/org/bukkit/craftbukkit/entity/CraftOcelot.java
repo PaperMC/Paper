@@ -7,8 +7,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Ocelot;
 
 public class CraftOcelot extends CraftTameableAnimal implements Ocelot {
-    public CraftOcelot(CraftServer server, EntityOcelot wolf) {
-        super(server, wolf);
+    public CraftOcelot(CraftServer server, EntityOcelot ocelot) {
+        super(server, ocelot);
     }
 
     @Override
@@ -23,6 +23,11 @@ public class CraftOcelot extends CraftTameableAnimal implements Ocelot {
     public void setCatType(Type type) {
         Validate.notNull(type, "Cat type cannot be null");
         getHandle().setCatType(type.getId());
+    }
+
+    @Override
+    public String toString() {
+        return "CraftOcelot";
     }
 
     @Override

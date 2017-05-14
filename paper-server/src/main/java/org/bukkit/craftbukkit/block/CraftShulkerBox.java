@@ -42,6 +42,6 @@ public class CraftShulkerBox extends CraftLootable implements ShulkerBox {
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData((byte) ((BlockShulkerBox) box.getBlock()).b.getColorIndex());
+        return DyeColor.getByWoolData((byte) ((BlockShulkerBox) box.getBlock()).color.getColorIndex());
     }
 }

@@ -15,7 +15,7 @@ public class RecipeIterator implements Iterator<Recipe> {
     private Iterator<?> removeFrom = null;
 
     public RecipeIterator() {
-        this.recipes = CraftingManager.getInstance().getRecipes().iterator();
+        this.recipes = CraftingManager.recipes.iterator();
         this.smeltingCustom = RecipesFurnace.getInstance().customRecipes.keySet().iterator();
         this.smeltingVanilla = RecipesFurnace.getInstance().recipes.keySet().iterator();
     }

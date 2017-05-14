@@ -12,7 +12,7 @@
 +import org.bukkit.craftbukkit.Main;
 +// CraftBukkit end
  
- public abstract class MinecraftServer implements Runnable, ICommandListener, IAsyncTaskHandler, IMojangStatistics {
+ public abstract class MinecraftServer implements ICommandListener, Runnable, IAsyncTaskHandler, IMojangStatistics {
  
 @@ -97,19 +104,61 @@
      private Thread serverThread;
@@ -343,7 +343,7 @@
  
                      if (k > 2000L && this.ab - this.R >= 15000L) {
 +                        if (server.getWarnOnOverload()) // CraftBukkit
-                         MinecraftServer.LOGGER.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", new Object[] { Long.valueOf(k), Long.valueOf(k / 50L)});
+                         MinecraftServer.LOGGER.warn("Can\'t keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", Long.valueOf(k), Long.valueOf(k / 50L));
                          k = 2000L;
                          this.R = this.ab;
 @@ -385,11 +544,12 @@
@@ -453,7 +453,7 @@
          }
  
          this.methodProfiler.c("connection");
-@@ -597,10 +782,11 @@
+@@ -599,10 +784,11 @@
          this.o.add(itickable);
      }
  
@@ -466,7 +466,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -645,13 +831,16 @@
+@@ -647,13 +833,16 @@
                      ++j;
                  }
              }
@@ -484,7 +484,7 @@
              if (s != null) {
                  dedicatedserver.i(s);
              }
-@@ -682,6 +871,25 @@
+@@ -684,6 +873,25 @@
                      dedicatedserver.stop();
                  }
              });
@@ -510,7 +510,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -689,8 +897,10 @@
+@@ -691,8 +899,10 @@
      }
  
      public void F() {
@@ -521,7 +521,7 @@
      }
  
      public File d(String s) {
-@@ -706,7 +916,14 @@
+@@ -708,7 +918,14 @@
      }
  
      public WorldServer getWorldServer(int i) {
@@ -537,7 +537,7 @@
      }
  
      public String getVersion() {
-@@ -730,7 +947,7 @@
+@@ -732,7 +949,7 @@
      }
  
      public boolean isDebugging() {
@@ -546,7 +546,7 @@
      }
  
      public void g(String s) {
-@@ -745,7 +962,7 @@
+@@ -747,7 +964,7 @@
      }
  
      public String getServerModName() {
@@ -555,7 +555,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -774,6 +991,7 @@
+@@ -776,6 +993,7 @@
      }
  
      public List<String> tabCompleteCommand(ICommandListener icommandlistener, String s, @Nullable BlockPosition blockposition, boolean flag) {
@@ -563,7 +563,7 @@
          ArrayList arraylist = Lists.newArrayList();
          boolean flag1 = s.startsWith("/");
  
-@@ -816,10 +1034,13 @@
+@@ -818,10 +1036,13 @@
  
              return arraylist;
          }
@@ -578,7 +578,7 @@
      }
  
      public String getName() {
-@@ -875,11 +1096,13 @@
+@@ -877,11 +1098,13 @@
      }
  
      public void a(EnumDifficulty enumdifficulty) {
@@ -595,7 +595,7 @@
  
              if (worldserver != null) {
                  if (worldserver.getWorldData().isHardcore()) {
-@@ -946,13 +1169,11 @@
+@@ -948,13 +1171,11 @@
          int i = 0;
  
          if (this.worldServer != null) {
@@ -613,7 +613,7 @@
                      WorldData worlddata = worldserver.getWorldData();
  
                      mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.getDimensionManager().getDimensionID()));
-@@ -985,7 +1206,7 @@
+@@ -987,7 +1208,7 @@
      public abstract boolean aa();
  
      public boolean getOnlineMode() {
@@ -622,7 +622,7 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1065,13 +1286,9 @@
+@@ -1067,13 +1288,9 @@
      }
  
      public void setGamemode(EnumGamemode enumgamemode) {
@@ -639,7 +639,7 @@
          }
  
      }
-@@ -1103,7 +1320,7 @@
+@@ -1097,7 +1314,7 @@
      }
  
      public World getWorld() {
@@ -647,8 +647,8 @@
 +        return this.worlds.get(0); // CraftBukkit
      }
  
-     public Entity f() {
-@@ -1175,8 +1392,10 @@
+     public int getSpawnProtection() {
+@@ -1157,8 +1374,10 @@
          WorldServer[] aworldserver = this.worldServer;
          int i = aworldserver.length;
  
@@ -661,7 +661,7 @@
  
              if (worldserver != null) {
                  Entity entity = worldserver.getEntity(uuid);
-@@ -1191,7 +1410,7 @@
+@@ -1173,7 +1392,7 @@
      }
  
      public boolean getSendCommandFeedback() {
@@ -669,8 +669,8 @@
 +        return worlds.get(0).getGameRules().getBoolean("sendCommandFeedback");
      }
  
-     public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
-@@ -1206,7 +1425,7 @@
+     public MinecraftServer C_() {
+@@ -1186,7 +1405,7 @@
  
      public <V> ListenableFuture<V> a(Callable<V> callable) {
          Validate.notNull(callable);
@@ -679,9 +679,32 @@
              ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
              Queue queue = this.j;
  
-@@ -1251,4 +1470,11 @@
-     public int a(@Nullable WorldServer worldserver) {
-         return worldserver != null ? worldserver.getGameRules().c("spawnRadius") : 10;
+@@ -1229,23 +1448,30 @@
+     }
+ 
+     public AdvancementDataWorld getAdvancementData() {
+-        return this.worldServer[0].z();
++        return this.worlds.get(0).z(); // CraftBukkit
+     }
+ 
+     public CustomFunctionData aL() {
+-        return this.worldServer[0].A();
++        return this.worlds.get(0).A(); // CraftBukkit
+     }
+ 
+     public void reload() {
+         if (this.isMainThread()) {
+             this.getPlayerList().savePlayers();
+-            this.worldServer[0].getLootTableRegistry().reload();
++            this.worlds.get(0).getLootTableRegistry().reload(); // CraftBukkit
+             this.getAdvancementData().reload();
+             this.aL().f();
+             this.getPlayerList().reload();
+         } else {
+-            this.postToMainThread(run<invokedynamic>(this));
++            this.postToMainThread(() -> reload()); // CraftBukkit - decompile error
+         }
+ 
      }
 +
 +    // CraftBukkit start

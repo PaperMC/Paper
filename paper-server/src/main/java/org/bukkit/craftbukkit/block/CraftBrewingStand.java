@@ -67,6 +67,6 @@ public class CraftBrewingStand extends CraftContainer implements BrewingStand {
 
     @Override
     public void setCustomName(String name) {
-        brewingStand.a(name); // PAIL: setCustomName
+        brewingStand.setCustomName(name);
     }
 }

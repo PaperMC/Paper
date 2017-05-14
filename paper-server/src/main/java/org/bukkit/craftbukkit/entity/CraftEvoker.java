@@ -1,11 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityEvoker;
+import net.minecraft.server.EntityIllagerWizard;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
 
-public class CraftEvoker extends CraftMonster implements Evoker {
+public class CraftEvoker extends CraftSpellcaster implements Evoker {
 
     public CraftEvoker(CraftServer server, EntityEvoker entity) {
         super(server, entity);
@@ -27,12 +28,12 @@ public class CraftEvoker extends CraftMonster implements Evoker {
     }
 
     @Override
-    public Spell getCurrentSpell() {
-        return Spell.values()[getHandle().getSpell()];
+    public Evoker.Spell getCurrentSpell() {
+        return Evoker.Spell.values()[getHandle().getSpell().ordinal()];
     }
 
     @Override
-    public void setCurrentSpell(Spell spell) {
-        getHandle().a(spell == null ? 0 : spell.ordinal());
+    public void setCurrentSpell(Evoker.Spell spell) {
+        getHandle().setSpell(spell == null ? EntityIllagerWizard.Spell.NONE : EntityIllagerWizard.Spell.a(spell.ordinal()));
     }
 }

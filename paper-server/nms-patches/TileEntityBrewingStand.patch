@@ -19,7 +19,7 @@
 @@ -14,6 +23,31 @@
      private Item k;
      private String l;
-     private int m;
+     private int fuelLevel;
 +    // CraftBukkit start - add fields and methods
 +    private int lastTick = MinecraftServer.currentTick;
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -51,8 +51,8 @@
 @@ -55,8 +89,19 @@
          ItemStack itemstack = (ItemStack) this.items.get(4);
  
-         if (this.m <= 0 && itemstack.getItem() == Items.BLAZE_POWDER) {
--            this.m = 20;
+         if (this.fuelLevel <= 0 && itemstack.getItem() == Items.BLAZE_POWDER) {
+-            this.fuelLevel = 20;
 -            itemstack.subtract(1);
 +            // CraftBukkit start
 +            BrewingStandFuelEvent event = new BrewingStandFuelEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), CraftItemStack.asCraftMirror(itemstack), 20);
@@ -62,8 +62,8 @@
 +                return;
 +            }
 +
-+            this.m = event.getFuelPower(); // PAIL fuelLevel
-+            if (this.m > 0 && event.isConsuming()) {
++            this.fuelLevel = event.getFuelPower(); // PAIL fuelLevel
++            if (this.fuelLevel > 0 && event.isConsuming()) {
 +                itemstack.subtract(1);
 +            }
 +            // CraftBukkit end
@@ -93,7 +93,7 @@
          ItemStack itemstack = (ItemStack) this.items.get(3);
 +        // CraftBukkit start
 +        if (getOwner() != null) {
-+            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory(), this.m);
++            BrewEvent event = new BrewEvent(world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), (org.bukkit.inventory.BrewerInventory) this.getOwner().getInventory(), this.fuelLevel);
 +            org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return;
@@ -112,12 +112,3 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
-@@ -227,7 +286,7 @@
-         } else {
-             Item item = itemstack.getItem();
- 
--            return i == 4 ? item == Items.BLAZE_POWDER : (item == Items.POTION || item == Items.SPLASH_POTION || item == Items.LINGERING_POTION || item == Items.GLASS_BOTTLE) && this.getItem(i) == ItemStack.a;
-+            return i == 4 ? item == Items.BLAZE_POWDER : (item == Items.POTION || item == Items.SPLASH_POTION || item == Items.LINGERING_POTION || item == Items.GLASS_BOTTLE) && this.getItem(i).isEmpty(); // CraftBukkit - MC-111753
-         }
-     }
- 

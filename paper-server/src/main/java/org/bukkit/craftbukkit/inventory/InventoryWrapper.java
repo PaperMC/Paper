@@ -180,7 +180,7 @@ public class InventoryWrapper implements IInventory {
     }
 
     @Override
-    public boolean w_() {
+    public boolean x_() {
         return Iterables.any(inventory, Predicates.notNull());
     }
 }

@@ -953,12 +953,7 @@ public class CraftEventFactory {
     public static Cancellable handleStatisticsIncrease(EntityHuman entityHuman, net.minecraft.server.Statistic statistic, int current, int incrementation) {
         Player player = ((EntityPlayer) entityHuman).getBukkitEntity();
         Event event;
-        if (statistic instanceof net.minecraft.server.Achievement) {
-            if (current != 0) {
-                return null;
-            }
-            event = new PlayerAchievementAwardedEvent(player, CraftStatistic.getBukkitAchievement((net.minecraft.server.Achievement) statistic));
-        } else {
+        if (true) {
             org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(statistic);
             if (stat == null) {
                 System.err.println("Unhandled statistic: " + statistic);

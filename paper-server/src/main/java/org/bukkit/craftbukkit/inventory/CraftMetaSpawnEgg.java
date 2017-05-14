@@ -40,7 +40,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
 
             if (entityTag.hasKey(ENTITY_ID.NBT)) {
-                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).a()); // PAIL: rename
+                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getKey());
             }
         }
     }
@@ -58,10 +58,10 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
         if (tag.hasKey(ENTITY_TAG.NBT)) {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
-            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ENTITY, entityTag); // PAIL: convert
+            MinecraftServer.getServer().dataConverterManager.a(DataConverterTypes.ENTITY, entityTag); // PAIL: convert
 
             if (entityTag.hasKey(ENTITY_ID.NBT)) {
-                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).a()); // PAIL: rename
+                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getKey());
             }
         }
     }

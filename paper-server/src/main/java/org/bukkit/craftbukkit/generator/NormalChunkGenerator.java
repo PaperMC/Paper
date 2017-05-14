@@ -60,4 +60,9 @@ public class NormalChunkGenerator extends InternalChunkGenerator {
     public void recreateStructures(Chunk chunk, int i, int i1) {
         generator.recreateStructures(chunk, i, i1);
     }
+
+    @Override
+    public boolean a(World world, String string, BlockPosition bp) {
+        return generator.a(world, string, bp);
+    }
 }
