@@ -24,7 +24,7 @@ import org.bukkit.util.ChatPaginator;
 
 import com.google.common.collect.ImmutableList;
 
-public class HelpCommand extends VanillaCommand {
+public class HelpCommand extends BukkitCommand {
     public HelpCommand() {
         super("help");
         this.description = "Shows the help menu";

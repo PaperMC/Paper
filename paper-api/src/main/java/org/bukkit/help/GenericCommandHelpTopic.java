@@ -6,7 +6,6 @@ import org.bukkit.command.CommandSender;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.help.HelpTopic;
 
 /**
@@ -62,8 +61,8 @@ public class GenericCommandHelpTopic extends HelpTopic {
     }
 
     public boolean canSee(CommandSender sender) {
-        if (!command.isRegistered() && !(command instanceof VanillaCommand)) {
-            // Unregistered commands should not show up in the help (ignore VanillaCommands)
+        if (!command.isRegistered()) {
+            // Unregistered commands should not show up in the help
             return false;
         }
 

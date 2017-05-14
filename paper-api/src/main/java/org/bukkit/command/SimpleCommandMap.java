@@ -95,7 +95,7 @@ public class SimpleCommandMap implements CommandMap {
      */
     private synchronized boolean register(String label, Command command, boolean isAlias, String fallbackPrefix) {
         knownCommands.put(fallbackPrefix + ":" + label, command);
-        if ((command instanceof VanillaCommand || isAlias) && knownCommands.containsKey(label)) {
+        if (isAlias && knownCommands.containsKey(label)) {
             // Request is for an alias/fallback command and it conflicts with
             // a existing command or previous alias ignore it
             // Note: This will mean it gets removed from the commands list of active aliases
