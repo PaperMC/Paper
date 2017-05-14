@@ -12,7 +12,7 @@ Re-introduce a cap per tick for auto save (Spigot disabled the vanilla cap) and 
 Adds incremental player auto saving too
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 5b4d715a4..db2a4c2c7 100644
+index 621c585e7..da0984a35 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -26,7 +26,7 @@ index 5b4d715a4..db2a4c2c7 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index dc96bd7f4..bcf24cb49 100644
+index cec9ea74c..39f8a0a2c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ package com.destroystokyo.paper;
@@ -34,9 +34,9 @@ index dc96bd7f4..bcf24cb49 100644
  import java.util.List;
  
 +import net.minecraft.server.MinecraftServer;
- import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
+ 
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
      private void elytraHitWallDamage() {
          elytraHitWallDamage = getBoolean("elytra-hit-wall-damage", true);
@@ -58,7 +58,7 @@ index dc96bd7f4..bcf24cb49 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 88437d77a..9f7f32dc2 100644
+index a639ab2a8..099ce0b2d 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk {
@@ -76,7 +76,7 @@ index 88437d77a..9f7f32dc2 100644
  
      public Random a(long i) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 81b9bb884..71df9e4aa 100644
+index 9836c0c5a..39f0f5a17 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@
@@ -96,22 +96,22 @@ index 81b9bb884..71df9e4aa 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 4e8efc549..55c966811 100644
+index 2b01c5395..42eaef8a1 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
-     private static final Logger bR = LogManager.getLogger();
+     private static final Logger bW = LogManager.getLogger();
      public String locale = null; // Spigot private -> public // Paper - default to null
 +    public long lastSave = MinecraftServer.currentTick; // Paper
      public PlayerConnection playerConnection;
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2349c3ade..8134501c7 100644
+index 19a66b64c..1f0e79387 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
      public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
@@ -119,7 +119,7 @@ index 2349c3ade..8134501c7 100644
      // CraftBukkit end
      // Spigot start
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
              this.q.b().a(agameprofile);
          }
  
@@ -155,7 +155,7 @@ index 2349c3ade..8134501c7 100644
          this.methodProfiler.a("tallying");
          // Spigot start
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 97322c5da..58f30fb1d 100644
+index e7017883f..31f2704af 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -192,7 +192,7 @@ index 97322c5da..58f30fb1d 100644
      public void addWhitelist(GameProfile gameprofile) {
          this.whitelist.add(new WhiteListEntry(gameprofile));
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f80647b31..914c20282 100644
+index 36e6fdd16..b1253899c 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {

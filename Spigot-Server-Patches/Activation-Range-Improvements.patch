@@ -6,19 +6,19 @@ Subject: [PATCH] Activation Range Improvements
 Fixes and adds new Immunities to improve gameplay behavior
 
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
-index fdfe5b9ed..ce3907438 100644
+index 653aba2ba..6f18bd75b 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
 +++ b/src/main/java/net/minecraft/server/EntityCreature.java
 @@ -0,0 +0,0 @@ public abstract class EntityCreature extends EntityInsentient {
  
-     public static final UUID bu = UUID.fromString("E199AD21-BA8A-4C53-8D13-6182D5C69D3A");
-     public static final AttributeModifier bv = (new AttributeModifier(EntityCreature.bu, "Fleeing speed bonus", 2.0D, 2)).a(false);
+     public static final UUID bv = UUID.fromString("E199AD21-BA8A-4C53-8D13-6182D5C69D3A");
+     public static final AttributeModifier bw = (new AttributeModifier(EntityCreature.bv, "Fleeing speed bonus", 2.0D, 2)).a(false);
 +    public BlockPosition movingTarget = null; public BlockPosition getMovingTarget() { return movingTarget; } // Paper
      private BlockPosition a;
      private float b;
-     private float c;
+     private final float c;
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index b8ac99e5d..7242da9cc 100644
+index 9bfc14e43..1fae017c0 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
@@ -31,31 +31,29 @@ index b8ac99e5d..7242da9cc 100644
      protected int ticksFarFromPlayer;
      protected float aW;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
-index 13ae7a030..7e3aa6ee6 100644
+index 8e165f9db..05ac3811e 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -0,0 +0,0 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+         return this.bM != null;
+     }
+ 
++    public boolean inCaravan() { return this.dU(); } // Paper - OBFHELPER
+     public boolean dU() {
          return this.bL != null;
      }
- 
--    public boolean dR() {
-+    public boolean inCaravan() { return dR(); } public boolean dR() { // Paper - OBFHELPER
-         return this.bK != null;
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
-index ac6e2a9aa..e6c190d43 100644
+index faa82f764..ba7f250c2 100644
 --- a/src/main/java/net/minecraft/server/EntityVillager.java
 +++ b/src/main/java/net/minecraft/server/EntityVillager.java
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant {
-     private static final Logger bx = LogManager.getLogger();
-     private static final DataWatcherObject<Integer> by = DataWatcher.a(EntityVillager.class, DataWatcherRegistry.b);
-     private int profession;
--    private boolean bA;
-+    private boolean bA;public boolean isMating() { return bA; } // Paper - OBFHELPER
-     private boolean bB;
-     Village village;
-     private EntityHuman tradingPlayer;
+         return Math.max(((Integer) this.datawatcher.get(EntityVillager.bz)).intValue() % 6, 0);
+     }
+ 
++    public final boolean isMating() { return this.dk(); } // Paper - OBFHELPER
+     public boolean dk() {
+         return this.bB;
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index 83d9c43f3..1cb6652c2 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
@@ -110,7 +108,7 @@ index e5b5e9887..e3781f3a8 100644
                          }
                      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index c8a6ff3d4..428912cbc 100644
+index 7396b35f5..428912cbc 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -0,0 +0,0 @@ import net.minecraft.server.EntityFireball;
@@ -144,7 +142,7 @@ index c8a6ff3d4..428912cbc 100644
              {
                  return true;
              }
--            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).df()/* Getter for first boolean */ )
+-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).dk()/* Getter for first boolean */ )
 +            // Paper start
 +            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
              {
