@@ -166,6 +166,11 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         ENDER_PEARL,
         /**
+         * When an entity is spawned as a result of the entity it is being
+         * perched on jumping or being damaged
+         */
+        SHOULDER_ENTITY,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,

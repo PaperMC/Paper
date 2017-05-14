@@ -42,6 +42,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
 import com.google.common.collect.ImmutableList;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
@@ -438,6 +439,12 @@ public interface Server extends PluginMessageRecipient {
      * Reloads the server, refreshing settings and plugin information.
      */
     public void reload();
+
+    /**
+     * Reload only the Minecraft data for the server. This includes custom
+     * advancements and loot tables.
+     */
+    public void reloadData();
 
     /**
      * Returns the primary logger associated with this server instance.
@@ -920,6 +927,14 @@ public interface Server extends PluginMessageRecipient {
      * @return the entity with the given UUID, or null if it isn't found
      */
     Entity getEntity(UUID uuid);
+
+    /**
+     * Get the advancement specified by this key.
+     *
+     * @param key unique advancement key
+     * @return advancement or null if not exists
+     */
+    Advancement getAdvancement(NamespacedKey key);
 
     /**
      * @see UnsafeValues

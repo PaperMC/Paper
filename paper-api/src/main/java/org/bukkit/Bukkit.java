@@ -41,6 +41,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
 import com.google.common.collect.ImmutableList;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
@@ -531,6 +532,14 @@ public final class Bukkit {
      */
     public static void reload() {
         server.reload();
+    }
+
+    /**
+     * Reload only the Minecraft data for the server. This includes custom
+     * advancements and loot tables.
+     */
+    public static void reloadData() {
+        server.reloadData();
     }
 
     /**
@@ -1123,6 +1132,16 @@ public final class Bukkit {
      */
     public static Entity getEntity(UUID uuid) {
         return server.getEntity(uuid);
+    }
+
+    /**
+     * Get the advancement specified by this key.
+     *
+     * @param key unique advancement key
+     * @return advancement or null if not exists
+     */
+    public static Advancement getAdvancement(NamespacedKey key) {
+        return server.getAdvancement(key);
     }
 
     /**

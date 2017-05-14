@@ -22,6 +22,10 @@ public enum Attribute {
      */
     GENERIC_MOVEMENT_SPEED,
     /**
+     * Flying speed of an Entity.
+     */
+    GENERIC_FLYING_SPEED,
+    /**
      * Attack damage of an Entity.
      */
     GENERIC_ATTACK_DAMAGE,

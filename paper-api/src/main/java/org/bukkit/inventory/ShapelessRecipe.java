@@ -5,23 +5,33 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Keyed;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
 
 /**
  * Represents a shapeless recipe, where the arrangement of the ingredients on
  * the crafting grid does not matter.
  */
-public class ShapelessRecipe implements Recipe {
-    private ItemStack output;
-    private List<ItemStack> ingredients = new ArrayList<ItemStack>();
+public class ShapelessRecipe implements Recipe, Keyed {
+    private final NamespacedKey key;
+    private final ItemStack output;
+    private final List<ItemStack> ingredients = new ArrayList<ItemStack>();
+
+    @Deprecated
+    public ShapelessRecipe(ItemStack result) {
+        this.key = NamespacedKey.randomKey();
+        this.output = new ItemStack(result);
+    }
 
     /**
      * Create a shapeless recipe to craft the specified ItemStack. The
      * constructor merely determines the result and type; to set the actual
      * recipe, you'll need to call the appropriate methods.
      *
+     * @param key the unique recipe key
      * @param result The item you want the recipe to create.
      * @see ShapelessRecipe#addIngredient(Material)
      * @see ShapelessRecipe#addIngredient(MaterialData)
@@ -30,7 +40,8 @@ public class ShapelessRecipe implements Recipe {
      * @see ShapelessRecipe#addIngredient(int,MaterialData)
      * @see ShapelessRecipe#addIngredient(int,Material,int)
      */
-    public ShapelessRecipe(ItemStack result) {
+    public ShapelessRecipe(NamespacedKey key, ItemStack result) {
+        this.key = key;
         this.output = new ItemStack(result);
     }
 
@@ -222,5 +233,10 @@ public class ShapelessRecipe implements Recipe {
             result.add(ingredient.clone());
         }
         return result;
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 }

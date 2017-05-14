@@ -1,9 +1,9 @@
 package org.bukkit.entity;
 
 /**
- * Represents an Evoker.
+ * Represents an Evoker "Illager".
  */
-public interface Evoker extends Monster {
+public interface Evoker extends Spellcaster {
 
     /**
      * Represents the current spell the Evoker is using.
@@ -29,7 +29,15 @@ public interface Evoker extends Monster {
         /**
          * The "wololo" spell.
          */
-        WOLOLO;
+        WOLOLO,
+        /**
+         * The spell that makes the casting entity invisible.
+         */
+        DISAPPEAR,
+        /**
+         * The spell that makes the target blind.
+         */
+        BLINDNESS;
     }
 
     /**

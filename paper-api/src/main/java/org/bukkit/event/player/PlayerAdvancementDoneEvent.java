@@ -1,0 +1,38 @@
+package org.bukkit.event.player;
+
+import org.bukkit.advancement.Advancement;
+import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
+
+/**
+ * Called when a player has completed all criteria in an advancement.
+ */
+public class PlayerAdvancementDoneEvent extends PlayerEvent {
+
+    private static final HandlerList handlers = new HandlerList();
+    //
+    private final Advancement advancement;
+
+    public PlayerAdvancementDoneEvent(Player who, Advancement advancement) {
+        super(who);
+        this.advancement = advancement;
+    }
+
+    /**
+     * Get the advancement which has been completed.
+     *
+     * @return completed advancement
+     */
+    public Advancement getAdvancement() {
+        return advancement;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
+}

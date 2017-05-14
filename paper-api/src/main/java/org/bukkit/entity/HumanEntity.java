@@ -255,4 +255,66 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @return Experience required to level up
      */
     public int getExpToLevel();
+
+    /**
+     * Gets the entity currently perched on the left shoulder or null if no
+     * entity.
+     * <br>
+     * The returned entity will not be spawned within the world, so most
+     * operations are invalid unless the entity is first spawned in.
+     *
+     * @return left shoulder entity
+     * @deprecated There are currently no well defined semantics regarding
+     * serialized entities in Bukkit. Use with care.
+     */
+    @Deprecated
+    public Entity getShoulderEntityLeft();
+
+    /**
+     * Sets the entity currently perched on the left shoulder, or null to
+     * remove. This method will remove the entity from the world.
+     * <br>
+     * Note that only a copy of the entity will be set to display on the
+     * shoulder.
+     * <br>
+     * Also note that the client will currently only render {@link Parrot}
+     * entities.
+     *
+     * @param entity left shoulder entity
+     * @deprecated There are currently no well defined semantics regarding
+     * serialized entities in Bukkit. Use with care.
+     */
+    @Deprecated
+    public void setShoulderEntityLeft(Entity entity);
+
+    /**
+     * Gets the entity currently perched on the right shoulder or null if no
+     * entity.
+     * <br>
+     * The returned entity will not be spawned within the world, so most
+     * operations are invalid unless the entity is first spawned in.
+     *
+     * @return right shoulder entity
+     * @deprecated There are currently no well defined semantics regarding
+     * serialized entities in Bukkit. Use with care.
+     */
+    @Deprecated
+    public Entity getShoulderEntityRight();
+
+    /**
+     * Sets the entity currently perched on the right shoulder, or null to
+     * remove. This method will remove the entity from the world.
+     * <br>
+     * Note that only a copy of the entity will be set to display on the
+     * shoulder.
+     * <br>
+     * Also note that the client will currently only render {@link Parrot}
+     * entities.
+     *
+     * @param entity right shoulder entity
+     * @deprecated There are currently no well defined semantics regarding
+     * serialized entities in Bukkit. Use with care.
+     */
+    @Deprecated
+    public void setShoulderEntityRight(Entity entity);
 }

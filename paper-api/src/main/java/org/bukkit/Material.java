@@ -304,6 +304,24 @@ public enum Material {
     GREEN_SHULKER_BOX(232, 1),
     RED_SHULKER_BOX(233, 1),
     BLACK_SHULKER_BOX(234, 1),
+    WHITE_GLAZED_TERRACOTTA(235),
+    ORANGE_GLAZED_TERRACOTTA(236),
+    MAGENTA_GLAZED_TERRACOTTA(237),
+    LIGHT_BLUE_GLAZED_TERRACOTTA(238),
+    YELLOW_GLAZED_TERRACOTTA(239),
+    LIME_GLAZED_TERRACOTTA(240),
+    PINK_GLAZED_TERRACOTTA(241),
+    GRAY_GLAZED_TERRACOTTA(242),
+    SILVER_GLAZED_TERRACOTTA(243),
+    CYAN_GLAZED_TERRACOTTA(244),
+    PURPLE_GLAZED_TERRACOTTA(245),
+    BLUE_GLAZED_TERRACOTTA(246),
+    BROWN_GLAZED_TERRACOTTA(247),
+    GREEN_GLAZED_TERRACOTTA(248),
+    RED_GLAZED_TERRACOTTA(249),
+    BLACK_GLAZED_TERRACOTTA(250),
+    CONCRETE(251),
+    CONCRETE_POWDER(252),
     STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
     IRON_SPADE(256, 1, 250),
@@ -505,6 +523,7 @@ public enum Material {
     TOTEM(449, 1),
     SHULKER_SHELL(450),
     IRON_NUGGET(452),
+    KNOWLEDGE_BOOK(453, 1),
     GOLD_RECORD(2256, 1),
     GREEN_RECORD(2257, 1),
     RECORD_3(2258, 1),
@@ -946,6 +965,24 @@ public enum Material {
             case GREEN_SHULKER_BOX:
             case RED_SHULKER_BOX:
             case BLACK_SHULKER_BOX:
+            case WHITE_GLAZED_TERRACOTTA:
+            case ORANGE_GLAZED_TERRACOTTA:
+            case MAGENTA_GLAZED_TERRACOTTA:
+            case LIGHT_BLUE_GLAZED_TERRACOTTA:
+            case YELLOW_GLAZED_TERRACOTTA:
+            case LIME_GLAZED_TERRACOTTA:
+            case PINK_GLAZED_TERRACOTTA:
+            case GRAY_GLAZED_TERRACOTTA:
+            case SILVER_GLAZED_TERRACOTTA:
+            case CYAN_GLAZED_TERRACOTTA:
+            case PURPLE_GLAZED_TERRACOTTA:
+            case BLUE_GLAZED_TERRACOTTA:
+            case BROWN_GLAZED_TERRACOTTA:
+            case GREEN_GLAZED_TERRACOTTA:
+            case RED_GLAZED_TERRACOTTA:
+            case BLACK_GLAZED_TERRACOTTA:
+            case CONCRETE:
+            case CONCRETE_POWDER:
                 return true;
             default:
                 return false;
@@ -1310,6 +1347,24 @@ public enum Material {
             case NETHER_WART_BLOCK:
             case RED_NETHER_BRICK:
             case BONE_BLOCK:
+            case WHITE_GLAZED_TERRACOTTA:
+            case ORANGE_GLAZED_TERRACOTTA:
+            case MAGENTA_GLAZED_TERRACOTTA:
+            case LIGHT_BLUE_GLAZED_TERRACOTTA:
+            case YELLOW_GLAZED_TERRACOTTA:
+            case LIME_GLAZED_TERRACOTTA:
+            case PINK_GLAZED_TERRACOTTA:
+            case GRAY_GLAZED_TERRACOTTA:
+            case SILVER_GLAZED_TERRACOTTA:
+            case CYAN_GLAZED_TERRACOTTA:
+            case PURPLE_GLAZED_TERRACOTTA:
+            case BLUE_GLAZED_TERRACOTTA:
+            case BROWN_GLAZED_TERRACOTTA:
+            case GREEN_GLAZED_TERRACOTTA:
+            case RED_GLAZED_TERRACOTTA:
+            case BLACK_GLAZED_TERRACOTTA:
+            case CONCRETE:
+            case CONCRETE_POWDER:
                 return true;
             default:
                 return false;
@@ -1327,6 +1382,7 @@ public enum Material {
             case SAND:
             case GRAVEL:
             case ANVIL:
+            case CONCRETE_POWDER:
                 return true;
             default:
                 return false;
