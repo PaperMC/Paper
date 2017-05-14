@@ -10,31 +10,11 @@ import org.bukkit.util.Vector;
 public interface Minecart extends Vehicle {
 
     /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     *
-     * @param damage over 40 to "kill" a minecart
-     */
-    @Deprecated
-    public void _INVALID_setDamage(int damage);
-
-    /**
      * Sets a minecart's damage.
      *
      * @param damage over 40 to "kill" a minecart
      */
     public void setDamage(double damage);
-
-    /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     *
-     * @return The damage
-     */
-    @Deprecated
-    public int _INVALID_getDamage();
 
     /**
      * Gets a minecart's damage.

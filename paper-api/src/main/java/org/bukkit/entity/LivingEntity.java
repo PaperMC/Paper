@@ -169,31 +169,11 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     public double getLastDamage();
 
     /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     * 
-     * @return damage taken since the last no damage ticks time period
-     */
-    @Deprecated
-    public int _INVALID_getLastDamage();
-
-    /**
      * Sets the damage dealt within the current no damage ticks time period.
      *
      * @param damage amount of damage
      */
     public void setLastDamage(double damage);
-
-    /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     * 
-     * @param damage amount of damage
-     */
-    @Deprecated
-    public void _INVALID_setLastDamage(int damage);
 
     /**
      * Returns the living entity's current no damage ticks.
