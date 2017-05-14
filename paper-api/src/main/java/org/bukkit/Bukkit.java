@@ -40,7 +40,6 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
-import com.avaje.ebean.config.ServerConfig;
 import com.google.common.collect.ImmutableList;
 import org.bukkit.generator.ChunkGenerator;
 
@@ -587,16 +586,6 @@ public final class Bukkit {
      */
     public static boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException {
         return server.dispatchCommand(sender, commandLine);
-    }
-
-    /**
-     * Populates a given {@link ServerConfig} with values attributes to this
-     * server.
-     *
-     * @param config the server config to populate
-     */
-    public static void configureDbConfig(ServerConfig config) {
-        server.configureDbConfig(config);
     }
 
     /**

@@ -221,7 +221,6 @@ public final class PluginDescriptionFile {
     private List<String> authors = null;
     private String website = null;
     private String prefix = null;
-    private boolean database = false;
     private PluginLoadOrder order = PluginLoadOrder.POSTWORLD;
     private List<Permission> permissions = null;
     private Map<?, ?> lazyPermissions = null;
@@ -425,25 +424,6 @@ public final class PluginDescriptionFile {
      */
     public String getWebsite() {
         return website;
-    }
-
-    /**
-     * Gives if the plugin uses a database.
-     * <ul>
-     * <li>Using a database is non-trivial.
-     * <li>Valid values include <code>true</code> and <code>false</code>
-     * </ul>
-     * <p>
-     * In the plugin.yml, this entry is named <code>database</code>.
-     * <p>
-     * Example:
-     * <blockquote><pre>database: false</pre></blockquote>
-     *
-     * @return if this plugin requires a database
-     * @see Plugin#getDatabase()
-     */
-    public boolean isDatabaseEnabled() {
-        return database;
     }
 
     /**
@@ -873,10 +853,6 @@ public final class PluginDescriptionFile {
         return classLoaderOf;
     }
 
-    public void setDatabaseEnabled(boolean database) {
-        this.database = database;
-    }
-
     /**
      * Saves this PluginDescriptionFile to the given writer
      *
@@ -955,14 +931,6 @@ public final class PluginDescriptionFile {
         depend = makePluginNameList(map, "depend");
         softDepend = makePluginNameList(map, "softdepend");
         loadBefore = makePluginNameList(map, "loadbefore");
-
-        if (map.get("database") != null) {
-            try {
-                database = (Boolean) map.get("database");
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "database is of wrong type");
-            }
-        }
 
         if (map.get("website") != null) {
             website = map.get("website").toString();
@@ -1061,7 +1029,6 @@ public final class PluginDescriptionFile {
         map.put("name", name);
         map.put("main", main);
         map.put("version", version);
-        map.put("database", database);
         map.put("order", order.toString());
         map.put("default-permission", defaultPerm.toString());
 

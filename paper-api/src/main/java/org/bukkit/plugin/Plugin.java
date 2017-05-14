@@ -9,8 +9,6 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.ChunkGenerator;
 
-import com.avaje.ebean.EbeanServer;
-
 /**
  * Represents a Plugin
  * <p>
@@ -138,27 +136,6 @@ public interface Plugin extends TabExecutor {
      * @param canNag is this plugin still naggable?
      */
     public void setNaggable(boolean canNag);
-
-    /**
-     * Gets the {@link EbeanServer} tied to this plugin. This will only be
-     * available if enabled in the {@link
-     * PluginDescriptionFile#isDatabaseEnabled()}
-     * <p>
-     * <i>For more information on the use of <a href="http://www.avaje.org/">
-     * Avaje Ebeans ORM</a>, see <a
-     * href="http://www.avaje.org/ebean/documentation.html">Avaje Ebeans
-     * Documentation</a></i>
-     * <p>
-     * <i>For an example using Ebeans ORM, see <a
-     * href="https://github.com/Bukkit/HomeBukkit">Bukkit's Homebukkit Plugin
-     * </a></i>
-     *
-     * @return ebean server instance or null if not enabled
-     * @deprecated all EBean related methods will be removed with Minecraft 1.12
-     * - see https://www.spigotmc.org/threads/194144/
-     */
-    @Deprecated
-    public EbeanServer getDatabase();
 
     /**
      * Gets a {@link ChunkGenerator} for use in a default world, as specified

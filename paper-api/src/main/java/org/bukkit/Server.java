@@ -41,7 +41,6 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
-import com.avaje.ebean.config.ServerConfig;
 import com.google.common.collect.ImmutableList;
 import org.bukkit.generator.ChunkGenerator;
 
@@ -484,14 +483,6 @@ public interface Server extends PluginMessageRecipient {
      *     fails with an unhandled exception
      */
     public boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException;
-
-    /**
-     * Populates a given {@link ServerConfig} with values attributes to this
-     * server.
-     *
-     * @param config the server config to populate
-     */
-    public void configureDbConfig(ServerConfig config);
 
     /**
      * Adds a recipe to the crafting manager.
