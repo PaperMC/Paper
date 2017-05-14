@@ -1145,6 +1145,16 @@ public final class Bukkit {
     }
 
     /**
+     * Get an iterator through all advancements. Advancements cannot be removed
+     * from this iterator,
+     *
+     * @return an advancement iterator
+     */
+    public static Iterator<Advancement> advancementIterator() {
+        return server.advancementIterator();
+    }
+
+    /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */

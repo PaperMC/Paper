@@ -937,6 +937,14 @@ public interface Server extends PluginMessageRecipient {
     Advancement getAdvancement(NamespacedKey key);
 
     /**
+     * Get an iterator through all advancements. Advancements cannot be removed
+     * from this iterator,
+     *
+     * @return an advancement iterator
+     */
+    Iterator<Advancement> advancementIterator();
+
+    /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */
