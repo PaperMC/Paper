@@ -118,6 +118,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.authlib.GameProfile;
@@ -1659,6 +1660,16 @@ public final class CraftServer implements Server {
 
         Advancement advancement = console.getAdvancementData().a(CraftNamespacedKey.toMinecraft(key));
         return (advancement == null) ? null : advancement.bukkit;
+    }
+
+    @Override
+    public Iterator<org.bukkit.advancement.Advancement> advancementIterator() {
+        return Iterators.unmodifiableIterator(Iterators.transform(console.getAdvancementData().c().iterator(), new Function<Advancement, org.bukkit.advancement.Advancement>() { // PAIL: rename
+            @Override
+            public org.bukkit.advancement.Advancement apply(Advancement advancement) {
+                return advancement.bukkit;
+            }
+        }));
     }
 
     @Deprecated
