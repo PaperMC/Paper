@@ -1,33 +1,34 @@
-From 590f1a604da843d882d511958377ec6bfa13bb3e Mon Sep 17 00:00:00 2001
+From 900cbba0bf66c04a6f65d358b08f39f7c38f2896 Mon Sep 17 00:00:00 2001
 From: Alfie Cleveland <alfeh@me.com>
 Date: Fri, 25 Nov 2016 13:22:40 +0000
 Subject: [PATCH] Optimise removeQueue
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index eca224bdb..58d40f994 100644
+index 57d21fc12..8d48d7c0c 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
- import com.google.common.collect.Sets;
+@@ -3,8 +3,10 @@ package net.minecraft.server;
+ import com.google.common.collect.Lists;
  import com.mojang.authlib.GameProfile;
  import io.netty.buffer.Unpooled;
 +import java.util.ArrayDeque; // Paper
+ import java.util.ArrayList;
  import java.util.Collection;
 +import java.util.Deque; // Paper
- import java.util.HashSet;
  import java.util.Iterator;
  import java.util.List;
+ import javax.annotation.Nonnull;
 @@ -38,7 +40,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public final PlayerInteractManager playerInteractManager;
      public double d;
      public double e;
 -    public final List<Integer> removeQueue = Lists.newLinkedList();
 +    public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
-     private final ServerStatisticManager bU;
-     private float bV = Float.MIN_VALUE;
-     private int bW = Integer.MIN_VALUE;
-@@ -251,10 +253,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private final AdvancementDataPlayer bZ;
+     private final ServerStatisticManager ca;
+     private float cb = Float.MIN_VALUE;
+@@ -286,10 +288,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
              Iterator iterator = this.removeQueue.iterator();
              int j = 0;
  
@@ -46,20 +47,19 @@ index eca224bdb..58d40f994 100644
  
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(aint));
          }
-@@ -995,7 +1004,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         this.lastSentExp = -1;
+@@ -1097,7 +1106,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.lastHealthSent = -1.0F;
-         this.cc = -1;
--        this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue);
-+        // this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue); // Paper
-+        // Paper start
-+        if (this.removeQueue != ((EntityPlayer) entityhuman).removeQueue) {
-+            this.removeQueue.addAll(((EntityPlayer) entityhuman).removeQueue);
+         this.ci = -1;
+         this.cs.a((RecipeBook) entityplayer.cs);
+-        this.removeQueue.addAll(entityplayer.removeQueue);
++        //this.removeQueue.addAll(entityplayer.removeQueue); // Paper
++        if (this.removeQueue != entityplayer.removeQueue) {
++            this.removeQueue.addAll(entityplayer.removeQueue);
 +        }
 +        // Paper end
-     }
- 
-     protected void a(MobEffect mobeffect) {
+         this.cr = entityplayer.cr;
+         this.cw = entityplayer.cw;
+         this.setShoulderEntityLeft(entityplayer.getShoulderEntityLeft());
 -- 
-2.12.2
+2.13.0
 

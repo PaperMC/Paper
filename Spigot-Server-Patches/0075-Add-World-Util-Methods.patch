@@ -1,15 +1,36 @@
-From e6cab2b2737495bda0da7f5bea283749cf2d99be Mon Sep 17 00:00:00 2001
+From 0a7c4b8b28a8d72061bbfc35c2aeb0a9bc05674f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 20:16:03 -0400
 Subject: [PATCH] Add World Util Methods
 
 Methods that can be used for other patches to help improve logic.
 
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 491278646..c0d6e056d 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -580,6 +580,7 @@ public class Chunk {
+ 
+     }
+ 
++    public final int getLightSubtracted(BlockPosition blockposition, int i) { return this.a(blockposition, i); } // Paper - OBFHELPER
+     public int a(BlockPosition blockposition, int i) {
+         int j = blockposition.getX() & 15;
+         int k = blockposition.getY();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index cc7369e52..1d2d174e8 100644
+index 1fc7ec6f4..20bdf4055 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -152,6 +152,12 @@ public abstract class World implements IBlockAccess {
+@@ -76,7 +76,7 @@ public abstract class World implements IBlockAccess {
+     public final List<Entity> j = Lists.newArrayList();
+     protected final IntHashMap<Entity> entitiesById = new IntHashMap();
+     private final long K = 16777215L;
+-    private int L;
++    private int L; private int getSkylightSubtracted() { return this.L; } // Paper - OBFHELPER
+     protected int l = (new Random()).nextInt();
+     protected final int m = 1013904223;
+     protected float n;
+@@ -154,6 +154,12 @@ public abstract class World implements IBlockAccess {
          return (CraftServer) Bukkit.getServer();
      }
  
@@ -22,7 +43,7 @@ index cc7369e52..1d2d174e8 100644
      public Chunk getChunkIfLoaded(int x, int z) {
          return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x, z);
      }
-@@ -682,6 +688,41 @@ public abstract class World implements IBlockAccess {
+@@ -684,10 +690,46 @@ public abstract class World implements IBlockAccess {
          }
      }
  
@@ -53,7 +74,7 @@ index cc7369e52..1d2d174e8 100644
 +                }
 +
 +                Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-+                return chunk.a(blockposition, this.J) >= level;
++                return chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()) >= level;
 +            }
 +        } else {
 +            return true;
@@ -64,7 +85,12 @@ index cc7369e52..1d2d174e8 100644
      public int getLightLevel(BlockPosition blockposition) {
          return this.c(blockposition, true);
      }
-@@ -801,6 +842,27 @@ public abstract class World implements IBlockAccess {
+ 
++    public final int getLight(BlockPosition blockposition, boolean checkNeighbors) { return this.c(blockposition, checkNeighbors); } // Paper - OBFHELPER
+     public int c(BlockPosition blockposition, boolean flag) {
+         if (blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000) {
+             if (flag && this.getType(blockposition).f()) {
+@@ -803,6 +845,27 @@ public abstract class World implements IBlockAccess {
          return this.worldProvider.o()[this.getLightLevel(blockposition)];
      }
  
@@ -93,5 +119,5 @@ index cc7369e52..1d2d174e8 100644
          // CraftBukkit start - tree generation
          if (captureTreeGeneration) {
 -- 
-2.12.2.windows.2
+2.13.0
 

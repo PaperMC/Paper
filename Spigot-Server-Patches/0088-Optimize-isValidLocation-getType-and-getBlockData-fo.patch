@@ -1,4 +1,4 @@
-From 1979a3eba27bfc1b815da4923498bbe652906e95 Mon Sep 17 00:00:00 2001
+From bc65ae40e324298b8ab016670f728b7731197a31 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -12,7 +12,7 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index d60e75502..f772c7cdf 100644
+index d55e180d7..679d5504e 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -10,6 +10,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
@@ -52,10 +52,10 @@ index 67b476b22..008ed206d 100644
          public MutableBlockPosition() {
              this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 8f1a68d67..736fa1f62 100644
+index c0d6e056d..88f5ce9e2 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -406,11 +406,26 @@ public class Chunk {
+@@ -406,11 +406,27 @@ public class Chunk {
          return this.a(i, j, k).c();
      }
  
@@ -79,9 +79,10 @@ index 8f1a68d67..736fa1f62 100644
      public IBlockData a(final int i, final int j, final int k) {
 +        return getBlockData(i, j, k);
 +    }
++
 +    public IBlockData unused(final int i, final int j, final int k) {
 +    // Paper end
-         if (this.world.L() == WorldType.DEBUG_ALL_BLOCK_STATES) {
+         if (this.world.N() == WorldType.DEBUG_ALL_BLOCK_STATES) {
              IBlockData iblockdata = null;
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
@@ -98,10 +99,10 @@ index 3d784d0dc..afdc4a779 100644
      private NibbleArray skyLight;
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 1d2d174e8..9427fc080 100644
+index 20bdf4055..1cd81e533 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -273,12 +273,12 @@ public abstract class World implements IBlockAccess {
+@@ -275,12 +275,12 @@ public abstract class World implements IBlockAccess {
          return this.getType(blockposition1);
      }
  
@@ -118,7 +119,7 @@ index 1d2d174e8..9427fc080 100644
      }
  
      public boolean isEmpty(BlockPosition blockposition) {
-@@ -374,7 +374,7 @@ public abstract class World implements IBlockAccess {
+@@ -376,7 +376,7 @@ public abstract class World implements IBlockAccess {
              return true;
          }
          // CraftBukkit end
@@ -127,7 +128,7 @@ index 1d2d174e8..9427fc080 100644
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
              return false;
-@@ -691,7 +691,7 @@ public abstract class World implements IBlockAccess {
+@@ -693,7 +693,7 @@ public abstract class World implements IBlockAccess {
      // Paper start - test if meets light level, return faster
      // logic copied from below
      public boolean isLightLevel(BlockPosition blockposition, int level) {
@@ -136,7 +137,7 @@ index 1d2d174e8..9427fc080 100644
              if (this.getType(blockposition).f()) {
                  if (this.c(blockposition.up(), false) >= level) {
                      return true;
-@@ -809,7 +809,7 @@ public abstract class World implements IBlockAccess {
+@@ -812,7 +812,7 @@ public abstract class World implements IBlockAccess {
              blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
          }
  
@@ -145,7 +146,7 @@ index 1d2d174e8..9427fc080 100644
              return enumskyblock.c;
          } else if (!this.isLoaded(blockposition)) {
              return enumskyblock.c;
-@@ -821,7 +821,7 @@ public abstract class World implements IBlockAccess {
+@@ -824,7 +824,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
@@ -154,7 +155,7 @@ index 1d2d174e8..9427fc080 100644
              if (this.isLoaded(blockposition)) {
                  Chunk chunk = this.getChunkAtWorldCoords(blockposition);
  
-@@ -845,19 +845,19 @@ public abstract class World implements IBlockAccess {
+@@ -848,19 +848,19 @@ public abstract class World implements IBlockAccess {
      // Paper start - reduces need to do isLoaded before getType
      public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
          // CraftBukkit start - tree generation
@@ -182,7 +183,7 @@ index 1d2d174e8..9427fc080 100644
          }
          return null;
      }
-@@ -865,24 +865,33 @@ public abstract class World implements IBlockAccess {
+@@ -868,24 +868,33 @@ public abstract class World implements IBlockAccess {
  
      public IBlockData getType(BlockPosition blockposition) {
          // CraftBukkit start - tree generation
@@ -225,9 +226,9 @@ index 1d2d174e8..9427fc080 100644
      }
 +    // Paper end
  
-     public boolean B() {
-         return this.J < 4;
-@@ -2017,7 +2026,7 @@ public abstract class World implements IBlockAccess {
+     public boolean D() {
+         return this.L < 4;
+@@ -2020,7 +2029,7 @@ public abstract class World implements IBlockAccess {
      public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
      @Nullable
      public TileEntity getTileEntity(BlockPosition blockposition) {
@@ -236,7 +237,7 @@ index 1d2d174e8..9427fc080 100644
              return null;
          } else {
              // CraftBukkit start
-@@ -2058,7 +2067,7 @@ public abstract class World implements IBlockAccess {
+@@ -2061,7 +2070,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
@@ -245,7 +246,7 @@ index 1d2d174e8..9427fc080 100644
              if (tileentity != null && !tileentity.y()) {
              // CraftBukkit start
              if (captureBlockStates) {
-@@ -2121,7 +2130,7 @@ public abstract class World implements IBlockAccess {
+@@ -2124,7 +2133,7 @@ public abstract class World implements IBlockAccess {
      }
  
      public boolean d(BlockPosition blockposition, boolean flag) {
@@ -255,5 +256,5 @@ index 1d2d174e8..9427fc080 100644
          } else {
              Chunk chunk = this.chunkProvider.getLoadedChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 -- 
-2.12.2
+2.13.0
 

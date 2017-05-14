@@ -1,4 +1,4 @@
-From b6948fdd96baaba6bb2ef88bb94c34a355ffa1b5 Mon Sep 17 00:00:00 2001
+From da00e43894f069931ea9803a4c2d570ae9073e7e Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Sat, 18 Jun 2016 01:01:37 -0500
 Subject: [PATCH] Make entities look for hoppers
@@ -78,10 +78,10 @@ index 000000000..aef7c2be9
 +    double getZ();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7bd745a27..894d40662 100644
+index c74071eb1..d5d6e7fcd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -340,4 +340,9 @@ public class PaperWorldConfig {
+@@ -341,4 +341,9 @@ public class PaperWorldConfig {
      private void altFallingBlockOnGround() {
          altFallingBlockOnGround = getBoolean("use-alternate-fallingblock-onGround-detection", false);
      }
@@ -132,7 +132,7 @@ index 008ed206d..b3c1f550c 100644
              this.b = i;
              this.c = j;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0d1fdd3ee..0479b7551 100644
+index 5cd82f1b2..c81f88bce 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -80,6 +80,19 @@ public abstract class Entity implements ICommandListener {
@@ -156,7 +156,7 @@ index 0d1fdd3ee..0479b7551 100644
      public double motY;
      public double motZ;
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 9742afc65..95ca1b8e4 100644
+index 7b137d847..0a7f1476d 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -5,8 +5,15 @@ import javax.annotation.Nullable;
@@ -179,7 +179,7 @@ index 9742afc65..95ca1b8e4 100644
 @@ -56,6 +63,7 @@ public class EntityItem extends Entity {
              this.die();
          } else {
-             super.A_();
+             super.B_();
 +            if (tryPutInHopper()) return; // Paper
              // CraftBukkit start - Use wall time for pickup and despawn timers
              int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
@@ -193,7 +193,7 @@ index 9742afc65..95ca1b8e4 100644
          int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
          if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index 965aa5c23..04256898b 100644
+index 0eece3933..8415832d1 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -7,6 +7,7 @@ import javax.annotation.Nullable;
@@ -217,8 +217,8 @@ index 965aa5c23..04256898b 100644
 +    }
 +
 +    @Override
-+    public void A_() {
-+        super.A_();
++    public void B_() {
++        super.B_();
 +        tryPutInHopper();
 +    }
 +
@@ -249,7 +249,7 @@ index 804215a1c..e830d8390 100644
 +    double G(); default double getZ() { return G(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 44b6ecc5d..022e64520 100644
+index f99812989..d22261646 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -126,6 +126,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -321,7 +321,7 @@ index 44b6ecc5d..022e64520 100644
  
 @@ -506,18 +524,44 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      private IInventory I() {
-         EnumDirection enumdirection = BlockHopper.e(this.v());
+         EnumDirection enumdirection = BlockHopper.b(this.v());
  
 -        return b(this.getWorld(), this.E() + (double) enumdirection.getAdjacentX(), this.F() + (double) enumdirection.getAdjacentY(), this.G() + (double) enumdirection.getAdjacentZ());
 +        // Paper start - don't search for entities in push mode
@@ -378,5 +378,5 @@ index 44b6ecc5d..022e64520 100644
  
              if (!list.isEmpty()) {
 -- 
-2.12.2
+2.13.0
 

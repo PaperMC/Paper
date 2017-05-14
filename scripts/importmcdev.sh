@@ -60,6 +60,7 @@ import DataBits
 import DataConverterMaterialId
 import DataInspectorBlockEntity
 import DefinedStructure
+import EntityLlama
 import EULA
 import EntitySquid
 import EntityWaterAnimal
@@ -84,6 +85,7 @@ import PathfinderGoalGotoTarget
 import PathfinderWater
 import PersistentVillage
 import PlayerConnectionUtils
+import RegionFile
 import RemoteControlListener
 import TileEntityEnderChest
 import TileEntityLootable

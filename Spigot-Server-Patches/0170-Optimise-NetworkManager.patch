@@ -1,11 +1,11 @@
-From 7c2676da97136793b6b5c32c9f7770cdd7433e7e Mon Sep 17 00:00:00 2001
+From f4386bf9889ec25011969dbd83bf9b4fafba8d6d Mon Sep 17 00:00:00 2001
 From: Alfie Cleveland <alfeh@me.com>
 Date: Fri, 25 Nov 2016 20:35:05 +0000
 Subject: [PATCH] Optimise NetworkManager
 
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 184ef32a8..be14c0b25 100644
+index 58011bb2f..fb118e90b 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -62,8 +62,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -19,7 +19,7 @@ index 184ef32a8..be14c0b25 100644
      public Channel channel;
      // Spigot Start // PAIL
      public SocketAddress l;
-@@ -141,32 +141,36 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -141,32 +141,14 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
          if (this.isConnected()) {
              this.m();
              this.a(packet, (GenericFutureListener[]) null);
@@ -27,23 +27,12 @@ index 184ef32a8..be14c0b25 100644
 -            this.j.writeLock().lock();
 -
 -            try {
--                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) null));
+-                this.i.add(new NetworkManager.QueuedPacket(packet, new GenericFutureListener[0]));
 -            } finally {
 -                this.j.writeLock().unlock();
 -            }
          }
 -
-+        // Paper start - Remove but force a conflict
-+//        else {
-+//            this.j.writeLock().lock();
-+//
-+//            try {
-+//                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) null));
-+//            } finally {
-+//                this.j.writeLock().unlock();
-+//            }
-+//        }
-+        // Paper end
      }
  
      public void sendPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
@@ -60,21 +49,10 @@ index 184ef32a8..be14c0b25 100644
 -            }
          }
 -
-+        // Paper start - Remove but force a conflict
-+//        else {
-+//            this.j.writeLock().lock();
-+//
-+//            try {
-+//                this.i.add(new NetworkManager.QueuedPacket(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener)));
-+//            } finally {
-+//                this.j.writeLock().unlock();
-+//            }
-+//        }
-+        // Paper end
      }
  
      private void a(final Packet<?> packet, @Nullable final GenericFutureListener<? extends Future<? super Void>>[] agenericfuturelistener) {
-@@ -211,20 +215,22 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -211,20 +193,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void m() {
@@ -92,26 +70,11 @@ index 184ef32a8..be14c0b25 100644
 -            }
 -
 -        }
-+        // Paper start - Remove but force a conflict
-+//        if (this.channel != null && this.channel.isOpen()) {
-+//            this.j.readLock().lock();
-+//
-+//            try {
-+//                while (!this.i.isEmpty()) {
-+//                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
-+//
-+//                    this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
-+//                }
-+//            } finally {
-+//                this.j.readLock().unlock();
-+//            }
-+//
-+//        }
-+        // Paper end
++        // Paper - Contents removed
      }
  
      public void a() {
-@@ -317,7 +323,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -320,7 +289,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.i() != null) {
                      this.i().a(new ChatComponentText("Disconnected"));
                  }
@@ -121,5 +84,5 @@ index 184ef32a8..be14c0b25 100644
  
          }
 -- 
-2.12.2
+2.13.0
 

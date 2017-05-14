@@ -1,4 +1,4 @@
-From dff249a4a075a2bab36f65251537d6b8882e0768 Mon Sep 17 00:00:00 2001
+From 46d88a1e4205ca1ee13725c24884d9ad9bf6b600 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d9e4f1a9f..c4497aaa6 100644
+index 577a1b92a..995542ab9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -113,16 +113,12 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -113,16 +113,12 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -33,7 +33,7 @@ index d9e4f1a9f..c4497aaa6 100644
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
  
-@@ -533,12 +529,54 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -533,12 +529,54 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
          this.isRunning = false;
      }
  
@@ -93,7 +93,7 @@ index d9e4f1a9f..c4497aaa6 100644
  
      public void run() {
          try {
-@@ -552,24 +590,41 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+@@ -552,24 +590,41 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -147,10 +147,10 @@ index d9e4f1a9f..c4497aaa6 100644
                      }
                      lastTick = curTime;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index db4ac484f..0f77d0674 100644
+index a06b7f325..e5dcd4094 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1738,6 +1738,17 @@ public final class CraftServer implements Server {
+@@ -1724,6 +1724,17 @@ public final class CraftServer implements Server {
          return CraftMagicNumbers.INSTANCE;
      }
  
@@ -210,5 +210,5 @@ index be2e31dea..6d21c3269 100644
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
                  + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
 -- 
-2.12.2
+2.13.0
 
