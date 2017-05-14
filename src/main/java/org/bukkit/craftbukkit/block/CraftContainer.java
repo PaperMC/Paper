@@ -31,11 +31,11 @@ public class CraftContainer extends CraftBlockState implements Lockable {
 
     @Override
     public String getLock() {
-        return container.getLock().b(); // PAIL: getKey
+        return container.getLock().getKey();
     }
 
     @Override
     public void setLock(String key) {
-        container.a(key == null ? ChestLock.a : new ChestLock(key)); // PAIL: setLock
+        container.setLock(key == null ? ChestLock.a : new ChestLock(key));
     }
 }

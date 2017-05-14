@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Vindicator;
 
-public class CraftVindicator extends CraftMonster implements Vindicator {
+public class CraftVindicator extends CraftIllager implements Vindicator {
 
     public CraftVindicator(CraftServer server, EntityVindicator entity) {
         super(server, entity);

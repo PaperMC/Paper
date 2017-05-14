@@ -1,37 +1,6 @@
 --- a/net/minecraft/server/CraftingManager.java
 +++ b/net/minecraft/server/CraftingManager.java
-@@ -9,10 +9,16 @@
- import java.util.Iterator;
- import java.util.List;
- 
-+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
-+
- public class CraftingManager {
- 
-     private static final CraftingManager a = new CraftingManager();
-     public List<IRecipe> recipes = Lists.newArrayList();
-+    // CraftBukkit start
-+    public IRecipe lastRecipe;
-+    public org.bukkit.inventory.InventoryView lastCraftView;
-+    // CraftBukkit end
- 
-     public static CraftingManager getInstance() {
-         return CraftingManager.a;
-@@ -179,7 +185,12 @@
-         this.registerShapedRecipe(new ItemStack(Items.ARMOR_STAND, 1), new Object[] { "///", " / ", "/_/", Character.valueOf('/'), Items.STICK, Character.valueOf('_'), new ItemStack(Blocks.STONE_SLAB, 1, BlockDoubleStepAbstract.EnumStoneSlabVariant.STONE.a())});
-         this.registerShapedRecipe(new ItemStack(Blocks.END_ROD, 4), new Object[] { "/", "#", Character.valueOf('/'), Items.BLAZE_ROD, Character.valueOf('#'), Items.CHORUS_FRUIT_POPPED});
-         this.registerShapedRecipe(new ItemStack(Blocks.di, 1), new Object[] { "XXX", "XXX", "XXX", Character.valueOf('X'), new ItemStack(Items.DYE, 1, EnumColor.WHITE.getInvColorIndex())});
--        Collections.sort(this.recipes, new Comparator() {
-+        sort();
-+    }
-+
-+    // CraftBukkit start
-+    public void sort() {
-+       Collections.sort(this.recipes, new Comparator() {
-             public int a(IRecipe irecipe, IRecipe irecipe1) {
-                 return irecipe instanceof ShapelessRecipes && irecipe1 instanceof ShapedRecipes ? 1 : (irecipe1 instanceof ShapelessRecipes && irecipe instanceof ShapedRecipes ? -1 : (irecipe1.a() < irecipe.a() ? -1 : (irecipe1.a() > irecipe.a() ? 1 : 0)));
-             }
-@@ -290,13 +301,18 @@
+@@ -158,12 +158,14 @@
  
          do {
              if (!iterator.hasNext()) {
@@ -42,12 +11,31 @@
              irecipe = (IRecipe) iterator.next();
          } while (!irecipe.a(inventorycrafting, world));
  
--        return irecipe.craftItem(inventorycrafting);
-+        // CraftBukkit start - INVENTORY_PRE_CRAFT event
-+        inventorycrafting.currentRecipe = irecipe;
-+        ItemStack result = irecipe.craftItem(inventorycrafting);
-+        return CraftEventFactory.callPreCraftEvent(inventorycrafting, result, lastCraftView, false);
-+        // CraftBukkit end
++        inventorycrafting.currentRecipe = irecipe; // CraftBukkit
+         return irecipe.craftItem(inventorycrafting);
      }
  
-     public NonNullList<ItemStack> b(InventoryCrafting inventorycrafting, World world) {
+@@ -175,12 +177,14 @@
+ 
+         do {
+             if (!iterator.hasNext()) {
++                inventorycrafting.currentRecipe = null; // CraftBukkit - Clear recipe when no recipe is found
+                 return null;
+             }
+ 
+             irecipe = (IRecipe) iterator.next();
+         } while (!irecipe.a(inventorycrafting, world));
+ 
++        inventorycrafting.currentRecipe = irecipe; // CraftBukkit
+         return irecipe;
+     }
+ 
+@@ -210,7 +214,7 @@
+     }
+ 
+     public static int a(IRecipe irecipe) {
+-        return CraftingManager.recipes.a((Object) irecipe);
++        return CraftingManager.recipes.a(irecipe); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable

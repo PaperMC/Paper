@@ -599,7 +599,7 @@ public class CraftWorld implements World {
                 byte[] biomevals = chunk.getBiomeIndex();
                 biomevals[((z & 0xF) << 4) | (x & 0xF)] = (byte) BiomeBase.REGISTRY_ID.a(bb);
 
-                chunk.e(); // SPIGOT-2890 // PAIL: markDirty
+                chunk.markDirty(); // SPIGOT-2890
             }
         }
     }
@@ -1041,6 +1041,8 @@ public class CraftWorld implements World {
                     entity = new EntityWolf(world);
                 } else if (Ocelot.class.isAssignableFrom(clazz)) {
                     entity = new EntityOcelot(world);
+                } else if (Parrot.class.isAssignableFrom(clazz)) {
+                    entity = new EntityParrot(world);
                 }
             } else if (PigZombie.class.isAssignableFrom(clazz)) {
                 entity = new EntityPigZombie(world);
@@ -1088,12 +1090,18 @@ public class CraftWorld implements World {
                 entity = new EntityArmorStand(world, x, y, z);
             } else if (PolarBear.class.isAssignableFrom(clazz)) {
                 entity = new EntityPolarBear(world);
-            } else if (Evoker.class.isAssignableFrom(clazz)) {
-                entity = new EntityEvoker(world);
             } else if (Vex.class.isAssignableFrom(clazz)) {
                 entity = new EntityVex(world);
-            } else if (Vindicator.class.isAssignableFrom(clazz)) {
-                entity = new EntityVindicator(world);
+            } else if (Illager.class.isAssignableFrom(clazz)) {
+                if (Spellcaster.class.isAssignableFrom(clazz)) {
+                    if (Evoker.class.isAssignableFrom(clazz)) {
+                        entity = new EntityEvoker(world);
+                    } else if (Illusioner.class.isAssignableFrom(clazz)) {
+                        entity = new EntityIllagerIllusioner(world);
+                    }
+                } else if (Vindicator.class.isAssignableFrom(clazz)) {
+                    entity = new EntityVindicator(world);
+                }
             }
 
             if (entity != null) {
@@ -1227,7 +1235,7 @@ public class CraftWorld implements World {
     }
 
     public int getSeaLevel() {
-        return world.K(); // PAIL: rename
+        return world.getSeaLevel();
     }
 
     public boolean getKeepSpawnInMemory() {

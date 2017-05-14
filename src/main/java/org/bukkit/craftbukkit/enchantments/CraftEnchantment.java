@@ -61,7 +61,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public boolean isCursed() {
-        return target.d(); // PAIL isCursed
+        return target.isCursed();
     }
 
     @Override
@@ -107,7 +107,7 @@ public class CraftEnchantment extends Enchantment {
         case 21:
             return "LOOT_BONUS_MOBS";
         case 22:
-            return "SWEEPING";
+            return "SWEEPING_EDGE";
         case 32:
             return "DIG_SPEED";
         case 33:

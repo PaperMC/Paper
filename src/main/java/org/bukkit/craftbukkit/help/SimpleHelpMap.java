@@ -6,7 +6,6 @@ import com.google.common.collect.Collections2;
 
 import org.bukkit.command.*;
 import org.bukkit.command.defaults.BukkitCommand;
-import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.help.*;
@@ -184,7 +183,7 @@ public class SimpleHelpMap implements HelpMap {
         if (command instanceof VanillaCommandWrapper) {
             return "Minecraft";
         }
-        if (command instanceof BukkitCommand || command instanceof VanillaCommand) {
+        if (command instanceof BukkitCommand) {
             return "Bukkit";
         }
         if (command instanceof PluginIdentifiableCommand) {
@@ -194,7 +193,7 @@ public class SimpleHelpMap implements HelpMap {
     }
 
     private boolean commandInIgnoredPlugin(Command command, Set<String> ignoredPlugins) {
-        if ((command instanceof BukkitCommand || command instanceof VanillaCommand) && ignoredPlugins.contains("Bukkit")) {
+        if ((command instanceof BukkitCommand) && ignoredPlugins.contains("Bukkit")) {
             return true;
         }
         if (command instanceof PluginIdentifiableCommand && ignoredPlugins.contains(((PluginIdentifiableCommand)command).getPlugin().getName())) {

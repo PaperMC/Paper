@@ -17,6 +17,7 @@ import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.FireworkEffect.Type;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
@@ -33,6 +34,7 @@ import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -262,6 +264,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final SpawnEggMeta meta = (SpawnEggMeta) cleanStack.getItemMeta();
                     meta.setSpawnedType(EntityType.ZOMBIE);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+            }
+        },
+          new StackProvider(Material.KNOWLEDGE_BOOK) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final KnowledgeBookMeta meta = (KnowledgeBookMeta) cleanStack.getItemMeta();
+                    meta.addRecipe(new NamespacedKey("minecraft", "test"), new NamespacedKey("plugin", "test"));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

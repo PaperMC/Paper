@@ -20,7 +20,7 @@
  public final class ItemStack {
  
      public static final ItemStack a = new ItemStack((Item) null);
-@@ -42,32 +55,68 @@
+@@ -42,32 +55,74 @@
          this(item, i, 0);
      }
  
@@ -53,9 +53,15 @@
 +    // Called to run this stack through the data converter to handle older storage methods and serialized items
 +    public void convertStack() {
 +        if (MinecraftServer.getServer() != null) {
++            // Don't convert beds - both the old and new data values are valid
++            // Conversion would make getting white beds (data value 0) impossible
++            if (this.item == Items.BED) {
++                return;
++            }
++
 +            NBTTagCompound savedStack = new NBTTagCompound();
 +            this.save(savedStack);
-+            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
++            MinecraftServer.getServer().dataConverterManager.a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
 +            this.load(savedStack);
 +        }
 +    }
@@ -94,7 +100,7 @@
          this.F();
      }
  
-@@ -94,11 +143,138 @@
+@@ -94,11 +149,138 @@
      }
  
      public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
@@ -234,7 +240,7 @@
  
          return enuminteractionresult;
      }
-@@ -122,7 +298,7 @@
+@@ -122,7 +304,7 @@
          nbttagcompound.setByte("Count", (byte) this.count);
          nbttagcompound.setShort("Damage", (short) this.damage);
          if (this.tag != null) {
@@ -243,7 +249,7 @@
          }
  
          return nbttagcompound;
-@@ -157,11 +333,30 @@
+@@ -157,11 +339,30 @@
      }
  
      public void setData(int i) {
@@ -276,9 +282,9 @@
      }
  
      public int k() {
-@@ -198,6 +393,11 @@
+@@ -202,6 +403,11 @@
              if (this.f()) {
-                 if (this.isDamaged(i, entityliving.getRandom())) {
+                 if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.b(this);
 +                    // CraftBukkit start - Check for item breaking
 +                    if (this.count == 1 && entityliving instanceof EntityHuman) {
@@ -288,16 +294,16 @@
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
                          EntityHuman entityhuman = (EntityHuman) entityliving;
-@@ -239,7 +439,7 @@
+@@ -243,7 +449,7 @@
      }
  
      public ItemStack cloneItemStack() {
 -        ItemStack itemstack = new ItemStack(this.item, this.count, this.damage);
 +        ItemStack itemstack = new ItemStack(this.item, this.count, this.damage, false); // CraftBukkit
  
+         itemstack.d(this.D());
          if (this.tag != null) {
-             itemstack.tag = this.tag.g();
-@@ -509,6 +709,12 @@
+@@ -514,6 +720,12 @@
          nbttaglist.add(nbttagcompound);
      }
  

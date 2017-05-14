@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkRegionLoader.java
 +++ b/net/minecraft/server/ChunkRegionLoader.java
-@@ -29,25 +29,41 @@
+@@ -29,19 +29,35 @@
          this.e = dataconvertermanager;
      }
  
@@ -39,13 +39,6 @@
          }
  
          return this.a(world, i, j, nbttagcompound);
-     }
- 
--    public boolean a(int i, int j) {
-+    public boolean a(int i, int j) { // PAIL chunkExists (also in IChunkLoader)
-         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
-         NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(chunkcoordintpair);
- 
 @@ -55,7 +71,7 @@
      }
  
@@ -53,10 +46,10 @@
 -    protected Chunk a(World world, int i, int j, NBTTagCompound nbttagcompound) {
 +    protected Object[] a(World world, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
-             ChunkRegionLoader.a.error("Chunk file at {},{} is missing level data, skipping", new Object[] { Integer.valueOf(i), Integer.valueOf(j)});
+             ChunkRegionLoader.a.error("Chunk file at {},{} is missing level data, skipping", Integer.valueOf(i), Integer.valueOf(j));
              return null;
 @@ -72,10 +88,28 @@
-                     ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", new Object[] { Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ)});
+                     ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ));
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
 +
@@ -88,14 +81,14 @@
 @@ -106,20 +140,27 @@
      }
  
-     public boolean c() {
+     public boolean a() {
 -        if (this.b.isEmpty()) {
 +        // CraftBukkit start
 +        Iterator<Map.Entry<ChunkCoordIntPair, NBTTagCompound>> iter = this.b.entrySet().iterator();
 +        if (!iter.hasNext()) {
 +            // CraftBukkit end
              if (this.f) {
-                 ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", new Object[] { this.d.getName()});
+                 ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.d.getName());
              }
  
              return false;
@@ -133,7 +126,7 @@
  
      public void b(World world, Chunk chunk) throws IOException {}
 @@ -157,6 +202,7 @@
-                 if (this.c()) {
+                 if (this.a()) {
                      continue;
                  }
 +                break; // CraftBukkit - Fix infinite loop when saving chunks
@@ -198,6 +191,6 @@
 +    public static void a(Entity entity, World world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        if (world.addEntity(entity, reason) && entity.isVehicle()) {
 +            // CraftBukkit end
-             Iterator iterator = entity.bx().iterator();
+             Iterator iterator = entity.bD().iterator();
  
              while (iterator.hasNext()) {

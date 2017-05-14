@@ -15,10 +15,10 @@
 +
  public class EntityArmorStand extends EntityLiving {
  
-     private static final Vector3f bq = new Vector3f(0.0F, 0.0F, 0.0F);
+     private static final Vector3f br = new Vector3f(0.0F, 0.0F, 0.0F);
 @@ -364,6 +373,21 @@
-         if (itemstack1.isEmpty() || (this.bA & 1 << enumitemslot.c() + 8) == 0) {
-             if (!itemstack1.isEmpty() || (this.bA & 1 << enumitemslot.c() + 16) == 0) {
+         if (itemstack1.isEmpty() || (this.bB & 1 << enumitemslot.c() + 8) == 0) {
+             if (!itemstack1.isEmpty() || (this.bB & 1 << enumitemslot.c() + 16) == 0) {
                  ItemStack itemstack2;
 +                // CraftBukkit start
 +                org.bukkit.inventory.ItemStack armorStandItem = CraftItemStack.asCraftMirror(itemstack1);
@@ -50,22 +50,22 @@
          if (!this.world.isClientSide && !this.dead) {
              if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
 -                this.die();
-+                this.Q(); // CraftBukkit - this.die() -> this.Q()
++                this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
                  return false;
-             } else if (!this.isInvulnerable(damagesource) && !this.bz && !this.isMarker()) {
+             } else if (!this.isInvulnerable(damagesource) && !this.bA && !this.isMarker()) {
                  if (damagesource.isExplosion()) {
-                     this.G();
+                     this.F();
 -                    this.die();
-+                    this.Q(); // CraftBukkit - this.die() -> this.Q()
++                    this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
                      return false;
                  } else if (DamageSource.FIRE.equals(damagesource)) {
                      if (this.isBurning()) {
 @@ -421,7 +450,7 @@
                          } else if (damagesource.u()) {
-                             this.I();
+                             this.H();
                              this.D();
 -                            this.die();
-+                            this.Q(); // CraftBukkit - this.die() -> this.Q()
++                            this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
                              return false;
                          } else {
                              long i = this.world.getTime();
@@ -74,44 +74,29 @@
                                  this.E();
                                  this.D();
 -                                this.die();
-+                                this.Q(); // CraftBukkit - this.die() -> this.Q()
++                                this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
                              }
  
                              return false;
-@@ -460,19 +489,19 @@
+@@ -460,7 +489,7 @@
          f1 -= f;
          if (f1 <= 0.5F) {
-             this.G();
+             this.F();
 -            this.die();
-+            this.Q(); // CraftBukkit - this.die() -> this.Q()
++            this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
          } else {
              this.setHealth(f1);
          }
- 
+@@ -468,7 +497,7 @@
      }
  
--    private void E() {
+     private void E() {
 -        Block.a(this.world, new BlockPosition(this), new ItemStack(Items.ARMOR_STAND));
-+    private void E() { // PAIL: Rename dropLoot
 +        drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
-         this.G();
+         this.F();
      }
  
--    private void G() {
-+    private void G() { // PAIL: Rename dropEquippedItems
-         this.I();
- 
-         int i;
 @@ -481,7 +510,7 @@
-         for (i = 0; i < this.bx.size(); ++i) {
-             itemstack = (ItemStack) this.bx.get(i);
-             if (!itemstack.isEmpty()) {
--                Block.a(this.world, (new BlockPosition(this)).up(), itemstack);
-+                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
-                 this.bx.set(i, ItemStack.a);
-             }
-         }
-@@ -489,7 +518,7 @@
          for (i = 0; i < this.by.size(); ++i) {
              itemstack = (ItemStack) this.by.get(i);
              if (!itemstack.isEmpty()) {
@@ -120,13 +105,12 @@
                  this.by.set(i, ItemStack.a);
              }
          }
-@@ -600,7 +629,8 @@
-         return this.isSmall();
-     }
- 
--    public void Q() {
-+    public void Q() { // PAIL: Rename killEntity (super)
-+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event
-         this.die();
-     }
- 
+@@ -489,7 +518,7 @@
+         for (i = 0; i < this.bz.size(); ++i) {
+             itemstack = (ItemStack) this.bz.get(i);
+             if (!itemstack.isEmpty()) {
+-                Block.a(this.world, (new BlockPosition(this)).up(), itemstack);
++                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+                 this.bz.set(i, ItemStack.a);
+             }
+         }

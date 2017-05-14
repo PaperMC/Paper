@@ -28,6 +28,7 @@ public final class CraftItemFactory implements ItemFactory {
             .add("generic.knockbackResistance")
             .add("generic.maxHealth")
             .add("generic.movementSpeed")
+            .add("generic.flyingSpeed")
             .add("generic.attackSpeed")
             .add("generic.luck")
             .add("horse.jumpStrength")
@@ -93,6 +94,8 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
         case MONSTER_EGG:
             return meta instanceof CraftMetaSpawnEgg ? meta : new CraftMetaSpawnEgg(meta);
+        case KNOWLEDGE_BOOK:
+            return meta instanceof CraftMetaKnowledgeBook ? meta : new CraftMetaKnowledgeBook(meta);
         case FURNACE:
         case CHEST:
         case TRAPPED_CHEST:

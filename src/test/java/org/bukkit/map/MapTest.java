@@ -24,13 +24,13 @@ public class MapTest {
             if (nmsColors[i] == null) {
                 break;
             }
-            int rgb = nmsColors[i].L;
+            int rgb = nmsColors[i].ac;
 
             int r = (rgb >> 16) & 0xFF;
             int g = (rgb >> 8) & 0xFF;
             int b = rgb & 0xFF;
 
-            if (i > bukkitColors.length/4) {
+            if (i + 1 > bukkitColors.length / 4) {
                 for (int modi : modifiers) {
                     int mr = (r * modi) / 255;
                     int mg = (g * modi) / 255;

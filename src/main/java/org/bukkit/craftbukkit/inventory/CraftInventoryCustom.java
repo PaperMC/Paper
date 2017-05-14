@@ -202,7 +202,7 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public boolean w_() {
+        public boolean x_() {
             Iterator iterator = this.items.iterator();
 
             ItemStack itemstack;

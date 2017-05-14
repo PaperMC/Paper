@@ -30,3 +30,5 @@ If you submit a PR involving both Bukkit and CraftBukkit, it's appreciated if ea
     entity.k.get(i).f(); // PAIL pathfinders, navigateToHome 
 ```
 Also, make sure to include `// Craftbukkit` comments to indicate modified NMS sources.
+
+Although the minimum requirement for compilation & usage is Java 8, we prefer all contributions to be written in Java 7 style code unless there is a compelling reason otherwise.

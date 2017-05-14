@@ -422,15 +422,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public boolean hasCooldown(Material material) {
         Preconditions.checkArgument(material != null, "material");
 
-        return getHandle().di().a(CraftMagicNumbers.getItem(material)); // PAIL: getCooldownTracker
+        return getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material));
     }
 
     @Override
     public int getCooldown(Material material) {
         Preconditions.checkArgument(material != null, "material");
 
-        ItemCooldown.Info cooldown = getHandle().di().a.get(CraftMagicNumbers.getItem(material));
-        return (cooldown == null) ? 0 : Math.max(0, cooldown.b - getHandle().di().b);
+        ItemCooldown.Info cooldown = getHandle().getCooldownTracker().cooldowns.get(CraftMagicNumbers.getItem(material));
+        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTick - getHandle().getCooldownTracker().currentTick);
     }
 
     @Override
@@ -438,6 +438,44 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(material != null, "material");
         Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
 
-        getHandle().di().a(CraftMagicNumbers.getItem(material), ticks);
+        getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material), ticks);
+    }
+
+    @Override
+    public org.bukkit.entity.Entity getShoulderEntityLeft() {
+        if (getHandle().getShoulderEntityLeft() != null) {
+            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityLeft(), getHandle().world);
+
+            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+        }
+
+        return null;
+    }
+
+    @Override
+    public void setShoulderEntityLeft(org.bukkit.entity.Entity entity) {
+        getHandle().setShoulderEntityLeft(entity == null ? null : ((CraftEntity) entity).save());
+        if (entity != null) {
+            entity.remove();
+        }
+    }
+
+    @Override
+    public org.bukkit.entity.Entity getShoulderEntityRight() {
+        if (getHandle().getShoulderEntityRight() != null) {
+            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityRight(), getHandle().world);
+
+            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+        }
+
+        return null;
+    }
+
+    @Override
+    public void setShoulderEntityRight(org.bukkit.entity.Entity entity) {
+        getHandle().setShoulderEntityRight(entity == null ? null : ((CraftEntity) entity).save());
+        if (entity != null) {
+            entity.remove();
+        }
     }
 }

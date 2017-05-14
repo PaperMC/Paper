@@ -106,14 +106,15 @@
                      this.b();
                  }
              } else {
-@@ -176,25 +238,50 @@
+@@ -176,25 +238,52 @@
              if (!this.world.isClientSide) {
                  List list = this.a(itemstack, i, this.costs[i]);
  
 -                if (!list.isEmpty()) {
--                    entityhuman.enchantDone(j);
+-                    entityhuman.enchantDone(itemstack, j);
 +                // CraftBukkit start
 +                if (true || !list.isEmpty()) {
++                    // entityhuman.enchantDone(itemstack, j); // Moved down
                      boolean flag = itemstack.getItem() == Items.BOOK;
 +                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                    for (Object obj : list) {
@@ -124,11 +125,12 @@
 +
 +                    EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.getBukkitEntity(), this.getBukkitView(), this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), item, this.costs[i], enchants, i);
 +                    this.world.getServer().getPluginManager().callEvent(event);
- 
++
 +                    int level = event.getExpLevelCost();
 +                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || event.getEnchantsToAdd().isEmpty()) {
 +                        return false;
 +                    }
+ 
                      if (flag) {
                          itemstack = new ItemStack(Items.ENCHANTED_BOOK);
                          this.enchantSlots.setItem(0, itemstack);
@@ -158,14 +160,14 @@
                          }
                      }
  
-+                    entityhuman.enchantDone(j);
++                    entityhuman.enchantDone(itemstack, j);
 +                    // CraftBukkit end
 +
 +                    // CraftBukkit - TODO: let plugins change this
                      if (!entityhuman.abilities.canInstantlyBuild) {
                          itemstack1.subtract(j);
                          if (itemstack1.isEmpty()) {
-@@ -229,6 +316,11 @@
+@@ -233,12 +322,18 @@
  
      public void b(EntityHuman entityhuman) {
          super.b(entityhuman);
@@ -175,9 +177,8 @@
 +        }
 +        // CraftBukkit end
          if (!this.world.isClientSide) {
-             for (int i = 0; i < this.enchantSlots.getSize(); ++i) {
-                 ItemStack itemstack = this.enchantSlots.splitWithoutUpdate(i);
-@@ -242,6 +334,7 @@
+             this.a(entityhuman, entityhuman.world, this.enchantSlots);
+         }
      }
  
      public boolean a(EntityHuman entityhuman) {
@@ -185,7 +186,7 @@
          return this.world.getType(this.position).getBlock() != Blocks.ENCHANTING_TABLE ? false : entityhuman.d((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
      }
  
-@@ -294,4 +387,17 @@
+@@ -291,4 +386,17 @@
  
          return itemstack;
      }

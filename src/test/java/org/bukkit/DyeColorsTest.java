@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EnumColor;
 import net.minecraft.server.ItemDye;
 
@@ -34,7 +33,7 @@ public class DyeColorsTest extends AbstractTestingBase {
     @Test
     public void checkColor() {
         Color color = dye.getColor();
-        float[] nmsColorArray = EntitySheep.a(EnumColor.fromColorIndex(dye.getWoolData()));
+        float[] nmsColorArray = EnumColor.fromColorIndex(dye.getWoolData()).f();
         Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
         assertThat(color, is(nmsColor));
     }

@@ -119,6 +119,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                     .put(CraftMetaEnchantedBook.class, "ENCHANTED")
                     .put(CraftMetaFirework.class, "FIREWORK")
                     .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
+                    .put(CraftMetaKnowledgeBook.class, "KNOWLEDGE_BOOK")
                     .put(CraftMetaItem.class, "UNSPECIFIC")
                     .build();
 
@@ -890,7 +891,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaFirework.FIREWORKS.NBT,
                         CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
                         CraftMetaCharge.EXPLOSION.NBT,
-                        CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT
+                        CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
+                        CraftMetaKnowledgeBook.BOOK_RECIPES.NBT
                 ));
             }
             return HANDLED_TAGS;

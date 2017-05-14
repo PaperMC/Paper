@@ -28,10 +28,10 @@
 +    private final HashTreeSet<NextTickListEntry> nextTickList = new HashTreeSet<NextTickListEntry>(); // CraftBukkit - HashTreeSet
      private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
      public boolean savingDisabled;
-     private boolean O;
+     private boolean Q;
 @@ -38,14 +50,22 @@
-     private int T;
-     private final List<NextTickListEntry> U = Lists.newArrayList();
+     private int V;
+     private final List<NextTickListEntry> W = Lists.newArrayList();
  
 -    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, WorldData worlddata, int i, MethodProfiler methodprofiler) {
 -        super(idatamanager, worlddata, DimensionManager.a(i).d(), methodprofiler, false);
@@ -52,8 +52,8 @@
          this.chunkProvider = this.n();
 -        this.portalTravelAgent = new PortalTravelAgent(this);
 +        this.portalTravelAgent = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
-         this.H();
-         this.I();
+         this.J();
+         this.K();
          this.getWorldBorder().a(minecraftserver.aE());
 @@ -64,6 +84,7 @@
              this.villages.a((World) this);
@@ -63,19 +63,32 @@
          this.scoreboard = new ScoreboardServer(this.server);
          PersistentScoreboard persistentscoreboard = (PersistentScoreboard) this.worldMaps.get(PersistentScoreboard.class, "scoreboard");
  
-@@ -74,6 +95,11 @@
+@@ -74,9 +95,21 @@
  
          persistentscoreboard.a(this.scoreboard);
          ((ScoreboardServer) this.scoreboard).a((Runnable) (new RunnableSaveScoreboard(persistentscoreboard)));
+-        this.B = new LootTableRegistry(new File(new File(this.dataManager.getDirectory(), "data"), "loot_tables"));
+-        this.C = new AdvancementDataWorld(new File(new File(this.dataManager.getDirectory(), "data"), "advancements"));
+-        this.D = new CustomFunctionData(new File(new File(this.dataManager.getDirectory(), "data"), "functions"), this.server);
 +        // CraftBukkit start
 +        } else {
 +            this.scoreboard = getServer().getScoreboardManager().getMainScoreboard().getHandle();
 +        }
++
++        if (this.B == null) {
++            this.B = new LootTableRegistry(new File(new File(this.dataManager.getDirectory(), "data"), "loot_tables"));
++        }
++        if (this.C == null) {
++            this.C = new AdvancementDataWorld(new File(new File(this.dataManager.getDirectory(), "data"), "advancements"));
++        }
++        if (this.D == null) {
++            this.D = new CustomFunctionData(new File(new File(this.dataManager.getDirectory(), "data"), "functions"), this.server);
++        }
 +        // CraftBukkit end
-         this.B = new LootTableRegistry(new File(new File(this.dataManager.getDirectory(), "data"), "loot_tables"));
          this.getWorldBorder().setCenter(this.worldData.B(), this.worldData.C());
          this.getWorldBorder().setDamageAmount(this.worldData.H());
-@@ -86,9 +112,98 @@
+         this.getWorldBorder().setDamageBuffer(this.worldData.G());
+@@ -88,9 +121,98 @@
              this.getWorldBorder().setSize(this.worldData.D());
          }
  
@@ -174,7 +187,7 @@
      public void doTick() {
          super.doTick();
          if (this.getWorldData().isHardcore() && this.getDifficulty() != EnumDifficulty.HARD) {
-@@ -107,8 +222,11 @@
+@@ -109,8 +231,11 @@
          }
  
          this.methodProfiler.a("mobSpawner");
@@ -188,16 +201,16 @@
          }
  
          this.methodProfiler.c("chunkSource");
-@@ -137,6 +255,8 @@
+@@ -139,6 +264,8 @@
          this.portalTravelAgent.a(this.getTime());
          this.methodProfiler.b();
-         this.ao();
+         this.aq();
 +
 +        this.getWorld().processChunkGC(); // CraftBukkit
      }
  
      @Nullable
-@@ -164,7 +284,7 @@
+@@ -166,7 +293,7 @@
  
                  if (entityhuman.isSpectator()) {
                      ++i;
@@ -206,7 +219,7 @@
                      ++j;
                  }
              }
-@@ -193,25 +313,46 @@
+@@ -195,25 +322,46 @@
      }
  
      private void c() {
@@ -231,7 +244,7 @@
      }
  
      public boolean everyoneDeeplySleeping() {
-         if (this.O && !this.isClientSide) {
+         if (this.Q && !this.isClientSide) {
              Iterator iterator = this.players.iterator();
  
 +            // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
@@ -257,7 +270,7 @@
  
              return false;
          } else {
-@@ -281,7 +422,7 @@
+@@ -283,7 +431,7 @@
                              entityhorseskeleton.p(true);
                              entityhorseskeleton.setAgeRaw(0);
                              entityhorseskeleton.setPosition((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
@@ -266,7 +279,7 @@
                              this.strikeLightning(new EntityLightning(this, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), true));
                          } else {
                              this.strikeLightning(new EntityLightning(this, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), false));
-@@ -297,11 +438,11 @@
+@@ -299,11 +447,11 @@
                      BlockPosition blockposition1 = blockposition.down();
  
                      if (this.v(blockposition1)) {
@@ -280,7 +293,7 @@
                      }
  
                      if (flag && this.getBiome(blockposition1).d()) {
-@@ -376,7 +517,7 @@
+@@ -378,7 +526,7 @@
      public boolean b(BlockPosition blockposition, Block block) {
          NextTickListEntry nextticklistentry = new NextTickListEntry(blockposition, block);
  
@@ -289,7 +302,7 @@
      }
  
      public void a(BlockPosition blockposition, Block block, int i) {
-@@ -415,8 +556,8 @@
+@@ -412,8 +560,8 @@
                  nextticklistentry.a(j);
              }
  
@@ -300,7 +313,7 @@
                  this.nextTickList.add(nextticklistentry);
              }
          }
-@@ -438,15 +579,15 @@
+@@ -430,15 +578,15 @@
              nextticklistentry.a((long) i + this.worldData.getTime());
          }
  
@@ -319,7 +332,7 @@
              if (this.emptyTime++ >= 300) {
                  return;
              }
-@@ -516,11 +657,17 @@
+@@ -508,11 +656,17 @@
          } else {
              int i = this.nextTickList.size();
  
@@ -339,7 +352,7 @@
                  }
  
                  this.methodProfiler.a("cleaning");
-@@ -533,8 +680,9 @@
+@@ -525,8 +679,9 @@
                          break;
                      }
  
@@ -347,10 +360,10 @@
                      this.nextTickList.remove(nextticklistentry);
 -                    this.nextTickListHash.remove(nextticklistentry);
 +                    // this.nextTickListHash.remove(nextticklistentry);
-                     this.U.add(nextticklistentry);
+                     this.W.add(nextticklistentry);
                  }
  
-@@ -604,7 +752,7 @@
+@@ -596,7 +751,7 @@
                  if (blockposition.getX() >= structureboundingbox.a && blockposition.getX() < structureboundingbox.d && blockposition.getZ() >= structureboundingbox.c && blockposition.getZ() < structureboundingbox.f) {
                      if (flag) {
                          if (i == 0) {
@@ -359,7 +372,7 @@
                          }
  
                          iterator.remove();
-@@ -622,6 +770,7 @@
+@@ -614,6 +769,7 @@
          return arraylist;
      }
  
@@ -367,7 +380,7 @@
      public void entityJoinedWorld(Entity entity, boolean flag) {
          if (!this.getSpawnAnimals() && (entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal)) {
              entity.die();
-@@ -633,6 +782,7 @@
+@@ -625,6 +781,7 @@
  
          super.entityJoinedWorld(entity, flag);
      }
@@ -375,7 +388,7 @@
  
      private boolean getSpawnNPCs() {
          return this.server.getSpawnNPCs();
-@@ -645,7 +795,54 @@
+@@ -637,7 +794,54 @@
      protected IChunkProvider n() {
          IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
  
@@ -431,7 +444,7 @@
      }
  
      public boolean a(EntityHuman entityhuman, BlockPosition blockposition) {
-@@ -707,6 +904,23 @@
+@@ -699,6 +903,23 @@
              int j = this.worldProvider.getSeaLevel();
              int k = 8;
  
@@ -455,7 +468,7 @@
              if (blockposition != null) {
                  i = blockposition.getX();
                  k = blockposition.getZ();
-@@ -716,7 +930,7 @@
+@@ -708,7 +929,7 @@
  
              int l = 0;
  
@@ -464,7 +477,7 @@
                  i += random.nextInt(64) - random.nextInt(64);
                  k += random.nextInt(64) - random.nextInt(64);
                  ++l;
-@@ -758,6 +972,7 @@
+@@ -750,6 +971,7 @@
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
          if (chunkproviderserver.e()) {
@@ -472,7 +485,7 @@
              if (iprogressupdate != null) {
                  iprogressupdate.a("Saving level");
              }
-@@ -768,7 +983,8 @@
+@@ -760,7 +982,8 @@
              }
  
              chunkproviderserver.a(flag);
@@ -482,7 +495,7 @@
              Iterator iterator = arraylist.iterator();
  
              while (iterator.hasNext()) {
-@@ -803,6 +1019,12 @@
+@@ -795,6 +1018,12 @@
              }
          }
  
@@ -495,7 +508,7 @@
          this.worldData.a(this.getWorldBorder().getSize());
          this.worldData.d(this.getWorldBorder().getCenterX());
          this.worldData.c(this.getWorldBorder().getCenterZ());
-@@ -816,9 +1038,13 @@
+@@ -808,9 +1037,13 @@
          this.worldMaps.a();
      }
  
@@ -511,25 +524,25 @@
  
      public void a(Collection<Entity> collection) {
          ArrayList arraylist = Lists.newArrayList(collection);
-@@ -837,7 +1063,7 @@
+@@ -829,7 +1062,7 @@
  
      private boolean j(Entity entity) {
          if (entity.dead) {
--            WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", new Object[] { EntityTypes.a(entity)});
-+            // WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", new Object[] { EntityTypes.a(entity)}); // CraftBukkit
+-            WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.a(entity));
++            // WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.a(entity)); // CraftBukkit
              return false;
          } else {
              UUID uuid = entity.getUniqueID();
-@@ -849,7 +1075,7 @@
+@@ -841,7 +1074,7 @@
                      this.f.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
--                        WorldServer.a.warn("Keeping entity {} that already exists with UUID {}", new Object[] { EntityTypes.a(entity1), uuid.toString()});
-+                        // WorldServer.a.warn("Keeping entity {} that already exists with UUID {}", new Object[] { EntityTypes.a(entity1), uuid.toString()}); // CraftBukkit
+-                        WorldServer.a.warn("Keeping entity {} that already exists with UUID {}", EntityTypes.a(entity1), uuid.toString());
++                        // WorldServer.a.warn("Keeping entity {} that already exists with UUID {}", EntityTypes.a(entity1), uuid.toString()); // CraftBukkit
                          return false;
                      }
  
-@@ -902,8 +1128,16 @@
+@@ -894,8 +1127,16 @@
      }
  
      public boolean strikeLightning(Entity entity) {
@@ -547,7 +560,7 @@
              return true;
          } else {
              return false;
-@@ -919,10 +1153,20 @@
+@@ -911,10 +1152,20 @@
      }
  
      public Explosion createExplosion(@Nullable Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
@@ -568,7 +581,7 @@
          if (!flag1) {
              explosion.clearBlocks();
          }
-@@ -968,7 +1212,8 @@
+@@ -960,7 +1211,8 @@
                  BlockActionData blockactiondata = (BlockActionData) iterator.next();
  
                  if (this.a(blockactiondata)) {
@@ -578,20 +591,20 @@
                  }
              }
  
-@@ -991,6 +1236,7 @@
-         boolean flag = this.W();
+@@ -983,6 +1235,7 @@
+         boolean flag = this.Y();
  
          super.t();
 +        /* CraftBukkit start
          if (this.n != this.o) {
              this.server.getPlayerList().a((Packet) (new PacketPlayOutGameStateChange(7, this.o)), this.worldProvider.getDimensionManager().getDimensionID());
          }
-@@ -1009,6 +1255,21 @@
+@@ -1001,6 +1254,21 @@
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.o));
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.q));
          }
 +        // */
-+        if (flag != this.W()) {
++        if (flag != this.X()) {
 +            // Only send weather packets to those affected
 +            for (int i = 0; i < this.players.size(); ++i) {
 +                if (((EntityPlayer) this.players.get(i)).world == this) {
@@ -608,7 +621,7 @@
  
      }
  
-@@ -1038,10 +1299,20 @@
+@@ -1030,10 +1298,20 @@
      }
  
      public void a(EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {

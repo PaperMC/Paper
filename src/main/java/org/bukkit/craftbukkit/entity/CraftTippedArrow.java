@@ -123,11 +123,11 @@ public class CraftTippedArrow extends CraftArrow implements TippedArrow {
 
     @Override
     public void setColor(Color color) {
-        getHandle().d(color.asRGB());
+        getHandle().setColor(color.asRGB());
     }
 
     @Override
     public Color getColor() {
-        return Color.fromRGB(getHandle().o());
+        return Color.fromRGB(getHandle().getColor());
     }
 }

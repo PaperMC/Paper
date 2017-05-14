@@ -1,26 +1,39 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.AdvancementDataWorld;
 
 import net.minecraft.server.Block;
 import net.minecraft.server.Blocks;
+import net.minecraft.server.ChatDeserializer;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MojangsonParseException;
 import net.minecraft.server.MojangsonParser;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.StatisticList;
 
 import org.bukkit.Achievement;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
 import org.bukkit.UnsafeValues;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
@@ -131,7 +144,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public Achievement getAchievementFromInternalName(String name) {
-        return CraftStatistic.getBukkitAchievementByName(name);
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
 
     @Override
@@ -145,6 +158,42 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         }
         return matches;
+    }
+
+    @Override
+    public Advancement loadAdvancement(NamespacedKey key, String advancement) {
+        if (Bukkit.getAdvancement(key) != null) {
+            throw new IllegalArgumentException("Advancement " + key + " already exists.");
+        }
+
+        net.minecraft.server.Advancement.SerializedAdvancement nms = (net.minecraft.server.Advancement.SerializedAdvancement) ChatDeserializer.a(AdvancementDataWorld.DESERIALIZER, advancement, net.minecraft.server.Advancement.SerializedAdvancement.class);
+        if (nms != null) {
+            AdvancementDataWorld.REGISTRY.a(Maps.newHashMap(Collections.singletonMap(CraftNamespacedKey.toMinecraft(key), nms)));
+            Advancement bukkit = Bukkit.getAdvancement(key);
+
+            if (bukkit != null) {
+                File file = new File(MinecraftServer.getServer().getAdvancementData().folder, key.getNamespace() + File.separator + key.getKey() + ".json");
+                file.getParentFile().mkdirs();
+
+                try {
+                    Files.write(advancement, file, Charsets.UTF_8);
+                } catch (IOException ex) {
+                    Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
+                }
+
+                MinecraftServer.getServer().getPlayerList().reload();
+
+                return bukkit;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public boolean removeAdvancement(NamespacedKey key) {
+        File file = new File(MinecraftServer.getServer().getAdvancementData().folder, key.getNamespace() + File.separator + key.getKey() + ".json");
+        return file.delete();
     }
 
     /**

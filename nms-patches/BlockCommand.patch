@@ -1,38 +1,27 @@
 --- a/net/minecraft/server/BlockCommand.java
 +++ b/net/minecraft/server/BlockCommand.java
-@@ -2,6 +2,8 @@
- 
- import java.util.Random;
+@@ -4,6 +4,8 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
  
 +import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 +
  public class BlockCommand extends BlockTileEntity {
  
-     public static final BlockStateDirection a = BlockDirectional.FACING;
-@@ -29,7 +31,16 @@
+     private static final Logger c = LogManager.getLogger();
+@@ -30,6 +32,15 @@
+                 TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+                 boolean flag = world.isBlockIndirectlyPowered(blockposition);
                  boolean flag1 = tileentitycommand.f();
-                 boolean flag2 = tileentitycommand.h();
- 
--                if (flag && !flag1) {
-+            // CraftBukkit start
-+            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+            int old = flag1 ? 15 : 0;
-+            int current = flag ? 15 : 0;
++                // CraftBukkit start
++                org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                int old = flag1 ? 15 : 0;
++                int current = flag ? 15 : 0;
 +
-+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
-+            world.getServer().getPluginManager().callEvent(eventRedstone);
-+            // CraftBukkit end
-+
-+            if (eventRedstone.getNewCurrent() > 0 && !(eventRedstone.getOldCurrent() > 0)) { // CraftBukkit
-                     tileentitycommand.a(true);
-                     if (tileentitycommand.k() != TileEntityCommand.Type.SEQUENCE && !flag2) {
-                         boolean flag3 = !tileentitycommand.l() || this.e(world, blockposition, iblockdata);
-@@ -40,7 +51,7 @@
-                             this.c(world, blockposition);
-                         }
-                     }
--                } else if (!flag && flag1) {
-+            } else if (!(eventRedstone.getNewCurrent() > 0) && eventRedstone.getOldCurrent() > 0) { // CraftBukkit
-                     tileentitycommand.a(false);
-                 }
++                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
++                world.getServer().getPluginManager().callEvent(eventRedstone);
++                flag = eventRedstone.getNewCurrent() > 0;
++                // CraftBukkit end
  
+                 tileentitycommand.a(flag);
+                 if (!flag1 && !tileentitycommand.h() && tileentitycommand.l() != TileEntityCommand.Type.SEQUENCE) {

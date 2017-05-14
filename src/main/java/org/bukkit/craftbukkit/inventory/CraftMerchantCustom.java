@@ -49,7 +49,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         @Override
         public void a(MerchantRecipe merchantrecipe) {
             // increase recipe's uses
-            merchantrecipe.g(); // PAIL: rename
+            merchantrecipe.increaseUses();
         }
 
         @Override
@@ -62,12 +62,12 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public World t_() {
+        public World u_() {
             return null;
         }
 
         @Override
-        public BlockPosition u_() {
+        public BlockPosition v_() {
             return null;
         }
     }
