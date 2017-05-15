@@ -84,10 +84,6 @@ import com.google.common.collect.ImmutableSet;
  *     <td>{@link #getPrefix()}</td>
  *     <td>The token to prefix plugin log entries</td>
  * </tr><tr>
- *     <td><code>database</code></td>
- *     <td>{@link #isDatabaseEnabled()}</td>
- *     <td>Indicator to enable database support</td>
- * </tr><tr>
  *     <td><code>load</code></td>
  *     <td>{@link #getLoad()}</td>
  *     <td>The phase of server-startup this plugin will load during</td>
@@ -136,7 +132,6 @@ import com.google.common.collect.ImmutableSet;
  *website: http://www.curse.com/server-mods/minecraft/myplugin
  *
  *main: com.captaininflamo.bukkit.inferno.Inferno
- *database: false
  *depend: [NewFire, FlameWire]
  *
  *commands:
