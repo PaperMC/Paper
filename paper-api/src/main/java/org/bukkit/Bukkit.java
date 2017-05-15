@@ -2175,4 +2175,9 @@ public final class Bukkit {
     public static UnsafeValues getUnsafe() {
         return server.getUnsafe();
     }
+
+    @NotNull
+    public static Server.Spigot spigot() {
+        return server.spigot();
+    }
 }

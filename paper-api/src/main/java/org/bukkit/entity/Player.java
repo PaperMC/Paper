@@ -2287,4 +2287,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return whether the player allows server listings
      */
     public boolean isAllowingServerListings();
+
+    // Spigot start
+    public class Spigot extends Entity.Spigot {
+
+    }
+
+    @NotNull
+    @Override
+    Spigot spigot();
+    // Spigot end
 }

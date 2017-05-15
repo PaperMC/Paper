@@ -113,4 +113,13 @@ public interface BookMeta extends WritableBookMeta {
     @Override
     @NotNull
     BookMeta clone();
+
+    // Spigot start
+    public class Spigot {
+
+    }
+
+    @NotNull
+    Spigot spigot();
+    // Spigot end
 }

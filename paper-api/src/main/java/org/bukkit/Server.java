@@ -1852,4 +1852,13 @@ public interface Server extends PluginMessageRecipient {
     @Deprecated(since = "1.7.2")
     @NotNull
     UnsafeValues getUnsafe();
+
+    // Spigot start
+    public class Spigot {
+
+    }
+
+    @NotNull
+    Spigot spigot();
+    // Spigot end
 }

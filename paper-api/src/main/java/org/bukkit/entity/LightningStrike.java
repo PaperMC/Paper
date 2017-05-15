@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.GameEvent;
 import org.bukkit.enchantments.Enchantment;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -82,4 +83,13 @@ public interface LightningStrike extends Entity {
      */
     public void setCausingPlayer(@Nullable Player player);
 
+    // Spigot start
+    public class Spigot extends Entity.Spigot {
+
+    }
+
+    @NotNull
+    @Override
+    Spigot spigot();
+    // Spigot end
 }

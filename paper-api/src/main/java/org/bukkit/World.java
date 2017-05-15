@@ -2828,6 +2828,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
 
+    // Spigot start
+    public class Spigot {
+
+    }
+
+    @NotNull
+    Spigot spigot();
+    // Spigot end
+
     /**
      * Find the closest nearby location with a biome matching the provided
      * {@link Biome}(s). Finding biomes can, and will, block if the world is looking

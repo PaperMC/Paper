@@ -766,4 +766,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull
     @ApiStatus.Experimental
     Entity copy(@NotNull Location to);
+
+    // Spigot start
+    public class Spigot extends CommandSender.Spigot {
+
+    }
+
+    @NotNull
+    @Override
+    Spigot spigot();
+    // Spigot end
 }
