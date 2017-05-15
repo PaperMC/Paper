@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Parrot.
  */
-public interface Parrot extends Animals, Tameable {
+public interface Parrot extends Animals, Tameable, Sittable {
 
     /**
      * Get the variant of this parrot.

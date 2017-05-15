@@ -4,7 +4,7 @@ package org.bukkit.entity;
 /**
  * A wild tameable cat
  */
-public interface Ocelot extends Animals, Tameable {
+public interface Ocelot extends Animals, Tameable, Sittable {
 
     /**
      * Gets the current type of this cat.
@@ -19,21 +19,6 @@ public interface Ocelot extends Animals, Tameable {
      * @param type New type of this cat.
      */
     public void setCatType(Type type);
-
-    /**
-     * Checks if this ocelot is sitting
-     *
-     * @return true if sitting
-     */
-    public boolean isSitting();
-
-    /**
-     * Sets if this ocelot is sitting. Will remove any path that the ocelot
-     * was following beforehand.
-     *
-     * @param sitting true if sitting
-     */
-    public void setSitting(boolean sitting);
 
     /**
      * Represents the various different cat types there are.

@@ -5,7 +5,7 @@ import org.bukkit.DyeColor;
 /**
  * Represents a Wolf
  */
-public interface Wolf extends Animals, Tameable {
+public interface Wolf extends Animals, Tameable, Sittable {
 
     /**
      * Checks if this wolf is angry
@@ -23,22 +23,6 @@ public interface Wolf extends Animals, Tameable {
      * @param angry true if angry
      */
     public void setAngry(boolean angry);
-
-    /**
-     * Checks if this wolf is sitting
-     *
-     * @return true if sitting
-     */
-    public boolean isSitting();
-
-    /**
-     * Sets if this wolf is sitting.
-     * <p>
-     * Will remove any path that the wolf was following beforehand.
-     *
-     * @param sitting true if sitting
-     */
-    public void setSitting(boolean sitting);
 
     /**
      * Get the collar color of this wolf
