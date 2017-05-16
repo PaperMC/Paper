@@ -1077,10 +1077,6 @@ public final class CraftServer implements Server {
 
     @Override
     public void resetRecipes() {
-        // See SPIGOT-3240
-        if (true) {
-            return;
-        }
         CraftingManager.recipes = new RegistryMaterials();
         CraftingManager.init();
         RecipesFurnace.getInstance().recipes = new RecipesFurnace().recipes;
