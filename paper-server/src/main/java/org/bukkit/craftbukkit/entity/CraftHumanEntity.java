@@ -443,7 +443,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public org.bukkit.entity.Entity getShoulderEntityLeft() {
-        if (getHandle().getShoulderEntityLeft() != null) {
+        if (!getHandle().getShoulderEntityLeft().isEmpty()) {
             Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityLeft(), getHandle().world);
 
             return (shoulder == null) ? null : shoulder.getBukkitEntity();
@@ -454,7 +454,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setShoulderEntityLeft(org.bukkit.entity.Entity entity) {
-        getHandle().setShoulderEntityLeft(entity == null ? null : ((CraftEntity) entity).save());
+        getHandle().setShoulderEntityLeft(entity == null ? new NBTTagCompound() : ((CraftEntity) entity).save());
         if (entity != null) {
             entity.remove();
         }
@@ -462,7 +462,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public org.bukkit.entity.Entity getShoulderEntityRight() {
-        if (getHandle().getShoulderEntityRight() != null) {
+        if (!getHandle().getShoulderEntityRight().isEmpty()) {
             Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityRight(), getHandle().world);
 
             return (shoulder == null) ? null : shoulder.getBukkitEntity();
@@ -473,7 +473,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setShoulderEntityRight(org.bukkit.entity.Entity entity) {
-        getHandle().setShoulderEntityRight(entity == null ? null : ((CraftEntity) entity).save());
+        getHandle().setShoulderEntityRight(entity == null ? new NBTTagCompound() : ((CraftEntity) entity).save());
         if (entity != null) {
             entity.remove();
         }
