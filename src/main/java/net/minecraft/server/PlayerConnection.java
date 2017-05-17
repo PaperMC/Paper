@@ -1812,6 +1812,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
         switch (packetplayinentityaction.c()) {
             case PRESS_SHIFT_KEY:
                 this.player.setSneaking(true);
+
+            // Paper start - Hang on!
+            if (this.player.world.paperConfig.parrotsHangOnBetter) {
+                this.player.releaseShoulderEntities();
+            }
+            // Paper end
+
                 break;
             case RELEASE_SHIFT_KEY:
                 this.player.setSneaking(false);

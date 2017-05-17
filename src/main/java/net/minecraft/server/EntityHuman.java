@@ -436,7 +436,7 @@ public abstract class EntityHuman extends EntityLiving {
         this.j(this.getShoulderEntityLeft());
         this.j(this.getShoulderEntityRight());
         if (!this.world.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.isFlying || this.isSleeping()) {
-            this.releaseShoulderEntities();
+            if (!this.world.paperConfig.parrotsHangOnBetter) this.releaseShoulderEntities(); // Paper - Hang on!
         }
 
     }

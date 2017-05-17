@@ -323,4 +323,10 @@ public class PaperWorldConfig {
         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
         log( "Max Entity Collisions: " + maxCollisionsPerEntity );
     }
+
+    public boolean parrotsHangOnBetter;
+    private void parrotsHangOnBetter() {
+        parrotsHangOnBetter = getBoolean("parrots-are-unaffected-by-player-movement", false);
+        log("Parrots are unaffected by player movement: " + parrotsHangOnBetter);
+    }
 }
