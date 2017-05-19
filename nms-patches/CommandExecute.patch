@@ -11,27 +11,16 @@
  
  public class CommandExecute extends CommandAbstract {
  
-@@ -59,7 +63,10 @@
+@@ -59,26 +63,59 @@
              }
  
              String s = a(astring, b0);
--            ICommandListener icommandlistener1 = new ICommandListener() {
-+            // CraftBukkit start - name class
-+            class ProxyListener implements ICommandListener {
-+                private final ICommandListener base = icommandlistener;
-+            // CraftBukkit end
-                 public String getName() {
-                     return entity.getName();
-                 }
-@@ -104,25 +111,59 @@
-                     return entity.C_();
-                 }
-             };
-+            ICommandListener icommandlistener1 = new ProxyListener(); // CraftBukkit
+-            CommandListenerWrapper commandlistenerwrapper = CommandListenerWrapper.a(icommandlistener).a(entity, new Vec3D(d0, d1, d2)).a(minecraftserver.worldServer[0].getGameRules().getBoolean("commandBlockOutput"));
++            CommandListenerWrapper commandlistenerwrapper = CommandListenerWrapper.a(icommandlistener).a(entity, new Vec3D(d0, d1, d2)).a(minecraftserver.worlds.get(0).getGameRules().getBoolean("commandBlockOutput")); // CraftBukkit
              ICommandHandler icommandhandler = minecraftserver.getCommandHandler();
  
              try {
--                int i = icommandhandler.b(icommandlistener1, s);
+-                int i = icommandhandler.a(commandlistenerwrapper, s);
 +                // CraftBukkit start
 +                org.bukkit.command.CommandSender sender = null;
 +                ICommandListener listener = icommandlistener;
@@ -42,8 +31,8 @@
 +                        sender = minecraftserver.remoteConsole;
 +                    } else if (listener instanceof CommandBlockListenerAbstract) {
 +                        sender = ((CommandBlockListenerAbstract) listener).sender;
-+                    } else if (listener instanceof ProxyListener) {
-+                        listener = ((ProxyListener) listener).base; // Search deeper
++                    } else if (listener instanceof CommandListenerWrapper) {
++                        listener = ((CommandListenerWrapper) listener).base; // Search deeper
 +                    } else if (VanillaCommandWrapper.lastSender != null) {
 +                        sender = VanillaCommandWrapper.lastSender;
 +                    } else if (listener.f() != null) {
@@ -52,7 +41,7 @@
 +                        throw new CommandException("Unhandled executor " + icommandlistener.getClass().getSimpleName(), new Object[0]);
 +                    }
 +                }
-+                int i = CommandBlockListenerAbstract.executeCommand(icommandlistener1, new ProxiedNativeCommandSender(icommandlistener1, sender, entity.getBukkitEntity()), s); 
++                int i = CommandBlockListenerAbstract.executeCommand(commandlistenerwrapper, new ProxiedNativeCommandSender(commandlistenerwrapper, sender, entity.getBukkitEntity()), s); 
 +                // CraftBukkit end
  
                  if (i < 1) {

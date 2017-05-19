@@ -51,7 +51,7 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
         for (int i = 0; i < shape.length; i++) {
             String row = shape[i];
             for (int j = 0; j < row.length(); j++) {
-                data.set(i * width + j, new RecipeItemStack(CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))));
+                data.set(i * width + j, RecipeItemStack.a(new net.minecraft.server.ItemStack[]{CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))}));
             }
         }
 

@@ -22,7 +22,7 @@
 +
  public class EntityPlayer extends EntityHuman implements ICrafting {
  
-     private static final Logger bW = LogManager.getLogger();
+     private static final Logger bV = LogManager.getLogger();
 @@ -51,6 +67,19 @@
      public int ping;
      public boolean viewingCredits;
@@ -43,15 +43,7 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super(worldserver, gameprofile);
          playerinteractmanager.player = this;
-@@ -75,13 +104,18 @@
-         this.server = minecraftserver;
-         this.ca = minecraftserver.getPlayerList().a((EntityHuman) this);
-         this.bZ = minecraftserver.getPlayerList().h(this);
--        this.P = 0.0F;
-+        this.P = 1.0F; // CraftBukkit - hit when sneaking
-         this.setPositionRotation(blockposition, 0.0F, 0.0F);
- 
-         while (!worldserver.getCubes(this, this.getBoundingBox()).isEmpty() && this.locY < 255.0D) {
+@@ -82,6 +111,11 @@
              this.setPosition(this.locX, this.locY + 1.0D, this.locZ);
          }
  
@@ -65,7 +57,7 @@
      public void a(NBTTagCompound nbttagcompound) {
 @@ -104,6 +138,7 @@
          if (nbttagcompound.hasKeyOfType("recipeBook", 10)) {
-             this.cs.a(nbttagcompound.getCompound("recipeBook"));
+             this.cr.a(nbttagcompound.getCompound("recipeBook"));
          }
 +        this.getBukkitEntity().readExtraData(nbttagcompound); // CraftBukkit
  
@@ -74,7 +66,7 @@
 @@ -150,8 +185,34 @@
          }
  
-         nbttagcompound.set("recipeBook", this.cs.e());
+         nbttagcompound.set("recipeBook", this.cr.e());
 +        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
      }
  
@@ -121,14 +113,14 @@
 @@ -250,7 +316,7 @@
              }
  
-             if (this.getHealth() != this.lastHealthSent || this.ci != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.cj) {
+             if (this.getHealth() != this.lastHealthSent || this.ch != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.ci) {
 -                this.playerConnection.sendPacket(new PacketPlayOutUpdateHealth(this.getHealth(), this.foodData.getFoodLevel(), this.foodData.getSaturationLevel()));
 +                this.playerConnection.sendPacket(new PacketPlayOutUpdateHealth(this.getBukkitEntity().getScaledHealth(), this.foodData.getFoodLevel(), this.foodData.getSaturationLevel())); // CraftBukkit
                  this.lastHealthSent = this.getHealth();
-                 this.ci = this.foodData.getFoodLevel();
-                 this.cj = this.foodData.getSaturationLevel() == 0.0F;
+                 this.ch = this.foodData.getFoodLevel();
+                 this.ci = this.foodData.getSaturationLevel() == 0.0F;
 @@ -271,6 +337,12 @@
-                 this.a(IScoreboardCriteria.i, MathHelper.f((float) this.cd));
+                 this.a(IScoreboardCriteria.i, MathHelper.f((float) this.cc));
              }
  
 +            // CraftBukkit start - Force max health updates
@@ -137,9 +129,9 @@
 +            }
 +            // CraftBukkit end
 +
-             if (this.getArmorStrength() != this.ce) {
-                 this.ce = this.getArmorStrength();
-                 this.a(IScoreboardCriteria.j, MathHelper.f((float) this.ce));
+             if (this.getArmorStrength() != this.cd) {
+                 this.cd = this.getArmorStrength();
+                 this.a(IScoreboardCriteria.j, MathHelper.f((float) this.cd));
 @@ -295,6 +367,16 @@
                  CriterionTriggers.o.a(this);
              }
@@ -319,7 +311,7 @@
 +        if (this.isSleeping()) return this; // CraftBukkit - SPIGOT-3154
 +        // this.worldChangeInvuln = true; // CraftBukkit - Moved down and into PlayerList#changeDimension
          if (this.dimension == 0 && i == -1) {
-             this.cw = new Vec3D(this.locX, this.locY, this.locZ);
+             this.cv = new Vec3D(this.locX, this.locY, this.locZ);
          } else if (this.dimension != -1 && i != 0) {
 @@ -476,6 +599,7 @@
          }
@@ -519,12 +511,12 @@
 @@ -880,7 +1071,7 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
-         this.ci = -1;
--        this.cs.a((RecipeBook) entityplayer.cs);
-+        // this.cs.a((RecipeBook) entityplayer.cs); // CraftBukkit
+         this.ch = -1;
+-        this.cr.a((RecipeBook) entityplayer.cr);
++        // this.cr.a((RecipeBook) entityplayer.cr); // CraftBukkit
          this.removeQueue.addAll(entityplayer.removeQueue);
-         this.cr = entityplayer.cr;
-         this.cw = entityplayer.cw;
+         this.cq = entityplayer.cq;
+         this.cv = entityplayer.cv;
 @@ -939,6 +1130,18 @@
      }
  
@@ -579,14 +571,14 @@
 +        }
 +        // CraftBukkit end
          this.locale = packetplayinsettings.a();
-         this.cm = packetplayinsettings.c();
-         this.cn = packetplayinsettings.d();
+         this.cl = packetplayinsettings.c();
+         this.cm = packetplayinsettings.d();
 @@ -1054,7 +1273,7 @@
-         this.cp = (Entity) (entity == null ? this : entity);
-         if (entity1 != this.cp) {
-             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cp));
--            this.enderTeleportTo(this.cp.locX, this.cp.locY, this.cp.locZ);
-+            this.playerConnection.a(this.cp.locX, this.cp.locY, this.cp.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+         this.co = (Entity) (entity == null ? this : entity);
+         if (entity1 != this.co) {
+             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.co));
+-            this.enderTeleportTo(this.co.locX, this.co.locY, this.co.locZ);
++            this.playerConnection.a(this.co.locX, this.co.locY, this.co.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
          }
  
      }
@@ -619,7 +611,7 @@
      public AdvancementDataPlayer getAdvancementData() {
 @@ -1114,4 +1338,139 @@
      public Vec3D Q() {
-         return this.cw;
+         return this.cv;
      }
 +
 +    // CraftBukkit start - Add per-player time and weather.
