@@ -40,7 +40,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
         List<ItemStack> ingred = this.getIngredientList();
         NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.a);
         for (int i = 0; i < ingred.size(); i++) {
-            data.set(i, new RecipeItemStack(CraftItemStack.asNMSCopy(ingred.get(i))));
+            data.set(i, RecipeItemStack.a(new net.minecraft.server.ItemStack[]{CraftItemStack.asNMSCopy(ingred.get(i))}));
         }
 
         CraftingManager.a(CraftNamespacedKey.toMinecraft(this.getKey()), new ShapelessRecipes("", CraftItemStack.asNMSCopy(this.getResult()), data));
