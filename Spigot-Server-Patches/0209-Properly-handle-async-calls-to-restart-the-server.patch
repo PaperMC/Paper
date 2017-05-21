@@ -1,4 +1,4 @@
-From be5defaa5ff4f435f770d33606670e0271d1cf32 Mon Sep 17 00:00:00 2001
+From b181211ad3bd0a7823863febec582c4f38cb219e Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,7 +30,7 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 40514d042..f0743e6cc 100644
+index 42769d164..6c5b40f32 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -70,6 +70,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
@@ -78,7 +78,7 @@ index 40514d042..f0743e6cc 100644
          return this.serverThread;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 072de1f71..4483beeba 100644
+index 772670a03..34f113ee5 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -1361,10 +1361,15 @@ public abstract class PlayerList {
@@ -107,14 +107,16 @@ index 072de1f71..4483beeba 100644
      // CraftBukkit start
      public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 49768734d..d51636c8e 100644
+index 49768734d..e1bc3e64e 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
-@@ -45,88 +45,123 @@ public class RestartCommand extends Command
+@@ -45,88 +45,119 @@ public class RestartCommand extends Command
          AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
          try
          {
 -            if ( script.isFile() )
+-            {
+-                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
 +            // Paper - extract method and cleanup
 +            boolean isRestarting = addShutdownHook(script);
 +            if (isRestarting) {
@@ -122,39 +124,11 @@ index 49768734d..d51636c8e 100644
 +            } else {
 +                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
 +            }
-+
-+            // Stop the watchdog
-+            WatchdogThread.doStop();
-+
-+            shutdownServer(isRestarting);
-+        } catch ( Exception ex )
-+        {
-+            ex.printStackTrace();
-+        }
-+    }
-+
-+    // Paper start - sync copied from above with minor changes, async added
-+    private static void shutdownServer(boolean isRestarting)
-+    {
-+        if (MinecraftServer.getServer().isMainThread())
-+        {
-+            // Kick all players
-+            for ( EntityPlayer p : com.google.common.collect.ImmutableList.copyOf( MinecraftServer.getServer().getPlayerList().players ) )
-+            {
-+                p.playerConnection.disconnect(SpigotConfig.restartMessage);
-+            }
-+            // Give the socket a chance to send the packets
-+            try
-+            {
-+                Thread.sleep( 100 );
-+            } catch ( InterruptedException ex )
-             {
--                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
-+            }
  
 -                // Disable Watchdog
 -                WatchdogThread.doStop();
-+            closeSocket();
++            // Stop the watchdog
++            WatchdogThread.doStop();
  
 -                // Kick all players
 -                for ( EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players )
@@ -170,14 +144,7 @@ index 49768734d..d51636c8e 100644
 -                }
 -                // Close the socket so we can rebind with the new process
 -                MinecraftServer.getServer().getServerConnection().b();
-+            // Actually shutdown
-+            try
-+            {
-+                MinecraftServer.getServer().stop();
-+            } catch ( Throwable t )
-+            {
-+            }
- 
+-
 -                // Give time for it to kick in
 -                try
 -                {
@@ -185,8 +152,12 @@ index 49768734d..d51636c8e 100644
 -                } catch ( InterruptedException ex )
 -                {
 -                }
-+            // Actually stop the JVM
-+            System.exit(0);
++            shutdownServer(isRestarting);
++        } catch ( Exception ex )
++        {
++            ex.printStackTrace();
++        }
++    }
  
 -                // Actually shutdown
 -                try
@@ -195,10 +166,23 @@ index 49768734d..d51636c8e 100644
 -                } catch ( Throwable t )
 -                {
 -                }
-+        } else
++    // Paper start - sync copied from above with minor changes, async added
++    private static void shutdownServer(boolean isRestarting)
++    {
++        if (MinecraftServer.getServer().isMainThread())
 +        {
-+            // Mark the server to shutdown at the end of the tick
-+            MinecraftServer.getServer().safeShutdown(isRestarting);
++            // Kick all players
++            for ( EntityPlayer p : com.google.common.collect.ImmutableList.copyOf( MinecraftServer.getServer().getPlayerList().players ) )
++            {
++                p.playerConnection.disconnect(SpigotConfig.restartMessage);
++            }
++            // Give the socket a chance to send the packets
++            try
++            {
++                Thread.sleep( 100 );
++            } catch ( InterruptedException ex )
++            {
++            }
  
 -                // This will be done AFTER the server has completely halted
 -                Thread shutdownHook = new Thread()
@@ -225,19 +209,24 @@ index 49768734d..d51636c8e 100644
 -                        }
 -                    }
 -                };
++            closeSocket();
  
 -                shutdownHook.setDaemon( true );
 -                Runtime.getRuntime().addShutdownHook( shutdownHook );
 -            } else
-+            // wait 10 seconds to see if we're actually going to try shutdown
++            // Actually shutdown
 +            try
-+            {
-+                Thread.sleep(10000);
-+            }
-+            catch (InterruptedException ignored)
              {
 -                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
--
++                MinecraftServer.getServer().stop();
++            } catch ( Throwable t )
++            {
++            }
++        } else
++        {
++            // Mark the server to shutdown at the end of the tick
++            MinecraftServer.getServer().safeShutdown(isRestarting);
+ 
 -                // Actually shutdown
 -                try
 -                {
@@ -245,6 +234,14 @@ index 49768734d..d51636c8e 100644
 -                } catch ( Throwable t )
 -                {
 -                }
++
++            // wait 10 seconds to see if we're actually going to try shutdown
++            try
++            {
++                Thread.sleep(10000);
++            }
++            catch (InterruptedException ignored)
++            {
              }
 +
 +            // Check if we've actually hit a state where the server is going to safely shutdown
@@ -306,5 +303,5 @@ index 49768734d..d51636c8e 100644
      }
  }
 -- 
-2.13.0
+2.13.0.windows.1
 

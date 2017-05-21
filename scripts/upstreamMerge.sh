@@ -17,7 +17,7 @@ update Bukkit
 update CraftBukkit
 update Spigot
 
-if [[ "$2" = "all" ]] ; then
+if [[ "$2" = "all" || "$2" = "a" ]] ; then
 	update BuildData
 	update Paperclip
 fi
