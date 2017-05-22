@@ -798,16 +798,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setLevel(int level);
 
     /**
-     * Gets the players total experience points
+     * Gets the players total experience points.
+     * <br>
+     * This refers to the total amount of experience the player has collected
+     * over time and is only displayed as the player's "score" upon dying.
      *
      * @return Current total experience points
      */
     public int getTotalExperience();
 
     /**
-     * Sets the players current experience level
+     * Sets the players current experience points.
+     * <br>
+     * This refers to the total amount of experience the player has collected
+     * over time and is only displayed as the player's "score" upon dying.
      *
-     * @param exp New experience level
+     * @param exp New total experience points
      */
     public void setTotalExperience(int exp);
 
