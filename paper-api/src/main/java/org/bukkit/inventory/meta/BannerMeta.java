@@ -10,14 +10,18 @@ public interface BannerMeta extends ItemMeta {
      * Returns the base color for this banner
      *
      * @return the base color
+     * @deprecated banner color is now stored as the data value, not meta.
      */
+    @Deprecated
     DyeColor getBaseColor();
 
     /**
      * Sets the base color for this banner
      *
      * @param color the base color
+     * @deprecated banner color is now stored as the data value, not meta.
      */
+    @Deprecated
     void setBaseColor(DyeColor color);
 
     /**
