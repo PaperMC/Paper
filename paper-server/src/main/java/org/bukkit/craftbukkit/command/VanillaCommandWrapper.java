@@ -158,6 +158,9 @@ public final class VanillaCommandWrapper extends Command {
         if (sender instanceof ProxiedCommandSender) {
             return ((ProxiedNativeCommandSender) sender).getHandle();
         }
+        if (sender instanceof CraftFunctionCommandSender) {
+            return ((CraftFunctionCommandSender) sender).getHandle();
+        }
         throw new IllegalArgumentException("Cannot make " + sender + " a vanilla command listener");
     }
 
