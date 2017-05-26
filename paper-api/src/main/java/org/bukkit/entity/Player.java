@@ -1403,4 +1403,17 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @return object detailing the player's progress
      */
     public AdvancementProgress getAdvancementProgress(Advancement advancement);
+
+    /**
+     * Gets the player's current locale.
+     *
+     * The value of the locale String is not defined properly.
+     * <br>
+     * The vanilla Minecraft client will use lowercase language / country pairs
+     * separated by an underscore, but custom resource packs may use any format
+     * they wish.
+     *
+     * @return the player's locale
+     */
+    public String getLocale();
 }
