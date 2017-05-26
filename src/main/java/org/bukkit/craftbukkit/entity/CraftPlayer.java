@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -1445,5 +1444,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         AdvancementProgress progress = data.getProgress(craft.getHandle());
 
         return new CraftAdvancementProgress(craft, data, progress);
+    }
+
+    @Override
+    public String getLocale() {
+        return getHandle().locale;
     }
 }
