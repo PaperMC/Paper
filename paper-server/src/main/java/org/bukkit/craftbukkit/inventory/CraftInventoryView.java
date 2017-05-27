@@ -127,7 +127,7 @@ public class CraftInventoryView extends InventoryView {
         } else {
             if (slot == -999 || slot == -1) {
                 type = SlotType.OUTSIDE;
-            } else if (inventory.getType() == InventoryType.CRAFTING) {
+            } else if (inventory.getType() == InventoryType.CRAFTING) { // Also includes creative inventory
                 if (slot < 9) {
                     type = SlotType.ARMOR;
                 } else if (slot > 35) {
