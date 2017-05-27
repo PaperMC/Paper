@@ -1,6 +1,5 @@
 package org.bukkit.inventory;
 
-import org.bukkit.GameMode;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
@@ -228,13 +227,9 @@ public abstract class InventoryView {
         // Move down the slot index by the top size
         int slot = rawSlot - numInTop;
 
-        // Creative mode players have one contiguous inventory dictated by the client
-        if (getPlayer().getGameMode() == GameMode.CREATIVE && getType() == InventoryType.PLAYER) {
-            return slot;
-        }
-
         // Player crafting slots are indexed differently. The matrix is caught by the first return.
-        if (getType() == InventoryType.CRAFTING) {
+        // Creative mode is the same, except that you can't see the crafting slots (but the IDs are still used)
+        if (getType() == InventoryType.CRAFTING || getType() == InventoryType.CREATIVE) {
             /**
              * Raw Slots:
              *
@@ -247,7 +242,7 @@ public abstract class InventoryView {
              * 27 28 29 30 31 32 33 34 35
              * 36 37 38 39 40 41 42 43 44
              */
-            
+
             /**
              * Converted Slots:
              *
