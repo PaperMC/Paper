@@ -1,4 +1,4 @@
-From 1dae630a507144c4669bb19181840fb3860bcb24 Mon Sep 17 00:00:00 2001
+From 3ae56f998b55e3a503566891a5006dfd11c3dbd5 Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 02:48:12 -0600
 Subject: [PATCH] Add velocity warnings
@@ -17,21 +17,54 @@ index 1381d234e..00208ff45 100644
      private final class BooleanWrapper {
          private boolean value = true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 87813d59c..36c90e668 100644
+index 87813d59c..0a05da58f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -237,6 +237,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -237,12 +237,44 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
      }
  
      public void setVelocity(Vector vel) {
 +        // Paper start - Warn server owners when plugins try to set super high velocities
-+        if (!(this instanceof org.bukkit.entity.Projectile) && (vel.getX() > 4 || vel.getX() < -4 || vel.getY() > 4 || vel.getY() < -4 || vel.getZ() > 4 || vel.getZ() < -4)) {
-+            CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity #" + getEntityId() + " to (" + vel.getX() + "," + vel.getY() + "," + vel.getZ() + ").");
++        if (!(this instanceof org.bukkit.entity.Projectile) && isUnsafeVelocity(vel)) {
++            CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity " + entity.getName() + " id #" + getEntityId() + " to (" + vel.getX() + "," + vel.getY() + "," + vel.getZ() + ").");
 +        }
 +        // Paper end
          entity.motX = vel.getX();
          entity.motY = vel.getY();
          entity.motZ = vel.getZ();
+         entity.velocityChanged = true;
+     }
+ 
++    // Paper start
++    /**
++     * Checks if the given velocity is not necessarily safe in all situations.
++     * This function returning true does not mean the velocity is dangerous or to be avoided, only that it may be
++     * a detriment to performance on the server.
++     *
++     * It is not to be used as a hard rule of any sort.
++     * Paper only uses it to warn server owners in watchdog crashes.
++     *
++     * @param vel incoming velocity to check
++     * @return if the velocity has the potential to be a performance detriment
++     */
++    private static boolean isUnsafeVelocity(Vector vel) {
++        final double x = vel.getX();
++        final double y = vel.getY();
++        final double z = vel.getZ();
++
++        if (x > 4 || x < -4 || y > 4 || y < -4 || z > 4 || z < -4) {
++            return true;
++        } else if (x != x || y != y || z != z) { // NaN check
++            return true;
++        }
++
++        return false;
++    }
++    // Paper end
++
+     @Override
+     public double getHeight() {
+         return getHandle().length;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
 index 3ed983cc0..6384d50e7 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
