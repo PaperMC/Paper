@@ -13,6 +13,8 @@ import com.google.common.collect.ImmutableSet;
 
 import net.minecraft.server.ScoreboardTeam;
 import net.minecraft.server.ScoreboardTeamBase;
+import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 final class CraftTeam extends CraftScoreboardComponent implements Team {
     private final ScoreboardTeam team;
@@ -68,6 +70,21 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         team.setSuffix(suffix);
+    }
+
+    @Override
+    public ChatColor getColor() throws IllegalStateException {
+        CraftScoreboard scoreboard = checkState();
+
+        return CraftChatMessage.getColor(team.m()); // PAIL: rename
+    }
+
+    @Override
+    public void setColor(ChatColor color) {
+        Validate.notNull(color, "Color cannot be null");
+        CraftScoreboard scoreboard = checkState();
+
+        team.a(CraftChatMessage.getColor(color)); // PAIL: rename
     }
 
     public boolean allowFriendlyFire() throws IllegalStateException {
