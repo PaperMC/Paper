@@ -16,21 +16,31 @@ import net.minecraft.server.IChatBaseComponent;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import net.minecraft.server.ChatMessage;
+import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {
-    
-    private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
-    private static class StringMessage {
-        private static final Map<Character, EnumChatFormat> formatMap;
-        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))", Pattern.CASE_INSENSITIVE);
 
-        static {
-            Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
-            for (EnumChatFormat format : EnumChatFormat.values()) {
-                builder.put(Character.toLowerCase(format.toString().charAt(1)), format);
-            }
-            formatMap = builder.build();
+    private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
+    private static final Map<Character, EnumChatFormat> formatMap;
+
+    static {
+        Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
+        for (EnumChatFormat format : EnumChatFormat.values()) {
+            builder.put(Character.toLowerCase(format.toString().charAt(1)), format);
         }
+        formatMap = builder.build();
+    }
+
+    public static EnumChatFormat getColor(ChatColor color) {
+        return formatMap.get(color.getChar());
+    }
+
+    public static ChatColor getColor(EnumChatFormat format) {
+        return ChatColor.getByChar(format.z);
+    }
+
+    private static class StringMessage {
+        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))", Pattern.CASE_INSENSITIVE);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
         private IChatBaseComponent currentChatComponent = new ChatComponentText("");
