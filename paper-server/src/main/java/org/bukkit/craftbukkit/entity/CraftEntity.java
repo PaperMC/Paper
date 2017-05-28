@@ -391,7 +391,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return false;
         }
 
-        getHandle().leaveVehicle();
+        getHandle().aF(); // PAIL: rename
         return true;
     }
 
