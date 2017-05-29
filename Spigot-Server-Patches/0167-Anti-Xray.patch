@@ -1,0 +1,1541 @@
+From 16e0de9913201467615ad9493f8e43765a4e5cec Mon Sep 17 00:00:00 2001
+From: stonar96 <minecraft.stonar96@gmail.com>
+Date: Mon, 19 Sep 2016 14:10:23 +0200
+Subject: [PATCH] Anti-Xray
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e3fe8f4..d171a5f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper;
+ 
++import java.util.Arrays;
+ import java.util.List;
+ 
+ import org.bukkit.Bukkit;
+@@ -382,4 +383,22 @@ public class PaperWorldConfig {
+     private void elytraHitWallDamage() {
+         elytraHitWallDamage = getBoolean("elytra-hit-wall-damage", true);
+     }
++
++    public boolean antiXray;
++    public boolean asynchronous;
++    public int engineMode;
++    public int neighborsMode;
++    public int maxChunkY;
++    public List<Object> hiddenBlocks;
++    public List<Object> replaceBlocks;
++    private void antiXray() {
++        antiXray = getBoolean("anti-xray.enabled", false);
++        asynchronous = true;
++        engineMode = getInt("anti-xray.engine-mode", 3);
++        neighborsMode = getInt("anti-xray.neighbors-mode", 1);
++        maxChunkY = getInt("anti-xray.max-chunk-y", 3);
++        hiddenBlocks = getList("anti-xray.hide-blocks", Arrays.asList((Object) "gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "lit_redstone_ore", "clay", "emerald_ore", "ender_chest"));
++        replaceBlocks = getList("anti-xray.replace-blocks", Arrays.asList((Object) "stone", "planks"));
++        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode + " / Neighbors Mode: " + neighborsMode + " / Obfuscating up to " + ((maxChunkY + 1) * 16) + " blocks");
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java
+new file mode 100644
+index 0000000..199cb45
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketController.java
+@@ -0,0 +1,153 @@
++package com.destroystokyo.paper.antixray;
++
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Chunk;
++import net.minecraft.server.DataBits;
++import net.minecraft.server.DataPaletteBlock;
++import net.minecraft.server.IBlockData;
++import net.minecraft.server.PacketPlayOutMapChunk;
++import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.server.World;
++
++/**
++ * BlockPacketController is the default (vanilla) implementation of the interface IBlockPacketController.
++ * The singleton instance should be used for each world.
++ */
++public class BlockPacketController implements IBlockPacketController {
++
++    private static BlockPacketController instance = null;
++    protected final Lock noOpLock;
++
++    /**
++     * Protected constructor for invocation by subclass constructors.
++     * Direct invocation is prevented because of the singleton pattern.
++     */
++    protected BlockPacketController() {
++        noOpLock = Lock.getNoOpInstance();
++    }
++
++    /**
++     * Protected constructor for invocation by subclass constructors.
++     * Direct invocation is prevented because of the singleton pattern.
++     * Use this constructor to prevent unnecessary intantiation of the Lock singleton
++     * incase of overriding getChunkBlocksLock(Chunk chunk) and getChunkDataLock(Chunk chunk).
++     *
++     * @param lock The lock instance used by this instance
++     */
++    protected BlockPacketController(Lock lock) {
++        noOpLock = lock;
++    }
++
++    /**
++     * Thread-safe (synchronized) singleton getter.
++     *
++     * @return The singleton instance of this implementation of IBlockPacketController
++     */
++    public static synchronized BlockPacketController getInstance() {
++        if (instance == null) {
++            instance = new BlockPacketController();
++        }
++
++        return instance;
++    }
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock blocks or chunk sections from modification.
++     * This implementation returns the singleton Lock.getNoOpInstance().
++     *
++     * @param chunk The chunk which needs the lock
++     * @return The singleton Lock.getNoOpInstance()
++     */
++    @Override
++    public Lock getChunkBlocksLock(Chunk chunk) {
++        return noOpLock;
++    }
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock chunk data (everything that is needed to create the packet) from modification.
++     * This implementation returns the singleton Lock.getNoOpInstance().
++     *
++     * @param chunk The chunk which needs the lock
++     * @return The singleton Lock.getNoOpInstance()
++     */
++    @Override
++    public Lock getChunkDataLock(Chunk chunk) {
++        return noOpLock;
++    }
++
++    /**
++     * Called when a new chunk section is created.
++     * Returns an array of predefined block data for the DataPaletteBlock of the specified chunk section or null if there is no block data.
++     * This implementation does nothing and will always return null.
++     *
++     * @param chunk The chunk which contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @return null
++     */
++    @Override
++    public IBlockData[] getPredefinedBlockData(Chunk chunk, int chunkY) {
++        return null;
++    }
++
++    /**
++     * Called before the server attempts to create and send a PacketPlayOutMapChunk for the specified chunk (not for chunk updates).
++     * Returns false if and only if the packet should not be created now.
++     * In this case the chunk remains in the PlayerChunkMap and this method is called again later until this method returns true or the chunk is unloaded.
++     * This implementation does nothing and will always return true.
++     *
++     * @param chunk The chunk which the packet is created for
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return true
++     */
++    @Override
++    public boolean onPacketCreate(Chunk chunk, int chunkSectionSelector) {
++        return true;
++    }
++
++    /**
++     * Called when packetPlayOutMapChunk is created and the data of chunk should be written to packetDataSerializer.
++     * This method is called instead of packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks).
++     * This implementation is equal to the vanilla code.
++     *
++     * @param packetPlayOutMapChunk The packet which is created
++     * @param packetDataSerializer The data serializer of the specified packet
++     * @param chunk The chunk which the packet is created for and should be written to the data serializer
++     * @param writeSkyLightArray Whether or not the sky light array should be written to the data serializer
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return The written chunk sections (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = not written, 1 = written)
++     */
++    @Override
++    public int createPacket(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketDataSerializer packetDataSerializer, Chunk chunk, boolean writeSkyLightArray, int chunkSectionSelector) {
++        packetPlayOutMapChunk.setReady(true);
++        return packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, null);
++    }
++
++    /**
++     * Called when a PacketPlayOutMapChunk is created and the blocks of the specified chunk section should be written to packetDataSerializer.
++     * This method is called instead of packetDataSerializer.a(dataBits.a()).
++     * This implementation is equal to the vanilla code.
++     *
++     * @param packetDataSerializer The data serializer of the created packet
++     * @param chunk The chunk which the packet is created for and contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @param dataPaletteBlock The data palette for the blocks of the specified chunk section
++     * @param dataBits The dataBits of the blocks
++     * @param nearbyChunks An array with the length of 4 containing the chunks around the specified chunk or null if not loaded used for thread-safe chunk access (index 0 = x--, 1 = x++, 2 = z--, 3 = z++)
++     */
++    @Override
++    public void writeBlocks(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkY, DataPaletteBlock dataPaletteBlock, DataBits dataBits, Chunk[] nearbyChunks) {
++        packetDataSerializer.a(dataBits.a());
++    }
++
++    /**
++     * Called when the block at the specified block position in the specified world changes and nearby blocks become visible for players.
++     * This implementation does nothing.
++     *
++     * @param world The world of the changed block
++     * @param blockPosition The block position of the changed block
++     */
++    @Override
++    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
++
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
+new file mode 100644
+index 0000000..dcd6207
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/antixray/BlockPacketControllerObfuscate.java
+@@ -0,0 +1,415 @@
++package com.destroystokyo.paper.antixray;
++
++import java.util.HashSet;
++import java.util.Set;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ExecutorService;
++
++import com.destroystokyo.paper.PaperWorldConfig;
++
++import net.minecraft.server.Block;
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Blocks;
++import net.minecraft.server.Chunk;
++import net.minecraft.server.ChunkSection;
++import net.minecraft.server.DataBits;
++import net.minecraft.server.DataPaletteBlock;
++import net.minecraft.server.IBlockData;
++import net.minecraft.server.PacketPlayOutMapChunk;
++import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.server.World;
++
++/**
++ * BlockPacketControllerObfuscate is an implementation of the interface IBlockPacketController which aims to obfuscate blocks which are sent with chunk packets.
++ */
++public class BlockPacketControllerObfuscate implements IBlockPacketController {
++
++    private static ExecutorService executorServiceInstance = null;
++    protected final ExecutorService executorService;
++    protected final Lock noOpLock;
++    protected final boolean asynchronous;
++    protected final int engineMode;
++    protected final int neighborsMode;
++    protected final int maxChunkY;
++    protected final boolean[] obfuscateBlocks;
++    protected final IBlockData[] replacementOres;
++
++    /**
++     * Public (normal) constructor.
++     *
++     * @param config The config for for this instance
++     */
++    public BlockPacketControllerObfuscate(PaperWorldConfig config) {
++        asynchronous = config.asynchronous;
++        engineMode = config.engineMode;
++        neighborsMode = config.neighborsMode;
++        maxChunkY = config.maxChunkY;
++        obfuscateBlocks = new boolean[Short.MAX_VALUE];
++
++        if (asynchronous) {
++            executorService = getExecutorServiceInstance();
++            noOpLock = null;
++        } else {
++            executorService = null;
++            noOpLock = Lock.getNoOpInstance();
++        }
++
++        for (Object id : (engineMode == 1) ? config.hiddenBlocks : config.replaceBlocks) {
++            Block block = Block.getByName(String.valueOf(id));
++
++            if (block != null) {
++                int intId = Block.getId(block);
++                obfuscateBlocks[intId] = true;
++            }
++        }
++
++        Set<IBlockData> replacementOreList = new HashSet<IBlockData>();
++
++        for (Object id : config.hiddenBlocks) {
++            Block block = Block.getByName(String.valueOf(id));
++
++            if (block != null && !block.isTileEntity()) {
++                replacementOreList.add(block.getBlockData());
++            }
++        }
++
++        replacementOres = replacementOreList.toArray(new IBlockData[replacementOreList.size()]);
++    }
++
++    /**
++     * Protected constructor for invocation by subclass constructors.
++     * Use this constructor to prevent unnecessary intantiation of the Lock and ExecutorService singletons
++     * incase of overriding for example getChunkBlocksLock(Chunk chunk) and getChunkDataLock(Chunk chunk).
++     *
++     * @param executorService The executor service used by this class
++     * @param lock The lock instance used or returned by this class if asynchronous is false
++     * @param asynchronous Whether or not obfuscate asynchronous
++     * @param engineMode The engine mode (1 = replace ores, 2 = fake ores, 3 = fake ores every third block)
++     * @param neighborsMode The neighbors mode (1 = don't load, 2 = wait until loaded, 3 = load)
++     * @param maxChunkY The maximum chunk section coordinate for obfuscating (= (maxChunkY + 1) * 16 blocks)
++     * @param obfuscateBlocks The blocks which should be obfuscated
++     * @param replacementOres The blocks (ores) which are used in engine mode 2 and 3 to replace hidden blocks
++     */
++    protected BlockPacketControllerObfuscate(ExecutorService executorService, Lock lock, boolean asynchronous, int engineMode, int neighborsMode, int maxChunkY, boolean[] obfuscateBlocks, IBlockData[] replacementOres) {
++        this.executorService = executorService;
++        noOpLock = lock;
++        this.asynchronous = asynchronous;
++        this.engineMode = engineMode;
++        this.neighborsMode = neighborsMode;
++        this.maxChunkY = maxChunkY;
++        this.obfuscateBlocks = obfuscateBlocks;
++        this.replacementOres = replacementOres;
++    }
++
++    /**
++     * Thread-safe (synchronized) singleton getter.
++     *
++     * @return The singleton instance of the executor service (Executors.newSingleThreadExecutor())
++     */
++    public static synchronized ExecutorService getExecutorServiceInstance() {
++        if (executorServiceInstance == null) {
++            executorServiceInstance = Executors.newSingleThreadExecutor();
++        }
++
++        return executorServiceInstance;
++    }
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock blocks or chunk sections from modification.
++     * This implementation returns a new instance of Lock in asynchronous mode and the singleton Lock.getNoOpInstance() else.
++     *
++     * @param chunk The chunk which needs the lock
++     * @return An instance of a Lock implementation
++     */
++    @Override
++    public Lock getChunkBlocksLock(Chunk chunk) {
++        return asynchronous ? new Lock() : noOpLock;
++    }
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock chunk data (everything that is needed to create the packet) from modification.
++     * This implementation returns a new instance of Lock in asynchronous mode and the singleton Lock.getNoOpInstance() else.
++     *
++     * @param chunk The chunk which needs the lock
++     * @return An instance of a Lock implementation
++     */
++    @Override
++    public Lock getChunkDataLock(Chunk chunk) {
++        return asynchronous ? new Lock() : noOpLock;
++    }
++
++    /**
++     * Called when a new chunk section is created.
++     * Returns an array of predefined block data for the DataPaletteBlock of the specified chunk section or null if there is no block data.
++     * This implementation returns the blocks which are used to obfuscate the original blocks.
++     *
++     * @param chunk The chunk which contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @return The array of predefined block data or null
++     */
++    @Override
++    public IBlockData[] getPredefinedBlockData(Chunk chunk, int chunkY) {
++        if (chunkY <= maxChunkY) {
++            switch (engineMode) {
++                case 1:
++                    switch (chunk.world.getWorld().getEnvironment()) {
++                        case NETHER:
++                            return new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
++                        case THE_END:
++                            return new IBlockData[] {Blocks.END_STONE.getBlockData()};
++                        default:
++                            return new IBlockData[] {Blocks.STONE.getBlockData()};
++                    }
++                case 2:
++                case 3:
++                    return replacementOres;
++            }
++        }
++
++        return null;
++    }
++
++    /**
++     * Called before the server attempts to create and send a PacketPlayOutMapChunk for the specified chunk (not for chunk updates).
++     * Returns false if and only if the packet should not be created now.
++     * In this case the chunk remains in the PlayerChunkMap and this method is called again later until this method returns true or the chunk is unloaded.
++     * This implementation returns false in neighbors mode 2 if and only if not all neighbors of the specified chunk are loaded and loads all neighbors in mode 3.
++     *
++     * @param chunk The chunk which the packet is created for
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return <code>false</code> in neighbors mode 2 if and only if not all neighbors of the specified chunk are loaded
++     */
++    @Override
++    public boolean onPacketCreate(Chunk chunk, int chunkSectionSelector) {
++        if (neighborsMode == 2) {
++            if (chunk.world.getChunkIfLoaded(chunk.locX - 1, chunk.locZ) == null || chunk.world.getChunkIfLoaded(chunk.locX + 1, chunk.locZ) == null || chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ - 1) == null || chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ + 1) == null) {
++                return false;
++            }
++        } else if (neighborsMode == 3) {
++            chunk.world.getChunkAt(chunk.locX - 1, chunk.locZ);
++            chunk.world.getChunkAt(chunk.locX + 1, chunk.locZ);
++            chunk.world.getChunkAt(chunk.locX, chunk.locZ - 1);
++            chunk.world.getChunkAt(chunk.locX, chunk.locZ + 1);
++        }
++
++        return true;
++    }
++
++    /**
++     * Called when packetPlayOutMapChunk is created and the data of chunk should be written to packetDataSerializer.
++     * This method is called instead of packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks).
++     * This implementation tries to get the nearby chunks synchronously (if loaded) and executes the code asynchronously in asynchronous mode.
++     *
++     * @param packetPlayOutMapChunk The packet which is created
++     * @param packetDataSerializer The data serializer of the specified packet
++     * @param chunk The chunk which the packet is created for and should be written to the data serializer
++     * @param writeSkyLightArray Whether or not the sky light array should be written to the data serializer
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return The written chunk sections in synchronous mode, 0 otherwise (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = not written, 1 = written)
++     */
++    @Override
++    public int createPacket(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketDataSerializer packetDataSerializer, Chunk chunk, boolean writeSkyLightArray, int chunkSectionSelector) {
++        Chunk[] nearbyChunks = {chunk.world.getChunkIfLoaded(chunk.locX - 1, chunk.locZ), chunk.world.getChunkIfLoaded(chunk.locX + 1, chunk.locZ), chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ - 1), chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ + 1)};
++
++        if (asynchronous) {
++            executorService.execute(new ChunkPacketRunnable(packetPlayOutMapChunk, packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks));
++            return 0;
++        } else {
++            packetPlayOutMapChunk.setReady(true);
++            return packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks);
++        }
++    }
++
++    /**
++     * Called when a PacketPlayOutMapChunk is created and the blocks of the specified chunk section should be written to packetDataSerializer.
++     * This method is called instead of packetDataSerializer.a(dataBits.a()).
++     * This implementation obfuscates the data bits depending on the settings.
++     *
++     * @param packetDataSerializer The data serializer of the created packet
++     * @param chunk The chunk which the packet is created for and contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @param dataPaletteBlock The data palette for the blocks of the specified chunk section
++     * @param dataBits The dataBits of the blocks
++     * @param nearbyChunks An array with the length of 4 containing the chunks around the specified chunk or null if not loaded used for thread-safe chunk access (index 0 = x--, 1 = x++, 2 = z--, 3 = z++)
++     */
++    @Override
++    public void writeBlocks(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkY, DataPaletteBlock dataPaletteBlock, DataBits dataBits, Chunk[] nearbyChunks) {
++        long[] dataBitsArray = dataBits.getDataBitsArray();
++
++        if (chunkY <= maxChunkY && dataPaletteBlock.getCurrentPredefinedBlockData() != null && dataPaletteBlock.getCurrentPredefinedBlockData().length > 0 && nearbyChunks != null) {
++            // The iterator marking which random ore we should use next
++            int randomOre = 0;
++            // Boolean used to check if the engine mode is 3 (used for the initial value of x in the inner loop)
++            boolean engineMode3 = engineMode == 3;
++            // Increment the inner loop by 3 in engine mode 3 for more efficiency
++            int increment = engineMode3 ? 3 : 1;
++            // Stores the last array index of the data bits array which was obfuscated
++            int dataBitsArrayIndex = 0;
++            // Stores the last data which was obfuscated but not written to the packet
++            long currentData = dataBitsArray[dataBitsArrayIndex];
++            // Bits used for one block in the data bits array
++            int bitsPerBlock = dataBits.getBitsPerElement();
++            long blockBitMask = (1L << bitsPerBlock) - 1L;
++            // Write the length of the data bits array to the packet as it is in vanilla
++            packetDataSerializer.d(dataBitsArray.length);
++            // Optimization: Don't try to obfuscate edge blocks of this section if neighbor sections are not loaded or don't exist
++            // We can also add a check for ChunkSection#nonEmptyBlockCount == 0 here
++            int xMin = nearbyChunks[0] == null || nearbyChunks[0].getSections()[chunkY] == Chunk.a ? 1 : 0;
++            int xMax = nearbyChunks[1] == null || nearbyChunks[1].getSections()[chunkY] == Chunk.a ? 15 : 16;
++            int zMin = nearbyChunks[2] == null || nearbyChunks[2].getSections()[chunkY] == Chunk.a ? 1 : 0;
++            int zMax = nearbyChunks[3] == null || nearbyChunks[3].getSections()[chunkY] == Chunk.a ? 15 : 16;
++            int yMin = chunkY == 0 || chunk.getSections()[chunkY - 1] == Chunk.a ? 1 : 0;
++            int yMax = chunkY == chunk.getSections().length - 1 || chunk.getSections()[chunkY + 1] == Chunk.a ? 15 : 16;
++            // Work through the blocks and write the obfuscated data bits array to the packet
++            for (int y = yMin; y < yMax; y++) {
++                for (int z = zMin; z < zMax; z++) {
++                    // Shift the initial value of x and increment by 3 in engine mode 3
++                    int x;
++
++                    if (engineMode3) {
++                        x = (y + z) % 3;
++
++                        if (x < xMin) {
++                            x += 3;
++                        }
++                    } else {
++                        x = xMin;
++                    }
++
++                    for (; x < xMax; x += increment) {
++                        // Calculate the blockIndex from y, z and x and get the blockData from the dataPaletteBlock with the blockIndex
++                        // More efficient because we may use the blockIndex later again
++                        int blockIndex = y << 8 | z << 4 | x;
++                        IBlockData blockData = dataPaletteBlock.a(blockIndex);
++                        // Check if the block should be obfuscated
++                        if (obfuscateBlocks[Block.getId(blockData.getBlock())]) {
++                            // Check if the nearby blocks are not transparent, we can obfuscate
++                            if (isHiddenBlock(x, y, z, chunk, chunkY, nearbyChunks)) {
++                                // Get one of the predefined blocks which can be used for obfuscation
++                                if (randomOre >= dataPaletteBlock.getCurrentPredefinedBlockData().length) {
++                                    randomOre = 0;
++                                }
++
++                                long newBlockData = dataPaletteBlock.getCurrentPredefinedBlockData()[randomOre++];
++                                // Calculate the current index of the block in the data bits array
++                                int bitIndex = blockIndex * bitsPerBlock;
++                                int currentDataBitsArrayIndex = bitIndex / 64;
++                                // And check if it has changed
++                                if (currentDataBitsArrayIndex != dataBitsArrayIndex) {
++                                    // If so, we can write the last obfuscated data to the packet because it is finished with the obfuscation
++                                    packetDataSerializer.writeLong(currentData);
++                                    dataBitsArrayIndex++;
++                                    // We can also write all further content of the data bits array to the packet (until currentDataBitsArrayIndex is reached) because it didn't change
++                                    while (dataBitsArrayIndex < currentDataBitsArrayIndex) {
++                                        packetDataSerializer.writeLong(dataBitsArray[dataBitsArrayIndex]);
++                                        dataBitsArrayIndex++;
++                                    }
++                                    // Now we get the data which has to be obfuscated
++                                    currentData = dataBitsArray[dataBitsArrayIndex];
++                                }
++                                // Obfuscate currentData
++                                int bitIndexInArrayValue = bitIndex % 64;
++                                currentData = currentData & ~(blockBitMask << bitIndexInArrayValue) | (newBlockData & blockBitMask) << bitIndexInArrayValue;
++                                // Check if the data of the current block is splitted to the next index of the data bits array
++                                int nextBlockBitIndexInArrayValue = bitIndexInArrayValue + bitsPerBlock;
++
++                                if (nextBlockBitIndexInArrayValue > 64) {
++                                    // If so, we can write currentData to the packet because it is finished with the obfuscation
++                                    packetDataSerializer.writeLong(currentData);
++                                    dataBitsArrayIndex++;
++                                    // Get the data at the next index
++                                    currentData = dataBitsArray[dataBitsArrayIndex];
++                                    // And obfuscate it
++                                    nextBlockBitIndexInArrayValue -= 64;
++                                    currentData = currentData >>> nextBlockBitIndexInArrayValue << nextBlockBitIndexInArrayValue | (newBlockData & blockBitMask) >> (bitsPerBlock - nextBlockBitIndexInArrayValue);
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++            // Write the rest of the data bits array to the packet
++            packetDataSerializer.writeLong(currentData);
++            dataBitsArrayIndex++;
++
++            while (dataBitsArrayIndex < dataBitsArray.length) {
++                packetDataSerializer.writeLong(dataBitsArray[dataBitsArrayIndex]);
++                dataBitsArrayIndex++;
++            }
++        } else {
++            packetDataSerializer.a(dataBitsArray);
++        }
++    }
++
++    /**
++     * Called when the block at the specified block position in the specified world changes and nearby blocks become visible for players.
++     * This implementation marks the blocks arround the specified block position as dirty so that a block update is forced.
++     *
++     * @param world The world of the changed block
++     * @param blockPosition The block position of the changed block
++     */
++    @Override
++    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
++        // 2 is the radius, we shouldn't change it as that would make it exponentially slower
++        updateNearbyBlocks(world, blockPosition, 2, false);
++    }
++
++    private void updateNearbyBlocks(World world, BlockPosition blockPosition, int radius, boolean updateSelf) {
++        // If the block in question is loaded
++        if (world.isLoaded(blockPosition)) {
++            // Get block id
++            Block block = world.getType(blockPosition).getBlock();
++            // See if it needs update
++            if (updateSelf && obfuscateBlocks[Block.getId(block)]) {
++                // Send the update
++                world.notify(blockPosition);
++            }
++            // Check other blocks for updates
++            if (radius > 0) {
++                updateNearbyBlocks(world, blockPosition.east(), radius - 1, true);
++                updateNearbyBlocks(world, blockPosition.west(), radius - 1, true);
++                updateNearbyBlocks(world, blockPosition.up(), radius - 1, true);
++                updateNearbyBlocks(world, blockPosition.down(), radius - 1, true);
++                updateNearbyBlocks(world, blockPosition.south(), radius - 1, true);
++                updateNearbyBlocks(world, blockPosition.north(), radius - 1, true);
++            }
++        }
++    }
++
++    private static boolean isHiddenBlock(int x, int y, int z, Chunk chunk, int chunkY, Chunk[] nearbyChunks) {
++        return isSolidBlock(getType(x, y + 1, z, chunk, chunkY, nearbyChunks).getBlock())
++            && isSolidBlock(getType(x + 1, y, z, chunk, chunkY, nearbyChunks).getBlock())
++            && isSolidBlock(getType(x - 1, y, z, chunk, chunkY, nearbyChunks).getBlock())
++            && isSolidBlock(getType(x, y, z + 1, chunk, chunkY, nearbyChunks).getBlock())
++            && isSolidBlock(getType(x, y, z - 1, chunk, chunkY, nearbyChunks).getBlock())
++            && isSolidBlock(getType(x, y - 1, z, chunk, chunkY, nearbyChunks).getBlock());
++    }
++
++    private static IBlockData getType(int x, int y, int z, Chunk chunk, int chunkY, Chunk[] nearbyChunks) {
++        if (x < 0) {
++            chunk = nearbyChunks[0];
++        } else if (x > 15) {
++            chunk = nearbyChunks[1];
++        } else if (z < 0) {
++            chunk = nearbyChunks[2];
++        } else if (z > 15) {
++            chunk = nearbyChunks[3];
++        }
++
++        int blockY = (chunkY << 4) + y;
++
++        if (blockY >= 0 && blockY >> 4 < chunk.getSections().length) {
++            ChunkSection chunkSection = chunk.getSections()[blockY >> 4];
++
++            if (chunkSection != Chunk.a) {
++                return chunkSection.getType(x & 15, y & 15, z & 15);
++            }
++        }
++
++        return Blocks.AIR.getBlockData();
++    }
++
++    private static boolean isSolidBlock(Block block) {
++        return block.isOccluding(block.getBlockData()) && block != Blocks.MOB_SPAWNER && block != Blocks.BARRIER;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketRunnable.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketRunnable.java
+new file mode 100644
+index 0000000..70ce27f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketRunnable.java
+@@ -0,0 +1,70 @@
++package com.destroystokyo.paper.antixray;
++
++import net.minecraft.server.Chunk;
++import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.server.PacketPlayOutMapChunk;
++
++/**
++ * Runnable which runs the code for writing the blocks to the PacketDataSerializer of a PacketPlayOutMapChunk
++ */
++public class ChunkPacketRunnable implements Runnable {
++
++    private final PacketPlayOutMapChunk packetPlayOutMapChunk;
++    private final PacketDataSerializer packetDataSerializer;
++    private final Chunk chunk;
++    private final boolean writeSkyLightArray;
++    private final int chunkSectionSelector;
++    private final Chunk[] nearbyChunks;
++
++    /**
++     * The constructor applies the blocks lock and the data lock of the specified chunk and the blocks lock of the specified nearby chunks.
++     *
++     * @param packetPlayOutMapChunk The packet which is created
++     * @param packetDataSerializer The data serializer of the specified packet
++     * @param chunk The chunk which the packet is created for and should be written to the data serializer
++     * @param writeSkyLightArray Whether or not the sky light array should be written to the data serializer
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents for one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @param nearbyChunks An array with the length of 4 containing the chunks around the specified chunk or null if not loaded used for thread-safe chunk access (index 0 = x--, 1 = x++, 2 = z--, 3 = z++)
++     */
++    public ChunkPacketRunnable(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketDataSerializer packetDataSerializer, Chunk chunk, boolean writeSkyLightArray, int chunkSectionSelector, Chunk[] nearbyChunks) {
++        chunk.blocksLock.lock();
++        chunk.dataLock.lock();
++
++        if (nearbyChunks != null) {
++            for (Chunk nearbyChunk : nearbyChunks) {
++                if (nearbyChunk != null) {
++                    nearbyChunk.blocksLock.lock();
++                }
++            }
++        }
++
++        this.packetPlayOutMapChunk = packetPlayOutMapChunk;
++        this.packetDataSerializer = packetDataSerializer;
++        this.chunk = chunk;
++        this.nearbyChunks = nearbyChunks;
++        this.writeSkyLightArray = writeSkyLightArray;
++        this.chunkSectionSelector = chunkSectionSelector;
++    }
++
++    /**
++     * The run method writes the chunk to the data serializer, sets the packet ready and unlocks the chunks.
++     */
++    @Override
++    public void run() {
++        try {
++            packetPlayOutMapChunk.setWrittenChunkSections(packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks));
++            packetPlayOutMapChunk.setReady(true);
++        } finally {
++            chunk.blocksLock.unlock();
++            chunk.dataLock.unlock();
++
++            if (nearbyChunks != null) {
++                for (Chunk nearbyChunk : nearbyChunks) {
++                    if (nearbyChunk != null) {
++                        nearbyChunk.blocksLock.unlock();
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/IBlockPacketController.java b/src/main/java/com/destroystokyo/paper/antixray/IBlockPacketController.java
+new file mode 100644
+index 0000000..8cc693a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/antixray/IBlockPacketController.java
+@@ -0,0 +1,87 @@
++package com.destroystokyo.paper.antixray;
++
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Chunk;
++import net.minecraft.server.DataBits;
++import net.minecraft.server.DataPaletteBlock;
++import net.minecraft.server.IBlockData;
++import net.minecraft.server.PacketPlayOutMapChunk;
++import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.server.World;
++
++/**
++ * IBlockPacketController is an interface with methods which are used to control which and how blocks are sent to the client.
++ */
++public interface IBlockPacketController {
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock blocks or chunk sections from modification.
++     *
++     * @param chunk The chunk which needs the lock
++     * @return An instance of a Lock implementation
++     */
++    public Lock getChunkBlocksLock(Chunk chunk);
++
++    /**
++     * Returns an instance of a Lock implementation used by the specified chunk to lock chunk data (everything that is needed to create the packet) from modification.
++     *
++     * @param chunk The chunk which needs the lock
++     * @return An instance of a Lock implementation
++     */
++    public Lock getChunkDataLock(Chunk chunk);
++
++    /**
++     * Called when a new chunk section is created.
++     * Returns an array of predefined block data for the DataPaletteBlock of the specified chunk section or null if there is no block data.
++     *
++     * @param chunk The chunk which contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @return The array of predefined block data or null
++     */
++    public IBlockData[] getPredefinedBlockData(Chunk chunk, int chunkY);
++
++    /**
++     * Called before the server attempts to create and send a PacketPlayOutMapChunk for the specified chunk (not for chunk updates).
++     * Returns false if and only if the packet should not be created now.
++     * In this case the chunk remains in the PlayerChunkMap and this method is called again later until this method returns true or the chunk is unloaded.
++     *
++     * @param chunk The chunk which the packet is created for
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return <code>true</code> if the packet should be sent now, or <code>false</code> if the packet should be sent later
++     */
++    public boolean onPacketCreate(Chunk chunk, int chunkSectionSelector);
++
++    /**
++     * Called when packetPlayOutMapChunk is created and the data of chunk should be written to packetDataSerializer.
++     * This method is called instead of packetPlayOutMapChunk.a(packetDataSerializer, chunk, writeSkyLightArray, chunkSectionSelector, nearbyChunks).
++     *
++     * @param packetPlayOutMapChunk The packet which is created
++     * @param packetDataSerializer The data serializer of the specified packet
++     * @param chunk The chunk which the packet is created for and should be written to the data serializer
++     * @param writeSkyLightArray Whether or not the sky light array should be written to the data serializer
++     * @param chunkSectionSelector The chunk sections which should be sent (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = don't send, 1 = send)
++     * @return The written chunk sections (each bit represents one chunk section, the LSB represents the lowest chunk section, 0 = not written, 1 = written)
++     */
++    public int createPacket(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketDataSerializer packetDataSerializer, Chunk chunk, boolean writeSkyLightArray, int chunkSectionSelector);
++
++    /**
++     * Called when a PacketPlayOutMapChunk is created and the blocks of the specified chunk section should be written to packetDataSerializer.
++     * This method is called instead of packetDataSerializer.a(dataBits.a()).
++     *
++     * @param packetDataSerializer The data serializer of the created packet
++     * @param chunk The chunk which the packet is created for and contains the chunk section
++     * @param chunkY The y-coordinate of the chunk section from 0 to 15
++     * @param dataPaletteBlock The data palette for the blocks of the specified chunk section
++     * @param dataBits The dataBits of the blocks
++     * @param nearbyChunks An array with the length of 4 containing the chunks around the specified chunk or null if not loaded used for thread-safe chunk access (index 0 = x--, 1 = x++, 2 = z--, 3 = z++)
++     */
++    public void writeBlocks(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkY, DataPaletteBlock dataPaletteBlock, DataBits dataBits, Chunk[] nearbyChunks);
++
++    /**
++     * Called when the block at the specified block position in the specified world changes and nearby blocks become visible for players.
++     *
++     * @param world The world of the changed block
++     * @param blockPosition The block position of the changed block
++     */
++    public void updateNearbyBlocks(World world, BlockPosition blockPosition);
++}
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/Lock.java b/src/main/java/com/destroystokyo/paper/antixray/Lock.java
+new file mode 100644
+index 0000000..5437a70
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/antixray/Lock.java
+@@ -0,0 +1,117 @@
++package com.destroystokyo.paper.antixray;
++
++import java.util.concurrent.atomic.AtomicInteger;
++
++/**
++ * Example use case of this Lock class:
++ * <pre><code>String[] lines;
++ *void setLine(int i, String line) { //only invoked by main thread
++ *    lines[i] = line;
++ *}
++ *void printLines() { //only invoked by main thread
++ *    for (String line : lines) {System.out.println(line);}
++ *}</code></pre>
++ * Make printLines() async:
++ * <pre><code>String[] lines;
++ *void setLine(int i, String line) { //only invoked by main thread
++ *    //lock
++ *    lines[i] = line;
++ *    //unlock
++ *}
++ *void printLines() { //only invoked by main thread
++ *    //this state of the array should be printed
++ *    new Thread() {@Override public void run() {
++ *        //here is a race condition because the main thread moved on
++ *        //and can invoke setLine()
++ *        //lock
++ *        for (String line : lines) {System.out.println(line);}
++ *        //unlock
++ *    }}.start();
++ *}</code></pre>
++ * The goal is to ensure that the correct state of the array is printed
++ * (-> the state when printLines() is invoked).
++ * As shown with the //lock and //unlock comments a normal locking system
++ * can't help here.
++ * Possible solutions:
++ * <ul>
++ * <li>Copy the array before starting the new thread and print the copy
++ * <li>Or use this Lock implementation (if setLine() is invoked infrequently)
++ * </ul>
++ * Code:
++ * <pre><code>Lock lock = new Lock();
++ *String[] lines;
++ *void setLine(int i, String line) { //only invoked by main thread
++ *    lock.waitUntilUnlock();
++ *    //no race condition possible here because
++ *    //lock.lock() is invoked on the same thread
++ *    lines[i] = line;
++ *}
++ *void printLines() { //only invoked by main thread
++ *    lock.lock();
++ *    new Thread() {@Override public void run() {
++ *        for (String line : lines) {System.out.println(line);}
++ *        lock.unlock();
++ *    }}.start();
++ *}</code></pre>
++ */
++public class Lock {
++
++    private static Lock noOpInstance = null;
++    private final AtomicInteger lockCount = new AtomicInteger();
++
++    /**
++     * Thread-safe (synchronized) singleton getter.
++     *
++     * @return The singleton instance of a no operation implementation of this class
++     */
++    public static synchronized Lock getNoOpInstance() {
++        if (noOpInstance == null) {
++            noOpInstance = new Lock() {
++                @Override
++                public void lock() {
++
++                }
++
++                @Override
++                public void unlock() {
++
++                }
++
++                @Override
++                public void waitUntilUnlock() {
++
++                }
++            };
++        }
++
++        return noOpInstance;
++    }
++
++    /**
++     * See example use case in class doc.
++     */
++    public void lock() {
++        lockCount.incrementAndGet();
++    }
++
++    /**
++     * See example use case in class doc.
++     */
++    public synchronized void unlock() {
++        lockCount.decrementAndGet();
++        notifyAll();
++    }
++
++    /**
++     * See example use case in class doc.
++     */
++    public synchronized void waitUntilUnlock() {
++        while (lockCount.get() > 0) {
++            try {
++                wait();
++            } catch (InterruptedException e) {
++
++            }
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 30c3d6c..46eb180 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -1,5 +1,20 @@
+ package net.minecraft.server;
+ 
++// Paper start - Async-Anti-Xray
++import com.destroystokyo.paper.antixray.Lock;
++// Used to lock data of a chunk which is used to create a chunk packet from modification while creating the chunk packet
++// Note that Lock#lock() and Lock#unlock() just increment and decrement a field and don't block the thread
++// Lock#waitUntilUnlock() freezes the main thread until this field is 0 again
++// However, the main thread is freezed rarely and the worst case is the behavior of synchronous mode timings
++// Lock#lock() is invoked on the main thread before the packet is submitted to the executor service to ensure that the right state of the chunk is sent
++// In other words, the chunk can't be modified while creating the packet in synchronous mode because there is only one thread
++// In asynchronous mode the data of the chunk is locked synchronously on the main thread before the chunk packet would be created in synchronous mode
++// This ensures synchronous mode behavior in asynchronous mode
++// Lock#unlock() is invoked asynchronously when the packet is ready to be sent and the data of the chunk can be modified again
++// Lock#waitUntilUnlock() should be invoked on the main thread everytime before data which is used to create a packet is modified
++// Note that a race condition such as Lock#lock() between Lock#waitUntilUnlock() and the data modification is not possible because Lock#lock() is also invoked on the main thread
++// For more information look at the docs of the Lock class
++// Paper end
+ import com.destroystokyo.paper.exception.ServerInternalException;
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.Maps;
+@@ -50,6 +65,10 @@ public class Chunk {
+     public boolean d;public void setShouldUnload(boolean unload) { this.d = unload; } public boolean isUnloading() { return d; } // Paper // OBFHELPER
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+ 
++    // Paper start - Async-Anti-Xray
++    public final Lock blocksLock; // Locks the sections array and the blocks from modification and is applied when a chunk packet of this or a nearby chunk (because the edge blocks are used) is created
++    public final Lock dataLock; // Locks the sky light, the emitted light and the biome index from modification and is applied when a chunk packet of this chunk is created
++    // Paper end
+     // Paper start
+     // Track the number of minecarts and items
+     // Keep this synced with entitySlices.add() and entitySlices.remove()
+@@ -96,6 +115,10 @@ public class Chunk {
+         this.y = Queues.newConcurrentLinkedQueue();
+         this.entitySlices = (List[]) (new List[16]); // Spigot
+         this.world = world;
++        // Paper start - Async-Anti-Xray - Initialize blocksLock and dataLock with new instances of Lock if Anti-Xray is enabled in asynchronous mode or with a no operation instance otherwise
++        this.blocksLock = this.world.blockPacketController.getChunkBlocksLock(this);
++        this.dataLock = this.world.blockPacketController.getChunkDataLock(this);
++        // Paper end
+         this.locX = i;
+         this.locZ = j;
+         this.heightMap = new int[256];
+@@ -129,7 +152,16 @@ public class Chunk {
+                         int j1 = i1 >> 4;
+ 
+                         if (this.sections[j1] == Chunk.a) {
+-                            this.sections[j1] = new ChunkSection(j1 << 4, flag1);
++                            // Paper start - (Async-)Anti-Xray
++                            this.sections[j1] = new ChunkSection(this, j1 << 4, flag1, world.blockPacketController.getPredefinedBlockData(this, j1));
++                            // Inject the chunk for blocksLock and dataLock access in the ChunkSection class
++                            // Add the predefined blocks which are used for obfuscation to the data palette
++                            // This is the core idea of this Anti-Xray implementation
++                            // 1.9 added data palettes with a limited count of different blocks to save RAM and to reduce networking
++                            // If there is not enough space for the blocks which are used for obfuscation a new larger data palette and a conversion of the data bits would be necessary before creating the chunk packet
++                            // Adding those blocks from the beginning solves this problem
++                            // Predefined block data is null if Anti-Xray is disabled or this chunk section should not be obfuscated
++                            // Paper end
+                         }
+ 
+                         this.sections[j1].setType(k, i1 & 15, l, iblockdata);
+@@ -495,7 +527,8 @@ public class Chunk {
+                     return null;
+                 }
+ 
+-                chunksection = new ChunkSection(j >> 4 << 4, !this.world.worldProvider.m());
++                chunksection = new ChunkSection(this, j >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, j >> 4)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
++                this.blocksLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Lock the sections array
+                 this.sections[j >> 4] = chunksection;
+                 flag = j >= i1;
+             }
+@@ -580,7 +613,8 @@ public class Chunk {
+         ChunkSection chunksection = this.sections[k >> 4];
+ 
+         if (chunksection == Chunk.a) {
+-            chunksection = new ChunkSection(k >> 4 << 4, !this.world.worldProvider.m());
++            chunksection = new ChunkSection(this, k >> 4 << 4, !this.world.worldProvider.m(), this.world.blockPacketController.getPredefinedBlockData(this, k >> 4)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
++            this.blocksLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Lock the sections array
+             this.sections[k >> 4] = chunksection;
+             this.initLighting();
+         }
+@@ -1177,6 +1211,7 @@ public class Chunk {
+         if (k == 255) {
+             biomebase = worldchunkmanager.getBiome(blockposition, Biomes.c);
+             k = BiomeBase.a(biomebase);
++            this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Lock the biome index
+             this.g[j << 4 | i] = (byte) (k & 255);
+         }
+ 
+@@ -1192,6 +1227,7 @@ public class Chunk {
+         if (this.g.length != abyte.length) {
+             Chunk.e.warn("Could not set level chunk biomes, array length is {} instead of {}", new Object[] { Integer.valueOf(abyte.length), Integer.valueOf(this.g.length)});
+         } else {
++            this.dataLock.waitUntilUnlock(); // Paper - Async-Anti-Xray - Lock the biome index
+             System.arraycopy(abyte, 0, this.g, 0, this.g.length);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 584a77d..db8f28e 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -377,7 +377,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         for (int k = 0; k < nbttaglist.size(); ++k) {
+             NBTTagCompound nbttagcompound1 = nbttaglist.get(k);
+             byte b0 = nbttagcompound1.getByte("Y");
+-            ChunkSection chunksection = new ChunkSection(b0 << 4, flag1);
++            ChunkSection chunksection = new ChunkSection(chunk, b0 << 4, flag1, world.blockPacketController.getPredefinedBlockData(chunk, b0)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
+             byte[] abyte = nbttagcompound1.getByteArray("Blocks");
+             NibbleArray nibblearray = new NibbleArray(nbttagcompound1.getByteArray("Data"));
+             NibbleArray nibblearray1 = nbttagcompound1.hasKeyOfType("Add", 7) ? new NibbleArray(nbttagcompound1.getByteArray("Add")) : null;
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index 27d0f99..5f4c0e9 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import javax.annotation.Nullable; // Paper - Anti-Xray
++
+ public class ChunkSection {
+ 
+     private final int yPos;
+@@ -8,10 +10,18 @@ public class ChunkSection {
+     final DataPaletteBlock blockIds; // Paper - package
+     private NibbleArray emittedLight;
+     private NibbleArray skyLight;
++    private final Chunk chunk; // Paper - Async-Anti-Xray - Get access to Chunk#blocksLock and Chunk#dataLock
+ 
++    // Paper start - Anti-Xray - Support default constructor
+     public ChunkSection(int i, boolean flag) {
++        this(null, i, flag, (IBlockData[]) null);
++    }
++    // Paper end
++
++    public ChunkSection(Chunk chunk, int i, boolean flag, @Nullable IBlockData[] predefinedBlockData) { // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
++        this.chunk = chunk; // Paper - Async-Anti-Xray
+         this.yPos = i;
+-        this.blockIds = new DataPaletteBlock();
++        this.blockIds = new DataPaletteBlock(predefinedBlockData); // Paper - Anti-Xray - Add predefined blocks
+         this.emittedLight = new NibbleArray();
+         if (flag) {
+             this.skyLight = new NibbleArray();
+@@ -19,10 +29,17 @@ public class ChunkSection {
+ 
+     }
+ 
+-    // CraftBukkit start
++    // Paper start - Anti-Xray - Support default constructor
+     public ChunkSection(int y, boolean flag, char[] blockIds) {
++        this(null, y, flag, blockIds, null);
++    }
++    // Paper end
++
++    // CraftBukkit start
++    public ChunkSection(Chunk chunk, int y, boolean flag, char[] blockIds, @Nullable IBlockData[] predefinedBlockData) { // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
++        this.chunk = chunk; // Paper - Async-Anti-Xray
+         this.yPos = y;
+-        this.blockIds = new DataPaletteBlock();
++        this.blockIds = new DataPaletteBlock(predefinedBlockData); // Paper - Anti-Xray - Add predefined blocks
+         for (int i = 0; i < blockIds.length; i++) {
+             int xx = i & 15;
+             int yy = (i >> 8) & 15;
+@@ -42,6 +59,12 @@ public class ChunkSection {
+     }
+ 
+     public void setType(int i, int j, int k, IBlockData iblockdata) {
++        // Paper start - Async-Anti-Xray - Lock the blocks
++        if (chunk != null) { // Support default constructor
++            chunk.blocksLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         IBlockData iblockdata1 = this.getType(i, j, k);
+         Block block = iblockdata1.getBlock();
+         Block block1 = iblockdata.getBlock();
+@@ -78,6 +101,12 @@ public class ChunkSection {
+     }
+ 
+     public void a(int i, int j, int k, int l) {
++        // Paper start - Async-Anti-Xray - Lock the sky light
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.skyLight.a(i, j, k, l);
+     }
+ 
+@@ -86,6 +115,12 @@ public class ChunkSection {
+     }
+ 
+     public void b(int i, int j, int k, int l) {
++        // Paper start - Async-Anti-Xray - Lock the emitted light
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.emittedLight.a(i, j, k, l);
+     }
+ 
+@@ -127,10 +162,22 @@ public class ChunkSection {
+     }
+ 
+     public void a(NibbleArray nibblearray) {
++        // Paper start - Async-Anti-Xray - Lock the emitted light
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.emittedLight = nibblearray;
+     }
+ 
+     public void b(NibbleArray nibblearray) {
++        // Paper start - Async-Anti-Xray - Lock the sky light
++        if (chunk != null) {
++            chunk.dataLock.waitUntilUnlock();
++        }
++        // Paper end
++
+         this.skyLight = nibblearray;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
+index fa0fd8a..4e9cc0e 100644
+--- a/src/main/java/net/minecraft/server/DataBits.java
++++ b/src/main/java/net/minecraft/server/DataBits.java
+@@ -51,6 +51,13 @@ public class DataBits {
+         }
+     }
+ 
++    // Paper start - Anti-Xray
++    public int getBitsPerElement() {
++        return this.b;
++    }
++    // Paper end
++
++    public long[] getDataBitsArray() { return this.a(); } // Paper - OBFHELPER
+     public long[] a() {
+         return this.a;
+     }
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 1f2fe87..6fb51d0 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -10,9 +10,43 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+     protected DataPalette c;
+     private int e;
+ 
++    // Paper start - Anti-Xray - Support default constructor
+     public DataPaletteBlock() {
+-        this.b(4);
++        this(null);
+     }
++    // Paper end
++
++    // Paper start - Anti-Xray - Constructor for predefined blocks
++    private final IBlockData[] predefinedBlockData; // The predefined block data which should always be added to the data palette
++    private final int[] currentPredefinedBlockData; // Cached predefined block data bits of the current data palette which are used for obfuscation
++
++    public DataPaletteBlock(@Nullable IBlockData[] predefinedBlockData) {
++        this.predefinedBlockData = predefinedBlockData;
++
++        if (predefinedBlockData == null) {
++            this.currentPredefinedBlockData = null;
++            this.b(4); // Default constructor
++        } else {
++            this.currentPredefinedBlockData = new int[predefinedBlockData.length];
++            // Count the bits of the maximum array index to initialize a data palette with enough space from the beginning
++            // The length of the array is used because air is also added to the data palette from the beginning
++            int maxIndex = predefinedBlockData.length;
++            int bitCount = 0;
++
++            while (maxIndex != 0) {
++                maxIndex >>= 1;
++                bitCount++;
++            }
++
++            this.b(bitCount == 0 ? 4 : bitCount); // Initialize a data palette with bitCount
++        }
++    }
++
++    @Nullable
++    public int[] getCurrentPredefinedBlockData() {
++        return this.currentPredefinedBlockData;
++    }
++    // Paper end
+ 
+     private static int b(int i, int j, int k) {
+         return j << 8 | k << 4 | i;
+@@ -32,6 +66,15 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+             }
+ 
+             this.c.a(DataPaletteBlock.a);
++
++            // Paper start - Anti-Xray - Add predefined blocks to the data palette and update the array with the new data bits
++            if (this.predefinedBlockData != null) {
++                for (int j = 0; j < this.predefinedBlockData.length; j++) {
++                    this.currentPredefinedBlockData[j] = this.c.a(this.predefinedBlockData[j]);
++                }
++            }
++            // Paper end
++
+             this.b = new DataBits(this.e, 4096);
+         }
+     }
+@@ -67,12 +110,20 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+         return this.a(b(i, j, k));
+     }
+ 
+-    protected IBlockData a(int i) {
++    public IBlockData a(int i) { // Paper - Anti-Xray - protected -> public (Used inside the obfuscator loop)
+         IBlockData iblockdata = this.c.a(this.b.a(i));
+ 
+         return iblockdata == null ? DataPaletteBlock.a : iblockdata;
+     }
+ 
++    // Paper start - (Async-)Anti-Xray - This method replaces b(PacketDataSerializer packetdataserializer) and includes parameters which are used for obfuscation and thread safe chunk access
++    public void writeBlocks(PacketDataSerializer packetDataSerializer, Chunk chunk, int y, Chunk[] nearbyChunks) {
++        packetDataSerializer.writeByte(this.e);
++        this.c.b(packetDataSerializer);
++        chunk.world.blockPacketController.writeBlocks(packetDataSerializer, chunk, y, this, this.b, nearbyChunks);
++    }
++    // Paper end
++
+     public void b(PacketDataSerializer packetdataserializer) {
+         packetdataserializer.writeByte(this.e);
+         this.c.b(packetdataserializer);
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index 0d8c438..a0a8dac 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -71,6 +71,7 @@ public class EntityFallingBlock extends Entity {
+                 blockposition = new BlockPosition(this);
+                 if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
+                     this.world.setAir(blockposition);
++                    this.world.blockPacketController.updateNearbyBlocks(this.world, blockposition); // Paper - Anti-Xray
+                 } else if (!this.world.isClientSide) {
+                     this.die();
+                     return;
+@@ -117,6 +118,7 @@ public class EntityFallingBlock extends Entity {
+                                     return;
+                                 }
+                                 this.world.setTypeAndData(blockposition, this.block, 3);
++                                this.world.blockPacketController.updateNearbyBlocks(this.world, blockposition); // Paper - Anti-Xray
+                                 // CraftBukkit end
+                                 if (block instanceof BlockFalling) {
+                                     ((BlockFalling) block).a_(this.world, blockposition);
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index 0b9bc91..dc4b9ce 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -233,6 +233,7 @@ public class Explosion {
+                 blockposition = (BlockPosition) iterator.next();
+                 IBlockData iblockdata = this.world.getType(blockposition);
+                 Block block = iblockdata.getBlock();
++                this.world.blockPacketController.updateNearbyBlocks(this.world, blockposition); // Paper - Anti-Xray
+ 
+                 if (flag) {
+                     double d0 = (double) ((float) blockposition.getX() + this.world.random.nextFloat());
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index d59fca4..dbbe726 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -138,8 +138,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     public void sendPacket(Packet<?> packet) {
+-        if (this.isConnected()) {
+-            this.m();
++        if (this.isConnected() && this.trySendQueue() && !(packet instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) packet).isReady())) { // Paper - Async-Anti-Xray - Add chunk packets which are not ready or all packets if the queue contains a chunk packet which is not ready to the queue and send the packets later in the right order
++            //this.m(); // Paper - Async-Anti-Xray - Move to if statement (this.trySendQueue())
+             this.a(packet, (GenericFutureListener[]) null);
+         } else {
+             this.j.writeLock().lock();
+@@ -154,8 +154,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     public void sendPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
+-        if (this.isConnected()) {
+-            this.m();
++        if (this.isConnected() && this.trySendQueue() && !(packet instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) packet).isReady())) { // Paper - Async-Anti-Xray - Add chunk packets which are not ready or all packets if the queue contains a chunk packet which is not ready to the queue and send the packets later in the right order
++            //this.m(); // Paper - Async-Anti-Xray - Move to if statement (this.trySendQueue())
+             this.a(packet, (GenericFutureListener[]) ArrayUtils.add(agenericfuturelistener, 0, genericfuturelistener));
+         } else {
+             this.j.writeLock().lock();
+@@ -210,21 +210,33 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+     }
+ 
+-    private void m() {
++    private boolean trySendQueue() { return this.m(); } // Paper - OBFHELPER
++    private boolean m() { // Paper - Async-Anti-Xray - void -> boolean used in sendPacket
+         if (this.channel != null && this.channel.isOpen()) {
+             this.j.readLock().lock();
+ 
+             try {
+                 while (!this.i.isEmpty()) {
+-                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
+-
+-                    this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.peek(); // Paper - Async-Anti-Xray - poll() -> peek()
++
++                    if (networkmanager_queuedpacket != null) { // Paper - Aync-Anti-Xray - Fix NPE (possible vanilla bug caused by handleDisconnection())
++                        if (networkmanager_queuedpacket.a instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) networkmanager_queuedpacket.a).isReady()) { // Paper - Async-Anti-Xray - Return false if the queue contains a not ready chunk packet
++                            return false; // Paper - Aync-Anti-Xray
++                        } else {
++                            this.i.poll(); // Paper - Async-Anti-Xray - poll() here
++                            this.a(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++                        }
++                    } else {
++                        this.i.poll(); // Paper - Aync-Anti-Xray - The queue is probably empty but if the queue really contains null, remove it to avoid an endless loop
++                    }
+                 }
+             } finally {
+                 this.j.readLock().unlock();
+             }
+ 
+         }
++
++        return true; // Paper - Async-Anti-Xray - Return true if all packets where sent
+     }
+ 
+     public void a() {
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+index 925e27d..c4a3ac5 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+@@ -16,8 +16,13 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+     private byte[] d;
+     private List<NBTTagCompound> e;
+     private boolean f;
++    private volatile boolean ready = false; // Paper - Async-Anti-Xray - Used by the network manager to check if the packet is ready to be sent
+ 
+-    public PacketPlayOutMapChunk() {}
++    // Paper start - Async-Anti-Xray - Set ready to true
++    public PacketPlayOutMapChunk() {
++        this.ready = true;
++    }
++    // Paper end
+ 
+     public PacketPlayOutMapChunk(Chunk chunk, int i) {
+         this.a = chunk.locX;
+@@ -26,7 +31,8 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         boolean flag = !chunk.getWorld().worldProvider.m();
+ 
+         this.d = new byte[this.a(chunk, flag, i)];
+-        this.c = this.a(new PacketDataSerializer(this.g()), chunk, flag, i);
++        //this.c = this.a(new PacketDataSerializer(this.g()), chunk, flag, i); // Paper - Async-Anti-Xray - Call the method of the block packet controller instead, which decides about synchronous or asynchronous method call
++        this.c = chunk.world.blockPacketController.createPacket(this, new PacketDataSerializer(this.g()), chunk, flag, i); // Paper - Async-Anti-Xray - Note that this.c is set later in asynchronous mode
+         this.e = Lists.newArrayList();
+         Iterator iterator = chunk.getTileEntities().entrySet().iterator();
+ 
+@@ -45,6 +51,20 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+ 
+     }
+ 
++    // Paper start - Async-Anti-Xray
++    public boolean isReady() {
++        return this.ready;
++    }
++
++    public void setReady(boolean ready) {
++        this.ready = ready;
++    }
++
++    public void setWrittenChunkSections(int writtenChunkSections) { // Used to set this.c to the return value of this.a(PacketDataSerializer packetdataserializer, Chunk chunk, boolean flag, int i, Chunk[] nearbyChunks) in asynchronous mode
++        this.c = writtenChunkSections;
++    }
++    // Paper end
++
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+         this.a = packetdataserializer.readInt();
+         this.b = packetdataserializer.readInt();
+@@ -97,7 +117,14 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         return bytebuf;
+     }
+ 
++    // Paper start - Async-Anti-Xray - Support default method
+     public int a(PacketDataSerializer packetdataserializer, Chunk chunk, boolean flag, int i) {
++        Chunk[] nearbyChunks = {chunk.world.getChunkIfLoaded(chunk.locX - 1, chunk.locZ), chunk.world.getChunkIfLoaded(chunk.locX + 1, chunk.locZ), chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ - 1), chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ + 1)};
++        return this.a(packetdataserializer, chunk, flag, i, nearbyChunks);
++    }
++    // Paper end
++
++    public int a(PacketDataSerializer packetdataserializer, Chunk chunk, boolean flag, int i, Chunk[] nearbyChunks) { // Paper - Async-Anti-Xray - Add nearbyChunks for thread safe chunk access (This method is called asynchronously in asynchonous mode)
+         int j = 0;
+         ChunkSection[] achunksection = chunk.getSections();
+         int k = 0;
+@@ -107,7 +134,8 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+ 
+             if (chunksection != Chunk.a && (!this.e() || !chunksection.a()) && (i & 1 << k) != 0) {
+                 j |= 1 << k;
+-                chunksection.getBlocks().b(packetdataserializer);
++                //chunksection.getBlocks().b(packetdataserializer); // Paper - Anti-Xray - Call the writeBlocks method
++                chunksection.getBlocks().writeBlocks(packetdataserializer, chunk, k, nearbyChunks); // Paper - (Async-)Anti-Xray - Call this method insteadand with parameters which are used for obfuscation and thread safe chunk access
+                 packetdataserializer.writeBytes(chunksection.getEmittedLightArray().asBytes());
+                 if (flag) {
+                     packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index f109e98..f8a8389 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -134,6 +134,8 @@ public class PlayerChunk {
+             return false;
+         } else if (!this.chunk.isReady()) {
+             return false;
++        } else if (!this.chunk.world.blockPacketController.onPacketCreate(this.chunk, '\uffff')) { // Paper - Anti-Xray - Nearby chunks should be loaded before creating the packet to make the obfuscation of the chunk-edges possible (depending on anti-xray settings)
++            return false; // Paper - Anti-Xray - If the nearby chunks are not loaded and should be loaded first, return false so that this method is called again
+         } else {
+             this.dirtyCount = 0;
+             this.h = 0;
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 6eaecd8..47f9d94 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -202,6 +202,7 @@ public class PlayerInteractManager {
+             }
+ 
+         }
++        this.world.blockPacketController.updateNearbyBlocks(this.world, blockposition); // Paper - Anti-Xray
+     }
+ 
+     public void a(BlockPosition blockposition) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b3d4f86..d64c87b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -35,6 +35,9 @@ import org.bukkit.generator.ChunkGenerator;
+ 
+ // Paper start
+ import java.util.Set;
++import com.destroystokyo.paper.antixray.BlockPacketController; // Paper - Anti-Xray - Default singleton implementation for vanilla
++import com.destroystokyo.paper.antixray.BlockPacketControllerObfuscate; // Paper - Anti-Xray - Anti-Xray implementation
++import com.destroystokyo.paper.antixray.IBlockPacketController; // Paper - Anti-Xray - Interface with methods used to control which and how blocks are sent
+ import com.google.common.collect.Sets;
+ // Paper end
+ 
+@@ -135,6 +138,7 @@ public abstract class World implements IBlockAccess {
+     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+ 
+     public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
++    public final IBlockPacketController blockPacketController; // Paper - Anti-Xray - This per world instance handles all tasks related with Anti-Xray depending on the configuration
+ 
+     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
+     private boolean guardEntityList; // Spigot
+@@ -166,6 +170,7 @@ public abstract class World implements IBlockAccess {
+     protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
+         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
++        this.blockPacketController = this.paperConfig.antiXray ? new BlockPacketControllerObfuscate(paperConfig) : BlockPacketController.getInstance(); // Paper - Anti-Xray - If enabled use the obfuscate implementation else use the default singleton implementation for vanilla
+         this.generator = gen;
+         this.world = new CraftWorld((WorldServer) this, gen, env);
+         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+@@ -467,6 +472,18 @@ public abstract class World implements IBlockAccess {
+         return this.setTypeAndData(blockposition, iblockdata, 3);
+     }
+ 
++    // Paper start - Anti-Xray - notify from 1.8
++    public void notify(BlockPosition blockposition) {
++        for (int j = 0; j < this.u.size(); ++j) {
++            IWorldAccess access = this.u.get(j);
++            if (access instanceof WorldManager) {
++                access.a(null, blockposition, null, null, 0);
++            }
++        }
++
++    }
++    // Paper end
++
+     public void notify(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, int i) {
+         for (int j = 0; j < this.u.size(); ++j) {
+             ((IWorldAccess) this.u.get(j)).a(this, blockposition, iblockdata, iblockdata1, i);
+@@ -523,6 +540,7 @@ public abstract class World implements IBlockAccess {
+         this.e(blockposition.up(), block);
+         this.e(blockposition.north(), block);
+         this.e(blockposition.south(), block);
++        this.blockPacketController.updateNearbyBlocks(this, blockposition); // Paper - Anti-Xray
+     }
+ 
+     public void a(BlockPosition blockposition, Block block, EnumDirection enumdirection) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+index aa292e3..a70a552 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -73,7 +73,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+                 }
+                 // Build chunk section
+                 if (emptyTest != 0) {
+-                    csect[sec] = new ChunkSection(sec << 4, true, section);
++                    csect[sec] = new ChunkSection(chunk, sec << 4, true, section, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
+                 }
+             }
+         }
+@@ -98,7 +98,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+                         secBlkID[i] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
+                     }
+                     // Build chunk section
+-                    csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
++                    csect[sec] = new ChunkSection(chunk, sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
+                 }
+             }
+             else { // Else check for byte-per-block section data
+@@ -120,7 +120,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+                             Block b = Block.getById(btypes[sec][i] & 0xFF);
+                             secBlkID[i] = (char) Block.REGISTRY_ID.getId(b.getBlockData());
+                         }
+-                        csect[sec] = new ChunkSection(sec << 4, true, secBlkID);
++                        csect[sec] = new ChunkSection(chunk, sec << 4, true, secBlkID, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
+                     }
+                 }
+                 else { // Else, fall back to pre 1.2 method
+@@ -160,7 +160,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+                         }
+                         // If section built, finish prepping its state
+                         if (csbytes != null) {
+-                            ChunkSection cs = csect[sec] = new ChunkSection(sec << 4, true, csbytes);
++                            ChunkSection cs = csect[sec] = new ChunkSection(chunk, sec << 4, true, csbytes, this.world.blockPacketController.getPredefinedBlockData(chunk, sec)); // Paper - (Async-)Anti-Xray - Inject chunk and add predefined blocks
+                             cs.recalcBlockCounts();
+                         }
+                     }
+-- 
+1.9.4.msysgit.2
+
