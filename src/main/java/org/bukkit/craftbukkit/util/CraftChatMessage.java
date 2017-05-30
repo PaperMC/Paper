@@ -36,7 +36,7 @@ public final class CraftChatMessage {
     }
 
     public static ChatColor getColor(EnumChatFormat format) {
-        return ChatColor.getByChar(format.z);
+        return ChatColor.getByChar(format.character);
     }
 
     private static class StringMessage {

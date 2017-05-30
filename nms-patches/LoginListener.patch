@@ -21,7 +21,28 @@
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -82,10 +89,12 @@
+@@ -64,6 +71,20 @@
+ 
+     }
+ 
++    // CraftBukkit start
++    @Deprecated
++    public void disconnect(String s) {
++        try {
++            IChatBaseComponent ichatbasecomponent = new ChatComponentText(s);
++            LoginListener.c.info("Disconnecting {}: {}", this.c(), s);
++            this.networkManager.sendPacket(new PacketLoginOutDisconnect(ichatbasecomponent));
++            this.networkManager.close(ichatbasecomponent);
++        } catch (Exception exception) {
++            LoginListener.c.error("Error whilst disconnecting player", exception);
++        }
++    }
++    // CraftBukkit end
++
+     public void disconnect(IChatBaseComponent ichatbasecomponent) {
+         try {
+             LoginListener.c.info("Disconnecting {}: {}", this.c(), ichatbasecomponent.toPlainText());
+@@ -80,10 +101,12 @@
              this.i = this.a(this.i);
          }
  
@@ -30,14 +51,14 @@
 +        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, hostname);
  
 -        if (s != null) {
--            this.disconnect(s);
+-            this.disconnect(new ChatMessage(s, new Object[0]));
 +        if (s == null) {
-+            // this.disconnect(s);
++            // this.disconnect(new ChatMessage(s, new Object[0]));
 +            // CraftBukkit end
          } else {
              this.g = LoginListener.EnumProtocolState.ACCEPTED;
              if (this.server.aG() >= 0 && !this.networkManager.isLocal()) {
-@@ -94,7 +103,7 @@
+@@ -92,7 +115,7 @@
                          LoginListener.this.networkManager.setCompressionLevel(LoginListener.this.server.aG());
                      }
  
@@ -46,7 +67,7 @@
                          this.a((ChannelFuture) future);
                      }
                  }, new GenericFutureListener[0]);
-@@ -105,9 +114,9 @@
+@@ -103,9 +126,9 @@
  
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
@@ -58,7 +79,7 @@
              }
          }
  
-@@ -152,6 +161,43 @@
+@@ -150,6 +173,43 @@
  
                          LoginListener.this.i = LoginListener.this.server.az().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
                          if (LoginListener.this.i != null) {
@@ -102,8 +123,8 @@
                              LoginListener.c.info("UUID of player {} is {}", LoginListener.this.i.getName(), LoginListener.this.i.getId());
                              LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
                          } else if (LoginListener.this.server.R()) {
-@@ -171,6 +217,11 @@
-                             LoginListener.this.disconnect("Authentication servers are down. Please try again later, sorry!");
+@@ -169,6 +229,11 @@
+                             LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down", new Object[0]));
                              LoginListener.c.error("Couldn\'t verify username because servers are unavailable");
                          }
 +                        // CraftBukkit start - catch all exceptions
