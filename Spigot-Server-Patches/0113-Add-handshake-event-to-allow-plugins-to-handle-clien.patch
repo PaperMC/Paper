@@ -1,4 +1,4 @@
-From a6a5cd3d5aa8345b01724eb5073e1182ea389c06 Mon Sep 17 00:00:00 2001
+From b8c7bcb5f11570adba7ff9fd94cf116edfdd0a6a Mon Sep 17 00:00:00 2001
 From: kashike <kashike@vq.lc>
 Date: Wed, 13 Apr 2016 20:21:38 -0700
 Subject: [PATCH] Add handshake event to allow plugins to handle client
@@ -6,11 +6,11 @@ Subject: [PATCH] Add handshake event to allow plugins to handle client
 
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index a46df4b7f..f02263c34 100644
+index 8bac1e161..9640df356 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -72,8 +72,33 @@ public class HandshakeListener implements PacketHandshakingInListener {
-                 this.b.close(chatcomponenttext);
+                 this.b.close(chatmessage);
              } else {
                  this.b.setPacketListener(new LoginListener(this.a, this.b));
 +                // Paper start - handshake event
@@ -22,9 +22,9 @@ index a46df4b7f..f02263c34 100644
 +                    if (event.callEvent()) {
 +                        // If we've failed somehow, let the client know so and go no further.
 +                        if (event.isFailed()) {
-+                            chatcomponenttext = new ChatComponentText(event.getFailMessage());
-+                            this.b.sendPacket(new PacketLoginOutDisconnect(chatcomponenttext));
-+                            this.b.close(chatcomponenttext);
++                            chatmessage = new ChatMessage(event.getFailMessage());
++                            this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
++                            this.b.close(chatmessage);
 +                            return;
 +                        }
 +
@@ -45,5 +45,5 @@ index a46df4b7f..f02263c34 100644
                      if ( split.length == 3 || split.length == 4 ) {
                          packethandshakinginsetprotocol.hostname = split[0];
 -- 
-2.12.2
+2.13.0
 
