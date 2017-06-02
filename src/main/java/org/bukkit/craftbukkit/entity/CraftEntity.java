@@ -236,10 +236,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return new Vector(entity.motX, entity.motY, entity.motZ);
     }
 
-    public void setVelocity(Vector vel) {
-        entity.motX = vel.getX();
-        entity.motY = vel.getY();
-        entity.motZ = vel.getZ();
+    public void setVelocity(Vector velocity) {
+        Preconditions.checkArgument(velocity != null, "velocity");
+        velocity.checkFinite();
+        entity.motX = velocity.getX();
+        entity.motY = velocity.getY();
+        entity.motZ = velocity.getZ();
         entity.velocityChanged = true;
     }
 
@@ -269,6 +271,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
+        Preconditions.checkArgument(location != null, "location");
+        location.checkFinite();
+
         if (entity.isVehicle() || entity.dead) {
             return false;
         }
