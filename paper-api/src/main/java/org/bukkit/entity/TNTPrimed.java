@@ -28,9 +28,9 @@ public interface TNTPrimed extends Explosive {
      * org.bukkit.World#spawn(Location, Class)} method, for example.)
      * <p>
      * The source will become null if the chunk this primed TNT is in is
-     * unloaded then reloaded. If the source Entity becomes invalidated for
-     * any reason, such being removed from the world, the returned value will
-     * be null.
+     * unloaded then reloaded. The source entity may be invalid if for example
+     * it has since died or been unloaded. Callers should check
+     * {@link Entity#isValid()}.
      *
      * @return the source of this primed TNT
      */
