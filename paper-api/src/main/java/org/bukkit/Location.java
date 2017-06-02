@@ -6,7 +6,6 @@ import java.util.Map;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.NumberConversions;
-import static org.bukkit.util.NumberConversions.checkFinite;
 import org.bukkit.util.Vector;
 
 /**
@@ -556,6 +555,19 @@ public class Location implements Cloneable, ConfigurationSerializable {
     }
 
     /**
+     * Check if each component of this Location is finite.
+     *
+     * @throws IllegalArgumentException if any component is not finite
+     */
+    public void checkFinite() throws IllegalArgumentException {
+        NumberConversions.checkFinite(x, "x not finite");
+        NumberConversions.checkFinite(y, "y not finite");
+        NumberConversions.checkFinite(z, "z not finite");
+        NumberConversions.checkFinite(pitch, "pitch not finite");
+        NumberConversions.checkFinite(yaw, "yaw not finite");
+    }
+
+    /**
      * Safely converts a double (location coordinate) to an int (block
      * coordinate)
      *
@@ -566,22 +578,22 @@ public class Location implements Cloneable, ConfigurationSerializable {
         return NumberConversions.floor(loc);
     }
 
-	@Utility
-	public Map<String, Object> serialize() {
-		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("world", this.world.getName());
+    @Utility
+    public Map<String, Object> serialize() {
+        Map<String, Object> data = new HashMap<String, Object>();
+        data.put("world", this.world.getName());
 
-		data.put("x", this.x);
-		data.put("y", this.y);
-		data.put("z", this.z);
+        data.put("x", this.x);
+        data.put("y", this.y);
+        data.put("z", this.z);
 
-		data.put("yaw", this.yaw);
-		data.put("pitch", this.pitch);
+        data.put("yaw", this.yaw);
+        data.put("pitch", this.pitch);
 
-		return data;
-	}
-	
-	 /**
+        return data;
+    }
+
+    /**
      * Required method for deserialization
      *
      * @param args map to deserialize
@@ -589,12 +601,12 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @throws IllegalArgumentException if the world don't exists
      * @see ConfigurationSerializable
      */
-	public static Location deserialize(Map<String, Object> args) {
-		World world = Bukkit.getWorld((String) args.get("world"));
-		if (world == null) {
-			throw new IllegalArgumentException("unknown world");
-		}
+    public static Location deserialize(Map<String, Object> args) {
+        World world = Bukkit.getWorld((String) args.get("world"));
+        if (world == null) {
+            throw new IllegalArgumentException("unknown world");
+        }
 
-		return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
-	}
+        return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
+    }
 }

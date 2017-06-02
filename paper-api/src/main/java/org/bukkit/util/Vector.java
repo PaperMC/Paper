@@ -7,7 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
-import static org.bukkit.util.NumberConversions.checkFinite;
 
 /**
  * Represents a mutable vector. Because the components of Vectors are mutable,
@@ -614,6 +613,17 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      */
     public BlockVector toBlockVector() {
         return new BlockVector(x, y, z);
+    }
+
+    /**
+     * Check if each component of this Vector is finite.
+     *
+     * @throws IllegalArgumentException if any component is not finite
+     */
+    public void checkFinite() throws IllegalArgumentException {
+        NumberConversions.checkFinite(x, "x not finite");
+        NumberConversions.checkFinite(y, "y not finite");
+        NumberConversions.checkFinite(z, "z not finite");
     }
 
     /**
