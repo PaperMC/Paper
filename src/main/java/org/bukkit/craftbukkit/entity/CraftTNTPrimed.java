@@ -55,14 +55,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     public Entity getSource() {
         EntityLiving source = getHandle().getSource();
 
-        if (source != null) {
-            Entity bukkitEntity = source.getBukkitEntity();
-
-            if (bukkitEntity.isValid()) {
-                return bukkitEntity;
-            }
-        }
-
-        return null;
+        return (source != null) ? source.getBukkitEntity() : null;
     }
 }
