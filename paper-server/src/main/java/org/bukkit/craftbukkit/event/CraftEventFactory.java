@@ -1041,9 +1041,10 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockFormEvent(World world, BlockPosition pos, net.minecraft.server.Block block, @Nullable Entity entity) {
+    public static boolean handleBlockFormEvent(World world, BlockPosition pos, IBlockData block, @Nullable Entity entity) {
         BlockState blockState = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState();
-        blockState.setType(CraftMagicNumbers.getMaterial(block));
+        blockState.setType(CraftMagicNumbers.getMaterial(block.getBlock()));
+        blockState.setRawData((byte) block.getBlock().toLegacyData(block));
 
         BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
         world.getServer().getPluginManager().callEvent(event);
