@@ -17,21 +17,23 @@ index 1381d234e..00208ff45 100644
      private final class BooleanWrapper {
          private boolean value = true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 87813d59c..0a05da58f 100644
+index c39281247..a664c145d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
-     }
- 
-     public void setVelocity(Vector vel) {
+     public void setVelocity(Vector velocity) {
+         Preconditions.checkArgument(velocity != null, "velocity");
+         velocity.checkFinite();
++
 +        // Paper start - Warn server owners when plugins try to set super high velocities
-+        if (!(this instanceof org.bukkit.entity.Projectile) && isUnsafeVelocity(vel)) {
-+            CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity " + entity.getName() + " id #" + getEntityId() + " to (" + vel.getX() + "," + vel.getY() + "," + vel.getZ() + ").");
++        if (!(this instanceof org.bukkit.entity.Projectile) && isUnsafeVelocity(velocity)) {
++            CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity " + entity.getName() + " id #" + getEntityId() + " to (" + velocity.getX() + "," + velocity.getY() + "," + velocity.getZ() + ").");
 +        }
 +        // Paper end
-         entity.motX = vel.getX();
-         entity.motY = vel.getY();
-         entity.motZ = vel.getZ();
++
+         entity.motX = velocity.getX();
+         entity.motY = velocity.getY();
+         entity.motZ = velocity.getZ();
          entity.velocityChanged = true;
      }
  
@@ -53,8 +55,6 @@ index 87813d59c..0a05da58f 100644
 +        final double z = vel.getZ();
 +
 +        if (x > 4 || x < -4 || y > 4 || y < -4 || z > 4 || z < -4) {
-+            return true;
-+        } else if (x != x || y != y || z != z) { // NaN check
 +            return true;
 +        }
 +
