@@ -1,4 +1,4 @@
-From 68cdac4d3d6d018abe0cb1a307181b998c784acb Mon Sep 17 00:00:00 2001
+From d8c5a6c314c708f8018f59df2ba4ad4d34a94626 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 27 Dec 2016 22:38:06 -0500
 Subject: [PATCH] Activation Range Improvements
@@ -6,7 +6,7 @@ Subject: [PATCH] Activation Range Improvements
 Fixes and adds new Immunities to improve gameplay behavior
 
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
-index 653aba2ba..6f18bd75b 100644
+index 0c82c6f5b..9659a45ef 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
 +++ b/src/main/java/net/minecraft/server/EntityCreature.java
 @@ -10,6 +10,7 @@ public abstract class EntityCreature extends EntityInsentient {
@@ -18,7 +18,7 @@ index 653aba2ba..6f18bd75b 100644
      private float b;
      private final float c;
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 9bfc14e43..1fae017c0 100644
+index e50f7a3ca..194d55c30 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -73,7 +73,7 @@ public abstract class EntityLiving extends Entity {
@@ -31,28 +31,16 @@ index 9bfc14e43..1fae017c0 100644
      protected int ticksFarFromPlayer;
      protected float aW;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
-index 8e165f9db..05ac3811e 100644
+index dbda68dd0..af49b7273 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -363,6 +363,7 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
          return this.bM != null;
      }
  
-+    public boolean inCaravan() { return this.dU(); } // Paper - OBFHELPER
-     public boolean dU() {
++    public boolean inCaravan() { return this.dW(); } // Paper - OBFHELPER
+     public boolean dW() {
          return this.bL != null;
-     }
-diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
-index faa82f764..ba7f250c2 100644
---- a/src/main/java/net/minecraft/server/EntityVillager.java
-+++ b/src/main/java/net/minecraft/server/EntityVillager.java
-@@ -294,6 +294,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant {
-         return Math.max(((Integer) this.datawatcher.get(EntityVillager.bz)).intValue() % 6, 0);
-     }
- 
-+    public final boolean isMating() { return this.dk(); } // Paper - OBFHELPER
-     public boolean dk() {
-         return this.bB;
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index 83d9c43f3..1cb6652c2 100644
@@ -108,7 +96,7 @@ index e5b5e9887..e3781f3a8 100644
                          }
                      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 7396b35f5..428912cbc 100644
+index 47865c027..b08564618 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -20,6 +20,7 @@ import net.minecraft.server.EntityFireball;
@@ -130,28 +118,28 @@ index 7396b35f5..428912cbc 100644
              }
 -            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() != null )
 +            if ( entity instanceof EntityCreature )
-+            {
+             {
+-                return true;
 +                // Paper start
 +                EntityCreature creature = (EntityCreature) entity;
 +                if (creature.getGoalTarget() != null || creature.getMovingTarget() != null) {
 +                    return true;
 +                }
 +                // Paper end
-+            }
-+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).isMating() ) // Paper
+             }
+             if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).isInLove() )
              {
                  return true;
              }
--            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).dk()/* Getter for first boolean */ )
 +            // Paper start
 +            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
-             {
-                 return true;
-             }
++            {
++                return true;
++            }
 +            // Paper end
              if ( entity instanceof EntityAnimal )
              {
                  EntityAnimal animal = (EntityAnimal) entity;
 -- 
-2.13.0
+2.13.1
 
