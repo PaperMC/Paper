@@ -76,7 +76,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public ChatColor getColor() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return CraftChatMessage.getColor(team.getColor()); // PAIL: rename
+        return CraftChatMessage.getColor(team.getColor());
     }
 
     @Override
@@ -84,7 +84,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.notNull(color, "Color cannot be null");
         CraftScoreboard scoreboard = checkState();
 
-        team.setColor(CraftChatMessage.getColor(color)); // PAIL: rename
+        team.setColor(CraftChatMessage.getColor(color));
     }
 
     public boolean allowFriendlyFire() throws IllegalStateException {
