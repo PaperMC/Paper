@@ -553,6 +553,9 @@ public enum CraftSound {
     RECORD_WAIT("record.wait"),
     RECORD_WARD("record.ward"),
     UI_BUTTON_CLICK("ui.button.click"),
+    UI_TOAST_CHALLENGE_COMPLETE("ui.toast.challenge_complete"),
+    UI_TOAST_IN("ui.toast.in"),
+    UI_TOAST_OUT("ui.toast.out"),
     WEATHER_RAIN("weather.rain"),
     WEATHER_RAIN_ABOVE("weather.rain.above");
     private final String minecraftKey;
