@@ -2412,6 +2412,16 @@ public final class Bukkit {
     public static boolean reloadCommandAliases() {
         return server.reloadCommandAliases();
     }
+
+    /**
+     * Checks if player names should be suggested when a command returns {@code null} as
+     * their tab completion result.
+     *
+     * @return true if player names should be suggested
+     */
+    public static boolean suggestPlayerNamesWhenNullTabCompletions() {
+        return server.suggestPlayerNamesWhenNullTabCompletions();
+    }
     // Paper end
 
     @NotNull
