@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import org.fusesource.jansi.AnsiConsole;
+import net.minecrell.terminalconsole.TerminalConsoleAppender; // Paper
 
 public class Main {
     public static boolean useJline = true;
@@ -179,6 +179,8 @@ public class Main {
             }
 
             try {
+                // Paper start - Handled by TerminalConsoleAppender
+                /*
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                 String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
                 String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
@@ -196,9 +198,18 @@ public class Main {
                     // This ensures the terminal literal will always match the jline implementation
                     System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                 }
+                */
+
+                if (options.has("nojline")) {
+                    System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false");
+                    useJline = false;
+                }
+                // Paper end
 
                 if (options.has("noconsole")) {
                     useConsole = false;
+                    useJline = false; // Paper
+                    System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                 }
 
                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
@@ -226,7 +237,7 @@ public class Main {
                     System.out.println("Unable to read system info");
                 }
                 // Paper end
-
+                System.setProperty( "library.jansi.version", "Paper" ); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
                 System.out.println("Loading libraries, please wait...");
                 net.minecraft.server.Main.main(options);
             } catch (Throwable t) {

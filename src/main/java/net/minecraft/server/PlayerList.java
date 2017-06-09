@@ -79,8 +79,7 @@ public abstract class PlayerList {
 
     public PlayerList(MinecraftServer minecraftserver, IRegistryCustom.Dimension iregistrycustom_dimension, WorldNBTStorage worldnbtstorage, int i) {
         this.cserver = minecraftserver.server = new CraftServer((DedicatedServer) minecraftserver, this);
-        minecraftserver.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
-        minecraftserver.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(minecraftserver.server));
+        minecraftserver.console = new com.destroystokyo.paper.console.TerminalConsoleCommandSender(); // Paper
         // CraftBukkit end
 
         this.k = new GameProfileBanList(PlayerList.b);

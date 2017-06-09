@@ -17,7 +17,7 @@ public class ServerShutdownThread extends Thread {
             server.close();
         } finally {
             try {
-                server.reader.getTerminal().restore();
+                net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
             } catch (Exception e) {
             }
         }
