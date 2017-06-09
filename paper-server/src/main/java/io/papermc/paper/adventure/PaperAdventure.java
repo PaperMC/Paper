@@ -31,6 +31,7 @@ import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -129,6 +130,7 @@ public final class PaperAdventure {
     public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
     @Deprecated
     public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
+    public static final ANSIComponentSerializer ANSI_SERIALIZER = ANSIComponentSerializer.builder().flattener(FLATTENER).build();
     public static final Codec<Tag, String, CommandSyntaxException, RuntimeException> NBT_CODEC = new Codec<>() {
         @Override
         public @NotNull Tag decode(final @NotNull String encoded) throws CommandSyntaxException {

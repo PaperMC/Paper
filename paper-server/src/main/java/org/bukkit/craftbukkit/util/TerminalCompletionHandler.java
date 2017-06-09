@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jline.console.ConsoleReader;
-import jline.console.completer.CompletionHandler;
 
 /**
  * SPIGOT-6705: Make sure we print the display line again on tab completion, so that the user does not get stuck on it
  * e.g. The user needs to press y / n to continue
  */
-public class TerminalCompletionHandler implements CompletionHandler {
+public class TerminalCompletionHandler /* implements CompletionHandler */ { /* Paper - comment out whole class
 
     private final TerminalConsoleWriterThread writerThread;
     private final CompletionHandler delegate;
@@ -50,4 +48,5 @@ public class TerminalCompletionHandler implements CompletionHandler {
 
         return result;
     }
+*/ // Paper end - comment out whole class
 }

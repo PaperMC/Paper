@@ -5,6 +5,12 @@ plugins {
     `maven-publish`
 }
 
+val log4jPlugins = sourceSets.create("log4jPlugins")
+configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+    extendsFrom(configurations.compileClasspath.get())
+}
+val alsoShade: Configuration by configurations.creating
+
 // Paper start - configure mockito agent that is needed in newer java versions
 val mockitoAgent = configurations.register("mockitoAgent")
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
@@ -20,7 +26,22 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 dependencies {
     implementation(project(":paper-api"))
     implementation("ca.spottedleaf:concurrentutil:0.0.2") // Paper - Add ConcurrentUtil dependency
-    implementation("jline:jline:2.12.1")
+    // Paper start
+    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
+    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation("net.minecrell:terminalconsoleappender:1.3.0")
+    implementation("net.kyori:adventure-text-serializer-ansi:4.17.0") // Keep in sync with adventureVersion from Paper-API build file
+    /*
+          Required to add the missing Log4j2Plugins.dat file from log4j-core
+          which has been removed by Mojang. Without it, log4j has to classload
+          all its classes to check if they are plugins.
+          Scanning takes about 1-2 seconds so adding this speeds up the server start.
+     */
+    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+    runtimeOnly(log4jPlugins.output)
+    alsoShade(log4jPlugins.output)
+    // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.7.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
@@ -93,6 +114,19 @@ tasks.check {
     dependsOn(scanJar)
 }
 // Paper end
+// Paper start - use TCA for console improvements
+tasks.serverJar {
+    from(alsoShade.elements.map {
+        it.map { f ->
+            if (f.asFile.isFile) {
+                zipTree(f.asFile)
+            } else {
+                f.asFile
+            }
+        }
+    })
+}
+// Paper end - use TCA for console improvements
 
 tasks.test {
     include("**/**TestSuite.class")

@@ -7,13 +7,9 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jline.console.ConsoleReader;
-import jline.console.completer.CandidateListCompletionHandler;
 import org.bukkit.craftbukkit.Main;
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Erase;
 
-public class TerminalConsoleWriterThread extends Thread {
+public class TerminalConsoleWriterThread /*extends Thread*/ {/* // Paper - Comment out entire class
     private final ResourceBundle bundle = ResourceBundle.getBundle(CandidateListCompletionHandler.class.getName(), Locale.getDefault());
     private final ConsoleReader reader;
     private final OutputStream output;
@@ -70,4 +66,5 @@ public class TerminalConsoleWriterThread extends Thread {
     void setCompletion(int completion) {
         this.completion = completion;
     }
+*/ // Paper - Comment out entire class
 }

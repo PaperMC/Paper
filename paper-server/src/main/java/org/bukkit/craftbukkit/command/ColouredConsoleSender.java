@@ -5,15 +5,13 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jline.Terminal;
+//import jline.Terminal;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftServer;
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Attribute;
 
-public class ColouredConsoleSender extends CraftConsoleCommandSender {
+public class ColouredConsoleSender /*extends CraftConsoleCommandSender */{/* // Paper - disable
     private final Terminal terminal;
     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
     private final ChatColor[] colors = ChatColor.values();
@@ -93,5 +91,5 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
         } else {
             return new ColouredConsoleSender();
         }
-    }
+    }*/ // Paper
 }

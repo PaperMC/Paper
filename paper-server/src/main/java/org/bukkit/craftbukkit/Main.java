@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.util.PathConverter;
-import org.fusesource.jansi.AnsiConsole;
 
 public class Main {
     public static boolean useJline = true;
@@ -196,6 +195,8 @@ public class Main {
             }
 
             try {
+                // Paper start - Handled by TerminalConsoleAppender
+                /*
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                 String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
                 String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
@@ -213,9 +214,18 @@ public class Main {
                     // This ensures the terminal literal will always match the jline implementation
                     System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                 }
+                */
+
+                if (options.has("nojline")) {
+                    System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false");
+                    useJline = false;
+                }
+                // Paper end
 
                 if (options.has("noconsole")) {
                     Main.useConsole = false;
+                    useJline = false; // Paper
+                    System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                 }
 
                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
@@ -231,6 +241,8 @@ public class Main {
                     }
                 }
 
+                System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
+                System.setProperty("jdk.console", "java.base"); // Paper - revert default console provider back to java.base so we can have our own jline
                 System.out.println("Loading libraries, please wait...");
                 net.minecraft.server.Main.main(options);
             } catch (Throwable t) {

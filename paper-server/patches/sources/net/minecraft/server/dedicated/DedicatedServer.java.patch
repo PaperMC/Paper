@@ -34,7 +34,7 @@
      @Nullable
      private RconThread rconThread;
      public DedicatedServerSettings settings;
-@@ -81,25 +93,58 @@
+@@ -81,33 +93,99 @@
      private DebugSampleSubscriptionTracker debugSampleSubscriptionTracker;
      public ServerLinks serverLinks;
  
@@ -63,6 +63,9 @@
 +                if (!org.bukkit.craftbukkit.Main.useConsole) {
 +                    return;
 +                }
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
 +                jline.console.ConsoleReader bufferedreader = DedicatedServer.this.reader;
  
 +                // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
@@ -96,13 +99,16 @@
 +                            continue;
 +                        }
 +                        if (s.trim().length() > 0) { // Trim to filter lines which are just spaces
-+                            DedicatedServer.this.handleConsoleInput(s, DedicatedServer.this.createCommandSourceStack());
++                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
 +                        }
 +                        // CraftBukkit end
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -108,6 +153,29 @@
+                 }
+ 
++                */
++                // Paper end
              }
          };
  
@@ -114,6 +120,9 @@
 +        }
 +        global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
 +
++        // Paper start - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
++        /*
 +        final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
 +        for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
 +            if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
@@ -124,6 +133,8 @@
 +        TerminalConsoleWriterThread writerThread = new TerminalConsoleWriterThread(System.out, this.reader);
 +        this.reader.setCompletionHandler(new TerminalCompletionHandler(writerThread, this.reader.getCompletionHandler()));
 +        writerThread.start();
++        */
++        // Paper end - Not needed with TerminalConsoleAppender
 +
 +        System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
 +        System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
@@ -132,7 +143,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -126,13 +194,22 @@
+@@ -126,13 +204,22 @@
              this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
@@ -156,7 +167,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -156,10 +233,23 @@
+@@ -156,10 +243,23 @@
              return false;
          }
  
@@ -181,7 +192,7 @@
              DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
          }
  
-@@ -170,7 +260,7 @@
+@@ -170,7 +270,7 @@
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {
@@ -190,7 +201,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +268,13 @@
+@@ -178,13 +278,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -206,7 +217,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -197,7 +287,7 @@
+@@ -197,7 +297,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -215,7 +226,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
  
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(DedicatedServer.LOGGER));
-@@ -293,6 +383,7 @@
+@@ -293,6 +393,7 @@
              this.queryThreadGs4.stop();
          }
  
@@ -223,7 +234,7 @@
      }
  
      @Override
-@@ -302,8 +393,8 @@
+@@ -302,8 +403,8 @@
      }
  
      @Override
@@ -234,7 +245,7 @@
      }
  
      public void handleConsoleInput(String command, CommandSourceStack commandSource) {
-@@ -311,12 +402,22 @@
+@@ -311,12 +412,22 @@
      }
  
      public void handleConsoleInputs() {
@@ -258,7 +269,7 @@
      }
  
      @Override
-@@ -383,7 +484,7 @@
+@@ -383,7 +494,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -267,7 +278,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -541,16 +642,52 @@
+@@ -541,16 +652,52 @@
  
      @Override
      public String getPluginNames() {
@@ -324,7 +335,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +797,15 @@
+@@ -660,4 +807,15 @@
              }
          }
      }
