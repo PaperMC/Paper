@@ -382,4 +382,11 @@ public class SpigotConfig
             Bukkit.getLogger().info( "Debug logging is disabled" );
         }
     }
+
+    public static boolean disableAdvancementSaving;
+    public static List<String> disabledAdvancements;
+    private static void disabledAdvancements() {
+        SpigotConfig.disableAdvancementSaving = SpigotConfig.getBoolean("advancements.disable-saving", false);
+        SpigotConfig.disabledAdvancements = SpigotConfig.getList("advancements.disabled", Arrays.asList(new String[]{"minecraft:story/disabled"}));
+    }
 }
