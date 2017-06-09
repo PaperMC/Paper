@@ -771,6 +771,7 @@ public class CraftWorld implements World {
 
     public void setStorm(boolean hasStorm) {
         world.worldData.setStorm(hasStorm);
+        setWeatherDuration(0); // Reset weather duration (legacy behaviour)
     }
 
     public int getWeatherDuration() {
@@ -787,6 +788,7 @@ public class CraftWorld implements World {
 
     public void setThundering(boolean thundering) {
         world.worldData.setThundering(thundering);
+        setThunderDuration(0); // Reset weather duration (legacy behaviour)
     }
 
     public int getThunderDuration() {
