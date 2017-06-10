@@ -1,4 +1,4 @@
-From 641ad825cfd307896323c7de8fccada29951328b Mon Sep 17 00:00:00 2001
+From c511dea5f0acfa883e9b0d0c2acd313e3366d01f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -161,7 +161,7 @@ index 00000000..8c43e206
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 00000000..96057fc7
+index 00000000..feddcdbd
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 @@ -0,0 +1,81 @@
@@ -207,10 +207,10 @@ index 00000000..96057fc7
 +    /**
 +     * Wraps an event executor and associates a timing handler to it.
 +     *
-+     * @param executor
-+     * @param plugin
-+     * @param method
-+     * @param eventClass
++     * @param executor Executor to wrap
++     * @param plugin Owning plugin
++     * @param method EventHandler method
++     * @param eventClass Owning class
 +     */
 +    public TimedEventExecutor(EventExecutor executor, Plugin plugin, Method method, Class<? extends Event> eventClass) {
 +        this.executor = executor;
@@ -248,10 +248,10 @@ index 00000000..96057fc7
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 00000000..8b2d1b82
+index 00000000..b2260104
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,76 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -283,6 +283,8 @@ index 00000000..8b2d1b82
 +public interface Timing extends AutoCloseable {
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
++     *
++     * @return Timing
 +     */
 +    Timing startTiming();
 +
@@ -297,6 +299,8 @@ index 00000000..8b2d1b82
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     *
 +     * But only if we are on the primary thread.
++     *
++     * @return Timing
 +     */
 +    Timing startTimingIfSync();
 +
@@ -1184,7 +1188,7 @@ index 00000000..623dda49
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 00000000..0571c9e7
+index 00000000..32e4bb1e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
 @@ -0,0 +1,284 @@
@@ -1333,8 +1337,8 @@ index 00000000..0571c9e7
 +    }
 +
 +    /**
-+     * Sets whether or not the Timings should monitor at Verbose level.
-+     * <p/>
++     * <p>Sets whether or not the Timings should monitor at Verbose level.</p>
++     *
 +     * When Verbose is disabled, high-frequency timings will not be available.
 +     * Calling this will reset timing data.
 +     *
@@ -2284,10 +2288,10 @@ index 00000000..5edaba12
 +}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 00000000..5fdf7c4c
+index 00000000..96274975
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/JSONUtil.java
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,129 @@
 +package co.aikar.util;
 +
 +import com.google.common.base.Function;
@@ -2310,9 +2314,10 @@ index 00000000..5fdf7c4c
 +
 +    /**
 +     * Creates a key/value "JSONPair" object
-+     * @param key
-+     * @param obj
-+     * @return
++     *
++     * @param key Key to use
++     * @param obj Value to use
++     * @return JSONPair
 +     */
 +    public static JSONPair pair(String key, Object obj) {
 +        return new JSONPair(key, obj);
@@ -2323,9 +2328,10 @@ index 00000000..5fdf7c4c
 +    }
 +
 +    /**
-+     * Creates a new JSON object from multiple JsonPair key/value pairs
-+     * @param data
-+     * @return
++     * Creates a new JSON object from multiple JSONPair key/value pairs
++     *
++     * @param data JSONPairs
++     * @return Map
 +     */
 +    public static Map createObject(JSONPair... data) {
 +        return appendObjectData(new LinkedHashMap(), data);
@@ -2333,9 +2339,10 @@ index 00000000..5fdf7c4c
 +
 +    /**
 +     * This appends multiple key/value Obj pairs into a JSON Object
-+     * @param parent
-+     * @param data
-+     * @return
++     *
++     * @param parent Map to be appended to
++     * @param data Data to append
++     * @return Map
 +     */
 +    public static Map appendObjectData(Map parent, JSONPair... data) {
 +        for (JSONPair JSONPair : data) {
@@ -2346,8 +2353,9 @@ index 00000000..5fdf7c4c
 +
 +    /**
 +     * This builds a JSON array from a set of data
-+     * @param data
-+     * @return
++     *
++     * @param data Data to build JSON array from
++     * @return List
 +     */
 +    public static List toArray(Object... data) {
 +        return Lists.newArrayList(data);
@@ -2355,10 +2363,11 @@ index 00000000..5fdf7c4c
 +
 +    /**
 +     * These help build a single JSON array using a mapper function
-+     * @param collection
-+     * @param mapper
-+     * @param <E>
-+     * @return
++     *
++     * @param collection Collection to apply to
++     * @param mapper Mapper to apply
++     * @param <E> Element Type
++     * @return List
 +     */
 +    public static <E> List toArrayMapper(E[] collection, Function<E, Object> mapper) {
 +        return toArrayMapper(Lists.newArrayList(collection), mapper);
@@ -2377,10 +2386,11 @@ index 00000000..5fdf7c4c
 +
 +    /**
 +     * These help build a single JSON Object from a collection, using a mapper function
-+     * @param collection
-+     * @param mapper
-+     * @param <E>
-+     * @return
++     *
++     * @param collection Collection to apply to
++     * @param mapper Mapper to apply
++     * @param <E> Element Type
++     * @return Map
 +     */
 +    public static <E> Map toObjectMapper(E[] collection, Function<E, JSONPair> mapper) {
 +        return toObjectMapper(Lists.newArrayList(collection), mapper);
@@ -2413,10 +2423,10 @@ index 00000000..5fdf7c4c
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 00000000..79fa9d52
+index 00000000..24eae4be
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingIntMap.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,71 @@
 +/*
 + * Copyright (c) 2015. Starlis LLC / dba Empire Minecraft
 + *
@@ -2476,7 +2486,8 @@ index 00000000..79fa9d52
 +
 +    /**
 +     * Due to java stuff, you will need to cast it to (Function) for some cases
-+     * @param <T>
++     *
++     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
 +        @Override
@@ -2489,10 +2500,10 @@ index 00000000..79fa9d52
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 00000000..a9f29199
+index 00000000..1474384e
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,340 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2554,8 +2565,8 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Initializes an auto loading map using specified loader and backing map
-+     * @param backingMap
-+     * @param loader
++     * @param backingMap Map to wrap
++     * @param loader Loader
 +     */
 +    public LoadingMap(Map<K, V> backingMap, Function<K, V> loader) {
 +        this.backingMap = backingMap;
@@ -2564,11 +2575,12 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Creates a new LoadingMap with the specified map and loader
-+     * @param backingMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param backingMap Actual map being used.
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> of(Map<K, V> backingMap, Function<K, V> loader) {
 +        return new LoadingMap<K, V>(backingMap, loader);
@@ -2616,11 +2628,12 @@ index 00000000..a9f29199
 +     * @see #newAutoMap
 +     *
 +     * new Auto initializing map using a HashMap.
-+     * @param keyClass
-+     * @param valueClass
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param keyClass Class used for the K generic
++     * @param valueClass Class used for the V generic
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass) {
 +        return newAutoMap(new HashMap<K, V>(), keyClass, valueClass);
@@ -2630,10 +2643,11 @@ index 00000000..a9f29199
 +     * @see #newAutoMap
 +     *
 +     * new Auto initializing map using a HashMap.
-+     * @param valueClass
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param valueClass Class used for the V generic
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass) {
 +        return newHashAutoMap(null, valueClass);
@@ -2644,13 +2658,13 @@ index 00000000..a9f29199
 +     *
 +     * new Auto initializing map using a HashMap.
 +     *
-+     * @param keyClass
-+     * @param valueClass
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     * @param keyClass Class used for the K generic
++     * @param valueClass Class used for the V generic
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newAutoMap(new HashMap<K, V>(initialCapacity, loadFactor), keyClass, valueClass);
@@ -2661,12 +2675,12 @@ index 00000000..a9f29199
 +     *
 +     * new Auto initializing map using a HashMap.
 +     *
-+     * @param valueClass
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     * @param valueClass Class used for the V generic
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return  Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newHashAutoMap(null, valueClass, initialCapacity, loadFactor);
@@ -2674,10 +2688,11 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Initializes an auto loading map using a HashMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader) {
 +        return new LoadingMap<K, V>(new HashMap<K, V>(), loader);
@@ -2685,12 +2700,13 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Initializes an auto loading map using a HashMap
-+     * @param loader
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity, float loadFactor) {
 +        return new LoadingMap<K, V>(new HashMap<K, V>(initialCapacity, loadFactor), loader);
@@ -2698,10 +2714,11 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Initializes an auto loading map using an Identity HashMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader) {
 +        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(), loader);
@@ -2709,11 +2726,12 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Initializes an auto loading map using an Identity HashMap
-+     * @param loader
-+     * @param initialCapacity
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param initialCapacity Initial capacity to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader, int initialCapacity) {
 +        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(initialCapacity), loader);
@@ -2814,7 +2832,8 @@ index 00000000..a9f29199
 +
 +    /**
 +     * Due to java stuff, you will need to cast it to (Function) for some cases
-+     * @param <T>
++     *
++     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
 +        @Override
@@ -2827,10 +2846,10 @@ index 00000000..a9f29199
 +}
 diff --git a/src/main/java/co/aikar/util/MRUMapCache.java b/src/main/java/co/aikar/util/MRUMapCache.java
 new file mode 100644
-index 00000000..3a288d2a
+index 00000000..df592d85
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/MRUMapCache.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,102 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2863,8 +2882,9 @@ index 00000000..3a288d2a
 +
 +/**
 + * Implements a Most Recently Used cache in front of a backing map, to quickly access the last accessed result.
-+ * @param <K>
-+ * @param <V>
++ *
++ * @param <K> Key Type of the Map
++ * @param <V> Value Type of the Map
 + */
 +public class MRUMapCache<K, V> extends AbstractMap<K, V> {
 +    final Map<K, V> backingMap;
@@ -2922,10 +2942,11 @@ index 00000000..3a288d2a
 +
 +    /**
 +     * Wraps the specified map with a most recently used cache
-+     * @param map
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param map Map to be wrapped
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> of(Map<K, V> map) {
 +        return new MRUMapCache<K, V>(map);
