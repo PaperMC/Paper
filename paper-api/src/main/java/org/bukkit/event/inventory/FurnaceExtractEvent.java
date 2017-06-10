@@ -9,7 +9,9 @@ import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This event is called when a player takes items out of the furnace
+ * This event is called when a player takes items out of a furnace-like block such as a
+ * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
+ * {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceExtractEvent extends BlockExpEvent {
     private final Player player;

@@ -30,7 +30,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
          */
         FLY_TO_PORTAL,
         /**
-         * The dragon will land on on the portal. If the dragon is not near
+         * The dragon will land on the portal. If the dragon is not near
          * the portal, it will fly to it before mounting.
          */
         LAND_ON_PORTAL,

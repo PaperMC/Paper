@@ -31,11 +31,8 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param result The item you want the recipe to create.
      * @exception IllegalArgumentException if the {@code result} is an empty item (AIR)
      * @see ShapelessRecipe#addIngredient(Material)
-     * @see ShapelessRecipe#addIngredient(MaterialData)
-     * @see ShapelessRecipe#addIngredient(Material,int)
      * @see ShapelessRecipe#addIngredient(int,Material)
-     * @see ShapelessRecipe#addIngredient(int,MaterialData)
-     * @see ShapelessRecipe#addIngredient(int,Material,int)
+     * @see ShapelessRecipe#addIngredient(RecipeChoice)
      */
     public ShapelessRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
         super(key, checkResult(result));
@@ -175,7 +172,7 @@ public class ShapelessRecipe extends CraftingRecipe {
 
     /**
      * Removes multiple instances of an ingredient from the list. If there are
-     * less instances then specified, all will be removed. Only removes exact
+     * fewer instances than specified, all will be removed. Only removes exact
      * matches, with a data value of 0.
      *
      * @param count The number of copies to remove.

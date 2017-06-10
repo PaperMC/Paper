@@ -627,7 +627,7 @@ public abstract class ChunkGenerator {
          * Get the biome at x, y, z within chunk being generated
          *
          * @param x the x location in the chunk from 0-15 inclusive
-         * @param y the y location in the chunk from minimum (inclusive) -
+         * @param y the y location in the chunk from minHeight (inclusive) -
          * maxHeight (exclusive)
          * @param z the z location in the chunk from 0-15 inclusive
          * @return Biome value

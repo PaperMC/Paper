@@ -129,8 +129,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
     }
 
     /**
-     * Get the {@link EquipmentSlot} this AttributeModifier is active on,
-     * or null if this modifier is applicable for any slot.
+     * Get the {@link EquipmentSlotGroup} this AttributeModifier is active on.
      *
      * @return the slot
      */

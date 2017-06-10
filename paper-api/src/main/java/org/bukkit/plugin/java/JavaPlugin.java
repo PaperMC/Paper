@@ -69,7 +69,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Returns the folder that the plugin data's files are located in. The
+     * Returns the folder that the plugin data files are located in. The
      * folder may not yet exist.
      *
      * @return The folder.
@@ -127,9 +127,9 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Returns the plugin.yaml file containing the details for this plugin
+     * Returns the plugin.yml file containing the details for this plugin
      *
-     * @return Contents of the plugin.yaml file
+     * @return Contents of the plugin.yml file
      * @deprecated No longer applicable to all types of plugins
      */
     @NotNull

@@ -1538,6 +1538,8 @@ public final class Bukkit {
 
     /**
      * Gets every player that has ever played on this server.
+     * <p>
+     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
      */
@@ -2059,7 +2061,7 @@ public final class Bukkit {
      * server will pause most functions after this time if there are no players
      * online.
      * <p>
-     * A value of less than 0 will disable the setting
+     * A value of less than 1 will disable the setting
      *
      * @param seconds the pause threshold in seconds
      */

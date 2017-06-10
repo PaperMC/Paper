@@ -180,9 +180,13 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z);
 
     /**
-     * Returns a unique id for this entity
+     * Returns the network protocol ID for this entity. This is
+     * not to be used as an identifier for the entity except in
+     * network-related operations. Use {@link #getUniqueId()} as
+     * an entity identifier instead.
      *
-     * @return Entity id
+     * @return the network protocol ID
+     * @see #getUniqueId()
      */
     public int getEntityId();
 

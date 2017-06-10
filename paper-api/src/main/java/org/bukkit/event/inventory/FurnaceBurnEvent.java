@@ -8,7 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when an ItemStack is successfully burned as fuel in a furnace.
+ * Called when an ItemStack is successfully burned as fuel in a furnace-like block such as a
+ * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
+ * {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -357,7 +357,7 @@ public interface Block extends Metadatable, Translatable {
      * Gets the temperature of this block.
      * <p>
      * If the raw biome temperature without adjusting for height effects is
-     * required then please use {@link World#getTemperature(int, int)}.
+     * required then please use {@link World#getTemperature(int, int, int)}.
      *
      * @return Temperature of this block
      */
@@ -405,7 +405,10 @@ public interface Block extends Metadatable, Translatable {
     boolean applyBoneMeal(@NotNull BlockFace face);
 
     /**
-     * Returns a list of items which would drop by destroying this block
+     * Returns a list of items which could drop by destroying this block.
+     * <p>
+     * The items are not guaranteed to be consistent across multiple calls to this
+     * method as this just uses the block type's loot table.
      *
      * @return a list of dropped items for this type of block
      */
@@ -413,8 +416,11 @@ public interface Block extends Metadatable, Translatable {
     Collection<ItemStack> getDrops();
 
     /**
-     * Returns a list of items which would drop by destroying this block with
-     * a specific tool
+     * Returns a list of items which could drop by destroying this block with
+     * a specific tool.
+     * <p>
+     * The items are not guaranteed to be consistent across multiple calls to this
+     * method as this just uses the block type's loot table.
      *
      * @param tool The tool or item in hand used for digging
      * @return a list of dropped items for this type of block
@@ -423,8 +429,11 @@ public interface Block extends Metadatable, Translatable {
     Collection<ItemStack> getDrops(@Nullable ItemStack tool);
 
     /**
-     * Returns a list of items which would drop by the entity destroying this
-     * block with a specific tool
+     * Returns a list of items which could drop by the entity destroying this
+     * block with a specific tool.
+     * <p>
+     * The items are not guaranteed to be consistent across multiple calls to this
+     * method as this just uses the block type's loot table.
      *
      * @param tool The tool or item in hand used for digging
      * @param entity the entity destroying the block

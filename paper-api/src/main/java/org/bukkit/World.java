@@ -2766,7 +2766,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Find the closest nearby structure of a given {@link StructureType}.
      * Finding unexplored structures can, and will, block if the world is
-     * looking in chunks that gave not generated yet. This can lead to the world
+     * looking in chunks that have not generated yet. This can lead to the world
      * temporarily freezing while locating an unexplored structure.
      * <p>
      * The {@code radius} is not a rigid square radius. Each structure may alter
@@ -2800,7 +2800,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Find the closest nearby structure of a given {@link StructureType}.
      * Finding unexplored structures can, and will, block if the world is
-     * looking in chunks that gave not generated yet. This can lead to the world
+     * looking in chunks that have not generated yet. This can lead to the world
      * temporarily freezing while locating an unexplored structure.
      * <p>
      * The {@code radius} is not a rigid square radius. Each structure may alter
@@ -2833,7 +2833,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Find the closest nearby structure of a given {@link Structure}. Finding
      * unexplored structures can, and will, block if the world is looking in
-     * chunks that gave not generated yet. This can lead to the world
+     * chunks that have not generated yet. This can lead to the world
      * temporarily freezing while locating an unexplored structure.
      * <p>
      * The {@code radius} is not a rigid square radius. Each structure may alter

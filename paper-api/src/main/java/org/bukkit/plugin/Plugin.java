@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface Plugin extends TabExecutor {
     /**
-     * Returns the folder that the plugin data's files are located in. The
+     * Returns the folder that the plugin data files are located in. The
      * folder may not yet exist.
      *
      * @return The folder
@@ -27,9 +27,9 @@ public interface Plugin extends TabExecutor {
     public File getDataFolder();
 
     /**
-     * Returns the plugin.yaml file containing the details for this plugin
+     * Returns the plugin.yml file containing the details for this plugin
      *
-     * @return Contents of the plugin.yaml file
+     * @return Contents of the plugin.yml file
      * @deprecated May be inaccurate due to different plugin implementations.
      * @see Plugin#getPluginMeta()
      */

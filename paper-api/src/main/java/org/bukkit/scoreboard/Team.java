@@ -265,7 +265,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * Gets the Set of entries on the team
      *
      * @return entries on the team
-     * @throws IllegalStateException if this entries has been unregistered
+     * @throws IllegalStateException if this team has been unregistered
      */
     @NotNull
     Set<String> getEntries();

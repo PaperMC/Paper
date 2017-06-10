@@ -21,7 +21,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
      * Sets the value of the 'face' property.
      *
      * @param face the new 'face' value
-     * @deprecated use {@link #getAttachedFace()}
+     * @deprecated use {@link #setAttachedFace(AttachedFace)}
      */
     @Deprecated(since = "1.15.2")
     void setFace(@NotNull Face face);
@@ -42,7 +42,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
          */
         WALL,
         /**
-         * The switch is mounted to the ceiling and pointing dowanrds.
+         * The switch is mounted to the ceiling and pointing downwards.
          */
         CEILING;
     }

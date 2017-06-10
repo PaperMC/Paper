@@ -492,15 +492,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Saves the players current location, health, inventory, motion, and
-     * other information into the uuid.dat file, in the &lt;main
-     * world&gt;/playerdata folder.
+     * other information into the &lt;uuid&gt;.dat file, in the
+     * &lt;level-name&gt;/playerdata/ folder.
      */
     public void saveData();
 
     /**
      * Loads the players current location, health, inventory, motion, and
-     * other information from the uuid.dat file, in the &lt;main
-     * world&gt;/playerdata folder.
+     * other information from the &lt;uuid&gt;.dat file, in the
+     * &lt;level-name&gt;/playerdata/ folder.
      * <p>
      * Note: This will overwrite the players current inventory, health,
      * motion, etc, with the state from the saved dat file.
@@ -861,7 +861,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Plays an effect to just this player.
      *
-     * @param <T> the data based based on the type of the effect
+     * @param <T> the data based on the type of the effect
      * @param loc the location to play the effect at
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
@@ -1272,7 +1272,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * Use supplied alternative character to the section symbol to represent legacy color codes.
      *
-     * @param alternateChar Alternate symbol such as '&'
+     * @param alternateChar Alternate symbol such as '&amp;'
      * @param message The message to send
      * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
      */
@@ -1745,7 +1745,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Allows this player to see a player that was previously hidden. If
-     * another another plugin had hidden the player too, then the player will
+     * another plugin had hidden the player too, then the player will
      * remain hidden until the other plugin calls this method too.
      *
      * @param plugin Plugin that wants to show the player
@@ -1772,7 +1772,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Allows this player to see an entity that was previously hidden. If
-     * another another plugin had hidden the entity too, then the entity will
+     * another plugin had hidden the entity too, then the entity will
      * remain hidden until the other plugin calls this method too.
      *
      * @param plugin Plugin that wants to show the entity
@@ -1855,9 +1855,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting texture packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
      * <li>The request is send with "null" as the hash. This might result
      *     in newer versions not loading the pack correctly.
      * </ul>
@@ -1891,9 +1888,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
      * <li>The request is send with empty string as the hash. This might result
      *     in newer versions not loading the pack correctly.
      * </ul>
@@ -1930,9 +1924,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     case this method will have no affect on them. Use the
      *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
      *     the player loaded the pack!
-     * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so or you
-     *     have to send an empty pack.
      * <li>The request is sent with empty string as the hash when the hash is
      *     not provided. This might result in newer versions not loading the
      *     pack correctly.

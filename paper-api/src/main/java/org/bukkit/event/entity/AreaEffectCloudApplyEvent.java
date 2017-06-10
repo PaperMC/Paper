@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a lingering potion applies it's effects. Happens
+ * Called when a lingering potion applies its effects. Happens
  * once every 5 ticks
  */
 public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellable {

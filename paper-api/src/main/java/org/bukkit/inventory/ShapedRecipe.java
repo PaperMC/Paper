@@ -24,8 +24,6 @@ public class ShapedRecipe extends CraftingRecipe {
      * @param result The item you want the recipe to create.
      * @see ShapedRecipe#shape(String...)
      * @see ShapedRecipe#setIngredient(char, Material)
-     * @see ShapedRecipe#setIngredient(char, Material, int)
-     * @see ShapedRecipe#setIngredient(char, MaterialData)
      * @see ShapedRecipe#setIngredient(char, RecipeChoice)
      * @deprecated Recipes must have keys. Use {@link #ShapedRecipe(NamespacedKey, ItemStack)}
      * instead.
@@ -45,8 +43,6 @@ public class ShapedRecipe extends CraftingRecipe {
      * @exception IllegalArgumentException if the {@code result} is an empty item (AIR)
      * @see ShapedRecipe#shape(String...)
      * @see ShapedRecipe#setIngredient(char, Material)
-     * @see ShapedRecipe#setIngredient(char, Material, int)
-     * @see ShapedRecipe#setIngredient(char, MaterialData)
      * @see ShapedRecipe#setIngredient(char, RecipeChoice)
      */
     public ShapedRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {

@@ -10,7 +10,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when an entity explodes
+ * Called when an entity explodes interacting with blocks. The
+ * event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
+ * is disabled as no block interaction will occur.
  */
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

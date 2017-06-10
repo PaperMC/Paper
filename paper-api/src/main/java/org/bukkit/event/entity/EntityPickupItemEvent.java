@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Thrown when a entity picks an item up from the ground
+ * Thrown when an entity picks an item up from the ground
  */
 public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

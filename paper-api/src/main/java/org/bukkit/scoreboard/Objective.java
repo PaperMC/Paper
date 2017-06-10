@@ -86,7 +86,7 @@ public interface Objective {
      *
      * @return true if scores are modifiable
      * @throws IllegalStateException if this objective has been unregistered
-     * @see Criterias#HEALTH
+     * @see Criteria#HEALTH
      */
     boolean isModifiable();
 

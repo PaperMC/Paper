@@ -6,8 +6,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a player takes action on a resource pack request sent via
- * {@link Player#setResourcePack(java.lang.String)}.
+ * Called when a player takes action on a resource pack request.
+ * @see Player#setResourcePack(String, String)
+ * @see Player#setResourcePack(String, String, boolean)
  */
 public class PlayerResourcePackStatusEvent extends PlayerEvent {
 

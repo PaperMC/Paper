@@ -328,7 +328,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Gets the enchantable component. Higher values allow higher enchantments.
      *
-     * @return max_stack_size
+     * @return the enchantable value
      */
     int getEnchantable();
 
@@ -661,11 +661,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
 
     /**
      * Gets the item which this item will convert to when used.
-     * <p>
-     * The returned component is a snapshot of its current state and does not
-     * reflect a live view of what is on an item. After changing any value on
-     * this component, it must be set with {@link #setUseRemainder(ItemStack)}
-     * to apply the changes.
      *
      * @return remainder
      */
@@ -802,7 +797,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * The returned component is a snapshot of its current state and does not
      * reflect a live view of what is on an item. After changing any value on
      * this component, it must be set with
-     * {@link #setJukeboxPlayable(org.bukkit.inventory.meta.components.JukeboxComponent)}
+     * {@link #setJukeboxPlayable(org.bukkit.inventory.meta.components.JukeboxPlayableComponent)}
      * to apply the changes.
      *
      * @return component
@@ -811,7 +806,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     JukeboxPlayableComponent getJukeboxPlayable();
 
     /**
-     * Sets the item tool.
+     * Sets the jukebox playable component.
      *
      * @param jukeboxPlayable new component
      */
@@ -838,7 +833,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Return an immutable copy of all {@link Attribute}s and their
      * {@link AttributeModifier}s for a given {@link EquipmentSlot}.<br>
-     * Any {@link AttributeModifier} that does have have a given
+     * Any {@link AttributeModifier} that does have a given
      * {@link EquipmentSlot} will be returned. This is because
      * AttributeModifiers without a slot are active in any slot.<br>
      * If there are no attributes set for the given slot, an empty map

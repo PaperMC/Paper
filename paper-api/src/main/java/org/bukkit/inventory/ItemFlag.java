@@ -35,7 +35,7 @@ public enum ItemFlag {
      */
     HIDE_DYE,
     /**
-     * Setting to show/hide armor trim from leather armor.
+     * Setting to show/hide armor trim from armor.
      */
     HIDE_ARMOR_TRIM;
 }

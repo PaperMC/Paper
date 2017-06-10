@@ -38,7 +38,7 @@ public interface FaceAttachable extends BlockData {
          */
         WALL,
         /**
-         * The switch is mounted to the ceiling and pointing dowanrds.
+         * The switch is mounted to the ceiling and pointing downwards.
          */
         CEILING;
     }

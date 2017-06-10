@@ -22,6 +22,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
 
+    // Paper start
+    @Override
+    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
+    // Paper end
+
     /**
      * Returns the name of this player
      *

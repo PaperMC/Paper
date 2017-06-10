@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Triggered when a entity is created in the world by a player "placing" an item
+ * Triggered when an entity is created in the world by a player "placing" an item
  * on a block.
  * <br>
  * Note that this event is currently only fired for four specific placements:

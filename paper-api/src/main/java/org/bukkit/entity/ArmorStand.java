@@ -360,5 +360,8 @@ public interface ArmorStand extends LivingEntity {
      * @param move {@code true} if this armour stand can move, {@code false} otherwise
      */
     void setCanMove(boolean move);
+
+    @Override
+    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
     // Paper end
 }

@@ -581,13 +581,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * </ul>
      * <p>
      * <b>Note:</b> If set to 0, {@link SpawnCategory} mobs spawning will be disabled.
-     * <p>
-     * Minecraft default: 1.
-     * <br>
-     * <b>Note: </b> the {@link SpawnCategory#MISC} are not consider.
      *
      * @param spawnCategory the category of spawn
      * @return the default ticks per {@link SpawnCategory} mobs spawn value
+     * @throws IllegalArgumentException if the category is {@link SpawnCategory#MISC}
      */
     public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
 
@@ -1298,6 +1295,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     /**
      * Gets every player that has ever played on this server.
+     * <p>
+     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
      */
@@ -1740,7 +1739,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Sets the pause when empty threshold seconds. To save resources, the
      * pause most functions after this time if there are no players online.
      * <p>
-     * A value of less than 0 will disable the setting
+     * A value of less than 1 will disable the setting
      *
      * @param seconds the pause threshold in seconds
      */

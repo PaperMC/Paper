@@ -136,7 +136,7 @@ public interface ChunkSnapshot {
      * Get raw biome temperature at given coordinates
      *
      * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (0-15)
+     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return temperature at given coordinate
      */

@@ -75,7 +75,7 @@ public interface ItemFrame extends Hanging {
     public void setRotation(@NotNull Rotation rotation) throws IllegalArgumentException;
 
     /**
-     * Returns whether the item frame is be visible or not.
+     * Returns whether the item frame is visible or not.
      *
      * @return whether the item frame is visible or not
      */

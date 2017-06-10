@@ -93,7 +93,7 @@ public interface Arrow extends AbstractArrow {
      * Removes a custom potion effect from this arrow.
      *
      * @param type the potion effect type to remove
-     * @return true if the an effect was removed as a result of this call
+     * @return true if the effect was removed as a result of this call
      * @throws IllegalArgumentException if this operation would leave the Arrow
      * in a state with no Custom Effects and PotionType.UNCRAFTABLE
      */

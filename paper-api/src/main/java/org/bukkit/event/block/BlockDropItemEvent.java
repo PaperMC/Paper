@@ -10,15 +10,19 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called if a block broken by a player drops an item.
+ * Called after a block is broken by a player and potential drops are computed, even if said blocks loot table
+ * does not define any drops at the point the event is constructed.
  *
  * If the block break is cancelled, this event won't be called.
  *
- * If isDropItems in BlockBreakEvent is set to false, this event won't be
+ * If isDropItems in {@link org.bukkit.event.block.BlockBreakEvent} is set to false, this event won't be
  * called.
  *
+ * If a block is broken and isDropItems is set to true, this event will be called even if the block does
+ * not drop any items, for example glass broken by hand. In this case, #getItems() will be empty.
+ *
  * This event will also be called if the player breaks a multi block structure,
- * for example a torch on top of a stone. Both items will have an event call.
+ * for example a torch on top of a stone. Both items will be included in the #getItems() list.
  *
  * The Block is already broken as this event is called, so #getBlock() will be
  * AIR in most cases. Use #getBlockState() for more Information about the broken

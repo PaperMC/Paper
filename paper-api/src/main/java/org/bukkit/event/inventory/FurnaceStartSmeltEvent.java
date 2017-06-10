@@ -8,7 +8,10 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a Furnace starts smelting.
+ * Called when any of the furnace-like blocks start smelting.
+ * <p>
+ * Furnace-like blocks are {@link org.bukkit.block.Furnace},
+ * {@link org.bukkit.block.Smoker}, and {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
     private static final HandlerList handlers = new HandlerList();

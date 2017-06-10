@@ -28,7 +28,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
     }
 
     /**
-     * Create a cooking recipe to craft the specified ItemStack.
+     * Create a Stonecutting recipe to craft the specified ItemStack.
      *
      * @param key The unique recipe key
      * @param result The item you want the recipe to create.
@@ -42,7 +42,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
     }
 
     /**
-     * Sets the input of this cooking recipe.
+     * Sets the input of this Stonecutting recipe.
      *
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
@@ -64,7 +64,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
     }
 
     /**
-     * Sets the input of this cooking recipe.
+     * Sets the input of this Stonecutting recipe.
      *
      * @param input The input choice.
      * @return The changed recipe, so you can chain calls.

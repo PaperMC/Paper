@@ -158,11 +158,12 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         DROWNED,
         /**
-         * When an cow is spawned by shearing a mushroom cow
+         * When a cow is spawned by shearing a mushroom cow
          */
         SHEARED,
         /**
-         * When eg an effect cloud is spawned as a result of a creeper exploding
+         * When an entity is spawned as a result of an explosion. Like an area effect cloud from
+         * a creeper or a dragon fireball.
          */
         EXPLOSION,
         /**

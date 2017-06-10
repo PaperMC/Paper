@@ -114,7 +114,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the value whether the player would be allowed to build here.
-     * Defaults to spawn if the server was going to stop them (such as, the
+     * Defaults to false if the server was going to stop them (such as, the
      * player is in Spawn). Note that this is an entirely different check
      * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
      * rule like cactus on dirt.

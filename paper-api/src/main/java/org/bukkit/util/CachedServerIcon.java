@@ -5,7 +5,7 @@ import org.bukkit.event.server.ServerListPingEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This is a cached version of a server-icon. It's internal representation
+ * This is a cached version of a server-icon. Its internal representation
  * and implementation is undefined.
  *
  * @see Server#getServerIcon()

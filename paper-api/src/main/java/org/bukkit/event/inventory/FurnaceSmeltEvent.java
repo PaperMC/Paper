@@ -6,7 +6,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when an ItemStack is successfully smelted in a furnace.
+ * Called when an ItemStack is successfully smelted in a furnace-like block
+ * such as a {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker},
+ * or {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceSmeltEvent extends BlockCookEvent {
 

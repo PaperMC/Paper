@@ -4,7 +4,7 @@ import org.bukkit.block.data.Directional;
 
 /**
  * 'conditional' denotes whether this command block is conditional or not, i.e.
- * will only execute if the preceeding command block also executed successfully.
+ * will only execute if the preceding command block also executed successfully.
  */
 public interface CommandBlock extends Directional {
 

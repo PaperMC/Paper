@@ -7,7 +7,7 @@ import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a player related inventory event
+ * Called when a player opens an inventory
  */
 public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

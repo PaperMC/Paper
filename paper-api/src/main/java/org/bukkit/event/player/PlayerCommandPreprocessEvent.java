@@ -106,7 +106,9 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @param player New player which this event will execute as
      * @throws IllegalArgumentException if the player provided is null
+     * @deprecated Only works for sign commands; use {@link Player#performCommand(String)}, including those cases
      */
+    @Deprecated(forRemoval = true)
     public void setPlayer(@NotNull final Player player) throws IllegalArgumentException {
         Preconditions.checkArgument(player != null, "Player cannot be null");
         this.player = player;
@@ -123,11 +125,10 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * unmodifiable set.
      *
      * @return All Players who will see this chat message
-     * @deprecated This method is provided for backward compatibility with no
-     *     guarantee to the effect of viewing or modifying the set.
+     * @deprecated This is simply the online players. Modifications have no effect
      */
     @NotNull
-    @Deprecated(since = "1.3.1")
+    @Deprecated(since = "1.3.1", forRemoval = true)
     public Set<Player> getRecipients() {
         return recipients;
     }

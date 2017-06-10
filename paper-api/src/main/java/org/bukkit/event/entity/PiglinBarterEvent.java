@@ -10,8 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores all data related to the bartering interaction with a piglin.
  *
- * This event can be triggered by a piglin picking up an item that's on its
- * bartering list.
+ * Called when a piglin completes a barter.
  */
 public class PiglinBarterEvent extends EntityEvent implements Cancellable {
 

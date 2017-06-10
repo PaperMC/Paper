@@ -207,7 +207,7 @@ public enum Particle implements Keyed {
     }
 
     /**
-     * Options which can be applied to redstone dust particles - a particle
+     * Options which can be applied to dust particles - a particle
      * color and size.
      */
     public static class DustOptions {

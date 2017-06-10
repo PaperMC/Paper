@@ -44,8 +44,6 @@ public interface PigZombie extends Zombie {
 
     /**
      * <b>Not applicable to this entity</b>
-     *
-     * @return UnsuppotedOperationException
      */
     @Override
     public int getConversionTime();

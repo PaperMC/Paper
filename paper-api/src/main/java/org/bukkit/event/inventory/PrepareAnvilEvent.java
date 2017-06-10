@@ -24,6 +24,20 @@ public class PrepareAnvilEvent extends PrepareInventoryResultEvent {
         return (AnvilInventory) super.getInventory();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * Note: by default custom recipes in anvil are disabled
+     * you should define a repair cost on the anvil inventory
+     * greater or equals to zero in order to allow that.
+     *
+     * @param result result item
+     */
+    public void setResult(@Nullable ItemStack result) {
+        super.setResult(result);
+    }
+
     @NotNull
     @Override
     public AnvilView getView() {

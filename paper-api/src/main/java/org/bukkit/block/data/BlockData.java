@@ -224,7 +224,7 @@ public interface BlockData extends Cloneable {
      * {@link Material#REDSTONE_WIRE} -> {@link Material#REDSTONE}
      * {@link Material#CARROTS} -> {@link Material#CARROT}
      * </pre>
-     * @return placement material
+     * @return placement material or {@link Material#AIR} if it doesn't have one
      */
     @NotNull
     Material getPlacementMaterial();

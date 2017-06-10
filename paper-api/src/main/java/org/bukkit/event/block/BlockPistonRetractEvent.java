@@ -34,7 +34,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
 
     /**
      * Get an immutable list of the blocks which will be moved by the
-     * extending.
+     * retracting.
      *
      * @return Immutable list of the moved blocks.
      */

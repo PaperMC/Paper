@@ -31,7 +31,8 @@ public interface PluginMessageRecipient {
 
     /**
      * Gets a set containing all the Plugin Channels that this client is
-     * listening on.
+     * listening on. Does not contain the BungeeCord channel due to its
+     * special status.
      *
      * @return Set containing all the channels that this client may accept.
      */

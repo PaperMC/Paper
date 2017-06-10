@@ -224,7 +224,7 @@ public interface Villager extends AbstractVillager {
          */
         Profession NITWIT = getProfession("nitwit");
         /**
-         * Sheperd profession. Wears a brown robe. Shepherds primarily trade for
+         * Shepherd profession. Wears a brown robe. Shepherds primarily trade for
          * wool items, and shears.
          */
         Profession SHEPHERD = getProfession("shepherd");

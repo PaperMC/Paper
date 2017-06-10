@@ -12,8 +12,7 @@ public enum HeightMap {
      */
     MOTION_BLOCKING,
     /**
-     * The highest block that blocks motion or contains a fluid or is in the
-     * {@link Tag#LEAVES}.
+     * The highest block that blocks motion or contains a fluid, excluding leaves.
      */
     MOTION_BLOCKING_NO_LEAVES,
     /**

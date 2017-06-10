@@ -16,12 +16,16 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This event is called when a player clicks in an inventory.
  * <p>
+ * In case of a drag action within an inventory, InventoryClickEvent is never called.
+ * Instead, {@link InventoryDragEvent} is called at the end of the drag.
+ * <p>
  * Because InventoryClickEvent occurs within a modification of the Inventory,
  * not all Inventory related methods are safe to use.
  * <p>
- * The following should never be invoked by an EventHandler for
- * InventoryClickEvent using the HumanEntity or InventoryView associated with
- * this event:
+ * Methods that change the view a player is looking at should never be invoked
+ * by an EventHandler for InventoryClickEvent using the HumanEntity or
+ * InventoryView associated with this event.
+ * Examples of these include:
  * <ul>
  * <li>{@link HumanEntity#closeInventory()}
  * <li>{@link HumanEntity#openInventory(Inventory)}
@@ -92,7 +96,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
     /**
      * Gets the ItemStack currently in the clicked slot.
      *
-     * @return the item in the clicked
+     * @return the item in the clicked slot
      */
     @Nullable
     public ItemStack getCurrentItem() {

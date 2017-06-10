@@ -105,7 +105,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         SATIATED,
         /**
-         * When a player regains health from eating consumables
+         * When an animal regains health from eating consumables
          */
         EATING,
         /**

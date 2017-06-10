@@ -358,7 +358,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      * <p>
      * Negative values will shrink the bounding box in the corresponding
      * direction. Shrinking will be limited to the point where the affected
-     * opposite faces would meet if the they shrank at uniform speeds.
+     * opposite faces would meet if they shrank at uniform speeds.
      *
      * @param negativeX the amount of expansion in the negative x direction
      * @param negativeY the amount of expansion in the negative y direction

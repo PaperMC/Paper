@@ -12,6 +12,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an entity is damaged by a block
+ * <p>
+ * For explosions, the Block returned by {@link #getDamager()} has
+ * already been cleared. See {@link #getDamagerBlockState()} for a snapshot
+ * of the block if it has already been changed.
  */
 public class EntityDamageByBlockEvent extends EntityDamageEvent {
     private final Block damager;
@@ -51,6 +55,9 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
 
     /**
      * Returns the captured BlockState of the block that damaged the player.
+     * <p>
+     * This block state is not placed so {@link org.bukkit.block.BlockState#isPlaced}
+     * will be false.
      *
      * @return the block state
      */

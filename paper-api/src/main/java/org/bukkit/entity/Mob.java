@@ -9,6 +9,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface Mob extends LivingEntity, Lootable {
 
+    // Paper start
+    @Override
+    org.bukkit.inventory.@org.jetbrains.annotations.NotNull EntityEquipment getEquipment();
+    // Paper end
     /**
      * Instructs this Mob to set the specified LivingEntity as its target.
      * <p>
