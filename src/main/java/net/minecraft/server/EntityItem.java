@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 // CraftBukkit end
+import org.bukkit.event.player.PlayerAttemptPickupItemEvent; // Paper
 
 public class EntityItem extends Entity {
 
@@ -337,6 +338,22 @@ public class EntityItem extends Entity {
             int canHold = entityhuman.inventory.canHold(itemstack);
             int remaining = i - canHold;
             boolean flyAtPlayer = false; // Paper
+
+            // Paper start
+            if (this.pickupDelay <= 0) {
+                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                this.world.getServer().getPluginManager().callEvent(attemptEvent);
+
+                flyAtPlayer = attemptEvent.getFlyAtPlayer();
+                if (attemptEvent.isCancelled()) {
+                    if (flyAtPlayer) {
+                        entityhuman.receive(this, i);
+                    }
+
+                    return;
+                }
+            }
+            // Paper end
 
             if (this.pickupDelay <= 0 && canHold > 0) {
                 itemstack.setCount(canHold);
