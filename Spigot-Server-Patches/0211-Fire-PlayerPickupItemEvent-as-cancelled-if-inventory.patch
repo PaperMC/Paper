@@ -1,0 +1,26 @@
+From 2da73e389028808ad70c78dc6963c5c43a8e3995 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 May 2017 07:37:05 -0500
+Subject: [PATCH] Fire PlayerPickupItemEvent as cancelled if inventory is full
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index 95ca1b8e..6ddc4e57 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -329,10 +329,10 @@ public class EntityItem extends Entity implements HopperPusher {
+             int canHold = entityhuman.inventory.canHold(itemstack);
+             int remaining = i - canHold;
+ 
+-            if (this.pickupDelay <= 0 && canHold > 0) {
++            if (this.pickupDelay <= 0) { // Paper
+                 itemstack.setCount(canHold);
+                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+-                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                event.setCancelled(canHold <= 0); // Paper
+                 this.world.getServer().getPluginManager().callEvent(event);
+                 itemstack.setCount(canHold + remaining);
+ 
+-- 
+2.11.0
+
