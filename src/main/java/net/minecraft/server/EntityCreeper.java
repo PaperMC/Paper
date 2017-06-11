@@ -226,7 +226,7 @@ public class EntityCreeper extends EntityMonster {
     private void createEffectCloud() {
         Collection<MobEffect> collection = this.getEffects();
 
-        if (!collection.isEmpty()) {
+        if (!collection.isEmpty() && !world.paperConfig.disableCreeperLingeringEffect) { // Paper
             EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.world, this.locX(), this.locY(), this.locZ());
 
             entityareaeffectcloud.setSource(this); // CraftBukkit
