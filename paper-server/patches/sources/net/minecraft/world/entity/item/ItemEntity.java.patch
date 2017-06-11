@@ -27,7 +27,7 @@
  import net.minecraft.world.item.Item;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Explosion;
-@@ -33,6 +20,26 @@
+@@ -33,6 +20,27 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.portal.TeleportTransition;
  import net.minecraft.world.phys.Vec3;
@@ -51,10 +51,11 @@
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.player.PlayerPickupItemEvent;
 +// CraftBukkit end
++import org.bukkit.event.player.PlayerAttemptPickupItemEvent; // Paper
  
  public class ItemEntity extends Entity implements TraceableEntity {
  
-@@ -52,6 +59,8 @@
+@@ -52,6 +60,8 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
@@ -63,7 +64,7 @@
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -133,12 +142,15 @@
+@@ -133,12 +143,15 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -83,7 +84,7 @@
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -188,9 +200,11 @@
+@@ -188,9 +201,11 @@
                  this.mergeWithNeighbours();
              }
  
@@ -95,7 +96,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,14 +215,42 @@
+@@ -201,14 +216,42 @@
                  }
              }
  
@@ -140,7 +141,7 @@
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
          return this.getOnPos(0.999999F);
      }
-@@ -229,7 +271,10 @@
+@@ -229,7 +272,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -152,7 +153,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -259,7 +304,7 @@
+@@ -259,7 +305,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -161,7 +162,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +332,16 @@
+@@ -287,11 +333,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -179,7 +180,7 @@
          }
  
      }
-@@ -320,12 +370,17 @@
+@@ -320,12 +371,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -198,7 +199,7 @@
              }
  
              return true;
-@@ -382,22 +437,70 @@
+@@ -382,22 +438,86 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -220,6 +221,22 @@
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
 +            boolean flyAtPlayer = false; // Paper
++
++            // Paper start - PlayerAttemptPickupItemEvent
++            if (this.pickupDelay <= 0) {
++                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                this.level().getCraftServer().getPluginManager().callEvent(attemptEvent);
++
++                flyAtPlayer = attemptEvent.getFlyAtPlayer();
++                if (attemptEvent.isCancelled()) {
++                    if (flyAtPlayer) {
++                        player.take(this, i);
++                    }
++
++                    return;
++                }
++            }
++            // Paper end - PlayerAttemptPickupItemEvent
 +
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                itemstack.setCount(canHold);
@@ -272,7 +289,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -492,7 +595,7 @@
+@@ -492,7 +612,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
