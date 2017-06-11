@@ -30,48 +30,31 @@ index 4f2fa59ac..8af52a61f 100644
      public void b() {
          this.b.l(this.a);
          this.a = false;
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0e70cdf6f..8a61c2369 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
-     public boolean noclip;
-     public float R;
-     protected Random random;
-+    public boolean fromMobSpawner; // Paper
-     public int ticksLived;
-     public int fireTicks;
-     public boolean inWater; // Spigot - protected -> public // PAIL
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 67f26bd62..6adb38de0 100644
+index 4c53aa0e9..882996572 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
      private boolean bE;
      private Entity leashHolder;
      private NBTTagCompound bG;
-+    public PathfinderGoalFloat goalFloat; // Paper
++    @Nullable public PathfinderGoalFloat goalFloat; // Paper
  
      public EntityInsentient(World world) {
          super(world);
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
-         this.world.methodProfiler.a("checkDespawn");
-         this.L();
-         this.world.methodProfiler.b();
-+        // Paper start - Re-add so we can allow them to float in water
-+        if (this.fromMobSpawner) {
+         // Spigot Start
+         if ( this.fromMobSpawner )
+         {
 +            // Paper start - Allow nerfed mobs to jump and float
 +            if (goalFloat != null) {
 +                if (goalFloat.validConditions()) goalFloat.update();
 +                this.getControllerJump().jumpIfSet();
 +            }
 +            // Paper end
-+            return;
-+        }
-+        // Spigot End
-         this.world.methodProfiler.a("sensing");
-         this.bw.a();
-         this.world.methodProfiler.b();
+             return;
+         }
+         // Spigot End
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 index b3b303b3b..fc8be86fd 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
@@ -97,17 +80,4 @@ index b3b303b3b..fc8be86fd 100644
      public void e() {
          if (this.a.getRandom().nextFloat() < 0.8F) {
              this.a.getControllerJump().a();
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 825ca9346..2f409fe1e 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
- 
-     @Override
-     public boolean hasAI() {
--        return (this.getHandle() instanceof EntityInsentient) ? !((EntityInsentient) this.getHandle()).isNoAI(): false;
-+        return this.getHandle() instanceof EntityInsentient && (!((EntityInsentient) this.getHandle()).isNoAI() || this.getHandle().getWorld().spigotConfig.nerfSpawnerMobs && ((EntityInsentient) this.getHandle()).fromMobSpawner); // Paper
-     }
- 
-     @Override
 --
