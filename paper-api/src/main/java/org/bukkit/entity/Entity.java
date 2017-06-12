@@ -12,6 +12,7 @@ import org.bukkit.util.Vector;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
@@ -468,4 +469,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @return true if the tag was successfully removed
      */
     boolean removeScoreboardTag(String tag);
+
+    /**
+     * Returns the reaction of the entity when moved by a piston.
+     *
+     * @return reaction
+     */
+    PistonMoveReaction getPistonMoveReaction();
 }
