@@ -13,6 +13,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -681,6 +682,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean removeScoreboardTag(String tag) {
         return getHandle().removeScoreboardTag(tag);
+    }
+
+    @Override
+    public PistonMoveReaction getPistonMoveReaction() {
+        return PistonMoveReaction.getById(getHandle().o_().ordinal()); // PAIL: rename
     }
 
     protected NBTTagCompound save() {
