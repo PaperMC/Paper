@@ -173,7 +173,7 @@ index 00000000..dcd31fbc
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 2feeb855..db9ace0c 100644
+index 2feeb855..3266df1f 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -207,14 +207,24 @@ index 2feeb855..db9ace0c 100644
                              issueCommand(s, DedicatedServer.this);
                          }
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             }
+         }
+         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
+ 
++        // Paper start - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
++        /*
+         final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
+         for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
+             if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
  
--        new Thread(new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader)).start();
--
+         new Thread(new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader)).start();
++        */
++        // Paper end
+ 
          System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
          System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
-         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index d84f59da..8ca8fdce 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -315,7 +325,7 @@ index 463f5890..df6a75b0 100644
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 1cbcc3df..c3b2413a 100644
+index 66e72006..84872520 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -0,0 +0,0 @@ import java.util.logging.Logger;
@@ -588,7 +598,7 @@ index b6409711..00000000
 -    }
 -}
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
-index 5cee8f00..f248d05f 100644
+index 5cee8f00..08b6bb7f 100644
 --- a/src/main/resources/log4j2.xml
 +++ b/src/main/resources/log4j2.xml
 @@ -0,0 +0,0 @@
@@ -596,7 +606,7 @@ index 5cee8f00..f248d05f 100644
 -<Configuration status="WARN" packages="com.mojang.util">
 +<Configuration status="WARN">
      <Appenders>
-         <Console name="WINDOWS_COMPAT" target="SYSTEM_OUT"></Console>
+-        <Console name="WINDOWS_COMPAT" target="SYSTEM_OUT"></Console>
 -        <Queue name="TerminalConsole">
 -            <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
 -        </Queue>
@@ -609,4 +619,12 @@ index 5cee8f00..f248d05f 100644
              <Policies>
                  <TimeBasedTriggeringPolicy />
                  <OnStartupTriggeringPolicy />
+@@ -0,0 +0,0 @@
+             <filters>
+                 <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+             </filters>
+-            <AppenderRef ref="WINDOWS_COMPAT" level="info"/>
+             <AppenderRef ref="File"/>
+             <AppenderRef ref="TerminalConsole" level="info"/>
+         </Root>
 --
