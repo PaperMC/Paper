@@ -1783,20 +1783,44 @@ public abstract class EntityHuman extends EntityLiving {
 
     }
 
+    // Paper start
+    public Entity releaseLeftShoulderEntity() {
+        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityLeft());
+        if (entity != null) {
+            this.setShoulderEntityLeft(new NBTTagCompound());
+        }
+        return entity;
+    }
+
+    public Entity releaseRightShoulderEntity() {
+        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityRight());
+        if (entity != null) {
+            this.setShoulderEntityRight(new NBTTagCompound());
+        }
+        return entity;
+    }
+    // Paper - maintain old signature
     private boolean spawnEntityFromShoulder(NBTTagCompound nbttagcompound) { // CraftBukkit void->boolean
-        if (!this.world.isClientSide && !nbttagcompound.isEmpty()) {
+        return spawnEntityFromShoulder0(nbttagcompound) != null;
+    }
+
+    // Paper - return entity
+    private Entity spawnEntityFromShoulder0(@Nullable NBTTagCompound nbttagcompound) {
+        if (!this.world.isClientSide && nbttagcompound != null && !nbttagcompound.isEmpty()) {
             return EntityTypes.a(nbttagcompound, this.world).map((entity) -> { // CraftBukkit
                 if (entity instanceof EntityTameableAnimal) {
                     ((EntityTameableAnimal) entity).setOwnerUUID(this.uniqueID);
                 }
 
                 entity.setPosition(this.locX(), this.locY() + 0.699999988079071D, this.locZ());
-                return ((WorldServer) this.world).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
-            }).orElse(true); // CraftBukkit
+                boolean addedToWorld = ((WorldServer) this.world).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
+                return addedToWorld ? entity : null;
+            }).orElse(null); // CraftBukkit // Paper - false -> null
         }
 
-        return true; // CraftBukkit
+        return null; // Paper - return null
     }
+    // Paper end
 
     @Override
     public abstract boolean isSpectator();
