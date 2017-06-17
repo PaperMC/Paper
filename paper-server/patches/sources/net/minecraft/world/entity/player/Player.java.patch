@@ -428,14 +428,11 @@
          }
  
      }
-@@ -1798,26 +1939,31 @@
+@@ -1798,26 +1939,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
 -            this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
--            this.setShoulderEntityLeft(new CompoundTag());
--            this.respawnEntityOnShoulder(this.getShoulderEntityRight());
--            this.setShoulderEntityRight(new CompoundTag());
 +            // CraftBukkit start
 +            if (this.respawnEntityOnShoulder(this.getShoulderEntityLeft())) {
 +                this.setShoulderEntityLeft(new CompoundTag());
@@ -444,14 +441,39 @@
 +                this.setShoulderEntityRight(new CompoundTag());
 +            }
 +            // CraftBukkit end
++        }
++
++    }
++
++    // Paper start - release entity api
++    public Entity releaseLeftShoulderEntity() {
++        Entity entity = this.respawnEntityOnShoulder0(this.getShoulderEntityLeft());
++        if (entity != null) {
+             this.setShoulderEntityLeft(new CompoundTag());
+-            this.respawnEntityOnShoulder(this.getShoulderEntityRight());
++        }
++        return entity;
++    }
++
++    public Entity releaseRightShoulderEntity() {
++        Entity entity = this.respawnEntityOnShoulder0(this.getShoulderEntityRight());
++        if (entity != null) {
+             this.setShoulderEntityRight(new CompoundTag());
          }
++        return entity;
++    }
++    // Paper end - release entity api
  
++    private boolean respawnEntityOnShoulder(CompoundTag nbttagcompound) { // CraftBukkit void->boolean
++    // Paper start - release entity api - return entity - overload
++        return this.respawnEntityOnShoulder0(nbttagcompound) != null;
      }
  
 -    private void respawnEntityOnShoulder(CompoundTag entityNbt) {
 -        if (!this.level().isClientSide && !entityNbt.isEmpty()) {
 -            EntityType.create(entityNbt, this.level(), EntitySpawnReason.LOAD).ifPresent((entity) -> {
-+    private boolean respawnEntityOnShoulder(CompoundTag nbttagcompound) { // CraftBukkit void->boolean
++    private Entity respawnEntityOnShoulder0(CompoundTag nbttagcompound) { // CraftBukkit void->boolean
++    // Paper end - release entity api - return entity - overload
 +        if (!this.level().isClientSide && !nbttagcompound.isEmpty()) {
 +            return EntityType.create(nbttagcompound, this.level(), EntitySpawnReason.LOAD).map((entity) -> { // CraftBukkit
                  if (entity instanceof TamableAnimal) {
@@ -461,11 +483,11 @@
                  entity.setPos(this.getX(), this.getY() + 0.699999988079071D, this.getZ());
 -                ((ServerLevel) this.level()).addWithUUID(entity);
 -            });
-+                return ((ServerLevel) this.level()).addWithUUID(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
-+            }).orElse(true); // CraftBukkit
++                return ((ServerLevel) this.level()).addWithUUID(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY) ? entity : null; // CraftBukkit // Paper start - release entity api - return entity
++            }).orElse(null); // CraftBukkit // Paper end - release entity api - return entity
          }
  
-+        return true; // CraftBukkit
++        return null; // Paper - return null
      }
  
      @Override
