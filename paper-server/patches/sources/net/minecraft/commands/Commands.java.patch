@@ -1,10 +1,9 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -138,6 +138,14 @@
- import net.minecraft.world.flag.FeatureFlags;
+@@ -139,6 +139,14 @@
  import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import com.google.common.base.Joiner;
 +import java.util.Collection;
@@ -12,9 +11,10 @@
 +import org.bukkit.event.player.PlayerCommandSendEvent;
 +import org.bukkit.event.server.ServerCommandEvent;
 +// CraftBukkit end
- 
++
  public class Commands {
  
+     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
 @@ -151,6 +159,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
@@ -35,12 +35,13 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -260,32 +274,79 @@
-         CommandContextBuilder<S> commandcontextbuilder1 = commandcontextbuilder.withSource(sourceMapper.apply(commandcontextbuilder.getSource()));
- 
+@@ -262,30 +276,77 @@
          return new ParseResults(commandcontextbuilder1, parseResults.getReader(), parseResults.getExceptions());
-+    }
-+
+     }
+ 
+-    public void performPrefixedCommand(CommandSourceStack source, String command) {
+-        command = command.startsWith("/") ? command.substring(1) : command;
+-        this.performCommand(this.dispatcher.parse(command, source), command);
 +    // CraftBukkit start
 +    public void dispatchServerCommand(CommandSourceStack sender, String command) {
 +        Joiner joiner = Joiner.on(" ");
@@ -78,13 +79,11 @@
      }
 +    // CraftBukkit end
  
-     public void performPrefixedCommand(CommandSourceStack source, String command) {
--        command = command.startsWith("/") ? command.substring(1) : command;
--        this.performCommand(this.dispatcher.parse(command, source), command);
++    public void performPrefixedCommand(CommandSourceStack source, String command) {
 +        // CraftBukkit start
 +        this.performPrefixedCommand(source, command, command);
-     }
- 
++    }
++
 +    public void performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
 +        s = s.startsWith("/") ? s.substring(1) : s;
 +        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
@@ -96,16 +95,15 @@
 +        this.performCommand(parseResults, command, command);
 +    }
  
--        Profiler.get().push(() -> {
--            return "/" + command;
 +    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
 +        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
 +
-+        Profiler.get().push(() -> {
+         Profiler.get().push(() -> {
+-            return "/" + command;
 +            return "/" + s;
          });
 -        ContextChain<CommandSourceStack> contextchain = Commands.finishParsing(parseResults, command, commandlistenerwrapper);
-+        ContextChain<CommandSourceStack> contextchain = Commands.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit
++        ContextChain contextchain = this.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit // Paper - Add UnknownCommandEvent
  
          try {
              if (contextchain != null) {
@@ -132,12 +130,12 @@
              }
          } finally {
              Profiler.get().pop();
-@@ -307,18 +368,18 @@
+@@ -307,18 +368,22 @@
      }
  
      @Nullable
 -    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
-+    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseresults, String s, CommandSourceStack commandlistenerwrapper, String label) { // CraftBukkit
++    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseresults, String s, CommandSourceStack commandlistenerwrapper, String label) { // CraftBukkit // Paper - Add UnknownCommandEvent
          try {
 -            Commands.validateParseResults(parseResults);
 -            return (ContextChain) ContextChain.tryFlatten(parseResults.getContext().build(command)).orElseThrow(() -> {
@@ -148,7 +146,11 @@
              });
          } catch (CommandSyntaxException commandsyntaxexception) {
 -            source.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
-+            commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
++            // Paper start - Add UnknownCommandEvent
++            final net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
++            // commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
++            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.brigadier.PaperBrigadier.componentFromMessage(commandsyntaxexception.getRawMessage()));
++            // Paper end - Add UnknownCommandEvent
              if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
                  int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
                  MutableComponent ichatmutablecomponent = Component.empty().withStyle(ChatFormatting.GRAY).withStyle((chatmodifier) -> {
@@ -157,16 +159,27 @@
                  });
  
                  if (i > 10) {
-@@ -333,7 +394,7 @@
+@@ -333,8 +398,18 @@
                  }
  
                  ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
 -                source.sendFailure(ichatmutablecomponent);
-+                commandlistenerwrapper.sendFailure(ichatmutablecomponent);
++                // Paper start - Add UnknownCommandEvent
++                // commandlistenerwrapper.sendFailure(ichatmutablecomponent);
++                builder
++                    .append(net.kyori.adventure.text.Component.newline())
++                    .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent));
              }
++            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(commandlistenerwrapper.getBukkitSender(), s, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++            if (event.message() != null) {
++                commandlistenerwrapper.sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
++                // Paper end - Add UnknownCommandEvent
++            }
  
              return null;
-@@ -368,7 +429,7 @@
+         }
+@@ -368,7 +443,7 @@
  
                  executioncontext1.close();
              } finally {
@@ -175,7 +188,7 @@
              }
          } else {
              callback.accept(executioncontext);
-@@ -377,11 +438,37 @@
+@@ -377,11 +452,37 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -214,7 +227,7 @@
          player.connection.send(new ClientboundCommandsPacket(rootcommandnode));
      }
  
-@@ -390,9 +477,10 @@
+@@ -390,9 +491,10 @@
  
          while (iterator.hasNext()) {
              CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
@@ -226,7 +239,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -415,7 +503,7 @@
+@@ -415,7 +517,7 @@
                      argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
                  }
  
@@ -235,7 +248,7 @@
  
                  resultNodes.put(commandnode2, commandnode3);
                  result.addChild(commandnode3);
-@@ -481,7 +569,7 @@
+@@ -481,7 +583,7 @@
              }
  
              private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {
