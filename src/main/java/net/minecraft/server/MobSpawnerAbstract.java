@@ -143,6 +143,7 @@ public abstract class MobSpawnerAbstract {
                                 }
                                 // Spigot End
                             }
+                        entity.spawnedViaMobSpawner = true; // Paper
                             // Spigot Start
                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
                                 Entity vehicle = entity.getVehicle();

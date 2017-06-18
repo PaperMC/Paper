@@ -1060,5 +1060,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Location origin = getHandle().origin;
         return origin == null ? null : origin.clone();
     }
+
+    @Override
+    public boolean fromMobSpawner() {
+        return getHandle().spawnedViaMobSpawner;
+    }
     // Paper end
 }
