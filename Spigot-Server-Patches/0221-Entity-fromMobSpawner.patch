@@ -1,0 +1,48 @@
+From dc587a67c0ed56180a98c8d98cb8ba9e6ce9c7ff Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 18 Jun 2017 18:17:12 -0500
+Subject: [PATCH] Entity#fromMobSpawner()
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index d34ec4ff..764d88dc 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -169,6 +169,7 @@ public abstract class Entity implements ICommandListener {
+     public final boolean defaultActivationState;
+     public long activatedTick = Integer.MIN_VALUE;
+     public boolean fromMobSpawner;
++    public boolean actuallyFromMobSpawner; // Paper
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index dd740276..6e2401bb 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -106,6 +106,7 @@ public abstract class MobSpawnerAbstract {
+                         if (this.spawnData.b().d() == 1 && this.spawnData.b().hasKeyOfType("id", 8) && entity instanceof EntityInsentient) {
+                             ((EntityInsentient) entity).prepare(world.D(new BlockPosition(entity)), (GroupDataEntity) null);
+                         }
++                        entity.actuallyFromMobSpawner = true; // Paper
+                         // Spigot Start
+                         if ( entity.world.spigotConfig.nerfSpawnerMobs )
+                         {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 05f3df4e..d06a0b88 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -788,5 +788,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         Location origin = getHandle().origin;
+         return origin == null ? null : origin.clone();
+     }
++
++    @Override
++    public boolean fromMobSpawner() {
++        return getHandle().actuallyFromMobSpawner;
++    }
+     // Paper end
+ }
+-- 
+2.11.0
+
