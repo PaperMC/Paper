@@ -805,5 +805,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @Nullable
     Location getOrigin();
+
+    /**
+     * Returns whether this entity was spawned from a mob spawner.
+     *
+     * @return True if entity spawned from a mob spawner
+     */
+    boolean fromMobSpawner();
     // Paper end
 }
