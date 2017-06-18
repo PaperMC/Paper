@@ -1,0 +1,1656 @@
+From 89b23913face5211d9fa3e0ca03875895a90c3ac Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Thu, 18 Feb 2016 14:37:38 -0700
+Subject: [PATCH] Add Profile API
+
+Plugins can modify lookup behavior through events.
+Adds a skin api
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java b/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java
+new file mode 100644
+index 0000000..b98d733
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java
+@@ -0,0 +1,180 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.UUID;
++
++import com.google.common.base.Objects;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.Bukkit;
++import org.bukkit.OfflinePlayer;
++import org.bukkit.entity.Player;
++
++/**
++ * Represents a player's profile
++ * Contains their uuid and username
++ * <p>
++ * This may or may not have properties
++ */
++public final class AccountProfile {
++    private final UUID id;
++    private final String name;
++    private final ProfileProperties properties;
++
++    public AccountProfile(UUID id, String name, ProfileProperties properties) {
++        Preconditions.checkNotNull(id, "Null id");
++        Preconditions.checkNotNull(name, "Null name");
++        Preconditions.checkArgument(ProfileLookup.isValidName(name), "Invalid name %s", name);
++        this.id = id;
++        this.name = name;
++        this.properties = properties;
++    }
++
++    public AccountProfile(UUID id, String name) {
++        this(id, name, null);
++    }
++
++    /**
++     * Get this player's uuid
++     *
++     * @return this players uuid
++     */
++    public UUID getId() {
++        return id;
++    }
++
++    /**
++     * Get this player's name
++     *
++     * @return this player's name
++     */
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * Get a json array with this players propertes
++     *
++     * @return a json array with this player's properties or null if not retreived
++     * @throws IllegalStateException if the player's profiles haven't been looked up
++     */
++    public ProfileProperties getProperties() {
++        Preconditions.checkState(hasProperties(), "Profile %s has no properties", this);
++        return properties;
++    }
++
++    /**
++     * Return if the player has its profiles
++     *
++     * @return if the player has its properties
++     */
++    public boolean hasProperties() {
++        return properties != null;
++    }
++
++    /**
++     * Return the player's textures, or null if none
++     *
++     * @return the player's textures, or null if none
++     * @throws IllegalStateException if the player has no properties
++     */
++    public PlayerTextures getTextures() {
++        Preconditions.checkState(hasProperties(), "Profile %s has no properties", this);
++        return PlayerTextures.parseTextures(this);
++    }
++
++    /**
++     * Return the player if online
++     *
++     * @return the player, or null if none
++     */
++    public Player getPlayer() {
++        return Bukkit.getPlayer(this.getId());
++    }
++
++    /**
++     * Return the offline player
++     * <p>Should never return null, even if the player doesn't exist.2</p>
++     *
++     * @return the offline player
++     */
++    public OfflinePlayer getOfflinePlayer() {
++        return Bukkit.getOfflinePlayer(getId());
++    }
++
++    /**
++     * Return a version of this profile with no properties
++     * <p>
++     * Returns this object if this object has no properties
++     *
++     * @return a version of this profile with no properties
++     */
++    public AccountProfile clearProperties() {
++        return withProperties(null);
++    }
++
++    /**
++     * Lookup the properties if needed
++     * <p>
++     * Unlike {@link #lookupProperties()}, this only does a lookup if needed
++     * Looks up from the default lookup.
++     *
++     * @return the profile, with properties looked up
++     * @throws IllegalArgumentException if there is no player found with this profile
++     * @throws LookupFailedException    if unable to lookup properties
++     */
++    public AccountProfile withProperties() {
++        if (hasProperties()) {
++            return this;
++        } else {
++            return lookupProperties();
++        }
++    }
++
++    /**
++     * Return a copy of this profile with properties looked up from the default lookup
++     * <p>
++     * This is just a utility wrapper for {@link ProfileLookup#lookupProperties(AccountProfile)}
++     *
++     * @return a copy of this profile with updated properties
++     * @throws IllegalArgumentException if there is no player found with this profile
++     * @throws LookupFailedException    if unable to lookup properties
++     */
++    public AccountProfile lookupProperties() {
++        return withProperties(Bukkit.getProfileLookup().lookupProperties(this));
++    }
++
++    /**
++     * Return a copy of this profile with the given properties
++     * <p>
++     * Returns this object if the properties are the same as the current properties
++     *
++     * @param properties the properties to use for the new profile
++     * @return a copy of this profile with the given properties
++     */
++    public AccountProfile withProperties(ProfileProperties properties) {
++        return this.properties == properties ? this : new AccountProfile(getId(), getName(), properties);
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (obj == this) return true;
++        if (obj == null) return false;
++        if (obj.getClass() == AccountProfile.class) {
++            AccountProfile other = (AccountProfile) obj;
++            return other.getId().equals(this.getId())
++                    && other.getName().equals(this.getName())
++                    && Objects.equal(this.properties, other.properties);
++        }
++        return false;
++    }
++
++    @Override
++    public int hashCode() {
++        return getId().hashCode();
++    }
++
++    @Override
++    public String toString() {
++        return getName() + ": " + getId();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/LookupCause.java b/src/main/java/com/destroystokyo/paper/profile/LookupCause.java
+new file mode 100644
+index 0000000..be392e3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/LookupCause.java
+@@ -0,0 +1,7 @@
++package com.destroystokyo.paper.profile;
++
++public enum LookupCause {
++    UUID_LOOKUP,
++    NAME_LOOKUP,
++    PROPERTIES_LOOKUP;
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java b/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java
+new file mode 100644
+index 0000000..11628b7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java
+@@ -0,0 +1,19 @@
++package com.destroystokyo.paper.profile;
++
++/**
++ * Thrown when the lookup fails, for reason other then a profile not found
++ */
++public class LookupFailedException extends RuntimeException {
++    public LookupFailedException(Throwable cause) {
++        super(cause);
++    }
++
++    public LookupFailedException(String message, Throwable cause) {
++        super(message, cause);
++    }
++
++    public LookupFailedException(String s) {
++        super(s);
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java b/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java
+new file mode 100644
+index 0000000..2a8667c
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java
+@@ -0,0 +1,265 @@
++package com.destroystokyo.paper.profile;
++
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.Base64;
++import java.util.Map;
++
++import com.google.common.base.Charsets;
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableMap;
++import com.google.common.collect.Iterables;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParseException;
++import com.google.gson.JsonParser;
++
++/**
++ * A player's texture data, including skin and cape.
++ */
++public final class PlayerTextures {
++    private final AccountProfile profile;
++    private final TextureData skinData, capeData;
++
++    public PlayerTextures(AccountProfile profile, TextureData skinData, TextureData capeData) {
++        Preconditions.checkNotNull(profile, "Null profile");
++        Preconditions.checkArgument(profile.hasProperties(), "No properties for %s", profile);
++        Preconditions.checkArgument(getProperty(profile.getProperties()) != null, "No texture data for %s", profile);
++        this.profile = profile;
++        this.skinData = skinData;
++        this.capeData = capeData;
++    }
++
++    /**
++     * Return the player's skin data, or null if the player has no skin
++     *
++     * @return the player's skin data, or null if none
++     */
++    public TextureData getSkinData() {
++        return skinData;
++    }
++
++    /**
++     * Return the player's cape data, or null if the player has no cape
++     *
++     * @return the player's cape data, or null if none
++     */
++    public TextureData getCapeData() {
++        return skinData;
++    }
++
++    /**
++     * Return the url of the player's skin, or null if the player has no skin
++     *
++     * @return the url of the player's skin, or null if none
++     */
++    public URL getSkin() {
++        return getSkinData() == null ? null : getSkinData().getUrl();
++    }
++
++    /**
++     * Return if the player has a skin
++     *
++     * @return the player has a skin
++     */
++    public boolean hasSkin() {
++        return getSkinData() != null;
++    }
++
++    /**
++     * Return if the player has a cape
++     *
++     * @return the player has a cape
++     */
++    public boolean hasCape() {
++        return getCapeData() != null;
++    }
++
++    /**
++     * Return the url of the player's cape, or null if the player has no cape
++     *
++     * @return the url of the player's cape, or null if none
++     */
++    public URL getCape() {
++        return getCapeData() == null ? null : getCapeData().getUrl();
++    }
++
++    /**
++     * Return if the player's skin has slim arms, or false if the player has no skin.
++     * <p>Alex style skins should return true. Steve style skins should return false.
++     * If the player has no skin, returns false.</p>
++     *
++     * @return if the player has slim arms
++     */
++    public boolean isSlimSkin() {
++        String model;
++        return hasSkin() && (model = getSkinData().getMetadata().get("model")) != null && model.equals("slim");
++    }
++
++    /**
++     * Get the profile this texture is associated with
++     *
++     * @return the profile
++     */
++    public AccountProfile getProfile() {
++        return profile;
++    }
++
++    public static PlayerTextures parseTextures(final AccountProfile profile) {
++        Preconditions.checkNotNull(profile, "Null profile");
++        Preconditions.checkArgument(profile.hasProperties(), "No properties for %s", profile);
++        ProfileProperty texture = getProperty(profile.getProperties());
++        if (texture == null) return null;
++        TextureData skinData = null;
++        TextureData capeData = null;
++        try {
++            JsonObject textureData = new JsonParser().parse(new String(Base64.getDecoder().decode(texture.getValue()), Charsets.UTF_8)).getAsJsonObject();
++            Preconditions.checkArgument(UUIDUtils.toMojangString(profile.getId()).equals(textureData.get("id").getAsString()), "Unexpected id: %s", textureData.get("id").getAsString());
++            JsonObject textures = textureData.get("textures").getAsJsonObject();
++            JsonObject skinJson = textures.getAsJsonObject("SKIN");
++            JsonObject capeJson = textures.getAsJsonObject("CAPE");
++            if (skinJson != null) {
++                String url = skinJson.getAsJsonPrimitive("url").getAsString();
++                ImmutableMap<String, String> metadata;
++                JsonObject metadataJson = skinJson.getAsJsonObject("metadata");
++                if (metadataJson != null) {
++                    ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.builder();
++                    for (Map.Entry<String, JsonElement> entry : metadataJson.entrySet()) {
++                        metadataBuilder.put(entry.getKey(), entry.getValue().getAsString());
++                    }
++                    metadata = metadataBuilder.build();
++                } else {
++                    metadata = ImmutableMap.of();
++                }
++                skinData = new TextureData(url, metadata);
++            }
++            if (capeJson != null) {
++                String url = capeJson.getAsJsonPrimitive("url").getAsString();
++                ImmutableMap<String, String> metadata;
++                JsonObject metadataJson = capeJson.getAsJsonObject("metadata");
++                if (metadataJson != null) {
++                    ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.builder();
++                    for (Map.Entry<String, JsonElement> entry : metadataJson.entrySet()) {
++                        metadataBuilder.put(entry.getKey(), entry.getValue().getAsString());
++                    }
++                    metadata = metadataBuilder.build();
++                } else {
++                    metadata = ImmutableMap.of();
++                }
++                capeData = new TextureData(url, metadata);
++            }
++            return new PlayerTextures(profile, skinData, capeData);
++        } catch (JsonParseException | ClassCastException | IllegalStateException e) { // IllegalStateException or ClassCastException is thrown by 'getAs()' methods
++            throw new IllegalArgumentException("Invalid json in textures", e);
++        }
++    }
++
++    private volatile Boolean signedByMojang;
++
++    /**
++     * Return if the texture has been singed by mojang
++     * <p>Clients will not accept textures that have not been signed by mojang.</p>
++     *
++     * @return if signed by mojang
++     */
++    public boolean isSignedByMojang() {
++        // Cache if we have a signature, to avoid verifying the texture twice
++        if (signedByMojang == null) {
++                synchronized (this) {
++                    if (signedByMojang == null) {
++                        signedByMojang = isSigned() && getProperty().isSignedByMojang();
++                    }
++                }
++        }
++        return signedByMojang;
++    }
++
++    /**
++     * Return if the texture has a signature.
++     *
++     * @return if the texture has a signature
++     */
++    public boolean isSigned() {
++        return getProperty().isSigned();
++    }
++
++    public ProfileProperty getProperty() {
++        return getProperty(profile.getProperties());
++    }
++
++    private static ProfileProperty getProperty(ProfileProperties properties) {
++        // Don't worry, getProperties() is immutable and IterableSet has a defined iteration order
++        return Iterables.getFirst(properties.getProperties("textures"), null);
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++
++        PlayerTextures that = (PlayerTextures) o;
++
++        if (!profile.equals(that.profile)) return false;
++        if (skinData != null ? !skinData.equals(that.skinData) : that.skinData != null) return false;
++        return !(capeData != null ? !capeData.equals(that.capeData) : that.capeData != null);
++
++    }
++
++    @Override
++    public int hashCode() {
++        return profile.hashCode();
++    }
++
++    public static final class TextureData {
++        private final URL url;
++        private final ImmutableMap<String, String> metadata;
++
++        public URL getUrl() {
++            return url;
++        }
++
++        public ImmutableMap<String, String> getMetadata() {
++            return metadata;
++        }
++
++        public TextureData(String url, ImmutableMap<String, String> metadata) {
++            Preconditions.checkNotNull(url, "Null url");
++            Preconditions.checkNotNull(metadata, "Null metadata");
++            try {
++                this.url = new URL(url);
++                this.metadata = metadata;
++            } catch (MalformedURLException e) {
++                throw new IllegalArgumentException("Invalid url " + url, e);
++            }
++        }
++
++        public TextureData(URL url, ImmutableMap<String, String> metadata) {
++            Preconditions.checkNotNull(url, "Null url");
++            Preconditions.checkNotNull(metadata, "Null metadata");
++            this.url = url;
++            this.metadata = metadata;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++
++            TextureData data = (TextureData) o;
++
++            if (!url.equals(data.url)) return false;
++            return metadata.equals(data.metadata);
++
++        }
++
++        @Override
++        public int hashCode() {
++            return url.hashCode();
++        }
++
++        @Override
++        public String toString() {
++            return url.toString();
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java
+new file mode 100644
+index 0000000..359cf03
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java
+@@ -0,0 +1,194 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.Collection;
++import java.util.UUID;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++
++import com.google.common.collect.ImmutableList;
++
++public interface ProfileLookup {
++
++    /**
++     * A regex of valid minecraft usernames
++     * <p>
++     * We have to accept spaces due to this bug: https://www.reddit.com/r/Minecraft/comments/276wcb/psa_usernames_can_contain_spaces_this_effectively/
++     * We also have to accept names less than 3 characters
++     */
++    public static final Pattern NAME_PATTERN = Pattern.compile("[ \\w]{1,16}+");
++
++    /**
++     * Return if the name is valid
++     * <p>
++     * This does not mean there is a player with a name, but that there *could* be a player with that name
++     *
++     * @param s the name to check
++     * @return true if valid
++     */
++    public static boolean isValidName(String s) {
++        Matcher m = NAME_PATTERN.matcher(s);
++        return m.matches();
++    }
++
++    /**
++     * Lookup a profile with the given name
++     * <p>
++     * Returns null if there is no player with the given name.
++     * The returned player profile may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     *
++     * @param name look for a profile with this name
++     * @return a profile with the given name, or null if there is no player
++     * @throws LookupFailedException if unable to lookup
++     * @throws NullPointerException if
++     */
++    public AccountProfile lookup(String name);
++
++    /**
++     * Lookup a profile with the given uuid
++     * <p>
++     * Returns null if there is no player with the given name.
++     * The looked up profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     *
++     * @param id look for a profile with this uuid
++     * @return a profile with the given id
++     * @throws LookupFailedException if unable to lookup
++     */
++    public AccountProfile lookup(UUID id);
++
++    /**
++     * Lookup a profile with the given name
++     * <p>
++     * The looked up profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     *
++     * @param name     look for a profile with this name
++     * @param callback the callback to handle the result of the lookups
++     */
++    public default void lookup(String name, ProfileLookupCallback<String> callback) {
++        try {
++            AccountProfile profile = lookup(name);
++            callback.onLookup(profile, name);
++        } catch (LookupFailedException e) {
++            callback.onLookupFailed(e.getCause(), name);
++        } catch (Throwable t) {
++            callback.onLookupFailed(t, name);
++        }
++    }
++
++
++    /**
++     * Lookup a profile with the given id
++     * <p>
++     * The returned player profile may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     *
++     * @param id       look for a profile with this id
++     * @param callback the callback to handle the result of the lookups
++     */
++    public default void lookup(UUID id, ProfileLookupCallback<UUID> callback) {
++        try {
++            AccountProfile profile = lookup(id);
++            callback.onLookup(profile, id);
++        } catch (LookupFailedException e) {
++            callback.onLookupFailed(e.getCause(), id);
++        } catch (Throwable t) {
++            callback.onLookupFailed(t, id);
++        }
++    }
++
++    /**
++     * Lookup all profiles with the given ids, earring on non-existent players
++     * <p>
++     * The returned profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     * <p>
++     * Use the callback version of the method if you want to handle (or ignore) non-existent players.
++     * The ordering of the returned profiles may or may not coincide with the ordering of the passed collection.
++     * Therefore, if you need the original id that you used for lookup, you should use the callback-version,
++     *
++     * @param ids the ids to lookup
++     * @return the resulting profiles
++     * @throws LookupFailedException    if lookup fails
++     * @throws IllegalArgumentException if one of the ids doesn't exist
++     */
++    public default ImmutableList<AccountProfile> lookupIds(Collection<UUID> ids) {
++        ImmutableList.Builder<AccountProfile> profileBuilder = ImmutableList.builder();
++        lookupIds(ids, ProfileLookupCallback.assumeFound((profile, original) -> profileBuilder.add(profile)));
++        return profileBuilder.build();
++    }
++
++    /**
++     * Lookup all profiles with the given names, ignoring non-existent profiles
++     * <p>
++     * The looked up profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     * <p>
++     * Use the callback version of the method if you want to handle (or ignore) non-existent players.
++     * The ordering of the returned profiles may or may not coincide with the ordering of the passed collection.
++     * Therefore, if you need the original name that you used for lookup, you should use the callback-version,
++     *
++     * @param names the names to lookup
++     * @return the resulting profiles
++     * @throws LookupFailedException    if lookup fails
++     * @throws IllegalArgumentException if one of the names doesn't exist
++     */
++    public default ImmutableList<AccountProfile> lookupNames(Collection<String> names) {
++        ImmutableList.Builder<AccountProfile> profileBuilder = ImmutableList.builder();
++        lookupNames(names, ProfileLookupCallback.assumeFound((profile, original) -> profileBuilder.add(profile)));
++        return profileBuilder.build();
++    }
++
++    /**
++     * Lookup all profiles with the given ids
++     * <p>
++     * The looked up profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     * <p>
++     * Blocks until the lookups complete
++     *
++     * @param ids      the ids to lookup
++     * @param callback the callback to handle the lookups
++     */
++    public default void lookupIds(Collection<UUID> ids, ProfileLookupCallback<UUID> callback) {
++        ids.forEach((id) -> lookup(id, callback));
++    }
++
++    /**
++     * Lookup all profiles with the given names
++     * <p>
++     * The looked up profiles may or may not include properties
++     * If properties are needed, proceed to use a property lookup
++     * <p>
++     * Blocks until the lookups complete
++     *
++     * @param names    the names to lookup
++     * @param callback the callback to handle the lookups
++     */
++    public default void lookupNames(Collection<String> names, ProfileLookupCallback<String> callback) {
++        names.forEach((name) -> lookup(name, callback));
++    }
++
++    /**
++     * Lookup the player's properties
++     * <p>
++     * Should never return null
++     *
++     * @param profile the profile to lookup properties for
++     * @return the player's properties
++     * @throws IllegalArgumentException if there is no player with the given name/uuid
++     * @throws LookupFailedException    if unable to lookup properties
++     */
++    public ProfileProperties lookupProperties(AccountProfile profile);
++
++    /**
++     * Return if the lookups have the same underlying source
++     * <p>
++     * Two lookups are considered equal if they use the same underlying source
++     *
++     * @param other the object to check equality with
++     * @return if equal
++     */
++    public boolean equals(Object other);
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java b/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java
+new file mode 100644
+index 0000000..859aff1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java
+@@ -0,0 +1,51 @@
++package com.destroystokyo.paper.profile;
++
++import com.google.common.base.Preconditions;
++
++/**
++ * A callback for profile lookup
++ * <p/>
++ * Methods may be called multiple times in a bulk lookup.
++ * <b>Just because a success method is called, doesn't mean the lookup wont fail!</b>
++ * Callbacks should take this into account, and wait till completion to handle
++ *
++ * @param <T> the key that is being looked up
++ */
++@FunctionalInterface
++public interface ProfileLookupCallback<T> {
++
++    /**
++     * Calls when a lookup succeeds
++     * <p>
++     * Profile may not be null if the player doesn't exist
++     *
++     * @param profile  the profile that was found, or null if the player
++     * @param original the key that was being looked up
++     */
++    public void onLookup(AccountProfile profile, T original);
++
++    /**
++     * Called when a lookup fails
++     *
++     * @param t        the exception that was caught, may be null
++     * @param original the key that was being looked up
++     */
++    public default void onLookupFailed(Throwable t, T original) {
++        throw new LookupFailedException("Unable to lookup " + original.toString(), t);
++    }
++
++    public static <T> ProfileLookupCallback<T> assumeFound(ProfileLookupCallback<T> delegate) {
++        return new ProfileLookupCallback<T>() {
++            @Override
++            public void onLookup(AccountProfile profile, T original) {
++                Preconditions.checkArgument(profile != null, "%s doesn't exist", original);
++                delegate.onLookup(profile, original);
++            }
++
++            @Override
++            public void onLookupFailed(Throwable t, T original) {
++                delegate.onLookupFailed(t, original);
++            }
++        };
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java b/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java
+new file mode 100644
+index 0000000..8d1ad99
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java
+@@ -0,0 +1,112 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.Collection;
++import java.util.Map;
++import java.util.function.BiConsumer;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.ImmutableSetMultimap;
++import com.google.common.collect.SetMultimap;
++
++public final class ProfileProperties {
++    private final ImmutableSetMultimap<String, ProfileProperty> properties;
++
++    private ProfileProperties(ImmutableSetMultimap<String, ProfileProperty> properties) {
++        this.properties = Preconditions.checkNotNull(properties);;
++    }
++
++    public static final ProfileProperties EMPTY = new ProfileProperties(ImmutableSetMultimap.of());
++
++    public ImmutableSet<ProfileProperty> getProperties(String name) {
++        return properties.get(name);
++    }
++
++    /**
++     * Get a single property with the given name
++     * <p>
++     * Throws an exception if there is more than one, or none at all
++     *
++     * @param name the name of the property to get
++     * @return the only property with the given name
++     * @throws IllegalStateException if there are no properties
++     * @throws IllegalStateException if there are more than one property with the name
++     */
++    public ProfileProperty getOnlyProperty(String name) {
++        ImmutableSet<ProfileProperty> properties = getProperties(name);
++        Preconditions.checkState(!properties.isEmpty(), "No properties named %s", name);
++        Preconditions.checkState(properties.size() == 1, "%s properties named %s", properties.size(), name);
++        return properties.iterator().next();
++    }
++
++    public boolean hasProperty(String name) {
++        return !getProperties(name).isEmpty();
++    }
++
++    public static ProfileProperties copyOf(Collection<ProfileProperty> properties) {
++        Builder builder = new Builder();
++        properties.forEach(builder::put);
++        return builder.build();
++    }
++
++    public static ProfileProperties copyOf(SetMultimap<String, ProfileProperty> originalMultimap) {
++        Preconditions.checkNotNull(originalMultimap, "Null multimap");
++        ImmutableSetMultimap<String, ProfileProperty> multimap = ImmutableSetMultimap.copyOf(originalMultimap);
++        if (multimap.isEmpty()) return EMPTY;
++        for (Map.Entry<String, ProfileProperty> entry : multimap.entries()) {
++            String name = entry.getKey();
++            ProfileProperty property = entry.getValue();
++            Preconditions.checkArgument(property.getName().equals(name), "Property %s with key %s", property, name);
++        }
++        return new ProfileProperties(multimap);
++    }
++
++    public int size() {
++        return properties.size();
++    }
++
++    public boolean isEmpty() {
++        return properties.isEmpty();
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        return obj instanceof ProfileProperties && ((ProfileProperties) obj).properties.equals(this.properties);
++    }
++
++    public void forEach(BiConsumer<String, ProfileProperty> consumer) {
++        for (Map.Entry<String, ProfileProperty> entry : properties.entries()) {
++            consumer.accept(entry.getKey(), entry.getValue());
++        }
++    }
++
++    public static ProfileProperties.Builder builder() {
++        return new Builder();
++    }
++
++    public final static class Builder {
++        private final ImmutableSetMultimap.Builder<String, ProfileProperty> builder = ImmutableSetMultimap.builder();
++        private int size;
++
++        public void put(ProfileProperty property) {
++            Preconditions.checkNotNull(property, "Null property");
++            put0(property.getName(), property);
++        }
++
++        public void put(String name, ProfileProperty value) {
++            Preconditions.checkNotNull(name, "Null name");
++            Preconditions.checkNotNull(value, "Null property");
++            Preconditions.checkArgument(name.equals(value.getName()), "Name %s doesn't match property %s", name, value);
++            put0(name, value);
++        }
++
++        private void put0(String name, ProfileProperty property) {
++            builder.put(name, property);
++            size++;
++        }
++
++        public ProfileProperties build() {
++            return size == 0 ? EMPTY : new ProfileProperties(builder.build());
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
+new file mode 100644
+index 0000000..16deedf
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
+@@ -0,0 +1,128 @@
++package com.destroystokyo.paper.profile;
++
++import java.io.BufferedInputStream;
++import java.io.IOException;
++import java.security.InvalidKeyException;
++import java.security.KeyFactory;
++import java.security.NoSuchAlgorithmException;
++import java.security.PublicKey;
++import java.security.Signature;
++import java.security.SignatureException;
++import java.security.spec.InvalidKeySpecException;
++import java.security.spec.X509EncodedKeySpec;
++import java.util.Base64;
++
++import com.google.common.base.Preconditions;
++import com.google.common.io.ByteStreams;
++
++public final class ProfileProperty {
++    private final String name, value, signature;
++
++    public ProfileProperty(String name, String value, String signature) {
++        this.name = Preconditions.checkNotNull(name, "Name of the property can't be null");
++        this.value = Preconditions.checkNotNull(value, "Value of the property can't be null");
++        this.signature = signature;
++    }
++
++    public ProfileProperty(String name, String value) {
++        this(name, value, null);
++    }
++
++    /**
++     * Return the name of this property
++     *
++     * @return the name of this property
++     */
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * Return the value of this property
++     *
++     * @return the value of this property
++     */
++    public String getValue() {
++        return value;
++    }
++
++    /**
++     * Return the signature of this property
++     * <p>
++     * This performs no verification of the returned signature.
++     *
++     * @return the signature of this property
++     * @throws IllegalStateException if the property is not singed
++     */
++    public String getSignature() {
++        Preconditions.checkState(signature != null, "Property is not signed");
++        return signature;
++    }
++
++    /**
++     * Return if the property is signed
++     *
++     * @return if the property is signed
++     */
++    public boolean isSigned() {
++        return signature != null;
++    }
++
++    /**
++     * Return if the signature is valid with the specified public key
++     *
++     * @param key the public key
++     * @return if valid
++     * @throws IllegalArgumentException if the key is invalid
++     * @throws IllegalStateException    if the property is not signed
++     * @throws RuntimeException         if unable to verify for some other reason
++     */
++    public boolean isSignatureValid(PublicKey key) {
++        try {
++            Signature signature = Signature.getInstance("SHA1withRSA");
++            signature.initVerify(key);
++            signature.update(this.value.getBytes());
++            return signature.verify(Base64.getDecoder().decode(getSignature()));
++        } catch (InvalidKeyException e) {
++            throw new IllegalArgumentException("Invalid key", e);
++        } catch (SignatureException e) {
++            throw new RuntimeException("Unable to verify", e);
++        } catch (NoSuchAlgorithmException e) {
++            throw new AssertionError("Couldn't find required algorithm", e);
++        }
++    }
++
++    /**
++     * Return if the signature has been signed by mojang
++     *
++     * @return if valid with mojang
++     * @throws IllegalStateException if the property is not signed
++     * @throws RuntimeException      if unable to verify for some other reason
++     */
++    public boolean isSignedByMojang() {
++        try {
++            return isSignatureValid(YGGDRASIL_PUBLIC_KEY);
++        } catch (IllegalArgumentException e) {
++            throw new RuntimeException("Invalid mojang key", e);
++        }
++    }
++
++    public static final PublicKey YGGDRASIL_PUBLIC_KEY;
++
++    static {
++        try (
++                // NOTE: Update this if yggdrasil public key location changes
++                BufferedInputStream in = new BufferedInputStream(ProfileProperty.class.getResourceAsStream("/yggdrasil_session_pubkey.der"))
++        ) {
++            X509EncodedKeySpec spec = new X509EncodedKeySpec(ByteStreams.toByteArray(in));
++            KeyFactory factory = KeyFactory.getInstance("RSA");
++            YGGDRASIL_PUBLIC_KEY = factory.generatePublic(spec);
++        } catch (InvalidKeySpecException e) {
++            throw new AssertionError("Missing/invalid yggdrasil public key!", e);
++        } catch (IOException e) {
++            throw new AssertionError("Couldn't load key", e);
++        } catch (NoSuchAlgorithmException e) {
++            throw new AssertionError("Missing RSA", e);
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java b/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java
+new file mode 100644
+index 0000000..96c8b5f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java
+@@ -0,0 +1,56 @@
++package com.destroystokyo.paper.profile;
++
++import java.util.UUID;
++
++import com.destroystokyo.paper.utils.Hex;
++import com.google.common.base.Preconditions;
++import com.google.common.primitives.Longs;
++
++public class UUIDUtils {
++    private UUIDUtils() {}
++
++    public static String toMojangString(UUID id) {
++        Preconditions.checkNotNull(id, "Null id");
++        return Hex.encodeString(toBytes(id));
++    }
++
++    public static UUID fromString(String s) {
++        Preconditions.checkNotNull(s, "Null string");
++        if (s.length() == 36) { // UUID.toString() uuid
++            s = s.replace("-", "");
++        } else if (s.length() != 32) {
++            throw new IllegalArgumentException("Invalid UUID: " + s);
++        }
++        try {
++            return fromBytes(Hex.decode(s));
++        } catch (IllegalArgumentException e) {
++            throw new IllegalArgumentException("Invalid UUID: " + s);
++        }
++    }
++
++    public static byte[] toBytes(UUID id) {
++        Preconditions.checkNotNull(id, "Null id");
++        byte[] result = new byte[16];
++        long lsb = id.getLeastSignificantBits();
++        for (int i = 15; i >= 8; i--) {
++            result[i] = (byte) (lsb & 0xffL);
++            lsb >>= 8;
++        }
++        long msb = id.getMostSignificantBits();
++        for (int i = 7; i >= 0; i--) {
++            result[i] = (byte) (msb & 0xffL);
++            msb >>= 8;
++        }
++        return result;
++    }
++
++    public static UUID fromBytes(byte[] bytes) {
++        Preconditions.checkNotNull(bytes, "Null bytes");
++        Preconditions.checkArgument(bytes.length == 16, "Invalid length: %s", bytes.length);
++        long msb = Longs.fromBytes(bytes[0], bytes[1], bytes[2], bytes[3],
++                bytes[4], bytes[5], bytes[6], bytes[7]);
++        long lsb = Longs.fromBytes(bytes[8], bytes[9], bytes[10], bytes[11],
++                bytes[12], bytes[13], bytes[14], bytes[15]);
++        return new UUID(msb, lsb);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java
+new file mode 100644
+index 0000000..57776d5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java
+@@ -0,0 +1,55 @@
++package com.destroystokyo.paper.profile.event;
++
++import com.destroystokyo.paper.profile.LookupCause;
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.event.HandlerList;
++
++/**
++ * Called before a uuid is requested from mojang.
++ * <p>
++ * <p>The event may be called synchronouslys if the uuid is resolved on the main thread</p>
++ */
++public class AsyncNamePreResolveEvent extends AsyncProfilePreResolveEvent {
++    private final String name;
++
++    public AsyncNamePreResolveEvent(String name) {
++        super(LookupCause.NAME_LOOKUP);
++        Preconditions.checkNotNull(name, "Null name");
++        this.name = name;
++    }
++
++    /**
++     * Return the name that was used to request the profile
++     *
++     * @return the name that was requested
++     */
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * {@inheritDoc}
++     *
++     * @throws IllegalArgumentException if the profile's name doesn't match the looked up names
++     */
++    @Override
++    public void setResult(AccountProfile result) {
++        if (result != null) {
++            Preconditions.checkArgument(result.getName().equalsIgnoreCase(this.getName()), "Name %s doesn't match looked up name: %s", result.getName(), this.getName());
++        }
++        super.setResult(result);
++    }
++
++    private static final HandlerList handlerList = new HandlerList();
++
++    public static HandlerList getHandlerList() {
++        return handlerList;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlerList;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java
+new file mode 100644
+index 0000000..bc81ec3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java
+@@ -0,0 +1,62 @@
++package com.destroystokyo.paper.profile.event;
++
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import com.destroystokyo.paper.profile.LookupCause;
++
++/**
++ * Called before a profile is looked up from mojang.
++ * Plugins can set a profile, which will effectively 'cancel' the lookup from mojang.
++ * <p>May be called from the main thread if the lookup is from the main thread.</p>
++ */
++public abstract class AsyncProfilePreResolveEvent extends Event {
++    private final LookupCause cause;
++    private AccountProfile result;
++
++    public AsyncProfilePreResolveEvent(LookupCause cause) {
++        super(!Bukkit.isPrimaryThread());
++        this.cause = Preconditions.checkNotNull(cause, "Null cause");;
++    }
++
++    /**
++     * Get the reason this profile is being looked up
++     * @return the reason this profile is being looked up
++     */
++    public LookupCause getCause() {
++        return cause;
++    }
++
++    /**
++     * Set the profile that will be returned by the lookup
++     * <p>Overrides any existing profile, and prevents a lookup from mojang.
++     * Setting to null re-allows a mojang lookup.</p>
++     *
++     * @param result the profile that will be returned by the lookup
++     */
++    public void setResult(AccountProfile result) {
++        this.result = result;
++    }
++
++    /**
++     * Get if a plugin has set the profile to be returned, and prevented a lookup to mojang
++     * <p>If not, it must be looked up from mojang</p>
++     *
++     * @return if a plugin has overriden the profile to be returned
++     */
++    public boolean isResolved() {
++        return result != null;
++    }
++
++    /**
++     * Get the profile that will be returned by the lookup, if another plugin has set it
++     * <p>If this returns null, than no plugin has set the profile and it must be looked up from mojang</p>
++     *
++     * @return the profile that has been set, or null if not set
++     */
++    public AccountProfile getResult() {
++        return result;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java
+new file mode 100644
+index 0000000..cbc2572
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java
+@@ -0,0 +1,80 @@
++package com.destroystokyo.paper.profile.event;
++
++import com.google.common.base.Preconditions;
++
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import com.destroystokyo.paper.profile.LookupCause;
++import com.destroystokyo.paper.profile.AccountProfile;
++
++/**
++ * Called once a profile is resolved.
++ * <p>May come from a plugin or from mojang.</p>
++ */
++public class AsyncProfileResolveEvent extends Event {
++    private final LookupCause cause;
++    private AccountProfile result;
++    private boolean mojang;
++
++    public AsyncProfileResolveEvent(LookupCause cause, AccountProfile result, boolean mojang) {
++        super(!Bukkit.isPrimaryThread());
++        this.cause = Preconditions.checkNotNull(cause, "Null cause");;
++        setResult(result);
++        this.mojang = mojang;
++    }
++
++    /**
++     * Return the result of this lookup
++     *
++     * @return the result of the lookup
++     */
++    public AccountProfile getResult() {
++        return result;
++    }
++
++    /**
++     * Set the result of this lookup
++     * <p>Can't be null. If the lookup is a properties lookup, the properties must be set.</p>
++     *
++     * @param result the result of the lookup
++     */
++    public void setResult(AccountProfile result) {
++        Preconditions.checkNotNull(result, "Null result");
++        if (this.getCause() == LookupCause.PROPERTIES_LOOKUP) {
++            Preconditions.checkArgument(result.hasProperties(), "Result doesn't have properties in properties lookup: %s", result);
++        }
++        this.result = result;
++        this.mojang = false;
++    }
++
++    /**
++     * Get what caused this lookup
++     *
++     * @return what caused this lookup
++     */
++    public LookupCause getCause() {
++        return cause;
++    }
++
++    /**
++     * Return if the profile is known to come from mojang
++     * <p>If not, it is probably from a plugin.</p>
++     *
++     * @return if the profile is known to come from mojang
++     */
++    public boolean isFromMojang() {
++        return mojang;
++    }
++
++    private static final HandlerList handlerList = new HandlerList();
++
++    public HandlerList getHandlerList() {
++        return handlerList;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return getHandlerList();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java
+new file mode 100644
+index 0000000..cf74f7a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java
+@@ -0,0 +1,68 @@
++package com.destroystokyo.paper.profile.event;
++
++import com.destroystokyo.paper.profile.ProfileProperties;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.event.HandlerList;
++import com.destroystokyo.paper.profile.LookupCause;
++import com.destroystokyo.paper.profile.AccountProfile;
++
++/**
++ * Called before profile properties are requested from mojang.
++ * Plugins can set a profile, which will effectively 'cancel' the lookup from mojang.
++ * <p>The event may be called synchronously if the uuid is resolved on the main thread</p>
++ */
++public class AsyncPropertiesPreResolveEvent extends AsyncProfilePreResolveEvent {
++    private final AccountProfile profile;
++
++    public AsyncPropertiesPreResolveEvent(AccountProfile profile) {
++        super(LookupCause.PROPERTIES_LOOKUP);
++        Preconditions.checkNotNull(profile, "Null profile");
++        this.profile = profile.withProperties(null);
++    }
++
++    /**
++     * Set the profile whose properties are being looked up
++     */
++    public AccountProfile getProfile() {
++        return profile;
++    }
++
++    /**
++     * Set the properties that will be returned by the lookup
++     * <p>Overrides any existing profile, and prevents a lookup from mojang.
++     * Setting to null re-allows a mojang lookup.</p>
++     *
++     * @param properties the properties that will be returned by the lookup
++     */
++    public void setProperties(ProfileProperties properties) {
++        setResult(properties == null ? null : getResult().withProperties(properties));
++    }
++
++    /**
++     * {@inheritDoc}
++     * @throws IllegalArgumentException if the profile's id doesn't match the looked up id
++     * @throws IllegalArgumentException if the profile's id doesn't match the looked up name
++     * @throws IllegalArgumentException if the profile has 'unset' properties
++     */
++    @Override
++    public void setResult(AccountProfile result) {
++        if (result != null) {
++            Preconditions.checkArgument(result.hasProperties(), "Profile has unset properties");
++            Preconditions.checkArgument(result.getId().equals(this.getProfile().getId()), "Profile id %s doesn't match looked up %s", result.getId(), getProfile().getId());
++            Preconditions.checkArgument(result.getName().equals(this.getProfile().getName()), "Profile name %s doesn't match looked up %s", result.getName(), getProfile().getName());
++        }
++        super.setResult(result);
++    }
++
++    private static final HandlerList handlerList = new HandlerList();
++
++    public static HandlerList getHandlerList() {
++        return handlerList;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return getHandlerList();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java
+new file mode 100644
+index 0000000..1cf537e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java
+@@ -0,0 +1,55 @@
++package com.destroystokyo.paper.profile.event;
++
++import java.util.UUID;
++
++import com.destroystokyo.paper.profile.LookupCause;
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.google.common.base.Preconditions;
++
++import org.bukkit.event.HandlerList;
++
++/**
++ * Called before a profile is requested from mojang.
++ * Plugins can set a profile, which will effectively 'cancel' the lookup from mojang.
++ * <p>The event may be called synchronously if the uuid is resolved on the main thread</p>
++ */
++public class AsyncUUIDPreResolveEvent extends AsyncProfilePreResolveEvent {
++    private final UUID id;
++
++    public AsyncUUIDPreResolveEvent(UUID id) {
++        super(LookupCause.UUID_LOOKUP);
++        this.id = Preconditions.checkNotNull(id, "Null id");;
++    }
++
++    /**
++     * Return the id whose profile was requested
++     *
++     * @return the id that was requested
++     */
++    public UUID getId() {
++        return id;
++    }
++
++    /**
++     * {@inheritDoc}
++     *
++     * @throws IllegalArgumentException if the profile's id doesn't match the looked up id
++     */
++    @Override
++    public void setResult(AccountProfile result) {
++        if (result != null) {
++            Preconditions.checkArgument(result.getId().equals(this.getId()), "Id %s doesn't match looked up id: %s", result.getId(), this.getId());
++        }
++        super.setResult(result);
++    }
++    private static final HandlerList handlerList = new HandlerList();
++
++    public static HandlerList getHandlerList() {
++        return handlerList;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return getHandlerList();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/utils/Hex.java b/src/main/java/com/destroystokyo/paper/utils/Hex.java
+new file mode 100644
+index 0000000..a705db0
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/Hex.java
+@@ -0,0 +1,113 @@
++package com.destroystokyo.paper.utils;
++
++import java.util.Arrays;
++import java.util.Objects;
++
++public class Hex {
++
++    public static byte[] decode(CharSequence chars) {
++        byte[] bytes = new byte[chars.length() >> 1];
++        decode(chars, 0, bytes, 0, bytes.length);
++        return bytes;
++    }
++
++    public static void decode(char[] chars, int charOffset, byte[] dest, int offset, int length) {
++        decode(new CharSequence() {
++            @Override
++            public int length() {
++                return chars.length;
++            }
++
++            @Override
++            public char charAt(int index) {
++                return chars[index];
++            }
++
++            @Override
++            public CharSequence subSequence(int start, int end) {
++                return toString().substring(start, end);
++            }
++
++            @Override
++            public String toString() {
++                return new String(chars, charOffset, chars.length);
++            }
++        });
++    }
++
++    public static void decode(CharSequence chars, int charOffset, byte[] dest, int offset, int length) {
++        Objects.requireNonNull(chars, "Null chars");
++        Objects.requireNonNull(chars, "Null destination");
++        final int numChars = chars.length();
++        if ((numChars & 0x01) != 0) {
++            throw new IllegalArgumentException("Odd number of characters: " + numChars);
++        } else if (length < (numChars - charOffset) >> 1) {
++            throw new IllegalArgumentException("Too many bytes to fill with " + numChars + " characters: " + length);
++        } else if (offset < 0 || charOffset < 0 || length < 0 || length * 2 > numChars - charOffset || length > dest.length - offset) {
++            throw new IndexOutOfBoundsException();
++        }
++        for (int i = 0, charIndex = charOffset; i < length; i++) {
++            char first = chars.charAt(charIndex++);
++            char second = chars.charAt(charIndex++);
++            dest[i + offset] = (byte) ((toDigit(first) << 4) | (toDigit(second)));
++        }
++    }
++
++    public static String encodeString(byte[] bytes) {
++        return new String(encode(bytes));
++    }
++
++    public static char[] encode(byte[] bytes) {
++        char[] chars = new char[bytes.length << 1];
++        encode(chars, 0, bytes, 0, bytes.length);
++        return chars;
++    }
++
++    public static void encode(char[] chars, int charOffset, byte[] source, int offset, int length) {
++        Objects.requireNonNull(chars, "Null chars");
++        Objects.requireNonNull(chars, "Null bytes");
++        if (offset < 0 || charOffset < 0 || length < 0 || length * 2 > chars.length - charOffset || length > source.length - offset) {
++            throw new IndexOutOfBoundsException();
++        } else if (length == 0) {
++            return;
++        }
++        for (int i = 0, charIndex = charOffset; i < length; i++) {
++            byte b = source[i + offset];
++            chars[charIndex++] = fromDigit((byte) ((b >> 4) & 0xF));
++            chars[charIndex++] = fromDigit((byte) (b & 0xF));
++        }
++    }
++    private static final char[] ENCODE_TABLE = new char[]{
++            '0', '1', '2', '3', '4', '5', '6', '7',
++            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
++    };
++    private static final byte[] DECODE_TABLE = new byte[128];
++
++    static {
++        Arrays.fill(DECODE_TABLE, (byte) -1);
++        for (int value = 0; value < ENCODE_TABLE.length; value++) {
++            char c = ENCODE_TABLE[value];
++            DECODE_TABLE[c] = (byte) value;
++            char upper;
++            if ((upper = Character.toUpperCase(c)) != c) {
++                DECODE_TABLE[upper] = (byte) value;
++            }
++        }
++    }
++
++    private static byte toDigit(char c) {
++        byte value;
++        if (c < DECODE_TABLE.length) {
++            value = DECODE_TABLE[c];
++        } else {
++            value = -1;
++        }
++        if (value < 0) throw new IllegalArgumentException("Invalid character " + c);
++        return value;
++    }
++
++    private static char fromDigit(byte b) {
++        assert (b & 0xF) == b : "Out of range " + b;
++        return ENCODE_TABLE[b];
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 3161b87..ab3d1a0 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -43,6 +43,8 @@ import org.bukkit.generator.ChunkGenerator;
+ import org.bukkit.inventory.ItemFactory;
+ import org.bukkit.inventory.meta.ItemMeta;
+ 
++import com.destroystokyo.paper.profile.ProfileLookup; // Paper
++
+ /**
+  * Represents the Bukkit core, for version and Server singleton handling
+  */
+@@ -1205,4 +1207,15 @@ public final class Bukkit {
+     {
+         return server.spigot();
+     }
++
++    // Paper start
++    /**
++     * Get the server's profile lookup
++     *
++     * @return the server's profile lookup
++     */
++    public static ProfileLookup getProfileLookup() {
++        return getServer().getProfileLookup();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index e98706a..8d7feef 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -7,6 +7,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
+ import org.bukkit.entity.AnimalTamer;
+ import org.bukkit.entity.Player;
+ import org.bukkit.permissions.ServerOperator;
++import com.destroystokyo.paper.profile.AccountProfile; // Paper
+ 
+ public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable {
+ 
+@@ -115,4 +116,12 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      */
+     public Location getBedSpawnLocation();
+ 
++    // Paper start
++    /**
++     * Return this player's profile
++     *
++     * @return this player's profile
++     */
++    public AccountProfile getAccount();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index edf0d04..b94965e 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -44,6 +44,8 @@ import org.bukkit.generator.ChunkGenerator;
+ import org.bukkit.inventory.ItemFactory;
+ import org.bukkit.inventory.meta.ItemMeta;
+ 
++import com.destroystokyo.paper.profile.ProfileLookup; // Paper
++
+ /**
+  * Represents a server implementation.
+  */
+@@ -1019,6 +1021,15 @@ public interface Server extends PluginMessageRecipient {
+ 
+     Spigot spigot();
+ 
++    // Paper start - profile api
++    /**
++     * Get the server's profile lookup
++     *
++     * @return the server's profile lookup
++     */
++    public ProfileLookup getProfileLookup();
++    // Paper end
++
+     void reloadPermissions(); // Paper
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 1498349..907ac2b 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -21,6 +21,7 @@ import org.bukkit.conversations.Conversable;
+ import org.bukkit.map.MapView;
+ import org.bukkit.plugin.messaging.PluginMessageRecipient;
+ import org.bukkit.scoreboard.Scoreboard;
++import com.destroystokyo.paper.profile.AccountProfile; // Paper
+ 
+ /**
+  * Represents a player, connected or not
+@@ -1621,4 +1622,14 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
+ 
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start
++    /**
++     * Return this player's profile
++     *
++     * @return this player's profile
++     */
++    @Override
++    public AccountProfile getAccount();
++    // Paper end
+ }
+-- 
+2.9.0
+
