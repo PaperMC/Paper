@@ -1,0 +1,54 @@
+From 2d6c4ea4e139c8ffad69ef2d41d1ff7b591b9fad Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 18 Jun 2017 18:32:54 -0500
+Subject: [PATCH] PlayerAttemptPickupItemsEvent Additions
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index 21a7a3a1..79910546 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -4,6 +4,7 @@ import java.util.Iterator;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.entity.Player;
+ import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
+ import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
+ import com.destroystokyo.paper.HopperPusher; // Paper
+@@ -327,17 +328,26 @@ public class EntityItem extends Entity implements HopperPusher {
+             Item item = itemstack.getItem();
+             int i = itemstack.getCount();
+ 
+-            // Paper start
+-            if (this.pickupDelay <= 0) {
+-                this.world.getServer().getPluginManager().callEvent(new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity()));
+-            }
+-            // Paper end
+-
+             // CraftBukkit start - fire PlayerPickupItemEvent
+             int canHold = entityhuman.inventory.canHold(itemstack);
+             int remaining = i - canHold;
+             boolean flyAtPlayer = false; // Paper
+ 
++            // Paper start
++            if (this.pickupDelay <= 0) {
++                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                this.world.getServer().getPluginManager().callEvent(attemptEvent);
++
++                flyAtPlayer = attemptEvent.getFlyAtPlayer();
++                if (attemptEvent.isCancelled()) {
++                    if (flyAtPlayer) {
++                        entityhuman.receive(this, i);
++                    }
++                    return;
++                }
++            }
++            // Paper end
++
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+                 PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+-- 
+2.11.0
+
