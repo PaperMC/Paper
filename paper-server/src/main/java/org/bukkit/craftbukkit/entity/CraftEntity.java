@@ -1011,4 +1011,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return originVector.toLocation(world);
     }
     // Paper end - entity origin API
+
+    // Paper start - Entity#fromMobSpawner
+    @Override
+    public boolean fromMobSpawner() {
+        return this.getHandle().spawnedViaMobSpawner;
+    }
+    // Paper end - Entity#fromMobSpawner
 }
