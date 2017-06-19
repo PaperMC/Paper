@@ -1,0 +1,45 @@
+From be2b2064c8a9c7b00529977852106d4d19537ce8 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 18 Feb 2017 19:29:58 -0600
+Subject: [PATCH] Do not let armorstands drown
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
+index 036498c0..f25ee906 100644
+--- a/src/main/java/net/minecraft/server/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
+@@ -772,5 +772,10 @@ public class EntityArmorStand extends EntityLiving {
+             super.move(moveType, x, y, z);
+         }
+     }
++
++    @Override
++    public boolean canBreatheUnderwater() { // Skips a bit of damage handling code, probably a micro-optimization
++        return true;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index b18fc969..3c7c4390 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -189,6 +189,7 @@ public abstract class EntityLiving extends Entity {
+         super.a(d0, flag, iblockdata, blockposition);
+     }
+ 
++    public boolean canBreatheUnderwater() { return this.bN(); } // Paper - OBFHELPER
+     public boolean bN() {
+         return false;
+     }
+@@ -223,7 +224,7 @@ public abstract class EntityLiving extends Entity {
+ 
+         if (this.isAlive()) {
+             if (this.a(Material.WATER)) {
+-                if (!this.bN() && !this.hasEffect(MobEffects.WATER_BREATHING) && !flag1) {
++                if (!this.canBreatheUnderwater() && !this.hasEffect(MobEffects.WATER_BREATHING) && !flag1) {
+                     this.setAirTicks(this.d(this.getAirTicks()));
+                     if (this.getAirTicks() == -20) {
+                         this.setAirTicks(0);
+-- 
+2.13.1.windows.2
+
