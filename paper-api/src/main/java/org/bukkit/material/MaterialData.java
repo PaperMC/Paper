@@ -90,7 +90,10 @@ public class MaterialData implements Cloneable {
      * Creates a new ItemStack based on this MaterialData
      *
      * @return New ItemStack containing a copy of this MaterialData
+     * @deprecated this method creates an ItemStack of size 0 which is not
+     * generally useful. Consider {@link #toItemStack(int)}.
      */
+    @Deprecated
     public ItemStack toItemStack() {
         return new ItemStack(type, 0, data);
     }
