@@ -9,18 +9,18 @@ import org.apache.commons.lang.Validate;
 import org.apache.logging.log4j.Level;
 import org.bukkit.Location;
 import org.bukkit.command.BlockCommandSender;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
+import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
 
-public final class VanillaCommandWrapper extends Command {
+public final class VanillaCommandWrapper extends BukkitCommand {
     protected final CommandAbstract vanillaCommand;
 
     public VanillaCommandWrapper(CommandAbstract vanillaCommand, String usage) {
