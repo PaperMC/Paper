@@ -9,7 +9,12 @@ import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 /**
- * Represents a 3-dimensional position in a world
+ * Represents a 3-dimensional position in a world.
+ * <br>
+ * No constraints are placed on any angular values other than that they be
+ * specified in degrees. This means that negative angles or angles of greater
+ * magnitude than 360 are valid, but may be normalized to any other equivalent
+ * representation by the implementation.
  */
 public class Location implements Cloneable, ConfigurationSerializable {
     private World world;
