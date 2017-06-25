@@ -435,13 +435,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void setCanPickupItems(boolean pickup) {
-        if (getHandle() instanceof EntityInsentient) {
-            ((EntityInsentient) getHandle()).canPickUpLoot = pickup;
-        }
+        getHandle().canPickUpLoot = pickup;
     }
 
     public boolean getCanPickupItems() {
-        return getHandle() instanceof EntityInsentient && ((EntityInsentient) getHandle()).canPickUpLoot;
+        return getHandle().canPickUpLoot;
     }
 
     @Override
