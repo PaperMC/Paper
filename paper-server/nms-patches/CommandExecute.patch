@@ -11,7 +11,7 @@
  
  public class CommandExecute extends CommandAbstract {
  
-@@ -59,26 +63,61 @@
+@@ -59,26 +63,41 @@
              }
  
              String s = a(astring, b0);
@@ -22,27 +22,7 @@
              try {
 -                int i = icommandhandler.a(commandlistenerwrapper, s);
 +                // CraftBukkit start
-+                org.bukkit.command.CommandSender sender = null;
-+                ICommandListener listener = icommandlistener;
-+                while (sender == null) {
-+                    if (listener instanceof DedicatedServer) {
-+                        sender = minecraftserver.console;
-+                    } else if (listener instanceof RemoteControlCommandListener) {
-+                        sender = minecraftserver.remoteConsole;
-+                    } else if (listener instanceof CommandBlockListenerAbstract) {
-+                        sender = ((CommandBlockListenerAbstract) listener).sender;
-+                    } else if (listener instanceof CustomFunctionData.CustomFunctionListener) {
-+                        sender = ((CustomFunctionData.CustomFunctionListener) listener).sender;
-+                    } else if (listener instanceof CommandListenerWrapper) {
-+                        listener = ((CommandListenerWrapper) listener).base; // Search deeper
-+                    } else if (VanillaCommandWrapper.lastSender != null) {
-+                        sender = VanillaCommandWrapper.lastSender;
-+                    } else if (listener.f() != null) {
-+                        sender = listener.f().getBukkitEntity();
-+                    } else {
-+                        throw new CommandException("Unhandled executor " + icommandlistener.getClass().getSimpleName(), new Object[0]);
-+                    }
-+                }
++                org.bukkit.command.CommandSender sender = CommandBlockListenerAbstract.unwrapSender(icommandlistener);
 +                int i = CommandBlockListenerAbstract.executeCommand(commandlistenerwrapper, new ProxiedNativeCommandSender(commandlistenerwrapper, sender, entity.getBukkitEntity()), s); 
 +                // CraftBukkit end
  
