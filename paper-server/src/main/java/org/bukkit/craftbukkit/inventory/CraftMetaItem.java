@@ -431,8 +431,13 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
         for (Map.Entry<?, ?> entry : ench.entrySet()) {
-            Enchantment enchantment = Enchantment.getByName(entry.getKey().toString());
+            // Doctor older enchants
+            String enchantKey = entry.getKey().toString();
+            if (enchantKey.equals("SWEEPING")) {
+                enchantKey = "SWEEPING_EDGE";
+            }
 
+            Enchantment enchantment = Enchantment.getByName(enchantKey);
             if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
                 enchantments.put(enchantment, (Integer) entry.getValue());
             }
