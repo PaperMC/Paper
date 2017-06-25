@@ -301,8 +301,6 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
 
     /**
      * Sets whether or not the living entity can pick up items.
-     * <p>
-     * This method has no effect on a {@link HumanEntity}.
      *
      * @param pickup whether or not the living entity can pick up items
      */
