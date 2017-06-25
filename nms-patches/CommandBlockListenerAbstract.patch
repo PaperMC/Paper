@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/CommandBlockListenerAbstract.java
 +++ b/net/minecraft/server/CommandBlockListenerAbstract.java
-@@ -4,6 +4,13 @@
+@@ -4,6 +4,14 @@
  import java.util.Date;
  import javax.annotation.Nullable;
  
@@ -9,12 +9,13 @@
 +import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import com.google.common.base.Joiner;
 +import java.util.logging.Level;
++import org.bukkit.command.CommandSender;
 +// CraftBukkit end
 +
  public abstract class CommandBlockListenerAbstract implements ICommandListener {
  
      private static final SimpleDateFormat a = new SimpleDateFormat("HH:mm:ss");
-@@ -15,6 +22,7 @@
+@@ -15,6 +23,7 @@
      private String g = "";
      private String h = "@";
      private final CommandObjectiveExecutor i = new CommandObjectiveExecutor();
@@ -22,7 +23,7 @@
  
      public CommandBlockListenerAbstract() {}
  
-@@ -107,7 +115,9 @@
+@@ -107,7 +116,9 @@
                  if (minecraftserver != null && minecraftserver.M() && minecraftserver.getEnableCommandBlock()) {
                      try {
                          this.f = null;
@@ -33,7 +34,7 @@
                      } catch (Throwable throwable) {
                          CrashReport crashreport = CrashReport.a(throwable, "Executing command block");
                          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Command to be executed");
-@@ -149,6 +159,138 @@
+@@ -149,6 +160,163 @@
          }
      }
  
@@ -166,6 +167,31 @@
 +        }
 +
 +        return commands;
++    }
++
++    public static CommandSender unwrapSender(ICommandListener listener) {
++        org.bukkit.command.CommandSender sender = null;
++        while (sender == null) {
++            if (listener instanceof DedicatedServer) {
++                sender = ((DedicatedServer) listener).console;
++            } else if (listener instanceof RemoteControlCommandListener) {
++                sender = ((DedicatedServer) listener).remoteConsole;
++            } else if (listener instanceof CommandBlockListenerAbstract) {
++                sender = ((CommandBlockListenerAbstract) listener).sender;
++            } else if (listener instanceof CustomFunctionData.CustomFunctionListener) {
++                sender = ((CustomFunctionData.CustomFunctionListener) listener).sender;
++            } else if (listener instanceof CommandListenerWrapper) {
++                listener = ((CommandListenerWrapper) listener).base; // Search deeper
++            } else if (VanillaCommandWrapper.lastSender != null) {
++                sender = VanillaCommandWrapper.lastSender;
++            } else if (listener.f() != null) {
++                sender = listener.f().getBukkitEntity();
++            } else {
++                throw new RuntimeException("Unhandled executor " + listener.getClass().getSimpleName());
++            }
++        }
++
++        return sender;
 +    }
 +    // CraftBukkit end
 +
