@@ -566,10 +566,12 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     public boolean hasEnchant(Enchantment ench) {
+        Validate.notNull(ench, "Enchantment cannot be null");
         return hasEnchants() && enchantments.containsKey(ench);
     }
 
     public int getEnchantLevel(Enchantment ench) {
+        Validate.notNull(ench, "Enchantment cannot be null");
         Integer level = hasEnchants() ? enchantments.get(ench) : null;
         if (level == null) {
             return 0;
@@ -582,6 +584,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
+        Validate.notNull(ench, "Enchantment cannot be null");
         if (enchantments == null) {
             enchantments = new HashMap<Enchantment, Integer>(4);
         }
@@ -594,6 +597,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     public boolean removeEnchant(Enchantment ench) {
+        Validate.notNull(ench, "Enchantment cannot be null");
         return hasEnchants() && enchantments.remove(ench) != null;
     }
 
