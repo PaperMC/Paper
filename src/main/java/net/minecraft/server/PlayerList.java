@@ -543,9 +543,9 @@ public abstract class PlayerList {
 
             // return chatmessage;
             if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
-        } else if (!this.isWhitelisted(gameprofile)) {
+        } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted");
-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
+            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
         } else if (getIPBans().isBanned(socketaddress) && !getIPBans().get(socketaddress).hasExpired()) {
             IpBanEntry ipbanentry = this.l.get(socketaddress);
 
@@ -937,9 +937,25 @@ public abstract class PlayerList {
         this.server.getCommandDispatcher().a(entityplayer);
     }
 
+    // Paper start
     public boolean isWhitelisted(GameProfile gameprofile) {
-        return !this.hasWhitelist || this.operators.d(gameprofile) || this.whitelist.d(gameprofile);
+        return isWhitelisted(gameprofile, null);
     }
+    public boolean isWhitelisted(GameProfile gameprofile, org.bukkit.event.player.PlayerLoginEvent loginEvent) {
+        boolean isOp = this.operators.d(gameprofile);
+        boolean isWhitelisted = !this.hasWhitelist || isOp || this.whitelist.d(gameprofile);
+        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
+        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(MCUtil.toBukkit(gameprofile), this.hasWhitelist, isWhitelisted, isOp, org.spigotmc.SpigotConfig.whitelistMessage);
+        event.callEvent();
+        if (!event.isWhitelisted()) {
+            if (loginEvent != null) {
+                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage());
+            }
+            return false;
+        }
+        return true;
+    }
+    // Paper end
 
     public boolean isOp(GameProfile gameprofile) {
         return this.operators.d(gameprofile) || this.server.a(gameprofile) && this.server.getSaveData().o() || this.v;
