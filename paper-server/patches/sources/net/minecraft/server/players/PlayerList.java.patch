@@ -486,9 +486,9 @@
 -            IpBanListEntry ipbanentry = this.ipBans.get(address);
 +            // return chatmessage;
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
-+        } else if (!this.isWhiteListed(gameprofile)) {
-+            ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted");
-+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
++        } else if (!this.isWhiteListed(gameprofile, event)) { // Paper - ProfileWhitelistVerifyEvent
++            //ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted"); // Paper
++            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure - moved to isWhitelisted
 +        } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
 +            IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
  
@@ -782,7 +782,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,6 +957,7 @@
+@@ -643,36 +957,51 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -790,7 +790,32 @@
          this.server.getCommands().sendCommands(player);
      }
  
-@@ -656,23 +971,19 @@
+     public boolean isWhiteListed(GameProfile profile) {
+-        return !this.doWhiteList || this.ops.contains(profile) || this.whitelist.contains(profile);
++        // Paper start - ProfileWhitelistVerifyEvent
++        return this.isWhiteListed(profile, null);
+     }
++    public boolean isWhiteListed(GameProfile gameprofile, @Nullable org.bukkit.event.player.PlayerLoginEvent loginEvent) {
++        boolean isOp = this.ops.contains(gameprofile);
++        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(gameprofile);
++        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
+ 
++        final net.kyori.adventure.text.Component configuredMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage);
++        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile), this.doWhiteList, isWhitelisted, isOp, configuredMessage);
++        event.callEvent();
++        if (!event.isWhitelisted()) {
++            if (loginEvent != null) {
++                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, event.kickMessage() == null ? configuredMessage : event.kickMessage());
++            }
++            return false;
++        }
++        return true;
++        // Paper end - ProfileWhitelistVerifyEvent
++    }
++
+     public boolean isOp(GameProfile profile) {
+         return this.ops.contains(profile) || this.server.isSingleplayerOwner(profile) && this.server.getWorldData().isAllowCommands() || this.allowCommandsForAllPlayers;
+     }
  
      @Nullable
      public ServerPlayer getPlayerByName(String name) {
@@ -822,7 +847,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -687,10 +998,12 @@
+@@ -687,10 +1016,12 @@
      }
  
      public void saveAll() {
@@ -835,7 +860,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1025,19 @@
+@@ -712,15 +1043,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -859,7 +884,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1046,16 @@
+@@ -729,8 +1064,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -877,7 +902,7 @@
      }
  
      public int getPlayerCount() {
-@@ -786,12 +1111,36 @@
+@@ -786,11 +1129,35 @@
      }
  
      public void removeAll() {
@@ -903,20 +928,19 @@
 +            if (team != null) scoreboard.removePlayerTeam(team);
 +        }
 +        // Paper end - Configurable player collision
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    public void broadcastMessage(Component[] iChatBaseComponents) {
 +        for (Component component : iChatBaseComponents) {
 +            this.broadcastSystemMessage(component, false);
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
-             return message;
-@@ -819,24 +1168,43 @@
+@@ -819,24 +1186,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -963,7 +987,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1213,27 @@
+@@ -845,20 +1231,27 @@
  
      }
  
@@ -996,7 +1020,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1242,7 @@
+@@ -867,7 +1260,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1005,7 +1029,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1250,13 @@
+@@ -875,13 +1268,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1021,7 +1045,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1307,28 @@
+@@ -932,15 +1325,28 @@
      }
  
      public void reloadResources() {
