@@ -48,6 +48,12 @@ public class LoginListener implements PacketLoginInListener {
     }
 
     public void tick() {
+        // Paper start - Do not allow logins while the server is shutting down
+        if (!MinecraftServer.getServer().isRunning()) {
+            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(org.spigotmc.SpigotConfig.restartMessage)[0]);
+            return;
+        }
+        // Paper end
         if (this.g == LoginListener.EnumProtocolState.READY_TO_ACCEPT) {
             this.c();
         } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
