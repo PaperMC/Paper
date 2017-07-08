@@ -520,6 +520,8 @@ public class CraftEventFactory {
                 cause = DamageCause.FALL;
             } else if (source == DamageSource.DRAGON_BREATH) {
                 cause = DamageCause.DRAGON_BREATH;
+            } else if (source == DamageSource.MAGIC) {
+                cause = DamageCause.MAGIC;
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
             }
