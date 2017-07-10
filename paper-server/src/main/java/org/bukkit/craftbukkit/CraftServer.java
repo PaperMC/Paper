@@ -143,7 +143,7 @@ public final class CraftServer implements Server {
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
-    private final PluginManager pluginManager = new SimplePluginManager(this, commandMap);
+    private final SimplePluginManager pluginManager = new SimplePluginManager(this, commandMap);
     protected final MinecraftServer console;
     protected final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
@@ -246,7 +246,7 @@ public final class CraftServer implements Server {
 
         saveCommandsConfig();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
-        ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling"));
+        pluginManager.useTimings(configuration.getBoolean("settings.plugin-profiling"));
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
@@ -352,11 +352,12 @@ public final class CraftServer implements Server {
 
             for (Permission perm : perms) {
                 try {
-                    pluginManager.addPermission(perm);
+                    pluginManager.addPermission(perm, false);
                 } catch (IllegalArgumentException ex) {
                     getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
                 }
             }
+            pluginManager.dirtyPermissibles();
 
             pluginManager.enablePlugin(plugin);
         } catch (Throwable ex) {
