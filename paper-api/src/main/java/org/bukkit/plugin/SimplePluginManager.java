@@ -589,6 +589,11 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     public void addPermission(Permission perm) {
+        addPermission(perm, true);
+    }
+
+    @Deprecated
+    public void addPermission(Permission perm, boolean dirty) {
         String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
 
         if (permissions.containsKey(name)) {
@@ -596,7 +601,7 @@ public final class SimplePluginManager implements PluginManager {
         }
 
         permissions.put(name, perm);
-        calculatePermissionDefault(perm);
+        calculatePermissionDefault(perm, dirty);
     }
 
     public Set<Permission> getDefaultPermissions(boolean op) {
@@ -616,19 +621,29 @@ public final class SimplePluginManager implements PluginManager {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
 
-            calculatePermissionDefault(perm);
+            calculatePermissionDefault(perm, true);
         }
     }
 
-    private void calculatePermissionDefault(Permission perm) {
+    private void calculatePermissionDefault(Permission perm, boolean dirty) {
         if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
             defaultPerms.get(true).add(perm);
-            dirtyPermissibles(true);
+            if (dirty) {
+                dirtyPermissibles(true);
+            }
         }
         if ((perm.getDefault() == PermissionDefault.NOT_OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
             defaultPerms.get(false).add(perm);
-            dirtyPermissibles(false);
+            if (dirty) {
+                dirtyPermissibles(false);
+            }
         }
+    }
+
+    @Deprecated
+    public void dirtyPermissibles() {
+        dirtyPermissibles(true);
+        dirtyPermissibles(false);
     }
 
     private void dirtyPermissibles(boolean op) {
