@@ -52,7 +52,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     public void setPrefix(String prefix) throws IllegalStateException, IllegalArgumentException {
         Validate.notNull(prefix, "Prefix cannot be null");
-        Validate.isTrue(prefix.length() <= 32, "Prefix '" + prefix + "' is longer than the limit of 32 characters");
+        Validate.isTrue(prefix.length() <= 16, "Prefix '" + prefix + "' is longer than the limit of 16 characters");
         CraftScoreboard scoreboard = checkState();
 
         team.setPrefix(prefix);
@@ -66,7 +66,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     public void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException {
         Validate.notNull(suffix, "Suffix cannot be null");
-        Validate.isTrue(suffix.length() <= 32, "Suffix '" + suffix + "' is longer than the limit of 32 characters");
+        Validate.isTrue(suffix.length() <= 16, "Suffix '" + suffix + "' is longer than the limit of 16 characters");
         CraftScoreboard scoreboard = checkState();
 
         team.setSuffix(suffix);
