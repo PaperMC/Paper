@@ -1,4 +1,4 @@
-From df3579e7a0ea6ad85593e8632946767660f44554 Mon Sep 17 00:00:00 2001
+From fd7aa7456ea06e3fc65cc8ad065d2d4d4ed690ab Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 000000000..2096d3f97
+index 000000000..cd67ab2bb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,72 @@
 +package com.destroystokyo.paper;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -17,15 +17,18 @@ index 000000000..2096d3f97
 +import org.bukkit.ChatColor;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
 +
 +import java.io.File;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
 +
 +public class PaperCommand extends Command {
 +
 +    public PaperCommand(String name) {
 +        super(name);
 +        this.description = "Paper related commands";
-+        this.usageMessage = "/paper [reload | version]";
++        this.usageMessage = "/paper [heap | reload | version]";
 +        this.setPermission("bukkit.command.paper");
 +    }
 +
@@ -38,25 +41,45 @@ index 000000000..2096d3f97
 +            return false;
 +        }
 +
-+        if (args[0].equals("reload")) {
-+            Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
-+            Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
-+
-+            MinecraftServer console = MinecraftServer.getServer();
-+            com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
-+            for (WorldServer world : console.worlds) {
-+                world.paperConfig.init();
-+            }
-+            console.server.reloadCount++;
-+
-+            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
-+        }
-+
-+        if (args[0].equals("version")) {
-+            org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version").execute(sender, commandLabel, new String[0]);
++        switch (args[0])  {
++            case "heap":
++                dumpHeap(sender);
++                break;
++            case "reload":
++                doReload(sender);
++                break;
++            case "ver":
++            case "version":
++                org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version").execute(sender, commandLabel, new String[0]);
++                break;
++            default:
++                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++                return false;
 +        }
 +
 +        return true;
++    }
++
++    private void dumpHeap(CommandSender sender) {
++        File file = new File(new File(new File("."), "dumps"),
++                "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + "-server.bin");
++        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data to " + file);
++        CraftServer.dumpHeap(file);
++        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump complete");
++    }
++
++    private void doReload(CommandSender sender) {
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++
++        MinecraftServer console = MinecraftServer.getServer();
++        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
++        for (WorldServer world : console.worlds) {
++            world.paperConfig.init();
++        }
++        console.server.reloadCount++;
++
++        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
@@ -347,7 +370,7 @@ index f5d387511..fd204ad7a 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 67ee8c55e..51981c386 100644
+index 67ee8c55e..ad075615a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -696,6 +696,7 @@ public final class CraftServer implements Server {
@@ -374,6 +397,30 @@ index 67ee8c55e..51981c386 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
          int pollCount = 0;
+@@ -1771,4 +1774,23 @@ public final class CraftServer implements Server {
+     {
+         return spigot;
+     }
++
++    // Paper start
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static void dumpHeap(File file) {
++        try {
++            if (file.getParentFile() != null) {
++                file.getParentFile().mkdirs();
++            }
++
++            Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++            java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++            m.invoke(hotspotMBean, file.getPath(), true);
++        } catch (Throwable t) {
++            Bukkit.getLogger().severe("Could not write heap to " + file);
++        }
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index a151451d5..0c5862a3f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -435,5 +482,5 @@ index 01e73eb89..0b66f5e35 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.13.2
+2.13.3.windows.1
 
