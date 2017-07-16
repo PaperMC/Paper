@@ -80,6 +80,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
+import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
@@ -1207,18 +1208,27 @@ public final class CraftServer implements Server {
 
     @Override
     public int broadcast(String message, String permission) {
-        int count = 0;
-        Set<Permissible> permissibles = getPluginManager().getPermissionSubscriptions(permission);
-
-        for (Permissible permissible : permissibles) {
+        Set<CommandSender> recipients = new HashSet<>();
+        for (Permissible permissible : getPluginManager().getPermissionSubscriptions(permission)) {
             if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-                CommandSender user = (CommandSender) permissible;
-                user.sendMessage(message);
-                count++;
+                recipients.add((CommandSender) permissible);
             }
         }
 
-        return count;
+        BroadcastMessageEvent broadcastMessageEvent = new BroadcastMessageEvent(message, recipients);
+        getPluginManager().callEvent(broadcastMessageEvent);
+
+        if (broadcastMessageEvent.isCancelled()) {
+            return 0;
+        }
+
+        message = broadcastMessageEvent.getMessage();
+
+        for (CommandSender recipient : recipients) {
+            recipient.sendMessage(message);
+        }
+
+        return recipients.size();
     }
 
     @Override
