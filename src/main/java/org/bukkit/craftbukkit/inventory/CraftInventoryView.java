@@ -133,7 +133,7 @@ public class CraftInventoryView extends InventoryView {
                 } else if (slot > 35) {
                     type = SlotType.QUICKBAR;
                 }
-            } else if (slot >= (inventory.countSlots() - 9)) {
+            } else if (slot >= (inventory.countSlots() - (9 + 4 + 1))) { // Quickbar, Armor, Offhand
                 type = SlotType.QUICKBAR;
             }
         }
