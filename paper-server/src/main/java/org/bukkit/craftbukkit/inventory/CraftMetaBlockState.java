@@ -178,7 +178,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case SIGN:
             case MOB_SPAWNER:
             case NOTE_BLOCK:
-            case PISTON_BASE:
             case BREWING_STAND_ITEM:
             case ENCHANTMENT_TABLE:
             case COMMAND:
@@ -384,6 +383,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityComparator();
             }
             return new CraftComparator(material, (TileEntityComparator) te);
+        case PISTON_BASE:
+            
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
