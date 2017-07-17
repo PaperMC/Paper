@@ -1,4 +1,4 @@
-From 1de2ca6ca76fc8df92e2c582ba2f90e152143109 Mon Sep 17 00:00:00 2001
+From 106acbe429bea150b87a92d9862a94c1d5c03840 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -12,7 +12,7 @@ Re-introduce a cap per tick for auto save (Spigot disabled the vanilla cap) and 
 Adds incremental player auto saving too
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 621c585e..da0984a3 100644
+index 621c585e7..da0984a35 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -251,4 +251,9 @@ public class PaperConfig {
@@ -26,7 +26,7 @@ index 621c585e..da0984a3 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index cec9ea74..39f8a0a2 100644
+index cec9ea74c..39f8a0a2c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -2,6 +2,7 @@ package com.destroystokyo.paper;
@@ -58,7 +58,7 @@ index cec9ea74..39f8a0a2 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a0b5cd56..f98d380f 100644
+index a0b5cd56b..f98d380f6 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -962,11 +962,9 @@ public class Chunk {
@@ -76,7 +76,7 @@ index a0b5cd56..f98d380f 100644
  
      public Random a(long i) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 9836c0c5..39f0f5a1 100644
+index 9836c0c5a..39f0f5a17 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -1,5 +1,6 @@
@@ -96,7 +96,7 @@ index 9836c0c5..39f0f5a1 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 8fe324cf..4cfd8961 100644
+index 5422b7d59..7ff7cc5d4 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -32,6 +32,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -108,7 +108,7 @@ index 8fe324cf..4cfd8961 100644
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 31ead884..9fc484ce 100644
+index 31ead8849..9fc484ce1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -118,6 +118,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
@@ -155,18 +155,18 @@ index 31ead884..9fc484ce 100644
          this.methodProfiler.a("tallying");
          // Spigot start
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 8fcf4d9c..7882eaba 100644
+index 7adf5eb87..73cf2e3d8 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -339,6 +339,7 @@ public abstract class PlayerList {
+@@ -343,6 +343,7 @@ public abstract class PlayerList {
      }
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
 +        entityplayer.lastSave = MinecraftServer.currentTick; // Paper
          this.playerFileData.save(entityplayer);
-         ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) this.o.get(entityplayer.getUniqueID());
+         ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -1230,13 +1231,23 @@ public abstract class PlayerList {
+@@ -1236,13 +1237,23 @@ public abstract class PlayerList {
  
      }
  
@@ -192,7 +192,7 @@ index 8fcf4d9c..7882eaba 100644
      public void addWhitelist(GameProfile gameprofile) {
          this.whitelist.add(new WhiteListEntry(gameprofile));
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3865b31c..87a95857 100644
+index 3865b31cb..87a95857c 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1050,8 +1050,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -215,5 +215,5 @@ index 3865b31c..87a95857 100644
              timings.worldSaveChunks.startTiming(); // Paper
              chunkproviderserver.a(flag);
 -- 
-2.13.1.windows.2
+2.13.0
 
