@@ -103,7 +103,15 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
                 .trail(explosion.getBoolean(EXPLOSION_TRAIL.NBT))
                 .with(getEffectType(0xff & explosion.getByte(EXPLOSION_TYPE.NBT)));
 
-        for (int color : explosion.getIntArray(EXPLOSION_COLORS.NBT)) {
+        int[] colors = explosion.getIntArray(EXPLOSION_COLORS.NBT);
+        // People using buggy command generators specify a list rather than an int here, so recover with dummy data.
+        // Wrong: Colors: [1234]
+        // Right: Colors: [I;1234]
+        if (colors.length == 0) {
+            effect.withColor(Color.WHITE);
+        }
+
+        for (int color : colors) {
             effect.withColor(Color.fromRGB(color));
         }
 
