@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
@@ -206,7 +207,8 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     }
 
     public ProjectileSource getSource() {
-        return getHandle().projectileSource;
+        EntityLiving source = getHandle().y(); // PAIL: rename
+        return (source == null) ? null : (LivingEntity) source.getBukkitEntity();
     }
 
     public void setSource(ProjectileSource shooter) {
@@ -215,6 +217,5 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
         } else {
             getHandle().setSource((EntityLiving) null);
         }
-        getHandle().projectileSource = shooter;
     }
 }
