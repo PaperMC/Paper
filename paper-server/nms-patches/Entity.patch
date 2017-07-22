@@ -539,7 +539,7 @@
          }
  
      }
-@@ -1893,19 +2236,70 @@
+@@ -1893,19 +2236,75 @@
          if (!this.world.isClientSide && !this.dead) {
              this.world.methodProfiler.a("changeDimension");
              MinecraftServer minecraftserver = this.C_();
@@ -576,6 +576,9 @@
 +            boolean useTravelAgent = exitWorld != null && !(this.dimension == 1 && exitWorld.dimension == 1); // don't use agent for custom worlds or return from THE_END
 +
 +            TravelAgent agent = exit != null ? (TravelAgent) ((CraftWorld) exit.getWorld()).getHandle().getTravelAgent() : org.bukkit.craftbukkit.CraftTravelAgent.DEFAULT; // return arbitrary TA to compensate for implementation dependent plugins
++            boolean oldCanCreate = agent.getCanCreatePortal();
++            agent.setCanCreatePortal(false); // General entities cannot create portals
++
 +            EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, agent);
 +            event.useTravelAgent(useTravelAgent);
 +            event.getEntity().getServer().getPluginManager().callEvent(event);
@@ -583,6 +586,8 @@
 +                return null;
 +            }
 +            exit = event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();
++            agent.setCanCreatePortal(oldCanCreate);
++
 +            // Need to make sure the profiler state is reset afterwards (but we still want to time the call)
 +            Entity entity = this.teleportTo(exit, true);
 +            this.world.methodProfiler.b();
@@ -613,7 +618,7 @@
              BlockPosition blockposition;
  
              if (i == 1) {
-@@ -1934,12 +2328,18 @@
+@@ -1934,12 +2333,18 @@
                  blockposition = new BlockPosition(this);
              }
  
@@ -633,7 +638,7 @@
                  if (j == 1 && i == 1) {
                      BlockPosition blockposition1 = worldserver1.q(worldserver1.getSpawn());
  
-@@ -1947,6 +2347,7 @@
+@@ -1947,6 +2352,7 @@
                  } else {
                      entity.setPositionRotation(blockposition, entity.yaw, entity.pitch);
                  }
@@ -641,7 +646,7 @@
  
                  boolean flag = entity.attachedToPlayer;
  
-@@ -1954,13 +2355,21 @@
+@@ -1954,13 +2360,21 @@
                  worldserver1.addEntity(entity);
                  entity.attachedToPlayer = flag;
                  worldserver1.entityJoinedWorld(entity, false);
@@ -664,7 +669,7 @@
              return entity;
          } else {
              return null;
-@@ -2064,6 +2473,11 @@
+@@ -2064,6 +2478,11 @@
      }
  
      public void setCustomName(String s) {
@@ -676,7 +681,7 @@
          this.datawatcher.set(Entity.aB, s);
      }
  
-@@ -2121,7 +2535,26 @@
+@@ -2121,7 +2540,26 @@
      }
  
      public void a(AxisAlignedBB axisalignedbb) {
@@ -704,7 +709,7 @@
      }
  
      public float getHeadHeight() {
-@@ -2295,7 +2728,7 @@
+@@ -2295,7 +2733,7 @@
          for (Iterator iterator = this.bF().iterator(); iterator.hasNext(); entity.a(oclass, set)) {
              entity = (Entity) iterator.next();
              if (oclass.isAssignableFrom(entity.getClass())) {
