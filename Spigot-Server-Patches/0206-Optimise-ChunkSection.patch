@@ -1,0 +1,83 @@
+From da459c0e1cbab39e075e7454ef8b307e1d5596b3 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Tue, 10 Jan 2017 18:50:38 +0000
+Subject: [PATCH] Optimise ChunkSection
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index afdc4a7..708762e 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -37,6 +37,12 @@ public class ChunkSection {
+     }
+     // CraftBukkit end
+ 
++    // Paper start
++    public IBlockData getType(int position) {
++        return this.blockIds.getType(position);
++    }
++    // Paper end
++
+     public IBlockData getType(int i, int j, int k) {
+         return this.blockIds.a(i, j, k);
+     }
+@@ -46,6 +52,13 @@ public class ChunkSection {
+         Block block = iblockdata1.getBlock();
+         Block block1 = iblockdata.getBlock();
+ 
++        // Paper start
++        if (block == block1) {
++            this.blockIds.setBlock(i, j, k, iblockdata);
++            return;
++        }
++        // Paper end
++
+         if (block != Blocks.AIR) {
+             --this.nonEmptyBlockCount;
+             if (block.isTicking()) {
+@@ -95,21 +108,18 @@ public class ChunkSection {
+         this.nonEmptyBlockCount = 0;
+         this.tickingBlockCount = 0;
+ 
+-        for (int i = 0; i < 16; ++i) {
+-            for (int j = 0; j < 16; ++j) {
+-                for (int k = 0; k < 16; ++k) {
+-                    Block block = this.getType(i, j, k).getBlock();
+-
+-                    if (block != Blocks.AIR) {
+-                        ++this.nonEmptyBlockCount;
+-                        if (block.isTicking()) {
+-                            ++this.tickingBlockCount;
+-                        }
+-                    }
++        // Paper start
++        for (int i = 0; i < 4096; i++) {
++            Block block = this.getType(i).getBlock();
++
++            if (block != Blocks.AIR) {
++                ++this.nonEmptyBlockCount;
++                if (block.isTicking()) {
++                    ++this.tickingBlockCount;
+                 }
+             }
+         }
+-
++        // Paper end
+     }
+ 
+     public DataPaletteBlock getBlocks() {
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 1f2fe87..d3df447 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -67,6 +67,7 @@ public class DataPaletteBlock implements DataPaletteExpandable {
+         return this.a(b(i, j, k));
+     }
+ 
++    protected IBlockData getType(int position) { return a(position); } // Paper - OBFHELPER
+     protected IBlockData a(int i) {
+         IBlockData iblockdata = this.c.a(this.b.a(i));
+ 
+-- 
+2.9.3 (Apple Git-75)
+
