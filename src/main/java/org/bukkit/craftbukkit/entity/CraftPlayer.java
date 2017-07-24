@@ -265,6 +265,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         case 4:
             instrumentName = "bass";
             break;
+        case 5:
+            instrumentName = "flute";
+            break;
+        case 6:
+            instrumentName = "bell";
+            break;
+        case 7:
+            instrumentName = "guitar";
+            break;
+        case 8:
+            instrumentName = "chime";
+            break;
+        case 9:
+            instrumentName = "xylophone";
+            break;
         }
 
         float f = (float) Math.pow(2.0D, (note - 12.0D) / 12.0D);
@@ -291,6 +306,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 break;
             case 4:
                 instrumentName = "bass";
+                break;
+            case 5:
+                instrumentName = "flute";
+                break;
+            case 6:
+                instrumentName = "bell";
+                break;
+            case 7:
+                instrumentName = "guitar";
+                break;
+            case 8:
+                instrumentName = "chime";
+                break;
+            case 9:
+                instrumentName = "xylophone";
                 break;
         }
         float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
