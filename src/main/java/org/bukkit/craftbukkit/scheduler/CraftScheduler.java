@@ -60,10 +60,10 @@ public class CraftScheduler implements BukkitScheduler {
     private final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10,
             new Comparator<CraftTask>() {
                 public int compare(final CraftTask o1, final CraftTask o2) {
-                    int value = (int) (o1.getNextRun() - o2.getNextRun());
+                    int value = Long.compare(o1.getNextRun(), o2.getNextRun());
 
                     // If the tasks should run on the same tick they should be run FIFO
-                    return value != 0 ? value : o1.getTaskId() - o2.getTaskId();
+                    return value != 0 ? value : Integer.compare(o1.getTaskId(), o2.getTaskId());
                 }
             });
     /**
