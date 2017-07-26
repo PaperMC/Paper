@@ -256,9 +256,6 @@ public final class CraftServer implements Server {
         chunkGCPeriod = configuration.getInt("chunk-gc.period-in-ticks");
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
         loadIcon();
-
-        loadPlugins();
-        enablePlugins(PluginLoadOrder.STARTUP);
     }
 
     public boolean getCommandBlockOverride(String command) {
