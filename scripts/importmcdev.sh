@@ -87,6 +87,7 @@ import PersistentVillage
 import PlayerConnectionUtils
 import RegionFile
 import RemoteControlListener
+import ScoreboardTeam
 import TileEntityEnderChest
 import TileEntityLootable
 import WorldGenStronghold
