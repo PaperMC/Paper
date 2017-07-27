@@ -1,11 +1,11 @@
-From ac2823f4090e996ccafb904bad20fb010ea2c081 Mon Sep 17 00:00:00 2001
+From 5348dcffeb074face49dbc88117a2cfb7375d18b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 26 Jul 2017 21:12:15 -0400
 Subject: [PATCH] Fix Recipe Books
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 682211cdd..0b0a34508 100644
+index 682211cdd..1fed465bf 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2027,12 +2027,6 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -21,19 +21,20 @@ index 682211cdd..0b0a34508 100644
          if (this.player.activeContainer.windowId == packetplayinautorecipe.a() && this.player.activeContainer.c(this.player)) {
              this.player.playerConnection.sendPacket(new PacketPlayOutTransaction(packetplayinautorecipe.a(), packetplayinautorecipe.b(), true));
              Iterator iterator;
-@@ -2046,7 +2040,10 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2046,7 +2040,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                  while (iterator.hasNext()) {
                      packetplayinautorecipe_a = (PacketPlayInAutoRecipe.a) iterator.next();
                      itemstack = this.player.activeContainer.getSlot(packetplayinautorecipe_a.b).getItem();
 -                    if (this.a(packetplayinautorecipe_a.a, itemstack)) {
 +                    // Paper start - improve validation
-+                    ItemStack to = this.player.activeContainer.getSlot(packetplayinautorecipe_a.c).getItem();
-+                    if (this.a(packetplayinautorecipe_a.a, itemstack) && (to.isEmpty() || this.a(packetplayinautorecipe_a.a, to))) {
++                    ItemStack to = this.player.inventory.getItem(packetplayinautorecipe_a.c);
++                    ItemStack ref = packetplayinautorecipe_a.a;
++                    if (this.a(ref, itemstack) && (to.isEmpty() || this.a(ref, to)) && (ref.getCount() + to.getCount() <= ref.getMaxStackSize())) {
 +                        // Paper end
                          i = packetplayinautorecipe_a.a.getCount();
                          if (packetplayinautorecipe_a.c == -1) {
                              this.player.drop(packetplayinautorecipe_a.a, true);
-@@ -2066,6 +2063,12 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2066,6 +2064,12 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                              itemstack.subtract(i);
                          }
                      }
