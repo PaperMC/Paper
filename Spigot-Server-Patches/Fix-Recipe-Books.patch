@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 26 Jul 2017 21:12:15 -0400
+Subject: [PATCH] Fix Recipe Books
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 682211cdd..0b0a34508 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     public void a(PacketPlayInAutoRecipe packetplayinautorecipe) {
+         PlayerConnectionUtils.ensureMainThread(packetplayinautorecipe, this, this.player.x());
+         this.player.resetIdleTimer();
+-        // CraftBukkit start
+-        if (!player.getBukkitEntity().hasPermission("minecraft.autocraft")) {
+-            player.getBukkitEntity().updateInventory();
+-            return;
+-        }
+-        // CraftBukkit end
+         if (this.player.activeContainer.windowId == packetplayinautorecipe.a() && this.player.activeContainer.c(this.player)) {
+             this.player.playerConnection.sendPacket(new PacketPlayOutTransaction(packetplayinautorecipe.a(), packetplayinautorecipe.b(), true));
+             Iterator iterator;
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 while (iterator.hasNext()) {
+                     packetplayinautorecipe_a = (PacketPlayInAutoRecipe.a) iterator.next();
+                     itemstack = this.player.activeContainer.getSlot(packetplayinautorecipe_a.b).getItem();
+-                    if (this.a(packetplayinautorecipe_a.a, itemstack)) {
++                    // Paper start - improve validation
++                    ItemStack to = this.player.activeContainer.getSlot(packetplayinautorecipe_a.c).getItem();
++                    if (this.a(packetplayinautorecipe_a.a, itemstack) && (to.isEmpty() || this.a(packetplayinautorecipe_a.a, to))) {
++                        // Paper end
+                         i = packetplayinautorecipe_a.a.getCount();
+                         if (packetplayinautorecipe_a.c == -1) {
+                             this.player.drop(packetplayinautorecipe_a.a, true);
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                             itemstack.subtract(i);
+                         }
+                     }
++                    // Paper start
++                    else {
++                        this.player.getBukkitEntity().updateInventory();
++                        return;
++                    }
++                    // Paper end
+                 }
+             }
+ 
+--
