@@ -1,0 +1,125 @@
+From 5870ffa944049567f1ecb23e9edefacea67edc0a Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 6 Nov 2016 12:38:31 -0800
+Subject: [PATCH] Update VehicleCreateEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/DispenserRegistry.java b/src/main/java/net/minecraft/server/DispenserRegistry.java
+index 41bd6e5..013aa78 100644
+--- a/src/main/java/net/minecraft/server/DispenserRegistry.java
++++ b/src/main/java/net/minecraft/server/DispenserRegistry.java
+@@ -761,6 +761,14 @@ public class DispenserRegistry {
+ 
+             entityboat.setType(this.c);
+             entityboat.yaw = enumdirection.opposite().l();
++
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callVehicleCreateEvent(entityboat, block, org.bukkit.event.vehicle.VehicleCreateEvent.VehicleCreateReason.DISPENSER).isCancelled()) {
++                itemstack.count++;
++                return itemstack;
++            }
++            // Paper end
++
+             world.addEntity(entityboat);
+             // itemstack.cloneAndSubtract(1); // CraftBukkit - handled during event processing
+             return itemstack;
+diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+index 01a8b84..88e9323 100644
+--- a/src/main/java/net/minecraft/server/EntityBoat.java
++++ b/src/main/java/net/minecraft/server/EntityBoat.java
+@@ -65,7 +65,7 @@ public class EntityBoat extends Entity {
+         this.lastX = d0;
+         this.lastY = d1;
+         this.lastZ = d2;
+-        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
++        //this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit // Paper - Relocated elsewhere
+     }
+ 
+     protected boolean playStepSound() {
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index 9df7dfc..a4a2c19 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -111,7 +111,7 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
+         this.lastY = d1;
+         this.lastZ = d2;
+ 
+-        this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
++        //this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit // Paper - Relocated elsewhere
+     }
+ 
+     public double ay() {
+diff --git a/src/main/java/net/minecraft/server/ItemBoat.java b/src/main/java/net/minecraft/server/ItemBoat.java
+index c68e328..c685d0b 100644
+--- a/src/main/java/net/minecraft/server/ItemBoat.java
++++ b/src/main/java/net/minecraft/server/ItemBoat.java
+@@ -72,6 +72,15 @@ public class ItemBoat extends Item {
+                     return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
+                 } else {
+                     if (!world.isClientSide) {
++                        // Paper start
++                        EntityPlayer entityplayer = (EntityPlayer) entityhuman;
++
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callVehicleCreateEvent(entityboat, entityplayer.getBukkitEntity(), org.bukkit.event.vehicle.VehicleCreateEvent.VehicleCreateReason.PLAYER).isCancelled()) {
++                            entityplayer.updateInventory(entityplayer.activeContainer); // Update inventory as the client will think there is no item in hand otherwise
++                            return new InteractionResultWrapper(EnumInteractionResult.PASS, itemstack);
++                        }
++                        // Paper end
++
+                         world.addEntity(entityboat);
+                     }
+ 
+diff --git a/src/main/java/net/minecraft/server/ItemMinecart.java b/src/main/java/net/minecraft/server/ItemMinecart.java
+index 46c3e76..d14ae8d 100644
+--- a/src/main/java/net/minecraft/server/ItemMinecart.java
++++ b/src/main/java/net/minecraft/server/ItemMinecart.java
+@@ -76,6 +76,13 @@ public class ItemMinecart extends Item {
+                 entityminecartabstract.setCustomName(itemstack.getName());
+             }
+ 
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callVehicleCreateEvent(entityminecartabstract, block2, org.bukkit.event.vehicle.VehicleCreateEvent.VehicleCreateReason.DISPENSER).isCancelled()) {
++                itemstack.count++;
++                return itemstack;
++            }
++            // Paper end
++
+             world.addEntity(entityminecartabstract);
+             // itemstack.cloneAndSubtract(1); // CraftBukkit - handled during event processing
+             // CraftBukkit end
+@@ -115,6 +122,15 @@ public class ItemMinecart extends Item {
+                     entityminecartabstract.setCustomName(itemstack.getName());
+                 }
+ 
++                // Paper start
++                EntityPlayer entityplayer = (EntityPlayer) entityhuman;
++
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callVehicleCreateEvent(entityminecartabstract, entityplayer.getBukkitEntity(), org.bukkit.event.vehicle.VehicleCreateEvent.VehicleCreateReason.PLAYER).isCancelled()) {
++                    entityplayer.updateInventory(entityplayer.activeContainer); // Update inventory as the client will think there is no item in hand otherwise
++                    return EnumInteractionResult.PASS;
++                }
++                // Paper end
++
+                 world.addEntity(entityminecartabstract);
+             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index bff7e8d..ccd25a2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1052,4 +1052,12 @@ public class CraftEventFactory {
+         child.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
++
++    // Paper start
++    public static org.bukkit.event.vehicle.VehicleCreateEvent callVehicleCreateEvent(Entity vehicle, Object source, org.bukkit.event.vehicle.VehicleCreateEvent.VehicleCreateReason reason) {
++        org.bukkit.event.vehicle.VehicleCreateEvent event = new org.bukkit.event.vehicle.VehicleCreateEvent((org.bukkit.entity.Vehicle) vehicle.getBukkitEntity(), source, reason);
++        vehicle.world.getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
+ }
+-- 
+2.10.0.windows.1
+
