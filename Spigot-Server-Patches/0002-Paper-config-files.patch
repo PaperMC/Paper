@@ -1,4 +1,4 @@
-From 8f7a6bb066e1009c5e436852a08b4642c93d219d Mon Sep 17 00:00:00 2001
+From added675968cf0fad5fedb1761ef8ea5906c8235 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 000000000..cd67ab2bb
+index 000000000..5cdf4bbf4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,75 @@
 +package com.destroystokyo.paper;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -62,10 +62,13 @@ index 000000000..cd67ab2bb
 +
 +    private void dumpHeap(CommandSender sender) {
 +        File file = new File(new File(new File("."), "dumps"),
-+                "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + "-server.bin");
++                "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + "-server.hprof");
 +        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data to " + file);
-+        CraftServer.dumpHeap(file);
-+        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump complete");
++        if (CraftServer.dumpHeap(file)) {
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump complete");
++        } else {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
++        }
 +    }
 +
 +    private void doReload(CommandSender sender) {
@@ -370,7 +373,7 @@ index f5d387511..fd204ad7a 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e21fb9bd7..d7af2c00f 100644
+index e21fb9bd7..dd50d5c56 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -691,6 +691,7 @@ public final class CraftServer implements Server {
@@ -397,14 +400,14 @@ index e21fb9bd7..d7af2c00f 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
          int pollCount = 0;
-@@ -1766,4 +1769,23 @@ public final class CraftServer implements Server {
+@@ -1766,4 +1769,26 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }
 +
 +    // Paper start
 +    @SuppressWarnings({"rawtypes", "unchecked"})
-+    public static void dumpHeap(File file) {
++    public static boolean dumpHeap(File file) {
 +        try {
 +            if (file.getParentFile() != null) {
 +                file.getParentFile().mkdirs();
@@ -415,8 +418,11 @@ index e21fb9bd7..d7af2c00f 100644
 +            Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
 +            java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
 +            m.invoke(hotspotMBean, file.getPath(), true);
++            return true;
 +        } catch (Throwable t) {
 +            Bukkit.getLogger().severe("Could not write heap to " + file);
++            t.printStackTrace();
++            return false;
 +        }
 +    }
 +    // Paper end
@@ -482,5 +488,5 @@ index 01e73eb89..0b66f5e35 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.13.0
+2.13.3.windows.1
 
