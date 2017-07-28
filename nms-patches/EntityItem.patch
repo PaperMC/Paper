@@ -1,14 +1,17 @@
 --- a/net/minecraft/server/EntityItem.java
 +++ b/net/minecraft/server/EntityItem.java
-@@ -4,6 +4,7 @@
+@@ -4,6 +4,10 @@
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-+import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
++// CraftBukkit start
++import org.bukkit.event.entity.EntityPickupItemEvent;
++import org.bukkit.event.player.PlayerPickupItemEvent;
++// CraftBukkit end
  
  public class EntityItem extends Entity {
  
-@@ -15,6 +16,7 @@
+@@ -15,6 +19,7 @@
      private String g;
      private String h;
      public float a;
@@ -16,7 +19,7 @@
  
      public EntityItem(World world, double d0, double d1, double d2) {
          super(world);
-@@ -54,9 +56,12 @@
+@@ -54,9 +59,12 @@
              this.die();
          } else {
              super.B_();
@@ -32,7 +35,7 @@
  
              this.lastX = this.locX;
              this.lastY = this.locY;
-@@ -104,9 +109,11 @@
+@@ -104,9 +112,11 @@
                  this.motY *= -0.5D;
              }
  
@@ -44,7 +47,7 @@
  
              this.aq();
              if (!this.world.isClientSide) {
-@@ -121,6 +128,12 @@
+@@ -121,6 +131,12 @@
              }
  
              if (!this.world.isClientSide && this.age >= 6000) {
@@ -57,7 +60,7 @@
                  this.die();
              }
  
-@@ -162,6 +175,7 @@
+@@ -162,6 +178,7 @@
                      } else if (itemstack1.getCount() + itemstack.getCount() > itemstack1.getMaxStackSize()) {
                          return false;
                      } else {
@@ -65,7 +68,7 @@
                          itemstack1.add(itemstack.getCount());
                          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
                          entityitem.age = Math.min(entityitem.age, this.age);
-@@ -208,6 +222,11 @@
+@@ -208,6 +225,11 @@
          } else if (!this.getItemStack().isEmpty() && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
              return false;
          } else {
@@ -77,7 +80,7 @@
              this.ax();
              this.f = (int) ((float) this.f - f);
              if (this.f <= 0) {
-@@ -270,6 +289,26 @@
+@@ -270,6 +292,35 @@
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
  
@@ -87,14 +90,23 @@
 +
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                itemstack.setCount(canHold);
-+                PlayerPickupItemEvent event = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-+                event.setCancelled(!entityhuman.canPickUpLoot);
-+                this.world.getServer().getPluginManager().callEvent(event);
-+                itemstack.setCount(canHold + remaining);
-+
-+                if (event.isCancelled()) {
++                // Call legacy event
++                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                playerEvent.setCancelled(!entityhuman.canPickUpLoot);
++                this.world.getServer().getPluginManager().callEvent(playerEvent);
++                if (playerEvent.isCancelled()) {
 +                    return;
 +                }
++
++                // Call newer event afterwards
++                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                entityEvent.setCancelled(!entityhuman.canPickUpLoot);
++                this.world.getServer().getPluginManager().callEvent(entityEvent);
++                if (entityEvent.isCancelled()) {
++                    return;
++                }
++
++                itemstack.setCount(canHold + remaining);
 +
 +                // Possibly < 0; fix here so we do not have to modify code below
 +                this.pickupDelay = 0;
