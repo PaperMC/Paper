@@ -1,11 +1,11 @@
-From 4e9b597d5c6e078739e0662f73de519766c3926c Mon Sep 17 00:00:00 2001
+From 3f62fddb4eedc5054286eaa7036099424d66ee03 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 26 Jul 2017 21:12:15 -0400
 Subject: [PATCH] Fix Recipe Books
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 682211cdd..0f7e82d27 100644
+index 682211cdd..5b9021939 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2027,12 +2027,6 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -47,24 +47,34 @@ index 682211cdd..0f7e82d27 100644
                  }
              }
  
-@@ -2075,7 +2079,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2075,7 +2079,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                  while (iterator.hasNext()) {
                      packetplayinautorecipe_a = (PacketPlayInAutoRecipe.a) iterator.next();
                      itemstack = this.player.inventory.getItem(packetplayinautorecipe_a.c);
 -                    if (this.a(packetplayinautorecipe_a.a, itemstack)) {
-+                    if (this.a(packetplayinautorecipe_a.a, itemstack) && itemstack.getCount() >= packetplayinautorecipe_a.a.getCount()) { // Paper
++                    // Paper start
++                    ItemStack ref = packetplayinautorecipe_a.a;
++                    ItemStack to = this.player.activeContainer.getSlot(packetplayinautorecipe_a.b).getItem();
++                    if (this.a(ref, itemstack) && (ref.getCount() + to.getCount() <= ref.getMaxStackSize())) {
++                        // Paper end
                          i = packetplayinautorecipe_a.a.getCount();
                          if (itemstack.getCount() == i) {
                              this.player.inventory.splitWithoutUpdate(packetplayinautorecipe_a.c);
-@@ -2085,6 +2089,12 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2083,8 +2091,17 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                             itemstack.subtract(i);
+                         }
  
-                         this.player.activeContainer.b(packetplayinautorecipe_a.b, packetplayinautorecipe_a.a);
-                     }
-+                    // Paper start
-+                    else {
+-                        this.player.activeContainer.b(packetplayinautorecipe_a.b, packetplayinautorecipe_a.a);
++                        // Paper start
++                        if (to.isEmpty()) {
++                            this.player.activeContainer.b(packetplayinautorecipe_a.b, packetplayinautorecipe_a.a);
++                        } else {
++                            to.add(i);
++                        }
++                    } else {
 +                        this.player.getBukkitEntity().updateInventory();
 +                        return;
-+                    }
+                     }
 +                    // Paper end
                  }
              }
