@@ -1,14 +1,14 @@
-From 063ea4b06d53bcfedb783b7b937482af565db81d Mon Sep 17 00:00:00 2001
+From 2f3f52a7ba8b8783d8d2e034b431cde5c3da87bb Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Sun, 7 May 2017 06:26:09 -0500
 Subject: [PATCH] PlayerPickupItemEvent#setFlyAtPlayer
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index dc52ef45b..fa207c579 100644
+index 99dbb1393..ae4910b4b 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
-@@ -329,6 +329,7 @@ public class EntityItem extends Entity implements HopperPusher {
+@@ -332,6 +332,7 @@ public class EntityItem extends Entity implements HopperPusher {
              // CraftBukkit start - fire PlayerPickupItemEvent
              int canHold = entityhuman.inventory.canHold(itemstack);
              int remaining = i - canHold;
@@ -16,13 +16,12 @@ index dc52ef45b..fa207c579 100644
  
              if (this.pickupDelay <= 0 && canHold > 0) {
                  itemstack.setCount(canHold);
-@@ -336,8 +337,14 @@ public class EntityItem extends Entity implements HopperPusher {
-                 event.setCancelled(!entityhuman.canPickUpLoot);
-                 this.world.getServer().getPluginManager().callEvent(event);
-                 itemstack.setCount(canHold + remaining);
-+                flyAtPlayer = event.getFlyAtPlayer(); // Paper
- 
-                 if (event.isCancelled()) {
+@@ -339,7 +340,13 @@ public class EntityItem extends Entity implements HopperPusher {
+                 PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                 playerEvent.setCancelled(!entityhuman.canPickUpLoot);
+                 this.world.getServer().getPluginManager().callEvent(playerEvent);
++                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
+                 if (playerEvent.isCancelled()) {
 +                    // Paper Start
 +                    if (flyAtPlayer) {
 +                        entityhuman.receive(this, i);
@@ -31,7 +30,7 @@ index dc52ef45b..fa207c579 100644
                      return;
                  }
  
-@@ -347,7 +354,11 @@ public class EntityItem extends Entity implements HopperPusher {
+@@ -359,7 +366,11 @@ public class EntityItem extends Entity implements HopperPusher {
              // CraftBukkit end
  
              if (this.pickupDelay == 0 && (this.h == null || 6000 - this.age <= 200 || this.h.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
@@ -45,5 +44,5 @@ index dc52ef45b..fa207c579 100644
                      this.die();
                      itemstack.setCount(i);
 -- 
-2.13.0
+2.13.3
 
