@@ -1,4 +1,4 @@
-From 8ce24b8a5642a47a532941057e9c1b46a7083443 Mon Sep 17 00:00:00 2001
+From 3d2fbd9d26c5403f5749630576610bd23219168b Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Sat, 18 Jun 2016 01:01:37 -0500
 Subject: [PATCH] Make entities look for hoppers
@@ -14,7 +14,7 @@ This patch may causes a decrease in the performance of dropped items, which is w
 
 diff --git a/src/main/java/com/destroystokyo/paper/HopperPusher.java b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 new file mode 100644
-index 00000000..aef7c2be
+index 000000000..aef7c2be9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/HopperPusher.java
 @@ -0,0 +1,59 @@
@@ -78,7 +78,7 @@ index 00000000..aef7c2be
 +    double getZ();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index c74071eb..d5d6e7fc 100644
+index c74071eb1..d5d6e7fcd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -341,4 +341,9 @@ public class PaperWorldConfig {
@@ -92,7 +92,7 @@ index c74071eb..d5d6e7fc 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
-index 1eb9c2da..c88b76a7 100644
+index 1eb9c2da8..c88b76a79 100644
 --- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
 +++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
 @@ -235,6 +235,7 @@ public class AxisAlignedBB {
@@ -104,7 +104,7 @@ index 1eb9c2da..c88b76a7 100644
          return this.a(axisalignedbb.a, axisalignedbb.b, axisalignedbb.c, axisalignedbb.d, axisalignedbb.e, axisalignedbb.f);
      }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 008ed206..b3c1f550 100644
+index 008ed206d..b3c1f550c 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -250,6 +250,7 @@ public class BlockPosition extends BaseBlockPosition {
@@ -132,7 +132,7 @@ index 008ed206..b3c1f550 100644
              this.b = i;
              this.c = j;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e78b1c26..0a8d8a1a 100644
+index 73507cda8..a55bc1610 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -80,6 +80,19 @@ public abstract class Entity implements ICommandListener {
@@ -156,13 +156,13 @@ index e78b1c26..0a8d8a1a 100644
      public double motY;
      public double motZ;
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 14caa86a..1927e8e2 100644
+index 4d3aef96b..6593fc633 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
-@@ -5,8 +5,15 @@ import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
+@@ -8,8 +8,15 @@ import org.apache.logging.log4j.Logger;
+ import org.bukkit.event.entity.EntityPickupItemEvent;
+ import org.bukkit.event.player.PlayerPickupItemEvent;
+ // CraftBukkit end
 +import com.destroystokyo.paper.HopperPusher; // Paper
  
 -public class EntityItem extends Entity {
@@ -176,7 +176,7 @@ index 14caa86a..1927e8e2 100644
  
      private static final Logger b = LogManager.getLogger();
      private static final DataWatcherObject<ItemStack> c = DataWatcher.a(EntityItem.class, DataWatcherRegistry.f);
-@@ -56,6 +63,7 @@ public class EntityItem extends Entity {
+@@ -59,6 +66,7 @@ public class EntityItem extends Entity {
              this.die();
          } else {
              super.B_();
@@ -184,7 +184,7 @@ index 14caa86a..1927e8e2 100644
              // CraftBukkit start - Use wall time for pickup and despawn timers
              int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
              if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
-@@ -143,6 +151,7 @@ public class EntityItem extends Entity {
+@@ -146,6 +154,7 @@ public class EntityItem extends Entity {
      // Spigot start - copied from above
      @Override
      public void inactiveTick() {
@@ -193,7 +193,7 @@ index 14caa86a..1927e8e2 100644
          int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
          if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index b382f818..721c26f3 100644
+index 1a2de4b77..41863b08d 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -7,6 +7,7 @@ import javax.annotation.Nullable;
@@ -232,7 +232,7 @@ index b382f818..721c26f3 100644
      private NonNullList<ItemStack> items;
      private boolean b;
 diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
-index 804215a1..e830d839 100644
+index 804215a1c..e830d8390 100644
 --- a/src/main/java/net/minecraft/server/IHopper.java
 +++ b/src/main/java/net/minecraft/server/IHopper.java
 @@ -4,9 +4,9 @@ public interface IHopper extends IInventory {
@@ -249,7 +249,7 @@ index 804215a1..e830d839 100644
 +    double G(); default double getZ() { return G(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index f9981298..d2226164 100644
+index f99812989..d22261646 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -126,6 +126,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -378,5 +378,5 @@ index f9981298..d2226164 100644
  
              if (!list.isEmpty()) {
 -- 
-2.13.1.windows.2
+2.13.3
 
