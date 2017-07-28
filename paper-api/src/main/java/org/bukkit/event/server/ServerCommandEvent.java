@@ -5,7 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
- * This event is called when a command is run from the server console. It is
+ * This event is called when a command is run by a non-player. It is
  * called early in the command handling process, and modifications in this
  * event (via {@link #setCommand(String)}) will be shown in the behavior.
  * <p>
