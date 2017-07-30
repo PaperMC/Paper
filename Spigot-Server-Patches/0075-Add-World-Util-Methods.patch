@@ -1,4 +1,4 @@
-From 05f72559e6fec57fb264f1ce6cd8d8e148e6b1ae Mon Sep 17 00:00:00 2001
+From ff23ede710a71e55199f8ba9b4ed518c3ced5657 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 20:16:03 -0400
 Subject: [PATCH] Add World Util Methods
@@ -6,7 +6,7 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 33737af78..1a77dfe4e 100644
+index 33737af7..1a77dfe4 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -580,6 +580,7 @@ public class Chunk {
@@ -18,7 +18,7 @@ index 33737af78..1a77dfe4e 100644
          int j = blockposition.getX() & 15;
          int k = blockposition.getY();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e175d2891..0ece629d8 100644
+index e175d289..1e66e0d0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -76,7 +76,7 @@ public abstract class World implements IBlockAccess {
@@ -43,41 +43,46 @@ index e175d2891..0ece629d8 100644
      public Chunk getChunkIfLoaded(int x, int z) {
          return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x, z);
      }
-@@ -685,10 +691,46 @@ public abstract class World implements IBlockAccess {
+@@ -685,10 +691,51 @@ public abstract class World implements IBlockAccess {
          }
      }
  
 +    // Paper start - test if meets light level, return faster
 +    // logic copied from below
 +    public boolean isLightLevel(BlockPosition blockposition, int level) {
-+        if (isValidLocation(blockposition)) {
++        return compareLightLevel(blockposition, level) != -1;
++    }
++
++    public int compareLightLevel(BlockPosition blockposition, int level) {
++        int i;
++        if (this.isValidLocation(blockposition)) {
 +            if (this.getType(blockposition).f()) {
-+                if (this.c(blockposition.up(), false) >= level) {
-+                    return true;
++                if ((i = this.c(blockposition.up(), false)) >= level) {
++                    return i == level ? 0 : 1;
 +                }
-+                if (this.c(blockposition.east(), false) >= level) {
-+                    return true;
++                if ((i = this.c(blockposition.east(), false)) >= level) {
++                    return i == level ? 0 : 1;
 +                }
-+                if (this.c(blockposition.west(), false) >= level) {
-+                    return true;
++                if ((i = this.c(blockposition.west(), false)) >= level) {
++                    return i == level ? 0 : 1;
 +                }
-+                if (this.c(blockposition.south(), false) >= level) {
-+                    return true;
++                if ((i = this.c(blockposition.south(), false)) >= level) {
++                    return i == level ? 0 : 1;
 +                }
-+                if (this.c(blockposition.north(), false) >= level) {
-+                    return true;
++                if ((i = this.c(blockposition.north(), false)) >= level) {
++                    return i == level ? 0 : 1;
 +                }
-+                return false;
++                return -1;
 +            } else {
 +                if (blockposition.getY() >= 256) {
 +                    blockposition = new BlockPosition(blockposition.getX(), 255, blockposition.getZ());
 +                }
 +
 +                Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-+                return chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()) >= level;
++                return Integer.compare(chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()), level);
 +            }
 +        } else {
-+            return true;
++            return 1;
 +        }
 +    }
 +    // Paper end
@@ -90,7 +95,7 @@ index e175d2891..0ece629d8 100644
      public int c(BlockPosition blockposition, boolean flag) {
          if (blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000) {
              if (flag && this.getType(blockposition).f()) {
-@@ -804,6 +846,27 @@ public abstract class World implements IBlockAccess {
+@@ -804,6 +851,27 @@ public abstract class World implements IBlockAccess {
          return this.worldProvider.o()[this.getLightLevel(blockposition)];
      }
  
@@ -119,5 +124,5 @@ index e175d2891..0ece629d8 100644
          // CraftBukkit start - tree generation
          if (captureTreeGeneration) {
 -- 
-2.13.3
+2.11.0.windows.3
 

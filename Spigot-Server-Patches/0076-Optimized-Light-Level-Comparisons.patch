@@ -1,4 +1,4 @@
-From 11e7e276d572aa7ff71afe417b1dc245564d8801 Mon Sep 17 00:00:00 2001
+From 85c0fc97d83b20cf7ea2d28355ef7391a2ac71d9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 21:22:56 -0400
 Subject: [PATCH] Optimized Light Level Comparisons
@@ -8,7 +8,7 @@ Use an optimized method to test if a block position meets a desired light level.
 This method benefits from returning as soon as the desired light level matches.
 
 diff --git a/src/main/java/net/minecraft/server/BlockCrops.java b/src/main/java/net/minecraft/server/BlockCrops.java
-index 128096453..fea81de16 100644
+index c0b88580..55ed0c95 100644
 --- a/src/main/java/net/minecraft/server/BlockCrops.java
 +++ b/src/main/java/net/minecraft/server/BlockCrops.java
 @@ -48,7 +48,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement
@@ -21,7 +21,7 @@ index 128096453..fea81de16 100644
  
              if (i < this.g()) {
 diff --git a/src/main/java/net/minecraft/server/BlockGrass.java b/src/main/java/net/minecraft/server/BlockGrass.java
-index d0fa96651..62ec2ad31 100644
+index fe55848b..8fc736d6 100644
 --- a/src/main/java/net/minecraft/server/BlockGrass.java
 +++ b/src/main/java/net/minecraft/server/BlockGrass.java
 @@ -29,7 +29,8 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
@@ -64,8 +64,57 @@ index d0fa96651..62ec2ad31 100644
                              // CraftBukkit start
                              // world.setTypeUpdate(blockposition1, Blocks.GRASS.getBlockData());
                              org.bukkit.World bworld = world.getWorld();
+diff --git a/src/main/java/net/minecraft/server/BlockIceFrost.java b/src/main/java/net/minecraft/server/BlockIceFrost.java
+index 950863fb..4b04742a 100644
+--- a/src/main/java/net/minecraft/server/BlockIceFrost.java
++++ b/src/main/java/net/minecraft/server/BlockIceFrost.java
+@@ -19,7 +19,7 @@ public class BlockIceFrost extends BlockIce {
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+-        if ((random.nextInt(3) == 0 || this.c(world, blockposition) < 4) && world.getLightLevel(blockposition) > 11 - ((Integer) iblockdata.get(BlockIceFrost.a)).intValue() - iblockdata.c()) {
++        if ((random.nextInt(3) == 0 || this.c(world, blockposition) < 4) && world.compareLightLevel(blockposition, 11 - ((Integer) iblockdata.get(BlockIceFrost.a)).intValue() - iblockdata.c()) == 1) {
+             this.a(world, blockposition, iblockdata, random, true);
+         } else {
+             world.a(blockposition, (Block) this, MathHelper.nextInt(random, 20, 40));
+diff --git a/src/main/java/net/minecraft/server/BlockMycel.java b/src/main/java/net/minecraft/server/BlockMycel.java
+index 9461b4a2..084b2ec9 100644
+--- a/src/main/java/net/minecraft/server/BlockMycel.java
++++ b/src/main/java/net/minecraft/server/BlockMycel.java
+@@ -28,7 +28,8 @@ public class BlockMycel extends Block {
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+         if (!world.isClientSide) {
+-            if (world.getLightLevel(blockposition.up()) < 4 && world.getType(blockposition.up()).c() > 2) {
++            int lightLevel = -1; // Paper
++            if (world.getType(blockposition.up()).c() > 2 && (lightLevel = world.getLightLevel(blockposition.up())) < 4) { // Paper - move light check to end to avoid unneeded light lookups
+                 // CraftBukkit start
+                 // world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, BlockDirt.EnumDirtVariant.DIRT));
+                 org.bukkit.World bworld = world.getWorld();
+@@ -43,13 +44,19 @@ public class BlockMycel extends Block {
+                 }
+                 // CraftBukkit end
+             } else {
+-                if (world.getLightLevel(blockposition.up()) >= 9) {
++                // Paper start
++                // If light was calculated above, reuse it, else grab it
++                if (lightLevel == -1) {
++                    lightLevel = world.getLightLevel(blockposition.up());
++                }
++                if (lightLevel >= 9) {
++                    // Paper end
+                     for (int i = 0; i < 4; ++i) {
+                         BlockPosition blockposition1 = blockposition.a(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
+                         IBlockData iblockdata1 = world.getType(blockposition1);
+                         IBlockData iblockdata2 = world.getType(blockposition1.up());
+ 
+-                        if (iblockdata1.getBlock() == Blocks.DIRT && iblockdata1.get(BlockDirt.VARIANT) == BlockDirt.EnumDirtVariant.DIRT && world.getLightLevel(blockposition1.up()) >= 4 && iblockdata2.c() <= 2) {
++                        if (iblockdata1.getBlock() == Blocks.DIRT && iblockdata1.get(BlockDirt.VARIANT) == BlockDirt.EnumDirtVariant.DIRT && world.isLightLevel(blockposition1.up(), 4) && iblockdata2.c() <= 2) { // Paper
+                             // CraftBukkit start
+                             // world.setTypeUpdate(blockposition1, this.getBlockData());
+                             org.bukkit.World bworld = world.getWorld();
 diff --git a/src/main/java/net/minecraft/server/BlockSapling.java b/src/main/java/net/minecraft/server/BlockSapling.java
-index b22949368..cb1e5a2a3 100644
+index 153bcc28..926d0b1f 100644
 --- a/src/main/java/net/minecraft/server/BlockSapling.java
 +++ b/src/main/java/net/minecraft/server/BlockSapling.java
 @@ -34,7 +34,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
@@ -78,7 +127,7 @@ index b22949368..cb1e5a2a3 100644
                  world.captureTreeGeneration = true;
                  // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/BlockStem.java b/src/main/java/net/minecraft/server/BlockStem.java
-index 7492110fa..8d1630ac0 100644
+index f12987c8..5ae7bd9d 100644
 --- a/src/main/java/net/minecraft/server/BlockStem.java
 +++ b/src/main/java/net/minecraft/server/BlockStem.java
 @@ -48,7 +48,7 @@ public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
@@ -91,7 +140,7 @@ index 7492110fa..8d1630ac0 100644
  
              if (random.nextInt((int) ((100.0F / (this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier)) * (25.0F / f)) + 1) == 0) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/EntityMonster.java b/src/main/java/net/minecraft/server/EntityMonster.java
-index 21539ff9b..1585bf3bc 100644
+index 0f55cf51..8782bce5 100644
 --- a/src/main/java/net/minecraft/server/EntityMonster.java
 +++ b/src/main/java/net/minecraft/server/EntityMonster.java
 @@ -118,17 +118,17 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
@@ -117,8 +166,21 @@ index 21539ff9b..1585bf3bc 100644
          }
      }
  
+diff --git a/src/main/java/net/minecraft/server/EntitySlime.java b/src/main/java/net/minecraft/server/EntitySlime.java
+index 3d3a9ca0..e5bcdaa7 100644
+--- a/src/main/java/net/minecraft/server/EntitySlime.java
++++ b/src/main/java/net/minecraft/server/EntitySlime.java
+@@ -248,7 +248,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+             if (this.world.getDifficulty() != EnumDifficulty.PEACEFUL) {
+                 BiomeBase biomebase = this.world.getBiome(blockposition);
+ 
+-                if (biomebase == Biomes.h && this.locY > 50.0D && this.locY < 70.0D && this.random.nextFloat() < 0.5F && this.random.nextFloat() < this.world.G() && this.world.getLightLevel(new BlockPosition(this)) <= this.random.nextInt(8)) {
++                if (biomebase == Biomes.h && this.locY > 50.0D && this.locY < 70.0D && this.random.nextFloat() < 0.5F && this.random.nextFloat() < this.world.G() && this.world.compareLightLevel(new BlockPosition(this), this.random.nextInt(8)) != -1) {
+                     return super.P();
+                 }
+                 boolean isSlimeChunk = world.paperConfig.allChunksAreSlimeChunks || chunk.a(world.spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
 diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
-index 2b619ab93..372890b5d 100644
+index 277f1414..6111ca0b 100644
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
 @@ -178,7 +178,7 @@ public class EntityZombie extends EntityMonster {
@@ -131,5 +193,5 @@ index 2b619ab93..372890b5d 100644
                          if (!this.world.isPlayerNearby((double) i1, (double) j1, (double) k1, 7.0D) && this.world.a(entityzombie.getBoundingBox(), (Entity) entityzombie) && this.world.getCubes(entityzombie, entityzombie.getBoundingBox()).isEmpty() && !this.world.containsLiquid(entityzombie.getBoundingBox())) {
                              this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 -- 
-2.13.0.windows.1
+2.11.0.windows.3
 
