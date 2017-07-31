@@ -144,6 +144,7 @@ public abstract class MobSpawnerAbstract {
                                 // Spigot End
                             }
                         entity.spawnedViaMobSpawner = true; // Paper
+                            flag = true; // Paper
                             // Spigot Start
                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
                                 Entity vehicle = entity.getVehicle();
@@ -167,7 +168,7 @@ public abstract class MobSpawnerAbstract {
                                 ((EntityInsentient) entity).doSpawnEffect();
                             }
 
-                            flag = true;
+                            /*flag = true;*/ // Paper - moved up above cancellable event
                         }
                     }
                 }
