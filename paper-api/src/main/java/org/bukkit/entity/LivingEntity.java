@@ -365,6 +365,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @Nullable
     public Player getKiller();
 
+    // Paper start
+    /**
+     * Sets the player identified as the killer of the living entity.
+     *
+     * @param killer player
+     */
+    public void setKiller(@Nullable Player killer);
+    // Paper end
+
     /**
      * Adds the given {@link PotionEffect} to the living entity.
      *
