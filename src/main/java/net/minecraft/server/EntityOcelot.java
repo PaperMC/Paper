@@ -81,7 +81,7 @@ public class EntityOcelot extends EntityAnimal {
 
     @Override
     public boolean isTypeNotPersistent(double d0) {
-        return !this.isTrusting() /*&& this.ticksLived > 2400*/; // CraftBukkit
+        return !this.isTrusting() && !this.hasCustomName() && !this.isLeashed() /*&& this.ticksLived > 2400*/; // CraftBukkit // Paper - honor name and leash
     }
 
     public static AttributeProvider.Builder eK() {
