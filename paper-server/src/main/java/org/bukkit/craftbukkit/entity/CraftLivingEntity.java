@@ -24,6 +24,7 @@ import net.minecraft.server.EntityLlamaSpit;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityProjectile;
+import net.minecraft.server.EntityShulkerBullet;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityThrownExpBottle;
@@ -60,6 +61,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.LlamaSpit;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.ShulkerBullet;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.SpectralArrow;
@@ -399,6 +401,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
             ((EntityLlamaSpit) launch).shooter = getHandle();
             ((EntityLlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
+            launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        } else if (ShulkerBullet.class.isAssignableFrom(projectile)) {
+            Location location = getEyeLocation();
+
+            launch = new EntityShulkerBullet(world, getHandle(), null, null);
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 
