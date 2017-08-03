@@ -245,7 +245,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                     break;
             }
         }
-        TileEntity te = (blockEntityTag == null) ? null : TileEntity.a(null, blockEntityTag);
+        TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(null, blockEntityTag);
 
         switch (material) {
         case SIGN:

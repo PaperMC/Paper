@@ -686,7 +686,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(getHandle().o_().ordinal()); // PAIL: rename
+        return PistonMoveReaction.getById(getHandle().getPushReaction().ordinal());
     }
 
     protected NBTTagCompound save() {
