@@ -60,19 +60,6 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     /**
      * Gets the block that the living entity has targeted.
      *
-     * @param transparent HashSet containing all transparent block IDs (set to
-     *     null for only air)
-     * @param maxDistance this is the maximum distance to scan (may be limited
-     *     by server by at least 100 blocks, no less)
-     * @return block that the living entity has targeted
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Block getTargetBlock(HashSet<Byte> transparent, int maxDistance);
-
-    /**
-     * Gets the block that the living entity has targeted.
-     *
      * @param transparent HashSet containing all transparent block Materials (set to
      *     null for only air)
      * @param maxDistance this is the maximum distance to scan (may be limited
@@ -80,22 +67,6 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
      * @return block that the living entity has targeted
      */
     public Block getTargetBlock(Set<Material> transparent, int maxDistance);
-
-    /**
-     * Gets the last two blocks along the living entity's line of sight.
-     * <p>
-     * The target block will be the last block in the list.
-     *
-     * @param transparent HashSet containing all transparent block IDs (set to
-     *     null for only air)
-     * @param maxDistance this is the maximum distance to scan. This may be
-     *     further limited by the server, but never to less than 100 blocks
-     * @return list containing the last 2 blocks along the living entity's
-     *     line of sight
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public List<Block> getLastTwoTargetBlocks(HashSet<Byte> transparent, int maxDistance);
 
     /**
      * Gets the last two blocks along the living entity's line of sight.
