@@ -1,4 +1,4 @@
-From 7a0cb308aec1ec2f127ee1de2cfadca2f3360460 Mon Sep 17 00:00:00 2001
+From 21e11d3533310ed87cce7b06c7cfa73e8dbedd78 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 21:19:14 -0400
 Subject: [PATCH] LootTable API & Replenishable Lootables Feature
@@ -657,8 +657,21 @@ index a97ad2037..618521304 100644
 +    // Paper end
 +
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index cf94c0626..52c982893 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -60,7 +60,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
+     }
+ 
+     // gets the wrapped TileEntity
+-    protected T getTileEntity() {
++    public T getTileEntity() { // Paper - protected -> public
+         return tileEntity;
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-index 3de7e14d8..6cab545e5 100644
+index 85f3bb272..733c04ef7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 @@ -1,5 +1,6 @@
@@ -672,13 +685,13 @@ index 3de7e14d8..6cab545e5 100644
  import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
  import org.bukkit.inventory.Inventory;
  
--public class CraftChest extends CraftLootable implements Chest {
-+public class CraftChest extends CraftLootable implements Chest, CraftLootableBlockInventory { // Paper
-     private final CraftWorld world;
-     private final TileEntityChest chest;
+-public class CraftChest extends CraftLootable<TileEntityChest> implements Chest {
++public class CraftChest extends CraftLootable<TileEntityChest> implements Chest, CraftLootableBlockInventory { // Paper
  
+     public CraftChest(final Block block) {
+         super(block, TileEntityChest.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java b/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
-index cc0d28f21..1b28e8ba2 100644
+index 1dc8bfecd..bfcf9b6c4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
 @@ -1,5 +1,6 @@
@@ -692,13 +705,13 @@ index cc0d28f21..1b28e8ba2 100644
  import org.bukkit.inventory.Inventory;
  import org.bukkit.projectiles.BlockProjectileSource;
  
--public class CraftDispenser extends CraftLootable implements Dispenser {
-+public class CraftDispenser extends CraftLootable implements Dispenser, CraftLootableBlockInventory { // Paper
-     private final CraftWorld world;
-     private final TileEntityDispenser dispenser;
+-public class CraftDispenser extends CraftLootable<TileEntityDispenser> implements Dispenser {
++public class CraftDispenser extends CraftLootable<TileEntityDispenser> implements Dispenser, CraftLootableBlockInventory {
  
+     public CraftDispenser(final Block block) {
+         super(block, TileEntityDispenser.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftHopper.java b/src/main/java/org/bukkit/craftbukkit/block/CraftHopper.java
-index b7a04bd84..5d4a5519d 100644
+index 6566554ab..df156d0d9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftHopper.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftHopper.java
 @@ -1,5 +1,6 @@
@@ -708,17 +721,17 @@ index b7a04bd84..5d4a5519d 100644
  import net.minecraft.server.TileEntityHopper;
  import org.bukkit.Material;
  import org.bukkit.block.Block;
-@@ -8,7 +9,7 @@ import org.bukkit.craftbukkit.CraftWorld;
+@@ -7,7 +8,7 @@ import org.bukkit.block.Hopper;
  import org.bukkit.craftbukkit.inventory.CraftInventory;
  import org.bukkit.inventory.Inventory;
  
--public class CraftHopper extends CraftLootable implements Hopper {
-+public class CraftHopper extends CraftLootable implements Hopper, CraftLootableBlockInventory { // Paper
-     private final TileEntityHopper hopper;
+-public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopper {
++public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopper, CraftLootableBlockInventory {
  
      public CraftHopper(final Block block) {
+         super(block, TileEntityHopper.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
-index 788c60263..dc2648094 100644
+index c029a1244..c26f0b5af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
 @@ -1,5 +1,6 @@
@@ -726,26 +739,17 @@ index 788c60263..dc2648094 100644
  
 +import com.destroystokyo.paper.loottable.CraftLootableBlockInventory;
  import net.minecraft.server.BlockShulkerBox;
- import net.minecraft.server.TileEntity;
  import net.minecraft.server.TileEntityShulkerBox;
-@@ -11,7 +12,7 @@ import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.DyeColor;
+@@ -10,7 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.inventory.Inventory;
  
--public class CraftShulkerBox extends CraftLootable implements ShulkerBox {
-+public class CraftShulkerBox extends CraftLootable implements ShulkerBox, CraftLootableBlockInventory { // Paper
+-public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> implements ShulkerBox {
++public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> implements ShulkerBox, CraftLootableBlockInventory {
  
-     private final CraftWorld world;
-     private final TileEntityShulkerBox box;
-@@ -31,7 +32,7 @@ public class CraftShulkerBox extends CraftLootable implements ShulkerBox {
-     }
- 
-     @Override
--    public TileEntity getTileEntity() {
-+    public TileEntityShulkerBox getTileEntity() { // Paper
-         return box;
-     }
- 
+     public CraftShulkerBox(final Block block) {
+         super(block, TileEntityShulkerBox.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java
 index 69435c457..4291edf25 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java
@@ -787,5 +791,5 @@ index e9963e21c..acb4dee04 100644
  
      CraftMinecartHopper(CraftServer server, EntityMinecartHopper entity) {
 -- 
-2.13.0
+2.13.4
 
