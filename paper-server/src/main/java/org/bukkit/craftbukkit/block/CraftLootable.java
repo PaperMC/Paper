@@ -4,31 +4,25 @@ import net.minecraft.server.TileEntityLootable;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftLootable extends CraftContainer implements Nameable {
+public abstract class CraftLootable<T extends TileEntityLootable> extends CraftContainer<T> implements Nameable {
 
-    private final TileEntityLootable te;
-
-    public CraftLootable(Block block) {
-        super(block);
-
-        te = (TileEntityLootable) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+    public CraftLootable(Block block, Class<T> tileEntityClass) {
+        super(block, tileEntityClass);
     }
 
-    public CraftLootable(Material material, TileEntityLootable tileEntity) {
+    public CraftLootable(Material material, T tileEntity) {
         super(material, tileEntity);
-
-        te = tileEntity;
     }
 
     @Override
     public String getCustomName() {
-        return te.hasCustomName() ? te.getName() : null;
+        T lootable = this.getSnapshot();
+        return lootable.hasCustomName() ? lootable.getName() : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        te.setCustomName(name);
+        this.getSnapshot().setCustomName(name);
     }
 }

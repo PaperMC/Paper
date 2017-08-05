@@ -11,43 +11,43 @@ import org.bukkit.block.NoteBlock;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
-public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
-    private final CraftWorld world;
-    private final TileEntityNote note;
+public class CraftNoteBlock extends CraftBlockEntityState<TileEntityNote> implements NoteBlock {
 
     public CraftNoteBlock(final Block block) {
-        super(block);
-
-        world = (CraftWorld) block.getWorld();
-        note = (TileEntityNote) world.getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityNote.class);
     }
 
     public CraftNoteBlock(final Material material, final TileEntityNote te) {
-        super(material);
-        world = null;
-        note = te;
+        super(material, te);
     }
 
+    @Override
     public Note getNote() {
-        return new Note(note.note);
+        return new Note(this.getSnapshot().note);
     }
 
+    @Override
     public byte getRawNote() {
-        return note.note;
+        return this.getSnapshot().note;
     }
 
-    public void setNote(Note n) {
-        note.note = n.getId();
+    @Override
+    public void setNote(Note note) {
+        this.getSnapshot().note = note.getId();
     }
 
-    public void setRawNote(byte n) {
-        note.note = n;
+    @Override
+    public void setRawNote(byte note) {
+        this.getSnapshot().note = note;
     }
 
+    @Override
     public boolean play() {
         Block block = getBlock();
 
         if (block.getType() == Material.NOTE_BLOCK) {
+            TileEntityNote note = (TileEntityNote) this.getTileEntityFromWorld();
+            CraftWorld world = (CraftWorld) this.getWorld();
             note.play(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
             return true;
         } else {
@@ -60,6 +60,7 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         Block block = getBlock();
 
         if (block.getType() == Material.NOTE_BLOCK) {
+            CraftWorld world = (CraftWorld) this.getWorld();
             world.getHandle().playBlockAction(new BlockPosition(getX(), getY(), getZ()), CraftMagicNumbers.getBlock(block), instrument, note);
             return true;
         } else {
@@ -72,15 +73,11 @@ public class CraftNoteBlock extends CraftBlockState implements NoteBlock {
         Block block = getBlock();
 
         if (block.getType() == Material.NOTE_BLOCK) {
+            CraftWorld world = (CraftWorld) this.getWorld();
             world.getHandle().playBlockAction(new BlockPosition(getX(), getY(), getZ()), CraftMagicNumbers.getBlock(block), instrument.getType(), note.getId());
             return true;
         } else {
             return false;
         }
-    }
-
-    @Override
-    public TileEntityNote getTileEntity() {
-        return note;
     }
 }

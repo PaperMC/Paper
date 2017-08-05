@@ -34,7 +34,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.block.CraftBanner;
 import org.bukkit.craftbukkit.block.CraftBeacon;
-import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBrewingStand;
 import org.bukkit.craftbukkit.block.CraftChest;
 import org.bukkit.craftbukkit.block.CraftCommandBlock;
@@ -384,7 +384,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             }
             return new CraftComparator(material, (TileEntityComparator) te);
         case PISTON_BASE:
-            
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
@@ -393,70 +392,68 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     @Override
     public void setBlockState(BlockState blockState) {
         Validate.notNull(blockState, "blockState must not be null");
-        TileEntity te = ((CraftBlockState) blockState).getTileEntity();
-        Validate.notNull(te, "Invalid tile for " + blockState);
 
         boolean valid;
         switch (material) {
         case SIGN:
         case SIGN_POST:
         case WALL_SIGN:
-            valid = te instanceof TileEntitySign;
+            valid = blockState instanceof CraftSign;
             break;
         case CHEST:
         case TRAPPED_CHEST:
-            valid = te instanceof TileEntityChest;
+            valid = blockState instanceof CraftChest;
             break;
         case BURNING_FURNACE:
         case FURNACE:
-            valid = te instanceof TileEntityFurnace;
+            valid = blockState instanceof CraftFurnace;
             break;
         case DISPENSER:
-            valid = te instanceof TileEntityDispenser;
+            valid = blockState instanceof CraftDispenser;
             break;
         case DROPPER:
-            valid = te instanceof TileEntityDropper;
+            valid = blockState instanceof CraftDropper;
             break;
         case END_GATEWAY:
-            valid = te instanceof TileEntityEndGateway;
+            valid = blockState instanceof CraftEndGateway;
             break;
         case HOPPER:
-            valid = te instanceof TileEntityHopper;
+            valid = blockState instanceof CraftHopper;
             break;
         case MOB_SPAWNER:
-            valid = te instanceof TileEntityMobSpawner;
+            valid = blockState instanceof CraftCreatureSpawner;
             break;
         case NOTE_BLOCK:
-            valid = te instanceof TileEntityNote;
+            valid = blockState instanceof CraftNoteBlock;
             break;
         case JUKEBOX:
-            valid = te instanceof BlockJukeBox.TileEntityRecordPlayer;
+            valid = blockState instanceof CraftJukebox;
             break;
         case BREWING_STAND_ITEM:
-            valid = te instanceof TileEntityBrewingStand;
+            valid = blockState instanceof CraftBrewingStand;
             break;
         case SKULL:
-            valid = te instanceof TileEntitySkull;
+            valid = blockState instanceof CraftSkull;
             break;
         case COMMAND:
         case COMMAND_REPEATING:
         case COMMAND_CHAIN:
-            valid = te instanceof TileEntityCommand;
+            valid = blockState instanceof CraftCommandBlock;
             break;
         case BEACON:
-            valid = te instanceof TileEntityBeacon;
+            valid = blockState instanceof CraftBeacon;
             break;
         case SHIELD:
         case BANNER:
         case WALL_BANNER:
         case STANDING_BANNER:
-            valid = te instanceof TileEntityBanner;
+            valid = blockState instanceof CraftBanner;
             break;
         case FLOWER_POT_ITEM:
-            valid = te instanceof TileEntityFlowerPot;
+            valid = blockState instanceof CraftFlowerPot;
             break;
         case STRUCTURE_BLOCK:
-            valid = te instanceof TileEntityStructure;
+            valid = blockState instanceof CraftStructureBlock;
             break;
         case WHITE_SHULKER_BOX:
         case ORANGE_SHULKER_BOX:
@@ -474,20 +471,20 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case GREEN_SHULKER_BOX:
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
-            valid = te instanceof TileEntityShulkerBox;
+            valid = blockState instanceof CraftShulkerBox;
             break;
         case ENCHANTMENT_TABLE:
-            valid = te instanceof TileEntityEnchantTable;
+            valid = blockState instanceof CraftEnchantingTable;
             break;
         case ENDER_CHEST:
-            valid = te instanceof TileEntityEnderChest;
+            valid = blockState instanceof CraftEnderChest;
             break;
         case DAYLIGHT_DETECTOR:
         case DAYLIGHT_DETECTOR_INVERTED:
-            valid = te instanceof TileEntityLightDetector;
+            valid = blockState instanceof CraftDaylightDetector;
             break;
         case REDSTONE_COMPARATOR:
-            valid = te instanceof TileEntityComparator;
+            valid = blockState instanceof CraftComparator;
             break;
         default:
             valid = false;
@@ -496,7 +493,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
         Validate.isTrue(valid, "Invalid blockState for " + material);
 
-        blockEntityTag = new NBTTagCompound();
-        te.save(blockEntityTag);
+        blockEntityTag = ((CraftBlockEntityState) blockState).getSnapshotNBT();
     }
 }

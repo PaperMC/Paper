@@ -4,98 +4,94 @@ import java.util.ArrayList;
 import java.util.Collection;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.MobEffectList;
+import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityBeacon;
 import org.bukkit.Material;
 import org.bukkit.block.Beacon;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftBeacon extends CraftContainer implements Beacon {
-    private final CraftWorld world;
-    private final TileEntityBeacon beacon;
+public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Beacon {
 
     public CraftBeacon(final Block block) {
-        super(block);
-
-        world = (CraftWorld) block.getWorld();
-        beacon = (TileEntityBeacon) world.getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityBeacon.class);
     }
 
     public CraftBeacon(final Material material, final TileEntityBeacon te) {
         super(material, te);
-        world = null;
-        beacon = te;
-    }
-
-    public Inventory getInventory() {
-        return new CraftInventoryBeacon(beacon);
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public BeaconInventory getSnapshotInventory() {
+        return new CraftInventoryBeacon(this.getSnapshot());
+    }
 
-        if (result) {
-            beacon.update();
+    @Override
+    public BeaconInventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
         }
 
-        return result;
-    }
-
-    @Override
-    public TileEntityBeacon getTileEntity() {
-        return beacon;
+        return new CraftInventoryBeacon(this.getTileEntity());
     }
 
     @Override
     public Collection<LivingEntity> getEntitiesInRange() {
-        Collection<EntityHuman> nms = beacon.getHumansInRange();
-        Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+        TileEntity tileEntity = this.getTileEntityFromWorld();
+        if (tileEntity instanceof TileEntityBeacon) {
+            TileEntityBeacon beacon = (TileEntityBeacon) tileEntity;
 
-        for (EntityHuman human : nms) {
-            bukkit.add(human.getBukkitEntity());
+            Collection<EntityHuman> nms = beacon.getHumansInRange();
+            Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+
+            for (EntityHuman human : nms) {
+                bukkit.add(human.getBukkitEntity());
+            }
+
+            return bukkit;
         }
 
-        return bukkit;
+        // block is no longer a beacon
+        return new ArrayList<LivingEntity>();
     }
 
     @Override
     public int getTier() {
-        return beacon.levels;
+        return this.getSnapshot().levels;
     }
 
     @Override
     public PotionEffect getPrimaryEffect() {
-        return beacon.getPrimaryEffect();
+        return this.getSnapshot().getPrimaryEffect();
     }
 
     @Override
     public void setPrimaryEffect(PotionEffectType effect) {
-        beacon.primaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+        this.getSnapshot().primaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
 
     @Override
     public PotionEffect getSecondaryEffect() {
-        return beacon.getSecondaryEffect();
+        return this.getSnapshot().getSecondaryEffect();
     }
 
     @Override
     public void setSecondaryEffect(PotionEffectType effect) {
-        beacon.secondaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+        this.getSnapshot().secondaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
 
     @Override
     public String getCustomName() {
+        TileEntityBeacon beacon = this.getSnapshot();
         return beacon.hasCustomName() ? beacon.getName() : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        beacon.setCustomName(name);
+        this.getSnapshot().setCustomName(name);
     }
 }

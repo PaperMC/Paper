@@ -14,27 +14,31 @@ import org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.projectiles.BlockProjectileSource;
 
-public class CraftDispenser extends CraftLootable implements Dispenser {
-    private final CraftWorld world;
-    private final TileEntityDispenser dispenser;
+public class CraftDispenser extends CraftLootable<TileEntityDispenser> implements Dispenser {
 
     public CraftDispenser(final Block block) {
-        super(block);
-
-        world = (CraftWorld) block.getWorld();
-        dispenser = (TileEntityDispenser) world.getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityDispenser.class);
     }
 
     public CraftDispenser(final Material material, final TileEntityDispenser te) {
         super(material, te);
-        world = null;
-        dispenser = te;
     }
 
+    @Override
+    public Inventory getSnapshotInventory() {
+        return new CraftInventory(this.getSnapshot());
+    }
+
+    @Override
     public Inventory getInventory() {
-        return new CraftInventory(dispenser);
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventory(this.getTileEntity());
     }
 
+    @Override
     public BlockProjectileSource getBlockProjectileSource() {
         Block block = getBlock();
 
@@ -42,13 +46,15 @@ public class CraftDispenser extends CraftLootable implements Dispenser {
             return null;
         }
 
-        return new CraftBlockProjectileSource(dispenser);
+        return new CraftBlockProjectileSource((TileEntityDispenser) this.getTileEntityFromWorld());
     }
 
+    @Override
     public boolean dispense() {
         Block block = getBlock();
 
         if (block.getType() == Material.DISPENSER) {
+            CraftWorld world = (CraftWorld) this.getWorld();
             BlockDispenser dispense = (BlockDispenser) Blocks.DISPENSER;
 
             dispense.dispense(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
@@ -56,21 +62,5 @@ public class CraftDispenser extends CraftLootable implements Dispenser {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
-
-        if (result) {
-            dispenser.update();
-        }
-
-        return result;
-    }
-
-    @Override
-    public TileEntityDispenser getTileEntity() {
-        return dispenser;
     }
 }

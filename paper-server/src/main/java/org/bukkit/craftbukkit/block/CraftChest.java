@@ -11,36 +11,43 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.inventory.Inventory;
 
-public class CraftChest extends CraftLootable implements Chest {
-    private final CraftWorld world;
-    private final TileEntityChest chest;
+public class CraftChest extends CraftLootable<TileEntityChest> implements Chest {
 
     public CraftChest(final Block block) {
-        super(block);
-
-        world = (CraftWorld) block.getWorld();
-        chest = (TileEntityChest) world.getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityChest.class);
     }
 
     public CraftChest(final Material material, final TileEntityChest te) {
         super(material, te);
-        chest = te;
-        world = null;
     }
 
+    @Override
+    public Inventory getSnapshotInventory() {
+        return new CraftInventory(this.getSnapshot());
+    }
+
+    @Override
     public Inventory getBlockInventory() {
-        return new CraftInventory(chest);
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventory(this.getTileEntity());
     }
 
+    @Override
     public Inventory getInventory() {
-        int x = getX();
-        int y = getY();
-        int z = getZ();
-        // The logic here is basically identical to the logic in BlockChest.interact
-        CraftInventory inventory = new CraftInventory(chest);
+        CraftInventory inventory = (CraftInventory) this.getBlockInventory();
         if (!isPlaced()) {
             return inventory;
         }
+
+        // The logic here is basically identical to the logic in BlockChest.interact
+        int x = this.getX();
+        int y = this.getY();
+        int z = this.getZ();
+        CraftWorld world = (CraftWorld) this.getWorld();
+
         int id;
         if (world.getBlockTypeIdAt(x, y, z) == Material.CHEST.getId()) {
             id = Material.CHEST.getId();
@@ -51,7 +58,7 @@ public class CraftChest extends CraftLootable implements Chest {
         }
 
         if (world.getBlockTypeIdAt(x - 1, y, z) == id) {
-            CraftInventory left = new CraftInventory((TileEntityChest)world.getHandle().getTileEntity(new BlockPosition(x - 1, y, z)));
+            CraftInventory left = new CraftInventory((TileEntityChest) world.getHandle().getTileEntity(new BlockPosition(x - 1, y, z)));
             inventory = new CraftInventoryDoubleChest(left, inventory);
         }
         if (world.getBlockTypeIdAt(x + 1, y, z) == id) {
@@ -67,21 +74,5 @@ public class CraftChest extends CraftLootable implements Chest {
             inventory = new CraftInventoryDoubleChest(inventory, right);
         }
         return inventory;
-    }
-
-    @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
-
-        if (result) {
-            chest.update();
-        }
-
-        return result;
-    }
-
-    @Override
-    public TileEntityChest getTileEntity() {
-        return chest;
     }
 }

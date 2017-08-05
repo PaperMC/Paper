@@ -12,50 +12,39 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-public class CraftDropper extends CraftLootable implements Dropper {
-    private final CraftWorld world;
-    private final TileEntityDropper dropper;
+public class CraftDropper extends CraftLootable<TileEntityDropper> implements Dropper {
 
     public CraftDropper(final Block block) {
-        super(block);
-
-        world = (CraftWorld) block.getWorld();
-        dropper = (TileEntityDropper) world.getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityDropper.class);
     }
 
     public CraftDropper(final Material material, TileEntityDropper te) {
         super(material, te);
-        world = null;
-        dropper = te;
     }
 
+    @Override
+    public Inventory getSnapshotInventory() {
+        return new CraftInventory(this.getSnapshot());
+    }
+
+    @Override
     public Inventory getInventory() {
-        return new CraftInventory(dropper);
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventory(this.getTileEntity());
     }
 
+    @Override
     public void drop() {
         Block block = getBlock();
 
         if (block.getType() == Material.DROPPER) {
+            CraftWorld world = (CraftWorld) this.getWorld();
             BlockDropper drop = (BlockDropper) Blocks.DROPPER;
 
             drop.dispense(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
         }
-    }
-
-    @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
-
-        if (result) {
-            dropper.update();
-        }
-
-        return result;
-    }
-
-    @Override
-    public TileEntityDropper getTileEntity() {
-        return dropper;
     }
 }

@@ -4,69 +4,61 @@ import net.minecraft.server.TileEntityBrewingStand;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
 import org.bukkit.inventory.BrewerInventory;
 
-public class CraftBrewingStand extends CraftContainer implements BrewingStand {
-    private final TileEntityBrewingStand brewingStand;
+public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> implements BrewingStand {
 
     public CraftBrewingStand(Block block) {
-        super(block);
-
-        brewingStand = (TileEntityBrewingStand) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityBrewingStand.class);
     }
 
     public CraftBrewingStand(final Material material, final TileEntityBrewingStand te) {
         super(material, te);
-        brewingStand = te;
-    }
-
-    public BrewerInventory getInventory() {
-        return new CraftInventoryBrewer(brewingStand);
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public BrewerInventory getSnapshotInventory() {
+        return new CraftInventoryBrewer(this.getSnapshot());
+    }
 
-        if (result) {
-            brewingStand.update();
+    @Override
+    public BrewerInventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
         }
 
-        return result;
-    }
-
-    public int getBrewingTime() {
-        return brewingStand.getProperty(0);
-    }
-
-    public void setBrewingTime(int brewTime) {
-        brewingStand.setProperty(0, brewTime);
+        return new CraftInventoryBrewer(this.getTileEntity());
     }
 
     @Override
-    public TileEntityBrewingStand getTileEntity() {
-        return brewingStand;
+    public int getBrewingTime() {
+        return this.getSnapshot().getProperty(0);
+    }
+
+    @Override
+    public void setBrewingTime(int brewTime) {
+        this.getSnapshot().setProperty(0, brewTime);
     }
 
     @Override
     public int getFuelLevel() {
-        return brewingStand.getProperty(1);
+        return this.getSnapshot().getProperty(1);
     }
 
     @Override
     public void setFuelLevel(int level) {
-        brewingStand.setProperty(1, level);
+        this.getSnapshot().setProperty(1, level);
     }
 
     @Override
     public String getCustomName() {
+        TileEntityBrewingStand brewingStand = this.getSnapshot();
         return brewingStand.hasCustomName() ? brewingStand.getName() : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        brewingStand.setCustomName(name);
+        this.getSnapshot().setCustomName(name);
     }
 }

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,9 +16,7 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 
 import java.util.List;
-import net.minecraft.server.EnumDirection;
 import net.minecraft.server.IBlockData;
-import net.minecraft.server.TileEntity;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
@@ -254,10 +251,6 @@ public class CraftBlockState implements BlockState {
         hash = 73 * hash + this.type;
         hash = 73 * hash + (this.data != null ? this.data.hashCode() : 0);
         return hash;
-    }
-
-    public TileEntity getTileEntity() {
-        return null;
     }
 
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {

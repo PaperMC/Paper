@@ -2,36 +2,29 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.server.EnumColor;
-import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityBed;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.Bed;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftBed extends CraftBlockState implements Bed {
+public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Bed {
 
-    private final TileEntityBed bed;
     private DyeColor color;
 
     public CraftBed(Block block) {
-        super(block);
-
-        bed = (TileEntityBed) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
-        color = DyeColor.getByWoolData((byte) bed.a().getColorIndex());
+        super(block, TileEntityBed.class);
     }
 
     public CraftBed(Material material, TileEntityBed te) {
-        super(material);
-
-        bed = te;
-        color = DyeColor.getByWoolData((byte) bed.a().getColorIndex());
+        super(material, te);
     }
 
     @Override
-    public TileEntity getTileEntity() {
-        return bed;
+    public void load(TileEntityBed bed) {
+        super.load(bed);
+
+        color = DyeColor.getByWoolData((byte) bed.a().getColorIndex());
     }
 
     @Override
@@ -47,14 +40,9 @@ public class CraftBed extends CraftBlockState implements Bed {
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public void applyTo(TileEntityBed bed) {
+        super.applyTo(bed);
 
-        if (result) {
-            bed.a(EnumColor.fromColorIndex(color.getWoolData()));
-            bed.update();
-        }
-
-        return result;
+        bed.a(EnumColor.fromColorIndex(color.getWoolData()));
     }
 }

@@ -6,52 +6,49 @@ import net.minecraft.server.TileEntitySign;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
-public class CraftSign extends CraftBlockState implements Sign {
-    private final TileEntitySign sign;
-    private final String[] lines;
+public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
+
+    private String[] lines;
 
     public CraftSign(final Block block) {
-        super(block);
-
-        CraftWorld world = (CraftWorld) block.getWorld();
-        sign = (TileEntitySign) world.getTileEntityAt(getX(), getY(), getZ());
-        lines = new String[sign.lines.length];
-        System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
+        super(block, TileEntitySign.class);
     }
 
     public CraftSign(final Material material, final TileEntitySign te) {
-        super(material);
-        sign = te;
+        super(material, te);
+    }
+
+    @Override
+    public void load(TileEntitySign sign) {
+        super.load(sign);
+
         lines = new String[sign.lines.length];
         System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
     }
 
+    @Override
     public String[] getLines() {
         return lines;
     }
 
+    @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
         return lines[index];
     }
 
+    @Override
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
         lines[index] = line;
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public void applyTo(TileEntitySign sign) {
+        super.applyTo(sign);
 
-        if (result) {
-            IChatBaseComponent[] newLines = sanitizeLines(lines);
-            System.arraycopy(newLines, 0, sign.lines, 0, 4);
-            sign.update();
-        }
-
-        return result;
+        IChatBaseComponent[] newLines = sanitizeLines(lines);
+        System.arraycopy(newLines, 0, sign.lines, 0, 4);
     }
 
     public static IChatBaseComponent[] sanitizeLines(String[] lines) {
@@ -78,10 +75,5 @@ public class CraftSign extends CraftBlockState implements Sign {
 
     private static String revertComponent(IChatBaseComponent component) {
         return CraftChatMessage.fromComponent(component);
-    }
-
-    @Override
-    public TileEntitySign getTileEntity() {
-        return sign;
     }
 }
