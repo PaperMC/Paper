@@ -26,7 +26,7 @@ public class Vine extends MaterialData {
      * @deprecated Magic value
      */
     @Deprecated
-    public Vine(int type, byte data){
+    public Vine(int type, byte data) {
         super(type, data);
     }
 
@@ -107,7 +107,7 @@ public class Vine extends MaterialData {
      * @param face The face to attach.
      */
     public void putOnFace(BlockFace face) {
-        switch(face) {
+        switch (face) {
             case WEST:
                 setData((byte) (getData() | VINE_WEST));
                 break;
@@ -149,7 +149,7 @@ public class Vine extends MaterialData {
      * @param face The face to detach.
      */
     public void removeFromFace(BlockFace face) {
-        switch(face) {
+        switch (face) {
             case WEST:
                 setData((byte) (getData() & ~VINE_WEST));
                 break;

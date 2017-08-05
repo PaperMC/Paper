@@ -41,7 +41,7 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      * @see BlockFace
      */
     public Comparator(BlockFace facingDirection, boolean isSubtraction) {
-    	this(facingDirection, isSubtraction, DEFAULT_STATE);
+        this(facingDirection, isSubtraction, DEFAULT_STATE);
     }
 
     /**
@@ -98,7 +98,7 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      * @param isSubtraction True if the comparator is in subtraction mode, false for normal comparator operation
      */
     public void setSubtractionMode(boolean isSubtraction) {
-        setData((byte)(getData() & 0xB | (isSubtraction ? 0x4 : 0x0)));
+        setData((byte) (getData() & 0xB | (isSubtraction ? 0x4 : 0x0)));
     }
 
     /**
@@ -139,7 +139,7 @@ public class Comparator extends MaterialData implements Directional, Redstone {
             data |= 0x0;
         }
 
-        setData((byte)data);
+        setData((byte) data);
     }
 
     /**

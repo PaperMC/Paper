@@ -124,6 +124,6 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
 
     @Override
     public String toString() {
-        return super.toString() + " facing " + getFacing() + (isActivated()?" Activated":"") + (isConnected()?" Connected":"");
+        return super.toString() + " facing " + getFacing() + (isActivated() ? " Activated" : "") + (isConnected() ? " Connected" : "");
     }
 }

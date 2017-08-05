@@ -122,7 +122,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
     }
 
     public boolean isCancelled() {
-        return cancel ;
+        return cancel;
     }
 
     public void setCancelled(boolean cancel) {

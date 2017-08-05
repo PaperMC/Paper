@@ -23,7 +23,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     public PlayerEditBookEvent(Player who, int slot, BookMeta previousBookMeta, BookMeta newBookMeta, boolean isSigning) {
         super(who);
 
-        Validate.isTrue(slot >= 0 && slot <=8, "Slot must be in range 0-8 inclusive");
+        Validate.isTrue(slot >= 0 && slot <= 8, "Slot must be in range 0-8 inclusive");
         Validate.notNull(previousBookMeta, "Previous book meta must not be null");
         Validate.notNull(newBookMeta, "New book meta must not be null");
 

@@ -27,7 +27,7 @@ public class ChatPaginator {
      * @return A single chat page.
      */
     public static ChatPage paginate(String unpaginatedString, int pageNumber) {
-        return  paginate(unpaginatedString, pageNumber, GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH, CLOSED_CHAT_PAGE_HEIGHT);
+        return paginate(unpaginatedString, pageNumber, GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH, CLOSED_CHAT_PAGE_HEIGHT);
     }
 
     /**
@@ -46,7 +46,7 @@ public class ChatPaginator {
         int actualPageNumber = pageNumber <= totalPages ? pageNumber : totalPages;
 
         int from = (actualPageNumber - 1) * pageHeight;
-        int to = from + pageHeight <= lines.length  ? from + pageHeight : lines.length;
+        int to = from + pageHeight <= lines.length ? from + pageHeight : lines.length;
         String[] selectedLines = Arrays.copyOfRange(lines, from, to);
 
         return new ChatPage(selectedLines, actualPageNumber, totalPages);
@@ -121,7 +121,7 @@ public class ChatPaginator {
             }
         }
 
-        if(line.length() > 0) { // Only add the last line if there is anything to add
+        if (line.length() > 0) { // Only add the last line if there is anything to add
             lines.add(line.toString());
         }
 
@@ -130,7 +130,7 @@ public class ChatPaginator {
             lines.set(0, ChatColor.WHITE + lines.get(0));
         }
         for (int i = 1; i < lines.size(); i++) {
-            final String pLine = lines.get(i-1);
+            final String pLine = lines.get(i - 1);
             final String subLine = lines.get(i);
 
             char color = pLine.charAt(pLine.lastIndexOf(ChatColor.COLOR_CHAR) + 1);

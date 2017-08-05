@@ -204,7 +204,7 @@ public enum Effect {
     private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
 
     Effect(int id, Type type) {
-        this(id,type,null);
+        this(id, type, null);
     }
 
     Effect(int id, Type type, Class<?> data) {

@@ -116,6 +116,6 @@ public class Step extends TexturedMaterial {
 
     @Override
     public String toString() {
-        return super.toString() + (isInverted()?"inverted":"");
+        return super.toString() + (isInverted() ? "inverted" : "");
     }
 }

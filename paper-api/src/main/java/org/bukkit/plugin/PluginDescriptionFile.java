@@ -1060,9 +1060,9 @@ public final class PluginDescriptionFile {
         return map;
     }
 
-    private Map<?,?> asMap(Object object) throws InvalidDescriptionException {
+    private Map<?, ?> asMap(Object object) throws InvalidDescriptionException {
         if (object instanceof Map) {
-            return (Map<?,?>) object;
+            return (Map<?, ?>) object;
         }
         throw new InvalidDescriptionException(object + " is not properly structured.");
     }

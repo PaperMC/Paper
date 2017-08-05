@@ -18,7 +18,7 @@ public class Gate extends MaterialData implements Directional, Openable {
         super(Material.FENCE_GATE);
     }
 
-    public Gate(int type, byte data){
+    public Gate(int type, byte data) {
         super(type, data);
     }
 
@@ -27,7 +27,7 @@ public class Gate extends MaterialData implements Directional, Openable {
     }
 
     public void setFacingDirection(BlockFace face) {
-        byte data = (byte) (getData() &~ DIR_BIT);
+        byte data = (byte) (getData() & ~DIR_BIT);
 
         switch (face) {
             default:

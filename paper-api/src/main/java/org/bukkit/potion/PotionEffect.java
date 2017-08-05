@@ -41,7 +41,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * @param particles the particle status, see {@link PotionEffect#hasParticles()}
      * @param color the particle color, see {@link PotionEffect#getColor()}
      */
-    public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, Color color){
+    public PotionEffect(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, Color color) {
         Validate.notNull(type, "effect type cannot be null");
         this.type = type;
         this.duration = duration;
@@ -99,7 +99,7 @@ public class PotionEffect implements ConfigurationSerializable {
         this(getEffectType(map), getInt(map, DURATION), getInt(map, AMPLIFIER), getBool(map, AMBIENT, false), getBool(map, PARTICLES, true));
     }
 
-    private static PotionEffectType getEffectType(Map<?,?> map) {
+    private static PotionEffectType getEffectType(Map<?, ?> map) {
         int type = getInt(map, TYPE);
         PotionEffectType effect = PotionEffectType.getById(type);
         if (effect != null) {
@@ -108,7 +108,7 @@ public class PotionEffect implements ConfigurationSerializable {
         throw new NoSuchElementException(map + " does not contain " + TYPE);
     }
 
-    private static int getInt(Map<?,?> map, Object key) {
+    private static int getInt(Map<?, ?> map, Object key) {
         Object num = map.get(key);
         if (num instanceof Integer) {
             return (Integer) num;
@@ -116,7 +116,7 @@ public class PotionEffect implements ConfigurationSerializable {
         throw new NoSuchElementException(map + " does not contain " + key);
     }
 
-    private static boolean getBool(Map<?,?> map, Object key, boolean def) {
+    private static boolean getBool(Map<?, ?> map, Object key, boolean def) {
         Object bool = map.get(key);
         if (bool instanceof Boolean) {
             return (Boolean) bool;
@@ -200,7 +200,7 @@ public class PotionEffect implements ConfigurationSerializable {
     /**
      * @return whether this effect has particles or not
      */
-    public boolean hasParticles(){
+    public boolean hasParticles() {
         return particles;
     }
 

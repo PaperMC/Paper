@@ -21,7 +21,7 @@ public class SpawnEgg extends MaterialData {
      * @deprecated Magic value
      */
     @Deprecated
-    public SpawnEgg(int type, byte data){
+    public SpawnEgg(int type, byte data) {
         super(type, data);
     }
 

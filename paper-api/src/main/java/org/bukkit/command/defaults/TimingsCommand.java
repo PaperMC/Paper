@@ -46,7 +46,7 @@ public class TimingsCommand extends BukkitCommand {
             for (HandlerList handlerList : HandlerList.getHandlerLists()) {
                 for (RegisteredListener listener : handlerList.getRegisteredListeners()) {
                     if (listener instanceof TimedRegisteredListener) {
-                        ((TimedRegisteredListener)listener).reset();
+                        ((TimedRegisteredListener) listener).reset();
                     }
                 }
             }

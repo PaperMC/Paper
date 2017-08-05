@@ -159,9 +159,9 @@ public abstract class InventoryView {
     public void setItem(int slot, ItemStack item) {
         if (slot != OUTSIDE) {
             if (slot < getTopInventory().getSize()) {
-                getTopInventory().setItem(convertSlot(slot),item);
+                getTopInventory().setItem(convertSlot(slot), item);
             } else {
-                getBottomInventory().setItem(convertSlot(slot),item);
+                getBottomInventory().setItem(convertSlot(slot), item);
             }
         } else {
             getPlayer().getWorld().dropItemNaturally(getPlayer().getLocation(), item);

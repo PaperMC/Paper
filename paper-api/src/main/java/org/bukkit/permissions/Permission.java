@@ -305,7 +305,7 @@ public class Permission {
                     }
                 }
             } else if (childrenNode instanceof Map) {
-                children = extractChildren((Map<?,?>) childrenNode, name, def, output);
+                children = extractChildren((Map<?, ?>) childrenNode, name, def, output);
             } else {
                 throw new IllegalArgumentException("'children' key is of wrong type");
             }

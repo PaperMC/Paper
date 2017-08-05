@@ -197,7 +197,7 @@ public final class Bukkit {
     public static String getServerId() {
         return server.getServerId();
     }
-    
+
     /**
      * Get world type (level-type setting) for default world.
      *
@@ -567,7 +567,7 @@ public final class Bukkit {
     public static void savePlayers() {
         server.savePlayers();
     }
-    
+
     /**
      * Dispatches a command on this server, and executes it if found.
      *
@@ -626,7 +626,7 @@ public final class Bukkit {
     public static void resetRecipes() {
         server.resetRecipes();
     }
-    
+
     /**
      * Gets a list of command aliases defined in the server properties.
      *
@@ -781,7 +781,7 @@ public final class Bukkit {
      * @param type the type of list to fetch, cannot be null
      * @return a ban list of the specified type
      */
-    public static BanList getBanList(BanList.Type type){
+    public static BanList getBanList(BanList.Type type) {
         return server.getBanList(type);
     }
 
@@ -955,7 +955,7 @@ public final class Bukkit {
     public static int getWaterAnimalSpawnLimit() {
         return server.getWaterAnimalSpawnLimit();
     }
-    
+
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in
      * a chunk.

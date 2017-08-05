@@ -96,12 +96,12 @@ public class Crops extends MaterialData {
             case CARROT:
             case POTATO:
                 // Mask the data just in case top bit set
-                return CropState.getByData((byte)(getData() & 0x7));
+                return CropState.getByData((byte) (getData() & 0x7));
             case BEETROOT_BLOCK:
             case NETHER_WARTS:
                 // Mask the data just in case top bits are set
                 // Will return SEEDED, SMALL, TALL, RIPE for the three growth data values
-                return CropState.getByData((byte)(((getData() & 0x3)*7+2)/3)) ;
+                return CropState.getByData((byte) (((getData() & 0x3) * 7 + 2) / 3));
             default:
                 throw new IllegalArgumentException("Block type is not a crop");
         }
@@ -127,12 +127,12 @@ public class Crops extends MaterialData {
             case CARROT:
             case POTATO:
                 // Preserve the top bit in case it is set
-                setData((byte)((getData() & 0x8)|state.getData()));
+                setData((byte) ((getData() & 0x8) | state.getData()));
                 break;
             case NETHER_WARTS:
             case BEETROOT_BLOCK:
                 // Preserve the top bits in case they are set
-                setData((byte)((getData() & 0xC)|(state.getData() >> 1)));
+                setData((byte) ((getData() & 0xC) | (state.getData() >> 1)));
                 break;
             default:
                 throw new IllegalArgumentException("Block type is not a crop");

@@ -26,7 +26,7 @@ public class NetherWarts extends MaterialData {
     }
 
     public NetherWarts(final Material type) {
-        super (type);
+        super(type);
     }
 
     /**

@@ -24,7 +24,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     private final Material material;
 
     public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue) {
-        super (player);
+        super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;
@@ -33,7 +33,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     }
 
     public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue, EntityType entityType) {
-        super (player);
+        super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;
@@ -42,7 +42,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     }
 
     public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue, Material material) {
-        super (player);
+        super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;

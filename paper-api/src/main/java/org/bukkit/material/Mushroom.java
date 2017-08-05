@@ -88,7 +88,7 @@ public class Mushroom extends MaterialData {
      * @deprecated Magic value
      */
     @Deprecated
-    public Mushroom(int type, byte data){
+    public Mushroom(int type, byte data) {
         super(type, data);
         Validate.isTrue(type == Material.HUGE_MUSHROOM_1.getId() || type == Material.HUGE_MUSHROOM_2.getId(), "Not a mushroom!");
     }
@@ -237,8 +237,7 @@ public class Mushroom extends MaterialData {
             case DOWN:
                 if (painted) {
                     data = MushroomBlockTexture.ALL_CAP.getData();
-                }
-                else {
+                } else {
                     data = MushroomBlockTexture.ALL_PORES.getData();
                 }
                 break;

@@ -918,7 +918,7 @@ public interface Server extends PluginMessageRecipient {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag ...flags);
+    BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags);
 
     /**
      * Gets an entity on the server by its UUID

@@ -12,9 +12,9 @@ public class PlayerLevelChangeEvent extends PlayerEvent {
     private final int newLevel;
 
     public PlayerLevelChangeEvent(final Player player, final int oldLevel, final int newLevel) {
-         super(player);
-         this.oldLevel = oldLevel;
-         this.newLevel = newLevel;
+        super(player);
+        this.oldLevel = oldLevel;
+        this.newLevel = newLevel;
     }
 
     /**

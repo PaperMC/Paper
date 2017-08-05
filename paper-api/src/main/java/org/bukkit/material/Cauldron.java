@@ -20,7 +20,7 @@ public class Cauldron extends MaterialData {
      * @deprecated Magic value
      */
     @Deprecated
-    public Cauldron(int type, byte data){
+    public Cauldron(int type, byte data) {
         super(type, data);
     }
 

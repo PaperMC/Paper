@@ -6,7 +6,7 @@ import org.apache.commons.lang.math.NumberUtils;
  * NumericPrompt is the base class for any prompt that requires a {@link
  * Number} response from the user.
  */
-public abstract class NumericPrompt extends ValidatingPrompt{
+public abstract class NumericPrompt extends ValidatingPrompt {
     public NumericPrompt() {
         super();
     }
@@ -30,8 +30,7 @@ public abstract class NumericPrompt extends ValidatingPrompt{
 
     @Override
     protected Prompt acceptValidatedInput(ConversationContext context, String input) {
-        try
-        {
+        try {
             return acceptValidatedInput(context, NumberUtils.createNumber(input));
         } catch (NumberFormatException e) {
             return acceptValidatedInput(context, NumberUtils.INTEGER_ZERO);

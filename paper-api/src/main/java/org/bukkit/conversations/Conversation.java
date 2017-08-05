@@ -217,7 +217,7 @@ public class Conversation {
             }
 
             // Test for conversation abandonment based on input
-            for(ConversationCanceller canceller : cancellers) {
+            for (ConversationCanceller canceller : cancellers) {
                 if (canceller.cancelBasedOnInput(context, input)) {
                     abandon(new ConversationAbandonedEvent(this, canceller));
                     return;

@@ -7,7 +7,7 @@ import org.apache.commons.lang.BooleanUtils;
  * BooleanPrompt is the base class for any prompt that requires a boolean
  * response from the user.
  */
-public abstract class BooleanPrompt extends ValidatingPrompt{
+public abstract class BooleanPrompt extends ValidatingPrompt {
 
     public BooleanPrompt() {
         super();

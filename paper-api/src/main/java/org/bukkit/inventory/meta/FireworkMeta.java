@@ -26,7 +26,7 @@ public interface FireworkMeta extends ItemMeta {
      * @throws IllegalArgumentException If any effect is null (may be thrown
      *     after changes have occurred)
      */
-    void addEffects(FireworkEffect...effects) throws IllegalArgumentException;
+    void addEffects(FireworkEffect... effects) throws IllegalArgumentException;
 
     /**
      * Add several firework effects to this firework.

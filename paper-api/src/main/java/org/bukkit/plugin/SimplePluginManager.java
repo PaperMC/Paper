@@ -152,7 +152,7 @@ public final class SimplePluginManager implements PluginManager {
                     file.getPath(),
                     replacedFile.getPath(),
                     directory.getPath()
-                    ));
+                ));
             }
 
             Collection<String> softDependencySet = description.getSoftDepend();
@@ -443,7 +443,7 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 server.getMessenger().unregisterIncomingPluginChannel(plugin);
                 server.getMessenger().unregisterOutgoingPluginChannel(plugin);
-            } catch(Throwable ex) {
+            } catch (Throwable ex) {
                 server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
         }
