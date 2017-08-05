@@ -5,6 +5,9 @@ import org.bukkit.block.banner.Pattern;
 
 import java.util.List;
 
+/**
+ * Represents a captured state of a banner.
+ */
 public interface Banner extends BlockState {
 
     /**

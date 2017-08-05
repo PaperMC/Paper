@@ -1,11 +1,10 @@
 package org.bukkit.block;
 
-import java.util.UUID;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 
 /**
- * Represents a Skull
+ * Represents a captured state of a skull block.
  */
 public interface Skull extends BlockState {
 

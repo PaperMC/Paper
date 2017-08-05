@@ -19,28 +19,29 @@ import org.bukkit.metadata.Metadatable;
 public interface BlockState extends Metadatable {
 
     /**
-     * Gets the block represented by this BlockState
+     * Gets the block represented by this block state.
      *
-     * @return Block that this BlockState represents
+     * @return the block represented by this block state
+     * @throws IllegalStateException if this block state is not placed
      */
     Block getBlock();
 
     /**
-     * Gets the metadata for this block
+     * Gets the metadata for this block state.
      *
      * @return block specific metadata
      */
     MaterialData getData();
 
     /**
-     * Gets the type of this block
+     * Gets the type of this block state.
      *
      * @return block type
      */
     Material getType();
 
     /**
-     * Gets the type-id of this block
+     * Gets the type-id of this block state.
      *
      * @return block type-id
      * @deprecated Magic value
@@ -49,52 +50,58 @@ public interface BlockState extends Metadatable {
     int getTypeId();
 
     /**
-     * Gets the light level between 0-15
+     * Gets the current light level of the block represented by this block state.
      *
-     * @return light level
+     * @return the light level between 0-15
+     * @throws IllegalStateException if this block state is not placed
      */
     byte getLightLevel();
 
     /**
-     * Gets the world which contains this Block
+     * Gets the world which contains the block represented by this block state.
      *
-     * @return World containing this block
+     * @return the world containing the block represented by this block state
+     * @throws IllegalStateException if this block state is not placed
      */
     World getWorld();
 
     /**
-     * Gets the x-coordinate of this block
+     * Gets the x-coordinate of this block state.
      *
      * @return x-coordinate
      */
     int getX();
 
     /**
-     * Gets the y-coordinate of this block
+     * Gets the y-coordinate of this block state.
      *
      * @return y-coordinate
      */
     int getY();
 
     /**
-     * Gets the z-coordinate of this block
+     * Gets the z-coordinate of this block state.
      *
      * @return z-coordinate
      */
     int getZ();
 
     /**
-     * Gets the location of this block
+     * Gets the location of this block state.
+     * <p>
+     * If this block state is not placed the location's world will be null!
      *
-     * @return location
+     * @return the location
      */
     Location getLocation();
 
     /**
-     * Stores the location of this block in the provided Location object.
+     * Stores the location of this block state in the provided Location object.
      * <p>
      * If the provided Location is null this method does nothing and returns
      * null.
+     * <p>
+     * If this block state is not placed the location's world will be null!
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
@@ -102,30 +109,31 @@ public interface BlockState extends Metadatable {
     Location getLocation(Location loc);
 
     /**
-     * Gets the chunk which contains this block
+     * Gets the chunk which contains the block represented by this block state.
      *
-     * @return Containing Chunk
+     * @return the containing Chunk
+     * @throws IllegalStateException if this block state is not placed
      */
     Chunk getChunk();
 
     /**
-     * Sets the metadata for this block
+     * Sets the metadata for this block state.
      *
      * @param data New block specific metadata
      */
     void setData(MaterialData data);
 
     /**
-     * Sets the type of this block
+     * Sets the type of this block state.
      *
-     * @param type Material to change this block to
+     * @param type Material to change this block state to
      */
     void setType(Material type);
 
     /**
-     * Sets the type-id of this block
+     * Sets the type-id of this block state.
      *
-     * @param type Type-Id to change this block to
+     * @param type Type-Id to change this block state to
      * @return Whether it worked?
      * @deprecated Magic value
      */
@@ -162,6 +170,8 @@ public interface BlockState extends Metadatable {
      * Attempts to update the block represented by this state, setting it to
      * the new values as defined by this state.
      * <p>
+     * If this state is not placed, this will have no effect and return true.
+     * <p>
      * Unless force is true, this will not modify the state of a block if it
      * is no longer the same type as it was when this state was taken. It will
      * return false in this eventuality.
@@ -195,8 +205,8 @@ public interface BlockState extends Metadatable {
 
     /**
      * Returns whether this state is placed in the world.
-     *
-     * Some methods will not work if the blockState isn't
+     * <p>
+     * Some methods will not work if the block state isn't
      * placed in the world.
      *
      * @return whether the state is placed in the world

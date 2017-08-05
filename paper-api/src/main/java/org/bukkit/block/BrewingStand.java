@@ -2,15 +2,14 @@ package org.bukkit.block;
 
 import org.bukkit.Nameable;
 import org.bukkit.inventory.BrewerInventory;
-import org.bukkit.inventory.InventoryHolder;
 
 /**
- * Represents a brewing stand.
+ * Represents a captured state of a brewing stand.
  */
-public interface BrewingStand extends BlockState, InventoryHolder, Lockable, Nameable {
+public interface BrewingStand extends Container, Nameable {
 
     /**
-     * How much time is left in the brewing cycle
+     * How much time is left in the brewing cycle.
      *
      * @return Brew Time
      */
@@ -37,5 +36,9 @@ public interface BrewingStand extends BlockState, InventoryHolder, Lockable, Nam
      */
     void setFuelLevel(int level);
 
-    public BrewerInventory getInventory();
+    @Override
+    BrewerInventory getInventory();
+
+    @Override
+    BrewerInventory getSnapshotInventory();
 }

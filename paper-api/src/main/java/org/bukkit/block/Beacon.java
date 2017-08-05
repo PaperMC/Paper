@@ -3,19 +3,29 @@ package org.bukkit.block;
 import java.util.Collection;
 import org.bukkit.Nameable;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 /**
- * Represents a beacon.
+ * Represents a captured state of a beacon.
  */
-public interface Beacon extends BlockState, InventoryHolder, Lockable, Nameable {
+public interface Beacon extends Container, Nameable {
+
+    @Override
+    BeaconInventory getInventory();
+
+    @Override
+    BeaconInventory getSnapshotInventory();
 
     /**
      * Returns the list of players within the beacon's range of effect.
+     * <p>
+     * This will return an empty list if the block represented by this state is
+     * no longer a beacon.
      *
      * @return the players in range
+     * @throws IllegalStateException if this block state is not placed
      */
     Collection<LivingEntity> getEntitiesInRange();
 

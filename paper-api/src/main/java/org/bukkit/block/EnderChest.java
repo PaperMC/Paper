@@ -1,6 +1,6 @@
 package org.bukkit.block;
 
 /**
- * Represents an ender chest.
+ * Represents a captured state of an ender chest.
  */
 public interface EnderChest extends BlockState { }

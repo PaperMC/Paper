@@ -4,7 +4,7 @@ import org.bukkit.Instrument;
 import org.bukkit.Note;
 
 /**
- * Represents a note.
+ * Represents a captured state of a note block.
  */
 public interface NoteBlock extends BlockState {
 
@@ -41,31 +41,41 @@ public interface NoteBlock extends BlockState {
     public void setRawNote(byte note);
 
     /**
-     * Attempts to play the note at block
+     * Attempts to play the note at the block.
      * <p>
-     * If the block is no longer a note block, this will return false
+     * If the block represented by this block state is no longer a note block,
+     * this will return false.
      *
      * @return true if successful, otherwise false
+     * @throws IllegalStateException if this block state is not placed
      */
     public boolean play();
 
     /**
-     * Plays an arbitrary note with an arbitrary instrument
+     * Plays an arbitrary note with an arbitrary instrument at the block.
+     * <p>
+     * If the block represented by this block state is no longer a note block,
+     * this will return false.
      *
      * @param instrument Instrument ID
      * @param note Note ID
      * @return true if successful, otherwise false
+     * @throws IllegalStateException if this block state is not placed
      * @deprecated Magic value
      */
     @Deprecated
     public boolean play(byte instrument, byte note);
 
     /**
-     * Plays an arbitrary note with an arbitrary instrument
+     * Plays an arbitrary note with an arbitrary instrument at the block.
+     * <p>
+     * If the block represented by this block state is no longer a note block,
+     * this will return false.
      *
      * @param instrument The instrument
      * @param note The note
      * @return true if successful, otherwise false
+     * @throws IllegalStateException if this block state is not placed
      * @see Instrument Note
      */
     public boolean play(Instrument instrument, Note note);

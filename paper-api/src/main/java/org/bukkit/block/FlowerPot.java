@@ -2,6 +2,9 @@ package org.bukkit.block;
 
 import org.bukkit.material.MaterialData;
 
+/**
+ * Represents a captured state of a flower pot.
+ */
 public interface FlowerPot extends BlockState {
 
     /**

@@ -1,7 +1,7 @@
 package org.bukkit.block;
 
 /**
- * Represents either a SignPost or a WallSign
+ * Represents a captured state of either a SignPost or a WallSign.
  */
 public interface Sign extends BlockState {
 

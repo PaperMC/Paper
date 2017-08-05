@@ -3,7 +3,7 @@ package org.bukkit.block;
 import org.bukkit.entity.EntityType;
 
 /**
- * Represents a creature spawner.
+ * Represents a captured state of a creature spawner.
  */
 public interface CreatureSpawner extends BlockState {
 

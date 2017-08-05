@@ -1,6 +1,6 @@
 package org.bukkit.block;
 
 /**
- * Represents an on / off comparator.
+ * Represents a captured state of an on / off comparator.
  */
 public interface Comparator extends BlockState { }
