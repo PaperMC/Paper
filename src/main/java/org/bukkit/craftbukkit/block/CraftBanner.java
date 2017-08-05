@@ -12,33 +12,23 @@ import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.craftbukkit.CraftWorld;
 
-public class CraftBanner extends CraftBlockState implements Banner {
+public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> implements Banner {
 
-    private final TileEntityBanner banner;
     private DyeColor base;
     private List<Pattern> patterns = new ArrayList<Pattern>();
 
     public CraftBanner(final Block block) {
-        super(block);
-
-        CraftWorld world = (CraftWorld) block.getWorld();
-        banner = (TileEntityBanner) world.getTileEntityAt(getX(), getY(), getZ());
-
-        base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
-
-        if (banner.patterns != null) {
-            for (int i = 0; i < banner.patterns.size(); i++) {
-                NBTTagCompound p = (NBTTagCompound) banner.patterns.get(i);
-                patterns.add(new Pattern(DyeColor.getByDyeData((byte) p.getInt("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
-            }
-        }
+        super(block, TileEntityBanner.class);
     }
 
     public CraftBanner(final Material material, final TileEntityBanner te) {
-        super(material);
-        banner = te;
+        super(material, te);
+    }
+
+    @Override
+    public void load(TileEntityBanner banner) {
+        super.load(banner);
 
         base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
 
@@ -96,31 +86,19 @@ public class CraftBanner extends CraftBlockState implements Banner {
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public void applyTo(TileEntityBanner banner) {
+        super.applyTo(banner);
 
-        if (result) {
-            banner.color = EnumColor.fromInvColorIndex(base.getDyeData());
+        banner.color = EnumColor.fromInvColorIndex(base.getDyeData());
 
-            NBTTagList newPatterns = new NBTTagList();
+        NBTTagList newPatterns = new NBTTagList();
 
-            for (Pattern p : patterns) {
-                NBTTagCompound compound = new NBTTagCompound();
-                compound.setInt("Color", p.getColor().getDyeData());
-                compound.setString("Pattern", p.getPattern().getIdentifier());
-                newPatterns.add(compound);
-            }
-
-            banner.patterns = newPatterns;
-
-            banner.update();
+        for (Pattern p : patterns) {
+            NBTTagCompound compound = new NBTTagCompound();
+            compound.setInt("Color", p.getColor().getDyeData());
+            compound.setString("Pattern", p.getPattern().getIdentifier());
+            newPatterns.add(compound);
         }
-
-        return result;
-    }
-
-    @Override
-    public TileEntityBanner getTileEntity() {
-        return banner;
+        banner.patterns = newPatterns;
     }
 }

@@ -4,42 +4,30 @@ import net.minecraft.server.TileEntityHopper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Hopper;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
-public class CraftHopper extends CraftLootable implements Hopper {
-    private final TileEntityHopper hopper;
+public class CraftHopper extends CraftLootable<TileEntityHopper> implements Hopper {
 
     public CraftHopper(final Block block) {
-        super(block);
-
-        hopper = (TileEntityHopper) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityHopper.class);
     }
 
     public CraftHopper(final Material material, final TileEntityHopper te) {
         super(material, te);
-
-        hopper = te;
-    }
-
-    public Inventory getInventory() {
-        return new CraftInventory(hopper);
     }
 
     @Override
-    public boolean update(boolean force, boolean applyPhysics) {
-        boolean result = super.update(force, applyPhysics);
+    public Inventory getSnapshotInventory() {
+        return new CraftInventory(this.getSnapshot());
+    }
 
-        if (result) {
-            hopper.update();
+    @Override
+    public Inventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
         }
 
-        return result;
-    }
-
-    @Override
-    public TileEntityHopper getTileEntity() {
-        return hopper;
+        return new CraftInventory(this.getTileEntity());
     }
 }

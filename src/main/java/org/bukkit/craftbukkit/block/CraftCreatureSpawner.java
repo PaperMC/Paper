@@ -6,40 +6,39 @@ import org.bukkit.Material;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.EntityType;
 
-public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpawner {
-    private final TileEntityMobSpawner spawner;
+public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpawner> implements CreatureSpawner {
 
     public CraftCreatureSpawner(final Block block) {
-        super(block);
-
-        spawner = (TileEntityMobSpawner) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+        super(block, TileEntityMobSpawner.class);
     }
 
     public CraftCreatureSpawner(final Material material, TileEntityMobSpawner te) {
-        super(material);
-        spawner = te;
+        super(material, te);
     }
 
+    @Override
     public EntityType getSpawnedType() {
-        MinecraftKey key = spawner.getSpawner().getMobName();
+        MinecraftKey key = this.getSnapshot().getSpawner().getMobName();
         return (key == null) ? EntityType.PIG : EntityType.fromName(key.getKey());
     }
 
+    @Override
     public void setSpawnedType(EntityType entityType) {
         if (entityType == null || entityType.getName() == null) {
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        spawner.getSpawner().setMobName(new MinecraftKey(entityType.getName()));
+        this.getSnapshot().getSpawner().setMobName(new MinecraftKey(entityType.getName()));
     }
 
+    @Override
     public String getCreatureTypeName() {
-        return spawner.getSpawner().getMobName().getKey();
+        return this.getSnapshot().getSpawner().getMobName().getKey();
     }
 
+    @Override
     public void setCreatureTypeByName(String creatureType) {
         // Verify input
         EntityType type = EntityType.fromName(creatureType);
@@ -49,16 +48,13 @@ public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpa
         setSpawnedType(type);
     }
 
+    @Override
     public int getDelay() {
-        return spawner.getSpawner().spawnDelay;
-    }
-
-    public void setDelay(int delay) {
-        spawner.getSpawner().spawnDelay = delay;
+        return this.getSnapshot().getSpawner().spawnDelay;
     }
 
     @Override
-    public TileEntityMobSpawner getTileEntity() {
-        return spawner;
+    public void setDelay(int delay) {
+        this.getSnapshot().getSpawner().spawnDelay = delay;
     }
 }

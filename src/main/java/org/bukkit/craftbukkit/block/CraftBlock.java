@@ -336,7 +336,14 @@ public class CraftBlock implements Block {
         case BED_BLOCK:
             return new CraftBed(this);
         default:
-            return new CraftBlockState(this);
+            TileEntity tileEntity = chunk.getCraftWorld().getTileEntityAt(x, y, z);
+            if (tileEntity != null) {
+                // block with unhandled TileEntity:
+                return new CraftBlockEntityState<TileEntity>(this, (Class<TileEntity>) tileEntity.getClass());
+            } else {
+                // Block without TileEntity:
+                return new CraftBlockState(this);
+            }
         }
     }
 
