@@ -169,6 +169,7 @@ public final class CraftServer implements Server {
     private boolean printSaveWarning;
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
+    private boolean unrestrictedAdvancements;
     private final Pattern validUserPattern = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
     private final UUID invalidUserUUID = UUID.nameUUIDFromBytes("InvalidUsername".getBytes(Charsets.UTF_8));
     private final List<CraftPlayer> playerView;
@@ -247,6 +248,7 @@ public final class CraftServer implements Server {
 
         saveCommandsConfig();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        unrestrictedAdvancements = commandsConfiguration.getBoolean("unrestricted-advancements");
         pluginManager.useTimings(configuration.getBoolean("settings.plugin-profiling"));
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
@@ -257,6 +259,10 @@ public final class CraftServer implements Server {
         chunkGCPeriod = configuration.getInt("chunk-gc.period-in-ticks");
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
         loadIcon();
+    }
+
+    public boolean getPermissionOverride(ICommandListener listener) {
+        return unrestrictedAdvancements && listener instanceof AdvancementRewards.AdvancementCommandListener;
     }
 
     public boolean getCommandBlockOverride(String command) {
