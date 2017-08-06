@@ -218,10 +218,12 @@ public class Main {
                     Calendar deadline = Calendar.getInstance();
                     deadline.add(Calendar.DAY_OF_YEAR, -21);
                     if (buildDate.before(deadline.getTime())) {
-                        System.err.println("*** Error, this build is outdated ***");
+                        // Paper start - This is some stupid bullshit
+                        System.err.println("*** Warning, you've not updated in a while! ***");
                         System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads ***"); // Paper
-                        System.err.println("*** Server will start in 20 seconds ***");
-                        Thread.sleep(TimeUnit.SECONDS.toMillis(20));
+                        //System.err.println("*** Server will start in 20 seconds ***");
+                        //Thread.sleep(TimeUnit.SECONDS.toMillis(20));
+                        // Paper End
                     }
                 }
 
