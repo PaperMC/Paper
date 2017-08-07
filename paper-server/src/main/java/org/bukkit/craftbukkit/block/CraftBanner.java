@@ -16,7 +16,7 @@ import org.bukkit.block.banner.PatternType;
 public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> implements Banner {
 
     private DyeColor base;
-    private List<Pattern> patterns = new ArrayList<Pattern>();
+    private List<Pattern> patterns;
 
     public CraftBanner(final Block block) {
         super(block, TileEntityBanner.class);
@@ -31,6 +31,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
         super.load(banner);
 
         base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
+        patterns = new ArrayList<Pattern>();
 
         if (banner.patterns != null) {
             for (int i = 0; i < banner.patterns.size(); i++) {
