@@ -84,7 +84,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         return snapshot.save(new NBTTagCompound());
     }
 
-    // copies the data of the given tile entity data to this block state
+    // copies the data of the given tile entity to this block state
     protected void load(T tileEntity) {
         if (tileEntity != null && tileEntity != snapshot) {
             copyData(tileEntity, snapshot);
