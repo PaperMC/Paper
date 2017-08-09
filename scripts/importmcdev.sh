@@ -49,6 +49,7 @@ import BlockPosition
 import BlockSnowBlock
 import BlockStateEnum
 import ChunkCache
+import ChunkCoordIntPair
 import ChunkProviderFlat
 import ChunkProviderGenerate
 import ChunkProviderHell
