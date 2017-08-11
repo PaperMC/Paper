@@ -1,6 +1,20 @@
 --- a/net/minecraft/server/ChunkRegionLoader.java
 +++ b/net/minecraft/server/ChunkRegionLoader.java
-@@ -29,19 +29,35 @@
+@@ -19,29 +19,47 @@
+ 
+     private static final Logger a = LogManager.getLogger();
+     private final Map<ChunkCoordIntPair, NBTTagCompound> b = Maps.newConcurrentMap();
+-    private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(Maps.newConcurrentMap());
++    // CraftBukkit
++    // private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(Maps.newConcurrentMap());
+     private final File d;
+     private final DataConverterManager e;
+-    private boolean f;
++    // private boolean f;
++    // CraftBukkit
+ 
+     public ChunkRegionLoader(File file, DataConverterManager dataconvertermanager) {
+         this.d = file;
          this.e = dataconvertermanager;
      }
  
@@ -39,7 +53,7 @@
          }
  
          return this.a(world, i, j, nbttagcompound);
-@@ -55,7 +71,7 @@
+@@ -55,7 +73,7 @@
      }
  
      @Nullable
@@ -48,7 +62,7 @@
          if (!nbttagcompound.hasKeyOfType("Level", 10)) {
              ChunkRegionLoader.a.error("Chunk file at {},{} is missing level data, skipping", Integer.valueOf(i), Integer.valueOf(j));
              return null;
-@@ -72,10 +88,28 @@
+@@ -72,10 +90,28 @@
                      ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ));
                      nbttagcompound1.setInt("xPos", i);
                      nbttagcompound1.setInt("zPos", j);
@@ -78,16 +92,32 @@
              }
          }
      }
-@@ -106,20 +140,27 @@
+@@ -98,7 +134,9 @@
+     }
+ 
+     protected void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+-        if (!this.c.contains(chunkcoordintpair)) {
++        // CraftBukkit
++        // if (!this.c.contains(chunkcoordintpair))
++        {
+             this.b.put(chunkcoordintpair, nbttagcompound);
+         }
+ 
+@@ -106,20 +144,32 @@
      }
  
      public boolean a() {
 -        if (this.b.isEmpty()) {
+-            if (this.f) {
 +        // CraftBukkit start
++        return this.processSaveQueueEntry(false);
++    }
++
++    private synchronized boolean processSaveQueueEntry(boolean logCompletion) {
 +        Iterator<Map.Entry<ChunkCoordIntPair, NBTTagCompound>> iter = this.b.entrySet().iterator();
 +        if (!iter.hasNext()) {
-+            // CraftBukkit end
-             if (this.f) {
++            if (logCompletion) {
++                // CraftBukkit end
                  ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.d.getName());
              }
  
@@ -96,20 +126,31 @@
 -            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) this.b.keySet().iterator().next();
 +            // CraftBukkit start
 +            Map.Entry<ChunkCoordIntPair, NBTTagCompound> entry = iter.next();
-+            iter.remove(); // Pop single entry
 +            ChunkCoordIntPair chunkcoordintpair = entry.getKey();
++            NBTTagCompound nbttagcompound = entry.getValue();
 +            // CraftBukkit end
  
              boolean flag;
  
              try {
-                 this.c.add(chunkcoordintpair);
+-                this.c.add(chunkcoordintpair);
 -                NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.remove(chunkcoordintpair);
-+                NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue(); // CraftBukkit
++                // this.c.add(chunkcoordintpair);
++                // NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.remove(chunkcoordintpair);
++                // CraftBukkit
  
                  if (nbttagcompound != null) {
                      try {
-@@ -139,10 +180,14 @@
+@@ -131,7 +181,7 @@
+ 
+                 flag = true;
+             } finally {
+-                this.c.remove(chunkcoordintpair);
++                this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit
+             }
+ 
+             return flag;
+@@ -139,10 +189,14 @@
      }
  
      private void b(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
@@ -125,15 +166,27 @@
      }
  
      public void b(World world, Chunk chunk) throws IOException {}
-@@ -157,6 +202,7 @@
-                 if (this.a()) {
+@@ -151,15 +205,16 @@
+ 
+     public void c() {
+         try {
+-            this.f = true;
++            // this.f = true; // CraftBukkit
+ 
+             while (true) {
+-                if (this.a()) {
++                if (this.processSaveQueueEntry(true)) { // CraftBukkit
                      continue;
                  }
 +                break; // CraftBukkit - Fix infinite loop when saving chunks
              }
          } finally {
-             this.f = false;
-@@ -334,6 +380,13 @@
+-            this.f = false;
++            // this.f = false; // CraftBukkit
+         }
+ 
+     }
+@@ -334,6 +389,13 @@
              chunk.a(nbttagcompound.getByteArray("Biomes"));
          }
  
@@ -147,7 +200,7 @@
          NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
  
          for (int l = 0; l < nbttaglist1.size(); ++l) {
-@@ -371,7 +424,7 @@
+@@ -371,7 +433,7 @@
              }
          }
  
@@ -156,7 +209,7 @@
      }
  
      @Nullable
-@@ -399,14 +452,20 @@
+@@ -399,14 +461,20 @@
      }
  
      @Nullable
@@ -178,7 +231,7 @@
                  return null;
              } else {
                  if (nbttagcompound.hasKeyOfType("Passengers", 9)) {
-@@ -435,8 +494,14 @@
+@@ -435,8 +503,14 @@
          }
      }
  
