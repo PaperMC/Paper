@@ -26,7 +26,7 @@ Then finally, Sleeping will by default be removed, but due to known issues with 
 But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 9a6f87e59..873ffa77d 100644
+index 36689db74..3898ad8fa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -41,7 +41,7 @@ index 9a6f87e59..873ffa77d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 6550686ee..17005d677 100644
+index cdb0b1342..cd976f09e 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ import java.util.List;
@@ -58,16 +58,12 @@ index 6550686ee..17005d677 100644
 +    private final Object lock = new Object(); // Paper - Chunk queue improvements
      private static final Logger a = LogManager.getLogger();
      private final Map<ChunkCoordIntPair, NBTTagCompound> b = Maps.newConcurrentMap();
--    private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(Maps.newConcurrentMap());
-+    //private final Set<ChunkCoordIntPair> c = Collections.newSetFromMap(Maps.newConcurrentMap()); // Paper - Chunk queue improvements
-     private final File d;
-     private final DataConverterManager e;
-     private boolean f;
+     // CraftBukkit
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     }
- 
      protected void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
--        if (!this.c.contains(chunkcoordintpair)) {
+         // CraftBukkit
+         // if (!this.c.contains(chunkcoordintpair))
+-        {
 +        synchronized (lock) {  // Paper - Chunk queue improvements
              this.b.put(chunkcoordintpair, nbttagcompound);
          }
@@ -75,35 +71,39 @@ index 6550686ee..17005d677 100644
  
          FileIOThread.a().a(this);
      }
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
  
-     public boolean a() {
--        // CraftBukkit start
+     private synchronized boolean processSaveQueueEntry(boolean logCompletion) {
 -        Iterator<Map.Entry<ChunkCoordIntPair, NBTTagCompound>> iter = this.b.entrySet().iterator();
 -        if (!iter.hasNext()) {
--            // CraftBukkit end
++        // CraftBukkit start
 +        // Paper start - Chunk queue improvements
 +        QueuedChunk chunk = queue.poll();
 +        if (chunk == null) {
-+            // Paper - end
-             if (this.f) {
++        // Paper - end
+             if (logCompletion) {
+                 // CraftBukkit end
                  ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.d.getName());
-             }
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
              return false;
          } else {
 -            // CraftBukkit start
 -            Map.Entry<ChunkCoordIntPair, NBTTagCompound> entry = iter.next();
--            iter.remove(); // Pop single entry
 -            ChunkCoordIntPair chunkcoordintpair = entry.getKey();
+-            NBTTagCompound nbttagcompound = entry.getValue();
 -            // CraftBukkit end
 +            ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
  
              boolean flag;
  
              try {
--                this.c.add(chunkcoordintpair);
--                NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue(); // CraftBukkit
+-                // this.c.add(chunkcoordintpair);
+-                // NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.remove(chunkcoordintpair);
+-                // CraftBukkit
 +                //this.c.add(chunkcoordintpair);
++                //NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue(); // CraftBukkit // Paper - Chunk queue improvements
 +                NBTTagCompound nbttagcompound = chunk.compound; // Paper - Chunk queue improvements
  
                  if (nbttagcompound != null) {
@@ -116,8 +116,8 @@ index 6550686ee..17005d677 100644
  
                  flag = true;
              } finally {
--                this.c.remove(chunkcoordintpair);
-+                //this.c.remove(chunkcoordintpair); // Paper
+-                this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit
++                //this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit // Paper
              }
  
              return flag;
