@@ -1,4 +1,4 @@
-From 3ce3d501a6fc62dc396aaec8eaff30c4a469b405 Mon Sep 17 00:00:00 2001
+From f2bcb786e5eed44c74b3ebc8573f5735e589cd6d Mon Sep 17 00:00:00 2001
 From: mezz <tehgeek@gmail.com>
 Date: Wed, 9 Aug 2017 17:51:22 -0500
 Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
@@ -40,7 +40,7 @@ index 23944088..e8d1a1c6 100644
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 12938b9f..7e0ba4b2 100644
+index 12938b9f..e4fd7fa7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -147,6 +147,7 @@ public abstract class World implements IBlockAccess {
@@ -59,7 +59,7 @@ index 12938b9f..7e0ba4b2 100644
  
          // Spigot start
          // Iterator iterator = this.tileEntityListTick.iterator();
-@@ -3261,4 +3263,36 @@ public abstract class World implements IBlockAccess {
+@@ -3261,4 +3263,40 @@ public abstract class World implements IBlockAccess {
      public BlockPosition a(String s, BlockPosition blockposition, boolean flag) {
          return null;
      }
@@ -74,7 +74,11 @@ index 12938b9f..7e0ba4b2 100644
 +
 +    private void removeTileEntitiesForRemovedChunks() {
 +        if (!this.tileEntitiesChunkToBeRemoved.isEmpty()) {
-+            java.util.function.Predicate<TileEntity> isInChunk = (tileEntity) -> {
++            java.util.function.Predicate<TileEntity> isInChunkOrNull = (tileEntity) -> {
++                if (tileEntity == null) {
++                    return true;
++                }
++
 +                BlockPosition tilePos = tileEntity.getPosition();
 +                long tileChunkPos = net.minecraft.server.ChunkCoordIntPair.asLong(tilePos.getX() >> 4, tilePos.getZ() >> 4);
 +                final boolean willRemove = this.tileEntitiesChunkToBeRemoved.contains(tileChunkPos);
@@ -90,12 +94,12 @@ index 12938b9f..7e0ba4b2 100644
 +                return willRemove;
 +            };
 +
-+            this.tileEntityListTick.removeIf(isInChunk);
++            this.tileEntityListTick.removeIf(isInChunkOrNull);
 +            this.tileEntitiesChunkToBeRemoved.clear();
 +        }
 +    }
 +    // Paper end
  }
 -- 
-2.13.4
+2.14.1
 
