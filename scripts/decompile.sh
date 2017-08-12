@@ -6,7 +6,7 @@ PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/$minecraftversion"
+decompiledir="$workdir/Minecraft/$minecraftversion"
 classdir="$decompiledir/classes"
 
 echo "Extracting NMS classes..."
