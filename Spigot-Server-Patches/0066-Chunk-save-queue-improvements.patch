@@ -1,4 +1,4 @@
-From 3cf72e3346d3d809dc82f2813aa459c3a97c6467 Mon Sep 17 00:00:00 2001
+From 7b7f601ad0c78736c6699917a5e4627dea796289 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -41,26 +41,28 @@ index 36689db74..3898ad8fa 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index cdb0b1342..cd976f09e 100644
+index 682b4230e..772da28aa 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -12,11 +12,14 @@ import java.util.List;
+@@ -12,6 +12,7 @@ import java.util.List;
  import java.util.Map;
  import java.util.Set;
  import javax.annotation.Nullable;
 +import java.util.concurrent.ConcurrentLinkedQueue; // Paper
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
+ // Spigot start
+@@ -21,6 +22,8 @@ import org.spigotmc.SupplierUtils;
  
  public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
 +    private ConcurrentLinkedQueue<QueuedChunk> queue = new ConcurrentLinkedQueue<>(); // Paper - Chunk queue improvements
 +    private final Object lock = new Object(); // Paper - Chunk queue improvements
      private static final Logger a = LogManager.getLogger();
-     private final Map<ChunkCoordIntPair, NBTTagCompound> b = Maps.newConcurrentMap();
+     private final Map<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = Maps.newConcurrentMap(); // Spigot
      // CraftBukkit
-@@ -138,9 +141,10 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     protected void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+@@ -155,9 +158,10 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
          // CraftBukkit
          // if (!this.c.contains(chunkcoordintpair))
 -        {
@@ -71,11 +73,11 @@ index cdb0b1342..cd976f09e 100644
  
          FileIOThread.a().a(this);
      }
-@@ -151,8 +155,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -168,8 +172,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      private synchronized boolean processSaveQueueEntry(boolean logCompletion) {
--        Iterator<Map.Entry<ChunkCoordIntPair, NBTTagCompound>> iter = this.b.entrySet().iterator();
+-        Iterator<Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>>> iter = this.b.entrySet().iterator(); // Spigot
 -        if (!iter.hasNext()) {
 +        // CraftBukkit start
 +        // Paper start - Chunk queue improvements
@@ -85,43 +87,40 @@ index cdb0b1342..cd976f09e 100644
              if (logCompletion) {
                  // CraftBukkit end
                  ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.d.getName());
-@@ -160,18 +167,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -177,17 +184,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
              return false;
          } else {
 -            // CraftBukkit start
--            Map.Entry<ChunkCoordIntPair, NBTTagCompound> entry = iter.next();
+-            Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>> entry = iter.next(); // Spigot
 -            ChunkCoordIntPair chunkcoordintpair = entry.getKey();
--            NBTTagCompound nbttagcompound = entry.getValue();
+-            Supplier<NBTTagCompound> value = entry.getValue(); // Spigot
 -            // CraftBukkit end
 +            ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
  
              boolean flag;
  
              try {
--                // this.c.add(chunkcoordintpair);
--                // NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.remove(chunkcoordintpair);
--                // CraftBukkit
-+                //this.c.add(chunkcoordintpair);
-+                //NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue(); // CraftBukkit // Paper - Chunk queue improvements
-+                NBTTagCompound nbttagcompound = chunk.compound; // Paper - Chunk queue improvements
+                 // this.c.add(chunkcoordintpair);
+-                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(value); // Spigot
++                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(chunk.compoundSupplier); // Spigot // Paper
+                 // CraftBukkit
  
                  if (nbttagcompound != null) {
-                     try {
-@@ -180,10 +183,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -197,10 +200,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                          ChunkRegionLoader.a.error("Failed to save chunk", exception);
                      }
                  }
-+                synchronized (lock) { if (this.b.get(chunkcoordintpair) == nbttagcompound) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
++                synchronized (lock) { if (this.b.get(chunkcoordintpair) == chunk.compoundSupplier) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
  
                  flag = true;
              } finally {
--                this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit
-+                //this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit // Paper
+-                this.b.remove(chunkcoordintpair, value); // CraftBukkit // Spigot
++                //this.b.remove(chunkcoordintpair, value); // CraftBukkit // Spigot // Paper
              }
  
              return flag;
-@@ -548,4 +552,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -574,4 +578,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
              return entity;
          }
      }
@@ -129,11 +128,11 @@ index cdb0b1342..cd976f09e 100644
 +    // Paper start - Chunk queue improvements
 +    private static class QueuedChunk {
 +        public ChunkCoordIntPair coords;
-+        public NBTTagCompound compound;
++        public Supplier<NBTTagCompound> compoundSupplier;
 +
-+        public QueuedChunk(ChunkCoordIntPair coords, NBTTagCompound compound) {
++        public QueuedChunk(ChunkCoordIntPair coords, Supplier<NBTTagCompound> compoundSupplier) {
 +            this.coords = coords;
-+            this.compound = compound;
++            this.compoundSupplier = compoundSupplier;
 +        }
 +    }
 +    // Paper end
