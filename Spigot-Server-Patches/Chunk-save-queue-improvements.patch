@@ -41,7 +41,7 @@ index 36689db74..3898ad8fa 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index cdb0b1342..cd976f09e 100644
+index 682b4230e..772da28aa 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ import java.util.List;
@@ -51,16 +51,18 @@ index cdb0b1342..cd976f09e 100644
 +import java.util.concurrent.ConcurrentLinkedQueue; // Paper
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
+ // Spigot start
+@@ -0,0 +0,0 @@ import org.spigotmc.SupplierUtils;
  
  public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
 +    private ConcurrentLinkedQueue<QueuedChunk> queue = new ConcurrentLinkedQueue<>(); // Paper - Chunk queue improvements
 +    private final Object lock = new Object(); // Paper - Chunk queue improvements
      private static final Logger a = LogManager.getLogger();
-     private final Map<ChunkCoordIntPair, NBTTagCompound> b = Maps.newConcurrentMap();
+     private final Map<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = Maps.newConcurrentMap(); // Spigot
      // CraftBukkit
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     protected void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+     protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
          // CraftBukkit
          // if (!this.c.contains(chunkcoordintpair))
 -        {
@@ -75,7 +77,7 @@ index cdb0b1342..cd976f09e 100644
      }
  
      private synchronized boolean processSaveQueueEntry(boolean logCompletion) {
--        Iterator<Map.Entry<ChunkCoordIntPair, NBTTagCompound>> iter = this.b.entrySet().iterator();
+-        Iterator<Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>>> iter = this.b.entrySet().iterator(); // Spigot
 -        if (!iter.hasNext()) {
 +        // CraftBukkit start
 +        // Paper start - Chunk queue improvements
@@ -90,34 +92,31 @@ index cdb0b1342..cd976f09e 100644
              return false;
          } else {
 -            // CraftBukkit start
--            Map.Entry<ChunkCoordIntPair, NBTTagCompound> entry = iter.next();
+-            Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>> entry = iter.next(); // Spigot
 -            ChunkCoordIntPair chunkcoordintpair = entry.getKey();
--            NBTTagCompound nbttagcompound = entry.getValue();
+-            Supplier<NBTTagCompound> value = entry.getValue(); // Spigot
 -            // CraftBukkit end
 +            ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
  
              boolean flag;
  
              try {
--                // this.c.add(chunkcoordintpair);
--                // NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.remove(chunkcoordintpair);
--                // CraftBukkit
-+                //this.c.add(chunkcoordintpair);
-+                //NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue(); // CraftBukkit // Paper - Chunk queue improvements
-+                NBTTagCompound nbttagcompound = chunk.compound; // Paper - Chunk queue improvements
+                 // this.c.add(chunkcoordintpair);
+-                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(value); // Spigot
++                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(chunk.compoundSupplier); // Spigot // Paper
+                 // CraftBukkit
  
                  if (nbttagcompound != null) {
-                     try {
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                          ChunkRegionLoader.a.error("Failed to save chunk", exception);
                      }
                  }
-+                synchronized (lock) { if (this.b.get(chunkcoordintpair) == nbttagcompound) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
++                synchronized (lock) { if (this.b.get(chunkcoordintpair) == chunk.compoundSupplier) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
  
                  flag = true;
              } finally {
--                this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit
-+                //this.b.remove(chunkcoordintpair, nbttagcompound); // CraftBukkit // Paper
+-                this.b.remove(chunkcoordintpair, value); // CraftBukkit // Spigot
++                //this.b.remove(chunkcoordintpair, value); // CraftBukkit // Spigot // Paper
              }
  
              return flag;
@@ -129,11 +128,11 @@ index cdb0b1342..cd976f09e 100644
 +    // Paper start - Chunk queue improvements
 +    private static class QueuedChunk {
 +        public ChunkCoordIntPair coords;
-+        public NBTTagCompound compound;
++        public Supplier<NBTTagCompound> compoundSupplier;
 +
-+        public QueuedChunk(ChunkCoordIntPair coords, NBTTagCompound compound) {
++        public QueuedChunk(ChunkCoordIntPair coords, Supplier<NBTTagCompound> compoundSupplier) {
 +            this.coords = coords;
-+            this.compound = compound;
++            this.compoundSupplier = compoundSupplier;
 +        }
 +    }
 +    // Paper end
