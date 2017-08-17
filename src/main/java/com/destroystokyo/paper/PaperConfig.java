@@ -1,5 +1,6 @@
 package com.destroystokyo.paper;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 
 import java.io.File;
@@ -264,5 +265,10 @@ public class PaperConfig {
     public static boolean suggestPlayersWhenNullTabCompletions = true;
     private static void suggestPlayersWhenNull() {
         suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
+    }
+
+    public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
+    private static void authenticationServersDownKickMessage() {
+        authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
     }
 }
