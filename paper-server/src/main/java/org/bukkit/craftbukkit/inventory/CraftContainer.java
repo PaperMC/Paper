@@ -8,32 +8,43 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 
 import net.minecraft.server.Container;
+import net.minecraft.server.ContainerAnvil;
+import net.minecraft.server.ContainerBeacon;
+import net.minecraft.server.ContainerBrewingStand;
+import net.minecraft.server.ContainerChest;
+import net.minecraft.server.ContainerDispenser;
+import net.minecraft.server.ContainerEnchantTable;
+import net.minecraft.server.ContainerFurnace;
+import net.minecraft.server.ContainerHopper;
+import net.minecraft.server.ContainerShulkerBox;
+import net.minecraft.server.ContainerWorkbench;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.PacketPlayOutOpenWindow;
-import net.minecraft.server.Slot;
-import net.minecraft.server.SlotShulkerBox;
+import net.minecraft.server.PlayerInventory;
 
 public class CraftContainer extends Container {
 
     private final InventoryView view;
     private InventoryType cachedType;
     private String cachedTitle;
+    private Container delegate;
     private final int cachedSize;
 
-    public CraftContainer(InventoryView view, int id) {
+    public CraftContainer(InventoryView view, EntityHuman player, int id) {
         this.view = view;
         this.windowId = id;
         // TODO: Do we need to check that it really is a CraftInventory?
         IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
-        IInventory bottom = ((CraftInventory) view.getBottomInventory()).getInventory();
+        PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
         cachedType = view.getType();
         cachedTitle = view.getTitle();
         cachedSize = getSize();
-        setupSlots(top, bottom);
+        setupSlots(top, bottom, player);
     }
 
-    public CraftContainer(final Inventory inventory, final HumanEntity player, int id) {
+    public CraftContainer(final Inventory inventory, final EntityHuman player, int id) {
         this(new InventoryView() {
             @Override
             public Inventory getTopInventory() {
@@ -42,19 +53,19 @@ public class CraftContainer extends Container {
 
             @Override
             public Inventory getBottomInventory() {
-                return player.getInventory();
+                return getPlayer().getInventory();
             }
 
             @Override
             public HumanEntity getPlayer() {
-                return player;
+                return player.getBukkitEntity();
             }
 
             @Override
             public InventoryType getType() {
                 return inventory.getType();
             }
-        }, id);
+        }, player, id);
     }
 
     @Override
@@ -81,11 +92,11 @@ public class CraftContainer extends Container {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
             String type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
-            IInventory bottom = ((CraftInventory) view.getBottomInventory()).getInventory();
+            PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
             this.b.clear();
             this.c.clear();
             if (typeChanged) {
-                setupSlots(top, bottom);
+                setupSlots(top, bottom, player.getHandle());
             }
             int size = getSize();
             player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle), size));
@@ -121,263 +132,58 @@ public class CraftContainer extends Container {
         }
     }
 
-    private void setupSlots(IInventory top, IInventory bottom) {
+    private void setupSlots(IInventory top, PlayerInventory bottom, EntityHuman entityhuman) {
         switch (cachedType) {
             case CREATIVE:
                 break; // TODO: This should be an error?
             case PLAYER:
             case CHEST:
-                setupChest(top, bottom);
+                delegate = new ContainerChest(bottom, top, entityhuman);
                 break;
             case DISPENSER:
             case DROPPER:
-                setupDispenser(top, bottom);
+                delegate = new ContainerDispenser(bottom, top);
                 break;
             case FURNACE:
-                setupFurnace(top, bottom);
+                delegate = new ContainerFurnace(bottom, top);
                 break;
             case CRAFTING: // TODO: This should be an error?
             case WORKBENCH:
-                setupWorkbench(top, bottom);
+                delegate = new ContainerWorkbench(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
                 break;
             case ENCHANTING:
-                setupEnchanting(top, bottom);
+                delegate = new ContainerEnchantTable(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
                 break;
             case BREWING:
-                setupBrewing(top, bottom);
+                delegate = new ContainerBrewingStand(bottom, top);
                 break;
             case HOPPER:
-                setupHopper(top, bottom);
+                delegate = new ContainerHopper(bottom, top, entityhuman);
                 break;
             case ANVIL:
-                setupAnvil(top, bottom);
+                delegate = new ContainerAnvil(bottom, entityhuman.world, entityhuman.getChunkCoordinates(), entityhuman);
                 break;
             case BEACON:
-                setupBeacon(top, bottom);
+                delegate = new ContainerBeacon(bottom, top);
                 break;
             case SHULKER_BOX:
-                setupShulkerBox(top, bottom);
+                delegate = new ContainerShulkerBox(bottom, top, entityhuman);
                 break;
         }
+
+        if (delegate != null) {
+            this.b = delegate.b; // PAIL: items
+            this.c = delegate.c; // PAIL: slots
+        }
     }
 
-    private void setupChest(IInventory top, IInventory bottom) {
-        int rows = top.getSize() / 9;
-        int row;
-        int col;
-        // This code copied from ContainerChest
-        int i = (rows - 4) * 18;
-        for (row = 0; row < rows; ++row) {
-            for (col = 0; col < 9; ++col) {
-                this.a(new Slot(top, col + row * 9, 8 + col * 18, 18 + row * 18));
-            }
-        }
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 103 + row * 18 + i));
-            }
-        }
-
-        for (col = 0; col < 9; ++col) {
-            this.a(new Slot(bottom, col, 8 + col * 18, 161 + i));
-        }
-        // End copy from ContainerChest
+    @Override
+    public ItemStack b(EntityHuman entityhuman, int i) { // PAIL: shiftClick
+        return (delegate != null) ? delegate.b(entityhuman, i) : super.b(entityhuman, i);
     }
 
-    private void setupWorkbench(IInventory top, IInventory bottom) {
-        // This code copied from ContainerWorkbench
-        this.a(new Slot(top, 0, 124, 35));
-
-        int row;
-        int col;
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 3; ++col) {
-                this.a(new Slot(top, 1 + col + row * 3, 30 + col * 18, 17 + row * 18));
-            }
-        }
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
-            }
-        }
-
-        for (col = 0; col < 9; ++col) {
-            this.a(new Slot(bottom, col, 8 + col * 18, 142));
-        }
-        // End copy from ContainerWorkbench
-    }
-
-    private void setupFurnace(IInventory top, IInventory bottom) {
-        // This code copied from ContainerFurnace
-        this.a(new Slot(top, 0, 56, 17));
-        this.a(new Slot(top, 1, 56, 53));
-        this.a(new Slot(top, 2, 116, 35));
-
-        int row;
-        int col;
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
-            }
-        }
-
-        for (col = 0; col < 9; ++col) {
-            this.a(new Slot(bottom, col, 8 + col * 18, 142));
-        }
-        // End copy from ContainerFurnace
-    }
-
-    private void setupDispenser(IInventory top, IInventory bottom) {
-        // This code copied from ContainerDispenser
-        int row;
-        int col;
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 3; ++col) {
-                this.a(new Slot(top, col + row * 3, 61 + col * 18, 17 + row * 18));
-            }
-        }
-
-        for (row = 0; row < 3; ++row) {
-            for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
-            }
-        }
-
-        for (col = 0; col < 9; ++col) {
-            this.a(new Slot(bottom, col, 8 + col * 18, 142));
-        }
-        // End copy from ContainerDispenser
-    }
-
-    private void setupEnchanting(IInventory top, IInventory bottom) {
-        // This code copied from ContainerEnchantTable
-        this.a((new Slot(top, 0, 15, 47)));
-        this.a((new Slot(top, 0, 35, 47)));
-
-        int row;
-
-        for (row = 0; row < 3; ++row) {
-            for (int i1 = 0; i1 < 9; ++i1) {
-                this.a(new Slot(bottom, i1 + row * 9 + 9, 8 + i1 * 18, 84 + row * 18));
-            }
-        }
-
-        for (row = 0; row < 9; ++row) {
-            this.a(new Slot(bottom, row, 8 + row * 18, 142));
-        }
-        // End copy from ContainerEnchantTable
-    }
-
-    private void setupBrewing(IInventory top, IInventory bottom) {
-        // This code copied from ContainerBrewingStand
-        this.a(new Slot(top, 0, 56, 46));
-        this.a(new Slot(top, 1, 79, 53));
-        this.a(new Slot(top, 2, 102, 46));
-        this.a(new Slot(top, 3, 79, 17));
-        this.a(new Slot(top, 4, 17, 17));
-
-        int i;
-        for (i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
-            }
-        }
-
-        for (i = 0; i < 9; ++i) {
-            this.a(new Slot(bottom, i, 8 + i * 18, 142));
-        }
-        // End copy from ContainerBrewingStand
-    }
-
-    private void setupHopper(IInventory top, IInventory bottom) {
-        // This code copied from ContainerHopper
-        byte b0 = 51;
-
-        int i;
-
-        for (i = 0; i < top.getSize(); ++i) {
-            this.a(new Slot(top, i, 44 + i * 18, 20));
-        }
-
-        for (i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, i * 18 + b0));
-            }
-        }
-
-        for (i = 0; i < 9; ++i) {
-            this.a(new Slot(bottom, i, 8 + i * 18, 58 + b0));
-        }
-        // End copy from ContainerHopper
-    }
-
-    private void setupAnvil(IInventory top, IInventory bottom) {
-        // This code copied from ContainerAnvil
-        this.a(new Slot(top, 0, 27, 47));
-        this.a(new Slot(top, 1, 76, 47));
-        this.a(new Slot(top, 2, 134, 47));
-
-        int i;
-
-        for (i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
-            }
-        }
-
-        for (i = 0; i < 9; ++i) {
-            this.a(new Slot(bottom, i, 8 + i * 18, 142));
-        }
-        // End copy from ContainerAnvil
-    }
-
-    private void setupBeacon(IInventory top, IInventory bottom) {
-        // This code is copied from ContainerBeacon
-        this.a(new Slot(top, 0, 136, 110));
-
-        int i;
-
-        for (i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.a(new Slot(bottom, j + i * 9 + 9, 36 + j * 18, 137 + i * 18));
-            }
-        }
-
-        for (i = 0; i < 9; ++i) {
-            this.a(new Slot(bottom, i, 36 + i * 18, 195));
-        }
-        // End copy from ContainerBeacon
-    }
-
-    private void setupShulkerBox(IInventory top, IInventory bottom) {
-        // This code is copied from ContainerShulkerBox
-        int i;
-        int j;
-
-        for (i = 0; i < 3; ++i) {
-            for (j = 0; j < 9; ++j) {
-                this.a((Slot) (new SlotShulkerBox(top, j + i * 9, 8 + j * 18, 18 + i * 18)));
-            }
-        }
-
-        for (i = 0; i < 3; ++i) {
-            for (j = 0; j < 9; ++j) {
-                this.a(new Slot(bottom, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
-            }
-        }
-
-        for (i = 0; i < 9; ++i) {
-            this.a(new Slot(bottom, i, 8 + i * 18, 142));
-        }
-        // End copy from ContainerShulkerBox
-    }
-
-    public boolean a(EntityHuman entity) {
+    @Override
+    public boolean a(EntityHuman entity) { // PAIL: canUse
         return true;
     }
 }
