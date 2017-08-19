@@ -28,6 +28,23 @@ public final class MapCursor {
     }
 
     /**
+     * Initialize the map cursor.
+     *
+     * @param x The x coordinate, from -128 to 127.
+     * @param y The y coordinate, from -128 to 127.
+     * @param direction The facing of the cursor, from 0 to 15.
+     * @param type The type (color/style) of the map cursor.
+     * @param visible Whether the cursor is visible by default.
+     */
+    public MapCursor(byte x, byte y, byte direction, Type type, boolean visible) {
+        this.x = x;
+        this.y = y;
+        setDirection(direction);
+        setType(type);
+        this.visible = visible;
+    }
+
+    /**
      * Get the X position of this cursor.
      *
      * @return The X coordinate.
