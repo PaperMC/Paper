@@ -1,0 +1,616 @@
+From 9628176f5c2df155a4317831a60c1d3c30ab854a Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@techcable.net>
+Date: Thu, 14 Apr 2016 17:41:40 -0700
+Subject: [PATCH] Add an api to access the uuid cache
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java b/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java
+index b98d733..b7dbdc0 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java
++++ b/src/main/java/com/destroystokyo/paper/profile/AccountProfile.java
+@@ -1,14 +1,13 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.util.UUID;
+-
+ import com.google.common.base.Objects;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.Bukkit;
+ import org.bukkit.OfflinePlayer;
+ import org.bukkit.entity.Player;
+ 
++import java.util.UUID;
++
+ /**
+  * Represents a player's profile
+  * Contains their uuid and username
+diff --git a/src/main/java/com/destroystokyo/paper/profile/CachingProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/CachingProfileLookup.java
+new file mode 100644
+index 0000000..36c3872
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/CachingProfileLookup.java
+@@ -0,0 +1,24 @@
++package com.destroystokyo.paper.profile;
++
++import com.google.common.collect.ImmutableCollection;
++
++import java.util.UUID;
++
++public interface CachingProfileLookup extends ProfileLookup {
++
++    ImmutableCollection<AccountProfile> getCachedProfiles();
++
++    AccountProfile getIfCached(UUID id);
++
++    AccountProfile getIfCached(String name);
++
++    void cache(AccountProfile profile);
++
++    void clearProfile(AccountProfile profile);
++
++    AccountProfile refresh(UUID id);
++
++    AccountProfile refresh(String name);
++
++    ProfileProperties refreshProperties(AccountProfile profile);
++}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/LookupCause.java b/src/main/java/com/destroystokyo/paper/profile/LookupCause.java
+index be392e3..d6fc8ae 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/LookupCause.java
++++ b/src/main/java/com/destroystokyo/paper/profile/LookupCause.java
+@@ -1,7 +1,7 @@
+ package com.destroystokyo.paper.profile;
+ 
+ public enum LookupCause {
+-    UUID_LOOKUP,
+-    NAME_LOOKUP,
+-    PROPERTIES_LOOKUP;
++    UUID,
++    NAME,
++    PROPERTIES;
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java b/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java
+index 11628b7..4ed0d49 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java
++++ b/src/main/java/com/destroystokyo/paper/profile/LookupFailedException.java
+@@ -4,16 +4,13 @@ package com.destroystokyo.paper.profile;
+  * Thrown when the lookup fails, for reason other then a profile not found
+  */
+ public class LookupFailedException extends RuntimeException {
+-    public LookupFailedException(Throwable cause) {
+-        super(cause);
+-    }
+ 
+     public LookupFailedException(String message, Throwable cause) {
+         super(message, cause);
+     }
+ 
+-    public LookupFailedException(String s) {
+-        super(s);
++    public LookupFailedException(String message) {
++        super(message);
+     }
+ 
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java b/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java
+index 2a8667c..bd6379a 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java
++++ b/src/main/java/com/destroystokyo/paper/profile/PlayerTextures.java
+@@ -1,10 +1,5 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.net.MalformedURLException;
+-import java.net.URL;
+-import java.util.Base64;
+-import java.util.Map;
+-
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableMap;
+@@ -14,6 +9,11 @@ import com.google.gson.JsonObject;
+ import com.google.gson.JsonParseException;
+ import com.google.gson.JsonParser;
+ 
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.util.Base64;
++import java.util.Map;
++
+ /**
+  * A player's texture data, including skin and cape.
+  */
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java b/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java
+index 359cf03..a42f443 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileLookup.java
+@@ -1,12 +1,12 @@
+ package com.destroystokyo.paper.profile;
+ 
++import com.google.common.collect.ImmutableList;
++
+ import java.util.Collection;
+ import java.util.UUID;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+-import com.google.common.collect.ImmutableList;
+-
+ public interface ProfileLookup {
+ 
+     /**
+@@ -15,7 +15,7 @@ public interface ProfileLookup {
+      * We have to accept spaces due to this bug: https://www.reddit.com/r/Minecraft/comments/276wcb/psa_usernames_can_contain_spaces_this_effectively/
+      * We also have to accept names less than 3 characters
+      */
+-    public static final Pattern NAME_PATTERN = Pattern.compile("[ \\w]{1,16}+");
++    Pattern NAME_PATTERN = Pattern.compile("[ \\w]{1,16}+");
+ 
+     /**
+      * Return if the name is valid
+@@ -25,7 +25,7 @@ public interface ProfileLookup {
+      * @param s the name to check
+      * @return true if valid
+      */
+-    public static boolean isValidName(String s) {
++    static boolean isValidName(String s) {
+         Matcher m = NAME_PATTERN.matcher(s);
+         return m.matches();
+     }
+@@ -42,7 +42,7 @@ public interface ProfileLookup {
+      * @throws LookupFailedException if unable to lookup
+      * @throws NullPointerException if
+      */
+-    public AccountProfile lookup(String name);
++    AccountProfile lookup(String name);
+ 
+     /**
+      * Lookup a profile with the given uuid
+@@ -55,7 +55,7 @@ public interface ProfileLookup {
+      * @return a profile with the given id
+      * @throws LookupFailedException if unable to lookup
+      */
+-    public AccountProfile lookup(UUID id);
++    AccountProfile lookup(UUID id);
+ 
+     /**
+      * Lookup a profile with the given name
+@@ -66,7 +66,7 @@ public interface ProfileLookup {
+      * @param name     look for a profile with this name
+      * @param callback the callback to handle the result of the lookups
+      */
+-    public default void lookup(String name, ProfileLookupCallback<String> callback) {
++    default void lookup(String name, ProfileLookupCallback<String> callback) {
+         try {
+             AccountProfile profile = lookup(name);
+             callback.onLookup(profile, name);
+@@ -87,7 +87,7 @@ public interface ProfileLookup {
+      * @param id       look for a profile with this id
+      * @param callback the callback to handle the result of the lookups
+      */
+-    public default void lookup(UUID id, ProfileLookupCallback<UUID> callback) {
++    default void lookup(UUID id, ProfileLookupCallback<UUID> callback) {
+         try {
+             AccountProfile profile = lookup(id);
+             callback.onLookup(profile, id);
+@@ -113,7 +113,7 @@ public interface ProfileLookup {
+      * @throws LookupFailedException    if lookup fails
+      * @throws IllegalArgumentException if one of the ids doesn't exist
+      */
+-    public default ImmutableList<AccountProfile> lookupIds(Collection<UUID> ids) {
++    default ImmutableList<AccountProfile> lookupIds(Collection<UUID> ids) {
+         ImmutableList.Builder<AccountProfile> profileBuilder = ImmutableList.builder();
+         lookupIds(ids, ProfileLookupCallback.assumeFound((profile, original) -> profileBuilder.add(profile)));
+         return profileBuilder.build();
+@@ -134,7 +134,7 @@ public interface ProfileLookup {
+      * @throws LookupFailedException    if lookup fails
+      * @throws IllegalArgumentException if one of the names doesn't exist
+      */
+-    public default ImmutableList<AccountProfile> lookupNames(Collection<String> names) {
++    default ImmutableList<AccountProfile> lookupNames(Collection<String> names) {
+         ImmutableList.Builder<AccountProfile> profileBuilder = ImmutableList.builder();
+         lookupNames(names, ProfileLookupCallback.assumeFound((profile, original) -> profileBuilder.add(profile)));
+         return profileBuilder.build();
+@@ -151,7 +151,7 @@ public interface ProfileLookup {
+      * @param ids      the ids to lookup
+      * @param callback the callback to handle the lookups
+      */
+-    public default void lookupIds(Collection<UUID> ids, ProfileLookupCallback<UUID> callback) {
++    default void lookupIds(Collection<UUID> ids, ProfileLookupCallback<UUID> callback) {
+         ids.forEach((id) -> lookup(id, callback));
+     }
+ 
+@@ -166,7 +166,7 @@ public interface ProfileLookup {
+      * @param names    the names to lookup
+      * @param callback the callback to handle the lookups
+      */
+-    public default void lookupNames(Collection<String> names, ProfileLookupCallback<String> callback) {
++    default void lookupNames(Collection<String> names, ProfileLookupCallback<String> callback) {
+         names.forEach((name) -> lookup(name, callback));
+     }
+ 
+@@ -180,7 +180,7 @@ public interface ProfileLookup {
+      * @throws IllegalArgumentException if there is no player with the given name/uuid
+      * @throws LookupFailedException    if unable to lookup properties
+      */
+-    public ProfileProperties lookupProperties(AccountProfile profile);
++    ProfileProperties lookupProperties(AccountProfile profile);
+ 
+     /**
+      * Return if the lookups have the same underlying source
+@@ -190,5 +190,5 @@ public interface ProfileLookup {
+      * @param other the object to check equality with
+      * @return if equal
+      */
+-    public boolean equals(Object other);
++    boolean equals(Object other);
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java b/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java
+index 859aff1..d5f8a4f 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileLookupCallback.java
+@@ -22,7 +22,7 @@ public interface ProfileLookupCallback<T> {
+      * @param profile  the profile that was found, or null if the player
+      * @param original the key that was being looked up
+      */
+-    public void onLookup(AccountProfile profile, T original);
++    void onLookup(AccountProfile profile, T original);
+ 
+     /**
+      * Called when a lookup fails
+@@ -30,11 +30,11 @@ public interface ProfileLookupCallback<T> {
+      * @param t        the exception that was caught, may be null
+      * @param original the key that was being looked up
+      */
+-    public default void onLookupFailed(Throwable t, T original) {
++    default void onLookupFailed(Throwable t, T original) {
+         throw new LookupFailedException("Unable to lookup " + original.toString(), t);
+     }
+ 
+-    public static <T> ProfileLookupCallback<T> assumeFound(ProfileLookupCallback<T> delegate) {
++    static <T> ProfileLookupCallback<T> assumeFound(ProfileLookupCallback<T> delegate) {
+         return new ProfileLookupCallback<T>() {
+             @Override
+             public void onLookup(AccountProfile profile, T original) {
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java b/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java
+index 8d1ad99..c8d9c15 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileProperties.java
+@@ -1,14 +1,14 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.util.Collection;
+-import java.util.Map;
+-import java.util.function.BiConsumer;
+-
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+ import com.google.common.collect.ImmutableSetMultimap;
+ import com.google.common.collect.SetMultimap;
+ 
++import java.util.Collection;
++import java.util.Map;
++import java.util.function.BiConsumer;
++
+ public final class ProfileProperties {
+     private final ImmutableSetMultimap<String, ProfileProperty> properties;
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
+index 16deedf..96d6ad9 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
++++ b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
+@@ -1,5 +1,8 @@
+ package com.destroystokyo.paper.profile;
+ 
++import com.google.common.base.Preconditions;
++import com.google.common.io.ByteStreams;
++
+ import java.io.BufferedInputStream;
+ import java.io.IOException;
+ import java.security.InvalidKeyException;
+@@ -12,11 +15,14 @@ import java.security.spec.InvalidKeySpecException;
+ import java.security.spec.X509EncodedKeySpec;
+ import java.util.Base64;
+ 
+-import com.google.common.base.Preconditions;
+-import com.google.common.io.ByteStreams;
+-
+ public final class ProfileProperty {
+-    private final String name, value, signature;
++    private final String name;
++    private final String value;
++    private final String signature;
++
++    public ProfileProperty(String name, String value) {
++        this(name, value, null);
++    }
+ 
+     public ProfileProperty(String name, String value, String signature) {
+         this.name = Preconditions.checkNotNull(name, "Name of the property can't be null");
+@@ -24,10 +30,6 @@ public final class ProfileProperty {
+         this.signature = signature;
+     }
+ 
+-    public ProfileProperty(String name, String value) {
+-        this(name, value, null);
+-    }
+-
+     /**
+      * Return the name of this property
+      *
+diff --git a/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java b/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java
+index 96c8b5f..cfde6f4 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java
++++ b/src/main/java/com/destroystokyo/paper/profile/UUIDUtils.java
+@@ -1,11 +1,11 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import java.util.UUID;
+-
+ import com.destroystokyo.paper.utils.Hex;
+ import com.google.common.base.Preconditions;
+ import com.google.common.primitives.Longs;
+ 
++import java.util.UUID;
++
+ public class UUIDUtils {
+     private UUIDUtils() {}
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java
+index 57776d5..c6d4d5a 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncNamePreResolveEvent.java
+@@ -1,23 +1,25 @@
+ package com.destroystokyo.paper.profile.event;
+ 
+-import com.destroystokyo.paper.profile.LookupCause;
+ import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.LookupCause;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.event.HandlerList;
+ 
++import java.util.UUID;
++
+ /**
+- * Called before a uuid is requested from mojang.
++ * Called before a {@link UUID} is requested from Mojang.
+  * <p>
+- * <p>The event may be called synchronouslys if the uuid is resolved on the main thread</p>
++ * <p>The event may be called synchronously if the uuid is resolved on the main thread</p>
+  */
+ public class AsyncNamePreResolveEvent extends AsyncProfilePreResolveEvent {
++
++    private static final HandlerList handlers = new HandlerList();
+     private final String name;
+ 
+     public AsyncNamePreResolveEvent(String name) {
+-        super(LookupCause.NAME_LOOKUP);
+-        Preconditions.checkNotNull(name, "Null name");
+-        this.name = name;
++        super(LookupCause.NAME);
++        this.name = Preconditions.checkNotNull(name, "Null name");
+     }
+ 
+     /**
+@@ -42,14 +44,12 @@ public class AsyncNamePreResolveEvent extends AsyncProfilePreResolveEvent {
+         super.setResult(result);
+     }
+ 
+-    private static final HandlerList handlerList = new HandlerList();
+-
+-    public static HandlerList getHandlerList() {
+-        return handlerList;
+-    }
+-
+     @Override
+     public HandlerList getHandlers() {
+-        return handlerList;
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
+     }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java
+index bc81ec3..6688293 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfilePreResolveEvent.java
+@@ -1,11 +1,10 @@
+ package com.destroystokyo.paper.profile.event;
+ 
+ import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.LookupCause;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.Bukkit;
+ import org.bukkit.event.Event;
+-import com.destroystokyo.paper.profile.LookupCause;
+ 
+ /**
+  * Called before a profile is looked up from mojang.
+@@ -18,7 +17,7 @@ public abstract class AsyncProfilePreResolveEvent extends Event {
+ 
+     public AsyncProfilePreResolveEvent(LookupCause cause) {
+         super(!Bukkit.isPrimaryThread());
+-        this.cause = Preconditions.checkNotNull(cause, "Null cause");;
++        this.cause = Preconditions.checkNotNull(cause, "Null cause");
+     }
+ 
+     /**
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java
+index cbc2572..e3751a7 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncProfileResolveEvent.java
+@@ -1,25 +1,26 @@
+ package com.destroystokyo.paper.profile.event;
+ 
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.LookupCause;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.Bukkit;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+-import com.destroystokyo.paper.profile.LookupCause;
+-import com.destroystokyo.paper.profile.AccountProfile;
+ 
+ /**
+  * Called once a profile is resolved.
+  * <p>May come from a plugin or from mojang.</p>
+  */
+ public class AsyncProfileResolveEvent extends Event {
++
++    private static final HandlerList handlers = new HandlerList();
+     private final LookupCause cause;
+     private AccountProfile result;
+     private boolean mojang;
+ 
+     public AsyncProfileResolveEvent(LookupCause cause, AccountProfile result, boolean mojang) {
+         super(!Bukkit.isPrimaryThread());
+-        this.cause = Preconditions.checkNotNull(cause, "Null cause");;
++        this.cause = Preconditions.checkNotNull(cause, "Null cause");
+         setResult(result);
+         this.mojang = mojang;
+     }
+@@ -41,7 +42,7 @@ public class AsyncProfileResolveEvent extends Event {
+      */
+     public void setResult(AccountProfile result) {
+         Preconditions.checkNotNull(result, "Null result");
+-        if (this.getCause() == LookupCause.PROPERTIES_LOOKUP) {
++        if (this.getCause() == LookupCause.PROPERTIES) {
+             Preconditions.checkArgument(result.hasProperties(), "Result doesn't have properties in properties lookup: %s", result);
+         }
+         this.result = result;
+@@ -67,14 +68,12 @@ public class AsyncProfileResolveEvent extends Event {
+         return mojang;
+     }
+ 
+-    private static final HandlerList handlerList = new HandlerList();
+-
+-    public HandlerList getHandlerList() {
+-        return handlerList;
+-    }
+-
+     @Override
+     public HandlerList getHandlers() {
+-        return getHandlerList();
++        return handlers;
++    }
++
++    public HandlerList getHandlerList() {
++        return handlers;
+     }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java
+index cf74f7a..26a3b6d 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncPropertiesPreResolveEvent.java
+@@ -1,11 +1,10 @@
+ package com.destroystokyo.paper.profile.event;
+ 
++import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.LookupCause;
+ import com.destroystokyo.paper.profile.ProfileProperties;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.event.HandlerList;
+-import com.destroystokyo.paper.profile.LookupCause;
+-import com.destroystokyo.paper.profile.AccountProfile;
+ 
+ /**
+  * Called before profile properties are requested from mojang.
+@@ -13,10 +12,12 @@ import com.destroystokyo.paper.profile.AccountProfile;
+  * <p>The event may be called synchronously if the uuid is resolved on the main thread</p>
+  */
+ public class AsyncPropertiesPreResolveEvent extends AsyncProfilePreResolveEvent {
++
++    private static final HandlerList handlers = new HandlerList();
+     private final AccountProfile profile;
+ 
+     public AsyncPropertiesPreResolveEvent(AccountProfile profile) {
+-        super(LookupCause.PROPERTIES_LOOKUP);
++        super(LookupCause.PROPERTIES);
+         Preconditions.checkNotNull(profile, "Null profile");
+         this.profile = profile.withProperties(null);
+     }
+@@ -55,14 +56,12 @@ public class AsyncPropertiesPreResolveEvent extends AsyncProfilePreResolveEvent
+         super.setResult(result);
+     }
+ 
+-    private static final HandlerList handlerList = new HandlerList();
+-
+-    public static HandlerList getHandlerList() {
+-        return handlerList;
+-    }
+-
+     @Override
+     public HandlerList getHandlers() {
+-        return getHandlerList();
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
+     }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java b/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java
+index 1cf537e..83554aa 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java
++++ b/src/main/java/com/destroystokyo/paper/profile/event/AsyncUUIDPreResolveEvent.java
+@@ -1,24 +1,25 @@
+ package com.destroystokyo.paper.profile.event;
+ 
+-import java.util.UUID;
+-
+-import com.destroystokyo.paper.profile.LookupCause;
+ import com.destroystokyo.paper.profile.AccountProfile;
++import com.destroystokyo.paper.profile.LookupCause;
+ import com.google.common.base.Preconditions;
+-
+ import org.bukkit.event.HandlerList;
+ 
++import java.util.UUID;
++
+ /**
+  * Called before a profile is requested from mojang.
+  * Plugins can set a profile, which will effectively 'cancel' the lookup from mojang.
+  * <p>The event may be called synchronously if the uuid is resolved on the main thread</p>
+  */
+ public class AsyncUUIDPreResolveEvent extends AsyncProfilePreResolveEvent {
++
++    private static final HandlerList handlers = new HandlerList();
+     private final UUID id;
+ 
+     public AsyncUUIDPreResolveEvent(UUID id) {
+-        super(LookupCause.UUID_LOOKUP);
+-        this.id = Preconditions.checkNotNull(id, "Null id");;
++        super(LookupCause.UUID);
++        this.id = Preconditions.checkNotNull(id, "Null id");
+     }
+ 
+     /**
+@@ -42,14 +43,13 @@ public class AsyncUUIDPreResolveEvent extends AsyncProfilePreResolveEvent {
+         }
+         super.setResult(result);
+     }
+-    private static final HandlerList handlerList = new HandlerList();
+-
+-    public static HandlerList getHandlerList() {
+-        return handlerList;
+-    }
+ 
+     @Override
+     public HandlerList getHandlers() {
+-        return getHandlerList();
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
+     }
+ }
+-- 
+2.7.4
+
