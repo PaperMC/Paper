@@ -28,10 +28,6 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
         return true;
     }
 
-    public boolean isCancelled() {
-        return getPeriod() == -2l;
-    }
-
     public boolean isDone() {
         final long period = this.getPeriod();
         return period != -1l && period != -3l;
