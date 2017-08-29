@@ -81,6 +81,11 @@ class CraftTask implements BukkitTask, Runnable {
         return task.getClass();
     }
 
+    @Override
+    public boolean isCancelled() {
+        return (period == -2l);
+    }
+
     public void cancel() {
         Bukkit.getScheduler().cancelTask(id);
     }
