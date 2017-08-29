@@ -226,7 +226,7 @@ public class CraftScheduler implements BukkitScheduler {
         handle(task, 0l);
         for (CraftTask taskPending = head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
             if (taskPending == task) {
-                return;
+                break;
             }
             if (taskPending.getTaskId() != -1 && taskPending.getOwner().equals(plugin)) {
                 taskPending.cancel0();
