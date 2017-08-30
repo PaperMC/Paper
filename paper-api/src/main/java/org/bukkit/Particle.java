@@ -206,6 +206,18 @@ public enum Particle implements Keyed {
         return key;
     }
 
+    // Paper start - Particle API expansion
+    /**
+     * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
+     *
+     * @return a {@link com.destroystokyo.paper.ParticleBuilder} for the particle
+     */
+    @NotNull
+    public com.destroystokyo.paper.ParticleBuilder builder() {
+        return new com.destroystokyo.paper.ParticleBuilder(this);
+    }
+    // Paper end
+
     /**
      * Options which can be applied to dust particles - a particle
      * color and size.
