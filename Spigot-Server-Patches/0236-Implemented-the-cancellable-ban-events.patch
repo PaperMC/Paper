@@ -1,11 +1,50 @@
-From 3f0bd2e44a112f56f630cf1d294bb29fbb2e38e0 Mon Sep 17 00:00:00 2001
+From b98cc4a61245d94cc9329e22c54c87b48914c637 Mon Sep 17 00:00:00 2001
 From: Sam Ezeh <spammy23@noreply.users.github.com>
 Date: Wed, 30 Aug 2017 21:57:17 +0100
 Subject: [PATCH] Implemented the cancellable ban events
 
 
+diff --git a/src/main/java/net/minecraft/server/ExpirableListEntry.java b/src/main/java/net/minecraft/server/ExpirableListEntry.java
+index e643741f..04273d56 100644
+--- a/src/main/java/net/minecraft/server/ExpirableListEntry.java
++++ b/src/main/java/net/minecraft/server/ExpirableListEntry.java
+@@ -8,10 +8,30 @@ import java.util.Date;
+ public abstract class ExpirableListEntry<T> extends JsonListEntry<T> {
+ 
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+-    protected final Date b;
+-    protected final String c;
+-    protected final Date d;
+-    protected final String e;
++    // Paper start - remove final modifiers
++    protected Date b;
++    protected String c;
++    protected Date d;
++    protected String e;
++    // Paper end
++
++    // Paper start - add setter methods
++    public void setCreated(Date created){
++        this.b = created;
++    }
++
++    public void setSource(String source){
++        this.c = source;
++    }
++
++    public void setExpiration(Date expiration){
++        this.d = expiration;
++    }
++
++    public void setReason(String reason){
++        this.e = reason;
++    }
++    // Paper end
+ 
+     public ExpirableListEntry(T t0, Date date, String s, Date date1, String s1) {
+         super(t0);
 diff --git a/src/main/java/net/minecraft/server/GameProfileBanList.java b/src/main/java/net/minecraft/server/GameProfileBanList.java
-index 737035bf..d390f406 100644
+index 737035bf..55bb8961 100644
 --- a/src/main/java/net/minecraft/server/GameProfileBanList.java
 +++ b/src/main/java/net/minecraft/server/GameProfileBanList.java
 @@ -2,6 +2,10 @@ package net.minecraft.server;
@@ -19,7 +58,7 @@ index 737035bf..d390f406 100644
  import java.io.File;
  import java.util.Iterator;
  
-@@ -32,6 +36,20 @@ public class GameProfileBanList extends JsonList<GameProfile, GameProfileBanEntr
+@@ -32,6 +36,23 @@ public class GameProfileBanList extends JsonList<GameProfile, GameProfileBanEntr
          return astring;
      }
  
@@ -32,7 +71,10 @@ index 737035bf..d390f406 100644
 +        BanProfileEvent event = CraftEventFactory.callEvent(new BanProfileEvent(new CraftProfileBanEntry(profile, entry, server.getPlayerList().getProfileBans() )));
 +        if(event.isCancelled()) return;
 +
-+        entry = new GameProfileBanEntry(server.getUserCache().getProfile(event.getTarget()), event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++        entry.setCreated(event.getCreated());
++        entry.setExpiration(event.getExpiration());
++        entry.setSource(event.getSource());
++        entry.setReason(event.getReason());
 +        super.add(entry);
 +    }
 +    // Paper end
@@ -41,7 +83,7 @@ index 737035bf..d390f406 100644
          return gameprofile.getId().toString();
      }
 diff --git a/src/main/java/net/minecraft/server/IpBanList.java b/src/main/java/net/minecraft/server/IpBanList.java
-index 617d326f..c0307128 100644
+index 617d326f..1368c715 100644
 --- a/src/main/java/net/minecraft/server/IpBanList.java
 +++ b/src/main/java/net/minecraft/server/IpBanList.java
 @@ -1,6 +1,9 @@
@@ -54,7 +96,7 @@ index 617d326f..c0307128 100644
  import java.io.File;
  import java.net.SocketAddress;
  
-@@ -26,6 +29,19 @@ public class IpBanList extends JsonList<String, IpBanEntry> {
+@@ -26,6 +29,22 @@ public class IpBanList extends JsonList<String, IpBanEntry> {
          return (IpBanEntry) this.get((Object) s);
      }
  
@@ -66,7 +108,10 @@ index 617d326f..c0307128 100644
 +        BanIpEvent event= new BanIpEvent(new CraftIpBanEntry(target, entry, server.getPlayerList().getIPBans()));
 +        if(event.isCancelled()) return;
 +
-+        entry = new IpBanEntry(event.getTarget(), event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++        entry.setCreated(event.getCreated()); // repeated code, override in superclass instead? (ExpirableListEntry)
++        entry.setExpiration(event.getExpiration());
++        entry.setSource(event.getSource());
++        entry.setReason(event.getReason());
 +        super.add(entry);
 +    }
 +    // Paper end
