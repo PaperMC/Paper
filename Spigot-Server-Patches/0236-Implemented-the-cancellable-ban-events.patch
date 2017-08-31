@@ -1,9 +1,104 @@
-From 59faabcc096fbf0a3002223de3619a76a8a60bbc Mon Sep 17 00:00:00 2001
+From 3f0bd2e44a112f56f630cf1d294bb29fbb2e38e0 Mon Sep 17 00:00:00 2001
 From: Sam Ezeh <spammy23@noreply.users.github.com>
 Date: Wed, 30 Aug 2017 21:57:17 +0100
 Subject: [PATCH] Implemented the cancellable ban events
 
 
+diff --git a/src/main/java/net/minecraft/server/GameProfileBanList.java b/src/main/java/net/minecraft/server/GameProfileBanList.java
+index 737035bf..d390f406 100644
+--- a/src/main/java/net/minecraft/server/GameProfileBanList.java
++++ b/src/main/java/net/minecraft/server/GameProfileBanList.java
+@@ -2,6 +2,10 @@ package net.minecraft.server;
+ 
+ import com.google.gson.JsonObject;
+ import com.mojang.authlib.GameProfile;
++import org.bukkit.craftbukkit.CraftProfileBanEntry;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.server.BanProfileEvent;
++
+ import java.io.File;
+ import java.util.Iterator;
+ 
+@@ -32,6 +36,20 @@ public class GameProfileBanList extends JsonList<GameProfile, GameProfileBanEntr
+         return astring;
+     }
+ 
++    // Paper start
++    @Override
++    public void add(GameProfileBanEntry entry){
++        MinecraftServer server = MinecraftServer.getServer();
++        GameProfile profile = entry.getKey();
++
++        BanProfileEvent event = CraftEventFactory.callEvent(new BanProfileEvent(new CraftProfileBanEntry(profile, entry, server.getPlayerList().getProfileBans() )));
++        if(event.isCancelled()) return;
++
++        entry = new GameProfileBanEntry(server.getUserCache().getProfile(event.getTarget()), event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++        super.add(entry);
++    }
++    // Paper end
++
+     protected String b(GameProfile gameprofile) {
+         return gameprofile.getId().toString();
+     }
+diff --git a/src/main/java/net/minecraft/server/IpBanList.java b/src/main/java/net/minecraft/server/IpBanList.java
+index 617d326f..c0307128 100644
+--- a/src/main/java/net/minecraft/server/IpBanList.java
++++ b/src/main/java/net/minecraft/server/IpBanList.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.server;
+ 
+ import com.google.gson.JsonObject;
++import org.bukkit.craftbukkit.CraftIpBanEntry;
++import org.bukkit.event.server.BanIpEvent;
++
+ import java.io.File;
+ import java.net.SocketAddress;
+ 
+@@ -26,6 +29,19 @@ public class IpBanList extends JsonList<String, IpBanEntry> {
+         return (IpBanEntry) this.get((Object) s);
+     }
+ 
++    // Paper start
++    @Override public void add(IpBanEntry entry){
++        MinecraftServer server = MinecraftServer.getServer();
++        String target = entry.getKey();
++
++        BanIpEvent event= new BanIpEvent(new CraftIpBanEntry(target, entry, server.getPlayerList().getIPBans()));
++        if(event.isCancelled()) return;
++
++        entry = new IpBanEntry(event.getTarget(), event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++        super.add(entry);
++    }
++    // Paper end
++
+     private String c(SocketAddress socketaddress) {
+         String s = socketaddress.toString();
+ 
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 0859c7eb..49d5b42d 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -82,7 +82,9 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+ 
+     }
+ 
+-    public V get(K k0) {
++    // Paper start
++    public V get(Object k0) {
++        // Paper end
+         this.h();
+         return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
+     }
+@@ -112,7 +114,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+         return this.d.size() < 1;
+     }
+ 
+-    protected String a(K k0) {
++    //Paper Start - fix decompile error
++    protected String a(Object k0) {
+         return k0.toString();
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java b/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java
 index 80832f78..05791767 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java
