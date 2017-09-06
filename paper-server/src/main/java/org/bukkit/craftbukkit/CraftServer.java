@@ -262,6 +262,10 @@ public final class CraftServer implements Server {
     }
 
     public boolean getPermissionOverride(ICommandListener listener) {
+        while (listener instanceof CommandListenerWrapper) {
+            listener = ((CommandListenerWrapper) listener).base;
+        }
+
         return unrestrictedAdvancements && listener instanceof AdvancementRewards.AdvancementCommandListener;
     }
 
