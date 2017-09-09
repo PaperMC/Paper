@@ -114,6 +114,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
                 chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
                 icommandlistener.sendMessage(chatmessage);
             }
+            icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.SUCCESS_COUNT, j);
         } catch (ExceptionUsage exceptionusage) {
             ChatMessage chatmessage1 = new ChatMessage("commands.generic.usage", new Object[] { new ChatMessage(exceptionusage.getMessage(), exceptionusage.getArgs()) });
             chatmessage1.getChatModifier().setColor(EnumChatFormat.RED);
@@ -135,7 +136,6 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         } finally {
             MinecraftServer.getServer().worldServer = prev;
         }
-        icommandlistener.a(CommandObjectiveExecutor.EnumCommandResult.SUCCESS_COUNT, j);
         return j;
     }
 
