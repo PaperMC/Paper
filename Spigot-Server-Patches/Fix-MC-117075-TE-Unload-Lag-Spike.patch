@@ -4,29 +4,6 @@ Date: Wed, 9 Aug 2017 17:51:22 -0500
 Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
 
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ed595955..228792fa 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk {
- 
-     public void removeEntities() {
-         this.j = false;
-+        // Paper start - Fix MC-117075: TE Unload Lag Spike
-+        this.world.markTileEntitiesForRemoval(this);
-+        /*
-         Iterator iterator = this.tileEntities.values().iterator();
- 
-         while (iterator.hasNext()) {
-@@ -0,0 +0,0 @@ public class Chunk {
- 
-             this.world.b(tileentity);
-         }
-+        */
-+        // Paper end
- 
-         List[] aentityslice = this.entitySlices; // Spigot
-         int i = aentityslice.length;
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 index 23944088..e8d1a1c6 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
@@ -40,64 +17,20 @@ index 23944088..e8d1a1c6 100644
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 12938b9f..e4fd7fa7 100644
+index 12938b9f..4585f2ef 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     private org.spigotmc.TickLimiter tileLimiter;
-     private int tileTickPosition;
-     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-+    private it.unimi.dsi.fastutil.longs.LongCollection tileEntitiesChunkToBeRemoved = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(); // Paper - Fix MC-117075: TE Unload Lag Spike
- 
-     public CraftWorld getWorld() {
-         return this.world;
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+         timings.tileEntityTick.startTiming(); // Spigot
+         // CraftBukkit start - From below, clean up tile entities before ticking them
+         if (!this.tileEntityListUnload.isEmpty()) {
+-            this.tileEntityListTick.removeAll(this.tileEntityListUnload);
++            // Paper start - Use alternate implementation with faster contains
++            java.util.Set<TileEntity> toRemove = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++            toRemove.addAll(tileEntityListUnload);
++            this.tileEntityListTick.removeAll(toRemove);
++            // Paper end
+             //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
              this.tileEntityListUnload.clear();
          }
-         // CraftBukkit end
-+        this.removeTileEntitiesForRemovedChunks(); // Paper - Fix MC-117075: TE Unload Lag Spike
- 
-         // Spigot start
-         // Iterator iterator = this.tileEntityListTick.iterator();
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     public BlockPosition a(String s, BlockPosition blockposition, boolean flag) {
-         return null;
-     }
-+
-+    // Paper start - Fix MC-117075: TE Unload Lag Spike
-+    public void markTileEntitiesForRemoval(Chunk chunk) {
-+        if (!chunk.getTileEntities().isEmpty()) {
-+            long pos = net.minecraft.server.ChunkCoordIntPair.asLong(chunk.locX, chunk.locZ);
-+            this.tileEntitiesChunkToBeRemoved.add(pos);
-+        }
-+    }
-+
-+    private void removeTileEntitiesForRemovedChunks() {
-+        if (!this.tileEntitiesChunkToBeRemoved.isEmpty()) {
-+            java.util.function.Predicate<TileEntity> isInChunkOrNull = (tileEntity) -> {
-+                if (tileEntity == null) {
-+                    return true;
-+                }
-+
-+                BlockPosition tilePos = tileEntity.getPosition();
-+                long tileChunkPos = net.minecraft.server.ChunkCoordIntPair.asLong(tilePos.getX() >> 4, tilePos.getZ() >> 4);
-+                final boolean willRemove = this.tileEntitiesChunkToBeRemoved.contains(tileChunkPos);
-+                // Brought over from Chunk#removeEntities
-+                if (willRemove && tileEntity instanceof IInventory) {
-+                    for (org.bukkit.entity.HumanEntity human : Lists.newArrayList(((IInventory) tileEntity).getViewers())) {
-+                        if (human instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity) {
-+                            ((org.bukkit.craftbukkit.entity.CraftHumanEntity) human).getHandle().closeInventory();
-+                        }
-+                    }
-+                }
-+
-+                return willRemove;
-+            };
-+
-+            this.tileEntityListTick.removeIf(isInChunkOrNull);
-+            this.tileEntitiesChunkToBeRemoved.clear();
-+        }
-+    }
-+    // Paper end
- }
 --
