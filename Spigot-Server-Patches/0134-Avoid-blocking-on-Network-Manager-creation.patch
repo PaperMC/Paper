@@ -1,4 +1,4 @@
-From e2a08b3a94447cee6d73854e8f38eb3a6c9e8c1d Mon Sep 17 00:00:00 2001
+From f01c96105b693ab0badfd8a57529919bfb0ed6f0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 23:19:16 -0400
 Subject: [PATCH] Avoid blocking on Network Manager creation
@@ -6,13 +6,13 @@ Subject: [PATCH] Avoid blocking on Network Manager creation
 Per Paper issue 294
 
 diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
-index 43421649..447d54d9 100644
+index 567edb300..4a629aaa1 100644
 --- a/src/main/java/net/minecraft/server/ServerConnection.java
 +++ b/src/main/java/net/minecraft/server/ServerConnection.java
 @@ -60,6 +60,15 @@ public class ServerConnection {
      public volatile boolean d;
-     private final List<ChannelFuture> g = Collections.synchronizedList(Lists.<ChannelFuture>newArrayList());
-     private final List<NetworkManager> h = Collections.synchronizedList(Lists.<NetworkManager>newArrayList());
+     private final List<ChannelFuture> g = Collections.synchronizedList(Lists.newArrayList());
+     private final List<NetworkManager> h = Collections.synchronizedList(Lists.newArrayList());
 +    // Paper start - prevent blocking on adding a new network manager while the server is ticking
 +    private final List<NetworkManager> pending = Collections.synchronizedList(Lists.<NetworkManager>newArrayList());
 +    private void addPending() {
@@ -43,5 +43,5 @@ index 43421649..447d54d9 100644
              if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
              {
 -- 
-2.13.1.windows.2
+2.14.1
 
