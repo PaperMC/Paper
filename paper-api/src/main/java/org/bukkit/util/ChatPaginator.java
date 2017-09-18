@@ -93,7 +93,10 @@ public class ChatPaginator {
                     for (String partialWord : word.toString().split("(?<=\\G.{" + lineLength + "})")) {
                         lines.add(partialWord);
                     }
-                } else if (line.length() + word.length() - lineColorChars == lineLength) { // Line exactly the correct length...newline
+                } else if (line.length() + 1 + word.length() - lineColorChars == lineLength) { // Line exactly the correct length...newline
+                    if (line.length() > 0) {
+                        line.append(' ');
+                    }
                     line.append(word);
                     lines.add(line.toString());
                     line = new StringBuilder();

@@ -7,14 +7,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-/**
- */
 public class ChatPaginatorTest {
     @Test
     public void testWordWrap1() {
         String rawString = ChatColor.RED + "123456789 123456789 123456789";
         String[] lines = ChatPaginator.wordWrap(rawString, 19);
-        
+
         assertThat(lines.length, is(2));
         assertThat(lines[0], is(ChatColor.RED + "123456789 123456789"));
         assertThat(lines[1], is(ChatColor.RED.toString() + "123456789"));
@@ -128,12 +126,22 @@ public class ChatPaginatorTest {
         assertThat(lines.length, is(1));
         assertThat(lines[0], is(ChatColor.RED + "a a a " + ChatColor.BLUE + "a a"));
     }
-    
+
+    @Test
+    public void testWordWrap12() {
+        String rawString = "123 1 123";
+        String[] lines = ChatPaginator.wordWrap(rawString, 5);
+
+        assertThat(lines.length, is(2));
+        assertThat(lines[0], is(ChatColor.WHITE.toString() + "123 1"));
+        assertThat(lines[1], is(ChatColor.WHITE.toString() + "123"));
+    }
+
     @Test
     public void testPaginate1() {
         String rawString = "1234 123456789 123456789 123456789";
         ChatPaginator.ChatPage page = ChatPaginator.paginate(rawString, 1, 6, 2);
-        
+
         assertThat(page.getPageNumber(), is(1));
         assertThat(page.getTotalPages(), is(4));
         assertThat(page.getLines().length, is(2));
