@@ -93,8 +93,8 @@ public class CraftContainer extends Container {
             String type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
             PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
-            this.b.clear();
-            this.c.clear();
+            this.items.clear();
+            this.slots.clear();
             if (typeChanged) {
                 setupSlots(top, bottom, player.getHandle());
             }
@@ -172,18 +172,18 @@ public class CraftContainer extends Container {
         }
 
         if (delegate != null) {
-            this.b = delegate.b; // PAIL: items
-            this.c = delegate.c; // PAIL: slots
+            this.items = delegate.items;
+            this.slots = delegate.slots;
         }
     }
 
     @Override
-    public ItemStack b(EntityHuman entityhuman, int i) { // PAIL: shiftClick
-        return (delegate != null) ? delegate.b(entityhuman, i) : super.b(entityhuman, i);
+    public ItemStack shiftClick(EntityHuman entityhuman, int i) {
+        return (delegate != null) ? delegate.shiftClick(entityhuman, i) : super.shiftClick(entityhuman, i);
     }
 
     @Override
-    public boolean a(EntityHuman entity) { // PAIL: canUse
+    public boolean canUse(EntityHuman entity) {
         return true;
     }
 }
