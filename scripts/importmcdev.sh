@@ -60,6 +60,7 @@ import ControllerJump
 import DataBits
 import DataConverterMaterialId
 import DataInspectorBlockEntity
+import DataPalette
 import DefinedStructure
 import EntityLlama
 import EULA
@@ -75,6 +76,7 @@ import NBTTagCompound
 import NBTTagList
 import PersistentScoreboard
 import PacketPlayInUseEntity
+import PacketPlayOutMapChunk
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutScoreboardTeam
 import PacketPlayOutTitle
@@ -87,6 +89,7 @@ import PathfinderWater
 import PersistentVillage
 import PlayerConnectionUtils
 import RegionFile
+import RegistryBlockID
 import RemoteControlListener
 import TileEntityEnderChest
 import TileEntityLootable
