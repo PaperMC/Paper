@@ -286,7 +286,7 @@ public class SpigotConfig
     private static void playerSample()
     {
         playerSample = getInt( "settings.sample-count", 12 );
-        System.out.println( "Server Ping Player Sample Count: " + playerSample );
+        Bukkit.getLogger().log( Level.INFO, "Server Ping Player Sample Count: {0}", playerSample ); // Paper - Use logger
     }
 
     public static int playerShuffle;
