@@ -37,7 +37,7 @@ dependencies {
           all its classes to check if they are plugins.
           Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
+    implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
     log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
