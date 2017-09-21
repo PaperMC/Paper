@@ -12,6 +12,8 @@ java {
 val annotationsVersion = "24.1.0"
 val bungeeCordChatVersion = "1.20-R0.2"
 val adventureVersion = "4.17.0"
+val slf4jVersion = "2.0.9"
+val log4jVersion = "2.17.1"
 val apiAndDocs: Configuration by configurations.creating {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
@@ -61,6 +63,8 @@ dependencies {
     apiAndDocs("net.kyori:adventure-text-serializer-legacy")
     apiAndDocs("net.kyori:adventure-text-serializer-plain")
     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+    api("org.apache.logging.log4j:log4j-api:$log4jVersion")
+    api("org.slf4j:slf4j-api:$slf4jVersion")
 
     implementation("org.ow2.asm:asm:9.7.1")
     implementation("org.ow2.asm:asm-commons:9.7.1")
@@ -155,6 +159,8 @@ tasks.withType<Javadoc> {
         "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
+        "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         // Paper end
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3", // Paper
     )
