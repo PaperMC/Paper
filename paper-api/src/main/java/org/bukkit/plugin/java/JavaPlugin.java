@@ -47,7 +47,7 @@ public abstract class JavaPlugin extends PluginBase {
     private boolean naggable = true;
     private FileConfiguration newConfig = null;
     private File configFile = null;
-    private PluginLogger logger = null;
+    private Logger logger = null; // Paper - PluginLogger -> Logger
 
     public JavaPlugin() {
         // Paper start
@@ -304,8 +304,8 @@ public abstract class JavaPlugin extends PluginBase {
         this.dataFolder = dataFolder;
         this.classLoader = classLoader;
         this.configFile = new File(dataFolder, "config.yml");
-        this.logger = new PluginLogger(this);
         this.pluginMeta = configuration; // Paper
+        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName()); // Paper - Handle plugin prefix in implementation
     }
 
     /**
