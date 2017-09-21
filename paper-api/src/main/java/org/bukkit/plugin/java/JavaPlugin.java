@@ -292,10 +292,10 @@ public abstract class JavaPlugin extends PluginBase {
             .orElseThrow();
     }
     public final void init(@NotNull PluginLoader loader, @NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader) {
-        init(server, description, dataFolder, file, classLoader, description);
+        init(server, description, dataFolder, file, classLoader, description, com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description));
         this.pluginMeta = description;
     }
-    public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration) {
+    public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration, @NotNull Logger logger) {
     // Paper end
         this.loader = DummyPluginLoaderImplHolder.INSTANCE; // Paper
         this.server = server;
@@ -305,7 +305,7 @@ public abstract class JavaPlugin extends PluginBase {
         this.classLoader = classLoader;
         this.configFile = new File(dataFolder, "config.yml");
         this.pluginMeta = configuration; // Paper
-        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName()); // Paper - Handle plugin prefix in implementation
+        this.logger = logger; // Paper
     }
 
     /**

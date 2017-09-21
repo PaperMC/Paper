@@ -67,6 +67,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         this.url = file.toURI().toURL();
         this.libraryLoader = libraryLoader;
 
+        this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description); // Paper - Register logger early
         // Paper start
         this.dependencyContext = dependencyContext;
         this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this);
@@ -262,7 +263,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         pluginState = new IllegalStateException("Initial initialization");
         this.pluginInit = javaPlugin;
 
-        javaPlugin.init(null, org.bukkit.Bukkit.getServer(), description, dataFolder, file, this); // Paper
+        javaPlugin.init(org.bukkit.Bukkit.getServer(), description, dataFolder, file, this, description, this.logger); // Paper
     }
 
     // Paper start
