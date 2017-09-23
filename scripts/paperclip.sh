@@ -12,7 +12,7 @@ vanillajar="../Minecraft/$mcver/$mcver.jar"
     cd "$workdir/Paperclip"
     mvn clean package "-Dmcver=$mcver" "-Dpaperjar=$paperjar" "-Dvanillajar=$vanillajar"
 )
-cp "$workdir/Paperclip/target/paperclip-${mcver}.jar" "$basedir/paperclip.jar"
+cp "$workdir/Paperclip/assembly/target/paperclip-${mcver}.jar" "$basedir/paperclip.jar"
 
 echo ""
 echo ""
