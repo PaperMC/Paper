@@ -1,0 +1,63 @@
+From a308504bd0a184f8e568e063143a3df4ec10fefb Mon Sep 17 00:00:00 2001
+From: Minecrell <dev@minecrell.net>
+Date: Thu, 21 Sep 2017 19:41:20 +0200
+Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
+ logger
+
+Essentials uses a custom logger name ("Essentials") instead of the
+plugin logger. Log messages are redirected to the plugin logger by
+setting the parent of the "Essentials" logger to the plugin logger.
+
+With our changes, the plugin logger is now also called "Essentials",
+resulting in an infinite loop. Make sure plugins can't change the
+parent of the plugin logger to avoid this.
+
+diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
+new file mode 100644
+index 00000000..1c93cf30
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
+@@ -0,0 +1,27 @@
++package com.destroystokyo.paper.utils;
++
++import org.bukkit.plugin.PluginDescriptionFile;
++
++import java.util.logging.LogManager;
++import java.util.logging.Logger;
++
++/**
++ * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
++ */
++public class PaperPluginLogger extends Logger {
++
++    public PaperPluginLogger(PluginDescriptionFile description) {
++        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
++        LogManager.getLogManager().addLogger(this);
++    }
++
++    @Override
++    public void setParent(Logger parent) {
++        if (getParent() != null) {
++            warning("Ignoring attempt to change parent of plugin logger");
++        } else {
++            super.setParent(parent);
++        }
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index b2cbf9e4..7a95239a 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -59,6 +59,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         this.dataFolder = dataFolder;
+         this.file = file;
+ 
++        new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
++
+         try {
+             Class<?> jarClass;
+             try {
+-- 
+2.14.1
+
