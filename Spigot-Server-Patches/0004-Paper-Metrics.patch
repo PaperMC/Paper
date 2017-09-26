@@ -1,4 +1,4 @@
-From 4a515602fa2dcfb95515ce32f502a744ffa01bc9 Mon Sep 17 00:00:00 2001
+From 55825618b563b55754e6cb59645db8fb55391831 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 24 Mar 2017 23:56:01 -0500
 Subject: [PATCH] Paper Metrics
@@ -15,10 +15,10 @@ decisions on behalf of the project.
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
 new file mode 100644
-index 000000000..9389f9a8c
+index 000000000..e257d6b36
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
-@@ -0,0 +1,603 @@
+@@ -0,0 +1,627 @@
 +package com.destroystokyo.paper;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -37,6 +37,8 @@ index 000000000..9389f9a8c
 +import java.util.concurrent.Callable;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
 +import java.util.zip.GZIPOutputStream;
 +
 +/**
@@ -614,7 +616,29 @@ index 000000000..9389f9a8c
 +                    String javaVersion = System.getProperty("java.version");
 +                    Map<String, Integer> entry = new HashMap<>();
 +                    entry.put(javaVersion, 1);
-+                    map.put("Java " + javaVersion.substring(0, javaVersion.lastIndexOf('.')), entry);
++
++                    // http://openjdk.java.net/jeps/223
++                    // Java decided to change their versioning scheme and in doing so modified the java.version system
++                    // property to return $major[.$minor][.$secuity][-ea], as opposed to 1.$major.0_$identifier
++                    // we can handle pre-9 by checking if the "major" is equal to "1", otherwise, 9+
++                    String majorVersion = javaVersion.split("\\.")[0];
++                    String release;
++
++                    int indexOf = javaVersion.lastIndexOf('.');
++
++                    if (majorVersion.equals("1")) {
++                        release = "Java " + javaVersion.substring(0, indexOf);
++                    } else {
++                        // of course, it really wouldn't be all that simple if they didn't add a quirk, now would it
++                        // valid strings for the major may potentially include values such as -ea to deannotate a pre release
++                        Matcher versionMatcher = Pattern.compile("\\d+").matcher(majorVersion);
++                        if (versionMatcher.find()) {
++                            majorVersion = versionMatcher.group(0);
++                        }
++                        release = "Java " + majorVersion;
++                    }
++                    map.put(release, entry);
++
 +                    return map;
 +                }));
 +            }
@@ -647,7 +671,7 @@ index 3d8ee9ed3..5ab2cf6ee 100644
  
      static void readConfig(Class<?> clazz, Object instance) {
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 80068e285..c779e035c 100644
+index 1b5158c0d..9ce3e1365 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -83,6 +83,7 @@ public class SpigotConfig
@@ -667,5 +691,5 @@ index 80068e285..c779e035c 100644
  
      static void readConfig(Class<?> clazz, Object instance)
 -- 
-2.13.0
+2.14.1
 
