@@ -217,7 +217,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public Location getLocation() {
-        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity.yaw, entity.pitch);
+        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity instanceof EntityLiving ? entity.getHeadRotation() : entity.yaw, entity.pitch);
     }
 
     public Location getLocation(Location loc) {
@@ -226,7 +226,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             loc.setX(entity.locX);
             loc.setY(entity.locY);
             loc.setZ(entity.locZ);
-            loc.setYaw(entity.yaw);
+            loc.setYaw(entity instanceof EntityLiving ? entity.getHeadRotation() : entity.yaw);
             loc.setPitch(entity.pitch);
         }
 
