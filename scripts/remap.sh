@@ -27,7 +27,7 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
    shopt -s expand_aliases
    alias md5sum='md5 -r'
-   echo "Using an alias for md5sum on OS X"
+   echo "Using an alias for md5sum on macOS"
 fi
 
 checksum=$(md5sum "$jarpath.jar" | cut -d ' ' -f 1)
