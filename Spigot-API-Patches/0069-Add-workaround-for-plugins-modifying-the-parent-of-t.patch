@@ -1,4 +1,4 @@
-From a308504bd0a184f8e568e063143a3df4ec10fefb Mon Sep 17 00:00:00 2001
+From 3b173da428895d6a961b7d68065468338beef633 Mon Sep 17 00:00:00 2001
 From: Minecrell <dev@minecrell.net>
 Date: Thu, 21 Sep 2017 19:41:20 +0200
 Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
@@ -14,14 +14,15 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 00000000..1c93cf30
+index 00000000..6fcc4f2c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,31 @@
 +package com.destroystokyo.paper.utils;
 +
 +import org.bukkit.plugin.PluginDescriptionFile;
 +
++import java.util.logging.Level;
 +import java.util.logging.LogManager;
 +import java.util.logging.Logger;
 +
@@ -32,7 +33,9 @@ index 00000000..1c93cf30
 +
 +    public PaperPluginLogger(PluginDescriptionFile description) {
 +        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
-+        LogManager.getLogManager().addLogger(this);
++        if (!LogManager.getLogManager().addLogger(this)) {
++            this.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
++        }
 +    }
 +
 +    @Override
@@ -40,24 +43,68 @@ index 00000000..1c93cf30
 +        if (getParent() != null) {
 +            warning("Ignoring attempt to change parent of plugin logger");
 +        } else {
++            this.log(Level.FINE, "Setting plugin logger parent to {0}", parent);
 +            super.setParent(parent);
 +        }
 +    }
 +
 +}
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 0abad9ad..14dda205 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -50,7 +50,7 @@ public abstract class JavaPlugin extends PluginBase {
+     private boolean naggable = true;
+     private FileConfiguration newConfig = null;
+     private File configFile = null;
+-    private Logger logger = null; // Paper - PluginLogger -> Logger
++    Logger logger = null; // Paper - PluginLogger -> Logger, package-private
+ 
+     public JavaPlugin() {
+         final ClassLoader classLoader = this.getClass().getClassLoader();
+@@ -277,8 +277,11 @@ public abstract class JavaPlugin extends PluginBase {
+         this.dataFolder = dataFolder;
+         this.classLoader = classLoader;
+         this.configFile = new File(dataFolder, "config.yml");
+-        // Paper - Handle plugin prefix in implementation
+-        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName());
++        // Paper start
++        if (this.logger == null) {
++            this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(this.description);
++        }
++        // Paper end
+     }
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index b2cbf9e4..7a95239a 100644
+index b2cbf9e4..2a4587e8 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -59,6 +59,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -25,6 +25,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+     final JavaPlugin plugin;
+     private JavaPlugin pluginInit;
+     private IllegalStateException pluginState;
++    private java.util.logging.Logger logger; // Paper - add field
+ 
+     // Spigot Start
+     static
+@@ -59,6 +60,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          this.dataFolder = dataFolder;
          this.file = file;
  
-+        new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
++        this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
 +
          try {
              Class<?> jarClass;
              try {
+@@ -126,6 +129,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         pluginState = new IllegalStateException("Initial initialization");
+         this.pluginInit = javaPlugin;
+ 
++        javaPlugin.logger = this.logger; // Paper - set logger
+         javaPlugin.init(loader, loader.server, description, dataFolder, file, this);
+     }
+ }
 -- 
-2.14.1
+2.14.1.windows.1
 
