@@ -14,7 +14,7 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 00000000..1c93cf30
+index 00000000..6fcc4f2c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 @@ -0,0 +0,0 @@
@@ -22,6 +22,7 @@ index 00000000..1c93cf30
 +
 +import org.bukkit.plugin.PluginDescriptionFile;
 +
++import java.util.logging.Level;
 +import java.util.logging.LogManager;
 +import java.util.logging.Logger;
 +
@@ -32,7 +33,9 @@ index 00000000..1c93cf30
 +
 +    public PaperPluginLogger(PluginDescriptionFile description) {
 +        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
-+        LogManager.getLogManager().addLogger(this);
++        if (!LogManager.getLogManager().addLogger(this)) {
++            this.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
++        }
 +    }
 +
 +    @Override
@@ -40,22 +43,66 @@ index 00000000..1c93cf30
 +        if (getParent() != null) {
 +            warning("Ignoring attempt to change parent of plugin logger");
 +        } else {
++            this.log(Level.FINE, "Setting plugin logger parent to {0}", parent);
 +            super.setParent(parent);
 +        }
 +    }
 +
 +}
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 0abad9ad..14dda205 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -0,0 +0,0 @@ public abstract class JavaPlugin extends PluginBase {
+     private boolean naggable = true;
+     private FileConfiguration newConfig = null;
+     private File configFile = null;
+-    private Logger logger = null; // Paper - PluginLogger -> Logger
++    Logger logger = null; // Paper - PluginLogger -> Logger, package-private
+ 
+     public JavaPlugin() {
+         final ClassLoader classLoader = this.getClass().getClassLoader();
+@@ -0,0 +0,0 @@ public abstract class JavaPlugin extends PluginBase {
+         this.dataFolder = dataFolder;
+         this.classLoader = classLoader;
+         this.configFile = new File(dataFolder, "config.yml");
+-        // Paper - Handle plugin prefix in implementation
+-        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName());
++        // Paper start
++        if (this.logger == null) {
++            this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(this.description);
++        }
++        // Paper end
+     }
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index b2cbf9e4..7a95239a 100644
+index b2cbf9e4..2a4587e8 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+     final JavaPlugin plugin;
+     private JavaPlugin pluginInit;
+     private IllegalStateException pluginState;
++    private java.util.logging.Logger logger; // Paper - add field
+ 
+     // Spigot Start
+     static
 @@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          this.dataFolder = dataFolder;
          this.file = file;
  
-+        new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
++        this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
 +
          try {
              Class<?> jarClass;
              try {
+@@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         pluginState = new IllegalStateException("Initial initialization");
+         this.pluginInit = javaPlugin;
+ 
++        javaPlugin.logger = this.logger; // Paper - set logger
+         javaPlugin.init(loader, loader.server, description, dataFolder, file, this);
+     }
+ }
 --
