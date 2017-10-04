@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 4 Oct 2017 04:19:51 +0100
+Subject: [PATCH] Revert "Allow Disabling of Random Lighting Updates"
+
+This patch by Spigot allows the disabling of chunks to be lit as they're ticked by server
+operators, the side effects of this is that there will potentially be chunks which are unlit
+with an invalid skymaps, this could have potential implications on plugins which care about
+this for checking the highest block in a region, as well as serves to just cause issues with
+invalid lighting in chunks which isn't accurately fixed.
+
+There is inherently nothing random about these light updates, they're there to ensure that
+the worlds lightmap is properly updated and disabling them only serves to cause sporadic
+lighting issues in the world.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ed5959559..d6e6f4d3e 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -0,0 +0,0 @@ public class Chunk {
+         }
+ 
+         this.r = true;
+-        if (!this.lit && this.done && this.world.spigotConfig.randomLightUpdates) { // Spigot - also use random light updates setting to determine if we should relight
++        if (!this.lit && this.done) {
+             this.o();
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index c03be509f..4318fe871 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+     protected void i() {
+         this.methodProfiler.a("playerCheckLight");
+-        if (spigotConfig.randomLightUpdates && !this.players.isEmpty()) { // Spigot
++        if (!this.players.isEmpty()) {
+             int i = this.random.nextInt(this.players.size());
+             EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+             int j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 0b66f5e35..5234be42d 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -0,0 +0,0 @@ public class SpigotWorldConfig
+         hopperAmount = getInt( "hopper-amount", 1 );
+         log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
+     }
+-
+-    public boolean randomLightUpdates;
+-    private void lightUpdates()
+-    {
+-        randomLightUpdates = getBoolean( "random-light-updates", false );
+-        log( "Random Lighting Updates: " + randomLightUpdates );
+-    }
+-
++    
+     public boolean saveStructureInfo;
+     private void structureInfo()
+     {
+--
