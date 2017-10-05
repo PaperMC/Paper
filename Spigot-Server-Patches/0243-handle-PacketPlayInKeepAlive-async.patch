@@ -1,0 +1,41 @@
+From ba1fd1fc65bec591a26a28ec246bfc10b3c5a438 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 5 Oct 2017 01:54:07 +0100
+Subject: [PATCH] handle PacketPlayInKeepAlive async
+
+In 1.12.2, Mojang moved the processing of PacketPlayInKeepAlive off the main
+thread, while entirely correct for the server, this causes issues with
+plugins which are expecting the PlayerQuitEvent on the main thread.
+
+In order to counteract some bad behavior, we will post handling of the
+disconnection to the main thread, but leave the actual processing of the packet
+on the main thread.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index d8f9a093b..eac4beb56 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2225,14 +2225,18 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     }
+ 
+     public void a(PacketPlayInKeepAlive packetplayinkeepalive) {
+-        PlayerConnectionUtils.ensureMainThread(packetplayinkeepalive, this, this.player.x()); // CraftBukkit
++        //PlayerConnectionUtils.ensureMainThread(packetplayinkeepalive, this, this.player.x()); // CraftBukkit // Paper - Keep this on the main thread
+         if (this.g && packetplayinkeepalive.a() == this.h) {
+             int i = (int) (this.d() - this.f);
+ 
+             this.player.ping = (this.player.ping * 3 + i) / 4;
+             this.g = false;
+         } else if (!this.player.getName().equals(this.minecraftServer.Q())) {
+-            this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
++            // Paper start - This needs to be handled on the main thread for plugins
++            minecraftServer.postToMainThread(() -> {
++                    this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
++            });
++            // Paper end
+         }
+ 
+     }
+-- 
+2.14.2
+
