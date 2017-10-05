@@ -2525,14 +2525,18 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
     @Override
     public void a(PacketPlayInKeepAlive packetplayinkeepalive) {
-        PlayerConnectionUtils.ensureMainThread(packetplayinkeepalive, this, this.player.getWorldServer()); // CraftBukkit
+        //PlayerConnectionUtils.ensureMainThread(packetplayinkeepalive, this, this.player.getWorldServer()); // CraftBukkit // Paper - This shouldn't be on the main thread
         if (this.awaitingKeepAlive && packetplayinkeepalive.b() == this.h) {
             int i = (int) (SystemUtils.getMonotonicMillis() - this.lastKeepAlive);
 
             this.player.ping = (this.player.ping * 3 + i) / 4;
             this.awaitingKeepAlive = false;
         } else if (!this.isExemptPlayer()) {
+            // Paper start - This needs to be handled on the main thread for plugins
+            minecraftServer.scheduleOnMain(() -> {
             this.disconnect(new ChatMessage("disconnect.timeout"));
+            });
+            // Paper end
         }
 
     }
