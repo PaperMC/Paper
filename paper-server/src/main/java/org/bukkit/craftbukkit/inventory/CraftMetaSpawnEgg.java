@@ -6,6 +6,7 @@ import java.util.Map;
 import net.minecraft.server.DataConverterTypes;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -63,6 +64,13 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             if (entityTag.hasKey(ENTITY_ID.NBT)) {
                 this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getKey());
             }
+        }
+    }
+
+    @Override
+    void serializeInternal(Map<String, NBTBase> internalTags) {
+        if (entityTag != null) {
+            internalTags.put(ENTITY_TAG.NBT, entityTag);
         }
     }
 
