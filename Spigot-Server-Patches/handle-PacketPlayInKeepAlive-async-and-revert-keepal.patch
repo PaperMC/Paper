@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Thu, 5 Oct 2017 01:54:07 +0100
-Subject: [PATCH] handle PacketPlayInKeepAlive async
+Subject: [PATCH] handle PacketPlayInKeepAlive async and revert keepalive limit
 
 In 1.12.2, Mojang moved the processing of PacketPlayInKeepAlive off the main
 thread, while entirely correct for the server, this causes issues with
@@ -11,10 +11,23 @@ In order to counteract some bad behavior, we will post handling of the
 disconnection to the main thread, but leave the actual processing of the packet
 off the main thread.
 
+We also revert the bump on the servers built in keepalive back to 15 seconds,
+this solves a read timeout in scenarios where the client isn't sending data to
+the server, e.g. spectating an entity.
+
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 36af72387..14815ed4d 100644
+index 36af72387..b0ed57ba1 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         this.minecraftServer.methodProfiler.a("keepAlive");
+         long i = this.d();
+ 
+-        if (i - this.f >= 30000L) { // CraftBukkit
++        if (i - this.f >= 15000L) { // CraftBukkit // Paper - revert to 15
+             if (this.g) {
+                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
+             } else {
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
      }
  
