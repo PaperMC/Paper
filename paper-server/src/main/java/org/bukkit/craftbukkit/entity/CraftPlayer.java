@@ -341,6 +341,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().transferCookieConnection.sendPacket(new ClientboundTransferPacket(host, port));
     }
 
+    // Paper start - Implement NetworkClient
+    @Override
+    public int getProtocolVersion() {
+        if (getHandle().connection == null) return -1;
+        return getHandle().connection.connection.protocolVersion;
+    }
+
+    @Override
+    public InetSocketAddress getVirtualHost() {
+        if (getHandle().connection == null) return null;
+        return getHandle().connection.connection.virtualHost;
+    }
+    // Paper end
+
     @Override
     public double getEyeHeight(boolean ignorePose) {
         if (ignorePose) {
