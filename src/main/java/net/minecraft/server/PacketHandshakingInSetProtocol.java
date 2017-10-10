@@ -35,6 +35,7 @@ public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingI
         return this.d;
     }
 
+    public int getProtocolVersion() { return c(); } // Paper - OBFHELPER
     public int c() {
         return this.a;
     }

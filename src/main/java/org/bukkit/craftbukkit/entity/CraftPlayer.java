@@ -188,6 +188,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
+    // Paper start - Implement NetworkClient
+    @Override
+    public int getProtocolVersion() {
+        if (getHandle().playerConnection == null) return -1;
+        return getHandle().playerConnection.networkManager.protocolVersion;
+    }
+
+    @Override
+    public InetSocketAddress getVirtualHost() {
+        if (getHandle().playerConnection == null) return null;
+        return getHandle().playerConnection.networkManager.virtualHost;
+    }
+    // Paper end
+
     @Override
     public double getEyeHeight(boolean ignorePose) {
         if (ignorePose) {
