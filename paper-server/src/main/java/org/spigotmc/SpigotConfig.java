@@ -285,7 +285,7 @@ public class SpigotConfig
     public static int playerSample;
     private static void playerSample()
     {
-        SpigotConfig.playerSample = SpigotConfig.getInt( "settings.sample-count", 12 );
+        SpigotConfig.playerSample = Math.max( SpigotConfig.getInt( "settings.sample-count", 12 ), 0 ); // Paper - Avoid negative counts
         Bukkit.getLogger().log( Level.INFO, "Server Ping Player Sample Count: {0}", playerSample ); // Paper - Use logger
     }
 
