@@ -248,9 +248,11 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support removing players
+     * @deprecated the Iterable interface will be removed at some point
      */
     @NotNull
     @Override
+    @Deprecated(forRemoval = true, since = "1.20.6")
     public Iterator<Player> iterator() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }

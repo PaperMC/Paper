@@ -18,4 +18,9 @@ public interface CachedServerIcon {
     @Nullable
     public String getData(); // Paper
 
+    // Paper start
+    default boolean isEmpty() {
+        return getData() == null;
+    }
+    // Paper end
 }
