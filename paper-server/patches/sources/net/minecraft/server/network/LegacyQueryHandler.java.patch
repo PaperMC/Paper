@@ -1,9 +1,36 @@
 --- a/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/net/minecraft/server/network/LegacyQueryHandler.java
-@@ -35,10 +35,11 @@
+@@ -15,6 +15,7 @@
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final ServerInfo server;
++    private ByteBuf buf; // Paper
+ 
+     public LegacyQueryHandler(ServerInfo server) {
+         this.server = server;
+@@ -23,6 +24,16 @@
+     public void channelRead(ChannelHandlerContext channelhandlercontext, Object object) {
+         ByteBuf bytebuf = (ByteBuf) object;
+ 
++        // Paper start - Make legacy ping handler more reliable
++        if (this.buf != null) {
++            try {
++                readLegacy1_6(channelhandlercontext, bytebuf);
++            } finally {
++                bytebuf.release();
++            }
++            return;
++        }
++        // Paper end
+         bytebuf.markReaderIndex();
+         boolean flag = true;
+ 
+@@ -34,11 +45,12 @@
+ 
                  SocketAddress socketaddress = channelhandlercontext.channel().remoteAddress();
                  int i = bytebuf.readableBytes();
-                 String s;
+-                String s;
++                String s = null; // Paper
 +                org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(socketaddress, this.server.getMotd(), this.server.getPlayerCount(), this.server.getMaxPlayers()); // CraftBukkit
  
                  if (i == 0) {
@@ -13,33 +40,140 @@
                      LegacyQueryHandler.sendFlushAndClose(channelhandlercontext, LegacyQueryHandler.createLegacyDisconnectPacket(channelhandlercontext.alloc(), s));
                  } else {
                      if (bytebuf.readUnsignedByte() != 1) {
-@@ -55,7 +56,7 @@
+@@ -46,16 +58,24 @@
+                     }
+ 
+                     if (bytebuf.isReadable()) {
+-                        if (!LegacyQueryHandler.readCustomPayloadPacket(bytebuf)) {
+-                            return;
++                        // Paper start - Replace with improved version below
++                        if (bytebuf.readUnsignedByte() != 250) {
++                            s = this.readLegacy1_6(channelhandlercontext, bytebuf);
++                            if (s == null) {
++                                return;
++                            }
+                         }
+-
+-                        LegacyQueryHandler.LOGGER.debug("Ping: (1.6) from {}", socketaddress);
++                        // if (!LegacyQueryHandler.readCustomPayloadPacket(bytebuf)) {
++                        //     return;
++                        // }
++                        //
++                        // LegacyQueryHandler.LOGGER.debug("Ping: (1.6) from {}", socketaddress);
++                        // Paper end
+                     } else {
                          LegacyQueryHandler.LOGGER.debug("Ping: (1.4-1.5.x) from {}", socketaddress);
                      }
  
 -                    s = LegacyQueryHandler.createVersion1Response(this.server);
-+                    s = LegacyQueryHandler.createVersion1Response(this.server, event); // CraftBukkit
++                    if (s == null) s = LegacyQueryHandler.createVersion1Response(this.server, event); // CraftBukkit // Paper
                      LegacyQueryHandler.sendFlushAndClose(channelhandlercontext, LegacyQueryHandler.createLegacyDisconnectPacket(channelhandlercontext.alloc(), s));
                  }
  
-@@ -106,12 +107,16 @@
+@@ -106,14 +126,102 @@
          }
      }
  
 -    private static String createVersion0Response(ServerInfo server) {
 -        return String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
-+    // CraftBukkit start
-+    private static String createVersion0Response(ServerInfo serverinfo, org.bukkit.event.server.ServerListPingEvent event) {
-+        return String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers());
-+        // CraftBukkit end
++    // Paper start
++    private static String readLegacyString(ByteBuf buf) {
++        int size = buf.readShort() * Character.BYTES;
++        if (!buf.isReadable(size)) {
++            return null;
++        }
++
++        String result = buf.toString(buf.readerIndex(), size, java.nio.charset.StandardCharsets.UTF_16BE);
++        buf.skipBytes(size); // toString doesn't increase readerIndex automatically
++        return result;
      }
  
 -    private static String createVersion1Response(ServerInfo server) {
 -        return String.format(Locale.ROOT, "\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, server.getServerVersion(), server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
++    private String readLegacy1_6(ChannelHandlerContext ctx, ByteBuf part) {
++        ByteBuf buf = this.buf;
++
++        if (buf == null) {
++            this.buf = buf = ctx.alloc().buffer();
++            buf.markReaderIndex();
++        } else {
++            buf.resetReaderIndex();
++        }
++
++        buf.writeBytes(part);
++
++        if (!buf.isReadable(Short.BYTES + Short.BYTES + Byte.BYTES + Short.BYTES + Integer.BYTES)) {
++            return null;
++        }
++
++        String s = readLegacyString(buf);
++        if (s == null) {
++            return null;
++        }
++
++        if (!s.equals("MC|PingHost")) {
++            removeHandler(ctx);
++            return null;
++        }
++
++        if (!buf.isReadable(Short.BYTES) || !buf.isReadable(buf.readShort())) {
++            return null;
++        }
++
++        net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
++        int protocolVersion = buf.readByte();
++        String host = readLegacyString(buf);
++        if (host == null) {
++            removeHandler(ctx);
++            return null;
++        }
++        int port = buf.readInt();
++
++        if (buf.isReadable()) {
++            removeHandler(ctx);
++            return null;
++        }
++
++        buf.release();
++        this.buf = null;
++
++        LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
++
++        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
++            Byte.MAX_VALUE, server.getServerVersion(), server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
++        return response;
+     }
+ 
++    private void removeHandler(ChannelHandlerContext ctx) {
++        ByteBuf buf = this.buf;
++        this.buf = null;
++
++        buf.resetReaderIndex();
++        ctx.pipeline().remove(this);
++        ctx.fireChannelRead(buf);
++    }
++
++    @Override
++    public void handlerRemoved(ChannelHandlerContext ctx) {
++        if (this.buf != null) {
++            this.buf.release();
++            this.buf = null;
++        }
++    }
++    // Paper end
++
++    // CraftBukkit start
++    private static String createVersion0Response(ServerInfo serverinfo, org.bukkit.event.server.ServerListPingEvent event) {
++        return String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers());
++        // CraftBukkit end
++    }
++
 +    // CraftBukkit start
 +    private static String createVersion1Response(ServerInfo serverinfo, org.bukkit.event.server.ServerListPingEvent event) {
 +        return String.format(Locale.ROOT, "\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, serverinfo.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers());
 +        // CraftBukkit end
-     }
- 
++    }
++
      private static void sendFlushAndClose(ChannelHandlerContext context, ByteBuf buf) {
+         context.pipeline().firstContext().writeAndFlush(buf).addListener(ChannelFutureListener.CLOSE);
+     }
