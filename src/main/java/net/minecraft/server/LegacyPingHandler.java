@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.network.PaperLegacyStatusClient;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -45,12 +47,19 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
             MinecraftServer minecraftserver = this.b.d();
             int i = bytebuf.readableBytes();
             String s;
-            org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers()); // CraftBukkit
+            //org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers()); // CraftBukkit // Paper
+            com.destroystokyo.paper.event.server.PaperServerListPingEvent event; // Paper
 
             switch (i) {
                 case 0:
                     LegacyPingHandler.LOGGER.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
-                    s = String.format("%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
+                // Paper start - Call PaperServerListPingEvent and use results
+                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
+                if (event == null) {
+                    channelhandlercontext.close();
+                    break;
+                }
+                s = String.format("%s\u00a7%d\u00a7%d", PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
                     this.a(channelhandlercontext, this.a(s));
                     break;
                 case 1:
@@ -59,7 +68,14 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     LegacyPingHandler.LOGGER.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
-                    s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
+                // Paper start - Call PaperServerListPingEvent and use results
+                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 127, null); // Paper
+                if (event == null) {
+                    channelhandlercontext.close();
+                    break;
+                }
+                s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { event.getProtocolVersion(), minecraftserver.getVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()}); // CraftBukkit
+                // Paper end
                     this.a(channelhandlercontext, this.a(s));
                     break;
                 default:
@@ -169,8 +185,16 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
 
         LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
 
-        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
-                Byte.MAX_VALUE, server.getVersion(), server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
+        InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
+        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = PaperLegacyStatusClient.processRequest(
+                server, (InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
+        if (event == null) {
+            ctx.close();
+            return;
+        }
+
+        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(),
+            PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
         this.a(ctx, this.a(response));
     }
 
