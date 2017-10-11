@@ -29,6 +29,7 @@ public class ServerPing {
         this.a = ichatbasecomponent;
     }
 
+    public ServerPingPlayerSample getPlayers() { return b(); } // Paper - OBFHELPER
     public ServerPing.ServerPingPlayerSample b() {
         return this.b;
     }
@@ -160,10 +161,12 @@ public class ServerPing {
             return this.b;
         }
 
+        public GameProfile[] getSample() { return c(); } // Paper - OBFHELPER
         public GameProfile[] c() {
             return this.c;
         }
 
+        public void setSample(GameProfile[] sample) { a(sample); } // Paper - OBFHELPER
         public void a(GameProfile[] agameprofile) {
             this.c = agameprofile;
         }

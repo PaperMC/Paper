@@ -35,6 +35,8 @@ public class PacketStatusListener implements PacketStatusInListener {
             this.networkManager.close(PacketStatusListener.a);
         } else {
             this.d = true;
+            // Paper start - Replace everything
+            /*
             // CraftBukkit start
             // this.networkManager.sendPacket(new PacketStatusOutServerInfo(this.minecraftServer.getServerPing()));
             final Object[] players = minecraftServer.getPlayerList().players.toArray();
@@ -130,6 +132,9 @@ public class PacketStatusListener implements PacketStatusInListener {
             ping.setServerInfo(new ServerPing.ServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), version));
 
             this.networkManager.sendPacket(new PacketStatusOutServerInfo(ping));
+            */
+            com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(this.minecraftServer, this.networkManager);
+            // Paper end
         }
         // CraftBukkit end
     }
