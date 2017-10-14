@@ -70,7 +70,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private final MinecraftServer minecraftServer;
     public EntityPlayer player;
     private int e;
-    private long lastKeepAlive; private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
+    private long lastKeepAlive = SystemUtils.getMonotonicMillis(); private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
     private boolean awaitingKeepAlive; private void setPendingPing(boolean isPending) { this.awaitingKeepAlive = isPending;}; private boolean isPendingPing() { return this.awaitingKeepAlive;}; // Paper - OBFHELPER
     private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
     // CraftBukkit start - multithreaded fields
@@ -101,6 +101,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private int E;
     private int receivedMovePackets;
     private int processedMovePackets;
+    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 
     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -182,18 +183,25 @@ public class PlayerConnection implements PacketListenerPlayIn {
         }
 
         this.minecraftServer.getMethodProfiler().enter("keepAlive");
-        long i = SystemUtils.getMonotonicMillis();
+        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
+        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
+        long currentTime = SystemUtils.getMonotonicMillis();
+        long elapsedTime = currentTime - this.getLastPing();
 
-        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
-            if (this.awaitingKeepAlive) {
-                this.disconnect(new ChatMessage("disconnect.timeout"));
-            } else {
-                this.awaitingKeepAlive = true;
-                this.lastKeepAlive = i;
-                this.h = i;
-                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
+        if (this.isPendingPing()) {
+            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
+                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
+                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
+            }
+        } else {
+            if (elapsedTime >= 15000L) { // 15 seconds
+                this.setPendingPing(true);
+                this.setLastPing(currentTime);
+                this.setKeepAliveID(currentTime);
+                this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
             }
         }
+        // Paper end
 
         this.minecraftServer.getMethodProfiler().exit();
         // CraftBukkit start
