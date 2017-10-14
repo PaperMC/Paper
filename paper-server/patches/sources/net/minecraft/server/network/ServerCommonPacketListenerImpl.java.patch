@@ -14,7 +14,7 @@
  import net.minecraft.network.DisconnectionDetails;
  import net.minecraft.network.PacketSendListener;
  import net.minecraft.network.chat.Component;
-@@ -22,22 +24,56 @@
+@@ -22,39 +24,87 @@
  import net.minecraft.network.protocol.common.ServerboundPongPacket;
  import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
  import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
@@ -71,13 +71,16 @@
 -    protected final Connection connection;
 +    public final Connection connection; // Paper
      private final boolean transferred;
-     private long keepAliveTime;
+-    private long keepAliveTime;
++    private long keepAliveTime = Util.getMillis(); // Paper
      private boolean keepAlivePending;
-@@ -46,15 +82,28 @@
+     private long keepAliveChallenge;
+     private long closedListenerTime;
      private boolean closed = false;
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
++    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
 -    public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie clientData) {
 -        this.server = server;
@@ -107,7 +110,7 @@
      private void close() {
          if (!this.closed) {
              this.closedListenerTime = Util.getMillis();
-@@ -80,13 +129,18 @@
+@@ -80,13 +130,18 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -127,7 +130,7 @@
          }
  
      }
-@@ -94,9 +148,57 @@
+@@ -94,8 +149,56 @@
      @Override
      public void handlePong(ServerboundPongPacket packet) {}
  
@@ -144,7 +147,7 @@
 +        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
 +        ResourceLocation identifier = packet.payload().type().id();
 +        ByteBuf payload = ((DiscardedPayload)packet.payload()).data();
- 
++
 +        if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_REGISTER)) {
 +            try {
 +                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
@@ -182,11 +185,10 @@
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
-         PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
-@@ -104,11 +206,34 @@
+@@ -104,28 +207,55 @@
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
              this.disconnect((Component) Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -221,16 +223,34 @@
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
      }
  
-@@ -116,7 +241,7 @@
+     protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
-         long i = Util.getMillis();
+-        long i = Util.getMillis();
++        // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
++        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
++        long currentTime = Util.getMillis();
++        long elapsedTime = currentTime - this.keepAliveTime;
  
 -        if (!this.isSingleplayerOwner() && i - this.keepAliveTime >= 15000L) {
-+        if (!this.isSingleplayerOwner() && i - this.keepAliveTime >= 25000L) { // CraftBukkit
-             if (this.keepAlivePending) {
+-            if (this.keepAlivePending) {
++        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // Paper - use vanilla's 15000L between keep alive packets
++            if (this.keepAlivePending && !this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // Paper - check keepalive limit, don't fire if already disconnected
                  this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
-             } else if (this.checkIfClosed(i)) {
-@@ -156,6 +281,14 @@
+-            } else if (this.checkIfClosed(i)) {
++            } else if (this.checkIfClosed(currentTime)) { // Paper
+                 this.keepAlivePending = true;
+-                this.keepAliveTime = i;
+-                this.keepAliveChallenge = i;
++                this.keepAliveTime = currentTime;
++                this.keepAliveChallenge = currentTime;
+                 this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
+             }
+         }
++        // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
+ 
+         Profiler.get().pop();
+     }
+@@ -156,6 +286,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -245,7 +265,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -175,20 +308,72 @@
+@@ -175,20 +313,72 @@
          }
      }
  
