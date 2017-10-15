@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Thu, 5 Oct 2017 01:54:07 +0100
-Subject: [PATCH] handle PacketPlayInKeepAlive async and revert keepalive limit
+Subject: [PATCH] handle PacketPlayInKeepAlive async
 
 In 1.12.2, Mojang moved the processing of PacketPlayInKeepAlive off the main
 thread, while entirely correct for the server, this causes issues with
@@ -11,24 +11,13 @@ In order to counteract some bad behavior, we will post handling of the
 disconnection to the main thread, but leave the actual processing of the packet
 off the main thread.
 
-We also revert the bump on the servers built in keepalive back to 15 seconds,
-this solves a read timeout in scenarios where the client isn't sending data to
-the server, e.g. spectating an entity.
+also adding some additional logging in order to help work out what is causing
+random disconnections for clients.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 69ed84af9..b18bf4245 100644
+index a07904143..26fbb30f9 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
- 
-         this.minecraftServer.methodProfiler.a("keepAlive");
-         long i = this.d();
--
--        if (i - this.f >= 25000L) { // CraftBukkit
-+        if (i - this.f >= 15000L) { // CraftBukkit // Paper - revert to 15
-             if (this.g) {
-                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
-             } else {
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
      }
  
@@ -43,6 +32,8 @@ index 69ed84af9..b18bf4245 100644
          } else if (!this.player.getName().equals(this.minecraftServer.Q())) {
 -            this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
 +            // Paper start - This needs to be handled on the main thread for plugins
++            PlayerConnection.LOGGER.warn("{} sent an invalid keepalive! pending keepalive: {} got id: {} expected id: {}",
++                    this.player.getName(), this.isPendingPing(), packetplayinkeepalive.a(), this.getKeepAliveID());
 +            minecraftServer.postToMainThread(() -> {
 +                    this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
 +            });
