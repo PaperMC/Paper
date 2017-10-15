@@ -6,44 +6,73 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 000000000..5cdf4bbf4
+index 00000000..ecd1c65a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper;
 +
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.WorldServer;
++import com.google.common.collect.Maps;
++import net.minecraft.server.*;
++import org.apache.commons.lang3.tuple.MutablePair;
++import org.apache.commons.lang3.tuple.Pair;
++import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
++import org.bukkit.Location;
++import org.bukkit.World;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.entity.Player;
 +
 +import java.io.File;
 +import java.time.LocalDateTime;
 +import java.time.format.DateTimeFormatter;
++import java.util.*;
++import java.util.stream.Collectors;
 +
 +public class PaperCommand extends Command {
 +
 +    public PaperCommand(String name) {
 +        super(name);
 +        this.description = "Paper related commands";
-+        this.usageMessage = "/paper [heap | reload | version]";
++        this.usageMessage = "/paper [heap | entity | reload | version]";
 +        this.setPermission("bukkit.command.paper");
++    }
++
++    @Override
++    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
++        if (args.length <= 1)
++            return CommandAbstract.getListMatchingLast(args, "heap", "entity", "reload", "version");
++
++        switch (args[0].toLowerCase(Locale.ENGLISH))
++        {
++            case "entity":
++                if (args.length == 2)
++                    return CommandAbstract.getListMatchingLast(args, "help", "list");
++                if (args.length == 3)
++                    return CommandAbstract.getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
++                break;
++        }
++        return Collections.emptyList();
 +    }
 +
 +    @Override
 +    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
 +        if (!testPermission(sender)) return true;
 +
-+        if (args.length != 1) {
++        if (args.length == 0) {
 +            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
 +            return false;
 +        }
 +
-+        switch (args[0])  {
++        switch (args[0].toLowerCase(Locale.ENGLISH))  {
 +            case "heap":
 +                dumpHeap(sender);
++                break;
++            case "entity":
++                listEntities(sender, args);
 +                break;
 +            case "reload":
 +                doReload(sender);
@@ -58,6 +87,95 @@ index 000000000..5cdf4bbf4
 +        }
 +
 +        return true;
++    }
++
++    /*
++     * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
++     */
++    private void listEntities(CommandSender sender, String[] args) {
++        if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
++            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
++            return;
++        }
++
++        switch (args[1].toLowerCase(Locale.ENGLISH)) {
++            case "list":
++                String filter = "*";
++                if (args.length > 2) {
++                    if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
++                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
++                        return;
++                    }
++                    filter = args[2];
++                }
++                final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
++                Set<MinecraftKey> names = EntityTypes.getEntityNameList().stream()
++                        .filter(n -> n.toString().matches(cleanfilter))
++                        .collect(Collectors.toSet());
++
++                if (names.isEmpty()) {
++                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
++                    return;
++                }
++
++                String worldName;
++                if (args.length > 3) {
++                    worldName = args[3];
++                } else if (sender instanceof Player) {
++                    worldName = ((Player) sender).getWorld().getName();
++                } else {
++                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
++                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
++                    return;
++                }
++
++                Map<MinecraftKey, MutablePair<Integer, Map<ChunkCoordIntPair, Integer>>> list = Maps.newHashMap();
++                World bukkitWorld = Bukkit.getWorld(worldName);
++                if (bukkitWorld == null) {
++                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
++                    return;
++                }
++                WorldServer world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
++
++                List<Entity> entities = world.entityList;
++                entities.forEach(e -> {
++                    MinecraftKey key = EntityTypes.getKey(e);
++
++                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
++                    ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
++                    info.left++;
++                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                });
++
++                if (names.size() == 1) {
++                    MinecraftKey name = names.iterator().next();
++                    Pair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.get(name);
++                    if (info == null) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++                    sender.sendMessage("Entity: " + name + " Total: " + info.getLeft());
++                    info.getRight().entrySet().stream()
++                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z));
++                } else {
++                    List<Pair<MinecraftKey, Integer>> info = list.entrySet().stream()
++                            .filter(e -> names.contains(e.getKey()))
++                            .map(e -> Pair.of(e.getKey(), e.getValue().left))
++                            .sorted((a, b) -> !a.getRight().equals(b.getRight()) ? b.getRight() - a.getRight() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .collect(Collectors.toList());
++
++                    if (info == null || info.size() == 0) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++
++                    int count = info.stream().mapToInt(Pair::getRight).sum();
++                    sender.sendMessage("Total: " + count);
++                    info.forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey()));
++                }
++                break;
++        }
 +    }
 +
 +    private void dumpHeap(CommandSender sender) {
@@ -87,7 +205,7 @@ index 000000000..5cdf4bbf4
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 000000000..3d8ee9ed3
+index 00000000..3d8ee9ed
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@
@@ -266,7 +384,7 @@ index 000000000..3d8ee9ed3
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 000000000..621bf7051
+index 00000000..621bf705
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@
@@ -336,8 +454,20 @@ index 000000000..621bf7051
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/CommandAbstract.java b/src/main/java/net/minecraft/server/CommandAbstract.java
+index 76501e29..76bf04f5 100644
+--- a/src/main/java/net/minecraft/server/CommandAbstract.java
++++ b/src/main/java/net/minecraft/server/CommandAbstract.java
+@@ -0,0 +0,0 @@ public abstract class CommandAbstract implements ICommand {
+         return s1.regionMatches(true, 0, s, 0, s.length());
+     }
+ 
++    public static List<String> getListMatchingLast(String[] args, String... matches) { return a(args, matches); } // Paper - OBFHELPER
+     public static List<String> a(String[] astring, String... astring1) {
+         return a(astring, (Collection) Arrays.asList(astring1));
+     }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 46b264227..6f63a5a1d 100644
+index 8c5361d6..e1cb96a8 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -351,8 +481,45 @@ index 46b264227..6f63a5a1d 100644
  
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index c2da96ea..8181ab2f 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener {
+     private static final DataWatcherObject<Boolean> aD = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     private static final DataWatcherObject<Boolean> aE = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     public boolean aa;
+-    public int ab;
+-    public int ac;
+-    public int ad;
++    public int ab; public int getChunkX() { return ab; } // Paper - OBFHELPER
++    public int ac; public int getChunkY() { return ac; } // Paper - OBFHELPER
++    public int ad; public int getChunkZ() { return ad; } // Paper - OBFHELPER
+     public boolean ah;
+     public boolean impulse;
+     public int portalCooldown;
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index eb6a955e..77b81a57 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -0,0 +0,0 @@ public class EntityTypes {
+     public static final Set<MinecraftKey> d = Sets.newHashSet();
+     private static final List<String> g = Lists.newArrayList();
+ 
++    @Nullable public static MinecraftKey getKey(Entity entity) { return a(entity); } // Paper - OBFHELPER
+     @Nullable
+     public static MinecraftKey a(Entity entity) {
+         return getName(entity.getClass());
+@@ -0,0 +0,0 @@ public class EntityTypes {
+         return entity;
+     }
+ 
++    public static Set<MinecraftKey> getEntityNameList() { return a(); } // Paper - OBFHELPER
+     public static Set<MinecraftKey> a() {
+         return EntityTypes.d;
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e1833f376..1096c6c66 100644
+index f62e7d9e..dbfed7c6 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
@@ -373,7 +540,7 @@ index e1833f376..1096c6c66 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 814be6ee5..37e3c14fd 100644
+index 814be6ee..37e3c14f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
@@ -428,7 +595,7 @@ index 814be6ee5..37e3c14fd 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index a151451d5..0c5862a3f 100644
+index a151451d..0c5862a3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -0,0 +0,0 @@ public class Main {
@@ -447,7 +614,7 @@ index a151451d5..0c5862a3f 100644
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 01e73eb89..0b66f5e35 100644
+index 01e73eb8..0b66f5e3 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -0,0 +0,0 @@ public class SpigotWorldConfig
