@@ -65,6 +65,7 @@ import DefinedStructure
 import EntityLlama
 import EULA
 import EntitySquid
+import EntityTypes
 import EntityWaterAnimal
 import FileIOThread
 import IHopper
