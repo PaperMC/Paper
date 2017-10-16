@@ -1,0 +1,53 @@
+From 1d4d6606d265fed886fe42950f829f64048c3d45 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Mar 2016 23:25:45 -0500
+Subject: [PATCH] Disable Scoreboards for non players by default
+
+Entities collision is checking for scoreboards setting.
+This is very heavy to do map lookups for every collision to check
+this setting.
+
+So avoid looking up scoreboards and short circuit to the "not on a team"
+logic which is most likely to be true.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 439be6bf4..092126d6c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -238,4 +238,9 @@ public class PaperWorldConfig {
+     private void disableTeleportationSuffocationCheck() {
+         disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
+     }
++
++    public boolean nonPlayerEntitiesOnScoreboards = false;
++    private void nonPlayerEntitiesOnScoreboards() {
++        nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/CommandScoreboard.java b/src/main/java/net/minecraft/server/CommandScoreboard.java
+index ec9a87239..b08274d93 100644
+--- a/src/main/java/net/minecraft/server/CommandScoreboard.java
++++ b/src/main/java/net/minecraft/server/CommandScoreboard.java
+@@ -492,6 +492,7 @@ public class CommandScoreboard extends CommandAbstract {
+ 
+                     while (iterator.hasNext()) {
+                         Entity entity = (Entity) iterator.next();
++                        if (!entity.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(entity instanceof EntityHuman)) { continue; } // Paper
+                         String s2 = f(minecraftserver, icommandlistener, entity.bn());
+ 
+                         if (scoreboard.addPlayerToTeam(s2, s)) {
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 5ef4978df..a27ff1a0c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -2074,6 +2074,7 @@ public abstract class Entity implements ICommandListener {
+ 
+     @Nullable
+     public ScoreboardTeamBase aY() {
++        if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
+         return this.world.getScoreboard().getPlayerTeam(this.bn());
+     }
+ 
+-- 
+2.14.2
+
