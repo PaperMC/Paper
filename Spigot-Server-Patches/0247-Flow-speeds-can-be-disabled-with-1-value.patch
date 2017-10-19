@@ -1,0 +1,95 @@
+From 8ef4d1492147fbff9528d54d2889c52baf5df157 Mon Sep 17 00:00:00 2001
+From: June <junehanabi@gmail.com>
+Date: Thu, 19 Oct 2017 14:39:53 -0500
+Subject: [PATCH] Flow speeds can be disabled with -1 value
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 14f652d4..65353746 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -452,4 +452,11 @@ public class PaperWorldConfig {
+         replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList((Object) "stone", "planks"));
+         log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Chunk Edge Mode: " + chunkEdgeMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks");
+     }
++    
++    public int waterFlowSpeed;
++
++    private void waterFlowSpeed() {
++        waterFlowSpeed = getInt("water-flow-speed", 5);
++        log("Water flow speed: " + waterFlowSpeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
+index ff90e08e..2cf444df 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowing.java
++++ b/src/main/java/net/minecraft/server/BlockFlowing.java
+@@ -23,6 +23,13 @@ public class BlockFlowing extends BlockFluids {
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        
++        // Paper start - don't flow if disabled
++        if (this.isFlowDisabled(world, world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), blockposition)) {
++            return;
++        }
++        // Paper end
++        
+         int i = ((Integer) iblockdata.get(BlockFlowing.LEVEL)).intValue();
+         byte b0 = 1;
+ 
+@@ -154,6 +161,42 @@ public class BlockFlowing extends BlockFluids {
+     private boolean canFlowTo(World world, org.bukkit.block.Block source, BlockFace face) {
+         return source.getWorld().isChunkLoaded((source.getX() + face.getModX()) >> 4, (source.getZ() + face.getModZ()) >> 4);
+     }
++    
++    private boolean isFlowDisabled(World world, org.bukkit.block.Block block,
++            BlockPosition blockposition) {
++
++        // Is lava disabled in nether?
++        if (this.material == Material.LAVA
++                && world.worldProvider.isSkyMissing()
++                && world.paperConfig.lavaFlowSpeedNether == -1) {
++            return true;
++        }
++
++        // Is lava disabled in overworld
++        if (this.material == Material.LAVA
++                && !world.worldProvider.isSkyMissing()
++                && world.paperConfig.lavaFlowSpeedNormal == -1) {
++            return true;
++        }
++
++        // Is water disabled over lava
++        if (this.material == Material.WATER
++                && (world.getType(blockposition.north(1)).getBlock().material == Material.LAVA
++                || world.getType(blockposition.south(1)).getBlock().material == Material.LAVA
++                || world.getType(blockposition.west(1)).getBlock().material == Material.LAVA
++                || world.getType(blockposition.east(1)).getBlock().material == Material.LAVA)
++                && world.paperConfig.waterOverLavaFlowSpeed == -1) {
++            return true;
++        }
++
++        // Is water disabled not over lava
++        if (this.material == Material.WATER
++                && world.paperConfig.waterFlowSpeed == -1) {
++            return true;
++        }
++
++        return false;
++    }
+     // Paper end
+ 
+     private void flow(World world, BlockPosition blockposition, IBlockData iblockdata, int i) {
+@@ -289,6 +332,8 @@ public class BlockFlowing extends BlockFluids {
+                         world.getType(blockposition.west(1)).getBlock().material == Material.LAVA ||
+                         world.getType(blockposition.east(1)).getBlock().material == Material.LAVA)) {
+             return world.paperConfig.waterOverLavaFlowSpeed;
++        } else if (this.material == Material.WATER) {
++            return world.paperConfig.waterFlowSpeed;
+         }
+         return super.a(world);
+     }
+-- 
+2.14.2
+
