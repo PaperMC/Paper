@@ -37,6 +37,7 @@ function import {
 
 import AxisAlignedBB
 import BaseBlockPosition
+import Biomes
 import BiomeBase
 import BiomeJungle
 import BiomeMesa
