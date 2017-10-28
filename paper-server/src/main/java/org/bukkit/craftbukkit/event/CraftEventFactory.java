@@ -84,7 +84,7 @@ public class CraftEventFactory {
 
         BlockPosition chunkcoordinates = worldServer.getSpawn();
 
-        int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.getX()), Math.abs(z - chunkcoordinates.getY()));
+        int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.getX()), Math.abs(z - chunkcoordinates.getZ()));
         return distanceFromSpawn > spawnSize;
     }
 
