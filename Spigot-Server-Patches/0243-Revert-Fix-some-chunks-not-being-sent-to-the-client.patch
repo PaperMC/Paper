@@ -1,0 +1,38 @@
+From 797dd1807d3bc4380fc285ab85f13a6a67df1e28 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 4 Oct 2017 04:20:21 +0100
+Subject: [PATCH] Revert "Fix some chunks not being sent to the client"
+
+This patch actually allows chunks to be sent before lighting has been calculated in a chunk,
+causing lighting to be invalid on chunks sent to clients. as lighting is done during chunk
+population and the server tracks which chunks have been sent to the client, this is no longer
+an issue.
+
+as the server tracks what chunks have and haven't been sent to the client (and the original
+issue for this appears to have already been fixed in the server in 1.9), there is nothing
+that this patch is actually achieving as of now.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index a96cb457e..b384cc5b0 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -1119,15 +1119,7 @@ public class Chunk {
+     }
+ 
+     public boolean isReady() {
+-        // Spigot Start
+-        /*
+-         * As of 1.7, Mojang added a check to make sure that only chunks which have been lit are sent to the client.
+-         * Unfortunately this interferes with our modified chunk ticking algorithm, which will only tick chunks distant from the player on a very infrequent basis.
+-         * We cannot unfortunately do this lighting stage during chunk gen as it appears to put a lot more noticeable load on the server, than when it is done at play time.
+-         * For now at least we will simply send all chunks, in accordance with pre 1.7 behaviour.
+-         */
+-        return true;
+-        // Spigot End
++        return this.r && this.done && this.lit;
+     }
+ 
+     public boolean j() {
+-- 
+2.14.2
+

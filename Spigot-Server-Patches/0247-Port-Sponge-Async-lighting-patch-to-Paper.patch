@@ -1,0 +1,1199 @@
+From bc22299a9f66b30a9398ca1181621c4914d88f29 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Tue, 17 Oct 2017 00:32:05 +0300
+Subject: [PATCH] Port Sponge Async lighting patch to Paper
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f5cb9799b..de2104e24 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -276,4 +276,9 @@ public class PaperConfig {
+     private static void authenticationServersDownKickMessage() {
+         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
+     }
++
++    public static int asyncLightingThreadsCount;
++    private static void asyncLightingThreadsCount() {
++        asyncLightingThreadsCount = 2;
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 38a7af58c..7c57b1a03 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -293,6 +293,7 @@ public class BlockPosition extends BaseBlockPosition {
+             }
+         }
+ 
++        public BlockPosition.PooledBlockPosition setPos(int i, int j, int k) { return f(i, j, k); } // Paper - OBFHELPER
+         public BlockPosition.PooledBlockPosition f(int i, int j, int k) {
+             if (this.f) {
+                 BlockPosition.b.error("PooledMutableBlockPosition modified after it was released.", new Throwable());
+@@ -379,6 +380,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return super.a(d0, d1, d2).h();
+         }
+ 
++        public BlockPosition add(int i, int j, int k) { return a(i, j, k); } // Paper - OBFHELPER
+         public BlockPosition a(int i, int j, int k) {
+             return super.a(i, j, k).h();
+         }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index a5bda7aaf..c6c04fc3b 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -26,26 +26,26 @@ public class Chunk {
+     private final ChunkSection[] sections;
+     private final byte[] g;
+     private final int[] h;
+-    private final boolean[] i;
++    private final boolean[] i; public boolean[] getUpdateSkylightColumns() { return i; } // Paper - OBFHELPER
+     private boolean j;
+     public final World world;
+     public final int[] heightMap;
+     public Long scheduledForUnload; // Paper - delay chunk unloads
+     public final int locX;
+     public final int locZ;
+-    private boolean m;
++    private boolean m; public boolean isGapLightingUpdate() { return m; } public void setGapLightingUpdate(boolean value) { m = value; } // Paper - OBFHELPER
+     public final Map<BlockPosition, TileEntity> tileEntities;
+     public final List<Entity>[] entitySlices; // Spigot
+     private boolean done;
+     private boolean lit;
+-    private boolean r;
+-    private boolean s;
++    private boolean r; public boolean isTicked() { return r; } public void setTicked(boolean value) { r = value; } // Paper - OBFHELPER
++    private boolean s; public boolean isDirty() { return s; } public void setDirty(boolean value) { s = value; } // Paper - OBFHELPER
+     private boolean t;
+     private long lastSaved;
+-    private int v;
++    private int v; public int getHeightMapMinimum() { return v; } public void setHeightMapMinimum(int value) { v = value; } // Paper - OBFHELPER
+     private long w;
+     private int x;
+-    private final ConcurrentLinkedQueue<BlockPosition> y;
++    private final ConcurrentLinkedQueue<BlockPosition> y; public ConcurrentLinkedQueue<BlockPosition> getTileEntityPosQueue() { return y; } // Paper - OBFHELPER
+     public boolean d; public void setShouldUnload(boolean unload) { this.d = unload; } public boolean isUnloading() { return d; } // Paper - OBFHELPER
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+ 
+@@ -116,6 +116,7 @@ public class Chunk {
+     // CraftBukkit end
+ 
+     public Chunk(World world, int i, int j) {
++        lightExecutorService = world.getLightingExecutor(); // Paper - asynclighting
+         this.sections = new ChunkSection[16];
+         this.g = new byte[256];
+         this.h = new int[256];
+@@ -144,6 +145,18 @@ public class Chunk {
+     public boolean mustSave;
+     // CraftBukkit end
+ 
++    // Paper start - asynclighting
++    // Keeps track of block positions in this chunk currently queued for sky light update
++    private java.util.concurrent.ConcurrentLinkedQueue<Short> queuedSkyLightingUpdates = new java.util.concurrent.ConcurrentLinkedQueue<>();
++    // Keeps track of block positions in this chunk currently queued for block light update
++    private java.util.concurrent.ConcurrentLinkedQueue<Short> queuedBlockLightingUpdates = new java.util.concurrent.ConcurrentLinkedQueue<>();
++    private java.util.concurrent.atomic.AtomicInteger pendingLightUpdates = new java.util.concurrent.atomic.AtomicInteger();
++    private long lightUpdateTime;
++    private java.util.concurrent.ExecutorService lightExecutorService;
++    private static final List<Chunk> EMPTY_LIST = new java.util.ArrayList<>();
++    private static final BlockPosition DUMMY_POS = new BlockPosition(0, 0, 0);
++    // Paper end
++
+     public Chunk(World world, ChunkSnapshot chunksnapshot, int i, int j) {
+         this(world, i, j);
+         boolean flag = true;
+@@ -169,6 +182,7 @@ public class Chunk {
+ 
+     }
+ 
++    public boolean isAtLocation(int i, int j) { return a(i, j); } // Paper - OBFHELPER
+     public boolean a(int i, int j) {
+         return i == this.locX && j == this.locZ;
+     }
+@@ -177,6 +191,7 @@ public class Chunk {
+         return this.b(blockposition.getX() & 15, blockposition.getZ() & 15);
+     }
+ 
++    public int getHeightValue(int i, int j) { return b(i, j); } // Paper - OBFHELPER
+     public int b(int i, int j) {
+         return this.heightMap[j << 4 | i];
+     }
+@@ -192,6 +207,7 @@ public class Chunk {
+         return null;
+     }
+ 
++    public int getTopFilledSegment() { return g(); } // Paper - OBFHELPER
+     public int g() {
+         ChunkSection chunksection = this.y();
+ 
+@@ -307,8 +323,18 @@ public class Chunk {
+         this.world.methodProfiler.b();
+     }
+ 
++    private void checkSkylightNeighborHeight(int i, int j, int k) { b(i, j, k); } // Paper - OBFHELPER
+     private void b(int i, int j, int k) {
+-        int l = this.world.getHighestBlockYAt(new BlockPosition(i, 0, j)).getY();
++        // Paper start - asynclighting
++        BlockPosition pos = new BlockPosition(i, 0, j);
++        final Chunk chunk = this.getLightChunk(pos.getX() >> 4, pos.getZ() >> 4, null);
++        pos = chunk != null ? new BlockPosition(pos.getX(), chunk.b(pos.getX() & 15, pos.getZ() & 15), pos.getZ()) : DUMMY_POS;
++        if (chunk == null) {
++            pos = DUMMY_POS;
++        }
++
++        int l = this.world.getHighestBlockYAt(pos).getY();
++        // Paper end
+ 
+         if (l > k) {
+             this.a(i, j, k, l + 1);
+@@ -318,10 +344,11 @@ public class Chunk {
+ 
+     }
+ 
++    private void updateSkylightNeighborHeight(int i, int j, int k, int l) { a(i, j, k, l); } // Paper - OBFHELPER
+     private void a(int i, int j, int k, int l) {
+-        if (l > k && this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)) {
++        if (l > k && /*this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)*/this.isAreaLoaded()) { // Paper - asynclighting
+             for (int i1 = k; i1 < l; ++i1) {
+-                this.world.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
++                this.checkWorldLightFor(EnumSkyBlock.SKY, new BlockPosition(i, i1, j)); // Paper - asynclighting
+             }
+ 
+             this.s = true;
+@@ -330,6 +357,10 @@ public class Chunk {
+     }
+ 
+     private void c(int i, int j, int k) {
++        // Paper start - asynclighting
++        this.lightExecutorService.execute(() -> this.relightBlockAsync(i, j, k));
++    }
++    private void cUnused(int i, int j, int k) {
+         int l = this.heightMap[k << 4 | i] & 255;
+         int i1 = l;
+ 
+@@ -420,11 +451,13 @@ public class Chunk {
+             this.s = true;
+         }
+     }
++    // Paper end
+ 
+     public int b(BlockPosition blockposition) {
+         return this.getBlockData(blockposition).c();
+     }
+ 
++    private int getBlockLightOpacity(int i, int j, int k) { return d(i, j, k); } // Paper - OBFHELPER
+     private int d(int i, int j, int k) {
+         return this.a(i, j, k).c();
+     }
+@@ -595,6 +628,7 @@ public class Chunk {
+         return chunksection == Chunk.a ? (this.c(blockposition) ? enumskyblock.c : 0) : (enumskyblock == EnumSkyBlock.SKY ? (!this.world.worldProvider.m() ? 0 : chunksection.b(i, j & 15, k)) : (enumskyblock == EnumSkyBlock.BLOCK ? chunksection.c(i, j & 15, k) : enumskyblock.c));
+     }
+ 
++    public void setLightFor(EnumSkyBlock enumskyblock, BlockPosition pos, int i) { a(enumskyblock, pos, i); } // Paper - OBFHELPER
+     public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
+         int j = blockposition.getX() & 15;
+         int k = blockposition.getY();
+@@ -730,6 +764,7 @@ public class Chunk {
+         // Spigot end
+     }
+ 
++    public boolean canSeeSky(BlockPosition pos) { return c(pos); } // Paper - OBFHELPER
+     public boolean c(BlockPosition blockposition) {
+         int i = blockposition.getX() & 15;
+         int j = blockposition.getY();
+@@ -738,6 +773,7 @@ public class Chunk {
+         return j >= this.heightMap[k << 4 | i];
+     }
+ 
++    @Nullable private TileEntity createNewTileEntity(BlockPosition blockPosition) { return this.g(blockPosition); } // Paper - OBFHELPER
+     @Nullable
+     private TileEntity g(BlockPosition blockposition) {
+         IBlockData iblockdata = this.getBlockData(blockposition);
+@@ -746,6 +782,7 @@ public class Chunk {
+         return !block.isTileEntity() ? null : ((ITileEntity) block).a(this.world, iblockdata.getBlock().toLegacyData(iblockdata));
+     }
+ 
++    @Nullable public final TileEntity getTileEntity(BlockPosition pos, EnumTileEntityState state) { return this.a(pos, state); } // Paper - OBFHELPER
+     @Nullable public final TileEntity getTileEntityImmediately(BlockPosition pos) { return this.a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
+     @Nullable
+     public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
+@@ -1156,6 +1193,32 @@ public class Chunk {
+     }
+ 
+     public void b(boolean flag) {
++        // Paper start - Sponge async lighting port
++        final List<Chunk> neighbors = this.getSurroundingChunks();
++        if (this.isGapLightingUpdate() && this.world.worldProvider.m() && !flag && !neighbors.isEmpty()) {
++            this.lightExecutorService.execute(() -> this.recheckGapsAsync(neighbors));
++            setGapLightingUpdate(false);
++        }
++
++        setTicked(true);
++
++        if (!this.lit && this.done && !neighbors.isEmpty()) {
++            this.lightExecutorService.execute(() -> this.checkLightAsync(neighbors));
++            // set to true to avoid requeuing the same task when not finished
++            this.lit = true;
++        }
++
++        while (!getTileEntityPosQueue().isEmpty()) {
++            BlockPosition blockpos = getTileEntityPosQueue().poll();
++
++            if(this.getTileEntity(blockpos, Chunk.EnumTileEntityState.CHECK) == null && this.getBlockData(blockpos).getBlock().isTileEntity()) {
++                TileEntity tileentity = createNewTileEntity(blockpos);
++                this.world.setTileEntity(blockpos, tileentity);
++                this.world.markBlockRangeForRenderUpdate(blockpos, blockpos);
++            }
++        }
++    }
++    public void unusedB(boolean flag) {
+         if (this.m && this.world.worldProvider.m() && !flag) {
+             this.h(this.world.isClientSide);
+         }
+@@ -1175,7 +1238,7 @@ public class Chunk {
+                 this.world.b(blockposition, blockposition);
+             }
+         }
+-
++        // Paper end
+     }
+ 
+     public boolean isReady() {
+@@ -1278,11 +1341,11 @@ public class Chunk {
+                             BlockPosition blockposition2 = blockposition1.shift(enumdirection);
+ 
+                             if (this.world.getType(blockposition2).d() > 0) {
+-                                this.world.w(blockposition2);
++                                this.checkWorldLight(blockposition2); // Paper - asynclighting
+                             }
+                         }
+ 
+-                        this.world.w(blockposition1);
++                        this.checkWorldLight(blockposition1); // Paper - asynclighting
+                     }
+                 }
+             }
+@@ -1291,6 +1354,27 @@ public class Chunk {
+     }
+ 
+     public void o() {
++        // Paper start - asynclighting
++        if (this.world.getMinecraftServer().isStopped() || this.lightExecutorService.isShutdown()) {
++            return;
++        }
++
++        if (this.isUnloading()) {
++            return;
++        }
++        final List<Chunk> neighborChunks = this.getSurroundingChunks();
++        if (neighborChunks.isEmpty()) {
++            this.lit = false;
++            return;
++        }
++
++        if(this.world.getMinecraftServer().isMainThread()) {
++            this.lightExecutorService.execute(() -> this.checkLightAsync(neighborChunks));
++        } else {
++            this.checkLightAsync(neighborChunks);
++        }
++    }
++    public void oUnused() {
+         world.timings.lightChunk.startTiming(); // Paper
+         this.done = true;
+         this.lit = true;
+@@ -1327,7 +1411,9 @@ public class Chunk {
+ 
+         world.timings.lightChunk.stopTiming(); // Paper
+     }
++    // Paper end
+ 
++    private void setSkylightUpdated() { z(); } // Paper - OBFHELPER
+     private void z() {
+         for (int i = 0; i < this.i.length; ++i) {
+             this.i[i] = true;
+@@ -1336,6 +1422,7 @@ public class Chunk {
+         this.h(false);
+     }
+ 
++    public void checkLightSide(EnumDirection direction) { this.a(direction); } // Paper - OBFHELPER
+     private void a(EnumDirection enumdirection) {
+         if (this.done) {
+             int i;
+@@ -1387,7 +1474,7 @@ public class Chunk {
+         for (l = blockposition_mutableblockposition.getY(); l > 0; --l) {
+             blockposition_mutableblockposition.c(blockposition_mutableblockposition.getX(), l, blockposition_mutableblockposition.getZ());
+             if (this.getBlockData(blockposition_mutableblockposition).d() > 0) {
+-                this.world.w(blockposition_mutableblockposition);
++                this.checkWorldLight(blockposition_mutableblockposition); // Paper - asynclighting
+             }
+         }
+ 
+@@ -1468,4 +1555,389 @@ public class Chunk {
+ 
+         private EnumTileEntityState() {}
+     }
++
++    // Paper start - asynclighting
++    private void recheckGapsAsync(List<Chunk> neighbors) {
++        for (int i = 0; i < 16; ++i) {
++            for (int j = 0; j < 16; ++j) {
++                if (this.getUpdateSkylightColumns()[i + j * 16]) {
++                    this.getUpdateSkylightColumns()[i + j * 16] = false;
++                    int k = this.getHeightValue(i, j);
++                    int l = this.locX * 16 + i;
++                    int i1 = this.locZ * 16 + j;
++                    int j1 = Integer.MAX_VALUE;
++
++                    for (EnumDirection enumfacing : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
++                        final Chunk chunk = this.getLightChunk((l + enumfacing.getAdjacentX()) >> 4, (i1 + enumfacing.getAdjacentZ()) >> 4, neighbors);
++                        if (chunk == null || chunk.isUnloading()) {
++                            continue;
++                        }
++                        j1 = Math.min(j1, chunk.getHeightMapMinimum());
++                    }
++
++                    this.checkSkylightNeighborHeight(l, i1, j1);
++
++                    for (EnumDirection enumfacing1 : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
++                        this.checkSkylightNeighborHeight(l + enumfacing1.getAdjacentX(), i1 + enumfacing1.getAdjacentZ(), k);
++                    }
++                }
++            }
++
++            setGapLightingUpdate(false);
++        }
++    }
++
++    private void checkLightAsync(List<Chunk> neighbors) {
++        this.done = true;
++        this.lit = true;
++        BlockPosition blockpos = new BlockPosition(this.locX << 4, 0, this.locZ << 4);
++
++        if (this.world.worldProvider.hasSkyLight()) {
++            label44:
++
++            for (int i = 0; i < 16; ++i) {
++                for (int j = 0; j < 16; ++j) {
++                    if (!this.checkLightAsync(i, j, neighbors)) {
++                        this.lit = false;
++                        break label44;
++                    }
++                }
++            }
++
++            if (this.lit) {
++                for (EnumDirection enumfacing : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
++                    int k = enumfacing.getAxisDirection() == EnumDirection.EnumAxisDirection.POSITIVE ? 16 : 1;
++                    final BlockPosition pos = blockpos.shift(enumfacing, k);
++                    final Chunk chunk = this.getLightChunk(pos.getX() >> 4, pos.getZ() >> 4, neighbors);
++                    if (chunk == null) {
++                        continue;
++                    }
++                    EnumDirection opposite = enumfacing.opposite();
++                    chunk.checkLightSide(opposite);
++                }
++
++                this.setSkylightUpdated();
++            }
++        }
++    }
++
++    /**
++     * Checks light async.
++     *
++     * @param x The x position of chunk
++     * @param z The z position of chunk
++     * @param neighbors A thread-safe list of surrounding neighbor chunks
++     * @return True if light update was successful, false if not
++     */
++    private boolean checkLightAsync(int x, int z, List<Chunk> neighbors) {
++        int i = this.getTopFilledSegment();
++        boolean flag = false;
++        boolean flag1 = false;
++        BlockPosition.MutableBlockPosition blockpos$mutableblockpos = new BlockPosition.MutableBlockPosition((this.locX << 4) + x, 0, (this.locZ << 4) + z);
++
++        for (int j = i + 16 - 1; j > this.world.getSeaLevel() || j > 0 && !flag1; --j) {
++            blockpos$mutableblockpos.add(blockpos$mutableblockpos.getX(), j, blockpos$mutableblockpos.getZ());
++            int k = this.getBlockData(blockpos$mutableblockpos).getLightOpacity();
++
++            if (k == 255 && blockpos$mutableblockpos.getY() < this.world.getSeaLevel()) {
++                flag1 = true;
++            }
++
++            if (!flag && k > 0) {
++                flag = true;
++            } else if (flag && k == 0 && !this.checkWorldLight(blockpos$mutableblockpos, neighbors)) {
++                return false;
++            }
++        }
++
++        for (int l = blockpos$mutableblockpos.getY(); l > 0; --l) {
++            blockpos$mutableblockpos.add(blockpos$mutableblockpos.getX(), l, blockpos$mutableblockpos.getZ());
++            if (this.getBlockData(blockpos$mutableblockpos).getLightOpacity() > 0) {
++                this.checkWorldLight(blockpos$mutableblockpos, neighbors);
++            }
++        }
++
++        return true;
++    }
++
++    /**
++     * Thread-safe method to retrieve a chunk during async light updates.
++     *
++     * @param chunkX The x position of chunk.
++     * @param chunkZ The z position of chunk.
++     * @param neighbors A thread-safe list of surrounding neighbor chunks
++     * @return The chunk if available, null if not
++     */
++    private Chunk getLightChunk(int chunkX, int chunkZ, List<Chunk> neighbors) {
++        final Chunk currentChunk = this;
++        if(currentChunk.isAtLocation(chunkX, chunkZ)) {
++            if (currentChunk.isUnloading()) {
++                return null;
++            }
++            return currentChunk;
++        }
++        if (neighbors == null) {
++            neighbors = this.getSurroundingChunks();
++            if (neighbors.isEmpty()) {
++                return null;
++            }
++        }
++        for(Chunk neighbor : neighbors) {
++            if (neighbor.isAtLocation(chunkX, chunkZ)) {
++                if (neighbor.isUnloading()) {
++                    return null;
++                }
++                return neighbor;
++            }
++        }
++
++        return null;
++    }
++
++    /**
++     * Checks if surrounding chunks are loaded thread-safe.
++     *
++     * @return True if surrounded chunks are loaded, false if not
++     */
++    private boolean isAreaLoaded() {
++        if (!this.areNeighborsLoaded()) {
++            return false;
++        }
++
++        // add diagonal chunks
++        final Chunk southEastChunk = this.getNeighborChunk(0).getNeighborChunk(2);
++        if (southEastChunk == null) {
++            return false;
++        }
++
++        final Chunk southWestChunk = this.getNeighborChunk(0).getNeighborChunk(3);
++        if (southWestChunk == null) {
++            return false;
++        }
++
++        final Chunk northEastChunk = this.getNeighborChunk(1).getNeighborChunk(2);
++        if (northEastChunk == null) {
++            return false;
++        }
++
++        final Chunk northWestChunk = this.getNeighborChunk(1).getNeighborChunk(3);
++        if (northWestChunk == null) {
++            return false;
++        }
++
++        return true;
++    }
++
++    /**
++     * Gets surrounding chunks thread-safe.
++     *
++     * @return The list of surrounding chunks, empty list if not loaded
++     */
++    private List<Chunk> getSurroundingChunks() {
++        if (!this.areNeighborsLoaded()) {
++            return EMPTY_LIST;
++        }
++
++        // add diagonal chunks
++        final Chunk southEastChunk = this.getNeighborChunk(0).getNeighborChunk(2);
++        if (southEastChunk == null) {
++            return EMPTY_LIST;
++        }
++
++        final Chunk southWestChunk = this.getNeighborChunk(0).getNeighborChunk(3);
++        if (southWestChunk == null) {
++            return EMPTY_LIST;
++        }
++
++        final Chunk northEastChunk = this.getNeighborChunk(1).getNeighborChunk(2);
++        if (northEastChunk == null) {
++            return EMPTY_LIST;
++        }
++
++        final Chunk northWestChunk = this.getNeighborChunk(1).getNeighborChunk(3);
++        if (northWestChunk == null) {
++            return EMPTY_LIST;
++        }
++
++        List<Chunk> chunkList = new java.util.ArrayList<>();
++        chunkList = this.getNeighbors();
++        chunkList.add(southEastChunk);
++        chunkList.add(southWestChunk);
++        chunkList.add(northEastChunk);
++        chunkList.add(northWestChunk);
++        return chunkList;
++    }
++
++    /**
++     * Relight's a block async.
++     *
++     * @param x The x position
++     * @param y The y position
++     * @param z The z position
++     */
++    private void relightBlockAsync(int x, int y, int z) {
++        int i = this.heightMap[z << 4 | x] & 255;
++        int j = i;
++
++        if (y > i)
++        {
++            j = y;
++        }
++
++        while (j > 0 && this.getBlockLightOpacity(x, j - 1, z) == 0) {
++            --j;
++        }
++
++        if (j != i)
++        {
++            this.markBlocksDirtyVerticalAsync(x + this.locX * 16, z + this.locZ * 16, j, i);
++            this.heightMap[z << 4 | x] = j;
++            int k = this.locX * 16 + x;
++            int l = this.locZ * 16 + z;
++
++            if (this.world.worldProvider.m()) {
++                if (j < i) {
++                    for (int j1 = j; j1 < i; ++j1) {
++                        ChunkSection extendedblockstorage2 = this.sections[j1 >> 4];
++                        if (extendedblockstorage2 != Chunk.EMPTY_CHUNK_SECTION) {
++                            extendedblockstorage2.setSkyLight(x, j1 & 15, z, 15);
++                            this.world.notifyLightSet(new BlockPosition((this.locX << 4) + x, j1, (this.locZ << 4) + z));
++                        }
++                    }
++                } else {
++                    for (int i1 = i; i1 < j; ++i1) {
++                        ChunkSection extendedblockstorage = this.sections[i1 >> 4];
++
++                        if (extendedblockstorage != Chunk.EMPTY_CHUNK_SECTION) {
++                            extendedblockstorage.setSkyLight(x, i1 & 15, z, 0);
++                            this.world.notifyLightSet(new BlockPosition((this.locX << 4) + x, i1, (this.locZ << 4) + z));
++                        }
++                    }
++                }
++
++                int k1 = 15;
++
++                while (j > 0 && k1 > 0) {
++                    --j;
++                    int i2 = this.getBlockLightOpacity(x, j, z);
++
++                    if (i2 == 0) {
++                        i2 = 1;
++                    }
++
++                    k1 -= i2;
++
++                    if (k1 < 0) {
++                        k1 = 0;
++                    }
++
++                    ChunkSection extendedblockstorage1 = this.sections[j >> 4];
++
++                    if (extendedblockstorage1 != Chunk.EMPTY_CHUNK_SECTION) {
++                        extendedblockstorage1.setBlockLight(x, j & 15, z, k1);
++                    }
++                }
++            }
++
++            int l1 = this.heightMap[z << 4 | x];
++            int j2 = i;
++            int k2 = l1;
++
++            if (l1 < i) {
++                j2 = l1;
++                k2 = i;
++            }
++
++            if (l1 < this.getHeightMapMinimum()) {
++                setHeightMapMinimum(l1);
++            }
++
++            if (this.world.worldProvider.hasSkyLight()) {
++                for (EnumDirection enumfacing : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
++                    this.updateSkylightNeighborHeight(k + enumfacing.getAdjacentX(), l + enumfacing.getAdjacentZ(), j2, k2);
++                }
++
++                this.updateSkylightNeighborHeight(k, l, j2, k2);
++            }
++
++            setDirty(true);
++        }
++    }
++
++    private void markBlocksDirtyVerticalAsync(int x1, int z1, int x2, int z2) {
++        if (x2 > z2) {
++            int i = z2;
++            z2 = x2;
++            x2 = i;
++        }
++
++        if(this.world.worldProvider.hasSkyLight()) {
++            for (int j = x2; j <= z2; ++j) {
++                final BlockPosition pos = new BlockPosition(x1, j, z1);
++                final Chunk chunk = this.getLightChunk(pos.getX() >> 4, pos.getZ() >> 4, null);
++                if (chunk == null) {
++                    continue;
++                }
++                this.world.updateLightAsync(EnumSkyBlock.SKY, new BlockPosition(x1, j, z1), chunk);
++            }
++        }
++
++        this.world.markBlockRangeForRenderUpdate(x1, x2, z1, x1, z2, z1);
++    }
++
++    private boolean checkWorldLightFor(EnumSkyBlock lightType, BlockPosition pos) {
++        final Chunk chunk = this.getLightChunk(pos.getX() >> 4, pos.getZ() >> 4, null);
++        if (chunk == null) {
++            return false;
++        }
++
++        return this.world.updateLightAsync(lightType, pos, chunk);
++    }
++
++    private boolean checkWorldLight(BlockPosition pos) {
++        return this.checkWorldLight(pos, null);
++    }
++
++    /**
++     * Checks world light async.
++     *
++     * @param pos The block position
++     * @param neighbors A thread-safe list of surrounding neighbor chunks
++     * @return True if light update was successful, false if not
++     */
++    private boolean checkWorldLight(BlockPosition pos, List<Chunk> neighbors) {
++        boolean flag = false;
++        final Chunk chunk = this.getLightChunk(pos.getX() >> 4, pos.getZ() >> 4, neighbors);
++        if (chunk == null) {
++            return false;
++        }
++
++        if (this.world.worldProvider.hasSkyLight()) {
++            flag |= this.world.updateLightAsync(EnumSkyBlock.SKY, pos, chunk);
++        }
++
++        flag = flag | this.world.updateLightAsync(EnumSkyBlock.BLOCK, pos, chunk);
++        return flag;
++    }
++
++    public java.util.concurrent.atomic.AtomicInteger getPendingLightUpdates() {
++        return pendingLightUpdates;
++    }
++
++    public long getLightUpdateTime() {
++        return this.lightUpdateTime;
++    }
++
++    public void setLightUpdateTime(long time) {
++        this.lightUpdateTime = time;
++    }
++
++    public java.util.concurrent.ConcurrentLinkedQueue<Short> getQueuedLightingUpdates(EnumSkyBlock type) {
++        if(type == EnumSkyBlock.SKY) {
++            return this.queuedSkyLightingUpdates;
++        } //else if(type == EnumSkyBlock.BLOCK) {
++        return this.queuedBlockLightingUpdates;
++        //}
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index aae227fdb..2bc6d81a8 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -87,6 +87,7 @@ public class ChunkSection {
+         return this.yPos;
+     }
+ 
++    public void setSkyLight(int i, int j, int k, int l) { a(i, j, k, l); } // Paper - OBFHELPER
+     public void a(int i, int j, int k, int l) {
+         this.skyLight.a(i, j, k, l);
+     }
+@@ -95,6 +96,7 @@ public class ChunkSection {
+         return this.skyLight.a(i, j, k);
+     }
+ 
++    public void setBlockLight(int i, int j, int k, int l) { b(i, j, k, l); } // Paper - OBFHELPER
+     public void b(int i, int j, int k, int l) {
+         this.emittedLight.a(i, j, k, l);
+     }
+diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
+index ef7b951b9..d88b113af 100644
+--- a/src/main/java/net/minecraft/server/EnumDirection.java
++++ b/src/main/java/net/minecraft/server/EnumDirection.java
+@@ -42,6 +42,7 @@ public enum EnumDirection implements INamable {
+         return this.i;
+     }
+ 
++    public EnumDirection.EnumAxisDirection getAxisDirection() { return c(); } // Paper - OBFHELPER
+     public EnumDirection.EnumAxisDirection c() {
+         return this.l;
+     }
+@@ -217,9 +218,11 @@ public enum EnumDirection implements INamable {
+             return Iterators.forArray(this.a());
+         }
+ 
+-        public boolean apply(@Nullable Object object) {
+-            return this.a((EnumDirection) object);
++        // Paper start - Fix decompile error
++        public boolean apply(@Nullable EnumDirection enumDirection) {
++            return this.a(enumDirection);
+         }
++        // Paper end
+     }
+ 
+     public static enum EnumAxisDirection {
+@@ -284,9 +287,11 @@ public enum EnumDirection implements INamable {
+             return this.e;
+         }
+ 
+-        public boolean apply(@Nullable Object object) {
+-            return this.a((EnumDirection) object);
++        // Paper start - Fix decompile error
++        public boolean apply(@Nullable EnumDirection enumDirection) {
++            return this.a(enumDirection);
+         }
++        // Paper end
+ 
+         static {
+             EnumDirection.EnumAxis[] aenumdirection_enumaxis = values();
+diff --git a/src/main/java/net/minecraft/server/EnumSkyBlock.java b/src/main/java/net/minecraft/server/EnumSkyBlock.java
+index 5880922f8..2bc35b203 100644
+--- a/src/main/java/net/minecraft/server/EnumSkyBlock.java
++++ b/src/main/java/net/minecraft/server/EnumSkyBlock.java
+@@ -5,6 +5,7 @@ public enum EnumSkyBlock {
+     SKY(15), BLOCK(0);
+ 
+     public final int c;
++    public int getDefaultLightValue() { return c; } // Paper - OBFHELPER
+ 
+     private EnumSkyBlock(int i) {
+         this.c = i;
+diff --git a/src/main/java/net/minecraft/server/IBlockProperties.java b/src/main/java/net/minecraft/server/IBlockProperties.java
+index e68b8bdfc..1fd8b22c2 100644
+--- a/src/main/java/net/minecraft/server/IBlockProperties.java
++++ b/src/main/java/net/minecraft/server/IBlockProperties.java
+@@ -11,8 +11,10 @@ public interface IBlockProperties {
+ 
+     boolean a(Entity entity);
+ 
++    default int getLightOpacity() { return c(); } // Paper - OBFHELPER
+     int c();
+ 
++    default int getLightValue() { return d(); } // Paper - OBFHELPER
+     int d();
+ 
+     boolean f();
+diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
+index 28ef4249f..c10c5679d 100644
+--- a/src/main/java/net/minecraft/server/MathHelper.java
++++ b/src/main/java/net/minecraft/server/MathHelper.java
+@@ -51,6 +51,7 @@ public class MathHelper {
+         return f >= 0.0F ? f : -f;
+     }
+ 
++    public static int abs(int i) { return a(i); } // Paper - OBFHELPER
+     public static int a(int i) {
+         return i >= 0 ? i : -i;
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index c91df6bb6..5f23ad995 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -108,7 +108,7 @@ public abstract class World implements IBlockAccess {
+     public boolean allowAnimals;
+     private boolean O;
+     private final WorldBorder P;
+-    int[] J;
++    int[] J; public int[] getLightUpdateBlockList() { return J; } // Paper - OBFHELPER
+ 
+     // CraftBukkit start Added the following
+     private final CraftWorld world;
+@@ -150,6 +150,20 @@ public abstract class World implements IBlockAccess {
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
++    // Paper start - asynclighting
++    private static final int NUM_XZ_BITS = 4;
++    private static final int NUM_SHORT_Y_BITS = 8;
++    private static final short XZ_MASK = 0xF;
++    private static final short Y_SHORT_MASK = 0xFF;
++
++    private java.util.concurrent.ExecutorService lightExecutorService = java.util.concurrent.Executors.newFixedThreadPool(
++            com.destroystokyo.paper.PaperConfig.asyncLightingThreadsCount,
++            new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("Paper - Async Light Thread").build()
++    );
++    public java.util.concurrent.ExecutorService getLightingExecutor() {
++        return lightExecutorService;
++    }
++    // Paper end
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+@@ -519,10 +533,12 @@ public abstract class World implements IBlockAccess {
+         this.b(i, k, j, i, l, j);
+     }
+ 
++    public void markBlockRangeForRenderUpdate(BlockPosition pos, BlockPosition pos2) { this.b(pos, pos2); } // Paper - OBFHELPER
+     public void b(BlockPosition blockposition, BlockPosition blockposition1) {
+         this.b(blockposition.getX(), blockposition.getY(), blockposition.getZ(), blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
+     }
+ 
++    public void markBlockRangeForRenderUpdate(int i, int j, int k, int l, int i1, int j1) { b(i, j, k, l, i1, j1); } // Paper - OBFHELPER
+     public void b(int i, int j, int k, int l, int i1, int j1) {
+         for (int k1 = 0; k1 < this.u.size(); ++k1) {
+             ((IWorldAccess) this.u.get(k1)).a(i, j, k, l, i1, j1);
+@@ -843,6 +859,7 @@ public abstract class World implements IBlockAccess {
+         }
+     }
+ 
++    public void notifyLightSet(BlockPosition pos) { m(pos); } // Paper - OBFHELPER
+     public void m(BlockPosition blockposition) {
+         for (int i = 0; i < this.u.size(); ++i) {
+             ((IWorldAccess) this.u.get(i)).a(blockposition);
+@@ -2427,6 +2444,10 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
++        // Paper start - asynclighting
++        return this.updateLightAsync(enumskyblock, blockposition, null);
++    }
++    public boolean cUnused(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
+         // CraftBukkit start - Use neighbor cache instead of looking up
+         Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+         if (chunk == null || !chunk.areNeighborsLoaded(1) /*!this.areChunksLoaded(blockposition, 17, false)*/) {
+@@ -2553,6 +2574,7 @@ public abstract class World implements IBlockAccess {
+             return true;
+         }
+     }
++    // Paper end
+ 
+     public boolean a(boolean flag) {
+         return false;
+@@ -3260,4 +3282,290 @@ public abstract class World implements IBlockAccess {
+     public BlockPosition a(String s, BlockPosition blockposition, boolean flag) {
+         return null;
+     }
++
++    // Paper start - asynclighting
++    public boolean updateLightAsync(EnumSkyBlock lightType, BlockPosition pos, Chunk currentChunk) {
++        if (this.getMinecraftServer().isStopped() || this.lightExecutorService.isShutdown()) {
++            return false;
++        }
++
++        if (currentChunk == null) {
++            currentChunk = MCUtil.getLoadedChunkWithoutMarkingActive(this.getChunkProvider(), pos.getX() >> 4, pos.getZ() >> 4);
++        }
++
++        if (currentChunk == null || currentChunk.isUnloading() || !currentChunk.areNeighborsLoaded()) {
++            return false;
++        }
++
++        final short shortPos = this.blockPosToShort(pos);
++        if (currentChunk.getQueuedLightingUpdates(lightType).contains(shortPos)) {
++            return false;
++        }
++
++        final Chunk chunk = currentChunk;
++        currentChunk.getQueuedLightingUpdates(lightType).add(shortPos);
++        currentChunk.getPendingLightUpdates().incrementAndGet();
++        currentChunk.setLightUpdateTime(chunk.getWorld().getTime());
++
++        List<Chunk> neighbors = currentChunk.getNeighbors();
++        // add diagonal chunks
++        Chunk southEastChunk = currentChunk.getNeighborChunk(0).getNeighborChunk(2);
++        Chunk southWestChunk = currentChunk.getNeighborChunk(0).getNeighborChunk(3);
++        Chunk northEastChunk = currentChunk.getNeighborChunk(1).getNeighborChunk(2);
++        Chunk northWestChunk = currentChunk.getNeighborChunk(1).getNeighborChunk(3);
++        if (southEastChunk != null) {
++            neighbors.add(southEastChunk);
++        }
++        if (southWestChunk != null) {
++            neighbors.add(southWestChunk);
++        }
++        if (northEastChunk != null) {
++            neighbors.add(northEastChunk);
++        }
++        if (northWestChunk != null) {
++            neighbors.add(northWestChunk);
++        }
++
++        for(Chunk neighbor : neighbors) {
++            neighbor.getPendingLightUpdates().incrementAndGet();
++            neighbor.setLightUpdateTime(chunk.getWorld().getTime());
++        }
++
++        if(getMinecraftServer().isMainThread()) {
++            this.lightExecutorService.execute(() -> this.checkLightAsync(lightType, pos, chunk, neighbors));
++        } else {
++            this.checkLightAsync(lightType, pos, chunk, neighbors);
++        }
++
++        return true;
++    }
++
++    public boolean checkLightAsync(EnumSkyBlock lightType, BlockPosition pos, Chunk currentChunk, List<Chunk> neighbors) {
++        int i = 0;
++        int j = 0;
++        int k = this.getLightForAsync(lightType, pos, currentChunk, neighbors);
++        int l = this.getRawBlockLightAsync(lightType, pos, currentChunk, neighbors);
++        int i1 = pos.getX();
++        int j1 = pos.getY();
++        int k1 = pos.getZ();
++
++        if (l > k) {
++            this.getLightUpdateBlockList()[j++] = 133152;
++        } else if (l < k) {
++            this.getLightUpdateBlockList()[j++] = 133152 | k << 18;
++
++            while (i < j) {
++                int l1 = this.getLightUpdateBlockList()[i++];
++                int i2 = (l1 & 63) - 32 + i1;
++                int j2 = (l1 >> 6 & 63) - 32 + j1;
++                int k2 = (l1 >> 12 & 63) - 32 + k1;
++                int l2 = l1 >> 18 & 15;
++                BlockPosition blockpos = new BlockPosition(i2, j2, k2);
++                int i3 = this.getLightForAsync(lightType, blockpos, currentChunk, neighbors);
++
++                if (i3 == l2) {
++                    this.setLightForAsync(lightType, blockpos, 0, currentChunk, neighbors);
++
++                    if (l2 > 0) {
++                        int j3 = MathHelper.abs(i2 - i1);
++                        int k3 = MathHelper.abs(j2 - j1);
++                        int l3 = MathHelper.abs(k2 - k1);
++
++                        if (j3 + k3 + l3 < 17) {
++                            BlockPosition.PooledBlockPosition blockpos$pooledmutableblockpos = BlockPosition.PooledBlockPosition.aquire();
++
++                            for(EnumDirection enumfacing : EnumDirection.values()) {
++                                int i4 = i2 + enumfacing.getAdjacentX();
++                                int j4 = j2 + enumfacing.getAdjacentY();
++                                int k4 = k2 + enumfacing.getAdjacentZ();
++                                blockpos$pooledmutableblockpos.setPos(i4, j4, k4);
++                                final Chunk pooledChunk = this.getLightChunk(blockpos$pooledmutableblockpos, currentChunk, neighbors);
++                                if (pooledChunk == null) {
++                                    continue;
++                                }
++                                int l4 = Math.max(1, pooledChunk.getBlockData(blockpos$pooledmutableblockpos).getLightOpacity());
++                                i3 = this.getLightForAsync(lightType, blockpos$pooledmutableblockpos, currentChunk, neighbors);
++
++                                if (i3 == l2 - l4 && j < this.getLightUpdateBlockList().length) {
++                                    this.getLightUpdateBlockList()[j++] = i4 - i1 + 32 | j4 - j1 + 32 << 6 | k4 - k1 + 32 << 12 | l2 - l4 << 18;
++                                }
++                            }
++
++                            blockpos$pooledmutableblockpos.free();
++                        }
++                    }
++                }
++            }
++
++            i = 0;
++        }
++
++        while (i < j) {
++            int i5 = this.getLightUpdateBlockList()[i++];
++            int j5 = (i5 & 63) - 32 + i1;
++            int k5 = (i5 >> 6 & 63) - 32 + j1;
++            int l5 = (i5 >> 12 & 63) - 32 + k1;
++            BlockPosition blockpos1 = new BlockPosition(j5, k5, l5);
++            int i6 = this.getLightForAsync(lightType, blockpos1, currentChunk, neighbors);
++            int j6 = this.getRawBlockLightAsync(lightType, blockpos1, currentChunk, neighbors);
++
++            if (j6 != i6) {
++                this.setLightForAsync(lightType, blockpos1, j6, currentChunk, neighbors);
++
++                if (j6 > i6) {
++                    int k6 = Math.abs(j5 - i1);
++                    int l6 = Math.abs(k5 - j1);
++                    int i7 = Math.abs(l5 - k1);
++                    boolean flag = j < this.getLightUpdateBlockList().length - 6;
++
++                    if (k6 + l6 + i7 < 17 && flag) {
++                        if (this.getLightForAsync(lightType, blockpos1.west(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 - 1 - i1 + 32 + (k5 - j1 + 32 << 6) + (l5 - k1 + 32 << 12);
++                        }
++
++                        if (this.getLightForAsync(lightType, blockpos1.east(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 + 1 - i1 + 32 + (k5 - j1 + 32 << 6) + (l5 - k1 + 32 << 12);
++                        }
++
++                        if (this.getLightForAsync(lightType, blockpos1.down(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 - i1 + 32 + (k5 - 1 - j1 + 32 << 6) + (l5 - k1 + 32 << 12);
++                        }
++
++                        if (this.getLightForAsync(lightType, blockpos1.up(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 - i1 + 32 + (k5 + 1 - j1 + 32 << 6) + (l5 - k1 + 32 << 12);
++                        }
++
++                        if (this.getLightForAsync(lightType, blockpos1.north(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 - i1 + 32 + (k5 - j1 + 32 << 6) + (l5 - 1 - k1 + 32 << 12);
++                        }
++
++                        if (this.getLightForAsync(lightType, blockpos1.south(), currentChunk, neighbors) < j6) {
++                            this.getLightUpdateBlockList()[j++] = j5 - i1 + 32 + (k5 - j1 + 32 << 6) + (l5 + 1 - k1 + 32 << 12);
++                        }
++                    }
++                }
++            }
++        }
++
++        currentChunk.getQueuedLightingUpdates(lightType).remove((Short) this.blockPosToShort(pos));
++        currentChunk.getPendingLightUpdates().decrementAndGet();
++        for (Chunk neighborChunk : neighbors) {
++            neighborChunk.getPendingLightUpdates().decrementAndGet();
++        }
++
++        return true;
++    }
++
++    // Thread safe methods to retrieve a chunk during async light updates
++    // Each method avoids calling getLoadedChunk and instead accesses the passed neighbor chunk list to avoid concurrency issues
++    public Chunk getLightChunk(BlockPosition pos, Chunk currentChunk, List<Chunk> neighbors) {
++        if (currentChunk.isAtLocation(pos.getX() >> 4, pos.getZ() >> 4)) {
++            if (currentChunk.isUnloading()) {
++                return null;
++            }
++            return currentChunk;
++        }
++        for (Chunk neighbor : neighbors) {
++            if (neighbor.isAtLocation(pos.getX() >> 4, pos.getZ() >> 4)) {
++                if (neighbor.isUnloading()) {
++                    return null;
++                }
++                return neighbor;
++            }
++        }
++
++        return null;
++    }
++
++    private int getLightForAsync(EnumSkyBlock lightType, BlockPosition pos, Chunk currentChunk, List<Chunk> neighbors) {
++        if (pos.getY() < 0) {
++            pos = new BlockPosition(pos.getX(), 0, pos.getZ());
++        }
++        if (!pos.isValidLocation()) {
++            return lightType.getDefaultLightValue();
++        }
++
++        final Chunk chunk = this.getLightChunk(pos, currentChunk, neighbors);
++        if (chunk == null || chunk.isUnloading()) {
++            return lightType.getDefaultLightValue();
++        }
++
++        return chunk.getBrightness(lightType, pos);
++    }
++
++    private int getRawBlockLightAsync(EnumSkyBlock lightType, BlockPosition pos, Chunk currentChunk, List<Chunk> neighbors) {
++        final Chunk chunk = getLightChunk(pos, currentChunk, neighbors);
++        if (chunk == null || chunk.isUnloading()) {
++            return lightType.getDefaultLightValue();
++        }
++        if (lightType == EnumSkyBlock.SKY && chunk.canSeeSky(pos)) {
++            return 15;
++        } else {
++            IBlockData blockState = chunk.getBlockData(pos);
++            int blockLight = blockState.getLightValue();
++            int i = lightType == EnumSkyBlock.SKY ? 0 : blockLight;
++            int j = blockState.getLightOpacity();
++
++            if (j >= 15 && blockLight > 0) {
++                j = 1;
++            }
++
++            if (j < 1) {
++                j = 1;
++            }
++
++            if (j >= 15) {
++                return 0;
++            } else if (i >= 14) {
++                return i;
++            } else {
++                for (EnumDirection enumfacing : EnumDirection.values()) {
++                    BlockPosition blockpos = pos.shift(enumfacing);
++                    int k = this.getLightForAsync(lightType, blockpos, currentChunk, neighbors) - j;
++
++                    if (k > i) {
++                        i = k;
++                    }
++
++                    if (i >= 14) {
++                        return i;
++                    }
++                }
++
++                return i;
++            }
++        }
++    }
++
++    public void setLightForAsync(EnumSkyBlock type, BlockPosition pos, int lightValue, Chunk currentChunk, List<Chunk> neighbors) {
++        if(!pos.isValidLocation()) {
++            return;
++        }
++        final Chunk chunk = this.getLightChunk(pos, currentChunk, neighbors);
++        if (chunk != null && !chunk.isUnloading()) {
++            chunk.setLightFor(type, pos, lightValue);
++            this.notifyLightSet(pos);
++        }
++    }
++
++    private short blockPosToShort(BlockPosition pos) {
++        short serialized = (short) setNibble(0, pos.getX() & XZ_MASK, 0, NUM_XZ_BITS);
++        serialized = (short) setNibble(serialized, pos.getY() & Y_SHORT_MASK, 1, NUM_SHORT_Y_BITS);
++        serialized = (short) setNibble(serialized, pos.getZ() & XZ_MASK, 3, NUM_XZ_BITS);
++        return serialized;
++    }
++
++    /**
++     * Modifies bits in an integer.
++     *
++     * @param num Integer to modify
++     * @param data Bits of data to add
++     * @param which Index of nibble to start at
++     * @param bitsToReplace The number of bits to replace starting from nibble index
++     * @return The modified integer
++     */
++    private int setNibble(int num, int data, int which, int bitsToReplace) {
++        return (num & ~(bitsToReplace << (which * 4)) | (data << (which * 4)));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldProvider.java b/src/main/java/net/minecraft/server/WorldProvider.java
+index 35d8d1a6e..2a864f294 100644
+--- a/src/main/java/net/minecraft/server/WorldProvider.java
++++ b/src/main/java/net/minecraft/server/WorldProvider.java
+@@ -110,6 +110,7 @@ public abstract class WorldProvider {
+         return this.d;
+     }
+ 
++    public boolean hasSkyLight() { return m(); } // Paper - OBFHELPER
+     public boolean m() {
+         return this.f;
+     }
+-- 
+2.14.2
+

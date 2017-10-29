@@ -1,0 +1,94 @@
+From 4e9716e3dc91131846b99efa98479016124a3a86 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Mon, 16 Oct 2017 23:05:08 +0300
+Subject: [PATCH] Port Sponge's chunk neighbors system
+
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index b384cc5b0..a5bda7aaf 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -56,6 +56,36 @@ public class Chunk {
+     private final int[] inventoryEntityCounts = new int[16];
+     // Paper end
+ 
++    // Paper start - Port Chunk neighbors from Sponge
++    private final Chunk[] chunkNeighbors = new Chunk[4];
++
++    public boolean areNeighborsLoaded() {
++        for(int i = 0; i < 4; i++) {
++            if(this.chunkNeighbors[i] == null)
++                return false;
++        }
++        return true;
++    }
++
++    public Chunk getNeighborChunk(int index) {
++        return this.chunkNeighbors[index];
++    }
++
++    public List<Chunk> getNeighbors() {
++        List<Chunk> neighborList = new java.util.ArrayList<>();
++        for (Chunk neighbor : this.chunkNeighbors) {
++            if (neighbor != null) {
++                neighborList.add(neighbor);
++            }
++        }
++        return neighborList;
++    }
++
++    public void setNeighbor(int index, Chunk neighborChunk) {
++        this.chunkNeighbors[index] = neighborChunk;
++    }
++    // Paper end
++
+     // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+     private int neighbors = 0x1 << 12;
+     public long chunkKey;
+@@ -810,6 +840,21 @@ public class Chunk {
+             this.world.a((Collection) entityslice);
+         }
+ 
++        // Paper start - Port chunk neighbors from Sponge
++        Iterator<EnumDirection> directionIterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
++        directionIterator.forEachRemaining(direction -> {
++            BaseBlockPosition pos = new BaseBlockPosition(locX + direction.getAdjacentX(), 0, locZ + direction.getAdjacentZ());
++            Chunk neighborChunk = MCUtil.getLoadedChunkWithoutMarkingActive(world, pos.getX(), pos.getZ());
++            if(neighborChunk == null)
++                return;
++
++            // Implementation note: DOWN and UP are first two in enum, so substract them from ordinal.
++            int neighborIndex = direction.ordinal() - 2;
++            int oppositeIndex = direction.opposite().ordinal() - 2;
++            this.setNeighbor(neighborIndex, neighborChunk);
++            neighborChunk.setNeighbor(oppositeIndex, this);
++        });
++        // Paper end
+     }
+ 
+     public void removeEntities() {
+@@ -867,6 +912,21 @@ public class Chunk {
+             // CraftBukkit end
+         }
+ 
++        // Paper start - Port chunk neighbors from Sponge
++        Iterator<EnumDirection> directionIterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
++        directionIterator.forEachRemaining(direction -> {
++            BaseBlockPosition pos = new BaseBlockPosition(locX + direction.getAdjacentX(), 0, locZ + direction.getAdjacentZ());
++
++            Chunk neighborChunk = MCUtil.getLoadedChunkWithoutMarkingActive(world, pos.getX(), pos.getZ());
++            if(neighborChunk == null)
++                return;
++
++            int neighborIndex = direction.ordinal() - 2;
++            int oppositeIndex = direction.opposite().ordinal() - 2;
++            this.setNeighbor(neighborIndex, null);
++            neighborChunk.setNeighbor(oppositeIndex, null);
++        });
++        // Paper end
+     }
+ 
+     public void markDirty() {
+-- 
+2.14.2
+
