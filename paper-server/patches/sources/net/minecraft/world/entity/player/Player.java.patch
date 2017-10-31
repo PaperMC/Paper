@@ -35,7 +35,7 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -188,7 +198,18 @@
+@@ -188,6 +198,17 @@
      public Entity currentExplosionCause;
      private boolean ignoreFallDamageFromCurrentImpulse;
      private int currentImpulseContextResetGraceTime;
@@ -44,16 +44,15 @@
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
 +    public int oldLevel = -1;
- 
++
 +    @Override
 +    public CraftHumanEntity getBukkitEntity() {
 +        return (CraftHumanEntity) super.getBukkitEntity();
 +    }
 +    // CraftBukkit end
-+
+ 
      public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
          super(EntityType.PLAYER, world);
-         this.lastItemInMainHand = ItemStack.EMPTY;
 @@ -353,7 +374,7 @@
      }
  
@@ -262,6 +261,15 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
+@@ -1159,7 +1230,7 @@
+                     boolean flag1;
+ 
+                     if (this.isSprinting() && flag) {
+-                        this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         flag1 = true;
+                     } else {
+                         flag1 = false;
 @@ -1223,8 +1294,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
@@ -277,7 +285,13 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1240,9 +1316,26 @@
+@@ -1235,26 +1311,43 @@
+                                 }
+                             }
+ 
+-                            this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.sweepAttack();
                          }
  
                          if (target instanceof ServerPlayer && target.hurtMarked) {
@@ -304,6 +318,21 @@
                          }
  
                          if (flag2) {
+-                            this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.crit(target);
+                         }
+ 
+                         if (!flag2 && !flag3) {
+                             if (flag) {
+-                                this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             } else {
+-                                this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             }
+                         }
+ 
 @@ -1308,9 +1401,14 @@
                              }
                          }
@@ -311,7 +340,8 @@
 -                        this.causeFoodExhaustion(0.1F);
 +                        this.causeFoodExhaustion(this.level().spigotConfig.combatExhaustion, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
                      } else {
-                         this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
+-                        this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
 +                        // CraftBukkit start - resync on cancelled event
 +                        if (this instanceof ServerPlayer) {
 +                            ((ServerPlayer) this).getBukkitEntity().updateInventory();
@@ -377,9 +407,18 @@
      }
  
      @Override
-@@ -1665,10 +1788,21 @@
+@@ -1664,11 +1787,30 @@
+     public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
++    // Paper start - send while respecting visibility
++    private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
++        fromEntity.level().playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity itself
++        if (fromEntity instanceof ServerPlayer serverPlayer) {
++            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEffect), soundCategory, x, y, z, volume, pitch, fromEntity.random.nextLong()));
++        }
++    }
++    // Paper end - send while respecting visibility
  
 +    // CraftBukkit start
      public void causeFoodExhaustion(float exhaustion) {
@@ -400,7 +439,7 @@
              }
  
          }
-@@ -1748,13 +1882,20 @@
+@@ -1748,13 +1890,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -428,7 +467,7 @@
          }
  
      }
-@@ -1798,26 +1939,55 @@
+@@ -1798,26 +1947,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
