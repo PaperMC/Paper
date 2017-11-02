@@ -43,6 +43,8 @@ import BiomeMesa
 import BlockBeacon
 import BlockChest
 import BlockFalling
+import BlockFlowerPot
+import BlockFluids
 import BlockFurnace
 import BlockIceFrost
 import BlockPosition

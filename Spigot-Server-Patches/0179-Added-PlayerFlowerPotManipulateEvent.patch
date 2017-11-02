@@ -1,0 +1,38 @@
+From 98a018de43a0d79eda1d3c5ffdb68c19486b3bb0 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 20 Nov 2016 15:38:53 -0800
+Subject: [PATCH] Added PlayerFlowerPotManipulateEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockFlowerPot.java b/src/main/java/net/minecraft/server/BlockFlowerPot.java
+index 88295ee..26cb08e 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowerPot.java
++++ b/src/main/java/net/minecraft/server/BlockFlowerPot.java
+@@ -43,6 +43,24 @@ public class BlockFlowerPot extends BlockTileEntity {
+         } else {
+             ItemStack itemstack1 = tileentityflowerpot.getContents();
+ 
++            // Paper start
++            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
++            org.bukkit.block.Block block = player.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            boolean placing = itemstack1.isEmpty();
++            org.bukkit.inventory.ItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(placing ? itemstack : itemstack1);
++
++            com.destroystokyo.paper.event.player.PlayerFlowerPotManipulateEvent event = new com.destroystokyo.paper.event.player.PlayerFlowerPotManipulateEvent(player, block, item, placing);
++            player.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                // Update client
++                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutTileEntityData(blockposition, 5, tileentityflowerpot.d()));
++                player.updateInventory();
++
++                return false;
++            }
++            // Paper end
++
+             if (itemstack1.isEmpty()) {
+                 if (!this.a(itemstack)) {
+                     return false;
+-- 
+2.10.0.windows.1
+
