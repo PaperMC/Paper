@@ -5,17 +5,17 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-minecraftversion=$(cat ${workdir}/BuildData/info.json | grep minecraftVersion | cut -d '"' -f 4)
-minecrafthash=$(cat ${workdir}/BuildData/info.json | grep minecraftHash | cut -d '"' -f 4)
-accesstransforms="$workdir/BuildData/mappings/"$(cat ${workdir}/BuildData/info.json | grep accessTransforms | cut -d '"' -f 4)
-classmappings="$workdir/BuildData/mappings/"$(cat ${workdir}/BuildData/info.json | grep classMappings | cut -d '"' -f 4)
-membermappings="$workdir/BuildData/mappings/"$(cat ${workdir}/BuildData/info.json | grep memberMappings | cut -d '"' -f 4)
-packagemappings="$workdir/BuildData/mappings/"$(cat ${workdir}/BuildData/info.json | grep packageMappings | cut -d '"' -f 4)
-jarpath="$workdir/$minecraftversion/$minecraftversion"
+minecraftversion=$(cat "${workdir}/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
+minecrafthash=$(cat "${workdir}/BuildData/info.json" | grep minecraftHash | cut -d '"' -f 4)
+accesstransforms="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep accessTransforms | cut -d '"' -f 4)
+classmappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep classMappings | cut -d '"' -f 4)
+membermappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep memberMappings | cut -d '"' -f 4)
+packagemappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep packageMappings | cut -d '"' -f 4)
+jarpath="$workdir/Minecraft/$minecraftversion/$minecraftversion"
 
 echo "Downloading unmapped vanilla jar..."
 if [ ! -f  "$jarpath.jar" ]; then
-    mkdir -p "$workdir/$minecraftversion"
+    mkdir -p "$workdir/Minecraft/$minecraftversion"
     curl -s -o "$jarpath.jar" "https://s3.amazonaws.com/Minecraft.Download/versions/$minecraftversion/minecraft_server.$minecraftversion.jar"
     if [ "$?" != "0" ]; then
         echo "Failed to download the vanilla server jar. Check connectivity or try again later."
@@ -27,7 +27,7 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
    shopt -s expand_aliases
    alias md5sum='md5 -r'
-   echo "Using an alias for md5sum on OS X"
+   echo "Using an alias for md5sum on macOS"
 fi
 
 checksum=$(md5sum "$jarpath.jar" | cut -d ' ' -f 1)

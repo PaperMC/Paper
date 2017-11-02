@@ -1,4 +1,4 @@
-From fc030252b9016bc9ab114383c13d6e1ddc5e347e Mon Sep 17 00:00:00 2001
+From d6c062cb8c337535554a3fcb0008ede65a33c86b Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Thu, 3 Mar 2016 13:20:33 -0700
 Subject: [PATCH] Use ASM for event executors.
@@ -6,10 +6,10 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/pom.xml b/pom.xml
-index 93e3c3b..b0eba81 100644
+index c6bdf44e..31b6f51b 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -134,6 +134,12 @@
+@@ -128,6 +128,12 @@
              <version>1.3</version>
              <scope>test</scope>
          </dependency>
@@ -24,7 +24,7 @@ index 93e3c3b..b0eba81 100644
      <build>
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
 new file mode 100644
-index 0000000..9ff99e3
+index 00000000..9ff99e3b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
 @@ -0,0 +1,40 @@
@@ -70,7 +70,7 @@ index 0000000..9ff99e3
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
 new file mode 100644
-index 0000000..f60f010
+index 00000000..f60f0100
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
 @@ -0,0 +1,39 @@
@@ -115,7 +115,7 @@ index 0000000..f60f010
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 0000000..45c2330
+index 00000000..140cf0ad
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 @@ -0,0 +1,44 @@
@@ -147,7 +147,7 @@ index 0000000..45c2330
 +        methodGenerator.checkCast(Type.getType(m.getDeclaringClass()));
 +        methodGenerator.loadArg(1);
 +        methodGenerator.checkCast(Type.getType(m.getParameterTypes()[0]));
-+        methodGenerator.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(m.getDeclaringClass()), m.getName(), Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
++        methodGenerator.visitMethodInsn(m.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL, Type.getInternalName(m.getDeclaringClass()), m.getName(), Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
 +        if (m.getReturnType() != void.class) {
 +            methodGenerator.pop();
 +        }
@@ -165,7 +165,7 @@ index 0000000..45c2330
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
 new file mode 100644
-index 0000000..6941d9f
+index 00000000..6941d9fb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
 @@ -0,0 +1,32 @@
@@ -203,10 +203,10 @@ index 0000000..6941d9f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
 new file mode 100644
-index 0000000..776a9a0
+index 00000000..1473ff8c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,63 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
 +import java.util.concurrent.ConcurrentHashMap;
@@ -214,6 +214,7 @@ index 0000000..776a9a0
 +
 +import com.google.common.base.Preconditions;
 +
++import com.google.common.collect.MapMaker;
 +import org.objectweb.asm.Type;
 +
 +public class SafeClassDefiner implements ClassDefiner {
@@ -221,7 +222,7 @@ index 0000000..776a9a0
 +
 +    private SafeClassDefiner() {}
 +
-+    private final ConcurrentMap<ClassLoader, GeneratedClassLoader> loaders = new ConcurrentHashMap<>();
++    private final ConcurrentMap<ClassLoader, GeneratedClassLoader> loaders = new MapMaker().weakKeys().makeMap();
 +
 +    @Override
 +    public Class<?> defineClass(ClassLoader parentLoader, String name, byte[] data) {
@@ -271,7 +272,7 @@ index 0000000..776a9a0
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java b/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java
 new file mode 100644
-index 0000000..62acbf8
+index 00000000..62acbf82
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java
 @@ -0,0 +1,33 @@
@@ -309,16 +310,20 @@ index 0000000..62acbf8
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
-index 3b2c99e..f9316d6 100644
+index 3b2c99ea..b45b6c1c 100644
 --- a/src/main/java/org/bukkit/plugin/EventExecutor.java
 +++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
-@@ -4,9 +4,55 @@ import org.bukkit.event.Event;
+@@ -4,9 +4,81 @@ import org.bukkit.event.Event;
  import org.bukkit.event.EventException;
  import org.bukkit.event.Listener;
  
 +// Paper start
 +import java.lang.reflect.Method;
 +import java.lang.reflect.Modifier;
++import java.util.HashMap;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentMap;
++import java.util.function.Function;
 +
 +import com.destroystokyo.paper.event.executor.MethodHandleEventExecutor;
 +import com.destroystokyo.paper.event.executor.StaticMethodHandleEventExecutor;
@@ -334,6 +339,24 @@ index 3b2c99e..f9316d6 100644
      public void execute(Listener listener, Event event) throws EventException;
 +
 +    // Paper start
++    ConcurrentMap<Method, Class<? extends EventExecutor>> eventExecutorMap = new ConcurrentHashMap<Method, Class<? extends EventExecutor>>() {
++        @Override
++        public Class<? extends EventExecutor> computeIfAbsent(Method key, Function<? super Method, ? extends Class<? extends EventExecutor>> mappingFunction) {
++            Class<? extends EventExecutor> executorClass = get(key);
++            if (executorClass != null)
++                return executorClass;
++
++            //noinspection SynchronizationOnLocalVariableOrMethodParameter
++            synchronized (key) {
++                executorClass = get(key);
++                if (executorClass != null)
++                    return executorClass;
++
++                return super.computeIfAbsent(key, mappingFunction);
++            }
++        }
++    };
++
 +    public static EventExecutor create(Method m, Class<? extends Event> eventClass) {
 +        Preconditions.checkNotNull(m, "Null method");
 +        Preconditions.checkArgument(m.getParameterCount() != 0, "Incorrect number of arguments %s", m.getParameterCount());
@@ -341,12 +364,16 @@ index 3b2c99e..f9316d6 100644
 +        ClassDefiner definer = ClassDefiner.getInstance();
 +        if (Modifier.isStatic(m.getModifiers())) {
 +            return new StaticMethodHandleEventExecutor(eventClass, m);
-+        } if (definer.isBypassAccessChecks() || Modifier.isPublic(m.getDeclaringClass().getModifiers()) && Modifier.isPublic(m.getModifiers())) {
-+            String name = ASMEventExecutorGenerator.generateName();
-+            byte[] classData = ASMEventExecutorGenerator.generateEventExecutor(m, name);
-+            Class<? extends EventExecutor> c = definer.defineClass(m.getDeclaringClass().getClassLoader(), name, classData).asSubclass(EventExecutor.class);
++        } else if (definer.isBypassAccessChecks() || Modifier.isPublic(m.getDeclaringClass().getModifiers()) && Modifier.isPublic(m.getModifiers())) {
++            // get the existing generated EventExecutor class for the Method or generate one
++            Class<? extends EventExecutor> executorClass = eventExecutorMap.computeIfAbsent(m, (__) -> {
++                String name = ASMEventExecutorGenerator.generateName();
++                byte[] classData = ASMEventExecutorGenerator.generateEventExecutor(m, name);
++                return definer.defineClass(m.getDeclaringClass().getClassLoader(), name, classData).asSubclass(EventExecutor.class);
++            });
++
 +            try {
-+                EventExecutor asmExecutor = c.newInstance();
++                EventExecutor asmExecutor = executorClass.newInstance();
 +                // Define a wrapper to conform to bukkit stupidity (passing in events that don't match and wrapper exception)
 +                return new EventExecutor() {
 +                    @Override
@@ -369,7 +396,7 @@ index 3b2c99e..f9316d6 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index d8b9c24..40fd71d 100644
+index d8b9c244..40fd71dc 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -287,20 +287,7 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -395,5 +422,5 @@ index d8b9c24..40fd71d 100644
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 -- 
-2.10.2
+2.14.1
 

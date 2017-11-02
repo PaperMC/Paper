@@ -1,15 +1,214 @@
-From ec03a27e95b1f53a612f33a4223a818ad61226fa Mon Sep 17 00:00:00 2001
+From cb7d77b69a13ca1dfe6edd5e2eb97502481e66e4 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+new file mode 100644
+index 00000000..ecd1c65a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -0,0 +1,193 @@
++package com.destroystokyo.paper;
++
++import com.google.common.collect.Maps;
++import net.minecraft.server.*;
++import org.apache.commons.lang3.tuple.MutablePair;
++import org.apache.commons.lang3.tuple.Pair;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.entity.Player;
++
++import java.io.File;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import java.util.*;
++import java.util.stream.Collectors;
++
++public class PaperCommand extends Command {
++
++    public PaperCommand(String name) {
++        super(name);
++        this.description = "Paper related commands";
++        this.usageMessage = "/paper [heap | entity | reload | version]";
++        this.setPermission("bukkit.command.paper");
++    }
++
++    @Override
++    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
++        if (args.length <= 1)
++            return CommandAbstract.getListMatchingLast(args, "heap", "entity", "reload", "version");
++
++        switch (args[0].toLowerCase(Locale.ENGLISH))
++        {
++            case "entity":
++                if (args.length == 2)
++                    return CommandAbstract.getListMatchingLast(args, "help", "list");
++                if (args.length == 3)
++                    return CommandAbstract.getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
++                break;
++        }
++        return Collections.emptyList();
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++
++        if (args.length == 0) {
++            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            return false;
++        }
++
++        switch (args[0].toLowerCase(Locale.ENGLISH))  {
++            case "heap":
++                dumpHeap(sender);
++                break;
++            case "entity":
++                listEntities(sender, args);
++                break;
++            case "reload":
++                doReload(sender);
++                break;
++            case "ver":
++            case "version":
++                org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version").execute(sender, commandLabel, new String[0]);
++                break;
++            default:
++                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++                return false;
++        }
++
++        return true;
++    }
++
++    /*
++     * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
++     */
++    private void listEntities(CommandSender sender, String[] args) {
++        if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
++            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
++            return;
++        }
++
++        switch (args[1].toLowerCase(Locale.ENGLISH)) {
++            case "list":
++                String filter = "*";
++                if (args.length > 2) {
++                    if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
++                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
++                        return;
++                    }
++                    filter = args[2];
++                }
++                final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
++                Set<MinecraftKey> names = EntityTypes.getEntityNameList().stream()
++                        .filter(n -> n.toString().matches(cleanfilter))
++                        .collect(Collectors.toSet());
++
++                if (names.isEmpty()) {
++                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
++                    return;
++                }
++
++                String worldName;
++                if (args.length > 3) {
++                    worldName = args[3];
++                } else if (sender instanceof Player) {
++                    worldName = ((Player) sender).getWorld().getName();
++                } else {
++                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
++                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
++                    return;
++                }
++
++                Map<MinecraftKey, MutablePair<Integer, Map<ChunkCoordIntPair, Integer>>> list = Maps.newHashMap();
++                World bukkitWorld = Bukkit.getWorld(worldName);
++                if (bukkitWorld == null) {
++                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
++                    return;
++                }
++                WorldServer world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
++
++                List<Entity> entities = world.entityList;
++                entities.forEach(e -> {
++                    MinecraftKey key = EntityTypes.getKey(e);
++
++                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
++                    ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
++                    info.left++;
++                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                });
++
++                if (names.size() == 1) {
++                    MinecraftKey name = names.iterator().next();
++                    Pair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.get(name);
++                    if (info == null) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++                    sender.sendMessage("Entity: " + name + " Total: " + info.getLeft());
++                    info.getRight().entrySet().stream()
++                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z));
++                } else {
++                    List<Pair<MinecraftKey, Integer>> info = list.entrySet().stream()
++                            .filter(e -> names.contains(e.getKey()))
++                            .map(e -> Pair.of(e.getKey(), e.getValue().left))
++                            .sorted((a, b) -> !a.getRight().equals(b.getRight()) ? b.getRight() - a.getRight() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .collect(Collectors.toList());
++
++                    if (info == null || info.size() == 0) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++
++                    int count = info.stream().mapToInt(Pair::getRight).sum();
++                    sender.sendMessage("Total: " + count);
++                    info.forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey()));
++                }
++                break;
++        }
++    }
++
++    private void dumpHeap(CommandSender sender) {
++        File file = new File(new File(new File("."), "dumps"),
++                "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + "-server.hprof");
++        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data to " + file);
++        if (CraftServer.dumpHeap(file)) {
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump complete");
++        } else {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
++        }
++    }
++
++    private void doReload(CommandSender sender) {
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++
++        MinecraftServer console = MinecraftServer.getServer();
++        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
++        for (WorldServer world : console.worlds) {
++            world.paperConfig.init();
++        }
++        console.server.reloadCount++;
++
++        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000..3d0a005
+index 00000000..3d8ee9ed
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,173 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -49,7 +248,8 @@ index 0000000..3d0a005
 +    public static YamlConfiguration config;
 +    static int version;
 +    static Map<String, Command> commands;
-+            /*========================================================================*/
++    private static boolean verbose;
++    /*========================================================================*/
 +
 +    public static void init(File configFile) {
 +        CONFIG_FILE = configFile;
@@ -63,12 +263,20 @@ index 0000000..3d0a005
 +        }
 +        config.options().header(HEADER);
 +        config.options().copyDefaults(true);
++        verbose = getBoolean("verbose", false);
 +
 +        commands = new HashMap<String, Command>();
++        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 11);
-+        set("config-version", 11);
++        version = getInt("config-version", 13);
++        set("config-version", 13);
 +        readConfig(PaperConfig.class, null);
++    }
++
++    protected static void log(String s) {
++        if (verbose) {
++            Bukkit.getLogger().info(s);
++        }
 +    }
 +
 +    public static void registerCommands() {
@@ -176,10 +384,10 @@ index 0000000..3d0a005
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000..dae60dc
+index 00000000..621bf705
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,66 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
@@ -187,6 +395,8 @@ index 0000000..dae60dc
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.spigotmc.SpigotWorldConfig;
++
++import static com.destroystokyo.paper.PaperConfig.log;
 +
 +public class PaperWorldConfig {
 +
@@ -203,16 +413,8 @@ index 0000000..dae60dc
 +    }
 +
 +    public void init() {
-+        this.verbose = getBoolean("verbose", false);
-+
 +        log("-------- World Settings For [" + worldName + "] --------");
 +        PaperConfig.readConfig(PaperWorldConfig.class, this);
-+    }
-+
-+    private void log(String s) {
-+        if (verbose) {
-+            Bukkit.getLogger().info(s);
-+        }
 +    }
 +
 +    private void set(String path, Object val) {
@@ -252,11 +454,23 @@ index 0000000..dae60dc
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/CommandAbstract.java b/src/main/java/net/minecraft/server/CommandAbstract.java
+index 76501e29..76bf04f5 100644
+--- a/src/main/java/net/minecraft/server/CommandAbstract.java
++++ b/src/main/java/net/minecraft/server/CommandAbstract.java
+@@ -634,6 +634,7 @@ public abstract class CommandAbstract implements ICommand {
+         return s1.regionMatches(true, 0, s, 0, s.length());
+     }
+ 
++    public static List<String> getListMatchingLast(String[] args, String... matches) { return a(args, matches); } // Paper - OBFHELPER
+     public static List<String> a(String[] astring, String... astring1) {
+         return a(astring, (Collection) Arrays.asList(astring1));
+     }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 954e0f3..f01bd35 100644
+index 8c5361d6..e1cb96a8 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -184,6 +184,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
              org.spigotmc.SpigotConfig.registerCommands();
              // Spigot end
@@ -267,11 +481,48 @@ index 954e0f3..f01bd35 100644
  
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index c2da96ea..8181ab2f 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -122,9 +122,9 @@ public abstract class Entity implements ICommandListener {
+     private static final DataWatcherObject<Boolean> aD = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     private static final DataWatcherObject<Boolean> aE = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
+     public boolean aa;
+-    public int ab;
+-    public int ac;
+-    public int ad;
++    public int ab; public int getChunkX() { return ab; } // Paper - OBFHELPER
++    public int ac; public int getChunkY() { return ac; } // Paper - OBFHELPER
++    public int ad; public int getChunkZ() { return ad; } // Paper - OBFHELPER
+     public boolean ah;
+     public boolean impulse;
+     public int portalCooldown;
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index eb6a955e..77b81a57 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -21,6 +21,7 @@ public class EntityTypes {
+     public static final Set<MinecraftKey> d = Sets.newHashSet();
+     private static final List<String> g = Lists.newArrayList();
+ 
++    @Nullable public static MinecraftKey getKey(Entity entity) { return a(entity); } // Paper - OBFHELPER
+     @Nullable
+     public static MinecraftKey a(Entity entity) {
+         return getName(entity.getClass());
+@@ -78,6 +79,7 @@ public class EntityTypes {
+         return entity;
+     }
+ 
++    public static Set<MinecraftKey> getEntityNameList() { return a(); } // Paper - OBFHELPER
+     public static Set<MinecraftKey> a() {
+         return EntityTypes.d;
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a912719..8bd0250 100644
+index f62e7d9e..dbfed7c6 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -125,6 +125,8 @@ public abstract class World implements IBlockAccess {
+@@ -129,6 +129,8 @@ public abstract class World implements IBlockAccess {
      private int tickPosition;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -280,7 +531,7 @@ index a912719..8bd0250 100644
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      private boolean guardEntityList; // Spigot
      public static boolean haveWeSilencedAPhysicsCrash;
-@@ -147,6 +149,7 @@ public abstract class World implements IBlockAccess {
+@@ -151,6 +153,7 @@ public abstract class World implements IBlockAccess {
  
      protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
@@ -289,10 +540,10 @@ index a912719..8bd0250 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6f31b47..d306f62 100644
+index 814be6ee..37e3c14f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -694,6 +694,7 @@ public final class CraftServer implements Server {
+@@ -702,6 +702,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -300,7 +551,7 @@ index 6f31b47..d306f62 100644
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
-@@ -709,12 +710,14 @@ public final class CraftServer implements Server {
+@@ -717,6 +718,7 @@ public final class CraftServer implements Server {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
              world.spigotConfig.init(); // Spigot
@@ -308,15 +559,43 @@ index 6f31b47..d306f62 100644
          }
  
          pluginManager.clearPlugins();
-         commandMap.clearCommands();
+@@ -724,6 +726,7 @@ public final class CraftServer implements Server {
          resetRecipes();
+         reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
 +        com.destroystokyo.paper.PaperConfig.registerCommands(); // Paper
- 
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
  
+         int pollCount = 0;
+@@ -1786,4 +1789,26 @@ public final class CraftServer implements Server {
+     {
+         return spigot;
+     }
++
++    // Paper start
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static boolean dumpHeap(File file) {
++        try {
++            if (file.getParentFile() != null) {
++                file.getParentFile().mkdirs();
++            }
++
++            Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++            java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++            m.invoke(hotspotMBean, file.getPath(), true);
++            return true;
++        } catch (Throwable t) {
++            Bukkit.getLogger().severe("Could not write heap to " + file);
++            t.printStackTrace();
++            return false;
++        }
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index f7637a9..11bc824 100644
+index a151451d..0c5862a3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -126,6 +126,14 @@ public class Main {
@@ -334,6 +613,47 @@ index f7637a9..11bc824 100644
              }
          };
  
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 01e73eb8..0b66f5e3 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -39,31 +39,31 @@ public class SpigotWorldConfig
+         config.set( "world-settings.default." + path, val );
+     }
+ 
+-    private boolean getBoolean(String path, boolean def)
++    public boolean getBoolean(String path, boolean def)
+     {
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getBoolean( "world-settings." + worldName + "." + path, config.getBoolean( "world-settings.default." + path ) );
+     }
+ 
+-    private double getDouble(String path, double def)
++    public double getDouble(String path, double def)
+     {
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getDouble( "world-settings." + worldName + "." + path, config.getDouble( "world-settings.default." + path ) );
+     }
+ 
+-    private int getInt(String path, int def)
++    public int getInt(String path, int def)
+     {
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getInt( "world-settings." + worldName + "." + path, config.getInt( "world-settings.default." + path ) );
+     }
+ 
+-    private <T> List getList(String path, T def)
++    public <T> List getList(String path, T def)
+     {
+         config.addDefault( "world-settings.default." + path, def );
+         return (List<T>) config.getList( "world-settings." + worldName + "." + path, config.getList( "world-settings.default." + path ) );
+     }
+ 
+-    private String getString(String path, String def)
++    public String getString(String path, String def)
+     {
+         config.addDefault( "world-settings.default." + path, def );
+         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.10.2
+2.14.2.windows.2
 

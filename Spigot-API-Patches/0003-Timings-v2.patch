@@ -1,4 +1,4 @@
-From 30dc07b0d34561883d0c878ff8ad5f9b70c98cb2 Mon Sep 17 00:00:00 2001
+From 98b1fecba12a6cdde5a5c08d9dc2a84851a7669b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 0000000..e5a98af
+index 00000000..4d8b633e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,82 @@
 +package co.aikar.timings;
 +
 +import static co.aikar.timings.TimingsManager.*;
@@ -85,6 +85,7 @@ index 0000000..e5a98af
 +            TimingsManager.HISTORY.add(new TimingHistory());
 +            TimingsManager.resetTimings();
 +        }
++        TimingsExport.reportTimings();
 +    }
 +
 +    boolean isViolated() {
@@ -93,7 +94,7 @@ index 0000000..e5a98af
 +}
 diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
 new file mode 100644
-index 0000000..8c43e20
+index 00000000..8c43e206
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
 @@ -0,0 +1,61 @@
@@ -160,7 +161,7 @@ index 0000000..8c43e20
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 0000000..96057fc
+index 00000000..feddcdbd
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 @@ -0,0 +1,81 @@
@@ -206,10 +207,10 @@ index 0000000..96057fc
 +    /**
 +     * Wraps an event executor and associates a timing handler to it.
 +     *
-+     * @param executor
-+     * @param plugin
-+     * @param method
-+     * @param eventClass
++     * @param executor Executor to wrap
++     * @param plugin Owning plugin
++     * @param method EventHandler method
++     * @param eventClass Owning class
 +     */
 +    public TimedEventExecutor(EventExecutor executor, Plugin plugin, Method method, Class<? extends Event> eventClass) {
 +        this.executor = executor;
@@ -247,10 +248,10 @@ index 0000000..96057fc
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 0000000..8b2d1b8
+index 00000000..b2260104
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,76 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -282,6 +283,8 @@ index 0000000..8b2d1b8
 +public interface Timing extends AutoCloseable {
 +    /**
 +     * Starts timing the execution until {@link #stopTiming()} is called.
++     *
++     * @return Timing
 +     */
 +    Timing startTiming();
 +
@@ -296,6 +299,8 @@ index 0000000..8b2d1b8
 +     * Starts timing the execution until {@link #stopTiming()} is called.
 +     *
 +     * But only if we are on the primary thread.
++     *
++     * @return Timing
 +     */
 +    Timing startTimingIfSync();
 +
@@ -325,7 +330,7 @@ index 0000000..8b2d1b8
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingData.java b/src/main/java/co/aikar/timings/TimingData.java
 new file mode 100644
-index 0000000..f222d6b
+index 00000000..f222d6b7
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingData.java
 @@ -0,0 +1,120 @@
@@ -451,7 +456,7 @@ index 0000000..f222d6b
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 0000000..916b6f9
+index 00000000..916b6f9d
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
 @@ -0,0 +1,209 @@
@@ -666,10 +671,10 @@ index 0000000..916b6f9
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 0000000..389875b
+index 00000000..c2c2fb83
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,342 @@
+@@ -0,0 +1,352 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -782,10 +787,20 @@ index 0000000..389875b
 +                    RegionData data = regions.get(new RegionId(chunk.getX(), chunk.getZ()));
 +
 +                    for (Entity entity : chunk.getEntities()) {
++                        if (entity == null) {
++                            Bukkit.getLogger().warning("Null entity detected in chunk at position x: " + chunk.getX() + ", z: " + chunk.getZ());
++                            continue;
++                        }
++
 +                        data.entityCounts.get(entity.getType()).increment();
 +                    }
 +
 +                    for (BlockState tileEntity : chunk.getTileEntities()) {
++                        if (tileEntity == null) {
++                            Bukkit.getLogger().warning("Null tileentity detected in chunk at position x: " + chunk.getX() + ", z: " + chunk.getZ());
++                            continue;
++                        }
++
 +                        data.tileEntityCounts.get(tileEntity.getBlock().getType()).increment();
 +                    }
 +                }
@@ -1014,7 +1029,7 @@ index 0000000..389875b
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 new file mode 100644
-index 0000000..0e114eb
+index 00000000..0e114eb3
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 @@ -0,0 +1,55 @@
@@ -1075,7 +1090,7 @@ index 0000000..0e114eb
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 0000000..623dda4
+index 00000000..623dda49
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
 @@ -0,0 +1,102 @@
@@ -1183,10 +1198,10 @@ index 0000000..623dda4
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 0000000..4e5cf35
+index 00000000..32e4bb1e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,284 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1214,6 +1229,7 @@ index 0000000..4e5cf35
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.EvictingQueue;
++import org.apache.commons.lang.Validate;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.plugin.Plugin;
@@ -1221,7 +1237,7 @@ index 0000000..4e5cf35
 +import java.util.Queue;
 +import java.util.logging.Level;
 +
-+@SuppressWarnings("UnusedDeclaration")
++@SuppressWarnings({"UnusedDeclaration", "WeakerAccess", "SameParameterValue"})
 +public final class Timings {
 +
 +    private static final int MAX_HISTORY_FRAMES = 12;
@@ -1331,8 +1347,8 @@ index 0000000..4e5cf35
 +    }
 +
 +    /**
-+     * Sets whether or not the Timings should monitor at Verbose level.
-+     * <p/>
++     * <p>Sets whether or not the Timings should monitor at Verbose level.</p>
++     *
 +     * When Verbose is disabled, high-frequency timings will not be available.
 +     * Calling this will reset timing data.
 +     *
@@ -1430,7 +1446,17 @@ index 0000000..4e5cf35
 +        if (sender == null) {
 +            sender = Bukkit.getConsoleSender();
 +        }
-+        TimingsExport.reportTimings(sender);
++        TimingsExport.requestingReport.add(sender);
++    }
++
++    /**
++     * Generates a report and sends it to the specified listener.
++     * Use with {@link org.bukkit.command.BufferedCommandSender} to get full response when done!
++     * @param sender The listener to send responses too.
++     */
++    public static void generateReport(TimingsReportListener sender) {
++        Validate.notNull(sender);
++        TimingsExport.requestingReport.add(sender);
 +    }
 +
 +    /*
@@ -1462,7 +1488,7 @@ index 0000000..4e5cf35
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 0000000..1fa0eb5
+index 00000000..56b10e89
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
 @@ -0,0 +1,119 @@
@@ -1565,7 +1591,7 @@ index 0000000..1fa0eb5
 +                "merged".equalsIgnoreCase(arg) ||
 +                "separate".equalsIgnoreCase(arg)
 +            ) {
-+            TimingsExport.reportTimings(sender);
++            Timings.generateReport(sender);
 +        } else {
 +            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
 +        }
@@ -1587,10 +1613,10 @@ index 0000000..1fa0eb5
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000..a4a7fea
+index 00000000..df7f4259
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,388 @@
+@@ -0,0 +1,342 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1616,19 +1642,16 @@ index 0000000..a4a7fea
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
++import com.google.common.collect.Lists;
 +import com.google.common.collect.Sets;
 +import org.apache.commons.lang.StringUtils;
 +import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
 +import org.bukkit.Material;
 +import org.bukkit.command.CommandSender;
-+import org.bukkit.command.ConsoleCommandSender;
-+import org.bukkit.command.RemoteConsoleCommandSender;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.MemorySection;
 +import org.bukkit.entity.EntityType;
-+import org.bukkit.plugin.Plugin;
 +import org.json.simple.JSONObject;
 +import org.json.simple.JSONValue;
 +
@@ -1636,7 +1659,6 @@ index 0000000..a4a7fea
 +import java.io.IOException;
 +import java.io.InputStream;
 +import java.io.OutputStream;
-+import java.lang.management.GarbageCollectorMXBean;
 +import java.lang.management.ManagementFactory;
 +import java.lang.management.RuntimeMXBean;
 +import java.net.HttpURLConnection;
@@ -1649,40 +1671,54 @@ index 0000000..a4a7fea
 +import java.util.zip.GZIPOutputStream;
 +
 +import static co.aikar.timings.TimingsManager.HISTORY;
-+import static co.aikar.util.JSONUtil.*;
++import static co.aikar.util.JSONUtil.appendObjectData;
++import static co.aikar.util.JSONUtil.createObject;
++import static co.aikar.util.JSONUtil.pair;
++import static co.aikar.util.JSONUtil.toArray;
++import static co.aikar.util.JSONUtil.toArrayMapper;
++import static co.aikar.util.JSONUtil.toObjectMapper;
 +
 +@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 +class TimingsExport extends Thread {
 +
-+    private final CommandSender sender;
++    private final TimingsReportListener listeners;
 +    private final Map out;
 +    private final TimingHistory[] history;
 +    private static long lastReport = 0;
++    final static List<CommandSender> requestingReport = Lists.newArrayList();
 +
-+    private TimingsExport(CommandSender sender, Map out, TimingHistory[] history) {
++    private TimingsExport(TimingsReportListener listeners, Map out, TimingHistory[] history) {
 +        super("Timings paste thread");
-+        this.sender = sender;
++        this.listeners = listeners;
 +        this.out = out;
 +        this.history = history;
 +    }
 +
 +    /**
-+     * Builds an XML report of the timings to be uploaded for parsing.
-+     *
-+     * @param sender Who to report to
++     * Checks if any pending reports are being requested, and builds one if needed.
 +     */
-+    static void reportTimings(CommandSender sender) {
++    static void reportTimings() {
++        if (requestingReport.isEmpty()) {
++            return;
++        }
++        TimingsReportListener listeners = new TimingsReportListener(requestingReport);
++        listeners.addConsoleIfNeeded();
++
++        requestingReport.clear();
 +        long now = System.currentTimeMillis();
 +        final long lastReportDiff = now - lastReport;
 +        if (lastReportDiff < 60000) {
-+            sender.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
++            listeners.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
++            listeners.done();
 +            return;
 +        }
 +        final long lastStartDiff = now - TimingsManager.timingStart;
 +        if (lastStartDiff < 180000) {
-+            sender.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
++            listeners.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
++            listeners.done();
 +            return;
 +        }
++        listeners.sendMessage(ChatColor.GREEN + "Preparing Timings Report...");
 +        lastReport = now;
 +        Map parent = createObject(
 +            // Get some basic system details about the server
@@ -1714,12 +1750,7 @@ index 0000000..a4a7fea
 +                pair("cpu", runtime.availableProcessors()),
 +                pair("runtime", ManagementFactory.getRuntimeMXBean().getUptime()),
 +                pair("flags", StringUtils.join(runtimeBean.getInputArguments(), " ")),
-+                pair("gc", toObjectMapper(ManagementFactory.getGarbageCollectorMXBeans(), new Function<GarbageCollectorMXBean, JSONPair>() {
-+                    @Override
-+                    public JSONPair apply(GarbageCollectorMXBean input) {
-+                        return pair(input.getName(), toArray(input.getCollectionCount(), input.getCollectionTime()));
-+                    }
-+                }))
++                pair("gc", toObjectMapper(ManagementFactory.getGarbageCollectorMXBeans(), input -> pair(input.getName(), toArray(input.getCollectionCount(), input.getCollectionTime()))))
 +            )
 +        );
 +
@@ -1755,49 +1786,24 @@ index 0000000..a4a7fea
 +
 +        parent.put("idmap", createObject(
 +            pair("groups", toObjectMapper(
-+                TimingIdentifier.GROUP_MAP.values(), new Function<TimingIdentifier.TimingGroup, JSONPair>() {
-+                @Override
-+                public JSONPair apply(TimingIdentifier.TimingGroup group) {
-+                    return pair(group.id, group.name);
-+                }
-+            })),
++                TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name))),
 +            pair("handlers", handlers),
-+            pair("worlds", toObjectMapper(TimingHistory.worldMap.entrySet(), new Function<Map.Entry<String, Integer>, JSONPair>() {
-+                    @Override
-+                    public JSONPair apply(Map.Entry<String, Integer> input) {
-+                        return pair(input.getValue(), input.getKey());
-+                    }
-+                })),
++            pair("worlds", toObjectMapper(TimingHistory.worldMap.entrySet(), input -> pair(input.getValue(), input.getKey()))),
 +            pair("tileentity",
-+                toObjectMapper(tileEntityTypeSet, new Function<Material, JSONPair>() {
-+                    @Override
-+                    public JSONPair apply(Material input) {
-+                        return pair(input.getId(), input.name());
-+                    }
-+                })),
++                toObjectMapper(tileEntityTypeSet, input -> pair(input.getId(), input.name()))),
 +            pair("entity",
-+                toObjectMapper(entityTypeSet, new Function<EntityType, JSONPair>() {
-+                    @Override
-+                    public JSONPair apply(EntityType input) {
-+                        return pair(input.getTypeId(), input.name());
-+                    }
-+                }))
++                toObjectMapper(entityTypeSet, input -> pair(input.getTypeId(), input.name())))
 +        ));
 +
 +        // Information about loaded plugins
 +
 +        parent.put("plugins", toObjectMapper(Bukkit.getPluginManager().getPlugins(),
-+            new Function<Plugin, JSONPair>() {
-+                @Override
-+                public JSONPair apply(Plugin plugin) {
-+                    return pair(plugin.getName(), createObject(
-+                        pair("version", plugin.getDescription().getVersion()),
-+                        pair("description", String.valueOf(plugin.getDescription().getDescription()).trim()),
-+                        pair("website", plugin.getDescription().getWebsite()),
-+                        pair("authors", StringUtils.join(plugin.getDescription().getAuthors(), ", "))
-+                    ));
-+                }
-+            }));
++                plugin -> pair(plugin.getName(), createObject(
++                    pair("version", plugin.getDescription().getVersion()),
++                    pair("description", String.valueOf(plugin.getDescription().getDescription()).trim()),
++                    pair("website", plugin.getDescription().getWebsite()),
++                    pair("authors", StringUtils.join(plugin.getDescription().getAuthors(), ", "))
++                ))));
 +
 +
 +
@@ -1809,7 +1815,7 @@ index 0000000..a4a7fea
 +            pair("paper", mapAsJSON(Bukkit.spigot().getPaperConfig(), null))
 +        ));
 +
-+        new TimingsExport(sender, parent, history).start();
++        new TimingsExport(listeners, parent, history).start();
 +    }
 +
 +    static long getCost() {
@@ -1866,12 +1872,7 @@ index 0000000..a4a7fea
 +        if (!(val instanceof MemorySection)) {
 +            if (val instanceof List) {
 +                Iterable<Object> v = (Iterable<Object>) val;
-+                return toArrayMapper(v, new Function<Object, Object>() {
-+                    @Override
-+                    public Object apply(Object input) {
-+                        return valAsJSON(input, parentKey);
-+                    }
-+                });
++                return toArrayMapper(v, input -> valAsJSON(input, parentKey));
 +            } else {
 +                return val.toString();
 +            }
@@ -1880,33 +1881,13 @@ index 0000000..a4a7fea
 +        }
 +    }
 +
-+    @SuppressWarnings("CallToThreadRun")
-+    @Override
-+    public synchronized void start() {
-+        if (sender instanceof RemoteConsoleCommandSender) {
-+            sender.sendMessage(ChatColor.RED + "Warning: Timings report done over RCON will cause lag spikes.");
-+            sender.sendMessage(ChatColor.RED + "You should use " + ChatColor.YELLOW +
-+                "/timings report" + ChatColor.RED + " in game or console.");
-+            run();
-+        } else {
-+            super.start();
-+        }
-+    }
-+
 +    @Override
 +    public void run() {
-+        sender.sendMessage(ChatColor.GREEN + "Preparing Timings Report...");
-+
-+
-+        out.put("data", toArrayMapper(history, new Function<TimingHistory, Object>() {
-+            @Override
-+            public Object apply(TimingHistory input) {
-+                return input.export();
-+            }
-+        }));
++        out.put("data", toArrayMapper(history, TimingHistory::export));
 +
 +
 +        String response = null;
++        String timingsURL = null;
 +        try {
 +            HttpURLConnection con = (HttpURLConnection) new URL("http://timings.aikar.co/post").openConnection();
 +            con.setDoOutput(true);
@@ -1928,30 +1909,29 @@ index 0000000..a4a7fea
 +            response = getResponse(con);
 +
 +            if (con.getResponseCode() != 302) {
-+                sender.sendMessage(
++                listeners.sendMessage(
 +                    ChatColor.RED + "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage());
-+                sender.sendMessage(ChatColor.RED + "Check your logs for more information");
++                listeners.sendMessage(ChatColor.RED + "Check your logs for more information");
 +                if (response != null) {
 +                    Bukkit.getLogger().log(Level.SEVERE, response);
 +                }
 +                return;
 +            }
 +
-+            String location = con.getHeaderField("Location");
-+            sender.sendMessage(ChatColor.GREEN + "View Timings Report: " + location);
-+            if (!(sender instanceof ConsoleCommandSender)) {
-+                Bukkit.getLogger().log(Level.INFO, "View Timings Report: " + location);
-+            }
++            timingsURL = con.getHeaderField("Location");
++            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + timingsURL);
 +
 +            if (response != null && !response.isEmpty()) {
 +                Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);
 +            }
 +        } catch (IOException ex) {
-+            sender.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
++            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
 +            if (response != null) {
 +                Bukkit.getLogger().log(Level.SEVERE, response);
 +            }
 +            Bukkit.getLogger().log(Level.SEVERE, "Could not paste timings", ex);
++        } finally {
++            this.listeners.done(timingsURL);
 +        }
 +    }
 +
@@ -1969,7 +1949,7 @@ index 0000000..a4a7fea
 +            return bos.toString();
 +
 +        } catch (IOException ex) {
-+            sender.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
++            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
 +            Bukkit.getLogger().log(Level.WARNING, con.getResponseMessage(), ex);
 +            return null;
 +        } finally {
@@ -1981,7 +1961,7 @@ index 0000000..a4a7fea
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 0000000..58ed35e
+index 00000000..58ed35e0
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
 @@ -0,0 +1,196 @@
@@ -2181,9 +2161,87 @@ index 0000000..58ed35e
 +        return null;
 +    }
 +}
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+new file mode 100644
+index 00000000..e7c389c0
+--- /dev/null
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -0,0 +1,72 @@
++package co.aikar.timings;
++
++import com.google.common.collect.Lists;
++import org.apache.commons.lang.Validate;
++import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.command.ConsoleCommandSender;
++import org.bukkit.command.MessageCommandSender;
++import org.bukkit.command.RemoteConsoleCommandSender;
++
++import java.util.List;
++
++@SuppressWarnings("WeakerAccess")
++public class TimingsReportListener implements MessageCommandSender {
++    private final List<CommandSender> senders;
++    private final Runnable onDone;
++    private String timingsURL;
++
++    public TimingsReportListener(CommandSender senders) {
++        this(senders, null);
++    }
++    public TimingsReportListener(CommandSender sender, Runnable onDone) {
++        this(Lists.newArrayList(sender), onDone);
++    }
++    public TimingsReportListener(List<CommandSender> senders) {
++        this(senders, null);
++    }
++    public TimingsReportListener(List<CommandSender> senders, Runnable onDone) {
++        Validate.notNull(senders);
++        Validate.notEmpty(senders);
++
++        this.senders = Lists.newArrayList(senders);
++        this.onDone = onDone;
++    }
++
++    public String getTimingsURL() {
++        return timingsURL;
++    }
++
++    public void done() {
++        done(null);
++    }
++
++    public void done(String url) {
++        this.timingsURL = url;
++        if (onDone != null) {
++            onDone.run();
++        }
++        for (CommandSender sender : senders) {
++            if (sender instanceof TimingsReportListener) {
++                ((TimingsReportListener) sender).done();
++            }
++        }
++    }
++
++    @Override
++    public void sendMessage(String message) {
++        senders.forEach((sender) -> sender.sendMessage(message));
++    }
++
++    public void addConsoleIfNeeded() {
++        boolean hasConsole = false;
++        for (CommandSender sender : this.senders) {
++            if (sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender) {
++                hasConsole = true;
++            }
++        }
++        if (!hasConsole) {
++            this.senders.add(Bukkit.getConsoleSender());
++        }
++    }
++}
 diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 new file mode 100644
-index 0000000..5edaba1
+index 00000000..5edaba12
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 @@ -0,0 +1,51 @@
@@ -2240,10 +2298,10 @@ index 0000000..5edaba1
 +}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 0000000..5fdf7c4
+index 00000000..96274975
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/JSONUtil.java
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,129 @@
 +package co.aikar.util;
 +
 +import com.google.common.base.Function;
@@ -2266,9 +2324,10 @@ index 0000000..5fdf7c4
 +
 +    /**
 +     * Creates a key/value "JSONPair" object
-+     * @param key
-+     * @param obj
-+     * @return
++     *
++     * @param key Key to use
++     * @param obj Value to use
++     * @return JSONPair
 +     */
 +    public static JSONPair pair(String key, Object obj) {
 +        return new JSONPair(key, obj);
@@ -2279,9 +2338,10 @@ index 0000000..5fdf7c4
 +    }
 +
 +    /**
-+     * Creates a new JSON object from multiple JsonPair key/value pairs
-+     * @param data
-+     * @return
++     * Creates a new JSON object from multiple JSONPair key/value pairs
++     *
++     * @param data JSONPairs
++     * @return Map
 +     */
 +    public static Map createObject(JSONPair... data) {
 +        return appendObjectData(new LinkedHashMap(), data);
@@ -2289,9 +2349,10 @@ index 0000000..5fdf7c4
 +
 +    /**
 +     * This appends multiple key/value Obj pairs into a JSON Object
-+     * @param parent
-+     * @param data
-+     * @return
++     *
++     * @param parent Map to be appended to
++     * @param data Data to append
++     * @return Map
 +     */
 +    public static Map appendObjectData(Map parent, JSONPair... data) {
 +        for (JSONPair JSONPair : data) {
@@ -2302,8 +2363,9 @@ index 0000000..5fdf7c4
 +
 +    /**
 +     * This builds a JSON array from a set of data
-+     * @param data
-+     * @return
++     *
++     * @param data Data to build JSON array from
++     * @return List
 +     */
 +    public static List toArray(Object... data) {
 +        return Lists.newArrayList(data);
@@ -2311,10 +2373,11 @@ index 0000000..5fdf7c4
 +
 +    /**
 +     * These help build a single JSON array using a mapper function
-+     * @param collection
-+     * @param mapper
-+     * @param <E>
-+     * @return
++     *
++     * @param collection Collection to apply to
++     * @param mapper Mapper to apply
++     * @param <E> Element Type
++     * @return List
 +     */
 +    public static <E> List toArrayMapper(E[] collection, Function<E, Object> mapper) {
 +        return toArrayMapper(Lists.newArrayList(collection), mapper);
@@ -2333,10 +2396,11 @@ index 0000000..5fdf7c4
 +
 +    /**
 +     * These help build a single JSON Object from a collection, using a mapper function
-+     * @param collection
-+     * @param mapper
-+     * @param <E>
-+     * @return
++     *
++     * @param collection Collection to apply to
++     * @param mapper Mapper to apply
++     * @param <E> Element Type
++     * @return Map
 +     */
 +    public static <E> Map toObjectMapper(E[] collection, Function<E, JSONPair> mapper) {
 +        return toObjectMapper(Lists.newArrayList(collection), mapper);
@@ -2369,10 +2433,10 @@ index 0000000..5fdf7c4
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 0000000..79fa9d5
+index 00000000..24eae4be
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingIntMap.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,71 @@
 +/*
 + * Copyright (c) 2015. Starlis LLC / dba Empire Minecraft
 + *
@@ -2432,7 +2496,8 @@ index 0000000..79fa9d5
 +
 +    /**
 +     * Due to java stuff, you will need to cast it to (Function) for some cases
-+     * @param <T>
++     *
++     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
 +        @Override
@@ -2445,10 +2510,10 @@ index 0000000..79fa9d5
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 0000000..a9f2919
+index 00000000..1474384e
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,340 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2510,8 +2575,8 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Initializes an auto loading map using specified loader and backing map
-+     * @param backingMap
-+     * @param loader
++     * @param backingMap Map to wrap
++     * @param loader Loader
 +     */
 +    public LoadingMap(Map<K, V> backingMap, Function<K, V> loader) {
 +        this.backingMap = backingMap;
@@ -2520,11 +2585,12 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Creates a new LoadingMap with the specified map and loader
-+     * @param backingMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param backingMap Actual map being used.
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> of(Map<K, V> backingMap, Function<K, V> loader) {
 +        return new LoadingMap<K, V>(backingMap, loader);
@@ -2572,11 +2638,12 @@ index 0000000..a9f2919
 +     * @see #newAutoMap
 +     *
 +     * new Auto initializing map using a HashMap.
-+     * @param keyClass
-+     * @param valueClass
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param keyClass Class used for the K generic
++     * @param valueClass Class used for the V generic
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass) {
 +        return newAutoMap(new HashMap<K, V>(), keyClass, valueClass);
@@ -2586,10 +2653,11 @@ index 0000000..a9f2919
 +     * @see #newAutoMap
 +     *
 +     * new Auto initializing map using a HashMap.
-+     * @param valueClass
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param valueClass Class used for the V generic
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass) {
 +        return newHashAutoMap(null, valueClass);
@@ -2600,13 +2668,13 @@ index 0000000..a9f2919
 +     *
 +     * new Auto initializing map using a HashMap.
 +     *
-+     * @param keyClass
-+     * @param valueClass
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     * @param keyClass Class used for the K generic
++     * @param valueClass Class used for the V generic
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newAutoMap(new HashMap<K, V>(initialCapacity, loadFactor), keyClass, valueClass);
@@ -2617,12 +2685,12 @@ index 0000000..a9f2919
 +     *
 +     * new Auto initializing map using a HashMap.
 +     *
-+     * @param valueClass
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     * @param valueClass Class used for the V generic
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return  Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newHashAutoMap(null, valueClass, initialCapacity, loadFactor);
@@ -2630,10 +2698,11 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Initializes an auto loading map using a HashMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader) {
 +        return new LoadingMap<K, V>(new HashMap<K, V>(), loader);
@@ -2641,12 +2710,13 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Initializes an auto loading map using a HashMap
-+     * @param loader
-+     * @param initialCapacity
-+     * @param loadFactor
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param initialCapacity Initial capacity to use
++     * @param loadFactor Load factor to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity, float loadFactor) {
 +        return new LoadingMap<K, V>(new HashMap<K, V>(initialCapacity, loadFactor), loader);
@@ -2654,10 +2724,11 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Initializes an auto loading map using an Identity HashMap
-+     * @param loader
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader) {
 +        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(), loader);
@@ -2665,11 +2736,12 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Initializes an auto loading map using an Identity HashMap
-+     * @param loader
-+     * @param initialCapacity
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param loader Loader to use
++     * @param initialCapacity Initial capacity to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader, int initialCapacity) {
 +        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(initialCapacity), loader);
@@ -2770,7 +2842,8 @@ index 0000000..a9f2919
 +
 +    /**
 +     * Due to java stuff, you will need to cast it to (Function) for some cases
-+     * @param <T>
++     *
++     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
 +        @Override
@@ -2783,10 +2856,10 @@ index 0000000..a9f2919
 +}
 diff --git a/src/main/java/co/aikar/util/MRUMapCache.java b/src/main/java/co/aikar/util/MRUMapCache.java
 new file mode 100644
-index 0000000..3a288d2
+index 00000000..df592d85
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/MRUMapCache.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,102 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2819,8 +2892,9 @@ index 0000000..3a288d2
 +
 +/**
 + * Implements a Most Recently Used cache in front of a backing map, to quickly access the last accessed result.
-+ * @param <K>
-+ * @param <V>
++ *
++ * @param <K> Key Type of the Map
++ * @param <V> Value Type of the Map
 + */
 +public class MRUMapCache<K, V> extends AbstractMap<K, V> {
 +    final Map<K, V> backingMap;
@@ -2878,20 +2952,21 @@ index 0000000..3a288d2
 +
 +    /**
 +     * Wraps the specified map with a most recently used cache
-+     * @param map
-+     * @param <K>
-+     * @param <V>
-+     * @return
++     *
++     * @param map Map to be wrapped
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
 +     */
 +    public static <K, V> Map<K, V> of(Map<K, V> map) {
 +        return new MRUMapCache<K, V>(map);
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 5d8422e..ac8b0f5 100644
+index eb6b7976..a9081ddb 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -537,7 +537,6 @@ public final class Bukkit {
+@@ -523,7 +523,6 @@ public final class Bukkit {
       */
      public static void reload() {
          server.reload();
@@ -2900,11 +2975,11 @@ index 5d8422e..ac8b0f5 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index c5c3506..3cc741b 100644
+index 83b66361..bc3211f9 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -925,12 +925,27 @@ public interface Server extends PluginMessageRecipient {
- 
+@@ -945,12 +945,27 @@ public interface Server extends PluginMessageRecipient {
+     // Spigot start
      public class Spigot
      {
 -
@@ -2932,8 +3007,32 @@ index c5c3506..3cc741b 100644
          /**
           * Sends the component to the player
           *
+diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
+new file mode 100644
+index 00000000..fd452bce
+--- /dev/null
++++ b/src/main/java/org/bukkit/command/BufferedCommandSender.java
+@@ -0,0 +1,18 @@
++package org.bukkit.command;
++
++public class BufferedCommandSender implements MessageCommandSender {
++    private final StringBuffer buffer = new StringBuffer();
++    @Override
++    public void sendMessage(String message) {
++        buffer.append(message);
++        buffer.append("\n");
++    }
++
++    public String getBuffer() {
++        return buffer.toString();
++    }
++
++    public void reset() {
++        this.buffer.setLength(0);
++    }
++}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 08a9739..347d218 100644
+index 08a9739f..347d2189 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -32,7 +32,8 @@ public abstract class Command {
@@ -2963,7 +3062,7 @@ index 08a9739..347d218 100644
              return true;
          }
 diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-index 3f07d7f..f89ad07 100644
+index 3f07d7f4..f89ad075 100644
 --- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 +++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 @@ -14,6 +14,7 @@ public class FormattedCommandAlias extends Command {
@@ -2984,8 +3083,119 @@ index 3f07d7f..f89ad07 100644
      private static boolean inRange(int i, int j, int k) {
          return i >= j && i <= k;
      }
+diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
+new file mode 100644
+index 00000000..5527e7c8
+--- /dev/null
++++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
+@@ -0,0 +1,105 @@
++package org.bukkit.command;
++
++import org.apache.commons.lang.NotImplementedException;
++import org.bukkit.Bukkit;
++import org.bukkit.Server;
++import org.bukkit.permissions.Permission;
++import org.bukkit.permissions.PermissionAttachment;
++import org.bukkit.permissions.PermissionAttachmentInfo;
++import org.bukkit.plugin.Plugin;
++
++import java.util.Set;
++
++/**
++ * For when all you care about is just messaging
++ */
++public interface MessageCommandSender extends CommandSender {
++
++    @Override
++    default void sendMessage(String[] messages) {
++        for (String message : messages) {
++            sendMessage(message);
++        }
++    }
++
++    @Override
++    default Server getServer() {
++        return Bukkit.getServer();
++    }
++
++    @Override
++    default String getName() {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default boolean isOp() {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default void setOp(boolean value) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default boolean isPermissionSet(String name) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default boolean isPermissionSet(Permission perm) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default boolean hasPermission(String name) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default boolean hasPermission(Permission perm) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default PermissionAttachment addAttachment(Plugin plugin) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default PermissionAttachment addAttachment(Plugin plugin, int ticks) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default void removeAttachment(PermissionAttachment attachment) {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default void recalculatePermissions() {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default Set<PermissionAttachmentInfo> getEffectivePermissions() {
++        throw new NotImplementedException();
++    }
++
++    @Override
++    default Spigot spigot() {
++        throw new NotImplementedException();
++    }
++
++}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 5965514..466757b 100644
+index 71709126..b886cd82 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
@@ -3020,7 +3230,7 @@ index 5965514..466757b 100644
              // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
-index a8f61f2..0000000
+index bba914d7..00000000
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 +++ /dev/null
 @@ -1,253 +0,0 @@
@@ -3150,7 +3360,7 @@ index a8f61f2..0000000
 -            for (HandlerList handlerList : HandlerList.getHandlerLists()) {
 -                for (RegisteredListener listener : handlerList.getRegisteredListeners()) {
 -                    if (listener instanceof TimedRegisteredListener) {
--                        ((TimedRegisteredListener)listener).reset();
+-                        ((TimedRegisteredListener) listener).reset();
 -                    }
 -                }
 -            }
@@ -3278,10 +3488,10 @@ index a8f61f2..0000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 36094b5..b4a4ed5 100644
+index bd2cc354..d2a78f56 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1440,6 +1440,11 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
+@@ -1520,6 +1520,11 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
          public void sendMessage(net.md_5.bungee.api.ChatMessageType position, net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
@@ -3292,12 +3502,12 @@ index 36094b5..b4a4ed5 100644
 +        }
      }
  
-     Spigot spigot();
+     @Override
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 1056186..4ee123e 100644
+index b3bcda52..041a4cd7 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -295,7 +295,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -292,7 +292,6 @@ public final class SimplePluginManager implements PluginManager {
              }
          }
  
@@ -3305,7 +3515,7 @@ index 1056186..4ee123e 100644
          return result.toArray(new Plugin[result.size()]);
      }
  
-@@ -332,7 +331,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -329,7 +328,7 @@ public final class SimplePluginManager implements PluginManager {
  
          if (result != null) {
              plugins.add(result);
@@ -3314,7 +3524,7 @@ index 1056186..4ee123e 100644
          }
  
          return result;
-@@ -358,7 +357,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -355,7 +354,7 @@ public final class SimplePluginManager implements PluginManager {
       * @return Plugin if it exists, otherwise null
       */
      public synchronized Plugin getPlugin(String name) {
@@ -3323,7 +3533,7 @@ index 1056186..4ee123e 100644
      }
  
      public synchronized Plugin[] getPlugins() {
-@@ -556,7 +555,8 @@ public final class SimplePluginManager implements PluginManager {
+@@ -553,7 +552,8 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
  
@@ -3333,7 +3543,7 @@ index 1056186..4ee123e 100644
              getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -717,7 +717,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -729,7 +729,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
      public boolean useTimings() {
@@ -3342,7 +3552,7 @@ index 1056186..4ee123e 100644
      }
  
      /**
-@@ -726,6 +726,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -738,6 +738,6 @@ public final class SimplePluginManager implements PluginManager {
       * @param use True if per event timing code should be used
       */
      public void useTimings(boolean use) {
@@ -3351,7 +3561,7 @@ index 1056186..4ee123e 100644
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 80c6a72..759c461 100644
+index 80c6a72e..759c4617 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -40,7 +40,6 @@ import org.bukkit.plugin.PluginLoader;
@@ -3400,7 +3610,7 @@ index 80c6a72..759c461 100644
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 4cffa13..b2cbf9e 100644
+index 4cffa137..b2cbf9e4 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -15,7 +15,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
@@ -3414,7 +3624,7 @@ index 4cffa13..b2cbf9e 100644
      private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
      private final PluginDescriptionFile description;
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 5ca863b..0480470 100644
+index 5ca863b3..04804706 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
 +++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
 @@ -12,4 +12,6 @@ import org.bukkit.event.server.ServerListPingEvent;
@@ -3426,7 +3636,7 @@ index 5ca863b..0480470 100644
 +    public String getData(); // Spigot
 +}
 diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 8d98297..7e89b97 100644
+index 8d982974..7e89b97b 100644
 --- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
 +++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
 @@ -1,165 +1,76 @@
@@ -3656,5 +3866,5 @@ index 8d98297..7e89b97 100644
 -    }
  }
 -- 
-2.10.2
+2.13.0
 
