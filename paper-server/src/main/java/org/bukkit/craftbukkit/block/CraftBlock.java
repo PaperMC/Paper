@@ -328,6 +328,13 @@ public class CraftBlock implements Block {
         return CraftBlockStates.getBlockState(this);
     }
 
+    // Paper start
+    @Override
+    public BlockState getState(boolean useSnapshot) {
+        return CraftBlockStates.getBlockState(this, useSnapshot);
+    }
+    // Paper end
+
     @Override
     public Biome getBiome() {
         return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
