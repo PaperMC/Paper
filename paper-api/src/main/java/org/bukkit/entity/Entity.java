@@ -311,6 +311,8 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * Performs the specified {@link EntityEffect} for this entity.
      * <p>
      * This will be viewable to all players near the entity.
+     * <p>
+     * If the effect is not applicable to this class of entity, it will not play.
      *
      * @param type Effect to play.
      */

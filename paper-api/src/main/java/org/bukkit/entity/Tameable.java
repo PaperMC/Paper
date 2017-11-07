@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-public interface Tameable {
+public interface Tameable extends Entity {
 
     /**
      * Check if this is tamed

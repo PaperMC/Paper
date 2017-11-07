@@ -3,6 +3,21 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.bukkit.entity.Ageable;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Firework;
+import org.bukkit.entity.Guardian;
+import org.bukkit.entity.IronGolem;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Squid;
+import org.bukkit.entity.Tameable;
+import org.bukkit.entity.TippedArrow;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Witch;
+import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieVillager;
 
 /**
  * A list of all Effects that can happen to entities.
@@ -10,97 +25,131 @@ import com.google.common.collect.Maps;
 public enum EntityEffect {
 
     /**
+     * Colored particles from a tipped arrow.
+     */
+    ARROW_PARTICLES(0, TippedArrow.class),
+    /**
+     * Rabbit jumping.
+     */
+    RABBIT_JUMP(1, Rabbit.class),
+    /**
      * When mobs get hurt.
      */
-    HURT(2),
-
+    HURT(2, LivingEntity.class),
     /**
      * When a mob dies.
      * <p>
      * <b>This will cause client-glitches!</b>
      */
-    DEATH(3),
-
+    DEATH(3, LivingEntity.class),
+    /**
+     * Iron golem attacking.
+     */
+    GOLEM_ATTACK(4, IronGolem.class),
+    // 5 - unused
     /**
      * The smoke when taming a wolf fails.
-     * <p>
-     * Without client-mods this will be ignored if the entity is not a wolf.
      */
-    WOLF_SMOKE(6),
-
+    WOLF_SMOKE(6, Tameable.class),
     /**
      * The hearts when taming a wolf succeeds.
-     * <p>
-     * Without client-mods this will be ignored if the entity is not a wolf.
      */
-    WOLF_HEARTS(7),
-
+    WOLF_HEARTS(7, Wolf.class),
     /**
      * When a wolf shakes (after being wet).
-     * <p>
-     * Without client-mods this will be ignored if the entity is not a wolf.
      */
-    WOLF_SHAKE(8),
-
+    WOLF_SHAKE(8, Wolf.class),
+    // 9 - unused
     /**
-     * When a sheep eats a LONG_GRASS block.
+     * When an entity eats a LONG_GRASS block.
      */
-    SHEEP_EAT(10),
-
+    SHEEP_EAT(10, LivingEntity.class),
     /**
      * When an Iron Golem gives a rose.
-     * <p>
-     * This will not play an effect if the entity is not an iron golem.
      */
-    IRON_GOLEM_ROSE(11),
-
+    IRON_GOLEM_ROSE(11, IronGolem.class),
     /**
      * Hearts from a villager.
-     * <p>
-     * This will not play an effect if the entity is not a villager.
      */
-    VILLAGER_HEART(12),
-
+    VILLAGER_HEART(12, Villager.class),
     /**
      * When a villager is angry.
-     * <p>
-     * This will not play an effect if the entity is not a villager.
      */
-    VILLAGER_ANGRY(13),
-
+    VILLAGER_ANGRY(13, Villager.class),
     /**
      * Happy particles from a villager.
-     * <p>
-     * This will not play an effect if the entity is not a villager.
      */
-    VILLAGER_HAPPY(14),
-
+    VILLAGER_HAPPY(14, Villager.class),
     /**
      * Magic particles from a witch.
-     * <p>
-     * This will not play an effect if the entity is not a witch.
      */
-    WITCH_MAGIC(15),
-
+    WITCH_MAGIC(15, Witch.class),
     /**
      * When a zombie transforms into a villager by shaking violently.
-     * <p>
-     * This will not play an effect if the entity is not a zombie.
      */
-    ZOMBIE_TRANSFORM(16),
-
+    ZOMBIE_TRANSFORM(16, ZombieVillager.class),
     /**
      * When a firework explodes.
-     * <p>
-     * This will not play an effect if the entity is not a firework.
      */
-    FIREWORK_EXPLODE(17);
+    FIREWORK_EXPLODE(17, Firework.class),
+    /**
+     * Hearts from a breeding entity.
+     */
+    LOVE_HEARTS(18, Ageable.class),
+    /**
+     * Resets squid rotation.
+     */
+    SQUID_ROTATE(19, Squid.class),
+    /**
+     * Silverfish entering block, spawner spawning.
+     */
+    ENTITY_POOF(20, LivingEntity.class),
+    /**
+     * Guardian sets laser target.
+     */
+    GUARDIAN_TARGET(21, Guardian.class),
+    // 22-28 player internal flags
+    /**
+     * Shield blocks attack.
+     */
+    SHIELD_BLOCK(29, LivingEntity.class),
+    /**
+     * Shield breaks.
+     */
+    SHIELD_BREAK(30, LivingEntity.class),
+    // 31 - unused
+    /**
+     * Armor stand is hit.
+     */
+    ARMOR_STAND_HIT(32, ArmorStand.class),
+    /**
+     * Entity hurt by thorns attack.
+     */
+    THORNS_HURT(33, LivingEntity.class),
+    /**
+     * Iron golem puts away rose.
+     */
+    IRON_GOLEM_SHEATH(34, IronGolem.class),
+    /**
+     * Totem prevents entity death.
+     */
+    TOTEM_RESURRECT(35, LivingEntity.class),
+    /**
+     * Entity hurt due to drowning damage.
+     */
+    HURT_DROWN(36, LivingEntity.class),
+    /**
+     * Entity hurt due to explosion damage.
+     */
+    HURT_EXPLOSION(37, LivingEntity.class);
 
     private final byte data;
+    private final Class<? extends Entity> applicable;
     private final static Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
 
-    EntityEffect(final int data) {
+    EntityEffect(final int data, Class<? extends Entity> clazz) {
         this.data = (byte) data;
+        this.applicable = clazz;
     }
 
     /**
@@ -115,6 +164,15 @@ public enum EntityEffect {
     }
 
     /**
+     * Gets entity superclass which this affect is applicable to.
+     *
+     * @return applicable class
+     */
+    public Class<? extends Entity> getApplicable() {
+        return applicable;
+    }
+
+    /**
      * Gets the EntityEffect with the given data value
      *
      * @param data Data value to fetch
@@ -126,7 +184,6 @@ public enum EntityEffect {
     public static EntityEffect getByData(final byte data) {
         return BY_DATA.get(data);
     }
-
 
     static {
         for (EntityEffect entityEffect : values()) {
