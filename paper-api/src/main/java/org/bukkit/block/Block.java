@@ -272,6 +272,16 @@ public interface Block extends Metadatable, Translatable {
     @NotNull
     BlockState getState();
 
+    // Paper start
+    /**
+     * @see #getState() optionally disables use of snapshot, to operate on real block data
+     * @param useSnapshot if this block is a TE, should we create a fully copy of the TileEntity
+     * @return BlockState with the current state of this block
+     */
+    @NotNull
+    BlockState getState(boolean useSnapshot);
+    // Paper end
+
     /**
      * Returns the biome that this block resides in
      *
