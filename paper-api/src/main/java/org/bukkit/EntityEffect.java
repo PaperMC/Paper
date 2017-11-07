@@ -41,11 +41,9 @@ public enum EntityEffect {
      * <p>
      * <b>This will cause client-glitches!</b>
      */
-    DEATH(3, LivingEntity.class),
-    /**
-     * Iron golem attacking.
-     */
-    GOLEM_ATTACK(4, IronGolem.class),
+    DEATH(3, Entity.class),
+    // PAIL - SPIGOT-3641 duplicate
+    // GOLEM_ATTACK(4, IronGolem.class),
     // 5 - unused
     /**
      * The smoke when taming a wolf fails.
@@ -60,10 +58,8 @@ public enum EntityEffect {
      */
     WOLF_SHAKE(8, Wolf.class),
     // 9 - unused
-    /**
-     * When an entity eats a LONG_GRASS block.
-     */
-    SHEEP_EAT(10, LivingEntity.class),
+    // PAIL - SPIGOT-3641 duplicate
+    // SHEEP_EAT(10, LivingEntity.class),
     /**
      * When an Iron Golem gives a rose.
      */
