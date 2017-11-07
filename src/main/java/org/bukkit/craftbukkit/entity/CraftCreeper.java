@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityCreeper;
 
 import org.bukkit.craftbukkit.CraftServer;
@@ -36,6 +37,30 @@ public class CraftCreeper extends CraftMonster implements Creeper {
                 getHandle().setPowered(false);
             }
         }
+    }
+
+    @Override
+    public void setMaxFuseTicks(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks < 0");
+
+        getHandle().maxFuseTicks = ticks;
+    }
+
+    @Override
+    public int getMaxFuseTicks() {
+        return getHandle().maxFuseTicks;
+    }
+
+    @Override
+    public void setExplosionRadius(int radius) {
+        Preconditions.checkArgument(radius >= 0, "radius < 0");
+
+        getHandle().explosionRadius = radius;
+    }
+
+    @Override
+    public int getExplosionRadius() {
+        return getHandle().explosionRadius;
     }
 
     @Override
