@@ -33,6 +33,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
     public TileEntity(TileEntityTypes<?> tileentitytypes) {
         this.position = BlockPosition.ZERO;
         this.tileType = tileentitytypes;
+        persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
     }
 
     // Paper start
@@ -81,7 +82,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
     public void load(IBlockData iblockdata, NBTTagCompound nbttagcompound) {
         this.position = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
         // CraftBukkit start - read container
-        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
+        this.persistentDataContainer.clear(); // Paper - clear instead of reinit
 
         NBTTagCompound persistentDataTag = nbttagcompound.getCompound("PublicBukkitValues");
         if (persistentDataTag != null) {
@@ -231,7 +232,12 @@ public abstract class TileEntity implements KeyedObject { // Paper
     }
 
     // CraftBukkit start - add method
+    // Paper start
     public InventoryHolder getOwner() {
+        return getOwner(true);
+    }
+    public InventoryHolder getOwner(boolean useSnapshot) {
+        // Paper end
         if (world == null) return null;
         // Spigot start
         org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
@@ -240,7 +246,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
             return null;
         }
         // Spigot end
-        org.bukkit.block.BlockState state = block.getState();
+        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
         if (state instanceof InventoryHolder) return (InventoryHolder) state;
         return null;
     }

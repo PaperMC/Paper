@@ -17,10 +17,12 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
 
     public CraftSign(final Block block) {
         super(block, TileEntitySign.class);
+        if (lines == null) { lines = new String[]{"", "", "", ""}; } // Paper
     }
 
     public CraftSign(final Material material, final TileEntitySign te) {
         super(material, te);
+        if (lines == null) { lines = new String[]{"", "", "", ""}; } // Paper
     }
 
     @Override
