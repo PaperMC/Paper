@@ -68,7 +68,7 @@ public class StandardMessenger implements Messenger {
             Set<String> channels = outgoingByPlugin.get(plugin);
 
             if (channels != null) {
-                String[] toRemove = channels.toArray(new String[0]);
+                String[] toRemove = channels.toArray(new String[channels.size()]);
 
                 outgoingByPlugin.remove(plugin);
 
@@ -138,7 +138,7 @@ public class StandardMessenger implements Messenger {
             Set<PluginMessageListenerRegistration> registrations = incomingByPlugin.get(plugin);
 
             if (registrations != null) {
-                PluginMessageListenerRegistration[] toRemove = registrations.toArray(new PluginMessageListenerRegistration[0]);
+                PluginMessageListenerRegistration[] toRemove = registrations.toArray(new PluginMessageListenerRegistration[registrations.size()]);
 
                 for (PluginMessageListenerRegistration registration : toRemove) {
                     if (registration.getChannel().equals(channel)) {
@@ -154,7 +154,7 @@ public class StandardMessenger implements Messenger {
             Set<PluginMessageListenerRegistration> registrations = incomingByPlugin.get(plugin);
 
             if (registrations != null) {
-                PluginMessageListenerRegistration[] toRemove = registrations.toArray(new PluginMessageListenerRegistration[0]);
+                PluginMessageListenerRegistration[] toRemove = registrations.toArray(new PluginMessageListenerRegistration[registrations.size()]);
 
                 incomingByPlugin.remove(plugin);
 

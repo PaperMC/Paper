@@ -14,7 +14,7 @@ public class Vine extends MaterialData {
     private static final int VINE_EAST = 0x8;
     private static final int VINE_WEST = 0x2;
     private static final int VINE_SOUTH = 0x1;
-    EnumSet<BlockFace> possibleFaces = EnumSet.of(BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST);
+    private static final EnumSet<BlockFace> possibleFaces = EnumSet.of(BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST);
 
     public Vine() {
         super(Material.VINE);

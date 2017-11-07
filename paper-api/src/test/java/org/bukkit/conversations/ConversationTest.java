@@ -27,7 +27,7 @@ public class ConversationTest {
         assertEquals("SecondPrompt", forWhom.lastSentMessage);
         assertEquals(conversation, forWhom.abandonedConverstion);
     }
-    
+
     @Test
     public void testConversationFactory() {
         FakeConversable forWhom = new FakeConversable();
@@ -75,7 +75,6 @@ public class ConversationTest {
     @Test
     public void testNotPlayer() {
         FakeConversable forWhom = new FakeConversable();
-        NullConversationPrefix prefix = new NullConversationPrefix();
         ConversationFactory factory = new ConversationFactory(null)
                 .thatExcludesNonPlayersWithMessage("bye");
         Conversation conversation = factory.buildConversation(forWhom);

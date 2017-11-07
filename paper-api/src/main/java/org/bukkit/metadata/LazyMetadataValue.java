@@ -17,7 +17,7 @@ import org.bukkit.plugin.Plugin;
  * level. Once invalidated, the LazyMetadataValue will recompute its value
  * when asked.
  */
-public class LazyMetadataValue extends MetadataValueAdapter implements MetadataValue {
+public class LazyMetadataValue extends MetadataValueAdapter {
     private Callable<Object> lazyValue;
     private CacheStrategy cacheStrategy;
     private SoftReference<Object> internalValue;

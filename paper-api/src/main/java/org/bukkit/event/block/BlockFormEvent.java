@@ -2,7 +2,6 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -23,7 +22,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see BlockSpreadEvent
  */
-public class BlockFormEvent extends BlockGrowEvent implements Cancellable {
+public class BlockFormEvent extends BlockGrowEvent {
     private static final HandlerList handlers = new HandlerList();
 
     public BlockFormEvent(final Block block, final BlockState newState) {

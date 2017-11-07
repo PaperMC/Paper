@@ -345,10 +345,10 @@ public class Potion {
             level++;
             potion = new Potion(type, level);
         }
-        if ((damage & SPLASH_BIT) > 0) {
+        if ((damage & SPLASH_BIT) != 0) {
             potion = potion.splash();
         }
-        if ((damage & EXTENDED_BIT) > 0) {
+        if ((damage & EXTENDED_BIT) != 0) {
             potion = potion.extend();
         }
         return potion;

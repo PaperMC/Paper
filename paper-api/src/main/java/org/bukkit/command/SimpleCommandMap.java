@@ -225,13 +225,14 @@ public class SimpleCommandMap implements CommandMap {
     public void registerServerAliases() {
         Map<String, String[]> values = server.getCommandAliases();
 
-        for (String alias : values.keySet()) {
+        for (Map.Entry<String, String[]> entry : values.entrySet()) {
+            String alias = entry.getKey();
             if (alias.contains(" ")) {
                 server.getLogger().warning("Could not register alias " + alias + " because it contains illegal characters");
                 continue;
             }
 
-            String[] commandStrings = values.get(alias);
+            String[] commandStrings = entry.getValue();
             List<String> targets = new ArrayList<String>();
             StringBuilder bad = new StringBuilder();
 
