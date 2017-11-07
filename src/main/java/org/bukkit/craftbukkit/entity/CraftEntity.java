@@ -226,7 +226,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             loc.setX(entity.locX);
             loc.setY(entity.locY);
             loc.setZ(entity.locZ);
-            loc.setYaw(entity instanceof EntityLiving ? entity.getHeadRotation() : entity.yaw);
+            loc.setYaw(entity.getBukkitYaw());
             loc.setPitch(entity.pitch);
         }
 
