@@ -436,8 +436,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return entity;
     }
 
+    @Override
     public void playEffect(EntityEffect type) {
-        this.getHandle().world.broadcastEntityEffect(getHandle(), type.getData());
+        Preconditions.checkArgument(type != null, "type");
+
+        if (this.getClass().isAssignableFrom(type.getApplicable())) {
+            this.getHandle().world.broadcastEntityEffect(getHandle(), type.getData());
+        }
     }
 
     public void setHandle(final Entity entity) {
