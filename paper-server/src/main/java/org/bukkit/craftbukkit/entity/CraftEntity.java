@@ -217,7 +217,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public Location getLocation() {
-        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity instanceof EntityLiving ? entity.getHeadRotation() : entity.yaw, entity.pitch);
+        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity.getBukkitYaw(), entity.pitch);
     }
 
     public Location getLocation(Location loc) {
