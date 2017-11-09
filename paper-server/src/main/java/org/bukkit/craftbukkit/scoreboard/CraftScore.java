@@ -56,6 +56,13 @@ final class CraftScore implements Score {
         objective.checkState().board.getPlayerScoreForObjective(entry, objective.getHandle()).setScore(score);
     }
 
+    @Override
+    public boolean isScoreSet() throws IllegalStateException {
+        Scoreboard board = objective.checkState().board;
+
+        return board.getPlayers().contains(entry) && board.getPlayerObjectives(entry).containsKey(objective.getHandle());
+    }
+
     public CraftScoreboard getScoreboard() {
         return objective.getScoreboard();
     }
