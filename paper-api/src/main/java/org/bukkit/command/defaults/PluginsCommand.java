@@ -1,6 +1,8 @@
 package org.bukkit.command.defaults;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -22,6 +24,11 @@ public class PluginsCommand extends BukkitCommand {
 
         sender.sendMessage("Plugins " + getPluginList());
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+        return Collections.emptyList();
     }
 
     private String getPluginList() {
