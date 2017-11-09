@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -421,7 +422,14 @@ public class StandardMessenger implements Messenger {
         Set<PluginMessageListenerRegistration> registrations = getIncomingChannelRegistrations(channel);
 
         for (PluginMessageListenerRegistration registration : registrations) {
-            registration.getListener().onPluginMessageReceived(channel, source, message);
+            try {
+                registration.getListener().onPluginMessageReceived(channel, source, message);
+            } catch (Throwable t) {
+                registration.getPlugin().getLogger().log(Level.WARNING,
+                    String.format("Plugin %s generated an exception whilst handling plugin message",
+                        registration.getPlugin().getDescription().getFullName()
+                    ), t);
+            }
         }
     }
 
