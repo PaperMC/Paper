@@ -52,6 +52,15 @@ public interface Score {
     void setScore(int score) throws IllegalStateException;
 
     /**
+     * Shows if this score has been set at any point in time.
+     *
+     * @return if this score has been set before
+     * @throws IllegalStateException if the associated objective has been
+     *     unregistered
+     */
+    boolean isScoreSet() throws IllegalStateException;
+
+    /**
      * Gets the scoreboard for the associated objective.
      *
      * @return the owning objective's scoreboard, or null if it has been
