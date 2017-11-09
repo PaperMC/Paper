@@ -55,7 +55,15 @@ public class ConversationTracker {
 
     public synchronized void acceptConversationInput(String input) {
         if (isConversing()) {
-            conversationQueue.getFirst().acceptInput(input);
+            Conversation conversation = conversationQueue.getFirst();
+            try {
+                conversation.acceptInput(input);
+            } catch (Throwable t) {
+                conversation.getContext().getPlugin().getLogger().log(Level.WARNING,
+                    String.format("Plugin %s generated an exception whilst handling conversation input",
+                        conversation.getContext().getPlugin().getDescription().getFullName()
+                    ), t);
+            }
         }
     }
 
