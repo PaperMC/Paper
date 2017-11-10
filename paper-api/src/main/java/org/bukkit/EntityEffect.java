@@ -40,7 +40,11 @@ public enum EntityEffect {
      * When a mob dies.
      * <p>
      * <b>This will cause client-glitches!</b>
+     *
+     * @deprecated although this effect may trigger other events on non-living
+     * entities, it's only supported usage is on living ones.
      */
+    @Deprecated
     DEATH(3, Entity.class),
     // PAIL - SPIGOT-3641 duplicate
     // GOLEM_ATTACK(4, IronGolem.class),
@@ -58,8 +62,14 @@ public enum EntityEffect {
      */
     WOLF_SHAKE(8, Wolf.class),
     // 9 - unused
-    // PAIL - SPIGOT-3641 duplicate
-    // SHEEP_EAT(10, LivingEntity.class),
+    /**
+     * When an entity eats a LONG_GRASS block.
+     *
+     * @deprecated although this effect may trigger other events on non-living
+     * entities, it's only supported usage is on living ones.
+     */
+    @Deprecated
+    SHEEP_EAT(10, Entity.class),
     /**
      * When an Iron Golem gives a rose.
      */
