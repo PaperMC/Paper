@@ -5,7 +5,7 @@ Subject: [PATCH] PlayerAttemptPickupItemEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index ae4910b4b..b56d1a35e 100644
+index ae4910b4..0b7fc327 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
@@ -17,16 +17,26 @@ index ae4910b4b..b56d1a35e 100644
  
  // Paper start - implement HopperPusher
 @@ -0,0 +0,0 @@ public class EntityItem extends Entity implements HopperPusher {
-             Item item = itemstack.getItem();
-             int i = itemstack.getCount();
+             int remaining = i - canHold;
+             boolean flyAtPlayer = false; // Paper
  
 +            // Paper start
 +            if (this.pickupDelay <= 0) {
-+                this.world.getServer().getPluginManager().callEvent(new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity()));
++                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                this.world.getServer().getPluginManager().callEvent(attemptEvent);
++
++                flyAtPlayer = attemptEvent.getFlyAtPlayer();
++                if (attemptEvent.isCancelled()) {
++                    if (flyAtPlayer) {
++                        entityhuman.receive(this, i);
++                    }
++
++                    return;
++                }
 +            }
 +            // Paper end
 +
-             // CraftBukkit start - fire PlayerPickupItemEvent
-             int canHold = entityhuman.inventory.canHold(itemstack);
-             int remaining = i - canHold;
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+                 // Call legacy event
 --
