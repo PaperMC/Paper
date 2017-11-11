@@ -16,6 +16,7 @@ public enum EnumItemSlot {
         this.j = s;
     }
 
+    public EnumItemSlot.Function getType() { return this.a(); } // Paper - OBFHELPER
     public EnumItemSlot.Function a() {
         return this.g;
     }

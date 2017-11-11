@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent; // Paper
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -2534,6 +2535,13 @@ public abstract class EntityLiving extends Entity {
             ItemStack itemstack1 = this.getEquipment(enumitemslot);
 
             if (!ItemStack.matches(itemstack1, itemstack)) {
+                // Paper start - PlayerArmorChangeEvent
+                if (this instanceof EntityPlayer && enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
+                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
+                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
+                    new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
+                }
+                // Paper end
                 if (map == null) {
                     map = Maps.newEnumMap(EnumItemSlot.class);
                 }
