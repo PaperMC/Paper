@@ -93,6 +93,9 @@ import PlayerConnectionUtils
 import RegionFile
 import RegistryBlockID
 import RemoteControlListener
+import StructureBoundingBox
+import StructurePiece
+import StructureStart
 import TileEntityEnderChest
 import TileEntityLootable
 import WorldGenStronghold
