@@ -335,4 +335,10 @@ public class PaperWorldConfig {
         disableCreeperLingeringEffect = getBoolean("disable-creeper-lingering-effect", false);
         log("Creeper lingering effect: " + disableCreeperLingeringEffect);
     }
+
+    public int expMergeMaxValue;
+    private void expMergeMaxValue() {
+        expMergeMaxValue = getInt("experience-merge-max-value", -1);
+        log("Experience Merge Max Value: " + expMergeMaxValue);
+    }
 }

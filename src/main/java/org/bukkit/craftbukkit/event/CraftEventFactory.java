@@ -585,16 +585,32 @@ public class CraftEventFactory {
             EntityExperienceOrb xp = (EntityExperienceOrb) entity;
             double radius = world.spigotConfig.expMerge;
             if (radius > 0) {
+                // Paper start - Maximum exp value when merging - Whole section has been tweaked, see comments for specifics
+                final int maxValue = world.paperConfig.expMergeMaxValue;
+                final boolean mergeUnconditionally = world.paperConfig.expMergeMaxValue <= 0;
+                if (mergeUnconditionally || xp.value < maxValue) { // Paper - Skip iteration if unnecessary
+
                 List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().grow(radius, radius, radius));
                 for (Entity e : entities) {
                     if (e instanceof EntityExperienceOrb) {
                         EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
-                        if (!loopItem.dead) {
-                            xp.value += loopItem.value;
-                            loopItem.die();
+                        // Paper start
+                        if (!loopItem.dead && !(maxValue > 0 && loopItem.value >= maxValue)) {
+                            long newTotal = (long)xp.value + (long)loopItem.value;
+                            if ((int) newTotal < 0) continue; // Overflow
+                            if (maxValue > 0 && newTotal > (long)maxValue) {
+                                loopItem.value = (int) (newTotal - maxValue);
+                                xp.value = maxValue;
+                            } else {
+                                xp.value += loopItem.value;
+                                loopItem.die();
+                            }
+                            // Paper end
                         }
                     }
                 }
+
+                } // Paper end - End iteration skip check - All tweaking ends here
             }
         // Spigot end
         } else if (!(entity instanceof EntityPlayer)) {
