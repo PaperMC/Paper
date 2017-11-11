@@ -63,10 +63,11 @@ import DataInspectorBlockEntity
 import DataPalette
 import DefinedStructure
 import EntityLlama
-import EULA
 import EntitySquid
 import EntityTypes
 import EntityWaterAnimal
+import EnumItemSlot
+import EULA
 import FileIOThread
 import IHopper
 import ItemBlock
@@ -75,7 +76,6 @@ import ItemMonsterEgg
 import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
-import PersistentScoreboard
 import PacketPlayInUseEntity
 import PacketPlayOutMapChunk
 import PacketPlayOutPlayerListHeaderFooter
@@ -87,6 +87,7 @@ import PathfinderGoal
 import PathfinderGoalFloat
 import PathfinderGoalGotoTarget
 import PathfinderWater
+import PersistentScoreboard
 import PersistentVillage
 import PlayerConnectionUtils
 import RegionFile
