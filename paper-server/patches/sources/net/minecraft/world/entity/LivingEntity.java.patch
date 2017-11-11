@@ -407,6 +407,9 @@
 +            MobEffectInstance mobeffect1 = (MobEffectInstance) this.activeEffects.get(mobeffect.getEffect());
              boolean flag = false;
  
+-            if (mobeffect1 == null) {
+-                this.activeEffects.put(effect.getEffect(), effect);
+-                this.onEffectAdded(effect, source);
 +            // CraftBukkit start
 +            boolean override = false;
 +            if (mobeffect1 != null) {
@@ -419,9 +422,7 @@
 +            }
 +            // CraftBukkit end
 +
-             if (mobeffect1 == null) {
--                this.activeEffects.put(effect.getEffect(), effect);
--                this.onEffectAdded(effect, source);
++            if (mobeffect1 == null) {
 +                this.activeEffects.put(mobeffect.getEffect(), mobeffect);
 +                this.onEffectAdded(mobeffect, entity);
                  flag = true;
@@ -768,7 +769,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1530,24 +1819,39 @@
+@@ -1530,22 +1819,37 @@
      protected void dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
          boolean flag = this.lastHurtByPlayerTime > 0;
  
@@ -798,8 +799,8 @@
          }
  
 +        return 0; // CraftBukkit
-     }
- 
++    }
++
 +    protected void dropExperience(ServerLevel world, @Nullable Entity attacker) {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
@@ -807,11 +808,9 @@
 +            this.expToDrop = 0;
 +        }
 +        // CraftBukkit end
-+    }
-+
-     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
+     }
  
-     public long getLootTableSeed() {
+     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
 @@ -1612,19 +1916,31 @@
      }
  
@@ -851,15 +850,17 @@
          }
      }
  
-@@ -1683,6 +1999,20 @@
-         return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
-     }
+@@ -1681,8 +1997,22 @@
  
+     public LivingEntity.Fallsounds getFallSounds() {
+         return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
++    }
++
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getHurtSound0(DamageSource damagesource) {
 +        return this.getHurtSound(damagesource);
-+    }
-+
+     }
+ 
 +    public SoundEvent getDeathSound0() {
 +        return this.getDeathSound();
 +    }
@@ -1219,7 +1220,27 @@
          Map<EquipmentSlot, ItemStack> map = this.collectEquipmentChanges();
  
          if (map != null) {
-@@ -3000,7 +3513,7 @@
+@@ -2778,10 +3291,17 @@
+                     throw new MatchException((String) null, (Throwable) null);
+             }
+ 
+-            ItemStack itemstack2 = itemstack1;
++            ItemStack itemstack2 = itemstack1; final ItemStack oldEquipment = itemstack2; // Paper - PlayerArmorChangeEvent - obfhelper 
+ 
+-            itemstack = this.getItemBySlot(enumitemslot);
++            itemstack = this.getItemBySlot(enumitemslot); final ItemStack newEquipment = itemstack;// Paper - PlayerArmorChangeEvent - obfhelper
+             if (this.equipmentHasChanged(itemstack2, itemstack)) {
++                // Paper start - PlayerArmorChangeEvent
++                if (this instanceof ServerPlayer && enumitemslot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
++                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(oldEquipment);
++                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(newEquipment);
++                    new com.destroystokyo.paper.event.player.PlayerArmorChangeEvent((Player) this.getBukkitEntity(), com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
++                }
++                // Paper end - PlayerArmorChangeEvent
+                 if (map == null) {
+                     map = Maps.newEnumMap(EquipmentSlot.class);
+                 }
+@@ -3000,7 +3520,7 @@
          {
              LivingEntity entityliving = this.getControllingPassenger();
  
@@ -1228,7 +1249,7 @@
                  if (this.isAlive()) {
                      this.travelRidden(entityhuman, vec3d1);
                      break label112;
-@@ -3063,6 +3576,7 @@
+@@ -3063,6 +3583,7 @@
          this.checkSlowFallDistance();
          if (!this.level().isClientSide) {
              if (!this.canGlide()) {
@@ -1236,7 +1257,7 @@
                  this.setSharedFlag(7, false);
                  return;
              }
-@@ -3113,7 +3627,7 @@
+@@ -3113,7 +3634,7 @@
          Level world = this.level();
  
          if (!(world instanceof ServerLevel worldserver)) {
@@ -1245,7 +1266,7 @@
          } else {
              List list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
  
-@@ -3138,10 +3652,12 @@
+@@ -3138,10 +3659,12 @@
                  }
  
                  Iterator iterator1 = list.iterator();
@@ -1260,7 +1281,7 @@
                      this.doPush(entity1);
                  }
              }
-@@ -3305,15 +3821,22 @@
+@@ -3305,15 +3828,22 @@
  
      @Override
      public boolean isPickable() {
@@ -1285,7 +1306,7 @@
      public float getYHeadRot() {
          return this.yHeadRot;
      }
-@@ -3342,7 +3865,7 @@
+@@ -3342,7 +3872,7 @@
      }
  
      public final void setAbsorptionAmount(float absorptionAmount) {
@@ -1294,7 +1315,7 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3483,13 +4006,48 @@
+@@ -3483,13 +4013,48 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1344,7 +1365,7 @@
                  }
  
              }
-@@ -3568,12 +4126,18 @@
+@@ -3568,12 +4133,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1365,7 +1386,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4156,43 @@
+@@ -3592,18 +4163,43 @@
              }
  
              if (flag2) {
@@ -1413,7 +1434,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4202,7 @@
+@@ -3613,7 +4209,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1422,7 +1443,7 @@
          }
      }
  
-@@ -3706,7 +4295,7 @@
+@@ -3706,7 +4302,7 @@
      }
  
      public void stopSleeping() {
@@ -1431,7 +1452,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4307,9 @@
+@@ -3718,9 +4314,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1443,7 +1464,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4329,7 @@
+@@ -3740,7 +4336,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1452,7 +1473,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4494,7 @@
+@@ -3905,7 +4501,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
