@@ -1,0 +1,34 @@
+From e2873d6dbc62fb4bfa94eb918e83c606937d95ae Mon Sep 17 00:00:00 2001
+From: pkt77 <parkerkt77@gmail.com>
+Date: Fri, 10 Nov 2017 23:46:34 -0500
+Subject: [PATCH] Add PlayerArmorChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 135a9c0e..5e17d107 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+ import com.google.common.base.Objects;
+ import com.google.common.collect.Maps;
+ import java.util.Collection;
+@@ -1929,6 +1930,13 @@ public abstract class EntityLiving extends Entity {
+                 ItemStack itemstack1 = this.getEquipment(enumitemslot);
+ 
+                 if (!ItemStack.matches(itemstack1, itemstack)) {
++                    // Paper start - PlayerArmorChangeEvent
++                    if (this instanceof EntityPlayer && enumitemslot.a() == EnumItemSlot.Function.ARMOR && !itemstack.getItem().equals(itemstack1.getItem())) {
++                        final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
++                        final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
++                        new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
++                    }
++                    // Paper end
+                     ((WorldServer) this.world).getTracker().a((Entity) this, (Packet) (new PacketPlayOutEntityEquipment(this.getId(), enumitemslot, itemstack1)));
+                     if (!itemstack.isEmpty()) {
+                         this.getAttributeMap().a(itemstack.a(enumitemslot));
+-- 
+2.14.2
+
