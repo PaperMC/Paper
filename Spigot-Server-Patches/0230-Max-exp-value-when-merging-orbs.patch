@@ -1,0 +1,50 @@
+From de6944ecfc0fc1460806c4ba4eb22beaef935301 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 4 Aug 2017 00:12:58 -0500
+Subject: [PATCH] Max exp value when merging orbs
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 54d081fd..e0977149 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -428,4 +428,10 @@ public class PaperWorldConfig {
+         disableCreeperLingeringEffect = getBoolean("disable-creeper-lingering-effect", false);
+         log("Creeper lingering effect: " + disableCreeperLingeringEffect);
+     }
++
++    public int expMergeMaxValue;
++    private void expMergeMaxValue() {
++        expMergeMaxValue = getInt("exp-merge-max-value", 0);
++        log("Experience Merge Max Value: " + expMergeMaxValue);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 9dfc2b4d..6d380981 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1146,12 +1146,20 @@ public abstract class World implements IBlockAccess {
+             EntityExperienceOrb xp = (EntityExperienceOrb) entity;
+             double radius = spigotConfig.expMerge;
+             if (radius > 0) {
++                int maxValue = paperConfig.expMergeMaxValue; // Paper
+                 List<Entity> entities = this.getEntities(entity, entity.getBoundingBox().grow(radius, radius, radius));
+                 for (Entity e : entities) {
+                     if (e instanceof EntityExperienceOrb) {
+                         EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
+-                        if (!loopItem.dead) {
++                        if (!loopItem.dead && !(maxValue > 0 && loopItem.value >= maxValue)) { // Paper
+                             xp.value += loopItem.value;
++                            // Paper start
++                            if (maxValue > 0 && xp.value > maxValue) {
++                                loopItem.value = xp.value - maxValue;
++                                xp.value = maxValue;
++                                break;
++                            }
++                            // Paper end
+                             loopItem.die();
+                         }
+                     }
+-- 
+2.11.0
+
