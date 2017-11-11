@@ -712,15 +712,29 @@ public class CraftEventFactory {
         if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
             double radius = world.spigotConfig.expMerge;
             if (radius > 0) {
+                // Paper start - Maximum exp value when merging; Whole section has been tweaked, see comments for specifics
+                final long maxValue = world.paperConfig().entities.behavior.experienceMergeMaxValue;
+                final boolean mergeUnconditionally = maxValue <= 0;
+                if (mergeUnconditionally || xp.value < maxValue) { // Paper - Skip iteration if unnecessary
+
                 List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
                 for (Entity e : entities) {
                     if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
-                        if (!loopItem.isRemoved()) {
+                        // Paper start
+                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.value < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
+                            long newTotal = (long)xp.value + (long)loopItem.value;
+                            if ((int) newTotal < 0) continue; // Overflow
+                            if (!mergeUnconditionally && newTotal > maxValue) {
+                                loopItem.value = (int) (newTotal - maxValue);
+                                xp.value = (int) maxValue;
+                            } else {
                             xp.value += loopItem.value;
                             loopItem.discard(null); // Add Bukkit remove cause
+                            } // Paper end - Maximum exp value when merging
                         }
                     }
                 }
+                } // Paper end - End iteration skip check - All tweaking ends here
             }
         }
         // Spigot end
