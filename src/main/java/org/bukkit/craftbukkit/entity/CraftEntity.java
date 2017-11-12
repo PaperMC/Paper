@@ -440,7 +440,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void playEffect(EntityEffect type) {
         Preconditions.checkArgument(type != null, "type");
 
-        if (this.getClass().isAssignableFrom(type.getApplicable())) {
+        if (type.getApplicable().isInstance(this)) {
             this.getHandle().world.broadcastEntityEffect(getHandle(), type.getData());
         }
     }
