@@ -55,7 +55,11 @@ public class LoginListener implements PacketLoginInListener {
         }
         // Paper end
         if (this.g == LoginListener.EnumProtocolState.READY_TO_ACCEPT) {
-            this.c();
+            // Paper start - prevent logins to be processed even though disconnect was called
+            if (networkManager.isConnected()) {
+                this.c();
+            }
+            // Paper end
         } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
             EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.i.getId());
 
