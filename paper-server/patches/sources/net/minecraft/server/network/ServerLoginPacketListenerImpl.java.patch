@@ -64,7 +64,7 @@
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -72,10 +102,22 @@
+@@ -72,10 +102,24 @@
  
      @Override
      public void tick() {
@@ -75,7 +75,9 @@
 +        }
 +        // Paper end - Do not allow logins while the server is shutting down
          if (this.state == ServerLoginPacketListenerImpl.State.VERIFYING) {
++            if (this.connection.isConnected()) { // Paper - prevent logins to be processed even though disconnect was called
              this.verifyLoginAndFinishConnectionSetup((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
++            } // Paper - prevent logins to be processed even though disconnect was called
          }
  
 +        // CraftBukkit start
@@ -87,7 +89,7 @@
          if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
-@@ -86,6 +128,13 @@
+@@ -86,6 +130,13 @@
  
      }
  
@@ -101,7 +103,7 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -131,7 +180,26 @@
+@@ -131,7 +182,26 @@
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
@@ -129,7 +131,7 @@
              }
  
          }
-@@ -144,10 +212,24 @@
+@@ -144,10 +214,24 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile profile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -157,7 +159,7 @@
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -155,12 +237,12 @@
+@@ -155,12 +239,12 @@
                  }));
              }
  
@@ -172,7 +174,7 @@
              }
          }
  
-@@ -195,7 +277,8 @@
+@@ -195,7 +279,8 @@
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -182,7 +184,7 @@
              public void run() {
                  String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
-@@ -205,11 +288,17 @@
+@@ -205,11 +290,17 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -201,7 +203,7 @@
                      } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", s1);
-@@ -217,11 +306,16 @@
+@@ -217,11 +308,16 @@
                  } catch (AuthenticationUnavailableException authenticationunavailableexception) {
                      if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
@@ -220,7 +222,7 @@
                  }
  
              }
-@@ -232,11 +326,46 @@
+@@ -232,11 +328,46 @@
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
@@ -270,7 +272,7 @@
  
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
-@@ -245,10 +374,11 @@
+@@ -245,10 +376,11 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
@@ -283,7 +285,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +394,44 @@
+@@ -264,12 +396,44 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
