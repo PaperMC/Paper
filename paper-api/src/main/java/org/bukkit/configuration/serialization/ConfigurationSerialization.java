@@ -13,6 +13,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.inventory.ItemStack;
@@ -37,6 +38,7 @@ public class ConfigurationSerialization {
         registerClass(FireworkEffect.class);
         registerClass(Pattern.class);
         registerClass(Location.class);
+        registerClass(AttributeModifier.class);
     }
 
     protected ConfigurationSerialization(Class<? extends ConfigurationSerializable> clazz) {
