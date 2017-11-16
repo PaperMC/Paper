@@ -71,7 +71,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     public boolean captureBlockStates = false;
     public boolean captureTreeGeneration = false;
-    public Map<BlockPosition, CapturedBlockState> capturedBlockStates = new java.util.LinkedHashMap<>();
+    public Map<BlockPosition, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
     public Map<BlockPosition, TileEntity> capturedTileEntities = new HashMap<>();
     public List<EntityItem> captureDrops;
     public long ticksPerAnimalSpawns;
@@ -293,7 +293,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
         // CraftBukkit start - tree generation
         if (this.captureTreeGeneration) {
-            CapturedBlockState blockstate = capturedBlockStates.get(blockposition);
+            CraftBlockState blockstate = capturedBlockStates.get(blockposition);
             if (blockstate == null) {
                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);
                 this.capturedBlockStates.put(blockposition.immutableCopy(), blockstate);
@@ -313,7 +313,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             // CraftBukkit start - capture blockstates
             boolean captured = false;
             if (this.captureBlockStates && !this.capturedBlockStates.containsKey(blockposition)) {
-                CapturedBlockState blockstate = CapturedBlockState.getBlockState(this, blockposition, i);
+                CraftBlockState blockstate = (CraftBlockState) world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
                 this.capturedBlockStates.put(blockposition.immutableCopy(), blockstate);
                 captured = true;
             }
@@ -571,7 +571,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public IBlockData getType(BlockPosition blockposition) {
         // CraftBukkit start - tree generation
         if (captureTreeGeneration) {
-            CapturedBlockState previous = capturedBlockStates.get(blockposition);
+            CraftBlockState previous = capturedBlockStates.get(blockposition); // Paper
             if (previous != null) {
                 return previous.getHandle();
             }
