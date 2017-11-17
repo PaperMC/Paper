@@ -1332,7 +1332,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void updateScaledHealth() {
         AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
-        Collection set = attributemapserver.c(); // PAIL: Rename
+        Collection<AttributeInstance> set = attributemapserver.c(); // PAIL: Rename
 
         injectScaledMaxHealth(set, true);
 
@@ -1347,13 +1347,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
     }
 
-    public void injectScaledMaxHealth(Collection collection, boolean force) {
+    public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
         if (!scaledHealth && !force) {
             return;
         }
-        for (Object genericInstance : collection) {
-            IAttribute attribute = ((AttributeInstance) genericInstance).getAttribute();
-            if (attribute.getName().equals("generic.maxHealth")) {
+        for (AttributeInstance genericInstance : collection) {
+            if (genericInstance.getAttribute().getName().equals("generic.maxHealth")) {
                 collection.remove(genericInstance);
                 break;
             }
