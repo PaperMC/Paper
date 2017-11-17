@@ -321,9 +321,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
-        TileEntity container = getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        TileEntity container = getHandle().world.getTileEntity(pos);
         if (container == null && force) {
             container = new TileEntityEnchantTable();
+            container.a(getHandle().world);
+            container.setPosition(pos);
         }
         getHandle().openTileEntity((ITileEntityContainer) container);
 
