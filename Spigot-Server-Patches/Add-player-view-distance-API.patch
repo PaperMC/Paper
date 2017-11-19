@@ -25,7 +25,7 @@ index 9829cdd89..5b0675718 100644
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index e4ed2e991..cfac05750 100644
+index e4ed2e991..9627a9be0 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap {
@@ -178,17 +178,26 @@ index e4ed2e991..cfac05750 100644
      // CraftBukkit end
 +
 +    // Paper start - Player view distance API
-+    public void updateViewDistance(EntityPlayer player, int toSet) {
++    public void updateViewDistance(EntityPlayer player, int distanceIn) {
 +        final int oldViewDistance = player.getViewDistance();
 +
-+        int viewDistance = MathHelper.clamp(toSet, 3, 32);
-+        if (toSet < 0) {
-+            viewDistance = -1;
++        // This represents the view distance that we will set on the player
++        // It can exist as a negative value
++        int playerViewDistance = MathHelper.clamp(distanceIn, 3, 32);
++
++        // This value is the one we actually use to update the chunk map
++        // We don't ever want this to be a negative
++        int toSet = playerViewDistance;
++
++        if (distanceIn < 0) {
++            playerViewDistance = -1;
++            toSet = world.getPlayerChunkMap().getViewDistance();
 +        }
-+        if (viewDistance != oldViewDistance) {
++
++        if (toSet != oldViewDistance) {
 +            // Order matters
-+            this.setViewDistance(player, viewDistance);
-+            player.setViewDistance(viewDistance);
++            this.setViewDistance(player, toSet);
++            player.setViewDistance(playerViewDistance);
 +        }
 +    }
 +    // Paper end
