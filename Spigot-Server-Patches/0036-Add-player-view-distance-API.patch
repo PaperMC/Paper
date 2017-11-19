@@ -1,4 +1,4 @@
-From e94c7b36b54d7763f5c7a48d7938925fac5e8ac7 Mon Sep 17 00:00:00 2001
+From fad221dfcc2fc3b1537d43146fab2e3a31ab06d3 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 14:35:27 -0600
 Subject: [PATCH] Add player view distance API
@@ -25,7 +25,7 @@ index 9829cdd89..5b0675718 100644
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index e4ed2e991..cfac05750 100644
+index e4ed2e991..9627a9be0 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -47,7 +47,7 @@ public class PlayerChunkMap {
@@ -172,23 +172,32 @@ index e4ed2e991..cfac05750 100644
  
      private void e() {
          this.l = true;
-@@ -503,4 +532,20 @@ public class PlayerChunkMap {
+@@ -503,4 +532,29 @@ public class PlayerChunkMap {
          }
      }
      // CraftBukkit end
 +
 +    // Paper start - Player view distance API
-+    public void updateViewDistance(EntityPlayer player, int toSet) {
++    public void updateViewDistance(EntityPlayer player, int distanceIn) {
 +        final int oldViewDistance = player.getViewDistance();
 +
-+        int viewDistance = MathHelper.clamp(toSet, 3, 32);
-+        if (toSet < 0) {
-+            viewDistance = -1;
++        // This represents the view distance that we will set on the player
++        // It can exist as a negative value
++        int playerViewDistance = MathHelper.clamp(distanceIn, 3, 32);
++
++        // This value is the one we actually use to update the chunk map
++        // We don't ever want this to be a negative
++        int toSet = playerViewDistance;
++
++        if (distanceIn < 0) {
++            playerViewDistance = -1;
++            toSet = world.getPlayerChunkMap().getViewDistance();
 +        }
-+        if (viewDistance != oldViewDistance) {
++
++        if (toSet != oldViewDistance) {
 +            // Order matters
-+            this.setViewDistance(player, viewDistance);
-+            player.setViewDistance(viewDistance);
++            this.setViewDistance(player, toSet);
++            player.setViewDistance(playerViewDistance);
 +        }
 +    }
 +    // Paper end
@@ -215,5 +224,5 @@ index b178fe9aa..a3e2e7fb7 100644
      private final Player.Spigot spigot = new Player.Spigot()
      {
 -- 
-2.15.0
+2.15.0.windows.1
 
