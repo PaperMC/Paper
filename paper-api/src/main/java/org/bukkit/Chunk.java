@@ -34,7 +34,7 @@ public interface Chunk {
      * Gets a block from this chunk
      *
      * @param x 0-15
-     * @param y 0-127
+     * @param y 0-255
      * @param z 0-15
      * @return the Block
      */
