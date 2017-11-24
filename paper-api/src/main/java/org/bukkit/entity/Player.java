@@ -22,6 +22,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.map.MapView;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.scoreboard.Scoreboard;
 
@@ -910,15 +911,37 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Hides a player from this player
      *
      * @param player Player to hide
+     * @deprecated see {@link #hidePlayer(Plugin, Player)}
      */
+    @Deprecated
     public void hidePlayer(Player player);
+
+    /**
+     * Hides a player from this player
+     *
+     * @param plugin Plugin that wants to hide the player
+     * @param player Player to hide
+     */
+    public void hidePlayer(Plugin plugin, Player player);
 
     /**
      * Allows this player to see a player that was previously hidden
      *
      * @param player Player to show
+     * @deprecated see {@link #showPlayer(Plugin, Player)}
      */
+    @Deprecated
     public void showPlayer(Player player);
+
+    /**
+     * Allows this player to see a player that was previously hidden. If
+     * another another plugin had hidden the player too, then the player will
+     * remain hidden until the other plugin calls this method too.
+     *
+     * @param plugin Plugin that wants to show the player
+     * @param player Player to show
+     */
+    public void showPlayer(Plugin plugin, Player player);
 
     /**
      * Checks to see if a player has been hidden from this player
