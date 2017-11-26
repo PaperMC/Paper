@@ -28,6 +28,61 @@ public class ConsoleCommandCompleter implements Completer {
     public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
         final CraftServer server = this.server.server;
         final String buffer = "/" + line.line();
+        // Async Tab Complete
+        final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event =
+            new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(server.getConsoleSender(), buffer, true, null);
+        event.callEvent();
+        final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.completions();
+
+        if (event.isCancelled() || event.isHandled()) {
+            // Still fire sync event with the provided completions, if someone is listening
+            if (!event.isCancelled() && TabCompleteEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> finalCompletions = new java.util.ArrayList<>(completions);
+                Waitable<List<String>> syncCompletions = new Waitable<List<String>>() {
+                    @Override
+                    protected List<String> evaluate() {
+                        org.bukkit.event.server.TabCompleteEvent syncEvent = new org.bukkit.event.server.TabCompleteEvent(server.getConsoleSender(), buffer,
+                            finalCompletions.stream()
+                                .map(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion::suggestion)
+                                .collect(java.util.stream.Collectors.toList()));
+                        return syncEvent.callEvent() ? syncEvent.getCompletions() : com.google.common.collect.ImmutableList.of();
+                    }
+                };
+                server.getServer().processQueue.add(syncCompletions);
+                try {
+                    final List<String> legacyCompletions = syncCompletions.get();
+                    completions.removeIf(it -> !legacyCompletions.contains(it.suggestion())); // remove any suggestions that were removed
+                    // add any new suggestions
+                    for (final String completion : legacyCompletions) {
+                        if (notNewSuggestion(completions, completion)) {
+                            continue;
+                        }
+                        completions.add(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion.completion(completion));
+                    }
+                } catch (InterruptedException | ExecutionException e1) {
+                    e1.printStackTrace();
+                }
+            }
+
+            if (!completions.isEmpty()) {
+                for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion completion : completions) {
+                    if (completion.suggestion().isEmpty()) {
+                        continue;
+                    }
+                    candidates.add(new Candidate(
+                        completion.suggestion(),
+                        completion.suggestion(),
+                        null,
+                        io.papermc.paper.adventure.PaperAdventure.PLAIN.serializeOr(completion.tooltip(), null),
+                        null,
+                        null,
+                        false
+                    ));
+                }
+            }
+            return;
+        }
+
         // Paper end
         Waitable<List<String>> waitable = new Waitable<List<String>>() {
             @Override
@@ -73,4 +128,15 @@ public class ConsoleCommandCompleter implements Completer {
             Thread.currentThread().interrupt();
         }
     }
+
+    // Paper start
+    private boolean notNewSuggestion(final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions, final String completion) {
+        for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion it : completions) {
+            if (it.suggestion().equals(completion)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // Paper end
 }
