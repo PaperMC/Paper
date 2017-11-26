@@ -48,6 +48,8 @@ public class AnnotationTest {
         // Generic functional interface
         "org/bukkit/util/Consumer",
         // Paper start
+        "io/papermc/paper/util/TransformingRandomAccessList",
+        "io/papermc/paper/util/TransformingRandomAccessList$TransformedListIterator",
         // Timings history is broken in terms of nullability due to guavas Function defining that the param is NonNull
         "co/aikar/timings/TimingHistory$2",
         "co/aikar/timings/TimingHistory$2$1",
