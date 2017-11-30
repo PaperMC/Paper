@@ -55,7 +55,7 @@ public class PathfinderGoalTempt extends PathfinderGoal {
                 }
                 this.target = (event.getTarget() == null) ? null : ((CraftLivingEntity) event.getTarget()).getHandle();
             }
-            return tempt;
+            return tempt && this.target != null; // Paper - must have target - plugin might of cancelled
             // CraftBukkit end
         }
     }
