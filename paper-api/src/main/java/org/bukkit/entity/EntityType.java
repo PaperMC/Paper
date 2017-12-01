@@ -188,7 +188,7 @@ public enum EntityType {
     /**
      * @see PoweredMinecart
      */
-    MINECART_FURNACE("chest_minecart", PoweredMinecart.class, 44),
+    MINECART_FURNACE("furnace_minecart", PoweredMinecart.class, 44),
     /**
      * @see ExplosiveMinecart
      */
