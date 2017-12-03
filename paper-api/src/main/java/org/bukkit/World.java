@@ -358,7 +358,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param delegate A class to call for each block changed as a result of
      *     this method
      * @return true if the tree was created successfully, otherwise false
+     * @deprecated rarely used API that was largely for implementation purposes
      */
+    @Deprecated
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
 
     /**
