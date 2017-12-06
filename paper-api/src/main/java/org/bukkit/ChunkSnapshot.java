@@ -37,6 +37,16 @@ public interface ChunkSnapshot {
      * @param x 0-15
      * @param y 0-127
      * @param z 0-15
+     * @return block material type
+     */
+    Material getBlockType(int x, int y, int z);
+
+    /**
+     * Get block type for block at corresponding coordinate in the chunk
+     *
+     * @param x 0-15
+     * @param y 0-127
+     * @param z 0-15
      * @return 0-255
      * @deprecated Magic value
      */
