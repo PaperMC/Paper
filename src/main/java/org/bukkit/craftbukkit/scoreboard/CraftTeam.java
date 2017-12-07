@@ -85,6 +85,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         team.setColor(CraftChatMessage.getColor(color));
+        scoreboard.board.handleTeamChanged(team); // SPIGOT-3684 - backing team fires this for prefix/suffix but not colour
     }
 
     public boolean allowFriendlyFire() throws IllegalStateException {
