@@ -20,6 +20,7 @@ public class ShapelessRecipe extends CraftingRecipe {
     @Deprecated(since = "1.12")
     public ShapelessRecipe(@NotNull ItemStack result) {
         this(NamespacedKey.randomKey(), result);
+        new Throwable("Warning: A plugin is creating a recipe using a Deprecated method. This will cause you to receive warnings stating 'Tried to load unrecognized recipe: bukkit:<ID>'. Please ask the author to give their recipe a static key using NamespacedKey.").printStackTrace(); // Paper
     }
 
     /**
