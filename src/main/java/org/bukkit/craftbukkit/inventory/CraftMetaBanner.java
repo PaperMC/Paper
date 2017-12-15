@@ -200,4 +200,11 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     boolean applicableTo(Material type) {
         return type == Material.BANNER;
     }
+
+    @Override
+    public CraftMetaBanner clone() {
+        CraftMetaBanner meta = (CraftMetaBanner) super.clone();
+        meta.patterns = new ArrayList<>(patterns);
+        return meta;
+    }
 }

@@ -176,6 +176,9 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         CraftMetaSpawnEgg clone = (CraftMetaSpawnEgg) super.clone();
 
         clone.spawnedType = spawnedType;
+        if (entityTag != null) {
+            clone.entityTag = entityTag.g();
+        }
 
         return clone;
     }

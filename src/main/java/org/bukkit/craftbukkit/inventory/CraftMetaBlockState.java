@@ -214,6 +214,15 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     }
 
     @Override
+    public CraftMetaBlockState clone() {
+        CraftMetaBlockState meta = (CraftMetaBlockState) super.clone();
+        if (blockEntityTag != null) {
+            meta.blockEntityTag = blockEntityTag.g();
+        }
+        return meta;
+    }
+
+    @Override
     public boolean hasBlockState() {
         return blockEntityTag != null;
     }
