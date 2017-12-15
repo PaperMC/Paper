@@ -945,7 +945,7 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        if (!(handle.dimension > 1)) {
+        if (handle.dimension == 0) {
             return false;
         }
 
