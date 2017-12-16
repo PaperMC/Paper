@@ -61,4 +61,13 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
     public void setCustomName(String name) {
         this.getSnapshot().setCustomName(name);
     }
+
+    @Override
+    public void applyTo(TileEntityBrewingStand brewingStand) {
+        super.applyTo(brewingStand);
+
+        if (!this.getSnapshot().hasCustomName()) {
+            brewingStand.setCustomName(null);
+        }
+    }
 }
