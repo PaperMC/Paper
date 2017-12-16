@@ -61,4 +61,13 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
     public void setCustomName(String name) {
         this.getSnapshot().setCustomName(name);
     }
+
+    @Override
+    public void applyTo(TileEntityFurnace furnace) {
+        super.applyTo(furnace);
+
+        if (!this.getSnapshot().hasCustomName()) {
+            furnace.setCustomName(null);
+        }
+    }
 }

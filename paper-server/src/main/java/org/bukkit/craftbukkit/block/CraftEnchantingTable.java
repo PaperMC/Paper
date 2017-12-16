@@ -25,4 +25,13 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
     public void setCustomName(String name) {
         this.getSnapshot().setCustomName(name);
     }
+
+    @Override
+    public void applyTo(TileEntityEnchantTable enchantingTable) {
+        super.applyTo(enchantingTable);
+
+        if (!this.getSnapshot().hasCustomName()) {
+            enchantingTable.setCustomName(null);
+        }
+    }
 }

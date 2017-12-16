@@ -25,4 +25,13 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
     public void setCustomName(String name) {
         this.getSnapshot().setCustomName(name);
     }
+
+    @Override
+    public void applyTo(T lootable) {
+        super.applyTo(lootable);
+
+        if (!this.getSnapshot().hasCustomName()) {
+            lootable.setCustomName(null);
+        }
+    }
 }
