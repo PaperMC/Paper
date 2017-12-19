@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.entity.Entity; // Paper
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -568,6 +569,89 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return centerLoc;
     }
     // Paper end - expand Location API
+
+    // Paper start - Expand Explosions API
+    /**
+     * Creates explosion at this location with given power
+     * <p>
+     * Will break blocks and ignite blocks on fire.
+     *
+     * @param power The power of explosion, where 4F is TNT
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(float power) {
+        return this.getWorld().createExplosion(this, power);
+    }
+
+    /**
+     * Creates explosion at this location with given power and optionally
+     * setting blocks on fire.
+     * <p>
+     * Will break blocks.
+     *
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(float power, boolean setFire) {
+        return this.getWorld().createExplosion(this, power, setFire);
+    }
+
+    /**
+     * Creates explosion at this location with given power and optionally
+     * setting blocks on fire.
+     *
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether to set blocks on fire
+     * @param breakBlocks Whether to have blocks be destroyed
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(float power, boolean setFire, boolean breakBlocks) {
+        return this.getWorld().createExplosion(this, power, setFire, breakBlocks);
+    }
+
+    /**
+     * Creates explosion at this location with given power, with the specified entity as the source.
+     * <p>
+     * Will break blocks and ignite blocks on fire.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(@Nullable Entity source, float power) {
+        return this.getWorld().createExplosion(source, this, power, true, true);
+    }
+
+    /**
+     * Creates explosion at this location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     * <p>
+     * Will break blocks.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(@Nullable Entity source, float power, boolean setFire) {
+        return this.getWorld().createExplosion(source, this, power, setFire, true);
+    }
+
+    /**
+     * Creates explosion at this location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether to set blocks on fire
+     * @param breakBlocks Whether to have blocks be destroyed
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(@Nullable Entity source, float power, boolean setFire, boolean breakBlocks) {
+        return this.getWorld().createExplosion(source, this, power, setFire, breakBlocks);
+    }
+    // Paper end - Expand Explosions API
 
     // Paper start - additional getNearbyEntities API
     /**

@@ -1424,6 +1424,104 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     public boolean createExplosion(@NotNull Location loc, float power, boolean setFire);
 
+    // Paper start
+    /**
+     * Creates explosion at given location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * @param source The source entity of the explosion
+     * @param loc Location to blow up
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @param breakBlocks Whether or not to have blocks be destroyed
+     * @param excludeSourceFromDamage whether the explosion should exclude the passed source from taking damage like vanilla explosions do.
+     * @return false if explosion was canceled, otherwise true
+     */
+    public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage);
+
+    /**
+     * Creates explosion at given location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * @param source The source entity of the explosion
+     * @param loc Location to blow up
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @param breakBlocks Whether or not to have blocks be destroyed
+     * @return false if explosion was canceled, otherwise true
+     */
+    default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks) {
+        return createExplosion(source, loc, power, setFire, breakBlocks, true);
+    }
+
+    /**
+     * Creates explosion at given location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * Will destroy other blocks
+     *
+     * @param source The source entity of the explosion
+     * @param loc Location to blow up
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire) {
+        return createExplosion(source, loc, power, setFire, true);
+    }
+    /**
+     * Creates explosion at given location with given power, with the specified entity as the source.
+     * Will set blocks on fire and destroy blocks.
+     *
+     * @param source The source entity of the explosion
+     * @param loc Location to blow up
+     * @param power The power of explosion, where 4F is TNT
+     * @return false if explosion was canceled, otherwise true
+     */
+    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power) {
+        return createExplosion(source, loc, power, true, true);
+    }
+    /**
+     * Creates explosion at given entities location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @param breakBlocks Whether or not to have blocks be destroyed
+     * @return false if explosion was canceled, otherwise true
+     */
+    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire, boolean breakBlocks) {
+        return createExplosion(source, source.getLocation(), power, setFire, breakBlocks);
+    }
+    /**
+     * Creates explosion at given entities location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * Will destroy blocks.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @param setFire Whether or not to set blocks on fire
+     * @return false if explosion was canceled, otherwise true
+     */
+    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire) {
+        return createExplosion(source, source.getLocation(), power, setFire, true);
+    }
+
+    /**
+     * Creates explosion at given entities location with given power and optionally
+     * setting blocks on fire, with the specified entity as the source.
+     *
+     * @param source The source entity of the explosion
+     * @param power The power of explosion, where 4F is TNT
+     * @return false if explosion was canceled, otherwise true
+     */
+    public default boolean createExplosion(@NotNull Entity source, float power) {
+        return createExplosion(source, source.getLocation(), power, true, true);
+    }
+    // Paper end
+
     /**
      * Creates explosion at given coordinates with given power and optionally
      * setting blocks on fire or breaking blocks.
