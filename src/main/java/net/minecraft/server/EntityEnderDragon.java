@@ -612,7 +612,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
             int j = EntityExperienceOrb.getOrbValue(i);
 
             i -= j;
-            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY(), this.locZ(), j));
+            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY(), this.locZ(), j, org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, this.killer, this)); // Paper
         }
 
     }

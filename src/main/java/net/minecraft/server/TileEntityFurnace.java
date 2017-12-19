@@ -573,7 +573,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
             int k = EntityExperienceOrb.getOrbValue(j);
 
             j -= k;
-            world.addEntity(new EntityExperienceOrb(world, vec3d.x, vec3d.y, vec3d.z, k));
+            world.addEntity(new EntityExperienceOrb(world, vec3d.x, vec3d.y, vec3d.z, k, org.bukkit.entity.ExperienceOrb.SpawnReason.FURNACE, entityhuman)); // Paper
         }
 
     }

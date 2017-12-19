@@ -81,7 +81,7 @@ public class ContainerGrindstone extends Container {
                         int k = EntityExperienceOrb.getOrbValue(j);
 
                         j -= k;
-                        world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX(), (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, k));
+                        world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX(), (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, k, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, entityhuman)); // Paper
                     }
 
                     world.triggerEffect(1042, blockposition, 0);

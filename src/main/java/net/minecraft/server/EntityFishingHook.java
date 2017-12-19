@@ -452,7 +452,7 @@ public class EntityFishingHook extends IProjectile {
                     this.world.addEntity(entityitem);
                     // CraftBukkit start - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
                     if (playerFishEvent.getExpToDrop() > 0) {
-                        entityhuman.world.addEntity(new EntityExperienceOrb(entityhuman.world, entityhuman.locX(), entityhuman.locY() + 0.5D, entityhuman.locZ() + 0.5D, playerFishEvent.getExpToDrop()));
+                        entityhuman.world.addEntity(new EntityExperienceOrb(entityhuman.world, entityhuman.locX(), entityhuman.locY() + 0.5D, entityhuman.locZ() + 0.5D, playerFishEvent.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.FISHING, this.getOwner(), this)); // Paper
                     }
                     // CraftBukkit end
                     if (itemstack1.getItem().a((Tag) TagsItem.FISHES)) {

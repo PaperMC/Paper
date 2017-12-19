@@ -237,7 +237,7 @@ public abstract class EntityAnimal extends EntityAgeable {
             if (worldserver.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
                 // CraftBukkit start - use event experience
                 if (experience > 0) {
-                    worldserver.addEntity(new EntityExperienceOrb(worldserver, this.locX(), this.locY(), this.locZ(), experience));
+                    worldserver.addEntity(new EntityExperienceOrb(worldserver, this.locX(), this.locY(), this.locZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer, entityageable)); // Paper
                 }
                 // CraftBukkit end
             }

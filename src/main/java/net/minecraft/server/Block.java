@@ -228,13 +228,13 @@ public class Block extends BlockBase implements IMaterial {
         }
     }
 
-    protected void dropExperience(WorldServer worldserver, BlockPosition blockposition, int i) {
+    protected void dropExperience(WorldServer worldserver, BlockPosition blockposition, int i, EntityPlayer player) { // Paper
         if (worldserver.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
             while (i > 0) {
                 int j = EntityExperienceOrb.getOrbValue(i);
 
                 i -= j;
-                worldserver.addEntity(new EntityExperienceOrb(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j));
+                worldserver.addEntity(new EntityExperienceOrb(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, player)); // Paper
             }
         }
 

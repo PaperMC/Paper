@@ -1805,7 +1805,7 @@ public class CraftWorld implements World {
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z, null);
         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
-            entity = new EntityExperienceOrb(world, x, y, z, 0);
+            entity = new EntityExperienceOrb(world, x, y, z, 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null); // Paper
         } else if (LightningStrike.class.isAssignableFrom(clazz)) {
             entity = EntityTypes.LIGHTNING_BOLT.a(world);
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {

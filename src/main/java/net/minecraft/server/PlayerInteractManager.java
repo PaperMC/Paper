@@ -377,7 +377,7 @@ public class PlayerInteractManager {
 
                 // Drop event experience
                 if (flag && event != null) {
-                    iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop());
+                    iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop(), this.player); // Paper
                 }
 
                 return true;

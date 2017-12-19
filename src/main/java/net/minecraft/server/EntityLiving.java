@@ -1488,7 +1488,8 @@ public abstract class EntityLiving extends Entity {
                 int j = EntityExperienceOrb.getOrbValue(i);
 
                 i -= j;
-                this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY(), this.locZ(), j));
+                EntityLiving attacker = killer != null ? killer : lastDamager; // Paper
+                this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY(), this.locZ(), j, this instanceof EntityPlayer ? org.bukkit.entity.ExperienceOrb.SpawnReason.PLAYER_DEATH : org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, attacker, this)); // Paper
             }
             this.expToDrop = 0;
         }

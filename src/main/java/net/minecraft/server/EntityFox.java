@@ -1236,7 +1236,7 @@ public class EntityFox extends EntityAnimal {
                 if (this.b.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
                     // CraftBukkit start - use event experience
                     if (experience > 0) {
-                        this.b.addEntity(new EntityExperienceOrb(this.b, this.animal.locX(), this.animal.locY(), this.animal.locZ(), experience));
+                        this.b.addEntity(new EntityExperienceOrb(this.b, this.animal.locX(), this.animal.locY(), this.animal.locZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer, entityfox)); // Paper
                     }
                     // CraftBukkit end
                 }

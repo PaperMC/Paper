@@ -20,6 +20,18 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
         getHandle().value = value;
     }
 
+    // Paper start
+    public java.util.UUID getTriggerEntityId() {
+        return getHandle().triggerEntityId;
+    }
+    public java.util.UUID getSourceEntityId() {
+        return getHandle().sourceEntityId;
+    }
+    public SpawnReason getSpawnReason() {
+        return getHandle().spawnReason;
+    }
+    // Paper end
+
     @Override
     public EntityExperienceOrb getHandle() {
         return (EntityExperienceOrb) entity;

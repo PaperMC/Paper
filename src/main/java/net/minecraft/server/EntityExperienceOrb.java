@@ -16,9 +16,59 @@ public class EntityExperienceOrb extends Entity {
     public int value;
     private EntityHuman targetPlayer;
     private int targetTime;
+    // Paper start
+    public java.util.UUID sourceEntityId;
+    public java.util.UUID triggerEntityId;
+    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
+
+    private void loadPaperNBT(NBTTagCompound nbttagcompound) {
+        if (!nbttagcompound.hasKeyOfType("Paper.ExpData", 10)) { // 10 = compound
+            return;
+        }
+        NBTTagCompound comp = nbttagcompound.getCompound("Paper.ExpData");
+        if (comp.hasUUID("source")) {
+            this.sourceEntityId = comp.getUUID("source");
+        }
+        if (comp.hasUUID("trigger")) {
+            this.triggerEntityId = comp.getUUID("trigger");
+        }
+        if (comp.hasKey("reason")) {
+            String reason = comp.getString("reason");
+            try {
+                this.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
+            } catch (Exception e) {
+                this.world.getServer().getLogger().warning("Invalid spawnReason set for experience orb: " + e.getMessage() + " - " + reason);
+            }
+        }
+    }
+    private void savePaperNBT(NBTTagCompound nbttagcompound) {
+        NBTTagCompound comp = new NBTTagCompound();
+        if (this.sourceEntityId != null) {
+            comp.setUUID("source", this.sourceEntityId);
+        }
+        if (this.triggerEntityId != null) {
+            comp.setUUID("trigger", triggerEntityId);
+        }
+        if (this.spawnReason != null && this.spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
+            comp.setString("reason", this.spawnReason.name());
+        }
+        nbttagcompound.set("Paper.ExpData", comp);
+    }
 
     public EntityExperienceOrb(World world, double d0, double d1, double d2, int i) {
+        this(world, d0, d1, d2, i, null, null);
+    }
+
+    public EntityExperienceOrb(World world, double d0, double d1, double d2, int i, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId) {
+        this(world, d0, d1, d2, i, reason, triggerId, null);
+    }
+
+    public EntityExperienceOrb(World world, double d0, double d1, double d2, int i, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId, Entity sourceId) {
         this(EntityTypes.EXPERIENCE_ORB, world);
+        this.sourceEntityId = sourceId != null ? sourceId.getUniqueID() : null;
+        this.triggerEntityId = triggerId != null ? triggerId.getUniqueID() : null;
+        this.spawnReason = reason != null ? reason : org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
+        // Paper end
         this.setPosition(d0, d1, d2);
         this.yaw = (float) (this.random.nextDouble() * 360.0D);
         this.setMot((this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D, this.random.nextDouble() * 0.2D * 2.0D, (this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D);
@@ -153,6 +203,7 @@ public class EntityExperienceOrb extends Entity {
         nbttagcompound.setShort("Health", (short) this.e);
         nbttagcompound.setShort("Age", (short) this.c);
         nbttagcompound.setShort("Value", (short) this.value);
+        this.savePaperNBT(nbttagcompound); // Paper
     }
 
     @Override
@@ -160,6 +211,7 @@ public class EntityExperienceOrb extends Entity {
         this.e = nbttagcompound.getShort("Health");
         this.c = nbttagcompound.getShort("Age");
         this.value = nbttagcompound.getShort("Value");
+        this.loadPaperNBT(nbttagcompound); // Paper
     }
 
     @Override

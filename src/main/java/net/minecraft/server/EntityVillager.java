@@ -532,7 +532,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
         }
 
         if (merchantrecipe.isRewardExp()) {
-            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY() + 0.5D, this.locZ(), i));
+            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX(), this.locY() + 0.5D, this.locZ(), i, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.getTrader(), this)); // Paper
         }
 
     }
