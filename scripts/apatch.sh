@@ -1,7 +1,7 @@
 #!/bin/bash
 noapply=1
 isreject=0
-if [ $1 == "--noapplied" ]; then
+if [[ $1 == "--noapplied" ]]; then
 	noapply=1
 	shift
 fi
@@ -64,7 +64,7 @@ fi
 		echo " "
 		echo "===========================";
 	fi
-	git st
+	git status
 	git diff
 )
 if [[ "$noapply" != "1" ]] && [[ "$file" != *-applied.patch ]]; then
