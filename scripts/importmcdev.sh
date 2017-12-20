@@ -62,6 +62,8 @@ import DataConverterMaterialId
 import DataInspectorBlockEntity
 import DataPalette
 import DefinedStructure
+import EnchantmentManager
+import Enchantments
 import EntityLlama
 import EntitySquid
 import EntityTypes
