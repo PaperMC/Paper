@@ -251,8 +251,8 @@ public class EnchantmentManager {
         return getEnchantmentLevel(Enchantments.CHANNELING, itemstack) > 0;
     }
 
-    @Nullable
-    public static Entry<EnumItemSlot, ItemStack> b(Enchantment enchantment, EntityLiving entityliving) {
+    public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, EntityLiving entityliving) { Entry<EnumItemSlot, ItemStack> entry = b(enchantment, entityliving); return entry != null ? entry.getValue() : ItemStack.NULL_ITEM; } // Paper - OBFHELPER
+    @Nullable public static Entry<EnumItemSlot, ItemStack> b(Enchantment enchantment, EntityLiving entityliving) {
         return a(enchantment, entityliving, (itemstack) -> {
             return true;
         });
