@@ -1665,7 +1665,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void giveExp(int exp) {
+    // Paper start - ability to apply mending
+    public int applyMending(int amount) {
+        ServerPlayer handle = this.getHandle();
+        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
+
+        final Optional<net.minecraft.world.item.enchantment.EnchantedItemInUse> stackEntry = net.minecraft.world.item.enchantment.EnchantmentHelper
+            .getRandomItemWith(net.minecraft.world.item.enchantment.EnchantmentEffectComponents.REPAIR_WITH_XP, handle, net.minecraft.world.item.ItemStack::isDamaged);
+        final net.minecraft.world.item.ItemStack itemstack = stackEntry.map(net.minecraft.world.item.enchantment.EnchantedItemInUse::itemStack).orElse(net.minecraft.world.item.ItemStack.EMPTY);
+        if (!itemstack.isEmpty() && itemstack.getItem().components().has(net.minecraft.core.component.DataComponents.MAX_DAMAGE)) {
+            net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+            orb.value = amount;
+            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
+            orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
+
+            final int possibleDurabilityFromXp = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDurabilityToRepairFromXp(
+                handle.serverLevel(), itemstack, amount
+            );
+            int i = Math.min(possibleDurabilityFromXp, itemstack.getDamageValue());
+            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.get().inSlot(), i);
+            i = event.getRepairAmount();
+            orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
+            if (!event.isCancelled()) {
+                amount -= i * amount / possibleDurabilityFromXp;
+                itemstack.setDamageValue(itemstack.getDamageValue() - i);
+            }
+        }
+        return amount;
+    }
+
+    @Override
+    public void giveExp(int exp, boolean applyMending) {
+        if (applyMending) {
+            exp = this.applyMending(exp);
+        }
+    // Paper end - ability to apply mending
         this.getHandle().giveExperiencePoints(exp);
     }
 
