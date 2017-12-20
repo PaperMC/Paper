@@ -217,7 +217,7 @@ public class EntityExperienceOrb extends Entity {
     @Override
     public void pickup(EntityHuman entityhuman) {
         if (!this.world.isClientSide) {
-            if (this.d == 0 && entityhuman.bu == 0) {
+            if (this.d == 0 && entityhuman.bu == 0 && new com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent(((EntityPlayer) entityhuman).getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) this.getBukkitEntity()).callEvent()) { // Paper
                 entityhuman.bu = 2;
                 entityhuman.receive(this, 1);
                 Entry<EnumItemSlot, ItemStack> entry = EnchantmentManager.a(Enchantments.MENDING, (EntityLiving) entityhuman, ItemStack::f);
