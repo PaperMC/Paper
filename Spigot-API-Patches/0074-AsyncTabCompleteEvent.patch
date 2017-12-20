@@ -1,4 +1,4 @@
-From 661d9fecb9f68354bfd35d767c3256ef1869009c Mon Sep 17 00:00:00 2001
+From e4c7ebe4e225c8fc4fd29c95fbf24c903d58e0a8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 26 Nov 2017 13:17:09 -0500
 Subject: [PATCH] AsyncTabCompleteEvent
@@ -13,10 +13,10 @@ completion, such as offline players.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 new file mode 100644
-index 00000000..2fa4cb1c
+index 00000000..3071320e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,168 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -43,6 +43,7 @@ index 00000000..2fa4cb1c
 +package com.destroystokyo.paper.event.server;
 +
 +import com.google.common.collect.ImmutableList;
++import org.apache.commons.lang.Validate;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
@@ -106,13 +107,13 @@ index 00000000..2fa4cb1c
 +     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
 +     * or current player names will not be called.
 +     *
++     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
++     *
 +     * @param completions the new completions
 +     */
 +    public void setCompletions(List<String> completions) {
-+        if (completions instanceof ImmutableList) {
-+            completions = new ArrayList<>(completions);
-+        }
-+        this.completions = completions;
++        Validate.notNull(completions);
++        this.completions = new ArrayList<>(completions);
 +    }
 +
 +    /**
@@ -185,10 +186,17 @@ index 00000000..2fa4cb1c
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-index 6ac437d5..fef57f5f 100644
+index 6ac437d5..df6eb53d 100644
 --- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
 +++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-@@ -21,6 +21,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -1,5 +1,6 @@
+ package org.bukkit.event.server;
+ 
++import java.util.ArrayList;
+ import java.util.List;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.command.CommandSender;
+@@ -21,6 +22,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
      private boolean cancelled;
  
      public TabCompleteEvent(CommandSender sender, String buffer, List<String> completions) {
@@ -202,7 +210,7 @@ index 6ac437d5..fef57f5f 100644
          Validate.notNull(sender, "sender");
          Validate.notNull(buffer, "buffer");
          Validate.notNull(completions, "completions");
-@@ -58,6 +65,24 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -58,14 +66,34 @@ public class TabCompleteEvent extends Event implements Cancellable {
          return completions;
      }
  
@@ -227,6 +235,17 @@ index 6ac437d5..fef57f5f 100644
      /**
       * Set the completions offered, overriding any already set.
       *
++     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
++     *
+      * @param completions the new completions
+      */
+     public void setCompletions(List<String> completions) {
+         Validate.notNull(completions);
+-        this.completions = completions;
++        this.completions = new ArrayList<>(completions); // Paper
+     }
+ 
+     @Override
 -- 
 2.15.1
 
