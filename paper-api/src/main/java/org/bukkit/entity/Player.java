@@ -1588,6 +1588,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public void resetPlayerWeather();
 
+    // Paper start
+    /**
+     * Gives the player the amount of experience specified.
+     *
+     * @param amount Exp amount to give
+     */
+    public default void giveExp(int amount) {
+        giveExp(amount, false);
+    }
     /**
      * Gets the player's cooldown between picking up experience orbs.
      *
@@ -1613,8 +1622,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gives the player the amount of experience specified.
      *
      * @param amount Exp amount to give
+     * @param applyMending Mend players items with mending, with same behavior as picking up orbs. calls {@link #applyMending(int)}
      */
-    public void giveExp(int amount);
+    public void giveExp(int amount, boolean applyMending);
+
+    /**
+     * Applies the mending effect to any items just as picking up an orb would.
+     *
+     * Can also be called with {@link #giveExp(int, boolean)} by passing true to applyMending
+     *
+     * @param amount Exp to apply
+     * @return the remaining experience
+     */
+    public int applyMending(int amount);
+    // Paper end
 
     /**
      * Gives the player the amount of experience levels specified. Levels can
