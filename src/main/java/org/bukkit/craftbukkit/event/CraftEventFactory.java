@@ -595,7 +595,7 @@ public class CraftEventFactory {
                     if (e instanceof EntityExperienceOrb) {
                         EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
                         // Paper start
-                        if (!loopItem.dead && !(maxValue > 0 && loopItem.value >= maxValue)) {
+                        if (!loopItem.dead && !(maxValue > 0 && loopItem.value >= maxValue)  && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper
                             long newTotal = (long)xp.value + (long)loopItem.value;
                             if ((int) newTotal < 0) continue; // Overflow
                             if (maxValue > 0 && newTotal > (long)maxValue) {
