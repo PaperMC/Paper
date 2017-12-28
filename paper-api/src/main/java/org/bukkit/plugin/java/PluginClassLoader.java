@@ -1,12 +1,20 @@
 package org.bukkit.plugin.java;
 
+import com.google.common.io.ByteStreams;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSigner;
+import java.security.CodeSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.InvalidPluginException;
@@ -21,11 +29,14 @@ final class PluginClassLoader extends URLClassLoader {
     private final PluginDescriptionFile description;
     private final File dataFolder;
     private final File file;
+    private final JarFile jar;
+    private final Manifest manifest;
+    private final URL url;
     final JavaPlugin plugin;
     private JavaPlugin pluginInit;
     private IllegalStateException pluginState;
 
-    PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws InvalidPluginException, MalformedURLException {
+    PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws IOException, InvalidPluginException, MalformedURLException {
         super(new URL[] {file.toURI().toURL()}, parent);
         Validate.notNull(loader, "Loader cannot be null");
 
@@ -33,6 +44,9 @@ final class PluginClassLoader extends URLClassLoader {
         this.description = description;
         this.dataFolder = dataFolder;
         this.file = file;
+        this.jar = new JarFile(file, true);
+        this.manifest = jar.getManifest();
+        this.url = file.toURI().toURL();
 
         try {
             Class<?> jarClass;
@@ -74,7 +88,35 @@ final class PluginClassLoader extends URLClassLoader {
             }
 
             if (result == null) {
-                result = super.findClass(name);
+                String path = name.replace('.', '/').concat(".class");
+                JarEntry entry = jar.getJarEntry(path);
+
+                if (entry != null) {
+                    byte[] classBytes;
+
+                    try (InputStream is = jar.getInputStream(entry)) {
+                        classBytes = ByteStreams.toByteArray(is);
+                    } catch (IOException ex) {
+                        throw new ClassNotFoundException(name, ex);
+                    }
+
+                    int dot = name.lastIndexOf('.');
+                    if (dot != -1) {
+                        String pkgName = name.substring(0, dot);
+                        if (getPackage(pkgName) == null) {
+                            definePackage(pkgName, manifest, url);
+                        }
+                    }
+
+                    CodeSigner[] signers = entry.getCodeSigners();
+                    CodeSource source = new CodeSource(url, signers);
+
+                    result = defineClass(name, classBytes, 0, classBytes.length, source);
+                }
+
+                if (result == null) {
+                    result = super.findClass(name);
+                }
 
                 if (result != null) {
                     loader.setClass(name, result);
@@ -85,6 +127,15 @@ final class PluginClassLoader extends URLClassLoader {
         }
 
         return result;
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            jar.close();
+        }
     }
 
     Set<String> getClasses() {
