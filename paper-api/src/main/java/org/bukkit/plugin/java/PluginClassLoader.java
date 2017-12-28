@@ -44,7 +44,7 @@ final class PluginClassLoader extends URLClassLoader {
         this.description = description;
         this.dataFolder = dataFolder;
         this.file = file;
-        this.jar = new JarFile(file, true);
+        this.jar = new JarFile(file);
         this.manifest = jar.getManifest();
         this.url = file.toURI().toURL();
 
@@ -104,7 +104,11 @@ final class PluginClassLoader extends URLClassLoader {
                     if (dot != -1) {
                         String pkgName = name.substring(0, dot);
                         if (getPackage(pkgName) == null) {
-                            definePackage(pkgName, manifest, url);
+                            if (manifest != null) {
+                                definePackage(pkgName, manifest, url);
+                            } else {
+                                definePackage(pkgName, null, null, null, null, null, null, null);
+                            }
                         }
                     }
 
