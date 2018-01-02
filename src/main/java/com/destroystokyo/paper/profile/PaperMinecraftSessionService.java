@@ -1,6 +1,8 @@
 package com.destroystokyo.paper.profile;
 
 import com.mojang.authlib.Environment;
+import com.destroystokyo.paper.event.profile.FillProfileEvent;
+import com.destroystokyo.paper.event.profile.PreFillProfileEvent;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
@@ -20,7 +22,15 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
 
     @Override
     public GameProfile fillProfileProperties(GameProfile profile, boolean requireSecure) {
-        return super.fillProfileProperties(profile, requireSecure);
+        CraftPlayerProfile playerProfile = (CraftPlayerProfile) CraftPlayerProfile.asBukkitMirror(profile);
+        new PreFillProfileEvent(playerProfile).callEvent();
+        profile = playerProfile.getGameProfile();
+        if (profile.isComplete() && profile.getProperties().containsKey("textures")) {
+            return profile;
+        }
+        GameProfile gameProfile = super.fillProfileProperties(profile, requireSecure);
+        new FillProfileEvent(CraftPlayerProfile.asBukkitMirror(gameProfile)).callEvent();
+        return gameProfile;
     }
 
     @Override
