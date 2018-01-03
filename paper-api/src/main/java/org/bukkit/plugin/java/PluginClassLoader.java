@@ -104,10 +104,16 @@ final class PluginClassLoader extends URLClassLoader {
                     if (dot != -1) {
                         String pkgName = name.substring(0, dot);
                         if (getPackage(pkgName) == null) {
-                            if (manifest != null) {
-                                definePackage(pkgName, manifest, url);
-                            } else {
-                                definePackage(pkgName, null, null, null, null, null, null, null);
+                            try {
+                                if (manifest != null) {
+                                    definePackage(pkgName, manifest, url);
+                                } else {
+                                    definePackage(pkgName, null, null, null, null, null, null, null);
+                                }
+                            } catch (IllegalArgumentException ex) {
+                                if (getPackage(pkgName) == null) {
+                                    throw new IllegalStateException("Cannot find package " + pkgName);
+                                }
                             }
                         }
                     }
