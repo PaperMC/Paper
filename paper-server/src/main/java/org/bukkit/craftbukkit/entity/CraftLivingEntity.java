@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -19,9 +18,7 @@ import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityLlama;
 import net.minecraft.server.EntityLlamaSpit;
-import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntityShulkerBullet;
@@ -77,7 +74,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
-import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -467,46 +463,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setGliding(boolean gliding) {
         getHandle().setFlag(7, gliding);
-    }
-
-    @Deprecated
-    public int _INVALID_getLastDamage() {
-        return NumberConversions.ceil(getLastDamage());
-    }
-
-    @Deprecated
-    public void _INVALID_setLastDamage(int damage) {
-        setLastDamage(damage);
-    }
-
-    @Deprecated
-    public void _INVALID_damage(int amount) {
-        damage(amount);
-    }
-
-    @Deprecated
-    public void _INVALID_damage(int amount, Entity source) {
-        damage(amount, source);
-    }
-
-    @Deprecated
-    public int _INVALID_getHealth() {
-        return NumberConversions.ceil(getHealth());
-    }
-
-    @Deprecated
-    public void _INVALID_setHealth(int health) {
-        setHealth(health);
-    }
-
-    @Deprecated
-    public int _INVALID_getMaxHealth() {
-        return NumberConversions.ceil(getMaxHealth());
-    }
-
-    @Deprecated
-    public void _INVALID_setMaxHealth(int health) {
-        setMaxHealth(health);
     }
 
     @Override

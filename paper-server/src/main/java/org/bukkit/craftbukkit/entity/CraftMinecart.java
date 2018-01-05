@@ -4,12 +4,10 @@ import net.minecraft.server.Blocks;
 import net.minecraft.server.EntityMinecartAbstract;
 
 import net.minecraft.server.IBlockData;
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Minecart;
 import org.bukkit.material.MaterialData;
-import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 public abstract class CraftMinecart extends CraftVehicle implements Minecart {
@@ -62,16 +60,6 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     @Override
     public EntityMinecartAbstract getHandle() {
         return (EntityMinecartAbstract) entity;
-    }
-
-    @Deprecated
-    public void _INVALID_setDamage(int damage) {
-        setDamage(damage);
-    }
-
-    @Deprecated
-    public int _INVALID_getDamage() {
-        return NumberConversions.ceil(getDamage());
     }
 
     public void setDisplayBlock(MaterialData material) {
