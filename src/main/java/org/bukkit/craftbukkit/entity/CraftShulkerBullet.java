@@ -47,17 +47,4 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
     public EntityShulkerBullet getHandle() {
         return (EntityShulkerBullet) entity;
     }
-
-    @Deprecated
-    public LivingEntity _INVALID_getShooter() {
-        if (getHandle().getShooter() == null) {
-            return null;
-        }
-        return (LivingEntity) getHandle().getShooter().getBukkitEntity();
-    }
-
-    @Deprecated
-    public void _INVALID_setShooter(LivingEntity shooter) {
-        getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
-    }
 }

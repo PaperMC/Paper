@@ -5,7 +5,6 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EnderDragonPart;
 import org.bukkit.entity.Entity;
-import org.bukkit.util.NumberConversions;
 
 public class CraftEnderDragonPart extends CraftComplexPart implements EnderDragonPart {
     public CraftEnderDragonPart(CraftServer server, EntityComplexPart entity) {
@@ -53,35 +52,5 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
 
     public void resetMaxHealth() {
         getParent().resetMaxHealth();
-    }
-
-    @Deprecated
-    public void _INVALID_damage(int amount) {
-        damage(amount);
-    }
-
-    @Deprecated
-    public void _INVALID_damage(int amount, Entity source) {
-        damage(amount, source);
-    }
-
-    @Deprecated
-    public int _INVALID_getHealth() {
-        return NumberConversions.ceil(getHealth());
-    }
-
-    @Deprecated
-    public void _INVALID_setHealth(int health) {
-        setHealth(health);
-    }
-
-    @Deprecated
-    public int _INVALID_getMaxHealth() {
-        return NumberConversions.ceil(getMaxHealth());
-    }
-
-    @Deprecated
-    public void _INVALID_setMaxHealth(int health) {
-        setMaxHealth(health);
     }
 }
