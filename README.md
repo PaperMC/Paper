@@ -1,4 +1,4 @@
-Paper [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/)
+Paper [![Build Status](https://ci.destroystokyo.com/job/Paper/badge/icon)](https://ci.destroystokyo.com/job/Paper)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
