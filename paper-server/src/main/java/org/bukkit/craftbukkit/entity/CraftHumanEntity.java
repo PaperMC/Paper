@@ -253,7 +253,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 break;
             case SHULKER_BOX:
                 if (iinventory instanceof TileEntityShulkerBox) {
-                    getHandle().openTileEntity((TileEntityShulkerBox) iinventory);
+                    getHandle().openContainer((TileEntityShulkerBox) iinventory);
                 } else {
                     openCustomInventory(inventory, player, "minecraft:shulker_box");
                 }
