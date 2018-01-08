@@ -204,7 +204,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.c();
-@@ -267,28 +319,73 @@
+@@ -267,28 +319,75 @@
  
      }
  
@@ -253,6 +253,8 @@
  
 -        worldserver.addEntity(entityplayer);
 -        this.a(entityplayer, (WorldServer) null);
++        entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
++
 +        // CraftBukkit start - Only add if the player wasn't moved in the event
 +        if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
 +            worldserver.addEntity(entityplayer);
@@ -284,7 +286,7 @@
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getVehicle();
-@@ -318,17 +415,67 @@
+@@ -318,17 +417,67 @@
  
          if (entityplayer1 == entityplayer) {
              this.j.remove(uuid);
@@ -294,9 +296,8 @@
 +            // this.o.remove(uuid);
 +            // this.p.remove(uuid);
 +            // CraftBukkit end
-         }
- 
--        this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
++        }
++
 +        // CraftBukkit start
 +        //  this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
 +        PacketPlayOutPlayerInfo packet = new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, entityplayer);
@@ -308,11 +309,12 @@
 +            } else {
 +                entityplayer2.getBukkitEntity().removeDisconnectingPlayer(entityplayer.getBukkitEntity());
 +            }
-+        }
+         }
 +        // This removes the scoreboard (and player reference) for the specific player in the manager
 +        cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
 +        // CraftBukkit end
-+
+ 
+-        this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
 +        ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
 +
 +        return playerQuitEvent.getQuitMessage(); // CraftBukkit
@@ -357,7 +359,7 @@
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
  
              s = "You are banned from this server!\nReason: " + gameprofilebanentry.getReason();
-@@ -336,10 +483,12 @@
+@@ -336,10 +485,12 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.g.format(gameprofilebanentry.getExpires());
              }
  
@@ -373,7 +375,7 @@
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
              s = "Your IP address is banned from this server!\nReason: " + ipbanentry.getReason();
-@@ -347,13 +496,25 @@
+@@ -347,13 +498,25 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.g.format(ipbanentry.getExpires());
              }
  
@@ -402,7 +404,7 @@
          UUID uuid = EntityHuman.a(gameprofile);
          ArrayList arraylist = Lists.newArrayList();
  
-@@ -388,17 +549,27 @@
+@@ -388,17 +551,27 @@
          }
  
          return new EntityPlayer(this.server, this.server.getWorldServer(0), gameprofile, (PlayerInteractManager) object);
@@ -431,7 +433,7 @@
          entityplayer.dimension = i;
          Object object;
  
-@@ -409,6 +580,11 @@
+@@ -409,6 +582,11 @@
          }
  
          EntityPlayer entityplayer1 = new EntityPlayer(this.server, this.server.getWorldServer(entityplayer.dimension), entityplayer.getProfile(), (PlayerInteractManager) object);
@@ -443,7 +445,7 @@
  
          entityplayer1.playerConnection = entityplayer.playerConnection;
          entityplayer1.copyFrom(entityplayer, flag);
-@@ -423,43 +599,163 @@
+@@ -423,43 +601,163 @@
              entityplayer1.addScoreboardTag(s);
          }
  
@@ -624,7 +626,7 @@
      public void f(EntityPlayer entityplayer) {
          GameProfile gameprofile = entityplayer.getProfile();
          int i = this.isOp(gameprofile) ? this.operators.a(gameprofile) : 0;
-@@ -498,12 +794,111 @@
+@@ -498,12 +796,111 @@
      }
  
      public void changeWorld(Entity entity, int i, WorldServer worldserver, WorldServer worldserver1) {
@@ -736,7 +738,7 @@
          if (entity.dimension == -1) {
              d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
              d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
-@@ -522,6 +917,8 @@
+@@ -522,6 +919,8 @@
              BlockPosition blockposition;
  
              if (i == 1) {
@@ -745,7 +747,7 @@
                  blockposition = worldserver1.getSpawn();
              } else {
                  blockposition = worldserver1.getDimensionSpawn();
-@@ -535,16 +932,27 @@
+@@ -535,16 +934,27 @@
                  worldserver.entityJoinedWorld(entity, false);
              }
          }
@@ -776,7 +778,7 @@
                  worldserver1.entityJoinedWorld(entity, false);
              }
  
-@@ -552,11 +960,23 @@
+@@ -552,11 +962,23 @@
          }
  
          entity.spawnIn(worldserver1);
@@ -801,7 +803,7 @@
              this.v = 0;
          }
  
-@@ -569,6 +989,25 @@
+@@ -569,6 +991,25 @@
  
      }
  
@@ -827,7 +829,7 @@
      public void a(Packet<?> packet, int i) {
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -667,11 +1106,23 @@
+@@ -667,11 +1108,23 @@
  
          this.operators.add(new OpListEntry(gameprofile, this.server.q(), this.operators.b(gameprofile)));
          this.b(this.a(gameprofile.getId()), i);
@@ -851,7 +853,7 @@
      }
  
      private void b(EntityPlayer entityplayer, int i) {
-@@ -696,7 +1147,7 @@
+@@ -696,7 +1149,7 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
@@ -860,7 +862,7 @@
      }
  
      @Nullable
-@@ -720,6 +1171,12 @@
+@@ -720,6 +1173,12 @@
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
@@ -873,7 +875,7 @@
              if (entityplayer != entityhuman && entityplayer.dimension == i) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -767,7 +1224,7 @@
+@@ -767,7 +1226,7 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -882,7 +884,7 @@
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.INITIALIZE));
          entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle")));
-@@ -775,16 +1232,21 @@
+@@ -775,16 +1234,21 @@
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutSpawnPosition(blockposition));
          if (worldserver.isRaining()) {
@@ -908,7 +910,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -797,7 +1259,7 @@
+@@ -797,7 +1261,7 @@
      }
  
      public String[] getSeenPlayers() {
@@ -917,7 +919,7 @@
      }
  
      public boolean getHasWhitelist() {
-@@ -846,26 +1308,39 @@
+@@ -846,26 +1310,39 @@
      }
  
      public void u() {
@@ -962,7 +964,7 @@
  
          if (serverstatisticmanager == null) {
              File file = new File(this.server.getWorldServer(0).getDataManager().getDirectory(), "stats");
-@@ -881,7 +1356,7 @@
+@@ -881,7 +1358,7 @@
  
              serverstatisticmanager = new ServerStatisticManager(this.server, file1);
              serverstatisticmanager.a();
@@ -971,7 +973,7 @@
          }
  
          return serverstatisticmanager;
-@@ -889,14 +1364,14 @@
+@@ -889,14 +1366,14 @@
  
      public AdvancementDataPlayer h(EntityPlayer entityplayer) {
          UUID uuid = entityplayer.getUniqueID();
@@ -988,7 +990,7 @@
          }
  
          advancementdataplayer.a(entityplayer);
-@@ -909,8 +1384,10 @@
+@@ -909,8 +1386,10 @@
              WorldServer[] aworldserver = this.server.worldServer;
              int j = aworldserver.length;
  
@@ -1001,7 +1003,7 @@
  
                  if (worldserver != null) {
                      worldserver.getPlayerChunkMap().a(i);
-@@ -934,13 +1411,20 @@
+@@ -934,13 +1413,20 @@
      }
  
      public void reload() {
