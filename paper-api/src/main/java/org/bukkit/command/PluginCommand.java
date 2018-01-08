@@ -33,7 +33,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
         boolean success = false;
 
         if (!owningPlugin.isEnabled()) {
-            return false;
+            throw new CommandException("Cannot execute command '" + commandLabel + "' in plugin " + owningPlugin.getDescription().getFullName() + " - plugin is disabled.");
         }
 
         if (!testPermission(sender)) {
