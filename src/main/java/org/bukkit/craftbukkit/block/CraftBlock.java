@@ -442,7 +442,7 @@ public class CraftBlock implements Block {
     }
 
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(getNMSBlock().getBlockData().getMaterial().getPushReaction().ordinal());
+        return PistonMoveReaction.getById(getNMSBlock().h(getNMSBlock().fromLegacyData(getData())).ordinal());
     }
 
     private boolean itemCausesDrops(ItemStack item) {
