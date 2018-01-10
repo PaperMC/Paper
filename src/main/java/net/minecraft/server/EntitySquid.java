@@ -169,7 +169,7 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     public static boolean b(EntityTypes<EntitySquid> entitytypes, GeneratorAccess generatoraccess, EnumMobSpawn enummobspawn, BlockPosition blockposition, Random random) {
-        return blockposition.getY() > 45 && blockposition.getY() < generatoraccess.getSeaLevel();
+        return blockposition.getY() > generatoraccess.getMinecraftWorld().spigotConfig.squidSpawnRangeMin && blockposition.getY() < generatoraccess.getSeaLevel(); // Spigot
     }
 
     public void a(float f, float f1, float f2) {
