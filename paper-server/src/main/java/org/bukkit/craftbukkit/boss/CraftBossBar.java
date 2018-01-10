@@ -103,13 +103,13 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public void addFlag(BarFlag flag) {
-        flags.remove(flag);
+        flags.add(flag);
         updateFlags();
     }
 
     @Override
     public void removeFlag(BarFlag flag) {
-        flags.add(flag);
+        flags.remove(flag);
         updateFlags();
     }
 
