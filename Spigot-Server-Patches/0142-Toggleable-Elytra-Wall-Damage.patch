@@ -1,0 +1,45 @@
+From a527a33b86db5515a407228bf1424a81547dfd35 Mon Sep 17 00:00:00 2001
+From: Jadon Fowler <jadonflower@gmail.com>
+Date: Sat, 18 Jun 2016 23:13:59 -0700
+Subject: [PATCH] Toggleable Elytra Wall Damage
+
+Instead of calculating the damage taken from hitting a wall, you can
+disable it in the config.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 70642451..64e31dd2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -347,4 +347,9 @@ public class PaperWorldConfig {
+             delayChunkUnloadsBy *= 1000;
+         }
+     }
++
++    public boolean elytraHitWallDamage = true;
++    private void elytraHitWallDamage() {
++        elytraHitWallDamage = getBoolean("elytra-hit-wall-damage", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index a09d8964..20aac1f3 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1737,6 +1737,7 @@ public abstract class EntityLiving extends Entity {
+                     this.motY = 0.30000001192092896D;
+                 }
+             } else if (this.cP()) {
++                if (world.paperConfig.elytraHitWallDamage) { // Paper start - Toggleable Elytra Wall Damage
+                 if (this.motY > -0.5D) {
+                     this.fallDistance = 1.0F;
+                 }
+@@ -1786,6 +1787,7 @@ public abstract class EntityLiving extends Entity {
+                         this.damageEntity(DamageSource.FLY_INTO_WALL, f8);
+                     }
+                 }
++                } // Paper end - Elyta Wall Damage if statement
+ 
+                 if (this.onGround && !this.world.isClientSide) {
+                     if (getFlag(7) && !CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) // CraftBukkit
+-- 
+2.14.3
+

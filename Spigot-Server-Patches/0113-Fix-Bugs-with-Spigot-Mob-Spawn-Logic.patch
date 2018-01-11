@@ -1,0 +1,60 @@
+From f47639cb7c51dfa19cfd33bc6fa1346071430a1b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 14 Apr 2016 21:01:39 -0400
+Subject: [PATCH] Fix Bugs with Spigot Mob Spawn Logic
+
+Spigot drastically altered vanilla mob spawn logic and caused a few issues.
+1) Used only spawnable chunks vs entire world for entity counting, resulting in ignoring
+other entities in the world, and causing the world to go over its intended limit.
+
+Specially with servers using smaller mob spawn ranges than view distance, as well as affects spawning API
+
+2) Spigot was using 16x16 division instead of vanilla 17x17 division.
+
+This patch returns mob counting to use all loaded chunks, and 17x17 division.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 300a5619..ecc76a88 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -683,7 +683,7 @@ public class Chunk {
+             i = this.entitySlices.length - 1;
+         }
+ 
+-        this.entitySlices[i].remove(entity);
++        if (!this.entitySlices[i].remove(entity)) { return; } // Paper
+         // Paper start - update counts
+         if (entity instanceof EntityItem) {
+             itemCounts[i]--;
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 45a83ae9..2cd06382 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -23,6 +23,15 @@ public final class SpawnerCreature {
+     // Spigot start - get entity count only from chunks being processed in b
+     private int getEntityCount(WorldServer server, Class oClass)
+     {
++        // Paper start - use entire world, not just active chunks. Spigot broke vanilla expectations.
++        if (true) {
++            return server
++                    .getChunkProviderServer()
++                    .chunks.values()
++                    .stream()
++                    .collect(java.util.stream.Collectors.summingInt(c -> c.entityCount.get(oClass)));
++        }
++        // Paper end
+         int i = 0;
+         Iterator<Long> it = this.b.iterator();
+         while ( it.hasNext() )
+@@ -126,7 +135,7 @@ public final class SpawnerCreature {
+                     int l1 = limit * i / a; // CraftBukkit - use per-world limits
+                     */ // Paper end
+ 
+-                    if ((mobcnt = getEntityCount(worldserver, enumcreaturetype.a())) <= limit * i / 256) {
++                    if ((mobcnt = getEntityCount(worldserver, enumcreaturetype.a())) <= limit * i / 289) { // Paper - use 17x17 like vanilla (a at top of file)
+                         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
+                         Iterator iterator1 = this.b.iterator();
+ 
+-- 
+2.14.3
+

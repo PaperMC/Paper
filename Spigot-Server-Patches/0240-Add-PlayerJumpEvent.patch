@@ -1,0 +1,69 @@
+From 35f54d42ec2538dd1caf18e5946a17114a385dca Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Thu, 28 Sep 2017 17:21:44 -0400
+Subject: [PATCH] Add PlayerJumpEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index deb0f4a9..579996d1 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -1399,6 +1399,7 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+     public void b(List<IRecipe> list) {}
+ 
++    public void jump() { this.cu(); } // Paper - OBFHELPER
+     public void cu() {
+         super.cu();
+         this.b(StatisticList.w);
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 9c8828eb..cc58a4a9 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -57,6 +57,7 @@ import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.util.NumberConversions;
+ import com.destroystokyo.paper.event.player.IllegalPacketEvent; // Paper
++import com.destroystokyo.paper.event.player.PlayerJumpEvent; // Paper
+ import co.aikar.timings.MinecraftTimings; // Paper
+ // CraftBukkit end
+ 
+@@ -584,7 +585,34 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                             d8 = d5 - this.p;
+                             d9 = d6 - this.q;
+                             if (this.player.onGround && !packetplayinflying.a() && d8 > 0.0D) {
+-                                this.player.cu();
++                                // Paper start - Add player jump event
++                                Player player = this.getPlayer();
++                                Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
++                                Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
++
++                                // If the packet contains movement information then we update the To location with the correct XYZ.
++                                if (packetplayinflying.hasPos) {
++                                    to.setX(packetplayinflying.x);
++                                    to.setY(packetplayinflying.y);
++                                    to.setZ(packetplayinflying.z);
++                                }
++
++                                // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
++                                if (packetplayinflying.hasLook) {
++                                    to.setYaw(packetplayinflying.yaw);
++                                    to.setPitch(packetplayinflying.pitch);
++                                }
++
++                                PlayerJumpEvent event = new PlayerJumpEvent(player, from, to);
++
++                                if (event.callEvent()) {
++                                    this.player.jump();
++                                } else {
++                                    from = event.getFrom();
++                                    this.internalTeleport(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch(), Collections.emptySet());
++                                    return;
++                                }
++                                // Paper end
+                             }
+ 
+                             this.player.move(EnumMoveType.PLAYER, d7, d8, d9);
+-- 
+2.14.3
+
