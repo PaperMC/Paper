@@ -341,4 +341,9 @@ public class PaperWorldConfig {
         expMergeMaxValue = getInt("experience-merge-max-value", -1);
         log("Experience Merge Max Value: " + expMergeMaxValue);
     }
+
+    public double squidMaxSpawnHeight;
+    private void squidMaxSpawnHeight() {
+        squidMaxSpawnHeight = getDouble("squid-spawn-height.maximum", 0.0D);
+    }
 }
