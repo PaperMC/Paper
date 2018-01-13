@@ -1,0 +1,79 @@
+From d68b88f5e1ce7b338a070ef7c1261c621a009253 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 13 Jan 2018 12:26:37 -0500
+Subject: [PATCH] Fix SPIGOT-3764
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemSkull.java b/src/main/java/net/minecraft/server/ItemSkull.java
+index f19acf9ba..06fb9886e 100644
+--- a/src/main/java/net/minecraft/server/ItemSkull.java
++++ b/src/main/java/net/minecraft/server/ItemSkull.java
+@@ -143,7 +143,7 @@ public class ItemSkull extends Item {
+                     nbttagcompound.set("SkullOwner", GameProfileSerializer.serialize(new NBTTagCompound(), gameprofile));
+                     return false;
+                 }
+-            });
++            }, true); // Paper
+             // Spigot end
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
+index ba02a17e0..8c30b1965 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySkull.java
++++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
+@@ -182,12 +182,13 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+                 }
+                 return false;
+             }
+-        }); 
++        }, true); // Paper
+         // Spigot end
+     }
+ 
+     // Spigot start - Support async lookups
+-    public static Future<GameProfile> b(final GameProfile gameprofile, final Predicate<GameProfile> callback) {
++    // Paper - temp fixes until spigot fixes it
++    public static Future<GameProfile> b(final GameProfile gameprofile, final Predicate<GameProfile> callback, boolean doAsync) {
+         if (gameprofile != null && !UtilColor.b(gameprofile.getName())) {
+             if (gameprofile.isComplete() && gameprofile.getProperties().containsKey("textures")) {
+                 callback.apply(gameprofile);
+@@ -199,7 +200,7 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+                     callback.apply(profile);
+ 
+                     return Futures.immediateFuture(profile);
+-                } else {
++                } else if (doAsync) {
+                     return executor.submit(new Callable<GameProfile>() {
+                         @Override
+                         public GameProfile call() {
+@@ -217,6 +218,14 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+                             return profile;
+                         }
+                     });
++                } else {
++                    profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
++                    if (profile == null) {
++                        callback.apply(gameprofile);
++                    } else {
++                        callback.apply(profile);
++                    }
++                    return Futures.immediateFuture(profile);
+                 }
+             }
+         } else {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index 987cc9a80..a67419774 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -79,7 +79,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+         if (profile != null) {
+             // Fill in textures
+             // Must be done sync due to way client handles textures
+-            profile = com.google.common.util.concurrent.Futures.getUnchecked(TileEntitySkull.b(profile, com.google.common.base.Predicates.alwaysTrue())); // Spigot
++            profile = com.google.common.util.concurrent.Futures.getUnchecked(TileEntitySkull.b(profile, com.google.common.base.Predicates.alwaysTrue(), false)); // Spigot // Paper
+ 
+             NBTTagCompound owner = new NBTTagCompound();
+             GameProfileSerializer.serialize(owner, profile);
+-- 
+2.15.1
+
