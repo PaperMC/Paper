@@ -48,7 +48,22 @@
                  list.add(enumcreaturetype);
              }
          }
-@@ -217,10 +238,15 @@
+@@ -207,7 +228,13 @@
+                                         j1 = biomesettingsmobs_c.minCount + world.random.nextInt(1 + biomesettingsmobs_c.maxCount - biomesettingsmobs_c.minCount);
+                                     }
+ 
+-                                    if (NaturalSpawner.isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
++                                    // Paper start - PreCreatureSpawnEvent
++                                    PreSpawnStatus doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
++                                    if (doSpawning == PreSpawnStatus.ABORT) {
++                                        return;
++                                    }
++                                    if (doSpawning == PreSpawnStatus.SUCCESS && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
++                                        // Paper end - PreCreatureSpawnEvent
+                                         Mob entityinsentient = NaturalSpawner.getMobForSpawn(world, biomesettingsmobs_c.type);
+ 
+                                         if (entityinsentient == null) {
+@@ -217,10 +244,15 @@
                                          entityinsentient.moveTo(d0, (double) i, d1, world.random.nextFloat() * 360.0F, 0.0F);
                                          if (NaturalSpawner.isValidPositionForMob(world, entityinsentient, d2)) {
                                              groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.NATURAL, groupdataentity);
@@ -68,7 +83,41 @@
                                              if (j >= entityinsentient.getMaxSpawnClusterSize()) {
                                                  return;
                                              }
-@@ -268,6 +294,7 @@
+@@ -250,10 +282,31 @@
+         return squaredDistance <= 576.0D ? false : (world.getSharedSpawnPos().closerToCenterThan(new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D), 24.0D) ? false : Objects.equals(new ChunkPos(pos), chunk.getPos()) || world.isNaturalSpawningAllowed((BlockPos) pos));
+     }
+ 
+-    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++    // Paper start - PreCreatureSpawnEvent
++    private enum PreSpawnStatus {
++        FAIL,
++        SUCCESS,
++        CANCELLED,
++        ABORT
++    }
++    private static PreSpawnStatus isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++        // Paper end - PreCreatureSpawnEvent
+         EntityType<?> entitytypes = spawnEntry.type;
+ 
+-        return entitytypes.getCategory() == MobCategory.MISC ? false : (!entitytypes.canSpawnFarFromPlayer() && squaredDistance > (double) (entitytypes.getCategory().getDespawnDistance() * entitytypes.getCategory().getDespawnDistance()) ? false : (entitytypes.canSummon() && NaturalSpawner.canSpawnMobAt(world, structureAccessor, chunkGenerator, group, spawnEntry, pos) ? (!SpawnPlacements.isSpawnPositionOk(entitytypes, world, pos) ? false : (!SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.NATURAL, pos, world.random) ? false : world.noCollision(entitytypes.getSpawnAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)))) : false));
++        // Paper start - PreCreatureSpawnEvent
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++            io.papermc.paper.util.MCUtil.toLocation(world, pos),
++            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytypes), SpawnReason.NATURAL
++        );
++        if (!event.callEvent()) {
++            if (event.shouldAbortSpawn()) {
++                return PreSpawnStatus.ABORT;
++            }
++            return PreSpawnStatus.CANCELLED;
++        }
++        // Paper end - PreCreatureSpawnEvent
++
++        return entitytypes.getCategory() == MobCategory.MISC ? PreSpawnStatus.FAIL : (!entitytypes.canSpawnFarFromPlayer() && squaredDistance > (double) (entitytypes.getCategory().getDespawnDistance() * entitytypes.getCategory().getDespawnDistance()) ? PreSpawnStatus.FAIL : (entitytypes.canSummon() && NaturalSpawner.canSpawnMobAt(world, structureAccessor, chunkGenerator, group, spawnEntry, pos) ? (!SpawnPlacements.isSpawnPositionOk(entitytypes, world, pos) ? PreSpawnStatus.FAIL : (!SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.NATURAL, pos, world.random) ? PreSpawnStatus.FAIL : world.noCollision(entitytypes.getSpawnAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)) ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL)) : PreSpawnStatus.FAIL)); // Paper - PreCreatureSpawnEvent
+     }
+ 
+     @Nullable
+@@ -268,6 +321,7 @@
              NaturalSpawner.LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception exception) {
              NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
@@ -76,7 +125,7 @@
          }
  
          return null;
-@@ -356,6 +383,7 @@
+@@ -356,6 +410,7 @@
                                      entity = biomesettingsmobs_c.type.create(world.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception exception) {
                                      NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
@@ -84,7 +133,7 @@
                                      continue;
                                  }
  
-@@ -369,7 +397,7 @@
+@@ -369,7 +424,7 @@
  
                                      if (entityinsentient.checkSpawnRules(world, EntitySpawnReason.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(world)) {
                                          groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupdataentity);
@@ -93,7 +142,7 @@
                                          flag = true;
                                      }
                                  }
-@@ -482,10 +510,12 @@
+@@ -482,10 +537,12 @@
              return this.unmodifiableMobCategoryCounts;
          }
  

@@ -54,7 +54,7 @@
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level world, ItemStack stack, @Nullable Player player) {
-@@ -464,21 +472,40 @@
+@@ -464,21 +472,50 @@
          CustomData customdata = (CustomData) stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
  
          return !customdata.isEmpty() ? chained.andThen((entity) -> {
@@ -82,12 +82,22 @@
 +        // CraftBukkit start
 +        return this.spawn(world, afterConsumer, pos, reason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
-+
+ 
 +    @Nullable
 +    public T spawn(ServerLevel worldserver, @Nullable Consumer<T> consumer, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
++        // Paper start - PreCreatureSpawnEvent
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++            io.papermc.paper.util.MCUtil.toLocation(worldserver, blockposition),
++            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(this),
++            spawnReason
++        );
++        if (!event.callEvent()) {
++            return null;
++        }
++        // Paper end - PreCreatureSpawnEvent
 +        T t0 = this.create(worldserver, consumer, blockposition, entityspawnreason, flag, flag1);
- 
++
          if (t0 != null) {
 -            world.addFreshEntityWithPassengers(t0);
 +            // CraftBukkit start
@@ -99,7 +109,7 @@
              if (t0 instanceof Mob) {
                  Mob entityinsentient = (Mob) t0;
  
-@@ -657,7 +684,7 @@
+@@ -657,7 +694,7 @@
              }
  
              return entity;
@@ -108,7 +118,7 @@
      }
  
      public static Stream<Entity> loadEntitiesRecursive(final List<? extends Tag> entityNbtList, final Level world, final EntitySpawnReason reason) {
-@@ -718,7 +745,7 @@
+@@ -718,7 +755,7 @@
  
      @Nullable
      public T tryCast(Entity obj) {
@@ -117,7 +127,7 @@
      }
  
      @Override
-@@ -791,7 +818,7 @@
+@@ -791,7 +828,7 @@
              this.canSpawnFarFromPlayer = spawnGroup == MobCategory.CREATURE || spawnGroup == MobCategory.MISC;
          }
  
