@@ -184,8 +184,15 @@ public final class SpawnerCreature {
                                         j1 = biomesettingsmobs_c.d + worldserver.random.nextInt(1 + biomesettingsmobs_c.e - biomesettingsmobs_c.d);
                                     }
 
-                                    if (a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
+                                    // Paper start
+                                    Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
+                                    if (doSpawning == null) {
+                                        return;
+                                    }
+                                    if (doSpawning && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
+                                        // Paper end
                                         EntityInsentient entityinsentient = a(worldserver, biomesettingsmobs_c.c);
+
 
                                         if (entityinsentient == null) {
                                             return;
@@ -238,8 +245,24 @@ public final class SpawnerCreature {
         }
     }
 
-    private static boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) {
+    private static Boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) { // Paper
         EntityTypes<?> entitytypes = biomesettingsmobs_c.c;
+        // Paper start
+        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
+        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(entitytypes).getKey());
+        if (type != null) {
+            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
+                MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
+                type, SpawnReason.NATURAL
+            );
+            if (!event.callEvent()) {
+                if (event.shouldAbortSpawn()) {
+                    return null;
+                }
+                return false;
+            }
+        }
+        // Paper end
 
         if (entitytypes.e() == EnumCreatureType.MISC) {
             return false;
