@@ -590,6 +590,15 @@ public class ChunkProviderServer extends IChunkProvider {
             this.world.getMethodProfiler().exit();
             //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
             //Collections.shuffle(list); // Paper
+            //Paper start - call player naturally spawn event
+            int chunkRange = world.spigotConfig.mobSpawnRange;
+            chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
+            chunkRange = Math.min(chunkRange, 8);
+            for (EntityPlayer entityPlayer : this.world.getPlayers()) {
+                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
+                entityPlayer.playerNaturallySpawnedEvent.callEvent();
+            };
+            // Paper end
             this.playerChunkMap.f().forEach((playerchunk) -> { // Paper - no... just no...
                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
 

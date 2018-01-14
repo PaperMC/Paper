@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
@@ -95,6 +96,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public boolean sentListPacket = false;
     public Integer clientViewDistance;
     // CraftBukkit end
+    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
 

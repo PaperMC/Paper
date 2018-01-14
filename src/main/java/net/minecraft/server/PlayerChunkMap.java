@@ -912,12 +912,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
         chunkRange = (chunkRange > 8) ? 8 : chunkRange;
 
-        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
+        final int finalChunkRange = chunkRange; // Paper for lambda below
+        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
         // Spigot end
         long i = chunkcoordintpair.pair();
 
         return !this.chunkDistanceManager.d(i) ? true : this.playerMap.a(i).noneMatch((entityplayer) -> {
-            return !entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange; // Spigot
+            // Paper start -
+            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
+            double blockRange = 16384.0D;
+            if (reducedRange) {
+                event = entityplayer.playerNaturallySpawnedEvent;
+                if (event == null || event.isCancelled()) return false;
+                blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
+            }
+
+            return (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange); // Spigot
+            // Paper end
         });
     }
 
