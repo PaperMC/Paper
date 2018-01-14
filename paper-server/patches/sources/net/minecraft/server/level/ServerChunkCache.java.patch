@@ -14,10 +14,12 @@
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
-@@ -95,6 +102,64 @@
+@@ -93,8 +100,66 @@
+         this.distanceManager = this.chunkMap.getDistanceManager();
+         this.distanceManager.updateSimulationDistance(simulationDistance);
          this.clearCache();
-     }
- 
++    }
++
 +    // CraftBukkit start - properly implement isChunkLoaded
 +    public boolean isChunkLoaded(int chunkX, int chunkZ) {
 +        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(ChunkPos.asLong(chunkX, chunkZ));
@@ -48,8 +50,8 @@
 +
 +    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
 +        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
-+    }
-+
+     }
+ 
 +    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
 +        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
 +    }
@@ -149,8 +151,8 @@
          this.dataStorage.close();
          this.lightEngine.close();
          this.chunkMap.close();
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - modelled on below
 +    public void purgeUnload() {
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
@@ -162,9 +164,9 @@
 +        this.chunkMap.tick(() -> true);
 +        gameprofilerfiller.pop();
 +        this.clearCache();
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
          ProfilerFiller gameprofilerfiller = Profiler.get();
@@ -175,7 +177,7 @@
              this.distanceManager.purgeStaleTickets();
          }
  
-@@ -401,14 +496,14 @@
+@@ -401,14 +496,22 @@
  
          this.lastSpawnState = spawnercreature_d;
          profiler.popPush("spawnAndTick");
@@ -186,6 +188,14 @@
  
          if (flag && (this.spawnEnemies || this.spawnFriendlies)) {
 -            boolean flag1 = this.level.getLevelData().getGameTime() % 400L == 0L;
++            // Paper start - PlayerNaturallySpawnCreaturesEvent
++            for (ServerPlayer entityPlayer : this.level.players()) {
++                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, entityPlayer.getBukkitEntity().getViewDistance());
++                chunkRange = Math.min(chunkRange, 8);
++                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
++                entityPlayer.playerNaturallySpawnedEvent.callEvent();
++            }
++            // Paper end - PlayerNaturallySpawnCreaturesEvent
 +            boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
  
 -            list1 = NaturalSpawner.getFilteredSpawningCategories(spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
@@ -193,7 +203,7 @@
          } else {
              list1 = List.of();
          }
-@@ -420,7 +515,7 @@
+@@ -420,7 +523,7 @@
              ChunkPos chunkcoordintpair = chunk.getPos();
  
              chunk.incrementInhabitedTime(timeDelta);
@@ -202,7 +212,7 @@
                  NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, list1);
              }
  
-@@ -541,10 +636,16 @@
+@@ -541,10 +644,16 @@
  
      @Override
      public void setSpawnSettings(boolean spawnMonsters) {
@@ -221,7 +231,7 @@
      public String getChunkDebugData(ChunkPos pos) {
          return this.chunkMap.getChunkDebugData(pos);
      }
-@@ -618,14 +719,20 @@
+@@ -618,14 +727,20 @@
          }
  
          @Override
