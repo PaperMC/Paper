@@ -41,7 +41,7 @@ public interface AdvancementProgress {
     boolean revokeCriteria(String criteria);
 
     /**
-     * Get the date the specified critera was awarded.
+     * Get the date the specified criteria was awarded.
      *
      * @param criteria the criteria to check
      * @return date awarded or null if unawarded or criteria does not exist

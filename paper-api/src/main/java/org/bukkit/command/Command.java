@@ -261,7 +261,7 @@ public abstract class Command {
      * outstanding changes
      *
      * @param commandMap the CommandMap to unregister
-     * @return true if the unregistration was successfull (the current
+     * @return true if the unregistration was successful (the current
      *     registered CommandMap was the passed CommandMap or null) false
      *     otherwise
      */

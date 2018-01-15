@@ -15,7 +15,7 @@ public interface Enderman extends Monster {
     public MaterialData getCarriedMaterial();
 
     /**
-     * Set the id and data of the block that the Enderman is carring.
+     * Set the id and data of the block that the Enderman is carrying.
      *
      * @param material data to set the carried block to
      */

@@ -15,7 +15,7 @@ public interface EnderDragon extends ComplexLivingEntity {
          */
         CIRCLING,
         /**
-         * The dragon will fly towards a targetted player and shoot a
+         * The dragon will fly towards a targeted player and shoot a
          * fireball when within 64 blocks.
          */
         STRAFING,

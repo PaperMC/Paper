@@ -113,7 +113,7 @@ public interface Plugin extends TabExecutor {
     /**
      * Called after a plugin is loaded but before it has been enabled.
      * <p>
-     * When mulitple plugins are loaded, the onLoad() for all plugins is
+     * When multiple plugins are loaded, the onLoad() for all plugins is
      * called before any onEnable() is called.
      */
     public void onLoad();

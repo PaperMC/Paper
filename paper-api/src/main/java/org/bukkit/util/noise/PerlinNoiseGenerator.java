@@ -6,7 +6,7 @@ import org.bukkit.World;
 /**
  * Generates noise using the "classic" perlin generator
  *
- * @see SimplexNoiseGenerator "Improved" and faster version with slighly
+ * @see SimplexNoiseGenerator "Improved" and faster version with slightly
  *     different results
  */
 public class PerlinNoiseGenerator extends NoiseGenerator {

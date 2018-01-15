@@ -84,7 +84,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * An item stack with the specified damage / durabiltiy
+     * An item stack with the specified damage / durability
      *
      * @param type item material
      * @param amount stack size

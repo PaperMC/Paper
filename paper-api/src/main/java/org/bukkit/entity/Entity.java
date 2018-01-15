@@ -49,7 +49,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
     /**
      * Gets this entity's current velocity
      *
-     * @return Current travelling velocity of this entity
+     * @return Current traveling velocity of this entity
      */
     public Vector getVelocity();
 

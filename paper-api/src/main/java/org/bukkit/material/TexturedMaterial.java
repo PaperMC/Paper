@@ -97,7 +97,7 @@ public abstract class TexturedMaterial extends MaterialData {
      */
     @Deprecated
     protected void setTextureIndex(int idx) {
-        setData((byte) idx); // Defult to using all bits - override for other mappings
+        setData((byte) idx); // Default to using all bits - override for other mappings
     }
 
     @Override

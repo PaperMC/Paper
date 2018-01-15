@@ -55,7 +55,7 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
     /**
      * Return the block clicked
      *
-     * @return the blicked block
+     * @return the clicked block
      */
     public Block getBlockClicked() {
         return blockClicked;
