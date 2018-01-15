@@ -1388,4 +1388,69 @@ public enum Material {
                 return false;
         }
     }
+
+    /**
+     * Checks if this Material is an obtainable item.
+     *
+     * @return true if this material is an item
+     */
+    public boolean isItem() {
+        switch (this) {
+            case ACACIA_DOOR:
+            case BED_BLOCK:
+            case BEETROOT_BLOCK:
+            case BIRCH_DOOR:
+            case BREWING_STAND:
+            case BURNING_FURNACE:
+            case CAKE_BLOCK:
+            case CARROT:
+            case CAULDRON:
+            case COCOA:
+            case CROPS:
+            case DARK_OAK_DOOR:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case DIODE_BLOCK_OFF:
+            case DIODE_BLOCK_ON:
+            case DOUBLE_STEP:
+            case DOUBLE_STONE_SLAB2:
+            case ENDER_PORTAL:
+            case END_GATEWAY:
+            case FIRE:
+            case FLOWER_POT:
+            case FROSTED_ICE:
+            case GLOWING_REDSTONE_ORE:
+            case IRON_DOOR_BLOCK:
+            case JUNGLE_DOOR:
+            case LAVA:
+            case MELON_STEM:
+            case NETHER_WARTS:
+            case PISTON_EXTENSION:
+            case PISTON_MOVING_PIECE:
+            case PORTAL:
+            case POTATO:
+            case PUMPKIN_STEM:
+            case PURPUR_DOUBLE_SLAB:
+            case REDSTONE_COMPARATOR_OFF:
+            case REDSTONE_COMPARATOR_ON:
+            case REDSTONE_LAMP_ON:
+            case REDSTONE_TORCH_OFF:
+            case REDSTONE_WIRE:
+            case SIGN_POST:
+            case SKULL:
+            case SPRUCE_DOOR:
+            case STANDING_BANNER:
+            case STATIONARY_LAVA:
+            case STATIONARY_WATER:
+            case SUGAR_CANE_BLOCK:
+            case TRIPWIRE:
+            case WALL_BANNER:
+            case WALL_SIGN:
+            case WATER:
+            case WOODEN_DOOR:
+            case WOOD_DOUBLE_STEP:
+                return false;
+            default:
+                return true;
+        }
+    }
 }
