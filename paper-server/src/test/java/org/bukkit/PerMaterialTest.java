@@ -162,4 +162,22 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertFalse(EnchantmentTarget.BREAKABLE.includes(material));
         }
     }
+
+    @Test
+    public void testBlock() {
+        if (material == Material.AIR) {
+            assertTrue(material.isBlock());
+        } else {
+            assertThat(material.isBlock(), is(equalTo(CraftMagicNumbers.getBlock(material) != Blocks.AIR)));
+        }
+    }
+
+    @Test
+    public void testAir() {
+        if (material == Material.AIR) {
+            assertTrue(material.isItem());
+        } else {
+            assertThat(material.isItem(), is(equalTo(CraftMagicNumbers.getItem(material) != null)));
+        }
+    }
 }
