@@ -1,0 +1,65 @@
+From 8c7f590319e0322c7b6d85b44bbc280328f84e93 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 23:55:48 -0400
+Subject: [PATCH] ensureServerConversions API
+
+This will take a Bukkit ItemStack and run it through any conversions a server process would perform on it,
+to ensure it meets latest minecraft expectations.
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 52a8d4d8..99b90629 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -121,4 +121,17 @@ public interface ItemFactory {
+      * @return the default color for leather armor
+      */
+     Color getDefaultLeatherColor();
++
++    // Paper start
++    /**
++     * Minecart updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @param item The item to process conversions on
++     * @return A potentially Data Converted ItemStack
++     */
++    ItemStack ensureServerConversions(ItemStack item);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 188ae6d7..6bb19b9d 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -556,7 +556,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+             }
+         }
+ 
+-        return result;
++        return result.ensureServerConversions(); // Paper
+     }
+ 
+     /**
+@@ -608,4 +608,18 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+ 
+         return true;
+     }
++
++    // Paper start
++    /**
++     * Minecart updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @return A potentially Data Converted ItemStack
++     */
++    public ItemStack ensureServerConversions() {
++        return Bukkit.getServer().getItemFactory().ensureServerConversions(this);
++    }
++    // Paper end
+ }
+-- 
+2.15.1
+

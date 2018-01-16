@@ -1,0 +1,264 @@
+From da39e33d6a82ceead9d973492435f4d5954ffc30 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Jun 2017 16:30:44 -0400
+Subject: [PATCH] Profile Lookup Events
+
+Adds a Pre Lookup Event and a Post Lookup Event so that plugins may prefill in profile data, and cache the responses from
+profiles that had to be looked up.
+
+diff --git a/pom.xml b/pom.xml
+index c8b37997..13994dc2 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -62,6 +62,13 @@
+             <!-- Trove Provided by CraftBukkit -->
+             <scope>provided</scope>
+         </dependency>
++        <!-- Paper - Add Authlib for Profile API -->
++        <dependency>
++            <groupId>com.mojang</groupId>
++            <artifactId>authlib</artifactId>
++            <version>1.5.25</version> <!-- keep in sync with major MC versions -->
++            <scope>compile</scope> <!-- expose to Plugins -->
++        </dependency>
+         <dependency>
+             <groupId>co.aikar</groupId>
+             <artifactId>fastutil-lite</artifactId>
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
+new file mode 100644
+index 00000000..37e957f4
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
+@@ -0,0 +1,53 @@
++package com.destroystokyo.paper.event.profile;
++
++import com.mojang.authlib.GameProfile;
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import javax.annotation.Nonnull;
++
++/**
++ * Allows a plugin to be notified anytime AFTER a Profile has been looked up from the Mojang API
++ * This is an opportunity to view the response and potentially cache things.
++ *
++ * No guarantees are made about thread execution context for this event. If you need to know, check
++ * event.isAsync()
++ */
++public class LookupProfileEvent extends Event {
++
++    private static final HandlerList handlers = new HandlerList();
++    /**
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    private final GameProfile profile;
++
++    /**
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    public LookupProfileEvent(@Nonnull GameProfile profile) {
++        super(!Bukkit.isPrimaryThread());
++        this.profile = profile;
++    }
++
++    /**
++     * @return The profile that was recently looked up. This profile can be mutated
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    @Nonnull
++    public GameProfile getProfile() {
++        return profile;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
+new file mode 100644
+index 00000000..455ffaa1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
+@@ -0,0 +1,170 @@
++package com.destroystokyo.paper.event.profile;
++
++import com.google.common.collect.Multimap;
++import com.google.common.collect.Sets;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.GameProfileRepository;
++import com.mojang.authlib.ProfileLookupCallback;
++import com.mojang.authlib.properties.Property;
++import com.mojang.authlib.properties.PropertyMap;
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import java.util.Set;
++import java.util.UUID;
++
++/**
++ * Allows a plugin to intercept a Profile Lookup for a Profile by name
++ *
++ * At the point of event fire, the UUID and properties are unset.
++ *
++ * If a plugin sets the UUID, and optionally the properties, the API call to look up the profile may be skipped.
++ *
++ * No guarantees are made about thread execution context for this event. If you need to know, check
++ * event.isAsync()
++ */
++public class PreLookupProfileEvent extends Event {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final String name;
++    private UUID uuid;
++    /**
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    private PropertyMap properties = new PropertyMap();
++
++    public PreLookupProfileEvent(@Nonnull String name) {
++        super(!Bukkit.isPrimaryThread());
++        this.name = name;
++    }
++
++    /**
++     * @return Name of the profile
++     */
++    @Nonnull
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * If this value is left null by the completion of the event call, then the server will
++     * trigger a call to the Mojang API to look up the UUID (Network Request), and subsequently, fire a
++     * {@link LookupProfileEvent}
++     *
++     * @return The UUID of the profile if it has already been provided by a plugin
++     */
++    @Nullable
++    public UUID getUUID() {
++        return uuid;
++    }
++
++    /**
++     * Sets the UUID for this player name. This will skip the initial API call to find the players UUID.
++     *
++     * However, if Profile Properties are needed by the server, you must also set them or else an API call will still be made.
++     *
++     * @param uuid the UUID to set on the {@link GameProfile} or null to reset
++     */
++    public void setUUID(@Nullable UUID uuid) {
++        this.uuid = uuid;
++    }
++
++    /**
++     * Get the properties for this profile
++     *
++     * @return the property map to attach to the new {@link GameProfile}
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    @Nonnull
++    public Multimap<String, Property> getProperties() {
++        return properties;
++    }
++
++    /**
++     * Completely replaces all Properties with the new provided properties
++     * @param properties the properties to set on the new profile
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    public void setProperties(Multimap<String, Property> properties) {
++        this.properties = new PropertyMap();
++        this.properties.putAll(properties);
++    }
++
++    /**
++     * Adds additional properties, without removing the original properties
++     * @param properties the properties to add to the existing properties
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    public void addProperties(Multimap<String, Property> properties) {
++        this.properties.putAll(properties);
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    /**
++     * Wraps the Profile Repository so we can intercept all lookups
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    public static GameProfileRepository wrapProfileRepository(final GameProfileRepository orig) {
++        return (names, agent, callback) -> {
++            Set<String> unfoundNames = Sets.newHashSet();
++            for (String name : names) {
++                PreLookupProfileEvent event = new PreLookupProfileEvent(name);
++                event.callEvent();
++                if (event.getUUID() != null) {
++                    // Plugin provided UUI, we can skip network call.
++                    GameProfile gameprofile = new GameProfile(event.getUUID(), name);
++                    // We might even have properties!
++                    gameprofile.getProperties().putAll(event.getProperties());
++                    callback.onProfileLookupSucceeded(gameprofile);
++                } else {
++                    unfoundNames.add(name);
++                }
++            }
++
++            // Some things were not found.... Proceed to look up.
++            if (!unfoundNames.isEmpty() && orig != null) {
++                String[] namesArr = unfoundNames.toArray(new String[unfoundNames.size()]);
++                orig.findProfilesByNames(namesArr, agent, new PreProfileLookupCallback(callback));
++            }
++        };
++    }
++
++    /**
++     * @deprecated will be removed with 1.13
++     */
++    @Deprecated
++    private static class PreProfileLookupCallback implements ProfileLookupCallback {
++        private final ProfileLookupCallback callback;
++
++        PreProfileLookupCallback(ProfileLookupCallback callback) {
++            this.callback = callback;
++        }
++
++        @Override
++        public void onProfileLookupSucceeded(GameProfile gameProfile) {
++            new LookupProfileEvent(gameProfile).callEvent();
++            callback.onProfileLookupSucceeded(gameProfile);
++        }
++
++        @Override
++        public void onProfileLookupFailed(GameProfile gameProfile, Exception e) {
++            callback.onProfileLookupFailed(gameProfile, e);
++        }
++    }
++}
+-- 
+2.15.1
+

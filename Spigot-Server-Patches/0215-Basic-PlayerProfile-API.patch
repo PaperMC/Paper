@@ -1,0 +1,147 @@
+From 30d546fa1b645b81f27c28e696e1c4637165e7b2 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 15 Jan 2018 22:11:48 -0500
+Subject: [PATCH] Basic PlayerProfile API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java
+new file mode 100644
+index 000000000..9891d8f06
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java
+@@ -0,0 +1,99 @@
++package com.destroystokyo.paper.profile;
++
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.properties.Property;
++import com.mojang.authlib.properties.PropertyMap;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import java.util.Collection;
++import java.util.Set;
++import java.util.UUID;
++import java.util.stream.Collectors;
++
++public class CraftGameProfile implements PlayerProfile {
++
++    private final GameProfile profile;
++
++    /**
++     * Constructs a new Game Profile with the specified ID and name.
++     * <p/>
++     * Either ID or name may be null/empty, but at least one must be filled.
++     *
++     * @param id   Unique ID of the profile
++     * @param name Display name of the profile
++     * @throws IllegalArgumentException Both ID and name are either null or empty
++     */
++    public CraftGameProfile(UUID id, String name) {
++        this.profile = new GameProfile(id, name);
++    }
++
++    public GameProfile getGameProfile() {
++        return profile;
++    }
++
++    @Nullable
++    @Override
++    public UUID getId() {
++        return profile.getId();
++    }
++
++    @Nonnull
++    @Override
++    public Set<ProfileProperty> getProperties() {
++        return profile.getProperties().values().stream().map(this::toBukkit).collect(Collectors.toSet());
++    }
++
++    @Nullable
++    @Override
++    public String getName() {
++        return profile.getName();
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        return profile.equals(o);
++    }
++
++    @Override
++    public int hashCode() {
++        return profile.hashCode();
++    }
++
++    @Override
++    public String toString() {
++        return profile.toString();
++    }
++
++    @Override
++    public void setProperty(ProfileProperty property) {
++        String name = property.getName();
++        PropertyMap properties = profile.getProperties();
++        properties.removeAll(name);
++        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
++    }
++
++    @Override
++    public void setProperties(Collection<ProfileProperty> properties) {
++        properties.forEach(this::setProperty);
++    }
++
++    @Override
++    public boolean removeProperty(String property) {
++        return !profile.getProperties().removeAll(property).isEmpty();
++    }
++
++    @Override
++    public void clearProperties() {
++        profile.getProperties().clear();
++    }
++
++    @Override
++    public boolean isComplete() {
++        return profile.isComplete();
++    }
++
++    private ProfileProperty toBukkit(Property property) {
++        return new ProfileProperty(property.getName(), property.getValue(), property.getSignature());
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 8d0a9e8ca..7d26531d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -135,6 +135,10 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.event.server.TabCompleteEvent;
+ import net.md_5.bungee.api.chat.BaseComponent;
+ 
++import javax.annotation.Nullable; // Paper
++import javax.annotation.Nonnull; // Paper
++
++
+ public final class CraftServer implements Server {
+     private final String serverName = "Paper";
+     private final String serverVersion;
+@@ -1923,5 +1927,17 @@ public final class CraftServer implements Server {
+     public boolean suggestPlayerNamesWhenNullTabCompletions() {
+         return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
+     }
++
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
++        return createProfile(uuid, null);
++    }
++
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull String name) {
++        return createProfile(null, name);
++    }
++
++    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
++        return new com.destroystokyo.paper.profile.CraftGameProfile(uuid, name);
++    }
+     // Paper end
+ }
+-- 
+2.15.1
+

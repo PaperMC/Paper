@@ -1,0 +1,54 @@
+From 665b880ec9616fbc2aea0aee0d2d2dbf2a3613e8 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 31 Jul 2017 02:08:55 -0500
+Subject: [PATCH] Make /plugins list alphabetical
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
+index e40b03a7..b1d384e8 100644
+--- a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
+@@ -3,6 +3,8 @@ package org.bukkit.command.defaults;
+ import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.List;
++import java.util.Map;
++import java.util.TreeMap;
+ 
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+@@ -32,19 +34,24 @@ public class PluginsCommand extends BukkitCommand {
+     }
+ 
+     private String getPluginList() {
+-        StringBuilder pluginList = new StringBuilder();
+-        Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
++        // Paper start
++        TreeMap<String, ChatColor> plugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
++
++        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
++            plugins.put(plugin.getDescription().getName(), plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
++        }
+ 
+-        for (Plugin plugin : plugins) {
++        StringBuilder pluginList = new StringBuilder();
++        for (Map.Entry<String, ChatColor> entry : plugins.entrySet()) {
+             if (pluginList.length() > 0) {
+                 pluginList.append(ChatColor.WHITE);
+                 pluginList.append(", ");
+             }
+-
+-            pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
+-            pluginList.append(plugin.getDescription().getName());
++            pluginList.append(entry.getValue());
++            pluginList.append(entry.getKey());
+         }
+ 
+-        return "(" + plugins.length + "): " + pluginList.toString();
++        return "(" + plugins.size() + "): " + pluginList.toString();
++        // Paper end
+     }
+ }
+-- 
+2.15.1
+
