@@ -93,7 +93,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
      * PlayerProfile once it is available
      */
     @NotNull
-    CompletableFuture<PlayerProfile> update();
+    CompletableFuture<? extends PlayerProfile> update(); // Paper
 
     @NotNull
     PlayerProfile clone();

@@ -2108,5 +2108,80 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if player names should be suggested
      */
     boolean suggestPlayerNamesWhenNullTabCompletions();
+
+    /**
+     * Creates a PlayerProfile for the specified uuid, with name as null.
+     *
+     * If a player with the passed uuid exists on the server at the time of creation, the returned player profile will
+     * be populated with the properties of said player (including their uuid and name).
+     *
+     * @param uuid UUID to create profile for
+     * @return A PlayerProfile object
+     */
+    @NotNull
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid);
+
+    /**
+     * Creates a PlayerProfile for the specified name, with UUID as null.
+     *
+     * If a player with the passed name exists on the server at the time of creation, the returned player profile will
+     * be populated with the properties of said player (including their uuid and name).
+     * <p>
+     * E.g. if the player 'jeb_' is currently playing on the server, calling {@code createProfile("JEB_")} will
+     * yield a profile with the name 'jeb_', their uuid and their textures.
+     * To bypass this pre-population on a case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
+     * <p>
+     *
+     * @param name Name to create profile for
+     * @return A PlayerProfile object
+     * @throws IllegalArgumentException if the name is longer than 16 characters
+     * @throws IllegalArgumentException if the name contains invalid characters
+     */
+    @NotNull
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name);
+
+    /**
+     * Creates a PlayerProfile for the specified name/uuid
+     *
+     * Both UUID and Name can not be null at same time. One must be supplied.
+     * If a player with the passed uuid or name exists on the server at the time of creation, the returned player
+     * profile will be populated with the properties of said player (including their uuid and name).
+     * <p>
+     * E.g. if the player 'jeb_' is currently playing on the server, calling {@code createProfile(null, "JEB_")} will
+     * yield a profile with the name 'jeb_', their uuid and their textures.
+     * To bypass this pre-population on an case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
+     * <p>
+     *
+     * The name comparison will compare the {@link String#toLowerCase()} version of both the passed name parameter and
+     * a players name to honour the case-insensitive nature of a mojang profile lookup.
+     *
+     * @param uuid UUID to create profile for
+     * @param name Name to create profile for
+     * @return A PlayerProfile object
+     * @throws IllegalArgumentException if the name is longer than 16 characters
+     * @throws IllegalArgumentException if the name contains invalid characters
+     */
+    @NotNull
+    com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name);
+
+    /**
+     * Creates an exact PlayerProfile for the specified name/uuid
+     *
+     * Both UUID and Name can not be null at same time. One must be supplied.
+     * If a player with the passed uuid or name exists on the server at the time of creation, the returned player
+     * profile will be populated with the properties of said player.
+     * <p>
+     * Compared to {@link #createProfile(UUID, String)}, this method will never mutate the passed uuid or name.
+     * If a player with either the same uuid or a matching name (case-insensitive) is found on the server, their
+     * properties, such as textures, will be pre-populated in the profile, however the passed uuid and name stay intact.
+     *
+     * @param uuid UUID to create profile for
+     * @param name Name to create profile for
+     * @return A PlayerProfile object
+     * @throws IllegalArgumentException if the name is longer than 16 characters
+     * @throws IllegalArgumentException if the name contains invalid characters
+     */
+    @NotNull
+    com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name);
     // Paper end
 }
