@@ -42,7 +42,7 @@ public class UserCache {
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static boolean b;
-    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();
+    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();private final Map<String, UserCache.UserCacheEntry> nameCache = c; // Paper - OBFHELPER // Paper
     private final Map<UUID, UserCache.UserCacheEntry> d = Maps.newConcurrentMap();
     private final GameProfileRepository e;
     private final Gson f = (new GsonBuilder()).create();
@@ -106,6 +106,7 @@ public class UserCache {
         return UserCache.b;
     }
 
+    public void saveProfile(GameProfile gameprofile) { a(gameprofile); } // Paper - OBFHELPER
     public synchronized void a(GameProfile gameprofile) { // Paper - synchronize
         Calendar calendar = Calendar.getInstance();
 
@@ -154,6 +155,13 @@ public class UserCache {
 
         return gameprofile;
     }
+
+    // Paper start
+    @Nullable public GameProfile getProfileIfCached(String name) {
+        UserCache.UserCacheEntry entry = this.nameCache.get(name.toLowerCase(Locale.ROOT));
+        return entry == null ? null : entry.getProfile();
+    }
+    // Paper end
 
     @Nullable
     public GameProfile getProfile(UUID uuid) {
@@ -337,7 +345,7 @@ public class UserCache {
 
     static class UserCacheEntry {
 
-        private final GameProfile a;
+        private final GameProfile a;public GameProfile getProfile() { return a; } // Paper - OBFHELPER
         private final Date b;
         private volatile long c;
 

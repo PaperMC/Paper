@@ -79,6 +79,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     private void setProfile(GameProfile profile) {
+        // Paper start
+        if (profile != null) {
+            com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
+            paperProfile.completeFromCache(false, true);
+            profile = paperProfile.getGameProfile();
+        }
+        // Paper end
         this.profile = profile;
         this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
     }

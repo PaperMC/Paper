@@ -94,7 +94,7 @@ public class Main {
             }
 
             File file = (File) optionset.valueOf("universe"); // CraftBukkit
-            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
+            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
             UserCache usercache = new UserCache(gameprofilerepository, new File(file, MinecraftServer.b.getName()));
