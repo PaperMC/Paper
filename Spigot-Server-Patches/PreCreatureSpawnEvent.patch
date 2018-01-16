@@ -15,7 +15,7 @@ instead and save a lot of server resources.
 See: https://github.com/PaperMC/Paper/issues/917
 
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index c29df55fa..d6c73a5a0 100644
+index c29df55fa..3c591e67e 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@
@@ -34,24 +34,30 @@ index c29df55fa..d6c73a5a0 100644
 +                    if (this.getMobName() == null) {
 +                        return;
 +                    }
-+                    com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                    event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                            MCUtil.toLocation(world, d3, d4, d5),
-+                            org.bukkit.entity.EntityType.fromName(this.getMobName().getKey()),
-+                            org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
-+                    );
-+                    if (!event.callEvent()) {
-+                        if (event.shouldAbortSpawn()) {
-+                            break;
++                    String key = this.getMobName().getKey();
++                    org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(key);
++                    if (type != null) {
++                        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++                        event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                                MCUtil.toLocation(world, d3, d4, d5),
++                                type,
++                                org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
++                        );
++                        if (!event.callEvent()) {
++                            if (event.shouldAbortSpawn()) {
++                                break;
++                            }
++                            continue;
 +                        }
-+                        continue;
++                    } else {
++                        MinecraftServer.LOGGER.warn("Warning, could not find EntityType for " + key + " - Please report this to Paper at https://github.com/PaperMC/Paper/issues");
 +                    }
 +                    // Paper end
                      Entity entity = ChunkRegionLoader.a(nbttagcompound, world, d3, d4, d5, false);
  
                      if (entity == null) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 2cd063829..1137dda86 100644
+index 2cd063829..f64de94fa 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
@@ -60,18 +66,23 @@ index 2cd063829..1137dda86 100644
                                                      if (worldserver.a(enumcreaturetype, biomebase_biomemeta, (BlockPosition) blockposition_mutableblockposition) && a(EntityPositionTypes.a(biomebase_biomemeta.b), worldserver, blockposition_mutableblockposition)) {
 +                                                        // Paper start
 +                                                        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                                                        event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                                                                MCUtil.toLocation(worldserver,  blockposition_mutableblockposition),
-+                                                                EntityTypes.clsToTypeMap.get(biomebase_biomemeta.b),
-+                                                                SpawnReason.NATURAL
-+                                                                );
-+                                                        if (!event.callEvent()) {
-+                                                            if (event.shouldAbortSpawn()) {
-+                                                                continue label120;
++                                                        Class<? extends EntityInsentient> cls = biomebase_biomemeta.b;
++                                                        org.bukkit.entity.EntityType type = EntityTypes.clsToTypeMap.get(cls);
++                                                        if (type != null) {
++                                                            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                                                                    MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
++                                                                    type, SpawnReason.NATURAL
++                                                            );
++                                                            if (!event.callEvent()) {
++                                                                if (event.shouldAbortSpawn()) {
++                                                                    continue label120;
++                                                                }
++                                                                j1 += l2;
++                                                                ++j4;
++                                                                continue;
 +                                                            }
-+                                                            j1 += l2;
-+                                                            ++j4;
-+                                                            continue;
++                                                        } else {
++                                                            MinecraftServer.LOGGER.warn("Warning, could not find EntityType for " + cls.getName() + " contains: " + (EntityTypes.clsToTypeMap.containsKey(cls) ? "yes" : "no") + " - Please report this to Paper at https://github.com/PaperMC/Paper/issues");
 +                                                        }
 +                                                        // Paper end
                                                          EntityInsentient entityinsentient;
