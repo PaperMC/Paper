@@ -23,7 +23,7 @@
      }
  
      public void add(GameProfile profile) {
-@@ -117,7 +119,7 @@
+@@ -117,13 +119,24 @@
          GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
  
          this.safeAdd(usercache_usercacheentry);
@@ -32,7 +32,24 @@
      }
  
      private long getNextOperation() {
-@@ -142,15 +144,15 @@
+         return this.operationCount.incrementAndGet();
+     }
+ 
++    // Paper start
++    public @Nullable GameProfile getProfileIfCached(String name) {
++        GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
++        if (entry == null) {
++            return null;
++        }
++        entry.setLastAccess(this.getNextOperation());
++        return entry.getProfile();
++    }
++    // Paper end
++
+     public Optional<GameProfile> get(String name) {
+         String s1 = name.toLowerCase(Locale.ROOT);
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
+@@ -142,15 +155,15 @@
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              optional = Optional.of(usercache_usercacheentry.getProfile());
          } else {
@@ -51,7 +68,7 @@
          }
  
          return optional;
-@@ -167,7 +169,7 @@
+@@ -167,7 +180,7 @@
              } else {
                  CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.supplyAsync(() -> {
                      return this.get(username);
@@ -60,7 +77,7 @@
                      this.requests.remove(username);
                  }, this.executor);
  
-@@ -208,7 +210,7 @@
+@@ -208,7 +221,7 @@
  
              label54:
              {
@@ -69,7 +86,7 @@
  
                  try {
                      JsonArray jsonarray = (JsonArray) this.gson.fromJson(bufferedreader, JsonArray.class);
-@@ -217,7 +219,7 @@
+@@ -217,7 +230,7 @@
                          DateFormat dateformat = GameProfileCache.createDateFormat();
  
                          jsonarray.forEach((jsonelement) -> {
@@ -78,7 +95,7 @@
  
                              Objects.requireNonNull(list);
                              optional.ifPresent(list::add);
-@@ -250,6 +252,11 @@
+@@ -250,6 +263,11 @@
              }
          } catch (FileNotFoundException filenotfoundexception) {
              ;
@@ -90,7 +107,7 @@
          } catch (JsonParseException | IOException ioexception) {
              GameProfileCache.LOGGER.warn("Failed to load profile cache {}", this.file, ioexception);
          }
-@@ -257,14 +264,15 @@
+@@ -257,14 +275,15 @@
          return list;
      }
  
@@ -108,7 +125,7 @@
  
          try {
              BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
-@@ -289,6 +297,14 @@
+@@ -289,6 +308,14 @@
          } catch (IOException ioexception) {
              ;
          }

@@ -48,7 +48,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
         }
     }
 
-    private final CraftPlayerProfile profile;
+    private final com.destroystokyo.paper.profile.SharedPlayerProfile profile; // Paper
 
     // The textures data is loaded lazily:
     private boolean loaded = false;
@@ -67,7 +67,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
     // GameProfiles (even if these modifications are later reverted).
     private boolean dirty = false;
 
-    CraftPlayerTextures(@Nonnull CraftPlayerProfile profile) {
+    public CraftPlayerTextures(@Nonnull com.destroystokyo.paper.profile.SharedPlayerProfile profile) { // Paper
         this.profile = profile;
     }
 
