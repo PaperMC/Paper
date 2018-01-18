@@ -58,7 +58,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      */
     @NotNull
     public ItemStack getItem() {
-        return itemStack.clone();
+        return itemStack; // Paper - Removed clone, handled better in Server
     }
 
     /**
