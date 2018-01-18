@@ -1,0 +1,88 @@
+From 1c34ffa74f4b1012824137f90a845d916eaf2530 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jan 2017 08:00:33 +0100
+Subject: [PATCH] Remove the Vanilla Method Profiler
+
+Spigot rebrought this back after it was removed for years due to the performance hit.
+
+It is unknown if the JIT will optimize it out as efficiently with how it was
+added, so we do not want any risk of performance degredation.
+
+Paper has a proper Timings system that makes the Vanilla Method profiler obsolete and inferior.
+
+diff --git a/src/main/java/net/minecraft/server/CommandDebug.java b/src/main/java/net/minecraft/server/CommandDebug.java
+index 89708da96..7586168db 100644
+--- a/src/main/java/net/minecraft/server/CommandDebug.java
++++ b/src/main/java/net/minecraft/server/CommandDebug.java
+@@ -35,12 +35,11 @@ public class CommandDebug extends CommandAbstract {
+ 
+     public void execute(MinecraftServer minecraftserver, ICommandListener icommandlistener, String[] astring) throws CommandException {
+         // CraftBukkit start - only allow use when enabled (so that no blank profile results occur)
+-        if (!minecraftserver.methodProfiler.ENABLED) {
+-            icommandlistener.sendMessage(new ChatComponentText("Vanilla debug profiling is disabled."));
+-            icommandlistener.sendMessage(new ChatComponentText("To enable, restart the server with `-DenableDebugMethodProfiler=true' before `-jar'."));
+-            icommandlistener.sendMessage(new ChatComponentText("Use `/timings' for plugin timings."));
++        if (true) { // Paper
++            icommandlistener.sendMessage(new ChatComponentText("Use `/timings report'")); // Paper
+             return;
+         }
++        /*
+         // CraftBukkit end
+         if (astring.length < 1) {
+             throw new ExceptionUsage("commands.debug.usage", new Object[0]);
+@@ -146,7 +145,7 @@ public class CommandDebug extends CommandAbstract {
+             return astring[(int) (System.nanoTime() % (long) astring.length)];
+         } catch (Throwable throwable) {
+             return "Witty comment unavailable :(";
+-        }
++        }*/ // Paper
+     }
+ 
+     public List<String> tabComplete(MinecraftServer minecraftserver, ICommandListener icommandlistener, String[] astring, @Nullable BlockPosition blockposition) {
+diff --git a/src/main/java/net/minecraft/server/MethodProfiler.java b/src/main/java/net/minecraft/server/MethodProfiler.java
+index 480e2ca97..a76d50723 100644
+--- a/src/main/java/net/minecraft/server/MethodProfiler.java
++++ b/src/main/java/net/minecraft/server/MethodProfiler.java
+@@ -11,7 +11,31 @@ import java.util.function.Supplier;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++// Paper - Remove this system - we have a more efficient Timings system
+ public class MethodProfiler {
++    public boolean a;
++
++    MethodProfiler() {}
++
++    public final void a() {}
++
++    public final void a(String s) {}
++
++    public void a(Supplier<String> supplier) {}
++
++    public final void b() {}
++
++    public List<MethodProfiler.ProfilerInfo> b(String s) {
++        return Collections.emptyList();
++    }
++
++    public final void c(String s) {}
++
++    public final String c() {
++        return "[DISABLED]";
++    }
++/*
++class MethodProfiler {
+ 
+     public static final boolean ENABLED = Boolean.getBoolean("enableDebugMethodProfiler"); // CraftBukkit - disable unless specified in JVM arguments
+     private static final Logger b = LogManager.getLogger();
+@@ -149,6 +173,7 @@ public class MethodProfiler {
+         if (!ENABLED) return "[DISABLED]";  // CraftBukkit
+         return this.c.isEmpty() ? "[UNKNOWN]" : (String) this.c.get(this.c.size() - 1);
+     }
++*/
+ 
+     public static final class ProfilerInfo implements Comparable<MethodProfiler.ProfilerInfo> {
+ 
+-- 
+2.16.1
+

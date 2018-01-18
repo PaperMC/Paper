@@ -1,0 +1,118 @@
+From 11ee9ef43abf1fcbe413d402b90df411ea4d02e8 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 22 May 2016 20:20:55 -0500
+Subject: [PATCH] Optional TNT doesn't move in water
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 067cb233e..06acdaaf0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -2,7 +2,6 @@ package com.destroystokyo.paper;
+ 
+ import java.util.List;
+ 
+-import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+ 
+@@ -325,4 +324,14 @@ public class PaperWorldConfig {
+             );
+         }
+     }
++
++    public boolean preventTntFromMovingInWater;
++    private void preventTntFromMovingInWater() {
++        if (PaperConfig.version < 13) {
++            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
++            set("prevent-tnt-from-moving-in-water", oldVal);
++        }
++        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
++        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index ef096ef65..d46fb1d76 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1114,6 +1114,11 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public boolean aq() {
++        return this.doWaterMovement();
++    }
++
++    public boolean doWaterMovement() {
++        // Paper end
+         if (this.bJ() instanceof EntityBoat) {
+             this.inWater = false;
+         } else if (this.world.a(this.getBoundingBox().grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D), Material.WATER, this)) {
+@@ -2544,6 +2549,11 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     public boolean bo() {
++        return this.pushedByWater();
++    }
++
++    public boolean pushedByWater() {
++        // Paper end
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index bb0904f86..50811852a 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -147,4 +147,49 @@ public class EntityTNTPrimed extends Entity {
+     public int getFuseTicks() {
+         return this.c;
+     }
++
++    // Paper start - Optional prevent TNT from moving in water
++    @Override
++    public boolean pushedByWater() {
++        return !world.paperConfig.preventTntFromMovingInWater && super.pushedByWater();
++    }
++
++    /**
++     * Author: Jedediah Smith <jedediah@silencegreys.com>
++     */
++    @Override
++    public boolean doWaterMovement() {
++        if (!world.paperConfig.preventTntFromMovingInWater) return super.doWaterMovement();
++
++        // Preserve velocity while calling the super method
++        double oldMotX = this.motX;
++        double oldMotY = this.motY;
++        double oldMotZ = this.motZ;
++
++        super.doWaterMovement();
++
++        this.motX = oldMotX;
++        this.motY = oldMotY;
++        this.motZ = oldMotZ;
++
++        if (this.inWater) {
++            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
++            // This does pretty well at keeping their clients in sync with the server.
++            EntityTrackerEntry ete = ((WorldServer) this.getWorld()).getTracker().trackedEntities.get(this.getId());
++            if (ete != null) {
++                PacketPlayOutEntityVelocity velocityPacket = new PacketPlayOutEntityVelocity(this);
++                PacketPlayOutEntityTeleport positionPacket = new PacketPlayOutEntityTeleport(this);
++
++                ete.trackedPlayers.stream()
++                        .filter(viewer -> (viewer.locX - this.locX) * (viewer.locY - this.locY) * (viewer.locZ - this.locZ) < 16 * 16)
++                        .forEach(viewer -> {
++                    viewer.playerConnection.sendPacket(velocityPacket);
++                    viewer.playerConnection.sendPacket(positionPacket);
++                });
++            }
++        }
++
++        return this.inWater;
++    }
++    // Paper end
+ }
+-- 
+2.16.1
+
