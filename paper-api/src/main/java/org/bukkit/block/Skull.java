@@ -63,6 +63,20 @@ public interface Skull extends TileState {
      */
     public void setOwningPlayer(@NotNull OfflinePlayer player);
 
+    // Paper start
+    /**
+     * Sets this skull to use the supplied Player Profile, which can include textures already prefilled.
+     * @param profile The profile to set this Skull to use, may not be null
+     */
+    void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile);
+
+    /**
+     * If the skull has an owner, per {@link #hasOwner()}, return the owners {@link com.destroystokyo.paper.profile.PlayerProfile}
+     * @return The profile of the owner, if set
+     */
+    @Nullable com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
+    // Paper end
+
     /**
      * Gets the profile of the player who owns the skull. This player profile
      * may appear as the texture depending on skull type.
@@ -70,6 +84,7 @@ public interface Skull extends TileState {
      * @return the profile of the owning player
      */
     @Nullable
+    @Deprecated // Paper
     PlayerProfile getOwnerProfile();
 
     /**
@@ -84,6 +99,7 @@ public interface Skull extends TileState {
      * @throws IllegalArgumentException if the profile does not contain the
      * necessary information
      */
+    @Deprecated // Paper
     void setOwnerProfile(@Nullable PlayerProfile profile);
 
     /**
