@@ -148,6 +148,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         return this.hasOwner() ? this.profile.name().orElse(null) : null;
     }
 
+    // Paper start
+    @Override
+    public void setPlayerProfile(@org.jetbrains.annotations.Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
+        setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asResolvableProfileCopy(profile));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
+        return profile != null ? new com.destroystokyo.paper.profile.CraftPlayerProfile(profile) : null;
+    }
+    // Paper end
+
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (this.hasOwner()) {
@@ -198,6 +211,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
+    @Deprecated // Paper
     public PlayerProfile getOwnerProfile() {
         if (!this.hasOwner()) {
             return null;
@@ -207,9 +221,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
+    @Deprecated // Paper
     public void setOwnerProfile(PlayerProfile profile) {
-        if (profile instanceof CraftPlayerProfile craftPlayerProfile) {
-            this.setProfile(CraftPlayerProfile.validateSkullProfile(craftPlayerProfile.buildResolvableProfile()));
+        if (profile instanceof final com.destroystokyo.paper.profile.SharedPlayerProfile sharedProfile) {
+            this.setProfile(CraftPlayerProfile.validateSkullProfile(sharedProfile.buildResolvableProfile())); // Paper
         } else {
             this.setProfile(null);
         }
@@ -263,7 +278,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super.serialize(builder);
 
         if (this.hasOwner()) {
-            builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
+            builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, new com.destroystokyo.paper.profile.CraftPlayerProfile(this.profile)); // Paper
         }
 
         NamespacedKey namespacedKeyNB = this.getNoteBlockSound();
