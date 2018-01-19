@@ -279,6 +279,12 @@ public class AdvancementDataPlayer {
         boolean flag1 = advancementprogress.isDone();
 
         if (advancementprogress.a(s)) {
+            // Paper start
+            if (!new com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent(this.player.getBukkitEntity(), advancement.bukkit, s).callEvent()) {
+                advancementprogress.b(s);
+                return false;
+            }
+            // Paper end
             this.d(advancement);
             this.j.add(advancement);
             flag = true;
