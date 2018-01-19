@@ -1,15 +1,15 @@
-From 30d546fa1b645b81f27c28e696e1c4637165e7b2 Mon Sep 17 00:00:00 2001
+From f325f4f1ec5258fa734ad2b77293c59e8862c8d0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java
+diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..9891d8f06
+index 000000000..6e9a6a2e6
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/profile/CraftGameProfile.java
-@@ -0,0 +1,99 @@
++++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
+@@ -0,0 +1,109 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.GameProfile;
@@ -23,7 +23,7 @@ index 000000000..9891d8f06
 +import java.util.UUID;
 +import java.util.stream.Collectors;
 +
-+public class CraftGameProfile implements PlayerProfile {
++public class CraftPlayerProfile implements PlayerProfile {
 +
 +    private final GameProfile profile;
 +
@@ -36,7 +36,7 @@ index 000000000..9891d8f06
 +     * @param name Display name of the profile
 +     * @throws IllegalArgumentException Both ID and name are either null or empty
 +     */
-+    public CraftGameProfile(UUID id, String name) {
++    public CraftPlayerProfile(UUID id, String name) {
 +        this.profile = new GameProfile(id, name);
 +    }
 +
@@ -53,7 +53,7 @@ index 000000000..9891d8f06
 +    @Nonnull
 +    @Override
 +    public Set<ProfileProperty> getProperties() {
-+        return profile.getProperties().values().stream().map(this::toBukkit).collect(Collectors.toSet());
++        return profile.getProperties().values().stream().map(CraftPlayerProfile::toBukkit).collect(Collectors.toSet());
 +    }
 +
 +    @Nullable
@@ -105,12 +105,22 @@ index 000000000..9891d8f06
 +        return profile.isComplete();
 +    }
 +
-+    private ProfileProperty toBukkit(Property property) {
++    private static ProfileProperty toBukkit(Property property) {
 +        return new ProfileProperty(property.getName(), property.getValue(), property.getSignature());
++    }
++
++    public static PlayerProfile from(GameProfile gameProfile) {
++        PlayerProfile profile = new CraftPlayerProfile(gameProfile.getId(), gameProfile.getName());
++        gameProfile.getProperties().values().forEach(property -> profile.setProperty(toBukkit(property)));
++        return profile;
++    }
++
++    public static Property asAuthlib(ProfileProperty property) {
++        return new Property(property.getName(), property.getValue(), property.getSignature());
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8d0a9e8ca..7d26531d8 100644
+index 8d0a9e8ca..f0ae65f08 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -135,6 +135,10 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -138,7 +148,7 @@ index 8d0a9e8ca..7d26531d8 100644
 +    }
 +
 +    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
-+        return new com.destroystokyo.paper.profile.CraftGameProfile(uuid, name);
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
 +    }
      // Paper end
  }
