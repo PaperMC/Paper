@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
@@ -15,6 +17,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import javax.annotation.Nullable;
 
 public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
 
@@ -104,6 +107,20 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
             this.profile = new GameProfile(player.getUniqueId(), player.getName());
         }
     }
+
+    // Paper start
+    @Override
+    public void setPlayerProfile(PlayerProfile profile) {
+        Preconditions.checkNotNull(profile, "profile");
+        this.profile = CraftPlayerProfile.asAuthlibCopy(profile);
+    }
+
+    @Nullable
+    @Override
+    public PlayerProfile getPlayerProfile() {
+        return profile != null ? CraftPlayerProfile.asBukkitCopy(profile) : null;
+    }
+    // Paper end
 
     @Override
     public BlockFace getRotation() {

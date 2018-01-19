@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.UUID;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import net.minecraft.server.GameProfileSerializer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
@@ -17,6 +19,7 @@ import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import javax.annotation.Nullable;
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
@@ -147,6 +150,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     public String getOwner() {
         return hasOwner() ? profile.getName() : null;
     }
+
+    // Paper start
+    @Override
+    public void setPlayerProfile(@Nullable PlayerProfile profile) {
+        setProfile((profile == null) ? null : CraftPlayerProfile.asAuthlibCopy(profile));
+    }
+
+    @Nullable
+    @Override
+    public PlayerProfile getPlayerProfile() {
+        return profile != null ? CraftPlayerProfile.asBukkitCopy(profile) : null;
+    }
+    // Paper end
 
     @Override
     public OfflinePlayer getOwningPlayer() {
