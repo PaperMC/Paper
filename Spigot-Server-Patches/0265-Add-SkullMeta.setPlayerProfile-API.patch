@@ -1,0 +1,53 @@
+From 1da2d5ebec485e442b4faf5e78d1affcdb98d0d9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 19 Jan 2018 00:36:25 -0500
+Subject: [PATCH] Add SkullMeta.setPlayerProfile API
+
+This allows you to create already filled textures on Skulls to avoid texture lookups
+which commonly cause rate limit issues with Mojang API
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index e2ea49cd9..4855307b9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.inventory;
+ 
+ import java.util.Map;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import net.minecraft.server.GameProfileSerializer;
+ import net.minecraft.server.NBTBase;
+ import net.minecraft.server.NBTTagCompound;
+@@ -19,6 +21,8 @@ import org.bukkit.inventory.meta.SkullMeta;
+ import com.google.common.collect.ImmutableMap.Builder;
+ import com.mojang.authlib.GameProfile;
+ 
++import javax.annotation.Nullable;
++
+ @DelegateDeserialization(SerializableMeta.class)
+ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+ 
+@@ -119,6 +123,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+         return hasOwner() ? profile.getName() : null;
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerProfile(@Nullable PlayerProfile profile) {
++        this.profile = (profile == null) ? null : CraftPlayerProfile.asAuthlibCopy(profile);
++    }
++
++    @Nullable
++    @Override
++    public PlayerProfile getPlayerProfile() {
++        return profile != null ? CraftPlayerProfile.asBukkitMirror(profile) : null;
++    }
++    // Paper end
++
+     @Override
+     public OfflinePlayer getOwningPlayer() {
+         if (hasOwner()) {
+-- 
+2.15.1
+
