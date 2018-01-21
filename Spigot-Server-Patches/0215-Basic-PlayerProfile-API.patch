@@ -1,4 +1,4 @@
-From 96b4614b35bf8df7a2d95c91f6b7df1b05641359 Mon Sep 17 00:00:00 2001
+From 2eae14bc83b8875e5949e811fbcc404dc353d468 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
@@ -6,19 +6,22 @@ Subject: [PATCH] Basic PlayerProfile API
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..6868ee9a4
+index 000000000..171b1aaf5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,185 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.properties.Property;
 +import com.mojang.authlib.properties.PropertyMap;
++import com.oracle.webservices.internal.api.message.PropertySet;
 +
 +import javax.annotation.Nonnull;
 +import javax.annotation.Nullable;
++import java.util.AbstractSet;
 +import java.util.Collection;
++import java.util.Iterator;
 +import java.util.Set;
 +import java.util.UUID;
 +import java.util.stream.Collectors;
@@ -26,6 +29,7 @@ index 000000000..6868ee9a4
 +public class CraftPlayerProfile implements PlayerProfile {
 +
 +    private final GameProfile profile;
++    private final PropertySet properties;
 +
 +    /**
 +     * Constructs a new Game Profile with the specified ID and name.
@@ -37,11 +41,12 @@ index 000000000..6868ee9a4
 +     * @throws IllegalArgumentException Both ID and name are either null or empty
 +     */
 +    public CraftPlayerProfile(UUID id, String name) {
-+        this.profile = new GameProfile(id, name);
++        this(new GameProfile(id, name));
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
 +        this.profile = profile;
++        this.properties = new PropertySet();
 +    }
 +
 +    public GameProfile getGameProfile() {
@@ -57,7 +62,7 @@ index 000000000..6868ee9a4
 +    @Nonnull
 +    @Override
 +    public Set<ProfileProperty> getProperties() {
-+        return profile.getProperties().values().stream().map(CraftPlayerProfile::toBukkit).collect(Collectors.toSet());
++        return properties;
 +    }
 +
 +    @Nullable
@@ -141,6 +146,53 @@ index 000000000..6868ee9a4
 +    public static GameProfile asAuthlib(PlayerProfile profile) {
 +        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
 +        return craft.getGameProfile();
++    }
++
++    private class PropertySet extends AbstractSet<ProfileProperty> {
++
++        @Override
++        public Iterator<ProfileProperty> iterator() {
++            Iterator<Property> iterator = profile.getProperties().values().iterator();
++            return new Iterator<ProfileProperty>() {
++                @Override
++                public boolean hasNext() {
++                    return iterator.hasNext();
++                }
++
++                @Override
++                public ProfileProperty next() {
++                    return toBukkit(iterator.next());
++                }
++
++                @Override
++                public void remove() {
++                    iterator().remove();
++                }
++            };
++        }
++
++        @Override
++        public int size() {
++            return profile.getProperties().size();
++        }
++
++        @Override
++        public boolean add(ProfileProperty property) {
++            setProperty(property);
++            return true;
++        }
++
++        @Override
++        public boolean addAll(Collection<? extends ProfileProperty> c) {
++            //noinspection unchecked
++            setProperties((Collection<ProfileProperty>) c);
++            return true;
++        }
++
++        @Override
++        public boolean contains(Object o) {
++            return o instanceof ProfileProperty && profile.getProperties().containsKey(((ProfileProperty) o).getName());
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
