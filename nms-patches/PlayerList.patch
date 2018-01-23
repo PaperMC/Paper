@@ -204,7 +204,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.c();
-@@ -267,28 +319,75 @@
+@@ -267,28 +319,79 @@
  
      }
  
@@ -219,6 +219,10 @@
 +        // CraftBukkit start
 +        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
 +        cserver.getPluginManager().callEvent(playerJoinEvent);
++
++        if (!entityplayer.playerConnection.networkManager.isConnected()) {
++            return;
++        }
 +
 +        joinMessage = playerJoinEvent.getJoinMessage();
 +
@@ -250,11 +254,11 @@
          }
 +        entityplayer.sentListPacket = true;
 +        // CraftBukkit end
++
++        entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
  
 -        worldserver.addEntity(entityplayer);
 -        this.a(entityplayer, (WorldServer) null);
-+        entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
-+
 +        // CraftBukkit start - Only add if the player wasn't moved in the event
 +        if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
 +            worldserver.addEntity(entityplayer);
@@ -286,7 +290,7 @@
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getVehicle();
-@@ -318,17 +417,67 @@
+@@ -318,17 +421,67 @@
  
          if (entityplayer1 == entityplayer) {
              this.j.remove(uuid);
@@ -296,8 +300,9 @@
 +            // this.o.remove(uuid);
 +            // this.p.remove(uuid);
 +            // CraftBukkit end
-+        }
-+
+         }
+ 
+-        this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
 +        // CraftBukkit start
 +        //  this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
 +        PacketPlayOutPlayerInfo packet = new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, entityplayer);
@@ -309,12 +314,11 @@
 +            } else {
 +                entityplayer2.getBukkitEntity().removeDisconnectingPlayer(entityplayer.getBukkitEntity());
 +            }
-         }
++        }
 +        // This removes the scoreboard (and player reference) for the specific player in the manager
 +        cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
 +        // CraftBukkit end
- 
--        this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[] { entityplayer}));
++
 +        ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
 +
 +        return playerQuitEvent.getQuitMessage(); // CraftBukkit
@@ -359,7 +363,7 @@
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
  
              s = "You are banned from this server!\nReason: " + gameprofilebanentry.getReason();
-@@ -336,10 +485,12 @@
+@@ -336,10 +489,12 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.g.format(gameprofilebanentry.getExpires());
              }
  
@@ -375,7 +379,7 @@
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
              s = "Your IP address is banned from this server!\nReason: " + ipbanentry.getReason();
-@@ -347,13 +498,25 @@
+@@ -347,13 +502,25 @@
                  s = s + "\nYour ban will be removed on " + PlayerList.g.format(ipbanentry.getExpires());
              }
  
@@ -388,13 +392,13 @@
 +            if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full");
 +            }
-+        }
+         }
 +
 +        cserver.getPluginManager().callEvent(event);
 +        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
 +            loginlistener.disconnect(event.getKickMessage());
 +            return null;
-         }
++        }
 +        return entity;
      }
  
@@ -404,7 +408,7 @@
          UUID uuid = EntityHuman.a(gameprofile);
          ArrayList arraylist = Lists.newArrayList();
  
-@@ -388,17 +551,27 @@
+@@ -388,17 +555,27 @@
          }
  
          return new EntityPlayer(this.server, this.server.getWorldServer(0), gameprofile, (PlayerInteractManager) object);
@@ -433,7 +437,7 @@
          entityplayer.dimension = i;
          Object object;
  
-@@ -409,6 +582,11 @@
+@@ -409,6 +586,11 @@
          }
  
          EntityPlayer entityplayer1 = new EntityPlayer(this.server, this.server.getWorldServer(entityplayer.dimension), entityplayer.getProfile(), (PlayerInteractManager) object);
@@ -445,7 +449,7 @@
  
          entityplayer1.playerConnection = entityplayer.playerConnection;
          entityplayer1.copyFrom(entityplayer, flag);
-@@ -423,43 +601,163 @@
+@@ -423,43 +605,163 @@
              entityplayer1.addScoreboardTag(s);
          }
  
@@ -626,7 +630,7 @@
      public void f(EntityPlayer entityplayer) {
          GameProfile gameprofile = entityplayer.getProfile();
          int i = this.isOp(gameprofile) ? this.operators.a(gameprofile) : 0;
-@@ -498,12 +796,111 @@
+@@ -498,12 +800,111 @@
      }
  
      public void changeWorld(Entity entity, int i, WorldServer worldserver, WorldServer worldserver1) {
@@ -648,13 +652,13 @@
 +        double d1 = enter.getZ();
 +         double d2 = 8.0D;
 +        /*
-+        double d0 = entity.locX;
-+        double d1 = entity.locZ;
-+        double d2 = 8.0D;
-+        float f = entity.yaw;
+         double d0 = entity.locX;
+         double d1 = entity.locZ;
+         double d2 = 8.0D;
+         float f = entity.yaw;
 +        */
-+
-+        worldserver.methodProfiler.a("moving");
+ 
+         worldserver.methodProfiler.a("moving");
 +        if (worldserver1.dimension == -1) {
 +            d0 = MathHelper.a(d0 / d2, worldserver1.getWorldBorder().b()+ 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
 +            d1 = MathHelper.a(d1 / d2, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
@@ -723,13 +727,13 @@
 +        int i = worldserver.dimension;
 +
 +        /*
-         double d0 = entity.locX;
-         double d1 = entity.locZ;
-         double d2 = 8.0D;
-         float f = entity.yaw;
++        double d0 = entity.locX;
++        double d1 = entity.locZ;
++        double d2 = 8.0D;
++        float f = entity.yaw;
 +        */
- 
-         worldserver.methodProfiler.a("moving");
++
++        worldserver.methodProfiler.a("moving");
 +        entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
 +        if (entity.isAlive()) {
 +            worldserver.entityJoinedWorld(entity, false);
@@ -738,7 +742,7 @@
          if (entity.dimension == -1) {
              d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
              d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
-@@ -522,6 +919,8 @@
+@@ -522,6 +923,8 @@
              BlockPosition blockposition;
  
              if (i == 1) {
@@ -747,7 +751,7 @@
                  blockposition = worldserver1.getSpawn();
              } else {
                  blockposition = worldserver1.getDimensionSpawn();
-@@ -535,16 +934,27 @@
+@@ -535,16 +938,27 @@
                  worldserver.entityJoinedWorld(entity, false);
              }
          }
@@ -778,7 +782,7 @@
                  worldserver1.entityJoinedWorld(entity, false);
              }
  
-@@ -552,11 +962,23 @@
+@@ -552,11 +966,23 @@
          }
  
          entity.spawnIn(worldserver1);
@@ -803,7 +807,7 @@
              this.v = 0;
          }
  
-@@ -569,6 +991,25 @@
+@@ -569,6 +995,25 @@
  
      }
  
@@ -829,7 +833,7 @@
      public void a(Packet<?> packet, int i) {
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -667,11 +1108,23 @@
+@@ -667,11 +1112,23 @@
  
          this.operators.add(new OpListEntry(gameprofile, this.server.q(), this.operators.b(gameprofile)));
          this.b(this.a(gameprofile.getId()), i);
@@ -853,7 +857,7 @@
      }
  
      private void b(EntityPlayer entityplayer, int i) {
-@@ -696,7 +1149,7 @@
+@@ -696,7 +1153,7 @@
      }
  
      public boolean isOp(GameProfile gameprofile) {
@@ -862,7 +866,7 @@
      }
  
      @Nullable
-@@ -720,6 +1173,12 @@
+@@ -720,6 +1177,12 @@
          for (int j = 0; j < this.players.size(); ++j) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
  
@@ -875,7 +879,7 @@
              if (entityplayer != entityhuman && entityplayer.dimension == i) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -767,7 +1226,7 @@
+@@ -767,7 +1230,7 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -884,7 +888,7 @@
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.INITIALIZE));
          entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle")));
-@@ -775,16 +1234,21 @@
+@@ -775,16 +1238,21 @@
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutSpawnPosition(blockposition));
          if (worldserver.isRaining()) {
@@ -910,7 +914,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -797,7 +1261,7 @@
+@@ -797,7 +1265,7 @@
      }
  
      public String[] getSeenPlayers() {
@@ -919,7 +923,7 @@
      }
  
      public boolean getHasWhitelist() {
-@@ -846,26 +1310,39 @@
+@@ -846,26 +1314,39 @@
      }
  
      public void u() {
@@ -964,7 +968,7 @@
  
          if (serverstatisticmanager == null) {
              File file = new File(this.server.getWorldServer(0).getDataManager().getDirectory(), "stats");
-@@ -881,7 +1358,7 @@
+@@ -881,7 +1362,7 @@
  
              serverstatisticmanager = new ServerStatisticManager(this.server, file1);
              serverstatisticmanager.a();
@@ -973,7 +977,7 @@
          }
  
          return serverstatisticmanager;
-@@ -889,14 +1366,14 @@
+@@ -889,14 +1370,14 @@
  
      public AdvancementDataPlayer h(EntityPlayer entityplayer) {
          UUID uuid = entityplayer.getUniqueID();
@@ -990,7 +994,7 @@
          }
  
          advancementdataplayer.a(entityplayer);
-@@ -909,8 +1386,10 @@
+@@ -909,8 +1390,10 @@
              WorldServer[] aworldserver = this.server.worldServer;
              int j = aworldserver.length;
  
@@ -1003,7 +1007,7 @@
  
                  if (worldserver != null) {
                      worldserver.getPlayerChunkMap().a(i);
-@@ -934,13 +1413,20 @@
+@@ -934,13 +1417,20 @@
      }
  
      public void reload() {
