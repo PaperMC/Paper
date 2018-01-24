@@ -81,7 +81,7 @@ public interface CreatureSpawner extends BlockState {
     public void setMinSpawnDelay(int delay);
 
     /**
-     * This maximum spawn delay amount (in ticks).
+     * The maximum spawn delay amount (in ticks).
      * <br>
      * This value is used when the spawner resets its delay (for any reason).
      * It will choose a random number between {@link #getMinSpawnDelay()}
