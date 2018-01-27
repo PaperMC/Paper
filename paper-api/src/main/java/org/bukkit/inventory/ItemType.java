@@ -1903,7 +1903,7 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> RABBIT_STEW = getItemType("rabbit_stew");
     ItemType.Typed<ItemMeta> RABBIT_FOOT = getItemType("rabbit_foot");
     ItemType.Typed<ItemMeta> RABBIT_HIDE = getItemType("rabbit_hide");
-    ItemType.Typed<ItemMeta> ARMOR_STAND = getItemType("armor_stand");
+    ItemType.Typed<com.destroystokyo.paper.inventory.meta.ArmorStandMeta> ARMOR_STAND = getItemType("armor_stand");
     ItemType.Typed<ItemMeta> IRON_HORSE_ARMOR = getItemType("iron_horse_armor");
     ItemType.Typed<ItemMeta> GOLDEN_HORSE_ARMOR = getItemType("golden_horse_armor");
     ItemType.Typed<ItemMeta> DIAMOND_HORSE_ARMOR = getItemType("diamond_horse_armor");
