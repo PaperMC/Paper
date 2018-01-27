@@ -1430,6 +1430,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaCrossbow.CHARGED.NBT,
                         CraftMetaCrossbow.CHARGED_PROJECTILES.NBT,
                         CraftMetaSuspiciousStew.EFFECTS.NBT,
+                        // Paper start
+                        CraftMetaArmorStand.ENTITY_TAG.NBT,
+                        CraftMetaArmorStand.INVISIBLE.NBT,
+                        CraftMetaArmorStand.NO_BASE_PLATE.NBT,
+                        CraftMetaArmorStand.SHOW_ARMS.NBT,
+                        CraftMetaArmorStand.SMALL.NBT,
+                        CraftMetaArmorStand.MARKER.NBT,
+                        // Paper end
                         CraftMetaCompass.LODESTONE_DIMENSION.NBT,
                         CraftMetaCompass.LODESTONE_POS.NBT,
                         CraftMetaCompass.LODESTONE_TRACKED.NBT

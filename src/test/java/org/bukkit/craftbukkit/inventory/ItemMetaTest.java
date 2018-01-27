@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import com.destroystokyo.paper.inventory.meta.ArmorStandMeta; // Paper
 import net.minecraft.server.Block;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.ITileEntity;
@@ -313,6 +314,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new NBTTagCompound();
                     meta.entityTag.setBoolean("Small", true);
+                    meta.setInvisible(true); // Paper
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
