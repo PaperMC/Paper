@@ -1,0 +1,49 @@
+From a5b27794b78e85a53485b5325935d91ddc4447ea Mon Sep 17 00:00:00 2001
+From: Marvin <webmaster@gianttree.de>
+Date: Sat, 27 Jan 2018 13:41:12 +0100
+Subject: [PATCH] construct plugins in alphabetical order
+
+This patch preserves the alphabetical order when constructing and loading plugins.
+
+Background of this patch is my attempt to load a library into the classpath of the server before constructing
+another plugin.
+Due to how hash maps work, the iterator of one will by default not preserve the order of insertion.
+This makes it impossible to reliably load classes before another plugin is constructed.
+
+This patch makes the order of construction of plugins predictable and reliable.
+
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index bd0588a2..73a367be 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -4,6 +4,7 @@ import java.io.File;
+ import java.lang.reflect.Constructor;
+ import java.lang.reflect.Method;
+ import java.util.ArrayList;
++import java.util.Arrays; // Paper
+ import java.util.Collection;
+ import java.util.HashMap;
+ import java.util.HashSet;
+@@ -114,13 +115,17 @@ public final class SimplePluginManager implements PluginManager {
+             updateDirectory = new File(directory, server.getUpdateFolder());
+         }
+ 
+-        Map<String, File> plugins = new HashMap<String, File>();
++        Map<String, File> plugins = new LinkedHashMap<String, File>(); // Paper - preserve insertion order
+         Set<String> loadedPlugins = new HashSet<String>();
+         Map<String, Collection<String>> dependencies = new HashMap<String, Collection<String>>();
+         Map<String, Collection<String>> softDependencies = new HashMap<String, Collection<String>>();
+ 
++        // Paper start - load and construct plugins in alphabetical order
++        File[] files = directory.listFiles();
++        Arrays.sort(files);
+         // This is where it figures out all possible plugins
+-        for (File file : directory.listFiles()) {
++        for (File file : files) {
++        // Paper end
+             PluginLoader loader = null;
+             for (Pattern filter : filters) {
+                 Matcher match = filter.matcher(file.getName());
+-- 
+2.15.1
+
