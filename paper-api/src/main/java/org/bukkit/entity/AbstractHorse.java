@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.inventory.AbstractHorseInventory;
 import org.bukkit.inventory.InventoryHolder;
 
 /**
@@ -96,4 +97,7 @@ public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameab
      * @param strength jump strength for this horse
      */
     public void setJumpStrength(double strength);
+
+    @Override
+    public AbstractHorseInventory getInventory();
 }

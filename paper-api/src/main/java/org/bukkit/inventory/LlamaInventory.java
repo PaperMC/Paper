@@ -5,7 +5,7 @@ import org.bukkit.entity.Llama;
 /**
  * An interface to the inventory of a {@link Llama}.
  */
-public interface LlamaInventory extends Inventory {
+public interface LlamaInventory extends AbstractHorseInventory {
 
     /*
      * Gets the item in the llama's decor slot.
