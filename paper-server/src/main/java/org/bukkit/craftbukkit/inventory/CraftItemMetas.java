@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.minecraft.world.item.BannerItem;
@@ -103,7 +104,7 @@ public final class CraftItemMetas {
             item -> new CraftMetaSpawnEgg(item.getComponentsPatch()),
             (type, meta) -> meta instanceof CraftMetaSpawnEgg spawnEgg ? spawnEgg : new CraftMetaSpawnEgg(meta));
 
-    private static final ItemMetaData<ItemMeta> ARMOR_STAND_META_DATA = new ItemMetaData<>(ItemMeta.class,
+    private static final ItemMetaData<ArmorStandMeta> ARMOR_STAND_META_DATA = new ItemMetaData<>(ArmorStandMeta.class, // paper
             item -> new CraftMetaArmorStand(item.getComponentsPatch()),
             (type, meta) -> meta instanceof CraftMetaArmorStand armorStand ? armorStand : new CraftMetaArmorStand(meta));
 
