@@ -5,11 +5,11 @@ import net.minecraft.server.EntityHorse;
 import net.minecraft.server.EntityHorseAbstract;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Horse;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.AbstractHorseInventory;
 
 public abstract class CraftAbstractHorse extends CraftAnimals implements AbstractHorse {
 
@@ -91,7 +91,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     }
 
     @Override
-    public Inventory getInventory() {
-        return new CraftInventory(getHandle().inventoryChest);
+    public AbstractHorseInventory getInventory() {
+        return new CraftInventoryAbstractHorse(getHandle().inventoryChest);
     }
 }
