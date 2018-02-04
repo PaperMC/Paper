@@ -65,6 +65,7 @@ import DefinedStructure
 import EnchantmentManager
 import Enchantments
 import EntityLlama
+import EntityMinecartHopper
 import EntitySquid
 import EntityTypes
 import EntityWaterAnimal
