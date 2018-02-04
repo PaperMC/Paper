@@ -1,0 +1,271 @@
+From b98cc4a61245d94cc9329e22c54c87b48914c637 Mon Sep 17 00:00:00 2001
+From: Sam Ezeh <spammy23@noreply.users.github.com>
+Date: Wed, 30 Aug 2017 21:57:17 +0100
+Subject: [PATCH] Implemented the cancellable ban events
+
+
+diff --git a/src/main/java/net/minecraft/server/ExpirableListEntry.java b/src/main/java/net/minecraft/server/ExpirableListEntry.java
+index e643741f..04273d56 100644
+--- a/src/main/java/net/minecraft/server/ExpirableListEntry.java
++++ b/src/main/java/net/minecraft/server/ExpirableListEntry.java
+@@ -8,10 +8,30 @@ import java.util.Date;
+ public abstract class ExpirableListEntry<T> extends JsonListEntry<T> {
+ 
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+-    protected final Date b;
+-    protected final String c;
+-    protected final Date d;
+-    protected final String e;
++    // Paper start - remove final modifiers
++    protected Date b;
++    protected String c;
++    protected Date d;
++    protected String e;
++    // Paper end
++
++    // Paper start - add setter methods
++    public void setCreated(Date created){
++        this.b = created;
++    }
++
++    public void setSource(String source){
++        this.c = source;
++    }
++
++    public void setExpiration(Date expiration){
++        this.d = expiration;
++    }
++
++    public void setReason(String reason){
++        this.e = reason;
++    }
++    // Paper end
+ 
+     public ExpirableListEntry(T t0, Date date, String s, Date date1, String s1) {
+         super(t0);
+diff --git a/src/main/java/net/minecraft/server/GameProfileBanList.java b/src/main/java/net/minecraft/server/GameProfileBanList.java
+index 737035bf..55bb8961 100644
+--- a/src/main/java/net/minecraft/server/GameProfileBanList.java
++++ b/src/main/java/net/minecraft/server/GameProfileBanList.java
+@@ -2,6 +2,10 @@ package net.minecraft.server;
+ 
+ import com.google.gson.JsonObject;
+ import com.mojang.authlib.GameProfile;
++import org.bukkit.craftbukkit.CraftProfileBanEntry;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.server.BanProfileEvent;
++
+ import java.io.File;
+ import java.util.Iterator;
+ 
+@@ -32,6 +36,23 @@ public class GameProfileBanList extends JsonList<GameProfile, GameProfileBanEntr
+         return astring;
+     }
+ 
++    // Paper start
++    @Override
++    public void add(GameProfileBanEntry entry){
++        MinecraftServer server = MinecraftServer.getServer();
++        GameProfile profile = entry.getKey();
++
++        BanProfileEvent event = CraftEventFactory.callEvent(new BanProfileEvent(new CraftProfileBanEntry(profile, entry, server.getPlayerList().getProfileBans() )));
++        if(event.isCancelled()) return;
++
++        entry.setCreated(event.getCreated());
++        entry.setExpiration(event.getExpiration());
++        entry.setSource(event.getSource());
++        entry.setReason(event.getReason());
++        super.add(entry);
++    }
++    // Paper end
++
+     protected String b(GameProfile gameprofile) {
+         return gameprofile.getId().toString();
+     }
+diff --git a/src/main/java/net/minecraft/server/IpBanList.java b/src/main/java/net/minecraft/server/IpBanList.java
+index 617d326f..1368c715 100644
+--- a/src/main/java/net/minecraft/server/IpBanList.java
++++ b/src/main/java/net/minecraft/server/IpBanList.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.server;
+ 
+ import com.google.gson.JsonObject;
++import org.bukkit.craftbukkit.CraftIpBanEntry;
++import org.bukkit.event.server.BanIpEvent;
++
+ import java.io.File;
+ import java.net.SocketAddress;
+ 
+@@ -26,6 +29,22 @@ public class IpBanList extends JsonList<String, IpBanEntry> {
+         return (IpBanEntry) this.get((Object) s);
+     }
+ 
++    // Paper start
++    @Override public void add(IpBanEntry entry){
++        MinecraftServer server = MinecraftServer.getServer();
++        String target = entry.getKey();
++
++        BanIpEvent event= new BanIpEvent(new CraftIpBanEntry(target, entry, server.getPlayerList().getIPBans()));
++        if(event.isCancelled()) return;
++
++        entry.setCreated(event.getCreated()); // repeated code, override in superclass instead? (ExpirableListEntry)
++        entry.setExpiration(event.getExpiration());
++        entry.setSource(event.getSource());
++        entry.setReason(event.getReason());
++        super.add(entry);
++    }
++    // Paper end
++
+     private String c(SocketAddress socketaddress) {
+         String s = socketaddress.toString();
+ 
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 0859c7eb..49d5b42d 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -82,7 +82,9 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+ 
+     }
+ 
+-    public V get(K k0) {
++    // Paper start
++    public V get(Object k0) {
++        // Paper end
+         this.h();
+         return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
+     }
+@@ -112,7 +114,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+         return this.d.size() < 1;
+     }
+ 
+-    protected String a(K k0) {
++    //Paper Start - fix decompile error
++    protected String a(Object k0) {
+         return k0.toString();
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java b/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java
+index 80832f78..05791767 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftIpBanList.java
+@@ -1,19 +1,19 @@
+ package org.bukkit.craftbukkit;
+ 
+-import java.io.IOException;
+-import java.net.InetSocketAddress;
+-import java.util.Date;
+-import java.util.Set;
+-
++import com.google.common.collect.ImmutableSet;
+ import net.minecraft.server.IpBanEntry;
+ import net.minecraft.server.IpBanList;
+-import net.minecraft.server.MinecraftServer;
+ import org.apache.commons.lang.StringUtils;
+ import org.apache.commons.lang.Validate;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.server.BanIpEvent;
+ 
+-import com.google.common.collect.ImmutableSet;
++import java.io.IOException;
++import java.net.InetSocketAddress;
++import java.util.Date;
++import java.util.Set;
+ import java.util.logging.Level;
+-import org.bukkit.Bukkit;
+ 
+ public class CraftIpBanList implements org.bukkit.BanList {
+     private final IpBanList list;
+@@ -36,13 +36,20 @@ public class CraftIpBanList implements org.bukkit.BanList {
+ 
+     @Override
+     public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
++
+         Validate.notNull(target, "Ban target cannot be null");
+ 
+         IpBanEntry entry = new IpBanEntry(target, new Date(),
+                 StringUtils.isBlank(source) ? null : source, expires,
+                 StringUtils.isBlank(reason) ? null : reason);
+ 
+-        list.add(entry);
++        BanIpEvent event = new BanIpEvent(new CraftIpBanEntry(target, entry, list));
++        event = CraftEventFactory.callEvent(event);
++
++        if(event.isCancelled()) return null;
++        IpBanEntry newEntry =  new IpBanEntry(event.getTarget(), event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++
++        list.add(newEntry);
+ 
+         try {
+             list.save();
+@@ -50,7 +57,7 @@ public class CraftIpBanList implements org.bukkit.BanList {
+             Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-ips.json, {0}", ex.getMessage());
+         }
+ 
+-        return new CraftIpBanEntry(target, entry, list);
++        return new CraftIpBanEntry(event.getTarget(), newEntry, list);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftProfileBanList.java b/src/main/java/org/bukkit/craftbukkit/CraftProfileBanList.java
+index 84a1f9c8..2ac9db43 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftProfileBanList.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftProfileBanList.java
+@@ -1,21 +1,21 @@
+ package org.bukkit.craftbukkit;
+ 
+-import java.io.IOException;
+-import java.util.Date;
+-import java.util.Set;
+-
++import com.google.common.collect.ImmutableSet;
++import com.mojang.authlib.GameProfile;
+ import net.minecraft.server.GameProfileBanEntry;
+ import net.minecraft.server.GameProfileBanList;
+ import net.minecraft.server.JsonListEntry;
+ import net.minecraft.server.MinecraftServer;
+-
+ import org.apache.commons.lang.StringUtils;
+ import org.apache.commons.lang.Validate;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.server.BanProfileEvent;
+ 
+-import com.google.common.collect.ImmutableSet;
+-import com.mojang.authlib.GameProfile;
++import java.io.IOException;
++import java.util.Date;
++import java.util.Set;
+ import java.util.logging.Level;
+-import org.bukkit.Bukkit;
+ 
+ public class CraftProfileBanList implements org.bukkit.BanList {
+     private final GameProfileBanList list;
+@@ -54,7 +54,14 @@ public class CraftProfileBanList implements org.bukkit.BanList {
+                 StringUtils.isBlank(source) ? null : source, expires,
+                 StringUtils.isBlank(reason) ? null : reason);
+ 
+-        list.add(entry);
++        BanProfileEvent event = new BanProfileEvent(new CraftProfileBanEntry(profile, entry, list));
++        event = CraftEventFactory.callEvent(event);
++        if(event.isCancelled()) return null;
++
++        GameProfile newProfile = MinecraftServer.getServer().getUserCache().getProfile(event.getTarget());
++        GameProfileBanEntry newEntry =  new GameProfileBanEntry(newProfile, event.getCreated(), event.getSource(), event.getExpiration(), event.getReason());
++
++        list.add(newEntry);
+ 
+         try {
+             list.save();
+@@ -62,7 +69,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
+             Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-players.json, {0}", ex.getMessage());
+         }
+ 
+-        return new CraftProfileBanEntry(profile, entry, list);
++        return new CraftProfileBanEntry(newProfile, newEntry, list);
+     }
+ 
+     @Override
+-- 
+2.14.1
+
