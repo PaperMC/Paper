@@ -29,11 +29,11 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     /**
      * Gets the height of the living entity's eyes above its Location.
      *
-     * @param ignoreSneaking if set to true, the effects of sneaking will be
-     *     ignored
+     * @param ignorePose if set to true, the effects of pose changes, eg
+     *     sneaking and gliding will be ignored
      * @return height of the living entity's eyes above its location
      */
-    public double getEyeHeight(boolean ignoreSneaking);
+    public double getEyeHeight(boolean ignorePose);
 
     /**
      * Get a Location detailing the current eye position of the living entity.
