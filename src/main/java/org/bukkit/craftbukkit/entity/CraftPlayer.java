@@ -1382,9 +1382,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         injectScaledMaxHealth(set, true);
 
+        // SPIGOT-3813: Attributes before health
+        if (getHandle().playerConnection != null) {
+            getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
+            sendHealthUpdate();
+        }
         getHandle().getDataWatcher().set(EntityLiving.HEALTH, (float) getScaledHealth());
-        sendHealthUpdate();
-        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
 
         getHandle().maxHealthCache = getMaxHealth();
     }
