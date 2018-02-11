@@ -79,7 +79,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
         Validate.isTrue(isBetween(vector.getBlockX(), 0, MAX_SIZE), "Structure Size (X) must be between 0 and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockY(), 0, MAX_SIZE), "Structure Size (Y) must be between 0 and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockZ(), 0, MAX_SIZE), "Structure Size (Z) must be between 0 and " + MAX_SIZE);
-        getSnapshot().c(new BlockPosition(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ())); // PAIL: setStructureSize
+        getSnapshot().i = new BlockPosition(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ()); // PAIL: rename size
     }
 
     @Override
