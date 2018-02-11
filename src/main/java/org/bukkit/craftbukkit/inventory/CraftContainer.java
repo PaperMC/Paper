@@ -17,12 +17,12 @@ import net.minecraft.server.ContainerEnchantTable;
 import net.minecraft.server.ContainerFurnace;
 import net.minecraft.server.ContainerHopper;
 import net.minecraft.server.ContainerShulkerBox;
-import net.minecraft.server.ContainerWorkbench;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.PlayerInventory;
+import net.minecraft.server.Slot;
 
 public class CraftContainer extends Container {
 
@@ -149,7 +149,7 @@ public class CraftContainer extends Container {
                 break;
             case CRAFTING: // TODO: This should be an error?
             case WORKBENCH:
-                delegate = new ContainerWorkbench(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
+                setupWorkbench(top, bottom); // SPIGOT-3812 - manually set up slots so we can use the delegated inventory and not the automatically created one
                 break;
             case ENCHANTING:
                 delegate = new ContainerEnchantTable(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
@@ -175,6 +175,31 @@ public class CraftContainer extends Container {
             this.items = delegate.items;
             this.slots = delegate.slots;
         }
+    }
+
+    private void setupWorkbench(IInventory top, IInventory bottom) {
+        // This code copied from ContainerWorkbench
+        this.a(new Slot(top, 0, 124, 35));
+
+        int row;
+        int col;
+
+        for (row = 0; row < 3; ++row) {
+            for (col = 0; col < 3; ++col) {
+                this.a(new Slot(top, 1 + col + row * 3, 30 + col * 18, 17 + row * 18));
+            }
+        }
+
+        for (row = 0; row < 3; ++row) {
+            for (col = 0; col < 9; ++col) {
+                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+            }
+        }
+
+        for (col = 0; col < 9; ++col) {
+            this.a(new Slot(bottom, col, 8 + col * 18, 142));
+        }
+        // End copy from ContainerWorkbench
     }
 
     @Override
