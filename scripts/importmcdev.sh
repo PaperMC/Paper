@@ -38,6 +38,7 @@ function import {
 import AxisAlignedBB
 import BaseBlockPosition
 import BiomeBase
+import BiomeBigHills
 import BiomeJungle
 import BiomeMesa
 import BlockBeacon
