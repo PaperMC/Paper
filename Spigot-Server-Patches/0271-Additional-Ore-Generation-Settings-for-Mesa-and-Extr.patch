@@ -1,0 +1,118 @@
+From e9950f796d774ed3f6a1a285c097ead91c6e50a9 Mon Sep 17 00:00:00 2001
+From: MelonCode <qlniklp@gmail.com>
+Date: Sat, 10 Feb 2018 04:14:57 +0300
+Subject: [PATCH] Additional Ore Generation Settings for Mesa and ExtremeHills
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 11e88663..55d5a9cb 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -1,8 +1,5 @@
+ package com.destroystokyo.paper;
+ 
+-import java.util.Arrays;
+-import java.util.List;
+-
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.ChunkEdgeMode;
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
+ import net.minecraft.server.MinecraftServer;
+@@ -10,6 +7,9 @@ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+ 
++import java.util.Arrays;
++import java.util.List;
++
+ import static com.destroystokyo.paper.PaperConfig.log;
+ 
+ public class PaperWorldConfig {
+@@ -162,6 +162,9 @@ public class PaperWorldConfig {
+     public boolean generateTemple;
+     public boolean generateVillage;
+     public boolean generateFlatBedrock;
++    public boolean disableExtremeHillsEmeralds;
++    public boolean disableExtremeHillsMonsterEggs;
++    public boolean disableMesaAdditionalGold;
+ 
+     private void generatorSettings() {
+         generateCanyon = getBoolean("generator-settings.canyon", true);
+@@ -174,6 +177,9 @@ public class PaperWorldConfig {
+         generateTemple = getBoolean("generator-settings.temple", true);
+         generateVillage = getBoolean("generator-settings.village", true);
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
++        disableExtremeHillsEmeralds = getBoolean("generator-settings.disable-extreme-hills-emeralds", false);
++        disableExtremeHillsMonsterEggs = getBoolean("generator-settings.disable-extreme-hills-monster-eggs", false);
++        disableMesaAdditionalGold = getBoolean("generator-settings.disable-mesa-additional-gold", false);
+     }
+ 
+     public boolean optimizeExplosions;
+diff --git a/src/main/java/net/minecraft/server/BiomeBigHills.java b/src/main/java/net/minecraft/server/BiomeBigHills.java
+index 9c39bf7a..5bab9779 100644
+--- a/src/main/java/net/minecraft/server/BiomeBigHills.java
++++ b/src/main/java/net/minecraft/server/BiomeBigHills.java
+@@ -32,23 +32,25 @@ public class BiomeBigHills extends BiomeBase {
+         int k;
+         int l;
+ 
+-        for (j = 0; j < i; ++j) {
+-            k = random.nextInt(16);
+-            l = random.nextInt(28) + 4;
+-            int i1 = random.nextInt(16);
+-            BlockPosition blockposition1 = blockposition.a(k, l, i1);
+-
+-            if (world.getType(blockposition1).getBlock() == Blocks.STONE) {
+-                world.setTypeAndData(blockposition1, Blocks.EMERALD_ORE.getBlockData(), 2);
++        if (!world.paperConfig.disableExtremeHillsEmeralds) // Paper
++            for (j = 0; j < i; ++j) {
++                k = random.nextInt(16);
++                l = random.nextInt(28) + 4;
++                int i1 = random.nextInt(16);
++                BlockPosition blockposition1 = blockposition.a(k, l, i1);
++
++                if (world.getType(blockposition1).getBlock() == Blocks.STONE) {
++                    world.setTypeAndData(blockposition1, Blocks.EMERALD_ORE.getBlockData(), 2);
++                }
+             }
+-        }
+ 
+-        for (i = 0; i < 7; ++i) {
+-            j = random.nextInt(16);
+-            k = random.nextInt(64);
+-            l = random.nextInt(16);
+-            this.x.generate(world, random, blockposition.a(j, k, l));
+-        }
++        if (!world.paperConfig.disableExtremeHillsMonsterEggs) // Paper
++            for (i = 0; i < 7; ++i) {
++                j = random.nextInt(16);
++                k = random.nextInt(64);
++                l = random.nextInt(16);
++                this.x.generate(world, random, blockposition.a(j, k, l));
++            }
+ 
+     }
+ 
+@@ -70,6 +72,7 @@ public class BiomeBigHills extends BiomeBase {
+ 
+         NORMAL, EXTRA_TREES, MUTATED;
+ 
+-        private Type() {}
++        private Type() {
++        }
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/BiomeMesa.java b/src/main/java/net/minecraft/server/BiomeMesa.java
+index 0541403f..ac48cfe1 100644
+--- a/src/main/java/net/minecraft/server/BiomeMesa.java
++++ b/src/main/java/net/minecraft/server/BiomeMesa.java
+@@ -259,6 +259,7 @@ public class BiomeMesa extends BiomeBase {
+ 
+         protected void a(World world, Random random) {
+             super.a(world, random);
++            if(world.paperConfig.disableMesaAdditionalGold) return; // Paper
+             this.a(world, random, 20, this.n, 32, 80);
+         }
+ 
+-- 
+2.14.3
+
