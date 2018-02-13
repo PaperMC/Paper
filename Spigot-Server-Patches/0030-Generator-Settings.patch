@@ -1,14 +1,14 @@
-From d247ea32a5da80867333bba8c86e284be41fa4a1 Mon Sep 17 00:00:00 2001
+From 1041665a9111bf437a33aef1bc08d7842c5ae211 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 02:17:54 -0600
 Subject: [PATCH] Generator Settings
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index db09711e..80500108 100644
+index db09711e4..7e5cd8042 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -147,4 +147,28 @@ public class PaperWorldConfig {
+@@ -147,4 +147,34 @@ public class PaperWorldConfig {
          disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
          log("End credits disabled: " + disableEndCredits);
      }
@@ -23,6 +23,9 @@ index db09711e..80500108 100644
 +    public boolean generateTemple;
 +    public boolean generateVillage;
 +    public boolean generateFlatBedrock;
++    public boolean disableExtremeHillsEmeralds;
++    public boolean disableExtremeHillsMonsterEggs;
++    public boolean disableMesaAdditionalGold;
 +
 +    private void generatorSettings() {
 +        generateCanyon = getBoolean("generator-settings.canyon", true);
@@ -35,10 +38,13 @@ index db09711e..80500108 100644
 +        generateTemple = getBoolean("generator-settings.temple", true);
 +        generateVillage = getBoolean("generator-settings.village", true);
 +        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
++        disableExtremeHillsEmeralds = getBoolean("generator-settings.disable-extreme-hills-emeralds", false);
++        disableExtremeHillsMonsterEggs = getBoolean("generator-settings.disable-extreme-hills-monster-eggs", false);
++        disableMesaAdditionalGold = getBoolean("generator-settings.disable-mesa-additional-gold", false);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index 1b759976..ab6db746 100644
+index 1b7599769..ab6db7468 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
 @@ -176,7 +176,7 @@ public abstract class BiomeBase {
@@ -50,8 +56,45 @@ index 1b759976..ab6db746 100644
                  chunksnapshot.a(k1, l1, j1, BiomeBase.c);
              } else {
                  IBlockData iblockdata2 = chunksnapshot.a(k1, l1, j1);
+diff --git a/src/main/java/net/minecraft/server/BiomeBigHills.java b/src/main/java/net/minecraft/server/BiomeBigHills.java
+index 9c39bf7af..61680ab50 100644
+--- a/src/main/java/net/minecraft/server/BiomeBigHills.java
++++ b/src/main/java/net/minecraft/server/BiomeBigHills.java
+@@ -32,6 +32,9 @@ public class BiomeBigHills extends BiomeBase {
+         int k;
+         int l;
+ 
++        // Paper start - Disable extreme hills emeralds
++        if (!world.paperConfig.disableExtremeHillsEmeralds) {
++
+         for (j = 0; j < i; ++j) {
+             k = random.nextInt(16);
+             l = random.nextInt(28) + 4;
+@@ -43,6 +46,12 @@ public class BiomeBigHills extends BiomeBase {
+             }
+         }
+ 
++        }
++        // Paper end block
++
++        // Paper start - Disable extreme hills monster eggs
++        if (!world.paperConfig.disableExtremeHillsMonsterEggs) {
++
+         for (i = 0; i < 7; ++i) {
+             j = random.nextInt(16);
+             k = random.nextInt(64);
+@@ -50,6 +59,9 @@ public class BiomeBigHills extends BiomeBase {
+             this.x.generate(world, random, blockposition.a(j, k, l));
+         }
+ 
++        }
++        // Paper end block
++
+     }
+ 
+     public void a(World world, Random random, ChunkSnapshot chunksnapshot, int i, int j, double d0) {
 diff --git a/src/main/java/net/minecraft/server/BiomeMesa.java b/src/main/java/net/minecraft/server/BiomeMesa.java
-index f2dd96a3..0541403f 100644
+index f2dd96a32..67f8ad8ed 100644
 --- a/src/main/java/net/minecraft/server/BiomeMesa.java
 +++ b/src/main/java/net/minecraft/server/BiomeMesa.java
 @@ -99,7 +99,7 @@ public class BiomeMesa extends BiomeBase {
@@ -63,8 +106,16 @@ index f2dd96a3..0541403f 100644
                  chunksnapshot.a(l, i2, k, BiomeMesa.c);
              } else if (l1 < 15 || this.I) {
                  IBlockData iblockdata2 = chunksnapshot.a(l, i2, k);
+@@ -259,6 +259,7 @@ public class BiomeMesa extends BiomeBase {
+ 
+         protected void a(World world, Random random) {
+             super.a(world, random);
++            if (world.paperConfig.disableMesaAdditionalGold) return; // Paper
+             this.a(world, random, 20, this.n, 32, 80);
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderFlat.java b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
-index 1452ff65..8b1b7938 100644
+index 1452ff657..8b1b79380 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderFlat.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderFlat.java
 @@ -26,7 +26,7 @@ public class ChunkProviderFlat implements ChunkGenerator {
@@ -110,7 +161,7 @@ index 1452ff65..8b1b7938 100644
          int k = 0;
          boolean flag1 = true;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
-index 22a24a39..ee9e00e6 100644
+index 22a24a39f..ee9e00e64 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
 @@ -160,32 +160,32 @@ public class ChunkProviderGenerate implements ChunkGenerator {
@@ -221,7 +272,7 @@ index 22a24a39..ee9e00e6 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderHell.java b/src/main/java/net/minecraft/server/ChunkProviderHell.java
-index 9f738749..12bc10ff 100644
+index 9f738749f..12bc10ff0 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderHell.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderHell.java
 @@ -151,7 +151,10 @@ public class ChunkProviderHell implements ChunkGenerator {
@@ -245,7 +296,7 @@ index 9f738749..12bc10ff 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
-index 66a80a77..34fd7edf 100644
+index 66a80a776..34fd7edfe 100644
 --- a/src/main/java/net/minecraft/server/StructureGenerator.java
 +++ b/src/main/java/net/minecraft/server/StructureGenerator.java
 @@ -128,6 +128,7 @@ public abstract class StructureGenerator extends WorldGenBase {
