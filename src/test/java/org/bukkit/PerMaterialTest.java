@@ -173,7 +173,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     }
 
     @Test
-    public void testAir() {
+    public void testItem() {
         if (material == Material.AIR) {
             assertTrue(material.isItem());
         } else {
