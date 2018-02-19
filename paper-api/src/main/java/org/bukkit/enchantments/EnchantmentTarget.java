@@ -160,6 +160,20 @@ public enum EnchantmentTarget {
         public boolean includes(Material item) {
             return item.getMaxDurability() > 0 && item.getMaxStackSize() == 1;
         }
+    },
+
+    /**
+     * Allows the enchantment to be placed on wearable items.
+     */
+    WEARABLE {
+        @Override
+        public boolean includes(Material item) {
+            return ARMOR.includes(item)
+                    || item.equals(Material.ELYTRA)
+                    || item.equals(Material.PUMPKIN)
+                    || item.equals(Material.JACK_O_LANTERN)
+                    || item.equals(Material.SKULL_ITEM);
+        }
     };
 
     /**
