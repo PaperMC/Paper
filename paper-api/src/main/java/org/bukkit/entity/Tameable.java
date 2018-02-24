@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Tameable extends Animals {
@@ -25,8 +26,21 @@ public interface Tameable extends Animals {
      */
     public void setTamed(boolean tame);
 
+    // Paper start
+    /**
+     * Gets the owners UUID
+     *
+     * @return the owners UUID, or null if not owned
+     */
+    @Nullable
+    public java.util.UUID getOwnerUniqueId();
+    // Paper end
+
     /**
      * Gets the current owning AnimalTamer
+     *
+     * @see #getOwnerUniqueId() Recommended to use UUID version instead of this for performance.
+     * This method will cause OfflinePlayer to be loaded from disk if the owner is not online.
      *
      * @return the owning AnimalTamer, or null if not owned
      */
