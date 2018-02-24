@@ -24,11 +24,16 @@ if [ ! -f  "$jarpath.jar" ]; then
 fi
 
 # OS X & FreeBSD don't have md5sum, just md5 -r
-if [[ "$OSTYPE" == "darwin"* || "$(uname)" == "FreeBSD" ]]; then
-   shopt -s expand_aliases
-   alias md5sum='md5 -r'
-   echo "Using an alias for md5sum on macOS and/or FreeBSD"
-fi
+command -v md5sum >/dev/null 2>&1 || {
+    command -v md5 >/dev/null 2>&1 && {
+        shopt -s expand_aliases
+        alias md5sum='md5 -r'
+        echo "md5sum command not found, using an alias instead"
+    } || {
+        echo >&2 "No md5sum or md5 command found"
+        exit 1
+    }
+}
 
 checksum=$(md5sum "$jarpath.jar" | cut -d ' ' -f 1)
 if [ "$checksum" != "$minecrafthash" ]; then
