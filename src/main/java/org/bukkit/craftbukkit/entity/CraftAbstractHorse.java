@@ -90,6 +90,9 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
         }
     }
 
+    public UUID getOwnerUniqueId() {
+        return getOwnerUUID();
+    }
     public UUID getOwnerUUID() {
         return getHandle().getOwnerUUID();
     }
