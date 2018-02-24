@@ -17,6 +17,10 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
         return (TamableAnimal) super.getHandle();
     }
 
+    @Override
+    public UUID getOwnerUniqueId() {
+        return getOwnerUUID();
+    }
     public UUID getOwnerUUID() {
         try {
             return this.getHandle().getOwnerUUID();

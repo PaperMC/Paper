@@ -88,6 +88,10 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
         }
     }
 
+    @Override
+    public UUID getOwnerUniqueId() {
+        return getOwnerUUID();
+    }
     public UUID getOwnerUUID() {
         return this.getHandle().getOwnerUUID();
     }
