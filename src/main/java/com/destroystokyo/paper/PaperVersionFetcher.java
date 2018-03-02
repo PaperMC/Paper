@@ -25,7 +25,10 @@ public class PaperVersionFetcher implements VersionFetcher {
     @Override
     public String getVersionMessage(@Nonnull String serverVersion) {
         String[] parts = serverVersion.substring("git-Paper-".length()).split("[-\\s]");
-        return getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
+        String updateMessage = getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
+        String history = getHistory();
+
+        return history != null ? history + "\n" + updateMessage : updateMessage;
     }
 
     private static @Nullable String getMinecraftVersion() {
@@ -111,5 +114,20 @@ public class PaperVersionFetcher implements VersionFetcher {
             e.printStackTrace();
             return -1;
         }
+    }
+
+    @Nullable
+    private String getHistory() {
+        final VersionHistoryManager.VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
+        if (data == null) {
+            return null;
+        }
+
+        final String oldVersion = data.getOldVersion();
+        if (oldVersion == null) {
+            return null;
+        }
+
+        return "Previous version: " + oldVersion;
     }
 }
