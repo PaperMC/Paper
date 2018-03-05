@@ -1,0 +1,85 @@
+From 68dd1298ee4620cf407c475cbffe49ada3f377a9 Mon Sep 17 00:00:00 2001
+From: AmbrosL <ambroslins98@gmail.com>
+Date: Mon, 5 Mar 2018 22:17:58 +0100
+Subject: [PATCH] fix-east-west-cannoning
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 2da303fe..988eff8f 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -529,18 +529,42 @@ public abstract class Entity implements ICommandListener {
+ 
+             AxisAlignedBB axisalignedbb2;
+             Iterator iterator1;
++			
++			//PaperSpigot start - fix east/west cannoning by calculating the z movement before x if the x velocity is greater
++
++			if(this.world.paperSpigotConfig.fixEastWest && Math.abs(d0) > Math.abs(d2))
++			{
++				
++				for (iterator1 = list.iterator(); iterator1.hasNext(); d2 = axisalignedbb2.c(this.getBoundingBox(), d2)) {
++					axisalignedbb2 = (AxisAlignedBB) iterator1.next();
++				}
++
++				this.a(this.getBoundingBox().c(0.0D, 0.0D, d2));
++				
++				for (iterator1 = list.iterator(); iterator1.hasNext(); d0 = axisalignedbb2.a(this.getBoundingBox(), d0)) {
++					axisalignedbb2 = (AxisAlignedBB) iterator1.next();
++				}
++
++				this.a(this.getBoundingBox().c(d0, 0.0D, 0.0D));
++
++			} else {
++				
++				for (iterator1 = list.iterator(); iterator1.hasNext(); d0 = axisalignedbb2.a(this.getBoundingBox(), d0)) {
++					axisalignedbb2 = (AxisAlignedBB) iterator1.next();
++				}
++
++				this.a(this.getBoundingBox().c(d0, 0.0D, 0.0D));
++
++				for (iterator1 = list.iterator(); iterator1.hasNext(); d2 = axisalignedbb2.c(this.getBoundingBox(), d2)) {
++					axisalignedbb2 = (AxisAlignedBB) iterator1.next();
++				}
++
++				this.a(this.getBoundingBox().c(0.0D, 0.0D, d2));
++				
++			}
++			
++			//PaperSpigot end
+ 
+-            for (iterator1 = list.iterator(); iterator1.hasNext(); d0 = axisalignedbb2.a(this.getBoundingBox(), d0)) {
+-                axisalignedbb2 = (AxisAlignedBB) iterator1.next();
+-            }
+-
+-            this.a(this.getBoundingBox().c(d0, 0.0D, 0.0D));
+-
+-            for (iterator1 = list.iterator(); iterator1.hasNext(); d2 = axisalignedbb2.c(this.getBoundingBox(), d2)) {
+-                axisalignedbb2 = (AxisAlignedBB) iterator1.next();
+-            }
+-
+-            this.a(this.getBoundingBox().c(0.0D, 0.0D, d2));
+             if (this.S > 0.0F && flag1 && (d6 != d0 || d8 != d2)) {
+                 double d10 = d0;
+                 double d11 = d1;
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 67e56df0..06fd2805 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -314,6 +314,13 @@ public class PaperSpigotWorldConfig
+     {
+         optimizeExplosions = getBoolean( "optimize-explosions", false );
+     }
++	
++	public boolean fixEastWest;
++	private void fixEastWest()
++	{
++			fixEastWest = getBoolean( "fix-east-west-cannoning" , false);
++			if( fixEastWest ) log( "fixing east/west cannoning" );
++	}
+ 
+     public boolean fastDrainLava;
+     public boolean fastDrainWater;
+-- 
+2.16.2.windows.1
+
