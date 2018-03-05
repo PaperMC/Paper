@@ -1,4 +1,4 @@
-From 17ca76593dd05a5c7ce88279f57a00b498bac4db Mon Sep 17 00:00:00 2001
+From 7c51a79d0c5b06020ba93772ff3f3c558e7133b9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -12,17 +12,23 @@ Re-introduce a cap per tick for auto save (Spigot disabled the vanilla cap) and 
 Adds incremental player auto saving too
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 621c585e7..da0984a35 100644
+index 621c585e7..459c86bce 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -251,4 +251,9 @@ public class PaperConfig {
+@@ -251,4 +251,15 @@ public class PaperConfig {
          flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
          flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
      }
 +
 +    public static int playerAutoSaveRate = -1;
++    public static int maxPlayerAutoSavePerTick = 10;
 +    private static void playerAutoSaveRate() {
 +        playerAutoSaveRate = getInt("settings.player-auto-save-rate", -1);
++        maxPlayerAutoSavePerTick = getInt("settings.max-player-auto-save-per-tick", -1);
++        if (maxPlayerAutoSavePerTick == -1) { // -1 Automatic / "Recommended"
++            // 10 should be safe for everyone unless your mass spamming player auto save
++            maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
++        }
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -155,7 +161,7 @@ index ab7933079..5c09c6ff7 100644
          this.methodProfiler.a("tallying");
          // Spigot start
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ed5852ef4..0e82c16b7 100644
+index ed5852ef4..efea22c92 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -343,6 +343,7 @@ public abstract class PlayerList {
@@ -166,7 +172,7 @@ index ed5852ef4..0e82c16b7 100644
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -1242,13 +1243,23 @@ public abstract class PlayerList {
+@@ -1242,13 +1243,25 @@ public abstract class PlayerList {
  
      }
  
@@ -178,11 +184,13 @@ index ed5852ef4..0e82c16b7 100644
 +    public void savePlayers(Integer interval) {
 +        long now = MinecraftServer.currentTick;
          MinecraftTimings.savePlayers.startTiming(); // Paper
++        int numSaved = 0; // Paper
          for (int i = 0; i < this.players.size(); ++i) {
 -            this.savePlayerFile((EntityPlayer) this.players.get(i));
 +            EntityPlayer entityplayer = this.players.get(i);
 +            if (interval == null || now - entityplayer.lastSave >= interval) {
 +                this.savePlayerFile(entityplayer);
++                if (interval != null && ++numSaved <= com.destroystokyo.paper.PaperConfig.maxPlayerAutoSavePerTick) { break; } // Paper
 +            }
          }
          MinecraftTimings.savePlayers.stopTiming(); // Paper
@@ -215,5 +223,5 @@ index f2ddc22dd..8493dccee 100644
              timings.worldSaveChunks.startTiming(); // Paper
              chunkproviderserver.a(flag);
 -- 
-2.16.1
+2.16.2
 
