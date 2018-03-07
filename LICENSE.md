@@ -21,4 +21,5 @@ Kyle Wood <demonwav@gmail.com>
 kashike <kashike@vq.lc>
 Black Hole <black-hole@live.com>
 Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Mystiflow <mystiflow@gmail.com>
 ```
