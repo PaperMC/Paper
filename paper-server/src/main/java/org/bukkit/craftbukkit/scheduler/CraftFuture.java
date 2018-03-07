@@ -16,21 +16,21 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
     private Exception exception = null;
 
     CraftFuture(final Callable<T> callable, final Plugin plugin, final int id) {
-        super(plugin, null, id, -1l);
+        super(plugin, null, id, CraftTask.NO_REPEATING);
         this.callable = callable;
     }
 
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
-        if (getPeriod() != -1l) {
+        if (getPeriod() != CraftTask.NO_REPEATING) {
             return false;
         }
-        setPeriod(-2l);
+        setPeriod(CraftTask.CANCEL);
         return true;
     }
 
     public boolean isDone() {
         final long period = this.getPeriod();
-        return period != -1l && period != -3l;
+        return period != CraftTask.NO_REPEATING && period != CraftTask.PROCESS_FOR_FUTURE;
     }
 
     public T get() throws CancellationException, InterruptedException, ExecutionException {
@@ -44,13 +44,13 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
     public synchronized T get(long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         timeout = unit.toMillis(timeout);
         long period = this.getPeriod();
-        long timestamp = timeout > 0 ? System.currentTimeMillis() : 0l;
+        long timestamp = timeout > 0 ? System.currentTimeMillis() : 0L;
         while (true) {
-            if (period == -1l || period == -3l) {
+            if (period == CraftTask.NO_REPEATING || period == CraftTask.PROCESS_FOR_FUTURE) {
                 this.wait(timeout);
                 period = this.getPeriod();
-                if (period == -1l || period == -3l) {
-                    if (timeout == 0l) {
+                if (period == CraftTask.NO_REPEATING || period == CraftTask.PROCESS_FOR_FUTURE) {
+                    if (timeout == 0L) {
                         continue;
                     }
                     timeout += timestamp - (timestamp = System.currentTimeMillis());
@@ -60,26 +60,26 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
                     throw new TimeoutException();
                 }
             }
-            if (period == -2l) {
+            if (period == CraftTask.CANCEL) {
                 throw new CancellationException();
             }
-            if (period == -4l) {
+            if (period == CraftTask.DONE_FOR_FUTURE) {
                 if (exception == null) {
                     return value;
                 }
                 throw new ExecutionException(exception);
             }
-            throw new IllegalStateException("Expected " + -1l + " to " + -4l + ", got " + period);
+            throw new IllegalStateException("Expected " + CraftTask.NO_REPEATING + " to " + CraftTask.DONE_FOR_FUTURE + ", got " + period);
         }
     }
 
     @Override
     public void run() {
         synchronized (this) {
-            if (getPeriod() == -2l) {
+            if (getPeriod() == CraftTask.CANCEL) {
                 return;
             }
-            setPeriod(-3l);
+            setPeriod(CraftTask.PROCESS_FOR_FUTURE);
         }
         try {
             value = callable.call();
@@ -87,17 +87,17 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
             exception = e;
         } finally {
             synchronized (this) {
-                setPeriod(-4l);
+                setPeriod(CraftTask.DONE_FOR_FUTURE);
                 this.notifyAll();
             }
         }
     }
 
     synchronized boolean cancel0() {
-        if (getPeriod() != -1l) {
+        if (getPeriod() != CraftTask.NO_REPEATING) {
             return false;
         }
-        setPeriod(-2l);
+        setPeriod(CraftTask.CANCEL);
         notifyAll();
         return true;
     }
