@@ -19,4 +19,5 @@ Zach Brown <zach.brown@destroystokyo.com>
 Daniel Ennis <aikar@aikar.co>
 Kyle Wood <demonwav@gmail.com>
 kashike <kashike@vq.lc>
+Black Hole <black-hole@live.com>
 ```
