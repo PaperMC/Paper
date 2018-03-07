@@ -16,4 +16,5 @@ should submit a pull request to this project to add their name.
 
 ```text
 Zach Brown <zach.brown@destroystokyo.com>
+Daniel Ennis <aikar@aikar.co>
 ```
