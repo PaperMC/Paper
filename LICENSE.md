@@ -21,4 +21,5 @@ Kyle Wood <kyle@denwav.dev>
 Riley Park <rileysebastianpark@gmail.com>
 Black Hole <black-hole@live.com>
 Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Mystiflow <mystiflow@gmail.com>
 ```
