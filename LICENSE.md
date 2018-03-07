@@ -19,4 +19,5 @@ Zach Brown <1254957+zachbr@users.noreply.github.com>
 Daniel Ennis <aikar@aikar.co>
 Kyle Wood <kyle@denwav.dev>
 Riley Park <rileysebastianpark@gmail.com>
+Black Hole <black-hole@live.com>
 ```
