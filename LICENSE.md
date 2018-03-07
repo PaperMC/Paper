@@ -23,4 +23,5 @@ Black Hole <black-hole@live.com>
 Mark Vainomaa <mikroskeem@mikroskeem.eu>
 Mystiflow <mystiflow@gmail.com>
 Shane Freeder <theboyetronic@gmail.com>
+Gabscap <git@gabscap.de>
 ```
