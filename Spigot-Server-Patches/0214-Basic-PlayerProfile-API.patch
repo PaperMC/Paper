@@ -1,4 +1,4 @@
-From f150a017e1d30c84b820b3ade01ee7653d86b31d Mon Sep 17 00:00:00 2001
+From 169a4bcde7aa5596794b15d147b9c331d8b01fb0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
@@ -6,10 +6,10 @@ Subject: [PATCH] Basic PlayerProfile API
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..98fca26e9
+index 000000000..e673726c5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,183 @@
+@@ -0,0 +1,191 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.GameProfile;
@@ -149,24 +149,9 @@ index 000000000..98fca26e9
 +    private class PropertySet extends AbstractSet<ProfileProperty> {
 +
 +        @Override
++        @Nonnull
 +        public Iterator<ProfileProperty> iterator() {
-+            Iterator<Property> iterator = profile.getProperties().values().iterator();
-+            return new Iterator<ProfileProperty>() {
-+                @Override
-+                public boolean hasNext() {
-+                    return iterator.hasNext();
-+                }
-+
-+                @Override
-+                public ProfileProperty next() {
-+                    return toBukkit(iterator.next());
-+                }
-+
-+                @Override
-+                public void remove() {
-+                    iterator().remove();
-+                }
-+            };
++            return new ProfilePropertyIterator(profile.getProperties().values().iterator());
 +        }
 +
 +        @Override
@@ -190,6 +175,29 @@ index 000000000..98fca26e9
 +        @Override
 +        public boolean contains(Object o) {
 +            return o instanceof ProfileProperty && profile.getProperties().containsKey(((ProfileProperty) o).getName());
++        }
++
++        private class ProfilePropertyIterator implements Iterator<ProfileProperty> {
++            private final Iterator<Property> iterator;
++
++            ProfilePropertyIterator(Iterator<Property> iterator) {
++                this.iterator = iterator;
++            }
++
++            @Override
++            public boolean hasNext() {
++                return iterator.hasNext();
++            }
++
++            @Override
++            public ProfileProperty next() {
++                return toBukkit(iterator.next());
++            }
++
++            @Override
++            public void remove() {
++                iterator.remove();
++            }
 +        }
 +    }
 +}
@@ -219,7 +227,7 @@ index 02940d697..4539b5601 100644
       * Calculates distance between 2 entities
       * @param e1
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8d0a9e8ca..f0ae65f08 100644
+index 77c16fe2c..aca5ea7c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -135,6 +135,10 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -252,5 +260,5 @@ index 8d0a9e8ca..f0ae65f08 100644
      // Paper end
  }
 -- 
-2.16.1
+2.16.2
 
