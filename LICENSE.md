@@ -27,5 +27,6 @@ Gabscap <git@gabscap.de>
 Jadon Fowler <jadonflower@gmail.com>
 chickeneer <emcchickeneer@gmail.com>
 Minecrell <minecrell@minecrell.net>
+Techcable <Techcable@outlook.com>
 BillyGalbreath <blake.galbreath@gmail.com>
 ```
