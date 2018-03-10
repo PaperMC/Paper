@@ -28,7 +28,8 @@ public class BlockIceFrost extends BlockIce {
                 EnumDirection enumdirection = aenumdirection[j];
 
                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, enumdirection);
-                IBlockData iblockdata1 = worldserver.getType(blockposition_mutableblockposition);
+                IBlockData iblockdata1 = worldserver.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
+                if (iblockdata1 == null) { continue; } // Paper
 
                 if (iblockdata1.a((Block) this) && !this.e(iblockdata1, (World) worldserver, blockposition_mutableblockposition)) {
                     worldserver.getBlockTickList().a(blockposition_mutableblockposition, this, MathHelper.nextInt(random, worldserver.paperConfig.frostedIceDelayMin, worldserver.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
@@ -71,7 +72,9 @@ public class BlockIceFrost extends BlockIce {
             EnumDirection enumdirection = aenumdirection[l];
 
             blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, enumdirection);
-            if (iblockaccess.getType(blockposition_mutableblockposition).a((Block) this)) {
+            // Paper start
+            IBlockData type = iblockaccess.getTypeIfLoaded(blockposition_mutableblockposition);
+            if (type != null && type.a((Block) this)) { // Paper end
                 ++j;
                 if (j >= i) {
                     return false;
