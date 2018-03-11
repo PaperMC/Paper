@@ -31,4 +31,5 @@ Techcable <Techcable@outlook.com>
 BillyGalbreath <blake.galbreath@gmail.com>
 MiniDigger | Martin <admin@minidigger.dev>
 Brokkonaut <hannos17@gmx.de>
+vemacs <d@nkmem.es>
 ```
