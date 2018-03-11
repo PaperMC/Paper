@@ -29,7 +29,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -114,6 +119,23 @@
+@@ -114,7 +119,25 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -37,8 +37,9 @@
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
 +    public java.net.InetSocketAddress virtualHost;
++    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
 +    // Paper end
-+
+ 
 +    // Paper start - add utility methods
 +    public final net.minecraft.server.level.ServerPlayer getPlayer() {
 +        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
@@ -50,10 +51,11 @@
 +        return null;
 +    }
 +    // Paper end - add utility methods
- 
++
      public Connection(PacketFlow side) {
          this.receiving = side;
-@@ -123,6 +145,9 @@
+     }
+@@ -123,6 +146,9 @@
          super.channelActive(channelhandlercontext);
          this.channel = channelhandlercontext.channel();
          this.address = this.channel.remoteAddress();
@@ -63,7 +65,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -176,6 +201,7 @@
+@@ -176,6 +202,7 @@
  
              }
          }
@@ -71,7 +73,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -205,7 +231,7 @@
+@@ -205,7 +232,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -80,7 +82,16 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -464,12 +490,15 @@
+@@ -431,7 +458,7 @@
+         }
+ 
+         if (this.channel != null) {
+-            this.channel.flush();
++            if (enableExplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - Disable explicit network manager flushing; we don't need to explicit flush here, but allow opt in incase issues are found to a better version
+         }
+ 
+         if (this.tickCount++ % 20 == 0) {
+@@ -464,12 +491,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -97,7 +108,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +566,7 @@
+@@ -537,7 +567,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -106,7 +117,7 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -661,6 +690,7 @@
+@@ -661,6 +691,7 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
