@@ -1,0 +1,37 @@
+From b7806469aa14552fea0aece2446419b9a96c27cc Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 11 Mar 2018 14:13:33 -0400
+Subject: [PATCH] Disable Implicit Network Manager Flushing
+
+This seems completely pointless, as packet dispatch uses .writeAndFlush.
+
+Things seem to work fine without implicit flushing, but incase issues arise,
+provide a System property to re-enable it using improved logic of doing the
+flushing on the netty event loop, so it won't do the flush on the main thread.
+
+Renable flushing by passing -Dpaper.implicit-flush=true
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index b93a26e8f..da7c45697 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -78,6 +78,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     // Paper start - NetworkClient implementation
+     public int protocolVersion;
+     public java.net.InetSocketAddress virtualHost;
++    private static boolean enableImplicitFlush = Boolean.getBoolean("paper.implicit-flush");
+     // Paper end
+ 
+     public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
+@@ -255,7 +256,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+ 
+         if (this.channel != null) {
+-            this.channel.flush();
++            if (enableImplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - we don't need to implicit flush here, but allow opt in incase issues are found to a better version
+         }
+ 
+     }
+-- 
+2.16.2
+
