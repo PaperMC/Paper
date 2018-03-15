@@ -12,6 +12,7 @@ import java.util.Set;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -623,64 +624,66 @@ public class MemorySection implements ConfigurationSection {
     }
 
     // Bukkit
-    public Vector getVector(String path) {
+    @Override
+    public <T extends ConfigurationSerializable> T getSerializable(String path, Class<T> clazz) {
+        Validate.notNull(clazz, "ConfigurationSerializable class cannot be null");
         Object def = getDefault(path);
-        return getVector(path, (def instanceof Vector) ? (Vector) def : null);
+        return getSerializable(path, clazz, (def != null && clazz.isInstance(def)) ? clazz.cast(def) : null);
+    }
+
+    @Override
+    public <T extends ConfigurationSerializable> T getSerializable(String path, Class<T> clazz, T def) {
+        Validate.notNull(clazz, "ConfigurationSerializable class cannot be null");
+        Object val = get(path);
+        return (val != null && clazz.isInstance(val)) ? clazz.cast(val) : def;
+    }
+
+    public Vector getVector(String path) {
+        return getSerializable(path, Vector.class);
     }
 
     public Vector getVector(String path, Vector def) {
-        Object val = get(path, def);
-        return (val instanceof Vector) ? (Vector) val : def;
+        return getSerializable(path, Vector.class, def);
     }
 
     public boolean isVector(String path) {
-        Object val = get(path);
-        return val instanceof Vector;
+        return getSerializable(path, Vector.class) != null;
     }
 
     public OfflinePlayer getOfflinePlayer(String path) {
-        Object def = getDefault(path);
-        return getOfflinePlayer(path, (def instanceof OfflinePlayer) ? (OfflinePlayer) def : null);
+        return getSerializable(path, OfflinePlayer.class);
     }
 
     public OfflinePlayer getOfflinePlayer(String path, OfflinePlayer def) {
-        Object val = get(path, def);
-        return (val instanceof OfflinePlayer) ? (OfflinePlayer) val : def;
+        return getSerializable(path, OfflinePlayer.class, def);
     }
 
     public boolean isOfflinePlayer(String path) {
-        Object val = get(path);
-        return val instanceof OfflinePlayer;
+        return getSerializable(path, OfflinePlayer.class) != null;
     }
 
     public ItemStack getItemStack(String path) {
-        Object def = getDefault(path);
-        return getItemStack(path, (def instanceof ItemStack) ? (ItemStack) def : null);
+        return getSerializable(path, ItemStack.class);
     }
 
     public ItemStack getItemStack(String path, ItemStack def) {
-        Object val = get(path, def);
-        return (val instanceof ItemStack) ? (ItemStack) val : def;
+        return getSerializable(path, ItemStack.class, def);
     }
 
     public boolean isItemStack(String path) {
-        Object val = get(path);
-        return val instanceof ItemStack;
+        return getSerializable(path, ItemStack.class) != null;
     }
 
     public Color getColor(String path) {
-        Object def = getDefault(path);
-        return getColor(path, (def instanceof Color) ? (Color) def : null);
+        return getSerializable(path, Color.class);
     }
 
     public Color getColor(String path, Color def) {
-        Object val = get(path, def);
-        return (val instanceof Color) ? (Color) val : def;
+        return getSerializable(path, Color.class, def);
     }
 
     public boolean isColor(String path) {
-        Object val = get(path);
-        return val instanceof Color;
+        return getSerializable(path, Color.class) != null;
     }
 
     public ConfigurationSection getConfigurationSection(String path) {

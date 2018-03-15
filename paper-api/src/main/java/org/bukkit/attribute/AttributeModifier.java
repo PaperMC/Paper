@@ -71,7 +71,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("uuid", uuid);
+        data.put("uuid", uuid.toString());
         data.put("name", name);
         data.put("operation", operation.ordinal());
         data.put("amount", amount);
@@ -79,7 +79,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     }
 
     public static AttributeModifier deserialize(Map<String, Object> args) {
-        return new AttributeModifier((UUID) args.get("uuid"), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))]);
+        return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))]);
     }
 
     /**

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.bukkit.Color;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.Vector;
 import org.bukkit.inventory.ItemStack;
 
@@ -606,6 +607,38 @@ public interface ConfigurationSection {
     public List<Map<?, ?>> getMapList(String path);
 
     // Bukkit
+    /**
+     * Gets the requested {@link ConfigurationSerializable} object at the given
+     * path.
+     *
+     * If the Object does not exist but a default value has been specified, this
+     * will return the default value. If the Object does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param <T> the type of {@link ConfigurationSerializable}
+     * @param path the path to the object.
+     * @param clazz the type of {@link ConfigurationSerializable}
+     * @return Requested {@link ConfigurationSerializable} object
+     */
+    public <T extends ConfigurationSerializable> T getSerializable(String path, Class<T> clazz);
+
+    /**
+     * Gets the requested {@link ConfigurationSerializable} object at the given
+     * path, returning a default value if not found
+     *
+     * If the Object does not exist then the specified default value will
+     * returned regardless of if a default has been identified in the root
+     * {@link Configuration}.
+     *
+     * @param <T> the type of {@link ConfigurationSerializable}
+     * @param path the path to the object.
+     * @param clazz the type of {@link ConfigurationSerializable}
+     * @param def the default object to return if the object is not present at
+     * the path
+     * @return Requested {@link ConfigurationSerializable} object
+     */
+    public <T extends ConfigurationSerializable> T getSerializable(String path, Class<T> clazz, T def);
+
     /**
      * Gets the requested Vector by path.
      * <p>
