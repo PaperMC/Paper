@@ -1,4 +1,4 @@
-From 64c30d8a2caa9ff443e46f399839579d9b4517c2 Mon Sep 17 00:00:00 2001
+From 2b304a51b4e740aaab398d6bd31f54da4486ef81 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 16 Mar 2018 22:59:43 -0400
 Subject: [PATCH] Improved Async Task Scheduler
@@ -38,10 +38,10 @@ queue if a plugin schedules lots of asynchronous tasks.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 new file mode 100644
-index 000000000..b1efbc3e7
+index 000000000..cf5aada2f
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,161 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -82,6 +82,7 @@ index 000000000..b1efbc3e7
 +
 +    private final Executor management = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
 +        .setNameFormat("Craft Scheduler Management Thread").build());
++    private final List<CraftTask> temp = new ArrayList<>();
 +    CraftAsyncScheduler() {
 +        super(true);
 +    }
@@ -108,29 +109,38 @@ index 000000000..b1efbc3e7
 +    }
 +
 +    private synchronized void runTasks(int currentTick) {
-+        final List<CraftTask> temp = new ArrayList<>();
 +        while (!this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick) {
 +            CraftTask task = this.pending.remove();
-+            this.runners.put(task.getTaskId(), task);
-+            this.executor.execute(new ServerSchedulerReportingWrapper(task));
-+            final long period = task.getPeriod();
-+            if (period > 0) {
-+                task.setNextRun(currentTick + period);
-+                temp.add(task);
++            if (executeTask(task)) {
++                final long period = task.getPeriod();
++                if (period > 0) {
++                    task.setNextRun(currentTick + period);
++                    temp.add(task);
++                }
 +            }
 +        }
 +        this.pending.addAll(temp);
++        temp.clear();
 +    }
 +
 +    @Override
 +    protected CraftTask handle(CraftTask task, final long delay) {
 +        if (task.getPeriod() == -1L && delay == 0L) {
-+            this.executor.execute(task);
-+            return task;
++            executeTask(task);
++        } else {
++            task.setNextRun(this.currentTick + delay);
++            this.management.execute(() -> this.addTask(task));
 +        }
-+        task.setNextRun(this.currentTick + delay);
-+        this.management.execute(() -> this.addTask(task));
 +        return task;
++    }
++
++    private boolean executeTask(CraftTask task) {
++        if (isValid(task)) {
++            this.runners.put(task.getTaskId(), task);
++            this.executor.execute(new ServerSchedulerReportingWrapper(task));
++            return true;
++        }
++        return false;
 +    }
 +
 +    private synchronized void addTask(CraftTask task) {
@@ -140,9 +150,9 @@ index 000000000..b1efbc3e7
 +    @Override
 +    public synchronized void cancelTasks(Plugin plugin) {
 +        for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
-+            CraftTask taskPending = iterator.next();
-+            if (taskPending.getTaskId() != -1 && (plugin == null || taskPending.getOwner().equals(plugin))) {
-+                taskPending.cancel0();
++            CraftTask task = iterator.next();
++            if (task.getTaskId() != -1 && (plugin == null || task.getOwner().equals(plugin))) {
++                task.cancel0();
 +                iterator.remove();
 +            }
 +        }
