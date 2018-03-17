@@ -1,4 +1,4 @@
-From a02abf4be83eadada6f4e91795711a06cee84905 Mon Sep 17 00:00:00 2001
+From 8b8705c3506d9120a1e0fffd272a4c31d9be2abb Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 16 Mar 2018 22:59:43 -0400
 Subject: [PATCH] Improved Async Task Scheduler
@@ -38,10 +38,10 @@ queue if a plugin schedules lots of asynchronous tasks.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 new file mode 100644
-index 000000000..cf5aada2f
+index 000000000..83575a44d
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,128 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -70,7 +70,6 @@ index 000000000..cf5aada2f
 +import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import org.bukkit.plugin.Plugin;
-+import org.bukkit.scheduler.BukkitTask;
 +
 +import java.util.ArrayList;
 +import java.util.Iterator;
@@ -93,6 +92,7 @@ index 000000000..cf5aada2f
 +    }
 +
 +    private synchronized void removeTask(int taskId) {
++        parsePending();
 +        this.pending.removeIf((task) -> {
 +            if (task.getTaskId() == taskId) {
 +                task.cancel0();
@@ -109,6 +109,7 @@ index 000000000..cf5aada2f
 +    }
 +
 +    private synchronized void runTasks(int currentTick) {
++        parsePending();
 +        while (!this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick) {
 +            CraftTask task = this.pending.remove();
 +            if (executeTask(task)) {
@@ -118,6 +119,7 @@ index 000000000..cf5aada2f
 +                    temp.add(task);
 +                }
 +            }
++            parsePending();
 +        }
 +        this.pending.addAll(temp);
 +        temp.clear();
@@ -127,11 +129,10 @@ index 000000000..cf5aada2f
 +    protected CraftTask handle(CraftTask task, final long delay) {
 +        if (task.getPeriod() == -1L && delay == 0L) {
 +            executeTask(task);
++            return task;
 +        } else {
-+            task.setNextRun(this.currentTick + delay);
-+            this.management.execute(() -> this.addTask(task));
++            return super.handle(task, delay);
 +        }
-+        return task;
 +    }
 +
 +    private boolean executeTask(CraftTask task) {
@@ -143,12 +144,9 @@ index 000000000..cf5aada2f
 +        return false;
 +    }
 +
-+    private synchronized void addTask(CraftTask task) {
-+        this.pending.add(task);
-+    }
-+
 +    @Override
 +    public synchronized void cancelTasks(Plugin plugin) {
++        parsePending();
 +        for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
 +            CraftTask task = iterator.next();
 +            if (task.getTaskId() != -1 && (plugin == null || task.getOwner().equals(plugin))) {
@@ -163,37 +161,6 @@ index 000000000..cf5aada2f
 +        cancelTasks(null);
 +    }
 +
-+    @Override
-+    public synchronized List<BukkitTask> getPendingTasks() {
-+        ArrayList<BukkitTask> list = new ArrayList<>();
-+        for (CraftTask task : this.runners.values()) {
-+            if (isValid(task)) {
-+                list.add(task);
-+            }
-+        }
-+        for (CraftTask task : this.pending) {
-+            if (isValid(task) && !list.contains(task)) {
-+                list.add(task);
-+            }
-+        }
-+
-+        return list;
-+    }
-+
-+    @Override
-+    public synchronized boolean isQueued(int taskId) {
-+        CraftTask runningTask = this.runners.get(taskId);
-+        if (runningTask != null && isValid(runningTask)) {
-+            return true;
-+        }
-+        for (CraftTask task : this.pending) {
-+            if (task.getTaskId() == taskId) {
-+                return isValid(task); // The task will run
-+            }
-+        }
-+        return false;
-+    }
-+
 +    /**
 +     * Task is not cancelled
 +     * @param runningTask
@@ -204,7 +171,7 @@ index 000000000..cf5aada2f
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index e47f4cca2..c3cb9e6d2 100644
+index e47f4cca2..8de7026f7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
@@ -378,6 +345,15 @@ index e47f4cca2..c3cb9e6d2 100644
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
+@@ -391,7 +450,7 @@ public class CraftScheduler implements BukkitScheduler {
+         //debugHead = debugHead.getNextHead(currentTick); // Paper
+     }
+ 
+-    private void addTask(final CraftTask task) {
++    protected void addTask(final CraftTask task) {
+         final AtomicReference<CraftTask> tail = this.tail;
+         CraftTask tailTask = tail.get();
+         while (!tail.compareAndSet(tailTask, task)) {
 @@ -400,7 +459,13 @@ public class CraftScheduler implements BukkitScheduler {
          tailTask.setNext(task);
      }
@@ -393,6 +369,26 @@ index e47f4cca2..c3cb9e6d2 100644
          task.setNextRun(currentTick + delay);
          addTask(task);
          return task;
+@@ -418,8 +483,8 @@ public class CraftScheduler implements BukkitScheduler {
+         return ids.incrementAndGet();
+     }
+ 
+-    private void parsePending() {
+-        MinecraftTimings.bukkitSchedulerPendingTimer.startTiming();
++    void parsePending() { // Paper
++        if (!this.isAsyncScheduler) MinecraftTimings.bukkitSchedulerPendingTimer.startTiming(); // Paper
+         CraftTask head = this.head;
+         CraftTask task = head.getNext();
+         CraftTask lastTask = head;
+@@ -438,7 +503,7 @@ public class CraftScheduler implements BukkitScheduler {
+            task.setNext(null);
+         }
+         this.head = lastTask;
+-        MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming();
++        if (!this.isAsyncScheduler) MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming(); // Paper
+     }
+ 
+     private boolean isReady(final int currentTick) {
 -- 
 2.16.2
 
