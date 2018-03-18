@@ -255,11 +255,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public PlayerProfile getPlayerProfile() {
-        return new CraftPlayerProfile(this.getProfile());
-    }
-
-    @Override
     public InetSocketAddress getAddress() {
         if (this.getHandle().connection.protocol() == null) return null;
 
@@ -1819,8 +1814,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
         // Remove this entity from the hidden player's EntityTrackerEntry
-        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
+        // Paper start
         Entity other = ((CraftEntity) entity).getHandle();
+        unregisterEntity(other);
+
+        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
+    }
+    private void unregisterEntity(Entity other) {
+        // Paper end
+        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
         if (entry != null) {
             entry.removePlayer(this.getHandle());
@@ -1833,8 +1835,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
             }
         }
-
-        this.server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
     }
 
     void resetAndHideEntity(org.bukkit.entity.Entity entity) {
@@ -1899,12 +1899,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     private void trackAndShowEntity(org.bukkit.entity.Entity entity) {
+        // Paper start - uuid override
+        this.trackAndShowEntity(entity, null);
+    }
+    private void trackAndShowEntity(org.bukkit.entity.Entity entity, final @Nullable UUID uuidOverride) {
+        // Paper end
         ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
         Entity other = ((CraftEntity) entity).getHandle();
 
         if (other instanceof ServerPlayer) {
             ServerPlayer otherPlayer = (ServerPlayer) other;
+            // Paper start - uuid override
+            UUID original = null;
+            if (uuidOverride != null) {
+                original = otherPlayer.getUUID();
+                otherPlayer.setUUID(uuidOverride);
+            }
+            // Paper end
             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
+            if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
         }
 
         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
@@ -1914,6 +1927,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         this.server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
     }
+    // Paper start
+    @Override
+    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
+        ServerPlayer self = this.getHandle();
+        GameProfile gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
+        if (!self.sentListPacket) {
+            self.gameProfile = gameProfile;
+            return;
+        }
+        List<ServerPlayer> players = this.server.getServer().getPlayerList().players;
+        // First unregister the player for all players with the OLD game profile
+        for (ServerPlayer player : players) {
+            CraftPlayer bukkitPlayer = player.getBukkitEntity();
+            if (bukkitPlayer.canSee(this)) {
+                bukkitPlayer.unregisterEntity(self);
+            }
+        }
+
+        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
+        self.gameProfile = gameProfile;
+
+        // Re-register the game profile for all players
+        for (ServerPlayer player : players) {
+            CraftPlayer bukkitPlayer = player.getBukkitEntity();
+            if (bukkitPlayer.canSee(this)) {
+                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity(), gameProfile.getId());
+            }
+        }
+
+        // Refresh misc player things AFTER sending game profile
+        this.refreshPlayer();
+    }
+    // Paper end
 
     void resetAndShowEntity(org.bukkit.entity.Entity entity) {
         // SPIGOT-7312: Can't show/hide self
@@ -1925,6 +1971,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             this.trackAndShowEntity(entity);
         }
     }
+    // Paper start
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
+    }
+
+    private void refreshPlayer() {
+        ServerPlayer handle = this.getHandle();
+        Location loc = this.getLocation();
+
+        ServerGamePacketListenerImpl connection = handle.connection;
+
+        //Respawn the player then update their position and selected slot
+        ServerLevel worldserver = handle.serverLevel();
+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
+        handle.onUpdateAbilities();
+        connection.internalTeleport(net.minecraft.world.entity.PositionMoveRotation.of(this.getHandle()), java.util.Collections.emptySet());
+        net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
+        playerList.sendPlayerPermissionLevel(handle, false);
+        playerList.sendLevelInfo(handle, worldserver);
+        playerList.sendAllPlayerInfo(handle);
+
+        // Resend their XP and effects because the respawn packet resets it
+        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
+        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
+            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect, false));
+        }
+    }
+    // Paper end
 
     public void onEntityRemove(Entity entity) {
         this.invertedVisibilityEntities.remove(entity.getUUID());

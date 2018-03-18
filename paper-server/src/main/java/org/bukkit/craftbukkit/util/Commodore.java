@@ -472,6 +472,13 @@ public class Commodore {
                         }
                         // Paper end - Rewrite plugins
 
+                        // Paper start - Rewrite plugins
+                        if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
+                            super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
+                            return;
+                        }
+                        // Paper end
+
                         if (modern) {
                             if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
                                 switch (name) {
