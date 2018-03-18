@@ -1,4 +1,4 @@
-From 169a4bcde7aa5596794b15d147b9c331d8b01fb0 Mon Sep 17 00:00:00 2001
+From d59f6eb0f4ce7dbd4e2ad3c366c5950e1bb6d9ca Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
@@ -6,15 +6,16 @@ Subject: [PATCH] Basic PlayerProfile API
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..e673726c5
+index 000000000..2cfd65bc1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,197 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.properties.Property;
 +import com.mojang.authlib.properties.PropertyMap;
++import net.minecraft.server.MinecraftServer;
 +
 +import javax.annotation.Nonnull;
 +import javax.annotation.Nullable;
@@ -26,7 +27,7 @@ index 000000000..e673726c5
 +
 +public class CraftPlayerProfile implements PlayerProfile {
 +
-+    private final GameProfile profile;
++    private GameProfile profile;
 +    private final PropertySet properties;
 +
 +    /**
@@ -116,6 +117,11 @@ index 000000000..e673726c5
 +
 +    @Override
 +    public boolean isComplete() {
++        return profile.isComplete();
++    }
++
++    public boolean complete() {
++        profile = MinecraftServer.getServer().getSessionService().fillProfileProperties(profile, true);
 +        return profile.isComplete();
 +    }
 +
@@ -226,6 +232,18 @@ index 02940d697..4539b5601 100644
      /**
       * Calculates distance between 2 entities
       * @param e1
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index e8bddc171..3b01ebd96 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1538,6 +1538,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+         this.H = i;
+     }
+ 
++    public MinecraftSessionService getSessionService() { return az(); } // Paper - OBFHELPER
+     public MinecraftSessionService az() {
+         return this.W;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 77c16fe2c..aca5ea7c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
