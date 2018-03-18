@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import java.math.BigInteger;
@@ -18,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 // CraftBukkit start
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -286,8 +289,16 @@ public class LoginListener implements PacketLoginInListener {
                             java.util.UUID uniqueId = i.getId();
                             final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
 
-                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
+                            // Paper start
+                            PlayerProfile profile = Bukkit.createProfile(uniqueId, playerName);
+                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
                             server.getPluginManager().callEvent(asyncEvent);
+                            profile = asyncEvent.getPlayerProfile();
+                            profile.complete();
+                            i = CraftPlayerProfile.asAuthlibCopy(profile);
+                            playerName = i.getName();
+                            uniqueId = i.getId();
+                            // Paper end
 
                             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
                                 final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
