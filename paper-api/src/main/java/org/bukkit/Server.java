@@ -1167,8 +1167,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if both the unique id is
      * <code>null</code> and the name is <code>null</code> or blank
+     * @deprecated use {@link #createProfile(UUID, String)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name);
 
     /**
@@ -1177,8 +1179,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param uniqueId the unique id
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the unique id is <code>null</code>
+     * @deprecated use {@link #createProfile(UUID)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     PlayerProfile createPlayerProfile(@NotNull UUID uniqueId);
 
     /**
@@ -1188,8 +1192,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the name is <code>null</code> or
      * blank
+     * @deprecated use {@link #createProfile(String)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     PlayerProfile createPlayerProfile(@NotNull String name);
 
     /**

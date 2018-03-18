@@ -1380,8 +1380,10 @@ public final class Bukkit {
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if both the unique id is
      * <code>null</code> and the name is <code>null</code> or blank
+     * @deprecated use {@link #createProfile(UUID, String)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     public static PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name) {
         return server.createPlayerProfile(uniqueId, name);
     }
@@ -1392,8 +1394,10 @@ public final class Bukkit {
      * @param uniqueId the unique id
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the unique id is <code>null</code>
+     * @deprecated use {@link #createProfile(UUID)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     public static PlayerProfile createPlayerProfile(@NotNull UUID uniqueId) {
         return server.createPlayerProfile(uniqueId);
     }
@@ -1405,8 +1409,10 @@ public final class Bukkit {
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the name is <code>null</code> or
      * blank
+     * @deprecated use {@link #createProfile(String)}
      */
     @NotNull
+    @Deprecated(since = "1.18.1") // Paper
     public static PlayerProfile createPlayerProfile(@NotNull String name) {
         return server.createPlayerProfile(name);
     }

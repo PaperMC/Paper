@@ -59,7 +59,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @return the player's profile
      */
     @NotNull
-    PlayerProfile getPlayerProfile();
+    com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile(); // Paper
 
     /**
      * Checks if this player has had their profile banned.

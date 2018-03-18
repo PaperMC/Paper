@@ -3154,6 +3154,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     }
     // Paper end
 
+    // Paper start - Player Profile API
+    /**
+     * Gets a copy of this players profile
+     *
+     * @return The players profile object
+     */
+    com.destroystokyo.paper.profile.@NotNull PlayerProfile getPlayerProfile();
+
+    /**
+     * Changes the PlayerProfile for this player. This will cause this player
+     * to be re-registered to all clients that can currently see this player.
+     * <p>
+     * After executing this method, the player {@link java.util.UUID} won't
+     * be swapped, only their name and profile properties.
+     *
+     * @param profile The new profile to use
+     */
+    void setPlayerProfile(com.destroystokyo.paper.profile.@NotNull PlayerProfile profile);
+    // Paper end - Player Profile API
+
     // Spigot start
     public class Spigot extends Entity.Spigot {
 
