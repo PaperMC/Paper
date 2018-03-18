@@ -1233,8 +1233,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         hiddenPlayers.put(player.getUniqueId(), hidingPlugins);
 
         // Remove this player from the hidden player's EntityTrackerEntry
-        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
+        // Paper start
         EntityPlayer other = ((CraftPlayer) player).getHandle();
+        unregisterPlayer(other);
+    }
+    private void unregisterPlayer(EntityPlayer other) {
+        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
+        // Paper end
         PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
         if (entry != null) {
             entry.clear(getHandle());
@@ -1275,8 +1280,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
         hiddenPlayers.remove(player.getUniqueId());
 
-        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
+        // Paper start
         EntityPlayer other = ((CraftPlayer) player).getHandle();
+        registerPlayer(other);
+    }
+    private void registerPlayer(EntityPlayer other) {
+        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
+        // Paper end
 
         getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
 
@@ -1285,6 +1295,50 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             entry.updatePlayer(getHandle());
         }
     }
+    // Paper start
+    private void reregisterPlayer(EntityPlayer player) {
+        if (!hiddenPlayers.containsKey(player.getUniqueID())) {
+            unregisterPlayer(player);
+            registerPlayer(player);
+        }
+    }
+    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
+        EntityPlayer self = getHandle();
+        self.setProfile(com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile));
+        if (!self.sentListPacket) {
+            return;
+        }
+        List<EntityPlayer> players = server.getServer().getPlayerList().players;
+        for (EntityPlayer player : players) {
+            player.getBukkitEntity().reregisterPlayer(self);
+        }
+        refreshPlayer();
+    }
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
+    }
+
+    private void refreshPlayer() {
+        EntityPlayer handle = getHandle();
+
+        Location loc = getLocation();
+
+        PlayerConnection connection = handle.playerConnection;
+        reregisterPlayer(handle);
+
+        //Respawn the player then update their position and selected slot
+        WorldServer worldserver = handle.getWorldServer();
+        connection.sendPacket(new net.minecraft.server.PacketPlayOutRespawn(worldserver.getDimensionManager(), worldserver.getDimensionKey(), net.minecraft.server.BiomeManager.a(worldserver.getSeed()), handle.playerInteractManager.getGameMode(), handle.playerInteractManager.c(), worldserver.isDebugWorld(), worldserver.isFlatWorld(), true));
+        handle.updateAbilities();
+        connection.sendPacket(new net.minecraft.server.PacketPlayOutPosition(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), new HashSet<>(), 0));
+        net.minecraft.server.MinecraftServer.getServer().getPlayerList().updateClient(handle);
+
+        if (this.isOp()) {
+            this.setOp(false);
+            this.setOp(true);
+        }
+    }
+    // Paper end
 
     public void removeDisconnectingPlayer(Player player) {
         hiddenPlayers.remove(player.getUniqueId());
