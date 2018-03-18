@@ -22,9 +22,10 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private Result result;
     private net.kyori.adventure.text.Component message; // Paper
-    private final String name;
     private final InetAddress ipAddress;
-    private final UUID uniqueId;
+    private com.destroystokyo.paper.profile.PlayerProfile profile; // Paper
+    private final InetAddress rawAddress; // Paper
+    private final String hostname; // Paper
     private final boolean transferred;
 
     @Deprecated(since = "1.7.5")
@@ -38,12 +39,30 @@ public class AsyncPlayerPreLoginEvent extends Event {
     }
 
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
+        // Paper start
+        this(name, ipAddress, uniqueId, transferred, org.bukkit.Bukkit.createProfile(uniqueId, name));
+    }
+
+    @Deprecated(forRemoval = true)
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
+        this(name, ipAddress, ipAddress, uniqueId, transferred, profile);
+    }
+
+    @Deprecated(forRemoval = true)
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
+        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
+    }
+
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
+        // Paper end
         super(true);
         this.result = Result.ALLOWED;
         this.message = net.kyori.adventure.text.Component.empty(); // Paper
-        this.name = name;
+        this.profile = profile;
         this.ipAddress = ipAddress;
-        this.uniqueId = uniqueId;
+        this.rawAddress = rawAddress; // Paper
+        this.hostname = hostname; // Paper
         this.transferred = transferred;
     }
 
@@ -207,7 +226,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      */
     @NotNull
     public String getName() {
-        return name;
+        return profile.getName(); // Paper
     }
 
     /**
@@ -227,8 +246,47 @@ public class AsyncPlayerPreLoginEvent extends Event {
      */
     @NotNull
     public UUID getUniqueId() {
-        return uniqueId;
+        return profile.getId(); // Paper
     }
+
+    // Paper start
+    /**
+     * Gets the PlayerProfile of the player logging in
+     * @return The Profile
+     */
+    @NotNull
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
+        return profile;
+    }
+
+    /**
+     * Changes the PlayerProfile the player will login as
+     * @param profile The profile to use
+     */
+    public void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
+        this.profile = profile;
+    }
+
+    /**
+     * Gets the raw address of the player logging in
+     * @return The address
+     */
+    @NotNull
+    public InetAddress getRawAddress() {
+        return rawAddress;
+    }
+
+    /**
+     * Gets the hostname that the player used to connect to the server, or
+     * blank if unknown
+     *
+     * @return The hostname
+     */
+    @NotNull
+    public String getHostname() {
+        return hostname;
+    }
+    // Paper end
 
     /**
      * Gets if this connection has been transferred from another server.
