@@ -1,4 +1,4 @@
-From 8b8705c3506d9120a1e0fffd272a4c31d9be2abb Mon Sep 17 00:00:00 2001
+From fd92bac5153091c31ee10a80e33658a7df7ba50f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 16 Mar 2018 22:59:43 -0400
 Subject: [PATCH] Improved Async Task Scheduler
@@ -30,18 +30,12 @@ that any Queue resizing operation occurs off of the main thread.
 The async queue uses a complete separate PriorityQueue, ensuring that resize
 operations are decoupled from the sync tasks queue.
 
-Additionally, an optimization was made that if a plugin schedules
-a single, non repeating, no delay task, that we immediately dispatch it
-to the executor pool instead of scheduling it. This avoids an unnecessary
-round trip through the queue, as well as will reduce the size growth of the
-queue if a plugin schedules lots of asynchronous tasks.
-
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 new file mode 100644
-index 000000000..83575a44d
+index 000000000..061c0ac52
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,127 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -76,14 +70,23 @@ index 000000000..83575a44d
 +import java.util.List;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.Executors;
++import java.util.concurrent.SynchronousQueue;
++import java.util.concurrent.ThreadPoolExecutor;
++import java.util.concurrent.TimeUnit;
 +
 +public class CraftAsyncScheduler extends CraftScheduler {
 +
-+    private final Executor management = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-+        .setNameFormat("Craft Scheduler Management Thread").build());
++    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
++            4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
++            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build());
++    private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
++            .setNameFormat("Craft Async Scheduler Management Thread").build());
 +    private final List<CraftTask> temp = new ArrayList<>();
++
 +    CraftAsyncScheduler() {
 +        super(true);
++        executor.allowCoreThreadTimeOut(true);
++        executor.prestartAllCoreThreads();
 +    }
 +
 +    @Override
@@ -125,16 +128,6 @@ index 000000000..83575a44d
 +        temp.clear();
 +    }
 +
-+    @Override
-+    protected CraftTask handle(CraftTask task, final long delay) {
-+        if (task.getPeriod() == -1L && delay == 0L) {
-+            executeTask(task);
-+            return task;
-+        } else {
-+            return super.handle(task, delay);
-+        }
-+    }
-+
 +    private boolean executeTask(CraftTask task) {
 +        if (isValid(task)) {
 +            this.runners.put(task.getTaskId(), task);
@@ -171,7 +164,7 @@ index 000000000..83575a44d
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index e47f4cca2..8de7026f7 100644
+index e47f4cca2..ab423392a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
@@ -200,7 +193,7 @@ index e47f4cca2..8de7026f7 100644
 -    private final Executor executor = Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build()); // Spigot
 +    final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<Integer, CraftTask>(); // Paper
 +    volatile int currentTick = -1; // Paper
-+    final Executor executor = Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build()); // Spigot // Paper
++    //private final Executor executor = Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build()); // Spigot // Paper - moved to AsyncScheduler
      //private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {@Override StringBuilder debugTo(StringBuilder string) {return string;}}; // Paper
      //private CraftAsyncDebugger debugTail = debugHead; // Paper
      private static final int RECENT_TICKS;
