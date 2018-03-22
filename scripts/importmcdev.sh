@@ -63,6 +63,7 @@ import DataConverterMaterialId
 import DataInspectorBlockEntity
 import DataPalette
 import DefinedStructure
+import DragonControllerLandedFlame
 import EnchantmentManager
 import Enchantments
 import EntityLlama
