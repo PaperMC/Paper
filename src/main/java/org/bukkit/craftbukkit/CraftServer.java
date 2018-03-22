@@ -1488,6 +1488,26 @@ public final class CraftServer implements Server {
         return recipients.size();
     }
 
+    // Paper start
+    @Nullable
+    public UUID getPlayerUniqueId(String name) {
+        Player player = Bukkit.getPlayerExact(name);
+        if (player != null) {
+            return player.getUniqueId();
+        }
+        GameProfile profile;
+        // Only fetch an online UUID in online mode
+        if (net.minecraft.server.MinecraftServer.getServer().getOnlineMode()
+                || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) {
+            profile = console.getUserCache().getProfile( name );
+        } else {
+            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
+            profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
+        }
+        return profile != null ? profile.getId() : null;
+    }
+    // Paper end
+
     @Override
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
