@@ -1,4 +1,4 @@
-From 5a73d0282b24f09156533a66c32aa2f86ba00541 Mon Sep 17 00:00:00 2001
+From 24802e2d2a7d5233284330e7dc7267a534289c1c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 20:47:41 -0400
 Subject: [PATCH] Optimize UserCache / Thread Safe
@@ -23,7 +23,7 @@ index 45d3dbde2..ab7933079 100644
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 487fc11f1..924dc63a4 100644
+index 487fc11f1..4fb17a801 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
 @@ -109,7 +109,7 @@ public class UserCache {
@@ -55,7 +55,7 @@ index 487fc11f1..924dc63a4 100644
          String s1 = s.toLowerCase(Locale.ROOT);
          UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
  
-@@ -166,7 +167,7 @@ public class UserCache {
+@@ -166,14 +167,15 @@ public class UserCache {
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
      }
  
@@ -64,7 +64,16 @@ index 487fc11f1..924dc63a4 100644
          ArrayList arraylist = Lists.newArrayList(this.d.keySet());
  
          return (String[]) arraylist.toArray(new String[arraylist.size()]);
-@@ -228,8 +229,15 @@ public class UserCache {
+     }
+ 
++    @Nullable public GameProfile getProfile(UUID uuid) { return a(uuid);  } // Paper - OBFHELPER
+     @Nullable
+-    public GameProfile a(UUID uuid) {
++    public synchronized GameProfile a(UUID uuid) { // Paper - synchronize
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
+ 
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+@@ -228,8 +230,15 @@ public class UserCache {
  
      }
  
@@ -80,7 +89,7 @@ index 487fc11f1..924dc63a4 100644
          BufferedWriter bufferedwriter = null;
  
          try {
-@@ -243,6 +251,14 @@ public class UserCache {
+@@ -243,6 +252,14 @@ public class UserCache {
          } finally {
              IOUtils.closeQuietly(bufferedwriter);
          }
@@ -96,5 +105,5 @@ index 487fc11f1..924dc63a4 100644
      }
  
 -- 
-2.16.1
+2.16.2
 
