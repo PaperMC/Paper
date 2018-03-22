@@ -753,6 +753,20 @@ public final class Bukkit {
         return server.getPlayer(id);
     }
 
+    // Paper start
+    /**
+     * Gets the unique ID of the player currently known as the specified player name
+     * In Offline Mode, will return an Offline UUID
+     *
+     * @param playerName the player name to look up the unique ID for
+     * @return A UUID, or null if that player name is not registered with Minecraft and the server is in online mode
+     */
+    @Nullable
+    public static UUID getPlayerUniqueId(@NotNull String playerName) {
+        return server.getPlayerUniqueId(playerName);
+    }
+    // Paper end
+
     /**
      * Gets the plugin manager for interfacing with plugins.
      *

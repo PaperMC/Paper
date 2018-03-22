@@ -633,6 +633,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @Nullable
     public Player getPlayer(@NotNull UUID id);
 
+    // Paper start
+    /**
+     * Gets the unique ID of the player currently known as the specified player name
+     * In Offline Mode, will return an Offline UUID
+     *
+     * @param playerName the player name to look up the unique ID for
+     * @return A UUID, or null if that player name is not registered with Minecraft and the server is in online mode
+     */
+    @Nullable
+    public UUID getPlayerUniqueId(@NotNull String playerName);
+    // Paper end
+
     /**
      * Gets the plugin manager for interfacing with plugins.
      *
