@@ -1,0 +1,28 @@
+From 2b7de80466e6bf6fd5ad582be810a43d5ff65546 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 11 Feb 2018 10:43:46 +0000
+Subject: [PATCH] Extend Player Interact cancellation to GUIs
+
+GUIs are opened on the client, meaning that the server cannot block them from opening,
+However, it is possible to close these GUIs from the server.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 5ec7f5819..b1cdb2154 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -468,6 +468,12 @@ public class PlayerInteractManager {
+                     ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
+                 } else if (blockdata.getBlock() instanceof BlockCake) {
+                     ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
++                // Paper start - extend Player Interact cancellation to GUIs
++                } else if (blockdata.getBlock() instanceof BlockStructure) {
++                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
++                } else if (blockdata.getBlock() instanceof BlockCommand) {
++                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
++                // Paper end - extend Player Interact cancellation to GUIs
+                 }
+                 ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-2867
+                 enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
+-- 
+2.16.2
+
