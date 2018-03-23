@@ -1,4 +1,4 @@
-From f925d0e5462649589e4dc8c9faf378d90f4b5df8 Mon Sep 17 00:00:00 2001
+From c30fb3bacce33d5d61ce16d4c9a81790a4a0c90b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
@@ -6,10 +6,10 @@ Subject: [PATCH] Basic PlayerProfile API
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..616a7b218
+index 000000000..63782747c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,262 @@
+@@ -0,0 +1,257 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -18,7 +18,6 @@ index 000000000..616a7b218
 +import com.mojang.authlib.properties.Property;
 +import com.mojang.authlib.properties.PropertyMap;
 +import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.UserCache;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.spigotmc.SpigotConfig;
 +
@@ -27,6 +26,7 @@ index 000000000..616a7b218
 +import java.util.AbstractSet;
 +import java.util.Collection;
 +import java.util.Iterator;
++import java.util.Objects;
 +import java.util.Set;
 +import java.util.UUID;
 +
@@ -49,27 +49,18 @@ index 000000000..616a7b218
 +
 +    private static GameProfile createGameProfile(UUID id, String name) {
 +        new GameProfile(id, name); // Validate that both are not null
-+        MinecraftServer server = MinecraftServer.getServer();
-+        UserCache userCache = server.getUserCache();
 +        GameProfile profile;
 +
 +        if (id == null) {
 +            profile = getProfileByName(name);
-+            if (profile != null) {
-+                id = profile.getId();
-+            }
 +        } else {
-+            profile = userCache.getProfile(id);
-+            if (profile != null) {
-+                name = profile.getName();
-+            }
++            profile = MinecraftServer.getServer().getUserCache().getProfile(id);
 +        }
 +
-+        GameProfile resultProfile = new GameProfile(id, name);
-+        if (profile != null) {
-+            copyProfileProperties(profile, resultProfile);
++        if (profile == null) {
++            profile = new GameProfile(id, name);
 +        }
-+        return resultProfile;
++        return profile;
 +    }
 +
 +    private static GameProfile getProfileByName(String name) {
@@ -130,10 +121,11 @@ index 000000000..616a7b218
 +        MinecraftServer server = MinecraftServer.getServer();
 +        String name = profile.getName();
 +        if (profile.getId() == null) {
-+            profile = getProfileByName(name);
++            GameProfile profile = getProfileByName(name);
 +            if (profile == null) {
 +                throw new NullPointerException("Could not get UUID for Player " + name);
 +            }
++            this.profile = profile;
 +        }
 +        if (!profile.isComplete() || (textures && !hasTextures())) {
 +            GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
@@ -196,7 +188,10 @@ index 000000000..616a7b218
 +
 +    @Override
 +    public boolean equals(Object o) {
-+        return profile.equals(o);
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        CraftPlayerProfile that = (CraftPlayerProfile) o;
++        return Objects.equals(profile, that.profile);
 +    }
 +
 +    @Override
