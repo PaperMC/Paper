@@ -1,4 +1,4 @@
-From ece9ffa638c05b83affc7321bbe17f54774ff340 Mon Sep 17 00:00:00 2001
+From f925d0e5462649589e4dc8c9faf378d90f4b5df8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 15 Jan 2018 22:11:48 -0500
 Subject: [PATCH] Basic PlayerProfile API
@@ -6,10 +6,10 @@ Subject: [PATCH] Basic PlayerProfile API
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 000000000..af6a81586
+index 000000000..616a7b218
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,248 @@
+@@ -0,0 +1,262 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -33,45 +33,36 @@ index 000000000..af6a81586
 +public class CraftPlayerProfile implements PlayerProfile {
 +
 +    private GameProfile profile;
-+    private final PropertySet properties;
++    private final PropertySet properties = new PropertySet();
 +
 +    public CraftPlayerProfile(CraftPlayer player) {
-+        GameProfile playerProfile = player.getHandle().getProfile();
-+        this.profile = new GameProfile(playerProfile.getId(), playerProfile.getName());
-+        copyProfileProperties(this.profile, this.profile);
-+        this.properties = new PropertySet();
++        this.profile = player.getHandle().getProfile();
 +    }
 +
-+    /**
-+     * Constructs a new Game Profile with the specified ID and name.
-+     * <p/>
-+     * Either ID or name may be null/empty, but at least one must be filled.
-+     *
-+     * @param id   Unique ID of the profile
-+     * @param name Display name of the profile
-+     * @throws IllegalArgumentException Both ID and name are either null or empty
-+     */
 +    public CraftPlayerProfile(UUID id, String name) {
-+        this(createGameProfile(id, name));
++        this.profile = createGameProfile(id, name);
++    }
++
++    public CraftPlayerProfile(GameProfile profile) {
++        this.profile = profile;
 +    }
 +
 +    private static GameProfile createGameProfile(UUID id, String name) {
 +        new GameProfile(id, name); // Validate that both are not null
 +        MinecraftServer server = MinecraftServer.getServer();
 +        UserCache userCache = server.getUserCache();
-+        GameProfile profile = null;
-+        boolean isOnlineMode = server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode);
-+        if (id == null && isOnlineMode) {
-+            profile = userCache.getProfile(name);
-+        }
++        GameProfile profile;
 +
-+        if (profile == null && name == null && id != null) {
++        if (id == null) {
++            profile = getProfileByName(name);
++            if (profile != null) {
++                id = profile.getId();
++            }
++        } else {
 +            profile = userCache.getProfile(id);
-+        }
-+
-+        if (profile == null && id == null && name != null && !isOnlineMode) {
-+            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-+            id = UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8));
++            if (profile != null) {
++                name = profile.getName();
++            }
 +        }
 +
 +        GameProfile resultProfile = new GameProfile(id, name);
@@ -79,6 +70,19 @@ index 000000000..af6a81586
 +            copyProfileProperties(profile, resultProfile);
 +        }
 +        return resultProfile;
++    }
++
++    private static GameProfile getProfileByName(String name) {
++        final GameProfile profile;
++        final MinecraftServer server = MinecraftServer.getServer();
++        boolean isOnlineMode = server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode);
++        if (isOnlineMode) {
++            profile = server.getUserCache().getProfile(name);
++        } else {
++            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
++            profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
++        }
++        return profile;
 +    }
 +
 +    private static void copyProfileProperties(GameProfile source, GameProfile target) {
@@ -89,10 +93,84 @@ index 000000000..af6a81586
 +        }
 +    }
 +
-+    public CraftPlayerProfile(GameProfile profile) {
-+        this.profile = profile;
-+        this.properties = new PropertySet();
++    @Override
++    public boolean hasProperty(String property) {
++        return profile.getProperties().containsKey(property);
 +    }
++
++    @Override
++    public void setProperty(ProfileProperty property) {
++        String name = property.getName();
++        PropertyMap properties = profile.getProperties();
++        properties.removeAll(name);
++        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
++    }
++
++    @Override
++    public void setProperties(Collection<ProfileProperty> properties) {
++        properties.forEach(this::setProperty);
++    }
++
++    @Override
++    public boolean removeProperty(String property) {
++        return !profile.getProperties().removeAll(property).isEmpty();
++    }
++
++    @Override
++    public void clearProperties() {
++        profile.getProperties().clear();
++    }
++
++    @Override
++    public boolean isComplete() {
++        return profile.isComplete();
++    }
++
++    public boolean complete(boolean textures) {
++        MinecraftServer server = MinecraftServer.getServer();
++        String name = profile.getName();
++        if (profile.getId() == null) {
++            profile = getProfileByName(name);
++            if (profile == null) {
++                throw new NullPointerException("Could not get UUID for Player " + name);
++            }
++        }
++        if (!profile.isComplete() || (textures && !hasTextures())) {
++            GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
++            if (result != null) {
++                this.profile = result;
++            }
++        }
++        return profile.isComplete() && (!textures || hasTextures());
++    }
++
++    private static ProfileProperty toBukkit(Property property) {
++        return new ProfileProperty(property.getName(), property.getValue(), property.getSignature());
++    }
++
++    public static PlayerProfile asBukkitCopy(GameProfile gameProfile) {
++        CraftPlayerProfile profile = new CraftPlayerProfile(gameProfile.getId(), gameProfile.getName());
++        copyProfileProperties(gameProfile, profile.profile);
++        return profile;
++    }
++
++    public static PlayerProfile asBukkitMirror(GameProfile profile) {
++        return new CraftPlayerProfile(profile);
++    }
++
++    public static Property asAuthlib(ProfileProperty property) {
++        return new Property(property.getName(), property.getValue(), property.getSignature());
++    }
++    public static GameProfile asAuthlibCopy(PlayerProfile profile) {
++        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
++        return asAuthlib(craft.clone());
++    }
++
++    public static GameProfile asAuthlib(PlayerProfile profile) {
++        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
++        return craft.getGameProfile();
++    }
++
 +
 +    public GameProfile getGameProfile() {
 +        return profile;
@@ -138,70 +216,6 @@ index 000000000..af6a81586
 +        return clone;
 +    }
 +
-+    @Override
-+    public void setProperty(ProfileProperty property) {
-+        String name = property.getName();
-+        PropertyMap properties = profile.getProperties();
-+        properties.removeAll(name);
-+        properties.put(name, new Property(name, property.getValue(), property.getSignature()));
-+    }
-+
-+    @Override
-+    public void setProperties(Collection<ProfileProperty> properties) {
-+        properties.forEach(this::setProperty);
-+    }
-+
-+    @Override
-+    public boolean removeProperty(String property) {
-+        return !profile.getProperties().removeAll(property).isEmpty();
-+    }
-+
-+    @Override
-+    public void clearProperties() {
-+        profile.getProperties().clear();
-+    }
-+
-+    @Override
-+    public boolean isComplete() {
-+        return profile.isComplete();
-+    }
-+
-+    public boolean complete() {
-+        if (!profile.isComplete()) {
-+            GameProfile result = MinecraftServer.getServer().getSessionService().fillProfileProperties(profile, true);
-+            if (result != null) {
-+                this.profile = result;
-+            }
-+        }
-+        return profile.isComplete();
-+    }
-+
-+    private static ProfileProperty toBukkit(Property property) {
-+        return new ProfileProperty(property.getName(), property.getValue(), property.getSignature());
-+    }
-+
-+    public static PlayerProfile asBukkitCopy(GameProfile gameProfile) {
-+        CraftPlayerProfile profile = new CraftPlayerProfile(gameProfile.getId(), gameProfile.getName());
-+        copyProfileProperties(gameProfile, profile.profile);
-+        return profile;
-+    }
-+
-+    public static PlayerProfile asBukkitMirror(GameProfile profile) {
-+        return new CraftPlayerProfile(profile);
-+    }
-+
-+    public static Property asAuthlib(ProfileProperty property) {
-+        return new Property(property.getName(), property.getValue(), property.getSignature());
-+    }
-+    public static GameProfile asAuthlibCopy(PlayerProfile profile) {
-+        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
-+        return asAuthlib(craft.clone());
-+    }
-+
-+    public static GameProfile asAuthlib(PlayerProfile profile) {
-+        CraftPlayerProfile craft = ((CraftPlayerProfile) profile);
-+        return craft.getGameProfile();
-+    }
 +
 +    private class PropertySet extends AbstractSet<ProfileProperty> {
 +
