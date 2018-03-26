@@ -271,4 +271,13 @@ public class PaperConfig {
     private static void authenticationServersDownKickMessage() {
         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
     }
+
+    public static boolean savePlayerData = true;
+    private static void savePlayerData() {
+        savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
+        if(!savePlayerData) {
+            Bukkit.getLogger().log(Level.WARNING, "Player Data Saving is currently disabled. Any changes to your players data, " +
+                    "such as inventories, experience points, advancements and the like will not be saved when they log out.");
+        }
+    }
 }

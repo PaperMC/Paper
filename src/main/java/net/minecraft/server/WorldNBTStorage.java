@@ -25,6 +25,7 @@ public class WorldNBTStorage {
     }
 
     public void save(EntityHuman entityhuman) {
+        if(!com.destroystokyo.paper.PaperConfig.savePlayerData) return; // Paper - Make player data saving configurable
         try {
             NBTTagCompound nbttagcompound = entityhuman.save(new NBTTagCompound());
             File file = File.createTempFile(entityhuman.getUniqueIDString() + "-", ".dat", this.playerDir);
