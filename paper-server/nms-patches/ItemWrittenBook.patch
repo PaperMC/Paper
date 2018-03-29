@@ -1,0 +1,34 @@
+--- a/net/minecraft/server/ItemWrittenBook.java
++++ b/net/minecraft/server/ItemWrittenBook.java
+@@ -61,6 +61,23 @@
+ 
+                         Object object;
+ 
++                        // CraftBukkit start
++                        // Some commands use the worldserver variable but we leave it full of null values,
++                        // so we must temporarily populate it with the world of the commandsender
++                        WorldServer[] prev = MinecraftServer.getServer().worldServer;
++                        MinecraftServer server = MinecraftServer.getServer();
++                        server.worldServer = new WorldServer[server.worlds.size()];
++                        server.worldServer[0] = (WorldServer) entityhuman.getWorld();
++                        int bpos = 0;
++                        for (int pos = 1; pos < server.worldServer.length; pos++) {
++                            WorldServer world = server.worlds.get(bpos++);
++                            if (server.worldServer[0] == world) {
++                                pos--;
++                                continue;
++                            }
++                            server.worldServer[pos] = world;
++                        }
++                        // CraftBukkit end
+                         try {
+                             IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.b(s);
+ 
+@@ -68,6 +85,7 @@
+                         } catch (Exception exception) {
+                             object = new ChatComponentText(s);
+                         }
++                        finally { MinecraftServer.getServer().worldServer = prev; } // CraftBukkit
+ 
+                         nbttaglist.a(i, new NBTTagString(IChatBaseComponent.ChatSerializer.a((IChatBaseComponent) object)));
+                     }
