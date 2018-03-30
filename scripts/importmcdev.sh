@@ -77,6 +77,7 @@ import IHopper
 import ItemBlock
 import ItemFireworks
 import ItemMonsterEgg
+import LegacyPingHandler
 import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
