@@ -1,4 +1,4 @@
-From fd92bac5153091c31ee10a80e33658a7df7ba50f Mon Sep 17 00:00:00 2001
+From 319def15cb52ba90e5799dddf8c00714bbf98b16 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 16 Mar 2018 22:59:43 -0400
 Subject: [PATCH] Improved Async Task Scheduler
@@ -32,7 +32,7 @@ operations are decoupled from the sync tasks queue.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 new file mode 100644
-index 000000000..061c0ac52
+index 000000000..eaf869287
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 @@ -0,0 +1,127 @@
@@ -160,11 +160,11 @@ index 000000000..061c0ac52
 +     * @return
 +     */
 +    static boolean isValid(CraftTask runningTask) {
-+        return runningTask.getPeriod() >= -1L;
++        return runningTask.getPeriod() >= CraftTask.NO_REPEATING;
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index e47f4cca2..ab423392a 100644
+index cc4a256c2..5d0d26e1a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
@@ -219,11 +219,11 @@ index e47f4cca2..ab423392a 100644
 +    // Paper end
 +
      public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task) {
-         return this.scheduleSyncDelayedTask(plugin, task, 0l);
+         return this.scheduleSyncDelayedTask(plugin, task, 0L);
      }
 @@ -154,7 +170,7 @@ public class CraftScheduler implements BukkitScheduler {
-         } else if (period < -1l) {
-             period = -1l;
+         } else if (period < CraftTask.NO_REPEATING) {
+             period = CraftTask.NO_REPEATING;
          }
 -        return handle(new CraftAsyncTask(runners, plugin, runnable, nextId(), period), delay);
 +        return handle(new CraftAsyncTask(this.asyncScheduler.runners, plugin, runnable, nextId(), period), delay); // Paper
@@ -291,7 +291,7 @@ index e47f4cca2..ab423392a 100644
 +        // Paper end
          for (CraftTask task = head.getNext(); task != null; task = task.getNext()) {
              if (task.getTaskId() == taskId) {
-                 return task.getPeriod() >= -1l; // The task will run
+                 return task.getPeriod() >= CraftTask.NO_REPEATING; // The task will run
 @@ -296,6 +339,12 @@ public class CraftScheduler implements BukkitScheduler {
      }
  
@@ -383,5 +383,5 @@ index e47f4cca2..ab423392a 100644
  
      private boolean isReady(final int currentTick) {
 -- 
-2.16.2
+2.16.3
 
