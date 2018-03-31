@@ -141,6 +141,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     // Paper start
     private org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus;
     private String resourcePackHash;
+    private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
     // Paper end
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
@@ -1501,7 +1502,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void addChannel(String channel) {
-        Preconditions.checkState(channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
+        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel); // Paper - flag to disable channel limit
         channel = StandardMessenger.validateAndCorrectChannel(channel);
         if (channels.add(channel)) {
             server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
