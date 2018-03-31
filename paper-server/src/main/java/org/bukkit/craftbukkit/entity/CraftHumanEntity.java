@@ -654,6 +654,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
     }
 
+    // Paper start - move open sign method to HumanEntity
+    @Override
+    public void openSign(final org.bukkit.block.Sign sign, final org.bukkit.block.sign.Side side) {
+        org.bukkit.craftbukkit.block.CraftSign.openSign(sign, (CraftPlayer) this, side);
+    }
+    // Paper end
     @Override
     public boolean dropItem(boolean dropAll) {
         if (!(this.getHandle() instanceof ServerPlayer)) return false;
