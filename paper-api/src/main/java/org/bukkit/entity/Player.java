@@ -3115,10 +3115,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Open a Sign for editing by the Player.
      *
-     * The Sign must be placed in the same world as the player.
+     * The Sign must be in the same world as the player.
      *
      * @param sign The sign to edit
+     * @deprecated use {@link #openSign(Sign, Side)}
      */
+    @Deprecated
     public void openSign(@NotNull Sign sign);
 
     /**

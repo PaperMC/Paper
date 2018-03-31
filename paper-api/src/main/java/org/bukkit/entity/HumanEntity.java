@@ -538,6 +538,26 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Deprecated(since = "1.12")
     public void setShoulderEntityRight(@Nullable Entity entity);
+    // Paper start - Add method to open already placed sign
+    /**
+     * Opens an editor window for the specified sign
+     *
+     * @param sign The sign to open
+     * @deprecated use {@link #openSign(org.bukkit.block.Sign, org.bukkit.block.sign.Side)}
+     */
+    @Deprecated
+    default void openSign(@NotNull org.bukkit.block.Sign sign) {
+        this.openSign(sign, org.bukkit.block.sign.Side.FRONT);
+    }
+
+    /**
+     * Opens an editor window for the specified sign
+     *
+     * @param sign The sign to open
+     * @param side The side of the sign to open
+     */
+    void openSign(org.bukkit.block.@NotNull Sign sign, org.bukkit.block.sign.@NotNull Side side);
+    // Paper end
 
     /**
      * Make the entity drop the item in their hand.
