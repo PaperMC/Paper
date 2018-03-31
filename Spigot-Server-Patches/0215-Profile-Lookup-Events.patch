@@ -1,0 +1,99 @@
+From bc59867ea93608a0e6e541d286b76d8579ab3df7 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Jun 2017 17:00:32 -0400
+Subject: [PATCH] Profile Lookup Events
+
+Adds a Pre Lookup Event and a Post Lookup Event so that plugins may prefill in profile data, and cache the responses from
+profiles that had to be looked up.
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/WrappedGameProfileRepository.java b/src/main/java/com/destroystokyo/paper/profile/WrappedGameProfileRepository.java
+new file mode 100644
+index 00000000..bffba6a6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/profile/WrappedGameProfileRepository.java
+@@ -0,0 +1,70 @@
++package com.destroystokyo.paper.profile;
++
++import com.destroystokyo.paper.event.profile.LookupProfileEvent;
++import com.destroystokyo.paper.event.profile.PreLookupProfileEvent;
++import com.google.common.collect.Sets;
++import com.mojang.authlib.Agent;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.GameProfileRepository;
++import com.mojang.authlib.ProfileLookupCallback;
++import com.mojang.authlib.properties.Property;
++
++import javax.annotation.Nonnull;
++import java.util.Set;
++
++public class WrappedGameProfileRepository implements GameProfileRepository {
++
++    private final GameProfileRepository orig;
++    public WrappedGameProfileRepository(@Nonnull GameProfileRepository orig) {
++        this.orig = orig;
++    }
++
++    @Override
++    public void findProfilesByNames(String[] names, Agent agent, ProfileLookupCallback callback) {
++        Set<String> unfoundNames = Sets.newHashSet();
++        for (String name : names) {
++            PreLookupProfileEvent event = new PreLookupProfileEvent(name);
++            event.callEvent();
++            if (event.getUUID() != null) {
++                // Plugin provided UUI, we can skip network call.
++                GameProfile gameprofile = new GameProfile(event.getUUID(), name);
++                // We might even have properties!
++                Set<ProfileProperty> profileProperties = event.getProfileProperties();
++                if (!profileProperties.isEmpty()) {
++                    for (ProfileProperty property : profileProperties) {
++                        gameprofile.getProperties().put(property.getName(), CraftPlayerProfile.asAuthlib(property));
++                    }
++                }
++                callback.onProfileLookupSucceeded(gameprofile);
++            } else {
++                unfoundNames.add(name);
++            }
++        }
++
++        // Some things were not found.... Proceed to look up.
++        if (!unfoundNames.isEmpty()) {
++            String[] namesArr = unfoundNames.toArray(new String[unfoundNames.size()]);
++            orig.findProfilesByNames(namesArr, agent, new PreProfileLookupCallback(callback));
++        }
++    }
++
++    private static class PreProfileLookupCallback implements ProfileLookupCallback {
++        private final ProfileLookupCallback callback;
++
++        PreProfileLookupCallback(ProfileLookupCallback callback) {
++            this.callback = callback;
++        }
++
++        @Override
++        public void onProfileLookupSucceeded(GameProfile gameProfile) {
++            PlayerProfile from = CraftPlayerProfile.asBukkitMirror(gameProfile);
++            new LookupProfileEvent(from).callEvent();
++            callback.onProfileLookupSucceeded(gameProfile);
++        }
++
++        @Override
++        public void onProfileLookupFailed(GameProfile gameProfile, Exception e) {
++            callback.onProfileLookupFailed(gameProfile, e);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3b01ebd9..85b9ac98 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1021,6 +1021,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+             YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
+             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
+             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
++            gameprofilerepository = new com.destroystokyo.paper.profile.WrappedGameProfileRepository(gameprofilerepository); // Paper
+             UserCache usercache = new UserCache(gameprofilerepository, new File(s1, MinecraftServer.a.getName()));
+             final DedicatedServer dedicatedserver = new DedicatedServer(options, DataConverterRegistry.a(), yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
+ 
+-- 
+2.14.3
+
