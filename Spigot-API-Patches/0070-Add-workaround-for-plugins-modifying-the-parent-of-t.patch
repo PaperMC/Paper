@@ -1,4 +1,4 @@
-From ff0a13235b08f1c508e36951f820337a8d4e71ff Mon Sep 17 00:00:00 2001
+From ce6570052db23d6966368350cbd01bb08f15322b Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Thu, 21 Sep 2017 19:41:20 +0200
 Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
@@ -14,10 +14,10 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 00000000..6fcc4f2c
+index 00000000..d052b2f5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,39 @@
 +package com.destroystokyo.paper.utils;
 +
 +import org.bukkit.plugin.PluginDescriptionFile;
@@ -31,11 +31,19 @@ index 00000000..6fcc4f2c
 + */
 +public class PaperPluginLogger extends Logger {
 +
-+    public PaperPluginLogger(PluginDescriptionFile description) {
-+        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
-+        if (!LogManager.getLogManager().addLogger(this)) {
-+            this.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
++    public static Logger getLogger(PluginDescriptionFile description) {
++        Logger logger = new PaperPluginLogger(description);
++        if (!LogManager.getLogManager().addLogger(logger)) {
++            // Disable this if it's going to happen across reloads anyways...
++            //logger.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
++            logger = LogManager.getLogManager().getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName());
 +        }
++
++        return logger;
++    }
++
++    private PaperPluginLogger(PluginDescriptionFile description) {
++        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
 +    }
 +
 +    @Override
@@ -50,7 +58,7 @@ index 00000000..6fcc4f2c
 +
 +}
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index 0abad9ad..14dda205 100644
+index 0abad9ad..93fa3493 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -50,7 +50,7 @@ public abstract class JavaPlugin extends PluginBase {
@@ -70,14 +78,14 @@ index 0abad9ad..14dda205 100644
 -        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName());
 +        // Paper start
 +        if (this.logger == null) {
-+            this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(this.description);
++            this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(this.description);
 +        }
 +        // Paper end
      }
  
      /**
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index ca9c7796..a7d87d2d 100644
+index ca9c7796..bd936d9f 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -36,6 +36,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
@@ -92,7 +100,7 @@ index ca9c7796..a7d87d2d 100644
          this.manifest = jar.getManifest();
          this.url = file.toURI().toURL();
  
-+        this.logger = new com.destroystokyo.paper.utils.PaperPluginLogger(description); // Paper - Register logger early
++        this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description); // Paper - Register logger early
 +
          try {
              Class<?> jarClass;
@@ -106,5 +114,5 @@ index ca9c7796..a7d87d2d 100644
      }
  }
 -- 
-2.15.1
+2.17.0
 
