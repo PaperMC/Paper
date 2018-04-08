@@ -93,6 +93,7 @@ public class CraftMapCanvas implements MapCanvas {
                     }
                     catch (NumberFormatException ex) {}
                 }
+                throw new IllegalArgumentException("Text contains unterminated color string");
             }
 
             CharacterSprite sprite = font.getChar(text.charAt(i));
