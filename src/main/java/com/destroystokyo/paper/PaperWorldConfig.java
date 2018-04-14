@@ -351,4 +351,9 @@ public class PaperWorldConfig {
     private void squidMaxSpawnHeight() {
         squidMaxSpawnHeight = getDouble("squid-spawn-height.maximum", 0.0D);
     }
+
+    public boolean disableSprintInterruptionOnAttack;
+    private void disableSprintInterruptionOnAttack() {
+        disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
+    }
 }

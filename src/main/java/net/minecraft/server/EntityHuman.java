@@ -1086,7 +1086,11 @@ public abstract class EntityHuman extends EntityLiving {
                             }
 
                             this.setMot(this.getMot().d(0.6D, 1.0D, 0.6D));
-                            this.setSprinting(false);
+                            // Paper start - Configuration option to disable automatic sprint interruption
+                            if (!world.paperConfig.disableSprintInterruptionOnAttack) {
+                                this.setSprinting(false);
+                            }
+                            // Paper end
                         }
 
                         if (flag3) {
