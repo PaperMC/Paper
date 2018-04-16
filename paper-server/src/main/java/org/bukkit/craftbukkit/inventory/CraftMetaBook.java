@@ -52,10 +52,6 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     }
 
     CraftMetaBook(NBTTagCompound tag) {
-        this(tag, true);
-    }
-
-    CraftMetaBook(NBTTagCompound tag, boolean handlePages) {
         super(tag);
 
         if (tag.hasKey(BOOK_TITLE.NBT)) {
@@ -75,10 +71,10 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
             generation = tag.getInt(GENERATION.NBT);
         }
 
-        if (tag.hasKey(BOOK_PAGES.NBT) && handlePages) {
+        if (tag.hasKey(BOOK_PAGES.NBT)) {
             NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 
-            for (int i = 0; i < pages.size(); i++) {
+            for (int i = 0; i < Math.min(pages.size(), MAX_PAGES); i++) {
                 String page = pages.getString(i);
                 if (resolved) {
                     try {
