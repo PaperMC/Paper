@@ -33,4 +33,6 @@ MiniDigger <admin@minidigger.me>
 Brokkonaut <hannos17@gmx.de>
 vemacs <d@nkmem.es>
 stonar96 <minecraft.stonar96@gmail.com>
+Devon Thome <devon@melondev.co>
+Jean May <jp@melondev.co>
 ```
