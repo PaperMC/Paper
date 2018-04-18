@@ -1,4 +1,4 @@
-From 2b86619b9cdca537a011f0b56ce28ecd4925ba8d Mon Sep 17 00:00:00 2001
+From 578b65ccedae8393493093111f4b06429d197ea0 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 17 Apr 2018 21:26:31 -0400
 Subject: [PATCH] Handle bad chunks more gracefully
@@ -15,23 +15,23 @@ Should Mojang choose to alter this behavior in the future, this change
 will simply defer to whatever that new behavior is.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 1e84afb0a..9055da64a 100644
+index 1e84afb0a..2ed3fc40b 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -167,6 +167,13 @@ public class ChunkProviderServer implements IChunkProvider {
-             chunk = originalGetChunkAt(i, j);
-         }
- 
-+        // Paper start - If there was an issue loading the chunk from region, stage1 will fail and stage2 will load it sync
-+        // all we need to do is fetch an instance
-+        if (chunk == null) {
-+            chunk = getChunkIfLoaded(i, j);
-+        }
-+        // Paper end
+@@ -162,6 +162,13 @@ public class ChunkProviderServer implements IChunkProvider {
+                 return null;
+             } else {
+                 chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
 +
-         // If we didn't load the chunk async and have a callback run it now
-         if (runnable != null) {
-             runnable.run();
++                // Paper start - If there was an issue loading the chunk from region, stage1 will fail and stage2 will load it sync
++                // all we need to do is fetch an instance
++                if (chunk == null) {
++                    chunk = getChunkIfLoaded(i, j);
++                }
++                // Paper end
+             }
+         } else if (chunk == null && generate) {
+             chunk = originalGetChunkAt(i, j);
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
 index ef9529add..cdf3b614c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
