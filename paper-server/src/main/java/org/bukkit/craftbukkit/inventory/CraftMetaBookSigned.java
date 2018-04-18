@@ -8,6 +8,7 @@ import net.minecraft.server.NBTTagList;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BookMeta;
 
 import com.google.common.collect.ImmutableMap.Builder;
@@ -23,7 +24,29 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
     }
 
     CraftMetaBookSigned(NBTTagCompound tag) {
-        super(tag);
+        super(tag, false);
+
+        boolean resolved = true;
+        if (tag.hasKey(RESOLVED.NBT)) {
+            resolved = tag.getBoolean(RESOLVED.NBT);
+        }
+
+        if (tag.hasKey(BOOK_PAGES.NBT)) {
+            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
+
+            for (int i = 0; i < Math.min(pages.size(), MAX_PAGES); i++) {
+                String page = pages.getString(i);
+                if (resolved) {
+                    try {
+                        this.pages.add(ChatSerializer.a(page));
+                        continue;
+                    } catch (Exception e) {
+                        // Ignore and treat as an old book
+                    }
+                }
+                addPage(page);
+            }
+        }
     }
 
     CraftMetaBookSigned(Map<String, Object> map) {
