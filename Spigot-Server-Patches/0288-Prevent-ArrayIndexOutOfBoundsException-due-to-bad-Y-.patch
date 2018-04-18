@@ -1,0 +1,26 @@
+From 091b78cf68c18580f7be023b71c9648da91807cd Mon Sep 17 00:00:00 2001
+From: Maxopoly <maxopoly3@gmail.com>
+Date: Wed, 11 Apr 2018 06:39:35 +0200
+Subject: [PATCH] Prevent ArrayIndexOutOfBoundsException due to bad Y-level tag
+ on chunk sections
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index bcce5e8b..a32863df 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -416,6 +416,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         for (int k = 0; k < nbttaglist.size(); ++k) {
+             NBTTagCompound nbttagcompound1 = nbttaglist.get(k);
+             byte b0 = nbttagcompound1.getByte("Y");
++            // Paper start - Prevent ArrayIndexOutOfBoundsException due to bad Y tag
++            if (b0 < 0 || b0 >= 16 ) {
++              continue;
++            }
++            // Paper end
+             ChunkSection chunksection = new ChunkSection(b0 << 4, flag1, world.chunkPacketBlockController.getPredefinedBlockData(chunk, b0)); // Paper - Anti-Xray - Add predefined block data
+             byte[] abyte = nbttagcompound1.getByteArray("Blocks");
+             NibbleArray nibblearray = new NibbleArray(nbttagcompound1.getByteArray("Data"));
+-- 
+2.16.2.windows.1
+
