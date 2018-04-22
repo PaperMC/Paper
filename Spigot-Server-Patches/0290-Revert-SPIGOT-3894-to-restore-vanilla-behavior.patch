@@ -1,0 +1,28 @@
+From 01a1624d8cb426581578ee90eac92d988cc9d19f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 18 Apr 2018 01:42:42 -0400
+Subject: [PATCH] Revert SPIGOT-3894 to restore vanilla behavior
+
+reporter of this issue was incorrect and did not verify vanilla logic
+
+vanilla logic only skips ticks if the flag is set
+
+spigots change causes bugs as it now skips ticking and processing
+chunk teleportation, which was a bug I fixed many many years ago...
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 4ce846b5..6c92f93a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1754,7 +1754,7 @@ public abstract class World implements IBlockAccess {
+         // CraftBukkit end
+ 
+         // Spigot start
+-        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
++        if (flag && !org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - Revert spigot change back to vanilla
+             entity.ticksLived++;
+             entity.inactiveTick();
+             return;
+-- 
+2.14.1.windows.1
+

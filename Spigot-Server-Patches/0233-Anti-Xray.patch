@@ -1,11 +1,11 @@
-From 8d22ff6f6f29ab5e7f2ab17f5166e92620c1c749 Mon Sep 17 00:00:00 2001
+From 77ddf4aa9f419f854fbb51fdd390f5316d2d00cd Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Thu, 21 Sep 2017 00:38:47 +0200
 Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7802cc1f..69fd8189 100644
+index 7802cc1f..30307da0 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,7 +1,10 @@
@@ -19,7 +19,7 @@ index 7802cc1f..69fd8189 100644
  import net.minecraft.server.MinecraftServer;
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
-@@ -426,4 +429,25 @@ public class PaperWorldConfig {
+@@ -426,4 +429,27 @@ public class PaperWorldConfig {
          disableCreeperLingeringEffect = getBoolean("disable-creeper-lingering-effect", false);
          log("Creeper lingering effect: " + disableCreeperLingeringEffect);
      }
@@ -29,6 +29,7 @@ index 7802cc1f..69fd8189 100644
 +    public EngineMode engineMode;
 +    public ChunkEdgeMode chunkEdgeMode;
 +    public int maxChunkSectionIndex;
++    public int updateRadius;
 +    public List<Object> hiddenBlocks;
 +    public List<Object> replacementBlocks;
 +    private void antiXray() {
@@ -40,9 +41,10 @@ index 7802cc1f..69fd8189 100644
 +        chunkEdgeMode = chunkEdgeMode == null ? ChunkEdgeMode.DEFAULT : chunkEdgeMode;
 +        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
 +        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
++        updateRadius = getInt("anti-xray.update-radius", 2);
 +        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList((Object) "gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "lit_redstone_ore", "clay", "emerald_ore", "ender_chest"));
 +        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList((Object) "stone", "planks"));
-+        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Chunk Edge Mode: " + chunkEdgeMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks");
++        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Chunk Edge Mode: " + chunkEdgeMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks / Update Radius: " + updateRadius);
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
@@ -89,10 +91,10 @@ index 00000000..6833cfad
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 00000000..91fa945f
+index 00000000..2dc0655a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,627 @@
+@@ -0,0 +1,640 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -124,6 +126,7 @@ index 00000000..91fa945f
 +    private final EngineMode engineMode;
 +    private final ChunkEdgeMode chunkEdgeMode;
 +    private final int maxChunkSectionIndex;
++    private final int updateRadius;
 +    private final IBlockData[] predefinedBlockData;
 +    private final IBlockData[] predefinedBlockDataStone;
 +    private final IBlockData[] predefinedBlockDataNetherrack;
@@ -142,6 +145,7 @@ index 00000000..91fa945f
 +        engineMode = paperWorldConfig.engineMode;
 +        chunkEdgeMode = paperWorldConfig.chunkEdgeMode;
 +        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
++        updateRadius = paperWorldConfig.updateRadius;
 +
 +        if (asynchronous) {
 +            executorService = getExecutorServiceInstance();
@@ -618,31 +622,42 @@ index 00000000..91fa945f
 +
 +    @Override
 +    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
-+        BlockPosition temp = blockPosition.west();
-+        updateBlock(world, temp);
-+        updateBlock(world, temp.west());
-+        updateBlock(world, temp.down());
-+        updateBlock(world, temp.up());
-+        updateBlock(world, temp.north());
-+        updateBlock(world, temp.south());
-+        updateBlock(world, temp = blockPosition.east());
-+        updateBlock(world, temp.east());
-+        updateBlock(world, temp.down());
-+        updateBlock(world, temp.up());
-+        updateBlock(world, temp.north());
-+        updateBlock(world, temp.south());
-+        updateBlock(world, temp = blockPosition.down());
-+        updateBlock(world, temp.down());
-+        updateBlock(world, temp.north());
-+        updateBlock(world, temp.south());
-+        updateBlock(world, temp = blockPosition.up());
-+        updateBlock(world, temp.up());
-+        updateBlock(world, temp.north());
-+        updateBlock(world, temp.south());
-+        updateBlock(world, temp = blockPosition.north());
-+        updateBlock(world, temp.north());
-+        updateBlock(world, temp = blockPosition.south());
-+        updateBlock(world, temp.south());
++        if (updateRadius >= 2) {
++            BlockPosition temp = blockPosition.west();
++            updateBlock(world, temp);
++            updateBlock(world, temp.west());
++            updateBlock(world, temp.down());
++            updateBlock(world, temp.up());
++            updateBlock(world, temp.north());
++            updateBlock(world, temp.south());
++            updateBlock(world, temp = blockPosition.east());
++            updateBlock(world, temp.east());
++            updateBlock(world, temp.down());
++            updateBlock(world, temp.up());
++            updateBlock(world, temp.north());
++            updateBlock(world, temp.south());
++            updateBlock(world, temp = blockPosition.down());
++            updateBlock(world, temp.down());
++            updateBlock(world, temp.north());
++            updateBlock(world, temp.south());
++            updateBlock(world, temp = blockPosition.up());
++            updateBlock(world, temp.up());
++            updateBlock(world, temp.north());
++            updateBlock(world, temp.south());
++            updateBlock(world, temp = blockPosition.north());
++            updateBlock(world, temp.north());
++            updateBlock(world, temp = blockPosition.south());
++            updateBlock(world, temp.south());
++        } else if (updateRadius == 1) {
++            updateBlock(world, blockPosition.west());
++            updateBlock(world, blockPosition.east());
++            updateBlock(world, blockPosition.down());
++            updateBlock(world, blockPosition.up());
++            updateBlock(world, blockPosition.north());
++            updateBlock(world, blockPosition.south());
++        } else {
++            //Do nothing if updateRadius <= 0 (test mode)
++        }
 +    }
 +
 +    private void updateBlock(World world, BlockPosition blockPosition) {
@@ -1502,7 +1517,7 @@ index 8860a012..fa0d66d6 100644
          return this.a.size();
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 00513d02..592e5b3b 100644
+index 137c2555..75d5451c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -35,6 +35,8 @@ import org.bukkit.generator.ChunkGenerator;
@@ -1579,5 +1594,5 @@ index 9942f0c7..2da6edc6 100644
                          }
                      }
 -- 
-2.14.3
+2.14.1.windows.1
 
