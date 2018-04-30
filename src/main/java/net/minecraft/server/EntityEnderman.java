@@ -224,6 +224,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
         super.mobTick();
     }
 
+    public final boolean teleportRandomly() { return this.eL(); } // Paper - OBFHELPER
     protected boolean eL() {
         if (!this.world.s_() && this.isAlive()) {
             double d0 = this.locX() + (this.random.nextDouble() - 0.5D) * 64.0D;
