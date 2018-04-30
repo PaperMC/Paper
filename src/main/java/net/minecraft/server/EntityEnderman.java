@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.EnumSet;
 import java.util.Optional;
+import com.destroystokyo.paper.event.entity.EndermanEscapeEvent; // Paper
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -54,6 +55,12 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
         // CraftBukkit start - fire event
         setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN, true);
     }
+
+    // Paper start
+    private boolean tryEscape(EndermanEscapeEvent.Reason reason) {
+        return new EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
+    }
+    // Paper end
 
     @Override
     public boolean setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
@@ -208,7 +215,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
         if (this.world.isDay() && this.ticksLived >= this.bs + 600) {
             float f = this.aQ();
 
-            if (f > 0.5F && this.world.e(this.getChunkCoordinates()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
+            if (f > 0.5F && this.world.e(this.getChunkCoordinates()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper
                 this.setGoalTarget((EntityLiving) null);
                 this.eL();
             }
@@ -306,17 +313,19 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
         if (this.isInvulnerable(damagesource)) {
             return false;
         } else if (damagesource instanceof EntityDamageSourceIndirect) {
+            if (this.tryEscape(EndermanEscapeEvent.Reason.INDIRECT)) { // Paper start
             for (int i = 0; i < 64; ++i) {
                 if (this.eL()) {
                     return true;
                 }
             }
+            } // Paper end
 
             return false;
         } else {
             boolean flag = super.damageEntity(damagesource, f);
 
-            if (!this.world.s_() && !(damagesource.getEntity() instanceof EntityLiving) && this.random.nextInt(10) != 0) {
+            if (!this.world.s_() && !(damagesource.getEntity() instanceof EntityLiving) && this.random.nextInt(10) != 0 && this.tryEscape(damagesource == DamageSource.DROWN ? EndermanEscapeEvent.Reason.DROWN : EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - use to be critical hits as else, but mojang removed critical hits in 1.16.2 due to MC-185684
                 this.eL();
             }
 
@@ -461,7 +470,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
 
     static class PathfinderGoalPlayerWhoLookedAtTarget extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
 
-        private final EntityEnderman i;
+        private final EntityEnderman i; public final EntityEnderman getEnderman() { return this.i; } // Paper - OBFHELPER
         private EntityHuman j;
         private int k;
         private int l;
@@ -524,7 +533,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
             } else {
                 if (this.c != null && !this.i.isPassenger()) {
                     if (this.i.g((EntityHuman) this.c)) {
-                        if (this.c.h((Entity) this.i) < 16.0D) {
+                        if (this.c.h((Entity) this.i) < 16.0D && this.getEnderman().tryEscape(EndermanEscapeEvent.Reason.STARE)) { // Paper
                             this.i.eL();
                         }
 
