@@ -11,7 +11,7 @@
  
  public class EnderMan extends Monster implements NeutralMob {
  
-@@ -112,10 +116,20 @@
+@@ -112,10 +116,26 @@
  
      @Override
      public void setTarget(@Nullable LivingEntity target) {
@@ -19,6 +19,12 @@
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
 +    }
++
++    // Paper start - EndermanEscapeEvent
++    private boolean tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason reason) {
++        return new com.destroystokyo.paper.event.entity.EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
++    }
++    // Paper end - EndermanEscapeEvent
 +
 +    @Override
 +    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
@@ -34,7 +40,7 @@
              this.targetChangeTime = 0;
              this.entityData.set(EnderMan.DATA_CREEPY, false);
              this.entityData.set(EnderMan.DATA_STARED_AT, false);
-@@ -127,6 +141,7 @@
+@@ -127,6 +147,7 @@
                  attributemodifiable.addTransientModifier(EnderMan.SPEED_MODIFIER_ATTACKING);
              }
          }
@@ -42,7 +48,30 @@
  
      }
  
-@@ -465,9 +480,11 @@
+@@ -241,7 +262,7 @@
+         if (world.isDay() && this.tickCount >= this.targetChangeTime + 600) {
+             float f = this.getLightLevelDependentMagicValue();
+ 
+-            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
++            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
+                 this.setTarget((LivingEntity) null);
+                 this.teleport();
+             }
+@@ -367,11 +388,13 @@
+             } else {
+                 flag1 = flag && this.hurtWithCleanWater(world, source, (ThrownPotion) source.getDirectEntity(), amount);
+ 
++                if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
+                 for (int i = 0; i < 64; ++i) {
+                     if (this.teleport()) {
+                         return true;
+                     }
+                 }
++                } // Paper - EndermanEscapeEvent
+ 
+                 return flag1;
+             }
+@@ -465,9 +488,11 @@
              if (iblockdata2 != null) {
                  iblockdata2 = Block.updateFromNeighbourShapes(iblockdata2, this.enderman.level(), blockposition);
                  if (this.canPlaceBlock(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
@@ -54,7 +83,7 @@
                  }
  
              }
-@@ -506,9 +523,11 @@
+@@ -506,9 +531,11 @@
              boolean flag = movingobjectpositionblock.getBlockPos().equals(blockposition);
  
              if (iblockdata.is(BlockTags.ENDERMAN_HOLDABLE) && flag) {
@@ -66,3 +95,12 @@
              }
  
          }
+@@ -592,7 +619,7 @@
+             } else {
+                 if (this.target != null && !this.enderman.isPassenger()) {
+                     if (this.enderman.isBeingStaredBy((Player) this.target)) {
+-                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D) {
++                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D && this.enderman.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.STARE)) { // Paper - EndermanEscapeEvent
+                             this.enderman.teleport();
+                         }
+ 
