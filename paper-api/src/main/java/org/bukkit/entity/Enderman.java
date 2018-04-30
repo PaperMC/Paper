@@ -10,6 +10,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface Enderman extends Monster {
 
+    // Paper start
+    /**
+     * Try to teleport the enderman to a random nearby location.
+     *
+     * May conditionally fail if the random location was not valid
+     * @return If the enderman teleported successfully or not
+     */
+
+    public boolean teleportRandomly();
+    // Paper end
+
     /**
      * Gets the id and data of the block that the Enderman is carrying.
      *
