@@ -356,4 +356,10 @@ public class PaperWorldConfig {
     private void disableSprintInterruptionOnAttack() {
         disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
     }
+
+    public boolean disableEnderpearlExploit = true;
+    private void disableEnderpearlExploit() {
+        disableEnderpearlExploit = getBoolean("game-mechanics.disable-unloaded-chunk-enderpearl-exploit", disableEnderpearlExploit);
+        log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
+    }
 }

@@ -48,6 +48,7 @@ public abstract class IProjectile extends Entity {
     protected void loadData(NBTTagCompound nbttagcompound) {
         if (nbttagcompound.b("Owner")) {
             this.shooter = nbttagcompound.a("Owner");
+            if (this instanceof EntityEnderPearl && this.world != null && this.world.paperConfig.disableEnderpearlExploit) { this.shooter = null; } // Paper - Don't store shooter name for pearls to block enderpearl travel exploit
         }
 
         this.d = nbttagcompound.getBoolean("LeftOwner");
