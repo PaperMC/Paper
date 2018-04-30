@@ -80,7 +80,7 @@
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
@@ -149,7 +149,7 @@
 +        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
 +        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
 +        ServerChunkCache chunkProvider = this.getChunkSource();
-+
+ 
 +        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
 +        int[] loadedChunks = new int[1];
 +
@@ -487,9 +487,10 @@
          if (flag != this.isRaining()) {
              if (flag) {
 -                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
-+                this.server.getPlayerList().broadcastAll(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.STOP_RAINING, 0.0F));
-             } else {
+-            } else {
 -                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
++                this.server.getPlayerList().broadcastAll(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.STOP_RAINING, 0.0F));
++            } else {
 +                this.server.getPlayerList().broadcastAll(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.START_RAINING, 0.0F));
              }
  
@@ -625,13 +626,13 @@
 -        return this.addEntity(entity);
 +        // CraftBukkit start
 +        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
-     }
- 
++    }
++
 +    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
-+    }
-+
+     }
+ 
      public void addDuringTeleport(Entity entity) {
 +        // CraftBukkit start
 +        // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
@@ -1100,10 +1101,12 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2239,27 @@
-         return this.serverLevelData.getGameRules();
-     }
+@@ -1800,7 +2237,28 @@
  
+     public GameRules getGameRules() {
+         return this.serverLevelData.getGameRules();
++    }
++
 +    // Paper start - respect global sound events gamerule
 +    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
 +        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
@@ -1122,13 +1125,12 @@
 +        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
 +            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
 +        }
-+    }
+     }
 +    // Paper end - notify observers even if grow failed
-+
+ 
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
-         CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1828,6 +2286,7 @@
+@@ -1828,22 +2286,30 @@
          }
  
          public void onTickingStart(Entity entity) {
@@ -1136,7 +1138,14 @@
              ServerLevel.this.entityTickList.add(entity);
          }
  
-@@ -1836,14 +2295,15 @@
+         public void onTickingEnd(Entity entity) {
+             ServerLevel.this.entityTickList.remove(entity);
++            // Paper start - Reset pearls when they stop being ticked
++            if (ServerLevel.this.paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && ServerLevel.this.paperConfig().misc.legacyEnderPearlBehavior && entity instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl pearl) {
++                pearl.cachedOwner = null;
++                pearl.ownerUUID = null;
++            }
++            // Paper end - Reset pearls when they stop being ticked
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1154,7 +1163,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1864,9 +2324,58 @@
+@@ -1864,9 +2330,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1213,7 +1222,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1874,7 +2383,7 @@
+@@ -1874,7 +2389,7 @@
              }
  
              if (entity instanceof Mob entityinsentient) {
@@ -1222,7 +1231,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1895,10 +2404,27 @@
+@@ -1895,10 +2410,27 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);

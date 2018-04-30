@@ -58,7 +58,15 @@
              return this.cachedOwner;
          } else {
              return null;
-@@ -184,12 +210,20 @@
+@@ -108,6 +134,7 @@
+     protected void readAdditionalSaveData(CompoundTag nbt) {
+         if (nbt.hasUUID("Owner")) {
+             this.setOwnerThroughUUID(nbt.getUUID("Owner"));
++            if (this instanceof ThrownEnderpearl && this.level() != null && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.ownerUUID = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
+         }
+ 
+         this.leftOwner = nbt.getBoolean("LeftOwner");
+@@ -184,12 +211,20 @@
  
          this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
          Vec3 vec3d = shooter.getKnownMovement();
@@ -81,7 +89,7 @@
              iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
          });
      }
-@@ -201,7 +235,12 @@
+@@ -201,7 +236,12 @@
      }
  
      public static <T extends Projectile> T spawnProjectileUsingShoot(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
@@ -95,12 +103,10 @@
              projectile.shoot(velocityX, velocityY, velocityZ, power, divergence);
          });
      }
-@@ -209,13 +248,47 @@
-     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack) {
-         return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
+@@ -211,11 +251,45 @@
          });
-+    }
-+
+     }
+ 
 +    // Paper start - delayed projectile spawning
 +    public record Delayed<T extends Projectile>(
 +        T projectile,
@@ -129,9 +135,9 @@
 +            this.attemptSpawn(reason);
 +            return projectile();
 +        }
-     }
++    }
 +    // Paper end - delayed projectile spawning
- 
++
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
 +    // Paper start - delayed projectile spawning
 +        return spawnProjectileDelayed(projectile, world, projectileStack, beforeSpawn).spawn();
@@ -146,7 +152,7 @@
      }
  
      public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
-@@ -232,6 +305,17 @@
+@@ -232,6 +306,17 @@
  
      }
  
@@ -164,7 +170,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult movingobjectpositionentity = (EntityHitResult) hitResult;
-@@ -269,7 +353,13 @@
+@@ -269,7 +354,13 @@
      public boolean deflect(ProjectileDeflection deflection, @Nullable Entity deflector, @Nullable Entity owner, boolean fromAttack) {
          deflection.deflect(this, deflector, this.random);
          if (!this.level().isClientSide) {
@@ -179,7 +185,7 @@
              this.onDeflection(deflector, fromAttack);
          }
  
-@@ -309,6 +399,11 @@
+@@ -309,6 +400,11 @@
      protected void onHitEntity(EntityHitResult entityHitResult) {}
  
      protected void onHitBlock(BlockHitResult blockHitResult) {
@@ -191,7 +197,7 @@
          BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
  
          iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);
-@@ -320,6 +415,15 @@
+@@ -320,6 +416,15 @@
          } else {
              Entity entity1 = this.getOwner();
  
@@ -207,7 +213,7 @@
              return entity1 == null || this.leftOwner || !entity1.isPassengerOfSameVehicle(entity);
          }
      }
-@@ -333,14 +437,8 @@
+@@ -333,14 +438,8 @@
      }
  
      protected static float lerpRotation(float prevRot, float newRot) {
