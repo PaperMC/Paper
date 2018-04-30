@@ -17,6 +17,7 @@ public class CraftEnderman extends CraftMonster implements Enderman {
         super(server, entity);
     }
 
+    @Override public boolean teleportRandomly() { return getHandle().teleport(); } // Paper
     @Override
     public MaterialData getCarriedMaterial() {
         BlockState blockData = this.getHandle().getCarriedBlock();
