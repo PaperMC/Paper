@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityArrow;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
@@ -44,6 +45,21 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
             getHandle().shooter = null;
         }
         getHandle().projectileSource = shooter;
+    }
+
+    @Override
+    public boolean isInBlock() {
+        return getHandle().inGround;
+    }
+
+    @Override
+    public Block getAttachedBlock() {
+        if (!isInBlock()) {
+            return null;
+        }
+
+        EntityArrow handle = getHandle();
+        return getWorld().getBlockAt(handle.h, handle.at, handle.au); // PAIL: rename tileX, tileY, tileZ
     }
 
     @Override
