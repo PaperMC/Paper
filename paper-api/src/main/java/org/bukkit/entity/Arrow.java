@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.block.Block;
+
 /**
  * Represents an arrow.
  */
@@ -39,6 +41,22 @@ public interface Arrow extends Projectile {
      * @param critical whether or not it should be critical
      */
     public void setCritical(boolean critical);
+
+    /**
+     * Gets whether this arrow is in a block or not.
+     * <p>
+     * Arrows in a block are motionless and may be picked up by players.
+     *
+     * @return true if in a block
+     */
+    public boolean isInBlock();
+
+    /**
+     * Gets the block to which this arrow is attached.
+     *
+     * @return the attached block or null if not attached
+     */
+    public Block getAttachedBlock();
 
     /**
      * Gets the current pickup status of this arrow.
