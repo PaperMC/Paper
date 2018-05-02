@@ -167,7 +167,15 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
         this.a((WorldServer) this.world, nbttagcompound);
     }
 
+    // Paper start - OBFHELPER - ok not really, but verify this on updates
     private boolean g(EntityHuman entityhuman) {
+        boolean shouldAttack = g_real(entityhuman);
+        com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent event = new com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent((org.bukkit.entity.Enderman) getBukkitEntity(), (org.bukkit.entity.Player) entityhuman.getBukkitEntity());
+        event.setCancelled(!shouldAttack);
+        return event.callEvent();
+    }
+    private boolean g_real(EntityHuman entityhuman) {
+        // Paper end
         ItemStack itemstack = (ItemStack) entityhuman.inventory.armor.get(3);
 
         if (itemstack.getItem() == Blocks.CARVED_PUMPKIN.getItem()) {
