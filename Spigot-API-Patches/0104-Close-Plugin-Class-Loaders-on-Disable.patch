@@ -1,0 +1,30 @@
+From e4a7a489ad86b9da9571249c189003c39be8bc9d Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 May 2018 21:33:35 -0400
+Subject: [PATCH] Close Plugin Class Loaders on Disable
+
+This should close more memory leaks from /reload and disabling plugins,
+by closing the class loader and the jar file.
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 40fd71dc..1ea695d5 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -355,6 +355,14 @@ public final class JavaPluginLoader implements PluginLoader {
+                 for (String name : names) {
+                     removeClass(name);
+                 }
++                // Paper start - close Class Loader on disable
++                try {
++                    loader.close();
++                } catch (IOException e) {
++                    server.getLogger().log(Level.WARNING, "Error closing the Plugin Class Loader for " + plugin.getDescription().getFullName());
++                    e.printStackTrace();
++                }
++                // Paper end
+             }
+         }
+     }
+-- 
+2.17.0
+
