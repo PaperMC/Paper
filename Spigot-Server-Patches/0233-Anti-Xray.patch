@@ -1,4 +1,4 @@
-From 77ddf4aa9f419f854fbb51fdd390f5316d2d00cd Mon Sep 17 00:00:00 2001
+From 49185dd588fb43036579f3691ab48e3b13b2ae51 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Thu, 21 Sep 2017 00:38:47 +0200
 Subject: [PATCH] Anti-Xray
@@ -1463,7 +1463,7 @@ index d16669bc..306a6b7c 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 48a008e0..045adbd3 100644
+index 48a008e0..395386f2 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -134,6 +134,8 @@ public class PlayerChunk {
@@ -1483,11 +1483,12 @@ index 48a008e0..045adbd3 100644
              entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(this.chunk, '\uffff'));
              this.playerChunkMap.getWorld().getTracker().a(entityplayer, this.chunk);
          }
-@@ -218,6 +221,7 @@ public class PlayerChunk {
+@@ -218,6 +221,8 @@ public class PlayerChunk {
                          this.a(this.playerChunkMap.getWorld().getTileEntity(blockposition));
                      }
                  } else if (this.dirtyCount == 64) {
-+                    this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, this.h, true); // Paper - Anti-Xray - Load nearby chunks if necessary
++                    // Paper - Anti-Xray - Loading chunks here could cause a ConcurrentModificationException #1104
++                    //this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, this.h, true); // Paper - Anti-Xray - Load nearby chunks if necessary
                      this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
                  } else {
                      this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
@@ -1517,7 +1518,7 @@ index 8860a012..fa0d66d6 100644
          return this.a.size();
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 137c2555..75d5451c 100644
+index 00513d02..592e5b3b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -35,6 +35,8 @@ import org.bukkit.generator.ChunkGenerator;
