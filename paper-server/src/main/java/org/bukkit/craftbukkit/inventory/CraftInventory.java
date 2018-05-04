@@ -46,10 +46,7 @@ public class CraftInventory implements Inventory {
     }
 
     public ItemStack getItem(int index) {
-        return asCraftMirror(getInventory().getItem(index));
-    }
-
-    protected static ItemStack asCraftMirror(net.minecraft.server.ItemStack item) {
+        net.minecraft.server.ItemStack item = getInventory().getItem(index);
         return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 
@@ -59,7 +56,7 @@ public class CraftInventory implements Inventory {
 
         for (int i = 0; i < size; i++) {
             net.minecraft.server.ItemStack mcItem = mcItems.get(i);
-            items[i] = asCraftMirror(mcItem);
+            items[i] = (mcItem.isEmpty()) ? null : CraftItemStack.asCraftMirror(mcItem);
         }
 
         return items;
