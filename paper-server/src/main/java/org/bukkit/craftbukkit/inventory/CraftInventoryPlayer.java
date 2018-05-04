@@ -29,7 +29,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack getItemInMainHand() {
-        return CraftItemStack.asCraftMirror(getInventory().getItemInHand());
+        return asCraftMirror(getInventory().getItemInHand());
     }
 
     @Override
@@ -39,7 +39,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack getItemInOffHand() {
-        return CraftItemStack.asCraftMirror(getInventory().extraSlots.get(0));
+        return asCraftMirror(getInventory().extraSlots.get(0));
     }
 
     @Override
