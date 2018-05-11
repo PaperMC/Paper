@@ -38,7 +38,10 @@ function applyPatch {
     echo "  Applying patches to $target..."
 
     git am --abort >/dev/null 2>&1
-    git am --3way --ignore-whitespace "$basedir/${what_name}-Patches/"*.patch
+	for patch in "$basedir/${what_name}-Patches/"*.patch;
+	do
+		git am --3way --ignore-whitespace "$patch";
+	done;
     if [ "$?" != "0" ]; then
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
