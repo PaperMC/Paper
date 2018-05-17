@@ -70,6 +70,7 @@ import EntityLlama
 import EntitySquid
 import EntityTypes
 import EntityWaterAnimal
+import EntityWitch
 import EnumItemSlot
 import EULA
 import FileIOThread
