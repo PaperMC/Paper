@@ -85,7 +85,11 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
 
                     this.setSlot(EnumItemSlot.MAINHAND, ItemStack.b);
                     if (itemstack.getItem() == Items.POTION) {
-                        List<MobEffect> list = PotionUtil.getEffects(itemstack);
+                        // Paper start
+                        com.destroystokyo.paper.event.entity.WitchConsumePotionEvent event = new com.destroystokyo.paper.event.entity.WitchConsumePotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
+
+                        List<MobEffect> list = event.callEvent() ? PotionUtil.getEffects(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion())) : null;
+                        // Paper end
 
                         if (list != null) {
                             Iterator iterator = list.iterator();
