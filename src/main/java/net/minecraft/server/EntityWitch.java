@@ -185,9 +185,16 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
                 potionregistry = Potions.WEAKNESS;
             }
 
+            // Paper start
+            ItemStack potion = PotionUtil.a(new ItemStack(Items.SPLASH_POTION), potionregistry);
+            com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
+            if (!event.callEvent()) {
+                return;
+            }
+            potion = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
             EntityPotion entitypotion = new EntityPotion(this.world, this);
-
-            entitypotion.setItem(PotionUtil.a(new ItemStack(Items.SPLASH_POTION), potionregistry));
+            entitypotion.setItem(potion);
+            // Paper end
             entitypotion.pitch -= -20.0F;
             entitypotion.shoot(d0, d1 + (double) (f1 * 0.2F), d2, 0.75F, 8.0F);
             if (!this.isSilent()) {
