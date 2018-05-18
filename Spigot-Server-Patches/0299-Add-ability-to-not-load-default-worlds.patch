@@ -1,0 +1,610 @@
+From 7801bb31509cefffae6e98034f74a167b7b3cb67 Mon Sep 17 00:00:00 2001
+From: theminecoder <buisness@theminecoder.me>
+Date: Fri, 18 May 2018 17:31:47 +1000
+Subject: [PATCH] Add ability to not load default worlds
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index b602bbf12..c8abecc15 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -236,7 +236,7 @@ public class PaperConfig {
+     private static void bungeeOnlineMode() {
+         bungeeOnlineMode = getBoolean("settings.bungee-online-mode", true);
+     }
+-    
++
+     public static int packetInSpamThreshold = 300;
+     private static void packetInSpamThreshold() {
+         if (version < 11) {
+@@ -285,10 +285,20 @@ public class PaperConfig {
+ 
+     public static boolean savePlayerData = true;
+     private static void savePlayerData() {
+-        savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
+-        if(!savePlayerData) {
++        savePlayerData = loadDefaultWorlds && getBoolean("settings.save-player-data", savePlayerData);
++        if(!savePlayerData && loadDefaultWorlds) {
+             Bukkit.getLogger().log(Level.WARNING, "Player Data Saving is currently disabled. Any changes to your players data, " +
+                     "such as inventories, experience points, advancements and the like will not be saved when they log out.");
+         }
+     }
++
++    public static boolean loadDefaultWorlds = true;
++    private static void loadDefaultWorlds() {
++        loadDefaultWorlds = getBoolean("settings.load-default-worlds", loadDefaultWorlds);
++        if(!loadDefaultWorlds && savePlayerData) {
++            Bukkit.getLogger().log(Level.WARNING, "Player Data Saving is currently disabled due to paper not loading default worlds." +
++                    " Any changes to your players data, such as inventories, experience points, advancements and the like will not be saved when they log out.");
++        }
++        savePlayerData = false;
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/CommandDispatcher.java b/src/main/java/net/minecraft/server/CommandDispatcher.java
+index 06298fd86..d0b43786c 100644
+--- a/src/main/java/net/minecraft/server/CommandDispatcher.java
++++ b/src/main/java/net/minecraft/server/CommandDispatcher.java
+@@ -113,7 +113,7 @@ public class CommandDispatcher extends CommandHandler implements ICommandDispatc
+             minecraftserver.sendMessage(chatmessage);
+         }
+ 
+-        boolean flag3 = minecraftserver.worldServer[0].getGameRules().getBoolean("sendCommandFeedback");
++        boolean flag3 = minecraftserver.worlds.size() <= 0 || minecraftserver.worldServer[0].getGameRules().getBoolean("sendCommandFeedback");
+ 
+         if (icommandlistener instanceof CommandBlockListenerAbstract) {
+             flag3 = ((CommandBlockListenerAbstract) icommandlistener).n();
+diff --git a/src/main/java/net/minecraft/server/CustomFunctionData.java b/src/main/java/net/minecraft/server/CustomFunctionData.java
+index a5593baed..c2c892c96 100644
+--- a/src/main/java/net/minecraft/server/CustomFunctionData.java
++++ b/src/main/java/net/minecraft/server/CustomFunctionData.java
+@@ -72,6 +72,10 @@ public class CustomFunctionData implements ITickable {
+     }
+ 
+     public void e() {
++        if (this.c.worlds.size() <= 0) {
++            return;
++        }
++
+         String s = this.c.worlds.get(0).getGameRules().get("gameLoopFunction"); // CraftBukkit
+ 
+         if (!s.equals(this.e)) {
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 39a3d46ff..96740f903 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+@@ -289,16 +290,28 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                 TileEntitySkull.a(this.getUserCache());
+                 TileEntitySkull.a(this.az());
+                 UserCache.a(this.getOnlineMode());
+-                DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.S());
++                if(PaperConfig.loadDefaultWorlds) {
++                    DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.S());
++                }
+                 this.a(this.S(), this.S(), k, worldtype, s2);
++
++                if(this.worlds.size() <= 0) {
++                    DedicatedServer.LOGGER.warn("**** NO WORLDS LOADED");
++                    DedicatedServer.LOGGER.warn("You have disabled loading the default worlds but have not loaded your own with a plugin. Beware.");
++                    DedicatedServer.LOGGER.warn("Some commands may not work until you have loaded a world.");
++                    return false;
++                }
++
+                 long i1 = System.nanoTime() - j;
+                 String s3 = String.format("%.3fs", new Object[] { Double.valueOf((double) i1 / 1.0E9D)});
+ 
+                 DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\" or \"?\"", s3);
+                 if (this.propertyManager.a("announce-player-achievements")) {
+-                    this.worlds.get(0).getGameRules().set("announceAdvancements", this.propertyManager.getBoolean("announce-player-achievements", true) ? "true" : "false"); // CraftBukkit
+-                    this.propertyManager.b("announce-player-achievements");
+-                    this.propertyManager.savePropertiesFile();
++                    if(PaperConfig.loadDefaultWorlds) {
++                        this.worlds.get(0).getGameRules().set("announceAdvancements", this.propertyManager.getBoolean("announce-player-achievements", true) ? "true" : "false"); // CraftBukkit
++                        this.propertyManager.b("announce-player-achievements");
++                        this.propertyManager.savePropertiesFile();
++                    }
+                 }
+ 
+                 if (this.propertyManager.getBoolean("enable-query", false)) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f82e22b23..729a4b6ba 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -48,7 +48,11 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.Main;
+ // CraftBukkit end
+ import org.spigotmc.SlackActivityAccountant; // Spigot
+-import co.aikar.timings.MinecraftTimings; // Paper
++// Paper start
++import co.aikar.timings.MinecraftTimings;
++import com.destroystokyo.paper.PaperConfig;
++import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
++// Paper end
+ 
+ public abstract class MinecraftServer implements ICommandListener, Runnable, IAsyncTaskHandler, IMojangStatistics {
+ 
+@@ -124,6 +128,10 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+     // Spigot start
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
++    // Paper start - Move to static to support no default world loading
++    private static CustomFunctionData customFunctionData;
++    private static AdvancementDataWorld advancementData;
++    // Paper end
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+         SERVER = this; // Paper - better singleton
+@@ -235,123 +243,166 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+             worldsettings = new WorldSettings(worlddata);
+         }
+         */
+-        int worldCount = 3;
++        // Paper start
+ 
+-        for (int j = 0; j < worldCount; ++j) {
+-            WorldServer world;
+-            byte dimension = 0;
++        if (PaperConfig.loadDefaultWorlds) {
++            int worldCount = 3;
+ 
+-            if (j == 1) {
+-                if (getAllowNether()) {
+-                    dimension = -1;
+-                } else {
+-                    continue;
++            for (int j = 0; j < worldCount; ++j) {
++                WorldServer world;
++                byte dimension = 0;
++
++                if (j == 1) {
++                    if (getAllowNether()) {
++                        dimension = -1;
++                    } else {
++                        continue;
++                    }
+                 }
+-            }
+ 
+-            if (j == 2) {
+-                if (server.getAllowEnd()) {
+-                    dimension = 1;
+-                } else {
+-                    continue;
++                if (j == 2) {
++                    if (server.getAllowEnd()) {
++                        dimension = 1;
++                    } else {
++                        continue;
++                    }
+                 }
+-            }
+ 
+-            String worldType = org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase();
+-            String name = (dimension == 0) ? s : s + "_" + worldType;
++                String worldType = org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase();
++                String name = (dimension == 0) ? s : s + "_" + worldType;
+ 
+-            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
+-            WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
+-            worldsettings.setGeneratorSettings(s2);
++                org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
++                WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
++                worldsettings.setGeneratorSettings(s2);
+ 
+-            if (j == 0) {
+-                IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), s1, true, this.dataConverterManager);
+-                WorldData worlddata = idatamanager.getWorldData();
+-                if (worlddata == null) {
+-                    worlddata = new WorldData(worldsettings, s1);
+-                }
+-                worlddata.checkName(s1); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
+-                if (this.V()) {
+-                    world = (WorldServer) (new DemoWorldServer(this, idatamanager, worlddata, dimension, this.methodProfiler)).b();
++                if (j == 0) {
++                    IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), s1, true, this.dataConverterManager);
++                    WorldData worlddata = idatamanager.getWorldData();
++                    if (worlddata == null) {
++                        worlddata = new WorldData(worldsettings, s1);
++                    }
++                    worlddata.checkName(s1); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
++                    if (this.V()) {
++                        world = (WorldServer) (new DemoWorldServer(this, idatamanager, worlddata, dimension, this.methodProfiler)).b();
++                    } else {
++                        world = (WorldServer) (new WorldServer(this, idatamanager, worlddata, dimension, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen)).b();
++                    }
++
++                    world.getWorldBorder().a(new IWorldBorderListener() {
++                        public void a(WorldBorder worldborder, double d0) {
++                            MinecraftServer.this.v.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_SIZE), worldborder.world);
++                        }
++
++                        public void a(WorldBorder worldborder, double d0, double d1, long i) {
++                            MinecraftServer.this.v.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.LERP_SIZE), worldborder.world);
++                        }
++
++                        public void a(WorldBorder worldborder, double d0, double d1) {
++                            MinecraftServer.this.v.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_CENTER), worldborder.world);
++                        }
++
++                        public void a(WorldBorder worldborder, int i) {
++                            MinecraftServer.this.v.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_WARNING_TIME), worldborder.world);
++                        }
++
++                        public void b(WorldBorder worldborder, int i) {
++                            MinecraftServer.this.v.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_WARNING_BLOCKS), worldborder.world);
++                        }
++
++                        public void b(WorldBorder worldborder, double d0) {
++                        }
++
++                        public void c(WorldBorder worldborder, double d0) {
++                        }
++                    });
++
++                    world.a(worldsettings);
++                    this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
+                 } else {
+-                    world = (WorldServer) (new WorldServer(this, idatamanager, worlddata, dimension, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen)).b();
+-                }
++                    String dim = "DIM" + dimension;
+ 
+-                world.a(worldsettings);
+-                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
+-            } else {
+-                String dim = "DIM" + dimension;
+-
+-                File newWorld = new File(new File(name), dim);
+-                File oldWorld = new File(new File(s), dim);
+-
+-                if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
+-                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
+-                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
+-                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
+-                    MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
+-
+-                    if (newWorld.exists()) {
+-                        MinecraftServer.LOGGER.warn("A file or folder already exists at " + newWorld + "!");
+-                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+-                    } else if (newWorld.getParentFile().mkdirs()) {
+-                        if (oldWorld.renameTo(newWorld)) {
+-                            MinecraftServer.LOGGER.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
+-                            // Migrate world data too.
+-                            try {
+-                                com.google.common.io.Files.copy(new File(new File(s), "level.dat"), new File(new File(name), "level.dat"));
+-                                org.apache.commons.io.FileUtils.copyDirectory(new File(new File(s), "data"), new File(new File(name), "data"));
+-                            } catch (IOException exception) {
+-                                MinecraftServer.LOGGER.warn("Unable to migrate world data.");
++                    File newWorld = new File(new File(name), dim);
++                    File oldWorld = new File(new File(s), dim);
++
++                    if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
++                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
++                        MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
++                        MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
++                        MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
++
++                        if (newWorld.exists()) {
++                            MinecraftServer.LOGGER.warn("A file or folder already exists at " + newWorld + "!");
++                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
++                        } else if (newWorld.getParentFile().mkdirs()) {
++                            if (oldWorld.renameTo(newWorld)) {
++                                MinecraftServer.LOGGER.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
++                                // Migrate world data too.
++                                try {
++                                    com.google.common.io.Files.copy(new File(new File(s), "level.dat"), new File(new File(name), "level.dat"));
++                                    org.apache.commons.io.FileUtils.copyDirectory(new File(new File(s), "data"), new File(new File(name), "data"));
++                                } catch (IOException exception) {
++                                    MinecraftServer.LOGGER.warn("Unable to migrate world data.");
++                                }
++                                MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder complete ----");
++                            } else {
++                                MinecraftServer.LOGGER.warn("Could not move folder " + oldWorld + " to " + newWorld + "!");
++                                MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+                             }
+-                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder complete ----");
+                         } else {
+-                            MinecraftServer.LOGGER.warn("Could not move folder " + oldWorld + " to " + newWorld + "!");
++                            MinecraftServer.LOGGER.warn("Could not create path for " + newWorld + "!");
+                             MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+                         }
+-                    } else {
+-                        MinecraftServer.LOGGER.warn("Could not create path for " + newWorld + "!");
+-                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+                     }
+-                }
+ 
+-                IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), name, true, this.dataConverterManager);
+-                // world =, b0 to dimension, s1 to name, added Environment and gen
+-                WorldData worlddata = idatamanager.getWorldData();
+-                if (worlddata == null) {
+-                    worlddata = new WorldData(worldsettings, name);
++                    IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), name, true, this.dataConverterManager);
++                    // world =, b0 to dimension, s1 to name, added Environment and gen
++                    WorldData worlddata = idatamanager.getWorldData();
++                    if (worlddata == null) {
++                        worlddata = new WorldData(worldsettings, name);
++                    }
++                    worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
++                    world = (WorldServer) new SecondaryWorldServer(this, idatamanager, dimension, this.worlds.get(0), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).b();
+                 }
+-                worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
+-                world = (WorldServer) new SecondaryWorldServer(this, idatamanager, dimension, this.worlds.get(0), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).b();
+-            }
+ 
+-            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
++                this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
++
++                world.addIWorldAccess(new WorldManager(this, world));
++                if (!this.R()) {
++                    world.getWorldData().setGameType(this.getGamemode());
++                }
+ 
+-            world.addIWorldAccess(new WorldManager(this, world));
+-            if (!this.R()) {
+-                world.getWorldData().setGameType(this.getGamemode());
++                worlds.add(world);
++                getPlayerList().setPlayerFileData(worlds.toArray(new WorldServer[worlds.size()]));
+             }
+ 
+-            worlds.add(world);
+-            getPlayerList().setPlayerFileData(worlds.toArray(new WorldServer[worlds.size()]));
++            // CraftBukkit end
++
++            this.v.setPlayerFileData(this.worldServer);
++        } else {
++            this.server.scoreboardManager = new CraftScoreboardManager(this, new ScoreboardServer(this));
+         }
+-        // CraftBukkit end
+-        this.v.setPlayerFileData(this.worldServer);
++
+         this.a(this.getDifficulty());
+         this.l();
+ 
+-        // Paper start - Handle collideRule team for player collision toggle
+-        final Scoreboard scoreboard = this.getWorld().getScoreboard();
+-        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
+-        for (String teamName : toRemove) {
+-            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
+-        }
++        if (PaperConfig.loadDefaultWorlds) {
++            // Paper start - Handle collideRule team for player collision toggle
++            final Scoreboard scoreboard = this.getWorld().getScoreboard();
++            final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
++            for (String teamName : toRemove) {
++                scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
++            }
+ 
+-        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
+-            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
+-            ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
+-            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
++            if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
++                this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
++                ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
++                collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
++            }
++            // Paper end
+         }
++
++        customFunctionData = new CustomFunctionData(new File(new File(new File(server.getWorldContainer(), this.K), "data"), "functions"), this);
++        advancementData = new AdvancementDataWorld(new File(new File(new File(server.getWorldContainer(), this.K), "data"), "advancements"));
+         // Paper end
+     }
+ 
+@@ -1585,7 +1636,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+     }
+ 
+     public boolean getSendCommandFeedback() {
+-        return worlds.get(0).getGameRules().getBoolean("sendCommandFeedback");
++        return worlds.size() > 0 && worlds.get(0).getGameRules().getBoolean("sendCommandFeedback");
+     }
+ 
+     public MinecraftServer C_() {
+@@ -1641,12 +1692,18 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+         return worldserver != null ? worldserver.getGameRules().c("spawnRadius") : 10;
+     }
+ 
++    // Paper start - Move to static to support no default world loading
+     public AdvancementDataWorld getAdvancementData() {
+-        return this.worlds.get(0).z(); // CraftBukkit
++        return advancementData;
+     }
+ 
+     public CustomFunctionData aL() {
+-        return this.worlds.get(0).A(); // CraftBukkit
++        return customFunctionData;
++    }
++    // Paper end
++
++    public CustomFunctionData getCustomFunctionData() {
++        return aL(); // Paper - OBFHELPER
+     }
+ 
+     public void reload() {
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 1c0c1bd81..bd5df1a5b 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -143,7 +143,7 @@ public abstract class PlayerList {
+ 
+         entityplayer.spawnIn(world);
+         entityplayer.setPosition(loc.getX(), loc.getY(), loc.getZ());
+-        entityplayer.setYawPitch(loc.getYaw(), loc.getPitch()); 
++        entityplayer.setYawPitch(loc.getYaw(), loc.getPitch());
+         // Spigot end
+ 
+         // CraftBukkit - Moved message to after join
+@@ -276,31 +276,6 @@ public abstract class PlayerList {
+     public void setPlayerFileData(WorldServer[] aworldserver) {
+         if (playerFileData != null) return; // CraftBukkit
+         this.playerFileData = aworldserver[0].getDataManager().getPlayerFileData();
+-        aworldserver[0].getWorldBorder().a(new IWorldBorderListener() {
+-            public void a(WorldBorder worldborder, double d0) {
+-                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_SIZE), worldborder.world);
+-            }
+-
+-            public void a(WorldBorder worldborder, double d0, double d1, long i) {
+-                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.LERP_SIZE), worldborder.world);
+-            }
+-
+-            public void a(WorldBorder worldborder, double d0, double d1) {
+-                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_CENTER), worldborder.world);
+-            }
+-
+-            public void a(WorldBorder worldborder, int i) {
+-                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_WARNING_TIME), worldborder.world);
+-            }
+-
+-            public void b(WorldBorder worldborder, int i) {
+-                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_WARNING_BLOCKS), worldborder.world);
+-            }
+-
+-            public void b(WorldBorder worldborder, double d0) {}
+-
+-            public void c(WorldBorder worldborder, double d0) {}
+-        });
+     }
+ 
+     public void a(EntityPlayer entityplayer, @Nullable WorldServer worldserver) {
+@@ -522,6 +497,11 @@ public abstract class PlayerList {
+             entityplayer.playerConnection.disconnect(new ChatMessage("multiplayer.disconnect.duplicate_login", new Object[0]));
+         }
+ 
++        if(server.worlds.size() <= 0) {
++            loginlistener.disconnect("No worlds are available!");
++            return null;
++        }
++
+         // Instead of kicking then returning, we need to store the kick reason
+         // in the event, check with plugins to see if it's ok, and THEN kick
+         // depending on the outcome.
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 49019d54d..03ba84485 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -104,17 +104,6 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         // CraftBukkit end
+ 
+         this.B = new LootTableRegistry(new File(new File(this.dataManager.getDirectory(), "data"), "loot_tables"));
+-        // CraftBukkit start
+-        if (this.dimension != 0) { // SPIGOT-3899 multiple worlds of advancements not supported
+-            this.C = this.server.getAdvancementData();
+-        }
+-        if (this.C == null) {
+-            this.C = new AdvancementDataWorld(new File(new File(this.dataManager.getDirectory(), "data"), "advancements"));
+-        }
+-        if (this.D == null) {
+-            this.D = new CustomFunctionData(new File(new File(this.dataManager.getDirectory(), "data"), "functions"), this.server);
+-        }
+-        // CraftBukkit end
+         this.getWorldBorder().setCenter(this.worldData.B(), this.worldData.C());
+         this.getWorldBorder().setDamageAmount(this.worldData.H());
+         this.getWorldBorder().setDamageBuffer(this.worldData.G());
+@@ -1454,13 +1443,15 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         return this.getChunkProviderServer().a(this, s, blockposition, flag);
+     }
+ 
++    // Paper start - Move to static to support no default world loading
+     public AdvancementDataWorld z() {
+-        return this.C;
++        return this.server.getAdvancementData();
+     }
+ 
+     public CustomFunctionData A() {
+-        return this.D;
++        return this.server.aL();
+     }
++    // Paper end
+ 
+     public IChunkProvider getChunkProvider() {
+         return this.getChunkProviderServer();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 80702f6f6..facd77f53 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -959,6 +959,7 @@ public final class CraftServer implements Server {
+         }
+         worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
+         WorldServer internal = (WorldServer) new WorldServer(console, sdm, worlddata, dimension, console.methodProfiler, creator.environment(), generator).b();
++        MinecraftServer.getServer().getPlayerList().setPlayerFileData(new WorldServer[]{internal}); // Paper - Set initial save location if default worlds not loaded
+ 
+         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
+             return null;
+@@ -1447,7 +1448,7 @@ public final class CraftServer implements Server {
+ 
+         for (JsonListEntry entry : playerList.getProfileBans().getValues()) {
+             result.add(getOfflinePlayer((GameProfile) entry.getKey()));
+-        }        
++        }
+ 
+         return result;
+     }
+@@ -1500,7 +1501,14 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public GameMode getDefaultGameMode() {
+-        return GameMode.getByValue(console.worlds.get(0).getWorldData().getGameType().getId());
++        EnumGamemode serverGamemode;
++        if(console.worlds.size() <= 0) {
++            serverGamemode = console.getGamemode();
++        } else {
++            serverGamemode = console.worlds.get(0).getWorldData().getGameType();
++        }
++
++        return GameMode.getByValue(serverGamemode.getId());
+     }
+ 
+     @Override
+@@ -1671,7 +1679,7 @@ public final class CraftServer implements Server {
+         } else {
+             offers = tabCompleteChat(player, message);
+         }
+-        
++
+         TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), pos) : null); // Paper
+         getPluginManager().callEvent(tabEvent);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+index 6247bbda1..3f1bc2dc3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+@@ -61,18 +61,20 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+         int j = 0;
+         // Some commands use the worldserver variable but we leave it full of null values,
+         // so we must temporarily populate it with the world of the commandsender
+-        WorldServer[] prev = MinecraftServer.getServer().worldServer;
+         MinecraftServer server = MinecraftServer.getServer();
+-        server.worldServer = new WorldServer[server.worlds.size()];
+-        server.worldServer[0] = (WorldServer) icommandlistener.getWorld();
+-        int bpos = 0;
+-        for (int pos = 1; pos < server.worldServer.length; pos++) {
+-            WorldServer world = server.worlds.get(bpos++);
+-            if (server.worldServer[0] == world) {
+-                pos--;
+-                continue;
++        WorldServer[] prev = server.worldServer;
++        if (server.worlds.size() > 0) {
++            server.worldServer = new WorldServer[server.worlds.size()];
++            server.worldServer[0] = (WorldServer) icommandlistener.getWorld();
++            int bpos = 0;
++            for (int pos = 1; pos < server.worldServer.length; pos++) {
++                WorldServer world = server.worlds.get(bpos++);
++                if (server.worldServer[0] == world) {
++                    pos--;
++                    continue;
++                }
++                server.worldServer[pos] = world;
+             }
+-            server.worldServer[pos] = world;
+         }
+ 
+         try {
+-- 
+2.15.1 (Apple Git-101)
+
