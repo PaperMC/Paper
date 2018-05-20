@@ -9,6 +9,6 @@ basedir="$(cd "$1" && pwd -P)"
 	exit 1
 ) || exit 1
 if [ "$2" == "--jar" ]; then
-	mvn clean install && ./scripts/paperclip.sh "$basedir"
+	mvn clean install
 fi
 )
