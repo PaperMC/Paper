@@ -12,7 +12,7 @@ cb="src/main/java/net/minecraft/server"
 gpgsign="$(git config commit.gpgsign || echo "false")"
 
 
-patch=$(which patch 2>/dev/null)
+patch=$(which patch)
 if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
 fi
