@@ -7,6 +7,7 @@ about: Report server crashes and/or scary stacktraces
 ### Link/paste of stack trace
 
     You can also simply just use code formatting in markdown!
+
 ___We need all of the stack trace! Do not cut off parts of it.___
 
 ### Plugin list:
