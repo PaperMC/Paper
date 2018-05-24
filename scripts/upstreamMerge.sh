@@ -5,12 +5,13 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+gitcmd="git -c commit.gpgsign=false"
 
 function update {
     cd "$workdir/$1"
-    git fetch && git reset --hard origin/master
+    $gitcmd fetch && $gitcmd reset --hard origin/master
     cd ../
-    git add $1
+    $gitcmd add $1
 }
 
 update Bukkit

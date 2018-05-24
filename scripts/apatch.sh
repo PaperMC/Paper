@@ -1,4 +1,7 @@
 #!/bin/bash
+
+gitcmd="git -c commit.gpgsign=false"
+
 noapply=1
 isreject=0
 if [[ $1 == "--noapplied" ]]; then
@@ -18,18 +21,18 @@ else
 fi
 applied=$(echo $file | sed 's/.patch$/-applied\.patch/g')
 if [ "$1" == "--reset" ]; then
-	git am --abort
-	git reset --hard
-	git clean -f
+	$gitcmd am --abort
+	$gitcmd reset --hard
+	$gitcmd clean -f
 	exit 0
 fi
 
 
-(test "$isreject" != "1" && git am -3 $file) || (
+(test "$isreject" != "1" && $gitcmd am -3 $file) || (
 	echo "Failures - Wiggling"
-	git reset --hard
-	git clean -f
-	errors=$(git apply --rej $file 2>&1)
+	$gitcmd reset --hard
+	$gitcmd clean -f
+	errors=$($gitcmd apply --rej $file 2>&1)
 	echo "$errors" >> ~/patch.log
 	export missingfiles=""
 	export summaryfail=""
@@ -44,12 +47,12 @@ fi
 			missingfiles="$missingfiles\n$base"
 		fi
 	done
-	for i in $(git status --porcelain | awk '{print $2}'); do
+	for i in $($gitcmd status --porcelain | awk '{print $2}'); do
 		filedata=$(cat "$i")
 		if [ -f "$file" ] && [[ "$filedata" == *"<<<<<"* ]]; then
 			export summaryfail="$summaryfail\nFAILED TO APPLY: $i"
 		else
-			git add "$i"
+			$gitcmd add "$i"
 			export summarygood="$summarygood\nAPPLIED CLEAN: $i"
 		fi
 	done
@@ -64,8 +67,8 @@ fi
 		echo " "
 		echo "===========================";
 	fi
-	git status
-	git diff
+	$gitcmd status
+	$gitcmd diff
 )
 if [[ "$noapply" != "1" ]] && [[ "$file" != *-applied.patch ]]; then
 	mv "$file" "$applied"
