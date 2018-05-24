@@ -4,8 +4,8 @@
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-gpgsign="$(git config commit.gpgsign || echo "false")"
-applycmd="git am --3way --ignore-whitespace"
+gitcmd="git -c commit.gpgsign=false"
+applycmd="$gitcmd am --3way --ignore-whitespace"
 # Windows detection to workaround ARG_MAX limitation
 windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
 
@@ -18,30 +18,25 @@ function applyPatch {
     branch=$3
 
     cd "$basedir/$what"
-    git fetch
-    git branch -f upstream "$branch" >/dev/null
+    $gitcmd fetch
+    $gitcmd branch -f upstream "$branch" >/dev/null
 
     cd "$basedir"
     if [ ! -d  "$basedir/$target" ]; then
-        git clone "$what" "$target"
+        $gitcmd clone "$what" "$target"
     fi
     cd "$basedir/$target"
 
-    # Disable GPG signing before AM, slows things down and doesn't play nicely.
-    # There is also zero rational or logical reason to do so for these sub-repo AMs.
-    # Calm down kids, it's re-enabled (if needed) immediately after, pass or fail.
-    git config commit.gpgsign false
-
     echo "Resetting $target to $what_name..."
-    git remote rm upstream > /dev/null 2>&1
-    git remote add upstream "$basedir/$what" >/dev/null 2>&1
-    git checkout master 2>/dev/null || git checkout -b master
-    git fetch upstream >/dev/null 2>&1
-    git reset --hard upstream/upstream
+    $gitcmd remote rm upstream > /dev/null 2>&1
+    $gitcmd remote add upstream "$basedir/$what" >/dev/null 2>&1
+    $gitcmd checkout master 2>/dev/null || $gitcmd checkout -b master
+    $gitcmd fetch upstream >/dev/null 2>&1
+    $gitcmd reset --hard upstream/upstream
 
     echo "  Applying patches to $target..."
 
-    git am --abort >/dev/null 2>&1
+    $gitcmd am --abort >/dev/null 2>&1
 
     # Special case Windows handling because of ARG_MAX constraint
     if [[ $windows == "true" ]]; then
@@ -72,23 +67,16 @@ function applyPatch {
     fi
 }
 
-function enableCommitSigningIfNeeded {
-    if [[ "$gpgsign" == "true" ]]; then
-        git config commit.gpgsign true
-    fi
-}
-
 # Move into spigot dir
 cd "$workdir/Spigot"
 basedir=$(pwd)
 # Apply Spigot
 (
-	applyPatch ../Bukkit Spigot-API HEAD &&
-	applyPatch ../CraftBukkit Spigot-Server patched
+    applyPatch ../Bukkit Spigot-API HEAD &&
+    applyPatch ../CraftBukkit Spigot-Server patched
 ) || (
-	echo "Failed to apply Spigot Patches"
-    enableCommitSigningIfNeeded
-	exit 1
+    echo "Failed to apply Spigot Patches"
+    exit 1
 ) || exit 1
 # Move out of Spigot
 basedir="$1"
@@ -101,12 +89,10 @@ echo "Importing MC Dev"
 # Apply paper
 cd "$basedir"
 (
-	applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
-	applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
-    enableCommitSigningIfNeeded
+    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
+    applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
 ) || (
-	echo "Failed to apply Paper Patches"
-    enableCommitSigningIfNeeded
-	exit 1
+    echo "Failed to apply Paper Patches"
+    exit 1
 ) || exit 1
 )
