@@ -9,23 +9,16 @@ minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion |
 decompiledir="$workdir/Minecraft/$minecraftversion"
 nms="$decompiledir/net/minecraft/server"
 cb="src/main/java/net/minecraft/server"
-gpgsign="$(git config commit.gpgsign || echo "false")"
-
+gitcmd="git -c commit.gpgsign=false"
 
 patch=$(which patch)
 if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
 fi
 
-function enableCommitSigningIfNeeded {
-    if [[ "$gpgsign" == "true" ]]; then
-        git config commit.gpgsign true
-    fi
-}
-
 echo "Applying CraftBukkit patches to NMS..."
 cd "$workdir/CraftBukkit"
-git checkout -B patched HEAD >/dev/null 2>&1
+$gitcmd checkout -B patched HEAD >/dev/null 2>&1
 rm -rf "$cb"
 mkdir -p "$cb"
 for file in $(ls nms-patches)
@@ -42,11 +35,7 @@ do
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
-git add src
-# We don't need to sign an automated commit
-# All it does is make you input your key passphrase mid-patch
-git config commit.gpgsign false
-git commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>"
-enableCommitSigningIfNeeded
-git checkout -f HEAD^
+$gitcmd add src
+$gitcmd commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>"
+$gitcmd checkout -f HEAD^
 )

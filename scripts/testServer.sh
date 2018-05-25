@@ -6,7 +6,7 @@ basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/Minecraft/$minecraftversion"
-
+gitcmd="git -c commit.gpgsign=false"
 
 #
 # FUNCTIONS
@@ -15,7 +15,7 @@ decompiledir="$workdir/Minecraft/$minecraftversion"
 
 updateTest() {
     paperstash
-    git reset --hard origin/master
+    $gitcmd reset --hard origin/master
     paperunstash
 }
 
@@ -29,9 +29,9 @@ cd "$papertestdir"
 #
 
 if [ ! -d .git ]; then
-    git init
-    git remote add origin ${PAPER_TEST_SKELETON:-https://github.com/PaperMC/PaperTestServer}
-    git fetch origin
+    $gitcmd init
+    $gitcmd remote add origin ${PAPER_TEST_SKELETON:-https://github.com/PaperMC/PaperTestServer}
+    $gitcmd fetch origin
     updateTest
 elif [ "$2" == "update" ] || [ "$3" == "update" ]; then
     updateTest
