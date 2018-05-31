@@ -1,4 +1,4 @@
-From d83312daee696d0883b12842fc5b72cf4fd11508 Mon Sep 17 00:00:00 2001
+From b1794a06ccd794dd501b048241fb45d7d2d5364d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -17,10 +17,10 @@ This allows servers with smaller worlds who do less long distance exploring to s
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ce43e7bb7..112c447e2 100644
+index ce43e7bb..e35e72e8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -344,4 +344,13 @@ public class PaperWorldConfig {
+@@ -344,4 +344,18 @@ public class PaperWorldConfig {
      private void isHopperPushBased() {
          isHopperPushBased = getBoolean("hopper.push-based", false);
      }
@@ -33,9 +33,14 @@ index ce43e7bb7..112c447e2 100644
 +            delayChunkUnloadsBy *= 1000;
 +        }
 +    }
++
++    public boolean skipEntityTickingInChunksScheduledForUnload = true;
++    private void skipEntityTickingInChunksScheduledForUnload() {
++        skipEntityTickingInChunksScheduledForUnload = getBoolean("skip-entity-ticking-in-chunks-scheduled-for-unload", skipEntityTickingInChunksScheduledForUnload);
++    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a847aa079..8ec26b97c 100644
+index a847aa07..8ec26b97 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -30,6 +30,7 @@ public class Chunk {
@@ -47,7 +52,7 @@ index a847aa079..8ec26b97c 100644
      public final int locZ;
      private boolean m;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c7af8da61..0adfcaa8b 100644
+index 5cc192bb..47159bff 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -315,6 +315,19 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -71,7 +76,7 @@ index c7af8da61..0adfcaa8b 100644
              this.chunkLoader.b();
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 3d30e1831..48a008e0a 100644
+index 3d30e183..48a008e0 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -32,8 +32,16 @@ public class PlayerChunk {
@@ -108,7 +113,7 @@ index 3d30e1831..48a008e0a 100644
              // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index ad1d90b56..0b10f1684 100644
+index ad1d90b5..0b10f168 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -487,7 +487,13 @@ public class PlayerChunkMap {
@@ -126,8 +131,27 @@ index ad1d90b56..0b10f1684 100644
          }
  
      }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index bce3fca8..fccfd3dd 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1594,7 +1594,13 @@ public abstract class World implements IBlockAccess {
+             if (!tileentity.y() && tileentity.u()) {
+                 BlockPosition blockposition = tileentity.getPosition();
+ 
+-                if (this.isLoaded(blockposition) && this.P.a(blockposition)) {
++                // Paper start - Skip ticking in chunks scheduled for unload
++                net.minecraft.server.Chunk chunk = this.getChunkIfLoaded(blockposition);
++                boolean shouldTick = chunk != null;
++                if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
++                    shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
++                if (shouldTick && this.P.a(blockposition)) {
++                    // Paper end
+                     try {
+                         this.methodProfiler.a(() -> {
+                             return String.valueOf(TileEntity.a(tileentity.getClass()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 69dc11e2b..284dc6391 100644
+index 69dc11e2..284dc639 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1576,7 +1576,7 @@ public class CraftWorld implements World {
@@ -139,6 +163,21 @@ index 69dc11e2b..284dc6391 100644
                  continue;
              }
  
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 47865c02..b79bf70f 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -283,6 +283,10 @@ public class ActivationRange
+         {
+             isActive = false;
+         }
++        // Paper start - Skip ticking in chunks scheduled for unload
++        if(entity.world.paperConfig.skipEntityTickingInChunksScheduledForUnload && (chunk == null || chunk.isUnloading() || chunk.scheduledForUnload != null))
++            isActive = false;
++        // Paper end
+         return isActive;
+     }
+ }
 -- 
-2.16.1
+2.17.0
 
