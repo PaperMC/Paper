@@ -109,6 +109,33 @@ public class PotionEffect implements ConfigurationSerializable {
         this(getEffectType(map), getInt(map, DURATION), getInt(map, AMPLIFIER), getBool(map, AMBIENT, false), getBool(map, PARTICLES, true), getBool(map, ICON, getBool(map, PARTICLES, true)));
     }
 
+    // Paper start
+    @NotNull
+    public PotionEffect withType(@NotNull PotionEffectType type) {
+        return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
+    }
+    @NotNull
+    public PotionEffect withDuration(int duration) {
+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+    }
+    @NotNull
+    public PotionEffect withAmplifier(int amplifier) {
+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+    }
+    @NotNull
+    public PotionEffect withAmbient(boolean ambient) {
+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+    }
+    @NotNull
+    public PotionEffect withParticles(boolean particles) {
+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+    }
+    @NotNull
+    public PotionEffect withIcon(boolean icon) {
+        return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+    }
+    // Paper end
+
     @NotNull
     private static PotionEffectType getEffectType(@NotNull Map<?, ?> map) {
         PotionEffectType effect;
