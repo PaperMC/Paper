@@ -1485,6 +1485,10 @@ public class CraftWorld implements World {
         if (Boat.class.isAssignableFrom(clazz)) {
             entity = new EntityBoat(world, x, y, z);
             entity.setPositionRotation(x, y, z, yaw, pitch);
+            // Paper start
+        } else if (org.bukkit.entity.Item.class.isAssignableFrom(clazz)) {
+            entity = new EntityItem(world, x, y, z, new net.minecraft.server.ItemStack(net.minecraft.server.Item.getItemOf(net.minecraft.server.Blocks.DIRT)));
+            // Paper end
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
             entity = new EntityFallingBlock(world, x, y, z, world.getType(new BlockPosition(x, y, z)));
         } else if (Projectile.class.isAssignableFrom(clazz)) {
