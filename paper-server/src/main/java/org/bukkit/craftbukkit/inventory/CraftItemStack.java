@@ -225,6 +225,21 @@ public final class CraftItemStack extends ItemStack {
         return (this.handle == null) ? Material.AIR.getMaxStackSize() : this.handle.getMaxStackSize();
     }
 
+    // Paper start
+    @Override
+    public int getMaxItemUseDuration(final org.bukkit.entity.LivingEntity entity) {
+        if (handle == null) {
+            return 0;
+        }
+
+        // Make sure plugins calling the old method don't blow up
+        if (entity == null && (handle.is(net.minecraft.world.item.Items.CROSSBOW) || handle.is(net.minecraft.world.item.Items.GOAT_HORN))) {
+            throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
+        }
+        return handle.getUseDuration(entity != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle() : null);
+    }
+    // Paper end
+
     @Override
     public void addUnsafeEnchantment(Enchantment ench, int level) {
         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
