@@ -670,5 +670,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public String getI18NDisplayName() {
         return Bukkit.getServer().getItemFactory().getI18NDisplayName(this);
     }
+
+    /**
+     * @deprecated use {@link #getMaxItemUseDuration(org.bukkit.entity.LivingEntity)}; crossbows, later possibly more items require an entity parameter
+     */
+    @Deprecated(forRemoval = true)
+    public int getMaxItemUseDuration() {
+        return getMaxItemUseDuration(null);
+    }
+
+    public int getMaxItemUseDuration(@NotNull final org.bukkit.entity.LivingEntity entity) {
+        if (type == null || type == Material.AIR || !type.isItem()) {
+            return 0;
+        }
+        // Requires access to NMS
+        return ensureServerConversions().getMaxItemUseDuration(entity);
+    }
     // Paper end
 }
