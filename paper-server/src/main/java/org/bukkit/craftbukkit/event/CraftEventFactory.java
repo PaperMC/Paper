@@ -1974,4 +1974,14 @@ public class CraftEventFactory {
         ).callEvent();
     }
     // Paper end - PlayerUseUnknownEntityEvent
+
+    // Paper start - WitchReadyPotionEvent
+    public static ItemStack handleWitchReadyPotionEvent(net.minecraft.world.entity.monster.Witch witch, @Nullable ItemStack potion) {
+        com.destroystokyo.paper.event.entity.WitchReadyPotionEvent event = new com.destroystokyo.paper.event.entity.WitchReadyPotionEvent((org.bukkit.entity.Witch) witch.getBukkitEntity(), CraftItemStack.asCraftMirror(potion));
+        if (!event.callEvent() || event.getPotion() == null) {
+            return ItemStack.EMPTY;
+        }
+        return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
+    }
+    // Paper end - WitchReadyPotionEvent
 }
