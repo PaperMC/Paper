@@ -1,4 +1,4 @@
-From fa5fe17b5525db90889a454fd8949895f3159afd Mon Sep 17 00:00:00 2001
+From 90a7290801e9df5dc6bd93909df915ffed52e875 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 29 Aug 2017 23:58:48 -0400
 Subject: [PATCH] Expand World.spawnParticle API and add Builder
@@ -10,10 +10,10 @@ This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 00000000..cf812721
+index 00000000..2bccc409
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,365 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.collect.Lists;
@@ -22,8 +22,10 @@ index 00000000..cf812721
 +import org.bukkit.Particle;
 +import org.bukkit.World;
 +import org.bukkit.entity.Player;
++import org.bukkit.util.NumberConversions;
 +
 +import javax.annotation.Nullable;
++import java.util.Collection;
 +import java.util.List;
 +
 +/**
@@ -85,7 +87,22 @@ index 00000000..cf812721
 +    }
 +
 +    /**
-+     * Sends this particle to all players in the world
++     * Example use:
++     *
++     * builder.receivers(16);
++     * if (builder.hasReceivers()) {
++     *     sendParticleAsync(builder);
++     * }
++     * @return If this particle is going to be sent to someone
++     */
++    public boolean hasReceivers() {
++        return (receivers == null && !location.getWorld().getPlayers().isEmpty()) || (receivers != null && !receivers.isEmpty());
++    }
++
++    /**
++     * Sends this particle to all players in the world. This is rather silly and you should likely not be doing this.
++     *
++     * Just be a logical person and use receivers by radius or collection.
 +     */
 +    public ParticleBuilder allPlayers() {
 +       this.receivers = null;
@@ -93,19 +110,123 @@ index 00000000..cf812721
 +    }
 +
 +    /**
-+     * @param receivers List of players to be receive this particle, or null
++     * @param receivers List of players to receive this particle, or null for all players in the world
 +     */
 +    public ParticleBuilder receivers(@Nullable List<Player> receivers) {
++        // Had to keep this as we first made API List<> and not Collection, but removing this may break plugins compiled on older jars
++        // TODO: deprecate?
 +        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
 +        return this;
 +    }
 +
 +    /**
-+     * @param receivers List of players to be receive this particle, or null
++     * @param receivers List of players to receive this particle, or null for all players in the world
++     */
++    public ParticleBuilder receivers(@Nullable Collection<Player> receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to be receive this particle, or null for all players in the world
 +     */
 +    public ParticleBuilder receivers(Player... receivers) {
-+        this.receivers = receivers != null && receivers.length > 0 ? Lists.newArrayList(receivers) : null;
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
 +        return this;
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the particle location, within the specified bounding box.
++     * If you want a more spherical check, see {@link #receivers(int, boolean)}
++     *
++     * @param radius amount to add on all axis
++     */
++    public ParticleBuilder receivers(int radius) {
++        return receivers(radius, radius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the particle location.
++     * If byDistance is false, behavior uses cuboid selection the same as {@link #receivers(int, int)}
++     * If byDistance is true, radius is tested by distance in a spherical shape
++     * @param radius  amount to add on each axis
++     * @param byDistance true to use a spherical radius, false to use a cuboid
++     */
++    public ParticleBuilder receivers(int radius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(radius, radius, radius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            for (Player nearbyPlayer : location.getWorld().getNearbyPlayers(location, radius, radius, radius)) {
++                Location loc = nearbyPlayer.getLocation();
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double y = NumberConversions.square(location.getY() - loc.getY());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (Math.sqrt(x + y + z) > radius) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the particle location, within the specified bounding box.
++     * Allows specifying a different Y size than X and Z
++     * If you want a more cylinder check, see {@link #receivers(int, int, boolean)}
++     * If you want a more spherical check, see {@link #receivers(int, boolean)}
++     *
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     */
++    public ParticleBuilder receivers(int xzRadius, int yRadius) {
++        return receivers(xzRadius, yRadius, xzRadius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the particle location.
++     * If byDistance is false, behavior uses cuboid selection the same as {@link #receivers(int, int)}
++     * If byDistance is true, radius is tested by distance on the y plane and on the x/z plane, in a cylinder shape.
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     * @param byDistance true to use a cylinder shape, false to use cuboid
++     */
++    public ParticleBuilder receivers(int xzRadius, int yRadius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(xzRadius, yRadius, xzRadius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            for (Player nearbyPlayer : location.getWorld().getNearbyPlayers(location, xzRadius, yRadius, xzRadius)) {
++                Location loc = nearbyPlayer.getLocation();
++                if (Math.abs(loc.getY() - this.location.getY()) > yRadius) {
++                    continue;
++                }
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (x + z > NumberConversions.square(xzRadius)) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the particle location, within the specified bounding box.
++     * If you want a more cylinder check, see {@link #receivers(int, int, boolean)}
++     * If you want a more spherical check, see {@link #receivers(int, boolean)}
++     *
++     * @param xRadius amount to add on the x axis
++     * @param yRadius amount to add on the y axis
++     * @param zRadius amount to add on the z axis
++     */
++    public ParticleBuilder receivers(int xRadius, int yRadius, int zRadius) {
++        if (location == null) {
++            throw new IllegalStateException("Please set location first");
++        }
++        return receivers(location.getWorld().getNearbyPlayers(location, xRadius, yRadius, zRadius));
 +    }
 +
 +    /**
@@ -314,5 +435,5 @@ index c7b0bd3e..6fa17d98 100644
      // Spigot start
      public class Spigot
 -- 
-2.17.0
+2.17.1
 
