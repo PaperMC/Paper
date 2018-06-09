@@ -1,4 +1,4 @@
-From e4a7a489ad86b9da9571249c189003c39be8bc9d Mon Sep 17 00:00:00 2001
+From 9825cddc7fa38c5ec7a8446b9d8c7332b6b07fac Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -6,17 +6,276 @@ Subject: [PATCH] Close Plugin Class Loaders on Disable
 This should close more memory leaks from /reload and disabling plugins,
 by closing the class loader and the jar file.
 
+diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
+index e7981a1d..541f85bc 100644
+--- a/src/main/java/org/bukkit/plugin/PluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
+@@ -73,4 +73,16 @@ public interface PluginLoader {
+      * @param plugin Plugin to disable
+      */
+     public void disablePlugin(Plugin plugin);
++
++    // Paper start - close Classloader on disable
++    /**
++     * Disables the specified plugin
++     * <p>
++     * Attempting to disable a plugin that is not enabled will have no effect
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader if the classloader for the Plugin should be closed
++     */
++    public void disablePlugin(Plugin plugin, boolean closeClassloader);
++    // Paper end - close Classloader on disable
+ }
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index e5638d56..b72d5a9b 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -154,6 +154,18 @@ public interface PluginManager {
+      */
+     public void disablePlugin(Plugin plugin);
+ 
++    // Paper start - close Classloader on disable
++    /**
++     * Disables the specified plugin
++     * <p>
++     * Attempting to disable a plugin that is not enabled will have no effect
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader if the classloader for the Plugin should be closed
++     */
++    public void disablePlugin(Plugin plugin, boolean closeClassloader);
++    // Paper end - close Classloader on disable
++
+     /**
+      * Gets a {@link Permission} from its fully qualified name
+      *
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index bd0588a2..cb2b0b9c 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -412,17 +412,29 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    // Paper start - close Classloader on disable
+     public void disablePlugins() {
++        disablePlugins(false);
++    }
++
++    public void disablePlugins(boolean closeClassloaders) {
++        // Paper end - close Classloader on disable
+         Plugin[] plugins = getPlugins();
+         for (int i = plugins.length - 1; i >= 0; i--) {
+-            disablePlugin(plugins[i]);
++            disablePlugin(plugins[i], closeClassloaders); // Paper - close Classloader on disable
+         }
+     }
+ 
+-    public void disablePlugin(final Plugin plugin) {
++    // Paper start - close Classloader on disable
++    public void disablePlugin(Plugin plugin) {
++        disablePlugin(plugin, false);
++    }
++
++    public void disablePlugin(final Plugin plugin, boolean closeClassloader) {
++        // Paper end - close Classloader on disable
+         if (plugin.isEnabled()) {
+             try {
+-                plugin.getPluginLoader().disablePlugin(plugin);
++                plugin.getPluginLoader().disablePlugin(plugin, closeClassloader); // Paper - close Classloader on disable
+             } catch (Throwable ex) {
+                 handlePluginException("Error occurred (in the plugin loader) while disabling "
+                         + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+@@ -468,7 +480,7 @@ public final class SimplePluginManager implements PluginManager {
+ 
+     public void clearPlugins() {
+         synchronized (this) {
+-            disablePlugins();
++            disablePlugins(true); // Paper - close Classloader on disable
+             plugins.clear();
+             lookupNames.clear();
+             HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 40fd71dc..1ea695d5 100644
+index 40fd71dc..d2c538b2 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -355,6 +355,14 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -1,23 +1,5 @@
+ package org.bukkit.plugin.java;
+ 
+-import java.io.File;
+-import java.io.FileNotFoundException;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.lang.reflect.InvocationTargetException;
+-import java.lang.reflect.Method;
+-import java.util.Arrays;
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.concurrent.CopyOnWriteArrayList;
+-import java.util.jar.JarEntry;
+-import java.util.jar.JarFile;
+-import java.util.logging.Level;
+-import java.util.regex.Pattern;
+-
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Server;
+ import org.bukkit.Warning;
+@@ -25,7 +7,6 @@ import org.bukkit.Warning.WarningState;
+ import org.bukkit.configuration.serialization.ConfigurationSerializable;
+ import org.bukkit.configuration.serialization.ConfigurationSerialization;
+ import org.bukkit.event.Event;
+-import org.bukkit.event.EventException;
+ import org.bukkit.event.EventHandler;
+ import org.bukkit.event.Listener;
+ import org.bukkit.event.server.PluginDisableEvent;
+@@ -42,18 +23,35 @@ import org.bukkit.plugin.TimedRegisteredListener;
+ import org.bukkit.plugin.UnknownDependencyException;
+ import org.yaml.snakeyaml.error.YAMLException;
+ 
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
++import java.io.InputStream;
++import java.lang.reflect.Method;
++import java.util.Arrays;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.concurrent.CopyOnWriteArrayList;
++import java.util.jar.JarEntry;
++import java.util.jar.JarFile;
++import java.util.logging.Level;
++import java.util.regex.Pattern;
++
+ /**
+  * Represents a Java plugin loader, allowing plugins in the form of .jar
+  */
+ public final class JavaPluginLoader implements PluginLoader {
+     final Server server;
+-    private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
++    private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$"),};
+     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
+ 
+     /**
+      * This class was not meant to be constructed explicitly
+-     * 
++     *
+      * @param instance the server instance
+      */
+     @Deprecated
+@@ -78,39 +76,38 @@ public final class JavaPluginLoader implements PluginLoader {
+ 
+         final File parentFile = file.getParentFile();
+         final File dataFolder = new File(parentFile, description.getName());
+-        @SuppressWarnings("deprecation")
+-        final File oldDataFolder = new File(parentFile, description.getRawName());
++        @SuppressWarnings("deprecation") final File oldDataFolder = new File(parentFile, description.getRawName());
+ 
+         // Found old data folder
+         if (dataFolder.equals(oldDataFolder)) {
+             // They are equal -- nothing needs to be done!
+         } else if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
+             server.getLogger().warning(String.format(
+-                "While loading %s (%s) found old-data folder: `%s' next to the new one `%s'",
+-                description.getFullName(),
+-                file,
+-                oldDataFolder,
+-                dataFolder
++                    "While loading %s (%s) found old-data folder: `%s' next to the new one `%s'",
++                    description.getFullName(),
++                    file,
++                    oldDataFolder,
++                    dataFolder
+             ));
+         } else if (oldDataFolder.isDirectory() && !dataFolder.exists()) {
+             if (!oldDataFolder.renameTo(dataFolder)) {
+                 throw new InvalidPluginException("Unable to rename old data folder: `" + oldDataFolder + "' to: `" + dataFolder + "'");
+             }
+             server.getLogger().log(Level.INFO, String.format(
+-                "While loading %s (%s) renamed data folder: `%s' to `%s'",
+-                description.getFullName(),
+-                file,
+-                oldDataFolder,
+-                dataFolder
++                    "While loading %s (%s) renamed data folder: `%s' to `%s'",
++                    description.getFullName(),
++                    file,
++                    oldDataFolder,
++                    dataFolder
+             ));
+         }
+ 
+         if (dataFolder.exists() && !dataFolder.isDirectory()) {
+             throw new InvalidPluginException(String.format(
+-                "Projected datafolder: `%s' for %s (%s) exists and is not a directory",
+-                dataFolder,
+-                description.getFullName(),
+-                file
++                    "Projected datafolder: `%s' for %s (%s) exists and is not a directory",
++                    dataFolder,
++                    description.getFullName(),
++                    file
+             ));
+         }
+ 
+@@ -187,7 +184,8 @@ public final class JavaPluginLoader implements PluginLoader {
+             for (PluginClassLoader loader : loaders) {
+                 try {
+                     cachedClass = loader.findClass(name, false);
+-                } catch (ClassNotFoundException cnfe) {}
++                } catch (ClassNotFoundException cnfe) {
++                }
+                 if (cachedClass != null) {
+                     return cachedClass;
+                 }
+@@ -276,7 +274,7 @@ public final class JavaPluginLoader implements PluginLoader {
+                             Level.WARNING,
+                             String.format(
+                                     "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated." +
+-                                    " \"%s\"; please notify the authors %s.",
++                                            " \"%s\"; please notify the authors %s.",
+                                     plugin.getDescription().getFullName(),
+                                     clazz.getName(),
+                                     method.toGenericString(),
+@@ -317,7 +315,7 @@ public final class JavaPluginLoader implements PluginLoader {
+             } catch (Throwable ex) {
+                 server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                 // Paper start - Disable plugins that fail to load
+-                disablePlugin(jPlugin);
++                disablePlugin(jPlugin, true); // Paper - close Classloader on disable - She's dead jim
+                 return;
+                 // Paper end
+             }
+@@ -328,7 +326,13 @@ public final class JavaPluginLoader implements PluginLoader {
+         }
+     }
+ 
++    // Paper start - close Classloader on disable
+     public void disablePlugin(Plugin plugin) {
++        disablePlugin(plugin, false); // Retain old behavior unless requested
++    }
++
++    public void disablePlugin(Plugin plugin, boolean closeClassloader) {
++        // Paper end - close Class Loader on disable
+         Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
+ 
+         if (plugin.isEnabled()) {
+@@ -355,6 +359,16 @@ public final class JavaPluginLoader implements PluginLoader {
                  for (String name : names) {
                      removeClass(name);
                  }
 +                // Paper start - close Class Loader on disable
 +                try {
-+                    loader.close();
++                    if (closeClassloader) {
++                        loader.close();
++                    }
 +                } catch (IOException e) {
 +                    server.getLogger().log(Level.WARNING, "Error closing the Plugin Class Loader for " + plugin.getDescription().getFullName());
 +                    e.printStackTrace();
@@ -26,5 +285,5 @@ index 40fd71dc..1ea695d5 100644
          }
      }
 -- 
-2.17.0
+2.17.1
 
