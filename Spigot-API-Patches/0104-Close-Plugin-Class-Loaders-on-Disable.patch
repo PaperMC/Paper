@@ -1,4 +1,4 @@
-From 9825cddc7fa38c5ec7a8446b9d8c7332b6b07fac Mon Sep 17 00:00:00 2001
+From 3d6d85f9357fce3fd1cbe10d06ec6ddb82ef1ee8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -97,154 +97,10 @@ index bd0588a2..cb2b0b9c 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 40fd71dc..d2c538b2 100644
+index 40fd71dc..43ec5369 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -1,23 +1,5 @@
- package org.bukkit.plugin.java;
- 
--import java.io.File;
--import java.io.FileNotFoundException;
--import java.io.IOException;
--import java.io.InputStream;
--import java.lang.reflect.InvocationTargetException;
--import java.lang.reflect.Method;
--import java.util.Arrays;
--import java.util.HashMap;
--import java.util.HashSet;
--import java.util.List;
--import java.util.Map;
--import java.util.Set;
--import java.util.concurrent.CopyOnWriteArrayList;
--import java.util.jar.JarEntry;
--import java.util.jar.JarFile;
--import java.util.logging.Level;
--import java.util.regex.Pattern;
--
- import org.apache.commons.lang.Validate;
- import org.bukkit.Server;
- import org.bukkit.Warning;
-@@ -25,7 +7,6 @@ import org.bukkit.Warning.WarningState;
- import org.bukkit.configuration.serialization.ConfigurationSerializable;
- import org.bukkit.configuration.serialization.ConfigurationSerialization;
- import org.bukkit.event.Event;
--import org.bukkit.event.EventException;
- import org.bukkit.event.EventHandler;
- import org.bukkit.event.Listener;
- import org.bukkit.event.server.PluginDisableEvent;
-@@ -42,18 +23,35 @@ import org.bukkit.plugin.TimedRegisteredListener;
- import org.bukkit.plugin.UnknownDependencyException;
- import org.yaml.snakeyaml.error.YAMLException;
- 
-+import java.io.File;
-+import java.io.FileNotFoundException;
-+import java.io.IOException;
-+import java.io.InputStream;
-+import java.lang.reflect.Method;
-+import java.util.Arrays;
-+import java.util.HashMap;
-+import java.util.HashSet;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Set;
-+import java.util.concurrent.CopyOnWriteArrayList;
-+import java.util.jar.JarEntry;
-+import java.util.jar.JarFile;
-+import java.util.logging.Level;
-+import java.util.regex.Pattern;
-+
- /**
-  * Represents a Java plugin loader, allowing plugins in the form of .jar
-  */
- public final class JavaPluginLoader implements PluginLoader {
-     final Server server;
--    private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
-+    private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$"),};
-     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
-     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
- 
-     /**
-      * This class was not meant to be constructed explicitly
--     * 
-+     *
-      * @param instance the server instance
-      */
-     @Deprecated
-@@ -78,39 +76,38 @@ public final class JavaPluginLoader implements PluginLoader {
- 
-         final File parentFile = file.getParentFile();
-         final File dataFolder = new File(parentFile, description.getName());
--        @SuppressWarnings("deprecation")
--        final File oldDataFolder = new File(parentFile, description.getRawName());
-+        @SuppressWarnings("deprecation") final File oldDataFolder = new File(parentFile, description.getRawName());
- 
-         // Found old data folder
-         if (dataFolder.equals(oldDataFolder)) {
-             // They are equal -- nothing needs to be done!
-         } else if (dataFolder.isDirectory() && oldDataFolder.isDirectory()) {
-             server.getLogger().warning(String.format(
--                "While loading %s (%s) found old-data folder: `%s' next to the new one `%s'",
--                description.getFullName(),
--                file,
--                oldDataFolder,
--                dataFolder
-+                    "While loading %s (%s) found old-data folder: `%s' next to the new one `%s'",
-+                    description.getFullName(),
-+                    file,
-+                    oldDataFolder,
-+                    dataFolder
-             ));
-         } else if (oldDataFolder.isDirectory() && !dataFolder.exists()) {
-             if (!oldDataFolder.renameTo(dataFolder)) {
-                 throw new InvalidPluginException("Unable to rename old data folder: `" + oldDataFolder + "' to: `" + dataFolder + "'");
-             }
-             server.getLogger().log(Level.INFO, String.format(
--                "While loading %s (%s) renamed data folder: `%s' to `%s'",
--                description.getFullName(),
--                file,
--                oldDataFolder,
--                dataFolder
-+                    "While loading %s (%s) renamed data folder: `%s' to `%s'",
-+                    description.getFullName(),
-+                    file,
-+                    oldDataFolder,
-+                    dataFolder
-             ));
-         }
- 
-         if (dataFolder.exists() && !dataFolder.isDirectory()) {
-             throw new InvalidPluginException(String.format(
--                "Projected datafolder: `%s' for %s (%s) exists and is not a directory",
--                dataFolder,
--                description.getFullName(),
--                file
-+                    "Projected datafolder: `%s' for %s (%s) exists and is not a directory",
-+                    dataFolder,
-+                    description.getFullName(),
-+                    file
-             ));
-         }
- 
-@@ -187,7 +184,8 @@ public final class JavaPluginLoader implements PluginLoader {
-             for (PluginClassLoader loader : loaders) {
-                 try {
-                     cachedClass = loader.findClass(name, false);
--                } catch (ClassNotFoundException cnfe) {}
-+                } catch (ClassNotFoundException cnfe) {
-+                }
-                 if (cachedClass != null) {
-                     return cachedClass;
-                 }
-@@ -276,7 +274,7 @@ public final class JavaPluginLoader implements PluginLoader {
-                             Level.WARNING,
-                             String.format(
-                                     "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated." +
--                                    " \"%s\"; please notify the authors %s.",
-+                                            " \"%s\"; please notify the authors %s.",
-                                     plugin.getDescription().getFullName(),
-                                     clazz.getName(),
-                                     method.toGenericString(),
-@@ -317,7 +315,7 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -317,7 +317,7 @@ public final class JavaPluginLoader implements PluginLoader {
              } catch (Throwable ex) {
                  server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
                  // Paper start - Disable plugins that fail to load
@@ -253,7 +109,7 @@ index 40fd71dc..d2c538b2 100644
                  return;
                  // Paper end
              }
-@@ -328,7 +326,13 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -328,7 +328,13 @@ public final class JavaPluginLoader implements PluginLoader {
          }
      }
  
@@ -267,7 +123,7 @@ index 40fd71dc..d2c538b2 100644
          Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
  
          if (plugin.isEnabled()) {
-@@ -355,6 +359,16 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -355,6 +361,16 @@ public final class JavaPluginLoader implements PluginLoader {
                  for (String name : names) {
                      removeClass(name);
                  }
