@@ -1,4 +1,4 @@
-From 3d6d85f9357fce3fd1cbe10d06ec6ddb82ef1ee8 Mon Sep 17 00:00:00 2001
+From 139f2372d8b97e7903ebea6da801c9457c87256e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -7,10 +7,10 @@ This should close more memory leaks from /reload and disabling plugins,
 by closing the class loader and the jar file.
 
 diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
-index e7981a1d..541f85bc 100644
+index e7981a1d..d34756f1 100644
 --- a/src/main/java/org/bukkit/plugin/PluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
-@@ -73,4 +73,16 @@ public interface PluginLoader {
+@@ -73,4 +73,19 @@ public interface PluginLoader {
       * @param plugin Plugin to disable
       */
      public void disablePlugin(Plugin plugin);
@@ -24,7 +24,10 @@ index e7981a1d..541f85bc 100644
 +     * @param plugin Plugin to disable
 +     * @param closeClassloader if the classloader for the Plugin should be closed
 +     */
-+    public void disablePlugin(Plugin plugin, boolean closeClassloader);
++    // provide default to allow other PluginLoader implementations to work
++    default public void disablePlugin(Plugin plugin, boolean closeClassloader) {
++        disablePlugin(plugin);
++    }
 +    // Paper end - close Classloader on disable
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
@@ -97,7 +100,7 @@ index bd0588a2..cb2b0b9c 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 40fd71dc..43ec5369 100644
+index 40fd71dc..3e87c3dd 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -317,7 +317,7 @@ public final class JavaPluginLoader implements PluginLoader {
