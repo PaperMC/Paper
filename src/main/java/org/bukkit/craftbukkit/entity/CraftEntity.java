@@ -356,6 +356,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return server;
     }
 
+    @Override
+    public boolean isPersistent() {
+        return entity.persist;
+    }
+
+    @Override
+    public void setPersistent(boolean persistent) {
+        entity.persist = persistent;
+    }
+
     public Vector getMomentum() {
         return getVelocity();
     }
