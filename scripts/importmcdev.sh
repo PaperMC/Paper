@@ -80,6 +80,7 @@ import ItemBlock
 import ItemFireworks
 import ItemMonsterEgg
 import LegacyPingHandler
+import LotoSelectorEntry
 import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
