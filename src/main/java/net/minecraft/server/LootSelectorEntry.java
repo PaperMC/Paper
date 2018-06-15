@@ -11,8 +11,8 @@ import org.apache.commons.lang3.ArrayUtils;
 
 public abstract class LootSelectorEntry extends LootEntryAbstract {
 
-    protected final int c;
-    protected final int e;
+    protected final int c; public int getWeight() { return c; } // Paper - OBFHELPER
+    protected final int e; public int getQuality() { return e; } // Paper - OBFHELPER
     protected final LootItemFunction[] f;
     private final BiFunction<ItemStack, LootTableInfo, ItemStack> g;
     private final LootEntry h = new LootSelectorEntry.c() {
@@ -143,11 +143,38 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
 
     public abstract class c implements LootEntry {
 
-        protected c() {}
+        protected c() {
+        }
 
         @Override
         public int a(float f) {
-            return Math.max(MathHelper.d((float) LootSelectorEntry.this.c + (float) LootSelectorEntry.this.e * f), 0);
+            // Paper start - Offer an alternative loot formula to refactor how luck bonus applies
+            // SEE: https://luckformula.emc.gs for details and data
+            if (lastLuck != null && lastLuck == f) {
+                return lastWeight;
+            }
+            // This is vanilla
+            float qualityModifer = (float) getQuality() * f;
+            double baseWeight = (getWeight() + qualityModifer);
+            if (com.destroystokyo.paper.PaperConfig.useAlternativeLuckFormula) {
+                // Random boost to avoid losing precision in the final int cast on return
+                final int weightBoost = 100;
+                baseWeight *= weightBoost;
+                // If we have vanilla 1, bump that down to 0 so nothing is is impacted
+                // vanilla 3 = 300, 200 basis = impact 2%
+                // =($B2*(($B2-100)/100/100))
+                double impacted = baseWeight * ((baseWeight - weightBoost) / weightBoost / 100);
+                // =($B$7/100)
+                float luckModifier = Math.min(100, f * 10) / 100;
+                // =B2 - (C2 *($B$7/100))
+                baseWeight = Math.ceil(baseWeight - (impacted * luckModifier));
+            }
+            lastLuck = f;
+            lastWeight = (int) Math.max(0, Math.floor(baseWeight));
+            return lastWeight;
         }
     }
+    private Float lastLuck = null;
+    private int lastWeight = 0;
+    // Paper end
 }
