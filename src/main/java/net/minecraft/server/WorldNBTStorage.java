@@ -36,7 +36,7 @@ public class WorldNBTStorage {
 
             SystemUtils.a(file1, file, file2);
         } catch (Exception exception) {
-            WorldNBTStorage.LOGGER.warn("Failed to save player data for {}", entityhuman.getDisplayName().getString());
+            WorldNBTStorage.LOGGER.error("Failed to save player data for {}", entityhuman.getName(), exception); // Paper
         }
 
     }
