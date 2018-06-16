@@ -101,6 +101,7 @@ import PlayerConnectionUtils
 import RegionFile
 import RegistryBlockID
 import RemoteControlListener
+import RecipeBookServer
 import ServerPing
 import StructureBoundingBox
 import StructurePiece
