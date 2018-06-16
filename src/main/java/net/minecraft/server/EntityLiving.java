@@ -3199,7 +3199,7 @@ public abstract class EntityLiving extends Entity {
         if (this.isHandRaised() && !this.activeItem.isEmpty()) {
             Item item = this.activeItem.getItem();
 
-            return item.d_(this.activeItem) != EnumAnimation.BLOCK ? false : item.e_(this.activeItem) - this.bd >= 5;
+            return item.d_(this.activeItem) != EnumAnimation.BLOCK ? false : item.e_(this.activeItem) - this.bd >= getShieldBlockingDelay(); // Paper - shieldBlockingDelay
         } else {
             return false;
         }
@@ -3455,4 +3455,15 @@ public abstract class EntityLiving extends Entity {
     public void broadcastItemBreak(EnumHand enumhand) {
         this.broadcastItemBreak(enumhand == EnumHand.MAIN_HAND ? EnumItemSlot.MAINHAND : EnumItemSlot.OFFHAND);
     }
+    // Paper start
+    public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
+
+    public int getShieldBlockingDelay() {
+        return shieldBlockingDelay;
+    }
+
+    public void setShieldBlockingDelay(int shieldBlockingDelay) {
+        this.shieldBlockingDelay = shieldBlockingDelay;
+    }
+    // Paper end
 }

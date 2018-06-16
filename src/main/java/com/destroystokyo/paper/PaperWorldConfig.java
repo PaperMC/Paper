@@ -362,4 +362,9 @@ public class PaperWorldConfig {
         disableEnderpearlExploit = getBoolean("game-mechanics.disable-unloaded-chunk-enderpearl-exploit", disableEnderpearlExploit);
         log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
     }
+
+    public int shieldBlockingDelay = 5;
+    private void shieldBlockingDelay() {
+        shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
+    }
 }
