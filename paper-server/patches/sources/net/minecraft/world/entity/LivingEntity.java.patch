@@ -769,7 +769,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1530,22 +1819,37 @@
+@@ -1530,24 +1819,39 @@
      protected void dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
          boolean flag = this.lastHurtByPlayerTime > 0;
  
@@ -799,8 +799,8 @@
          }
  
 +        return 0; // CraftBukkit
-+    }
-+
+     }
+ 
 +    protected void dropExperience(ServerLevel world, @Nullable Entity attacker) {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
@@ -808,9 +808,11 @@
 +            this.expToDrop = 0;
 +        }
 +        // CraftBukkit end
-     }
- 
++    }
++
      protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
+ 
+     public long getLootTableSeed() {
 @@ -1612,19 +1916,31 @@
      }
  
@@ -821,12 +823,12 @@
 +        // CraftBukkit start - EntityKnockbackEvent
 +        this.knockback(strength, x, z, null, EntityKnockbackEvent.KnockbackCause.UNKNOWN);
 +    }
- 
++
 +    public void knockback(double d0, double d1, double d2, Entity attacker, EntityKnockbackEvent.KnockbackCause cause) {
 +        d0 *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
 +        if (true || d0 > 0.0D) { // CraftBukkit - Call event even when force is 0
 +            //this.hasImpulse = true; // CraftBukkit - Move down
-+
+ 
              Vec3 vec3d;
  
 -            for (vec3d = this.getDeltaMovement(); x * x + z * z < 9.999999747378752E-6D; z = (Math.random() - Math.random()) * 0.01D) {
@@ -859,12 +861,12 @@
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getHurtSound0(DamageSource damagesource) {
 +        return this.getHurtSound(damagesource);
-     }
- 
-+    public SoundEvent getDeathSound0() {
-+        return this.getDeathSound();
 +    }
 +
++    public SoundEvent getDeathSound0() {
++        return this.getDeathSound();
+     }
+ 
 +    public SoundEvent getFallDamageSound0(int fallHeight) {
 +        return this.getFallDamageSound(fallHeight);
 +    }
@@ -935,7 +937,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -981,7 +983,7 @@
 +        };
 +        float resistanceModifier = resistance.apply((double) f).floatValue();
 +        f += resistanceModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> magic = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1115,27 +1117,26 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,9 +2432,19 @@
+@@ -1935,8 +2432,18 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
-     }
 @@ -1999,7 +2506,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1328,7 +1329,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1339,7 +1340,7 @@
 +                            entityPlayer.getBukkitEntity().updateScaledHealth();
 +                            return;
 +                        }
-+
+ 
 +                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
 +                    } else {
 +                        itemstack = this.useItem.finishUsingItem(this.level(), this);
@@ -1365,7 +1366,33 @@
                  }
  
              }
-@@ -3568,12 +4133,18 @@
+@@ -3544,12 +4109,24 @@
+         if (this.isUsingItem() && !this.useItem.isEmpty()) {
+             Item item = this.useItem.getItem();
+ 
+-            return item.getUseAnimation(this.useItem) != ItemUseAnimation.BLOCK ? null : (item.getUseDuration(this.useItem, this) - this.useItemRemaining < 5 ? null : this.useItem);
++            return item.getUseAnimation(this.useItem) != ItemUseAnimation.BLOCK ? null : (item.getUseDuration(this.useItem, this) - this.useItemRemaining < getShieldBlockingDelay() ? null : this.useItem); // Paper - Make shield blocking delay configurable
+         } else {
+             return null;
+         }
+     }
+ 
++    // Paper start - Make shield blocking delay configurable
++    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
++
++    public int getShieldBlockingDelay() {
++        return shieldBlockingDelay;
++    }
++
++    public void setShieldBlockingDelay(int shieldBlockingDelay) {
++        this.shieldBlockingDelay = shieldBlockingDelay;
++    }
++    // Paper end - Make shield blocking delay configurable
++
+     public boolean isSuppressingSlidingDownLadder() {
+         return this.isShiftKeyDown();
+     }
+@@ -3568,12 +4145,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1386,7 +1413,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4163,43 @@
+@@ -3592,18 +4175,43 @@
              }
  
              if (flag2) {
@@ -1398,7 +1425,7 @@
 +                this.setPos(d0, d6, d2);
                  if (world.noCollision((Entity) this) && !world.containsAnyLiquid(this.getBoundingBox())) {
                      flag1 = true;
-                 }
++                }
 +                // now revert and call event if the teleport place is valid
 +                this.setPos(d3, d4, d5);
 +
@@ -1418,7 +1445,7 @@
 +                            return Optional.empty();
 +                        }
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
              }
          }
@@ -1434,7 +1461,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4209,7 @@
+@@ -3613,7 +4221,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1443,7 +1470,7 @@
          }
      }
  
-@@ -3706,7 +4302,7 @@
+@@ -3706,7 +4314,7 @@
      }
  
      public void stopSleeping() {
@@ -1452,7 +1479,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4314,9 @@
+@@ -3718,9 +4326,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1464,7 +1491,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4336,7 @@
+@@ -3740,7 +4348,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1473,7 +1500,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4501,7 @@
+@@ -3905,7 +4513,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  

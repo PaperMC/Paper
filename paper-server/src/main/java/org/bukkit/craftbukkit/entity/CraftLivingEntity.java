@@ -873,5 +873,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setArrowsStuck(final int arrows) {
         this.getHandle().setArrowCount(arrows);
     }
+
+    @Override
+    public int getShieldBlockingDelay() {
+        return getHandle().getShieldBlockingDelay();
+    }
+
+    @Override
+    public void setShieldBlockingDelay(int delay) {
+        getHandle().setShieldBlockingDelay(delay);
+    }
     // Paper end
 }
