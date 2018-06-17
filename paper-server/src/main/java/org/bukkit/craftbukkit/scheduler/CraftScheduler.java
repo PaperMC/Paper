@@ -74,6 +74,10 @@ public class CraftScheduler implements BukkitScheduler {
      * These are tasks that are currently active. It's provided for 'viewing' the current state.
      */
     private final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<Integer, CraftTask>();
+    /**
+     * The sync task that is currently running on the main thread.
+     */
+    private volatile CraftTask currentTask = null;
     private volatile int currentTick = -1;
     private final Executor executor = Executors.newCachedThreadPool();
     private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {@Override StringBuilder debugTo(StringBuilder string) {return string;}};
@@ -269,12 +273,15 @@ public class CraftScheduler implements BukkitScheduler {
 
     public boolean isCurrentlyRunning(final int taskId) {
         final CraftTask task = runners.get(taskId);
-        if (task == null || task.isSync()) {
+        if (task == null) {
             return false;
+        }
+        if (task.isSync()) {
+            return (task == currentTask); 
         }
         final CraftAsyncTask asyncTask = (CraftAsyncTask) task;
         synchronized (asyncTask.getWorkers()) {
-            return asyncTask.getWorkers().isEmpty();
+            return !asyncTask.getWorkers().isEmpty();
         }
     }
 
@@ -348,6 +355,7 @@ public class CraftScheduler implements BukkitScheduler {
                 continue;
             }
             if (task.isSync()) {
+                currentTask = task;
                 try {
                     task.run();
                 } catch (final Throwable throwable) {
@@ -358,6 +366,8 @@ public class CraftScheduler implements BukkitScheduler {
                                 task.getTaskId(),
                                 task.getOwner().getDescription().getFullName()),
                             throwable);
+                } finally {
+                    currentTask = null;
                 }
                 parsePending();
             } else {
