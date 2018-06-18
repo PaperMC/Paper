@@ -1240,7 +1240,7 @@ public abstract class EntityLiving extends Entity {
                     }
 
                     this.ap = (float) (MathHelper.d(d1, d0) * 57.2957763671875D - (double) this.yaw);
-                    this.a(0.4F, d0, d1);
+                    this.doKnockback(0.4F, d0, d1, entity1); // Paper
                 } else {
                     this.ap = (float) ((int) (Math.random() * 2.0D) * 180);
                 }
@@ -1288,7 +1288,7 @@ public abstract class EntityLiving extends Entity {
     }
 
     protected void e(EntityLiving entityliving) {
-        entityliving.a(0.5F, entityliving.locX() - this.locX(), entityliving.locZ() - this.locZ());
+        entityliving.doKnockback(0.5F, entityliving.locX() - this.locX(), entityliving.locZ() - this.locZ(), this); // Paper
     }
 
     private boolean f(DamageSource damagesource) {
@@ -1524,6 +1524,11 @@ public abstract class EntityLiving extends Entity {
     }
 
     public void a(float f, double d0, double d1) {
+        // Paper start - add knockbacking entity parameter
+        this.doKnockback(f, d0, d1, null);
+    }
+    public void doKnockback(float f, double d0, double d1, Entity knockingBackEntity) {
+        // Paper end - add knockbacking entity parameter
         f = (float) ((double) f * (1.0D - this.b(GenericAttributes.KNOCKBACK_RESISTANCE)));
         if (f > 0.0F) {
             this.impulse = true;
@@ -1531,6 +1536,16 @@ public abstract class EntityLiving extends Entity {
             Vec3D vec3d1 = (new Vec3D(d0, 0.0D, d1)).d().a((double) f);
 
             this.setMot(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + (double) f) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
+
+            // Paper start - call EntityKnockbackByEntityEvent
+            Vec3D currentMot = this.getMot();
+            org.bukkit.util.Vector delta = new org.bukkit.util.Vector(currentMot.x - vec3d.x, currentMot.y - vec3d.y, currentMot.z - vec3d.z);
+            // Restore old velocity to be able to access it in the event
+            this.setMot(vec3d);
+            if (knockingBackEntity == null || new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((LivingEntity) getBukkitEntity(), knockingBackEntity.getBukkitEntity(), f, delta).callEvent()) {
+                this.setMot(vec3d.x + delta.getX(), vec3d.y + delta.getY(), vec3d.z + delta.getZ());
+            }
+            // Paper end
         }
     }
 

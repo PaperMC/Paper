@@ -1500,7 +1500,7 @@ public abstract class EntityInsentient extends EntityLiving {
 
         if (flag) {
             if (f1 > 0.0F && entity instanceof EntityLiving) {
-                ((EntityLiving) entity).a(f1 * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
+                ((EntityLiving) entity).doKnockback(f1 * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)), this); // Paper
                 this.setMot(this.getMot().d(0.6D, 1.0D, 0.6D));
             }
 
