@@ -7,7 +7,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity receives knockback from another entity.
+ *
+ * @deprecated use {@link com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent}
  */
+@Deprecated(forRemoval = true) // Paper
 public class EntityKnockbackByEntityEvent extends EntityKnockbackEvent {
 
     private final Entity source;
