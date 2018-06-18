@@ -550,3 +550,35 @@
      }
  
      @Override
+@@ -2005,18 +2188,29 @@
+         return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
+     }
+ 
++    // Paper start - PlayerReadyArrowEvent
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++        return !(this instanceof ServerPlayer) ||
++                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
++                    ((ServerPlayer) this).getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
++                ).callEvent();
++    }
++    // Paper end - PlayerReadyArrowEvent
++
+     @Override
+     public ItemStack getProjectile(ItemStack stack) {
+         if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
+             return ItemStack.EMPTY;
+         } else {
+-            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles();
++            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
+             ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
+ 
+             if (!itemstack1.isEmpty()) {
+                 return itemstack1;
+             } else {
+-                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles();
++                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
+ 
+                 for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
+                     ItemStack itemstack2 = this.inventory.getItem(i);
