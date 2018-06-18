@@ -35,12 +35,12 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -188,6 +198,17 @@
+@@ -188,7 +198,18 @@
      public Entity currentExplosionCause;
      private boolean ignoreFallDamageFromCurrentImpulse;
      private int currentImpulseContextResetGraceTime;
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
-+
+ 
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
 +    public int oldLevel = -1;
@@ -50,9 +50,10 @@
 +        return (CraftHumanEntity) super.getBukkitEntity();
 +    }
 +    // CraftBukkit end
- 
++
      public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
          super(EntityType.PLAYER, world);
+         this.lastItemInMainHand = ItemStack.EMPTY;
 @@ -353,7 +374,7 @@
      }
  
@@ -278,7 +279,15 @@
                      if (flag2) {
                          f *= 1.5F;
                      }
-@@ -1208,7 +1280,11 @@
+@@ -1202,13 +1274,17 @@
+                             if (target instanceof LivingEntity) {
+                                 LivingEntity entityliving1 = (LivingEntity) target;
+ 
+-                                entityliving1.knockback((double) (f5 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
++                                entityliving1.knockback((double) (f5 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
+                             } else {
+-                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * f5 * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * f5 * 0.5F));
++                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * f5 * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * f5 * 0.5F), this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
                              }
  
                              this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
@@ -294,13 +303,14 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
+-                                    entityliving2.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
+-                                    entityliving2.hurt(damagesource, f7);
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
 +                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep(), f7)) {
 +                                        continue;
 +                                    }
 +                                    // CraftBukkit end
-                                     entityliving2.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
--                                    entityliving2.hurt(damagesource, f7);
++                                    entityliving2.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // CraftBukkit // Paper - knockback events
 +                                    // entityliving2.hurt(damagesource, f7); // CraftBukkit - moved up
                                      Level world = this.level();
  
@@ -427,17 +437,18 @@
      }
  
      @Override
-@@ -1664,11 +1792,30 @@
+@@ -1663,12 +1791,31 @@
+ 
      public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
-     }
++    }
 +    // Paper start - send while respecting visibility
 +    private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
 +        fromEntity.level().playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity itself
 +        if (fromEntity instanceof ServerPlayer serverPlayer) {
 +            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEffect), soundCategory, x, y, z, volume, pitch, fromEntity.random.nextLong()));
 +        }
-+    }
+     }
 +    // Paper end - send while respecting visibility
  
 +    // CraftBukkit start
@@ -550,10 +561,12 @@
      }
  
      @Override
-@@ -2005,18 +2188,29 @@
+@@ -2003,20 +2186,31 @@
+     @Override
+     public ImmutableList<Pose> getDismountPoses() {
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
-     }
- 
++    }
++
 +    // Paper start - PlayerReadyArrowEvent
 +    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
 +        return !(this instanceof ServerPlayer) ||
@@ -562,9 +575,9 @@
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
 +                ).callEvent();
-+    }
+     }
 +    // Paper end - PlayerReadyArrowEvent
-+
+ 
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {

@@ -1936,19 +1936,33 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity attacker, EntityKnockbackEvent.KnockbackCause cause, double force, Vec3 raw, double x, double y, double z) {
-        Vector bukkitRaw = new Vector(-raw.x, raw.y, -raw.z); // Due to how the knockback calculation works, we need to invert x and z.
+    // Paper start - replace knockback events
+    public static io.papermc.paper.event.entity.EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity pusher, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause, double force, Vec3 knockback) {
+        Vector apiKnockback = CraftVector.toBukkit(knockback);
 
-        EntityKnockbackEvent event;
-        if (attacker != null) {
-            event = new EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
+        final Vector currentVelocity = entity.getVelocity();
+        final Vector legacyFinalKnockback = currentVelocity.clone().add(apiKnockback);
+        final org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause legacyCause = org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.valueOf(cause.name());
+        EntityKnockbackEvent legacyEvent;
+        if (pusher != null) {
+            legacyEvent = new EntityKnockbackByEntityEvent(entity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
         } else {
-            event = new EntityKnockbackEvent(entity, cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
+            legacyEvent = new EntityKnockbackEvent(entity, legacyCause, force, apiKnockback, legacyFinalKnockback);
         }
+        legacyEvent.callEvent();
 
-        Bukkit.getPluginManager().callEvent(event);
+        final io.papermc.paper.event.entity.EntityKnockbackEvent event;
+        apiKnockback = legacyEvent.getFinalKnockback().subtract(currentVelocity);
+        if (attacker != null) {
+            event = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
+        } else {
+            event = new io.papermc.paper.event.entity.EntityKnockbackEvent(entity, cause, apiKnockback);
+        }
+        event.setCancelled(legacyEvent.isCancelled());
+        event.callEvent();
         return event;
     }
+    // Paper end - replace knockback events
 
     public static void callEntityRemoveEvent(Entity entity, EntityRemoveEvent.Cause cause) {
         if (entity instanceof ServerPlayer) {

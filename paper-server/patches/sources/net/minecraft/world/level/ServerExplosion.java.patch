@@ -111,19 +111,16 @@
                          } else {
                              d6 = d5;
                          }
-@@ -214,11 +256,22 @@
+@@ -214,11 +256,19 @@
                          d3 *= d6;
                          Vec3 vec3d = new Vec3(d1, d2, d3);
  
 +                        // CraftBukkit start - Call EntityKnockbackEvent
 +                        if (entity instanceof LivingEntity) {
-+                            Vec3 result = entity.getDeltaMovement().add(vec3d);
-+                            org.bukkit.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.EXPLOSION, d6, vec3d, result.x, result.y, result.z);
-+
-+                            // SPIGOT-7640: Need to subtract entity movement from the event result,
-+                            // since the code below (the setDeltaMovement call as well as the hitPlayers map)
-+                            // want the vector to be the relative velocity will the event provides the absolute velocity
-+                            vec3d = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement());
++                           // Paper start - knockback events
++                           io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d6, vec3d);
++                            vec3d = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getKnockback());
++                           // Paper end - knockback events
 +                        }
 +                        // CraftBukkit end
                          entity.push(vec3d);
@@ -135,7 +132,7 @@
                                  this.hitPlayers.put(entityhuman, vec3d);
                              }
                          }
-@@ -235,10 +288,62 @@
+@@ -235,10 +285,62 @@
          List<ServerExplosion.StackCollector> list1 = new ArrayList();
  
          Util.shuffle(positions, this.level.random);
@@ -198,7 +195,7 @@
  
              this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
                  ServerExplosion.addOrAppendStack(list1, itemstack, blockposition1);
-@@ -262,13 +367,22 @@
+@@ -262,13 +364,22 @@
              BlockPos blockposition = (BlockPos) iterator.next();
  
              if (this.level.random.nextInt(3) == 0 && this.level.getBlockState(blockposition).isAir() && this.level.getBlockState(blockposition.below()).isSolidRender()) {
@@ -222,7 +219,7 @@
          this.level.gameEvent(this.source, (Holder) GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
  
-@@ -288,6 +402,7 @@
+@@ -288,6 +399,7 @@
      }
  
      private static void addOrAppendStack(List<ServerExplosion.StackCollector> droppedItemsOut, ItemStack item, BlockPos pos) {
@@ -230,7 +227,7 @@
          Iterator iterator = droppedItemsOut.iterator();
  
          do {
-@@ -372,4 +487,85 @@
+@@ -372,4 +484,85 @@
  
          }
      }
