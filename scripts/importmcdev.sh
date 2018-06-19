@@ -67,6 +67,7 @@ import DefinedStructure
 import DragonControllerLandedFlame
 import EnchantmentManager
 import Enchantments
+import EntityIllagerIllusioner
 import EntityLlama
 import EntitySquid
 import EntityTypes
