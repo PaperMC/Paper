@@ -877,6 +877,11 @@ public class CraftWorld implements World {
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
         return !world.createExplosion(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
     }
+    // Paper start
+    public boolean createExplosion(Entity source, Location loc, float power, boolean setFire, boolean breakBlocks) {
+        return !world.createExplosion(source != null ? ((org.bukkit.craftbukkit.entity.CraftEntity) source).getHandle() : null, loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
+    }
+    // Paper end
 
     @Override
     public boolean createExplosion(Location loc, float power) {
