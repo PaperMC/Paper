@@ -1,0 +1,83 @@
+From 56bcd520031264156557ee37406ad31801e4615e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 16 May 2018 20:39:09 -0400
+Subject: [PATCH] WitchThrowPotionEvent
+
+Fired when a witch throws a potion at a player
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/WitchThrowPotionEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/WitchThrowPotionEvent.java
+index 6ef6367b..77487e28 100644
+--- a/src/main/java/com/destroystokyo/paper/event/entity/WitchThrowPotionEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/entity/WitchThrowPotionEvent.java
+@@ -1,13 +1,51 @@
+ package com.destroystokyo.paper.event.entity;
+ 
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Witch;
+ import org.bukkit.event.Cancellable;
+-import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.inventory.ItemStack;
+ 
+-public class WitchThrowPotionEvent extends Event implements Cancellable {
+-    public WitchThrowPotionEvent() {
++/**
++ * Fired when a witch throws a potion at a player
++ */
++public class WitchThrowPotionEvent extends EntityEvent implements Cancellable {
++    private final LivingEntity target;
++    private ItemStack potion;
++
++    public WitchThrowPotionEvent(Witch witch, LivingEntity target, ItemStack potion) {
++        super(witch);
++        this.target = target;
++        this.potion = potion;
+     }
+ 
++    @Override
++    public Witch getEntity() {
++        return (Witch) super.getEntity();
++    }
++
++    /**
++     * @return The target of the potion
++     */
++    public LivingEntity getTarget() {
++        return target;
++    }
++
++    /**
++     * @return The potion the witch will throw at a player
++     */
++    public ItemStack getPotion() {
++        return potion;
++    }
++
++    /**
++     * Sets the potion to be thrown at a player
++     * @param potion The potion
++     */
++    public void setPotion(ItemStack potion) {
++        this.potion = potion != null ? potion.clone() : null;
++    }
+ 
+     private static final HandlerList handlers = new HandlerList();
+ 
+@@ -21,9 +59,12 @@ public class WitchThrowPotionEvent extends Event implements Cancellable {
+ 
+     private boolean cancelled = false;
+ 
++    /**
++     * @return Event was cancelled or potion was null
++     */
+     @Override
+     public boolean isCancelled() {
+-        return cancelled;
++        return cancelled || potion == null;
+     }
+ 
+     @Override
+-- 
+2.17.1
+
