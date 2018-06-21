@@ -777,6 +777,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
+    // Paper start - expand explosion API
+        return this.createExplosion(x, y, z, power, setFire, breakBlocks, source, null);
+    }
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
+    // Paper end - expand explosion API
         net.minecraft.world.level.Level.ExplosionInteraction explosionType;
         if (!breakBlocks) {
             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.NONE; // Don't break blocks
@@ -787,8 +792,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         net.minecraft.world.entity.Entity entity = (source == null) ? null : ((CraftEntity) source).getHandle();
-        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE).wasCanceled;
+        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, configurator).wasCanceled; // Paper - expand explosion API
     }
+    // Paper start
+    @Override
+    public boolean createExplosion(Entity source, Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage) {
+        return this.createExplosion(loc.x(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source, e -> e.excludeSourceFromDamage = excludeSourceFromDamage);
+    }
+    // Paper end
 
     @Override
     public boolean createExplosion(Location loc, float power) {

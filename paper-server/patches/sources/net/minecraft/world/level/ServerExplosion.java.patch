@@ -29,7 +29,7 @@
  
  public class ServerExplosion implements Explosion {
  
-@@ -50,16 +59,21 @@
+@@ -50,16 +59,22 @@
      private final DamageSource damageSource;
      private final ExplosionDamageCalculator damageCalculator;
      private final Map<Player, Vec3> hitPlayers = new HashMap();
@@ -37,6 +37,7 @@
 +    public boolean wasCanceled = false;
 +    public float yield;
 +    // CraftBukkit end
++    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
  
      public ServerExplosion(ServerLevel world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, Vec3 pos, float power, boolean createFire, Explosion.BlockInteraction destructionType) {
          this.level = world;
@@ -52,16 +53,16 @@
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(@Nullable Entity entity) {
-@@ -171,7 +185,7 @@
+@@ -171,7 +186,7 @@
          int l = Mth.floor(this.center.y + (double) f + 1.0D);
          int i1 = Mth.floor(this.center.z - (double) f - 1.0D);
          int j1 = Mth.floor(this.center.z + (double) f + 1.0D);
 -        List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) k, (double) i1, (double) j, (double) l, (double) j1));
-+        List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) k, (double) i1, (double) j, (double) l, (double) j1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
++        List<Entity> list = this.level.getEntities(excludeSourceFromDamage ? this.source : null, new AABB((double) i, (double) k, (double) i1, (double) j, (double) l, (double) j1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
          Iterator iterator = list.iterator();
  
          while (iterator.hasNext()) {
-@@ -192,10 +206,38 @@
+@@ -192,10 +207,38 @@
                          d3 /= d4;
                          boolean flag = this.damageCalculator.shouldDamageEntity(this, entity);
                          float f1 = this.damageCalculator.getKnockbackMultiplier(entity);
@@ -102,7 +103,7 @@
                          }
  
                          double d5 = (1.0D - d0) * (double) f2 * (double) f1;
-@@ -204,7 +246,7 @@
+@@ -204,7 +247,7 @@
                          if (entity instanceof LivingEntity) {
                              LivingEntity entityliving = (LivingEntity) entity;
  
@@ -111,7 +112,7 @@
                          } else {
                              d6 = d5;
                          }
-@@ -214,11 +256,19 @@
+@@ -214,11 +257,19 @@
                          d3 *= d6;
                          Vec3 vec3d = new Vec3(d1, d2, d3);
  
@@ -132,7 +133,7 @@
                                  this.hitPlayers.put(entityhuman, vec3d);
                              }
                          }
-@@ -235,10 +285,62 @@
+@@ -235,10 +286,62 @@
          List<ServerExplosion.StackCollector> list1 = new ArrayList();
  
          Util.shuffle(positions, this.level.random);
@@ -195,7 +196,7 @@
  
              this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
                  ServerExplosion.addOrAppendStack(list1, itemstack, blockposition1);
-@@ -262,13 +364,22 @@
+@@ -262,13 +365,22 @@
              BlockPos blockposition = (BlockPos) iterator.next();
  
              if (this.level.random.nextInt(3) == 0 && this.level.getBlockState(blockposition).isAir() && this.level.getBlockState(blockposition.below()).isSolidRender()) {
@@ -219,7 +220,7 @@
          this.level.gameEvent(this.source, (Holder) GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
  
-@@ -288,6 +399,7 @@
+@@ -288,6 +400,7 @@
      }
  
      private static void addOrAppendStack(List<ServerExplosion.StackCollector> droppedItemsOut, ItemStack item, BlockPos pos) {
@@ -227,7 +228,7 @@
          Iterator iterator = droppedItemsOut.iterator();
  
          do {
-@@ -372,4 +484,85 @@
+@@ -372,4 +485,85 @@
  
          }
      }

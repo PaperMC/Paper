@@ -79,7 +79,7 @@
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -209,7 +209,7 @@
 +                chunkgenerator = new FlatLevelSource(cpf.settings(), worldChunkManager);
 +            }
 +        }
-+
+ 
 +        if (gen != null) {
 +            chunkgenerator = new org.bukkit.craftbukkit.generator.CustomChunkGenerator(this, chunkgenerator, gen);
 +        }
@@ -543,13 +543,13 @@
 -        return this.addEntity(entity);
 +        // CraftBukkit start
 +        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
-+    }
-+
+     }
+ 
 +    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
-     }
- 
++    }
++
      public void addDuringTeleport(Entity entity) {
 +        // CraftBukkit start
 +        // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
@@ -716,7 +716,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, sourceBlock, (Direction) null, orientation);
      }
  
-@@ -1126,9 +1420,15 @@
+@@ -1126,9 +1420,20 @@
  
      @Override
      public void explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions smallParticle, ParticleOptions largeParticle, Holder<SoundEvent> soundEvent) {
@@ -725,6 +725,11 @@
 +    }
 +
 +    public ServerExplosion explode0(@Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Level.ExplosionInteraction world_a, ParticleOptions particleparam, ParticleOptions particleparam1, Holder<SoundEvent> holder) {
++    // Paper start - Allow explosions to damage source
++        return this.explode0(entity, damagesource, explosiondamagecalculator, d0, d1, d2, f, flag, world_a, particleparam, particleparam1, holder, null);
++    }
++    public ServerExplosion explode0(@Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Level.ExplosionInteraction world_a, ParticleOptions particleparam, ParticleOptions particleparam1, Holder<SoundEvent> holder, java.util.function.Consumer<ServerExplosion> configurator) {
++    // Paper end - Allow explosions to damage source
 +        // CraftBukkit end
          Explosion.BlockInteraction explosion_effect;
  
@@ -733,15 +738,14 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1143,17 +1443,27 @@
-                 break;
+@@ -1144,16 +1449,27 @@
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
-+                break;
+                 break;
 +            // CraftBukkit start - handle custom explosion type
 +            case STANDARD:
 +                explosion_effect = Explosion.BlockInteraction.DESTROY;
-                 break;
++                break;
 +            // CraftBukkit end
              default:
                  throw new MatchException((String) null, (Throwable) null);
@@ -752,6 +756,7 @@
 -        ServerExplosion serverexplosion = new ServerExplosion(this, entity, damageSource, behavior, vec3d, power, createFire, explosion_effect1);
 +        Vec3 vec3d = new Vec3(d0, d1, d2);
 +        ServerExplosion serverexplosion = new ServerExplosion(this, entity, damagesource, explosiondamagecalculator, vec3d, f, flag, explosion_effect1);
++        if (configurator != null) configurator.accept(serverexplosion);// Paper - Allow explosions to damage source
  
          serverexplosion.explode();
 -        ParticleOptions particleparam2 = serverexplosion.isSmall() ? smallParticle : largeParticle;
@@ -764,7 +769,7 @@
          Iterator iterator = this.players.iterator();
  
          while (iterator.hasNext()) {
-@@ -1162,10 +1472,11 @@
+@@ -1162,10 +1478,11 @@
              if (entityplayer.distanceToSqr(vec3d) < 4096.0D) {
                  Optional<Vec3> optional = Optional.ofNullable((Vec3) serverexplosion.getHitPlayers().get(entityplayer));
  
@@ -777,7 +782,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayRule) {
-@@ -1226,17 +1537,29 @@
+@@ -1226,17 +1543,29 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(T parameters, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
@@ -787,9 +792,12 @@
  
      public <T extends ParticleOptions> int sendParticles(T parameters, boolean force, boolean important, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 -        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(parameters, force, important, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
+-        int j = 0;
 +        return this.sendParticlesSource(null, parameters, force, important, x, y, z, count, offsetX, offsetY, offsetZ, speed); // CraftBukkit - visibility api support
 +    }
-+
+ 
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
 +    // CraftBukkit start - visibility api support
 +    public <T extends ParticleOptions> int sendParticlesSource(ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
 +        // Paper start - Particle API
@@ -799,20 +807,18 @@
 +        // Paper end - Particle API
 +        // CraftBukkit end
 +        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, flag, flag1, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
-         int j = 0;
++        int j = 0;
  
--        for (int k = 0; k < this.players.size(); ++k) {
--            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
+-            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
 +        for (Player entityhuman : receivers) { // Paper - Particle API
 +            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
 +            if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
- 
--            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
++
 +            if (this.sendParticles(entityplayer, flag, d0, d1, d2, packetplayoutworldparticles)) {
                  ++j;
              }
          }
-@@ -1292,7 +1615,7 @@
+@@ -1292,7 +1621,7 @@
  
      @Nullable
      public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipReferencedStructures) {
@@ -821,7 +827,7 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1334,11 +1657,22 @@
+@@ -1334,11 +1663,22 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId id) {
@@ -845,7 +851,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1649,6 +1983,11 @@
+@@ -1649,6 +1989,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -857,7 +863,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2007,12 @@
+@@ -1668,12 +2013,12 @@
      }
  
      public boolean isFlat() {
@@ -872,7 +878,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2035,7 @@
+@@ -1696,7 +2041,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -881,7 +887,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2044,7 @@
+@@ -1705,7 +2050,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -890,7 +896,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2056,7 @@
+@@ -1717,6 +2062,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -898,7 +904,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2142,17 @@
+@@ -1802,6 +2148,17 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -916,7 +922,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1836,6 +2187,7 @@
+@@ -1836,6 +2193,7 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -924,7 +930,7 @@
              ServerLevel.this.getChunkSource().addEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
-@@ -1864,9 +2216,52 @@
+@@ -1864,9 +2222,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -977,7 +983,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2290,15 @@
+@@ -1895,6 +2296,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
