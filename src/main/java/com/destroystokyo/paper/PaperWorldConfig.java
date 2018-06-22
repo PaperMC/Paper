@@ -367,4 +367,9 @@ public class PaperWorldConfig {
     private void shieldBlockingDelay() {
         shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
     }
+
+    public boolean scanForLegacyEnderDragon = true;
+    private void scanForLegacyEnderDragon() {
+        scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+    }
 }

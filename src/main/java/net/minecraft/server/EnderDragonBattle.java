@@ -31,7 +31,7 @@ public class EnderDragonBattle {
     private boolean dragonKilled;
     private boolean previouslyKilled;
     public UUID dragonUUID;
-    private boolean n;
+    private boolean n; private void setScanForLegacyFight(boolean scanForLegacyFight) { this.n = scanForLegacyFight; } private boolean scanForLegacyFight() { return this.n; } // Paper - OBFHELPER
     public BlockPosition exitPortalLocation;
     public EnumDragonRespawn respawnPhase;
     private int q;
@@ -41,6 +41,10 @@ public class EnderDragonBattle {
         this.bossBattle = (BossBattleServer) (new BossBattleServer(new ChatMessage("entity.minecraft.ender_dragon"), BossBattle.BarColor.PINK, BossBattle.BarStyle.PROGRESS)).setPlayMusic(true).c(true);
         this.gateways = Lists.newArrayList();
         this.n = true;
+        // Paper start
+        setScanForLegacyFight(worldserver.paperConfig.scanForLegacyEnderDragon);
+        if (!scanForLegacyFight()) dragonKilled = true;
+        // Paper end
         this.world = worldserver;
         if (nbttagcompound.hasKeyOfType("DragonKilled", 99)) {
             if (nbttagcompound.b("Dragon")) {
