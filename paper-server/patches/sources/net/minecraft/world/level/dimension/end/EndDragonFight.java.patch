@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -111,14 +111,14 @@
+@@ -111,14 +111,20 @@
          this.origin = origin;
          this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance((double) origin.getX(), (double) (128 + origin.getY()), (double) origin.getZ(), 192.0D));
          this.needsStateScanning = data.needsStateScanning;
@@ -11,13 +11,19 @@
          if (data.isRespawning) {
              this.respawnStage = DragonRespawnAnimation.START;
          }
++        // Paper start - Add config to disable ender dragon legacy check
++        if (data == EndDragonFight.Data.DEFAULT && !world.paperConfig().entities.spawning.scanForLegacyEnderDragon) {
++            this.needsStateScanning = false;
++            this.dragonKilled = true;
++        }
++        // Paper end - Add config to disable ender dragon legacy check
  
 -        this.portalLocation = (BlockPos) data.exitPortalLocation.orElse((Object) null);
 +        this.portalLocation = (BlockPos) data.exitPortalLocation.orElse(null); // CraftBukkit - decompile error
          this.gateways.addAll((Collection) data.gateways.orElseGet(() -> {
              ObjectArrayList<Integer> objectarraylist = new ObjectArrayList(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
  
-@@ -208,7 +208,7 @@
+@@ -208,7 +214,7 @@
              this.dragonKilled = false;
              if (!flag) {
                  EndDragonFight.LOGGER.info("But we didn't have a portal, let's remove it.");
@@ -26,7 +32,7 @@
                  this.dragonUUID = null;
              }
          }
-@@ -513,7 +513,7 @@
+@@ -513,7 +519,7 @@
          return this.previouslyKilled;
      }
  
@@ -35,7 +41,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockposition = this.portalLocation;
  
-@@ -540,19 +540,19 @@
+@@ -540,19 +546,19 @@
                  List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
                  if (list1.isEmpty()) {
@@ -59,7 +65,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
                  for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +571,10 @@
+@@ -571,9 +577,10 @@
              this.respawnStage = DragonRespawnAnimation.START;
              this.respawnTime = 0;
              this.spawnExitPortal(false);
