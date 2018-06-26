@@ -11,7 +11,7 @@ nms="$decompiledir/net/minecraft/server"
 cb="src/main/java/net/minecraft/server"
 gitcmd="git -c commit.gpgsign=false"
 
-patch=$(which patch 2>/dev/null)
+patch=$(which patch)
 if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
 fi
