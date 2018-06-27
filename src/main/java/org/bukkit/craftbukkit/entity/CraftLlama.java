@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.entity.CraftRangedEntity;
 import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityLlama;
 import org.bukkit.craftbukkit.CraftServer;
@@ -9,7 +10,7 @@ import org.bukkit.entity.Horse;
 import org.bukkit.entity.Llama;
 import org.bukkit.inventory.LlamaInventory;
 
-public class CraftLlama extends CraftChestedHorse implements Llama {
+public class CraftLlama extends CraftChestedHorse implements Llama, CraftRangedEntity<EntityLlama> { // Paper
 
     public CraftLlama(CraftServer server, EntityLlama entity) {
         super(server, entity);

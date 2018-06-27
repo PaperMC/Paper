@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.entity.CraftRangedEntity;
 import net.minecraft.server.EntityWither;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
@@ -7,7 +8,7 @@ import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Wither;
 
-public class CraftWither extends CraftMonster implements Wither {
+public class CraftWither extends CraftMonster implements Wither, CraftRangedEntity<EntityWither> { // Paper
 
     private BossBar bossBar;
 
