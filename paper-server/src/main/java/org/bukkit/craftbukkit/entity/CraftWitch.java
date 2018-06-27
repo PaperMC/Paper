@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Witch;
 
-public class CraftWitch extends CraftRaider implements Witch {
+public class CraftWitch extends CraftRaider implements Witch, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.monster.Witch> { // Paper
     public CraftWitch(CraftServer server, net.minecraft.world.entity.monster.Witch entity) {
         super(server, entity);
     }

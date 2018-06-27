@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.Piglin;
 import org.bukkit.inventory.Inventory;
 
-public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
+public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.monster.piglin.Piglin> { // Paper
 
     public CraftPiglin(CraftServer server, net.minecraft.world.entity.monster.piglin.Piglin entity) {
         super(server, entity);
