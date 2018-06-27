@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Wither boss
  */
-public interface Wither extends Monster, Boss {
+public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.RangedEntity { // Paper
 
     /**
      * {@inheritDoc}

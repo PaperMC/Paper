@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * of this type, instanceOf checks against the specific subtypes listed prior
  * are recommended.
  */
-public interface AbstractSkeleton extends Monster {
+public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entity.RangedEntity { // Paper
 
     /**
      * Gets the current type of this skeleton.

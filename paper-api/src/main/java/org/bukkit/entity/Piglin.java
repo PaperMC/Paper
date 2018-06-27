@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Piglin.
  */
-public interface Piglin extends PiglinAbstract, InventoryHolder {
+public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity { // Paper
 
     /**
      * Get whether the piglin is able to hunt hoglins.

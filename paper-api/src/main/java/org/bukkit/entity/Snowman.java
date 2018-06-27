@@ -1,9 +1,11 @@
 package org.bukkit.entity;
 
+import com.destroystokyo.paper.entity.RangedEntity;
+
 /**
  * Represents a snowman entity
  */
-public interface Snowman extends Golem {
+public interface Snowman extends Golem, RangedEntity { // Paper
 
     /**
      * Gets whether this snowman is in "derp mode", meaning it is not wearing a
