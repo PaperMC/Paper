@@ -80,6 +80,7 @@ import IHopper
 import ItemBlock
 import ItemFireworks
 import ItemMonsterEgg
+import IRangedEntity
 import LegacyPingHandler
 import LotoSelectorEntry
 import NavigationAbstract
