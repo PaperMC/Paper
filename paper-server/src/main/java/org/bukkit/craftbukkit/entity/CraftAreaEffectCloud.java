@@ -34,6 +34,11 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     }
 
     @Override
+    public String toString() {
+        return "CraftAreaEffectCloud";
+    }
+
+    @Override
     public EntityType getType() {
         return EntityType.AREA_EFFECT_CLOUD;
     }
