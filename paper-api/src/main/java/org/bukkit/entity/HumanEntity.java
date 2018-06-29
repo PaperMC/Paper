@@ -367,7 +367,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * blocking).
      *
      * @return Whether their hand is raised
+     * @see LivingEntity#hasActiveItem()
      */
+    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.4") // Paper - active item API
     public boolean isHandRaised();
 
     /**
