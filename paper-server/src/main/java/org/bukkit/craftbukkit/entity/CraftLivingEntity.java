@@ -884,4 +884,53 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         getHandle().setShieldBlockingDelay(delay);
     }
     // Paper end
+
+    // Paper start - active item API
+    @Override
+    public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
+        Preconditions.checkArgument(hand != null, "hand must not be null");
+        switch (hand) {
+            case HAND -> getHandle().startUsingItem(InteractionHand.MAIN_HAND);
+            case OFF_HAND -> getHandle().startUsingItem(InteractionHand.OFF_HAND);
+            default -> throw new IllegalArgumentException("hand may only be HAND or OFF_HAND");
+        }
+    }
+
+    @Override
+    public void completeUsingActiveItem() {
+        getHandle().completeUsingItem();
+    }
+
+    @Override
+    public ItemStack getActiveItem() {
+        return this.getHandle().getUseItem().asBukkitMirror();
+    }
+
+    @Override
+    public int getActiveItemRemainingTime() {
+        return this.getHandle().getUseItemRemainingTicks();
+    }
+
+    @Override
+    public void setActiveItemRemainingTime(final int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
+        Preconditions.checkArgument(ticks <= this.getHandle().getUseItem().getUseDuration(this.getHandle()), "ticks must be <= item use duration");
+        this.getHandle().useItemRemaining = ticks;
+    }
+
+    @Override
+    public int getActiveItemUsedTime() {
+        return this.getHandle().getTicksUsingItem();
+    }
+
+    @Override
+    public boolean hasActiveItem() {
+        return this.getHandle().isUsingItem();
+    }
+
+    @Override
+    public org.bukkit.inventory.EquipmentSlot getActiveItemHand() {
+        return org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(this.getHandle().getUsedItemHand());
+    }
+    // Paper end - active item API
 }
