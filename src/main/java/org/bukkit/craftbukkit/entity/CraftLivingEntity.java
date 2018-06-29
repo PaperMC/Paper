@@ -720,5 +720,25 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setShieldBlockingDelay(int delay) {
         getHandle().setShieldBlockingDelay(delay);
     }
+
+    @Override
+    public ItemStack getActiveItem() {
+        return getHandle().activeItem.asBukkitMirror();
+    }
+
+    @Override
+    public int getItemUseRemainingTime() {
+        return getHandle().getItemUseRemainingTime();
+    }
+
+    @Override
+    public int getHandRaisedTime() {
+        return getHandle().getHandRaisedTime();
+    }
+
+    @Override
+    public boolean isHandRaised() {
+        return getHandle().isHandRaised();
+    }
     // Paper end
 }
