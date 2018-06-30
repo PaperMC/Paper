@@ -1,0 +1,60 @@
+From 7867cd96c0c87f5bac30a86077f260fc1dd8a4ea Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 15 Aug 2017 22:29:12 -0400
+Subject: [PATCH] Expand World.spawnParticle API and add Builder
+
+Adds ability to control who receives it and who is the source/sender (vanish API)
+the standard API is to send the packet to everyone in the world, which is ineffecient.
+
+This adds a new Builder API which is much friendlier to use.
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index c06158e02..49019d54d 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1399,12 +1399,17 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         sendParticles(null, enumparticle, flag, d0, d1, d2, i, d3, d4, d5, d6, aint);
+     }
+ 
++    // Paper start - Particle API Expansion
+     public void sendParticles(EntityPlayer sender, EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
++        sendParticles(this.players, sender, enumparticle, flag, d0, d1, d2, i, d3, d4, d5, d6, aint);
++    }
++    public void sendParticles(List<? extends EntityHuman> receivers, EntityPlayer sender, EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
++        // Paper end
+         // CraftBukkit end
+         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(enumparticle, flag, (float) d0, (float) d1, (float) d2, (float) d3, (float) d4, (float) d5, (float) d6, i, aint);
+ 
+-        for (int j = 0; j < this.players.size(); ++j) {
+-            EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
++        for (EntityHuman entityhuman : receivers) { // Paper - Particle API Expansion
++            EntityPlayer entityplayer = (EntityPlayer) entityhuman; // Paper - Particle API Expansion
+             if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
+             BlockPosition blockposition = entityplayer.getChunkCoordinates();
+             double d7 = blockposition.distanceSquared(d0, d1, d2);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 568a50ec4..36dd8ad60 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1568,13 +1568,16 @@ public class CraftWorld implements World {
+         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
+     }
+ 
++    // Paper start - Particle API Expansion
+     @Override
+-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
++    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
++        // Paper end
+         if (data != null && !particle.getDataType().isInstance(data)) {
+             throw new IllegalArgumentException("data should be " + particle.getDataType() + " got " + data.getClass());
+         }
+         getHandle().sendParticles(
+-                null, // Sender
++                receivers == null ? getHandle().players : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API Expansion
++                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API Expansion
+                 CraftParticle.toNMS(particle), // Particle
+                 true, // Extended range
+                 x, y, z, // Position
+-- 
+2.18.0
+

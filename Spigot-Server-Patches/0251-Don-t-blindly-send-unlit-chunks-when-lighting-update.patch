@@ -1,0 +1,48 @@
+From 3189e3af74a86585787bd2adbfa1315620bbd417 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 18 Dec 2017 07:26:56 +0000
+Subject: [PATCH] Don't blindly send unlit chunks when lighting updates are
+ allowed
+
+Spigot, by default, disables several mechanisms around how chunks are
+lit, if ever, which has forced them to always send chunks before vanilla
+would consider them ready to send, causing for lots of issues around
+lighting glitches.
+
+Shamefully, the amount of work to relight chunks can be detremental
+to some servers, meaning that forcibily disabling light updates can
+cause major performance issues.
+
+as such, we make a compromise; if this "feature" is disabled, we will
+only send chunks which are actually ready to be sent, otherwise, we
+will always send chunks.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index aecfa331d..7cd537a59 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -39,7 +39,7 @@ public class Chunk {
+     final PaperLightingQueue.LightingQueue lightingQueue = new PaperLightingQueue.LightingQueue(this); // Paper
+     private boolean done;
+     private boolean lit;
+-    private boolean r;
++    private boolean r; private boolean isTicked() { return r; }; // Paper - OBFHELPER
+     private boolean s;
+     private boolean t;
+     private long lastSaved;
+@@ -1137,7 +1137,11 @@ public class Chunk {
+          * We cannot unfortunately do this lighting stage during chunk gen as it appears to put a lot more noticeable load on the server, than when it is done at play time.
+          * For now at least we will simply send all chunks, in accordance with pre 1.7 behaviour.
+          */
+-        return true;
++        // Paper Start
++        // if randomLightUpdates are disabled, we should always return true, otherwise chunks may never send
++        // to the client due to not being lit, otherwise retain standard behavior and only send properly lit chunks.
++        return !this.world.spigotConfig.randomLightUpdates || (this.isTicked() && this.done && this.lit);
++        // Paper End
+         // Spigot End
+     }
+ 
+-- 
+2.18.0
+
