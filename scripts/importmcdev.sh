@@ -65,8 +65,10 @@ import DataInspectorBlockEntity
 import DataPalette
 import DefinedStructure
 import DragonControllerLandedFlame
+import DragonControllerStrafe
 import EnchantmentManager
 import Enchantments
+import EntityDragonFireball
 import EntityIllagerIllusioner
 import EntityLlama
 import EntitySquid
