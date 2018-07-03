@@ -1,28 +1,43 @@
-From c560723f16f4031e744c72e218e20b0153c35e3f Mon Sep 17 00:00:00 2001
+From a4c6f19b6b2bb852891f867ca3c96bd485e4b58b Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 11 Feb 2018 10:43:46 +0000
-Subject: [PATCH] Extend Player Interact cancellation to GUIs
+Subject: [PATCH] Extend Player Interact cancellation
 
 GUIs are opened on the client, meaning that the server cannot block them from opening,
 However, it is possible to close these GUIs from the server.
 
+Flower pots are also not updated on the client when interaction is cancelled, this patch
+also resolves this.
+
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 5ec7f5819..b1cdb2154 100644
+index 5ec7f5819..24f14337a 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-@@ -468,6 +468,12 @@ public class PlayerInteractManager {
+@@ -468,6 +468,24 @@ public class PlayerInteractManager {
                      ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
                  } else if (blockdata.getBlock() instanceof BlockCake) {
                      ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
-+                // Paper start - extend Player Interact cancellation to GUIs
++                // Paper start - extend Player Interact cancellation
 +                } else if (blockdata.getBlock() instanceof BlockStructure) {
 +                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
 +                } else if (blockdata.getBlock() instanceof BlockCommand) {
 +                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
-+                // Paper end - extend Player Interact cancellation to GUIs
++                } else if (blockdata.getBlock() instanceof BlockFlowerPot) {
++                    // Send a block change to air and then send back the correct block, just to make the client happy
++                    PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(this.world, blockposition);
++                    packet.block = Blocks.AIR.getBlockData();
++                    this.player.playerConnection.sendPacket(packet);
++
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++
++                    TileEntity tileentity = this.world.getTileEntity(blockposition);
++                    if (tileentity != null) {
++                        player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++                    }
++                // Paper end - extend Player Interact cancellation
                  }
                  ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-2867
                  enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
 -- 
-2.18.0
+2.17.1
 
