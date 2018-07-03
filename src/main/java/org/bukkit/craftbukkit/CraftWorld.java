@@ -1291,6 +1291,15 @@ public class CraftWorld implements World {
         return list;
     }
 
+    // Paper start - getEntity by UUID API
+    @Override
+    public Entity getEntity(UUID uuid) {
+        Validate.notNull(uuid, "UUID cannot be null");
+        net.minecraft.server.Entity entity = world.getEntity(uuid);
+        return entity == null ? null : entity.getBukkitEntity();
+    }
+    // Paper end
+
     @Override
     public void save() {
         org.spigotmc.AsyncCatcher.catchOp("world save"); // Spigot
