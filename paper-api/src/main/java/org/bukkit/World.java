@@ -932,6 +932,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z);
 
+    // Paper start - getEntity by UUID API
+    /**
+     * Gets an entity in this world by its UUID
+     *
+     * @param uuid the UUID of the entity
+     * @return the entity with the given UUID, or null if it isn't found
+     */
+    @Nullable
+    public Entity getEntity(@NotNull java.util.UUID uuid);
+    // Paper end
+
     /**
      * Returns a list of entities within a bounding box centered around a
      * Location.
