@@ -178,7 +178,7 @@ public class PaperCommand extends Command {
 
                 Collection<Entity> entities = world.entitiesById.values();
                 entities.forEach(e -> {
-                    MinecraftKey key = new MinecraftKey(""); // TODO: update in next patch
+                    MinecraftKey key = e.getMinecraftKey();
 
                     MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                     ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.chunkX, e.chunkZ);
