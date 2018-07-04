@@ -1,0 +1,116 @@
+From 617df7f96ccc3f78fb180a4160fe637a89510f92 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 03:39:51 -0400
+Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
+
+In many places where we simply want the current chunk the entity
+is in, instead of doing a hashmap lookup for it, we now have access
+to the object directly on the Entity/TileEntity object we can directly grab.
+
+Use that local value instead to reduce lookups in many hot places.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 71d0db3f3..a51b648c5 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -704,6 +704,7 @@ public class Chunk {
+         // Spigot end
+     }
+ 
++    public void removeEntity(Entity entity) { b(entity); } // Paper - OBFHELPER
+     public void b(Entity entity) {
+         this.a(entity, entity.ac);
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index c0816b9f8..36818bf55 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1511,12 +1511,15 @@ public abstract class World implements IBlockAccess {
+         int j;
+         // Paper start - Set based removal lists
+         for (Entity e : this.f) {
++            /*
+             j = e.getChunkZ();
+             int k = e.getChunkX();
+ 
+             if (e.isAddedToChunk() && this.isChunkLoaded(k, j, true)) {
+                 this.getChunkAt(k, j).b(e);
+-            }
++            }*/
++            Chunk chunk = e.getCurrentChunk();
++            if (chunk != null) chunk.removeEntity(e);
+         }
+ 
+         for (Entity e : this.f) {
+@@ -1577,12 +1580,17 @@ public abstract class World implements IBlockAccess {
+             this.methodProfiler.b();
+             this.methodProfiler.a("remove");
+             if (entity.dead) {
++                // Paper start
++                /*
+                 j = entity.ab;
+                 int l = entity.ad;
+ 
+-                if (entity.aa && this.isChunkLoaded(j, l, true)) {
++                /*if (entity.aa && this.isChunkLoaded(j, l, true)) {
+                     this.getChunkAt(j, l).b(entity);
+-                }
++                }*/
++                Chunk chunk = entity.getCurrentChunk();
++                if (chunk != null) chunk.removeEntity(entity);
++                // Paper end
+ 
+                 guardEntityList = false; // Spigot
+                 this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
+@@ -1627,7 +1635,7 @@ public abstract class World implements IBlockAccess {
+                 BlockPosition blockposition = tileentity.getPosition();
+ 
+                 // Paper start - Skip ticking in chunks scheduled for unload
+-                net.minecraft.server.Chunk chunk = this.getChunkIfLoaded(blockposition);
++                net.minecraft.server.Chunk chunk = tileentity.getCurrentChunk();
+                 boolean shouldTick = chunk != null;
+                 if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
+                     shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
+@@ -1663,7 +1671,10 @@ public abstract class World implements IBlockAccess {
+                 tilesThisCycle--;
+                 this.tileEntityListTick.remove(tileTickPosition--);
+                 //this.tileEntityList.remove(tileentity); // Paper - remove unused list
+-                if (this.isLoaded(tileentity.getPosition())) {
++                // Paper start
++                net.minecraft.server.Chunk chunk = tileentity.getCurrentChunk();
++                if (chunk != null) {
++                    // Paper end
+                     this.getChunkAtWorldCoords(tileentity.getPosition()).d(tileentity.getPosition());
+                 }
+             }
+@@ -1684,8 +1695,11 @@ public abstract class World implements IBlockAccess {
+                     }
+                     // CraftBukkit end */
+ 
+-                    if (this.isLoaded(tileentity1.getPosition())) {
+-                        Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
++                    // Paper
++                    net.minecraft.server.Chunk chunk = tileentity1.getCurrentChunk();
++                    if (chunk != null) {
++                        //Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
++                        // Paper end
+                         IBlockData iblockdata = chunk.getBlockData(tileentity1.getPosition());
+ 
+                         chunk.a(tileentity1.getPosition(), tileentity1);
+@@ -1805,8 +1819,11 @@ public abstract class World implements IBlockAccess {
+         int k = MathHelper.floor(entity.locZ / 16.0D);
+ 
+         if (!entity.aa || entity.ab != i || entity.ac != j || entity.ad != k) {
+-            if (entity.aa && this.isChunkLoaded(entity.ab, entity.ad, true)) {
+-                this.getChunkAt(entity.ab, entity.ad).a(entity, entity.ac);
++            // Paper start
++            Chunk currentChunk = entity.getCurrentChunk();
++            if (entity.aa && currentChunk != null) {
++                currentChunk.removeEntity(entity);
++                // Paper end
+             }
+ 
+             if (!entity.bD() && !this.isChunkLoaded(i, k, true)) {
+-- 
+2.18.0
+
