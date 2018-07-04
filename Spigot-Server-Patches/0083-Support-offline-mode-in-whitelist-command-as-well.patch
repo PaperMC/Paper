@@ -1,0 +1,93 @@
+From 0e1114be5240770f53eb77187b73f603f8f168cb Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 21 Mar 2016 00:19:18 -0500
+Subject: [PATCH] Support offline mode in whitelist command as well
+
+
+diff --git a/src/main/java/net/minecraft/server/CommandWhitelist.java b/src/main/java/net/minecraft/server/CommandWhitelist.java
+index c74d1d2be..0f4237db1 100644
+--- a/src/main/java/net/minecraft/server/CommandWhitelist.java
++++ b/src/main/java/net/minecraft/server/CommandWhitelist.java
+@@ -44,24 +44,35 @@ public class CommandWhitelist extends CommandAbstract {
+                         throw new ExceptionUsage("commands.whitelist.add.usage", new Object[0]);
+                     }
+ 
++                    // Paper start - Handle offline mode as well
++                    /*
+                     gameprofile = minecraftserver.getUserCache().getProfile(astring[1]);
+                     if (gameprofile == null) {
+                         throw new CommandException("commands.whitelist.add.failed", new Object[] { astring[1]});
+                     }
+ 
+                     minecraftserver.getPlayerList().addWhitelist(gameprofile);
++                    */
++                    this.whitelist(minecraftserver, astring[1], true);
++                    // Paper end
+                     a(icommandlistener, (ICommand) this, "commands.whitelist.add.success", new Object[] { astring[1]});
+                 } else if ("remove".equals(astring[0])) {
+                     if (astring.length < 2) {
+                         throw new ExceptionUsage("commands.whitelist.remove.usage", new Object[0]);
+                     }
+ 
++                    // Paper start - Handle offline mode as well
++                    /*
+                     gameprofile = minecraftserver.getPlayerList().getWhitelist().a(astring[1]);
+                     if (gameprofile == null) {
+                         throw new CommandException("commands.whitelist.remove.failed", new Object[] { astring[1]});
+                     }
+ 
+                     minecraftserver.getPlayerList().removeWhitelist(gameprofile);
++
++                    */
++                    this.whitelist(minecraftserver, astring[1], false);
++                    // Paper end
+                     a(icommandlistener, (ICommand) this, "commands.whitelist.remove.success", new Object[] { astring[1]});
+                 } else if ("reload".equals(astring[0])) {
+                     minecraftserver.getPlayerList().reloadWhitelist();
+@@ -89,4 +100,43 @@ public class CommandWhitelist extends CommandAbstract {
+             return Collections.emptyList();
+         }
+     }
++
++    // Paper start
++    /**
++     * Adds or removes a player from the game whitelist
++     *
++     * @param mcserver running instance of MinecraftServer
++     * @param playerName the player we're going to be whitelisting
++     * @param add whether we're adding or removing from the whitelist
++     */
++    private void whitelist(MinecraftServer mcserver, String playerName, boolean add) throws CommandException {
++        if (mcserver.getOnlineMode()) {
++            // The reason we essentially copy/pasta NMS code here is because the NMS online-only version
++            // is capable of providing feedback to the person running the command based on whether or
++            // not the player is a real online-mode account
++            GameProfile gameprofile = mcserver.getUserCache().getProfile(playerName);
++            if (gameprofile == null) {
++                if (add) {
++                    throw new CommandException("commands.whitelist.add.failed", new Object[] { playerName});
++                } else {
++                    throw new CommandException("commands.whitelist.remove.failed", new Object[] { playerName});
++                }
++            }
++
++            if (add) {
++                mcserver.getPlayerList().addWhitelist(gameprofile);
++            } else {
++                mcserver.getPlayerList().removeWhitelist(gameprofile);
++            }
++        } else {
++            // versus our offline version, which will always report success all of the time
++            org.bukkit.OfflinePlayer offlinePlayer = org.bukkit.Bukkit.getOfflinePlayer(playerName);
++            if (add) {
++                offlinePlayer.setWhitelisted(true);
++            } else {
++                offlinePlayer.setWhitelisted(false);
++            }
++        }
++    }
++    // Paper end
+ }
+-- 
+2.18.0
+

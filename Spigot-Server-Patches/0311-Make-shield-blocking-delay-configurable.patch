@@ -1,0 +1,73 @@
+From 29599c88d5f36c9ade555f7a6d7890cc78c126f1 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 16 Jun 2018 01:18:16 -0500
+Subject: [PATCH] Make shield blocking delay configurable
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 03a9a96fc..99ad40fa3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -519,4 +519,9 @@ public class PaperWorldConfig {
+         disableEnderpearlExploit = getBoolean("game-mechanics.disable-unloaded-chunk-enderpearl-exploit", disableEnderpearlExploit);
+         log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
+     }
++
++    public int shieldBlockingDelay = 5;
++    private void shieldBlockingDelay() {
++        shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 9adcabd4f..65bc19b17 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2481,7 +2481,7 @@ public abstract class EntityLiving extends Entity {
+         if (this.isHandRaised() && !this.activeItem.isEmpty()) {
+             Item item = this.activeItem.getItem();
+ 
+-            return item.f(this.activeItem) != EnumAnimation.BLOCK ? false : item.e(this.activeItem) - this.bp >= 5;
++            return item.f(this.activeItem) != EnumAnimation.BLOCK ? false : item.e(this.activeItem) - this.bp >= getShieldBlockingDelay(); // Paper - shieldBlockingDelay
+         } else {
+             return false;
+         }
+@@ -2569,4 +2569,16 @@ public abstract class EntityLiving extends Entity {
+     public boolean cS() {
+         return true;
+     }
++
++    // Paper start
++    public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
++
++    public int getShieldBlockingDelay() {
++        return shieldBlockingDelay;
++    }
++
++    public void setShieldBlockingDelay(int shieldBlockingDelay) {
++        this.shieldBlockingDelay = shieldBlockingDelay;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index a7b076377..14fb474f7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -515,5 +515,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public void setArrowsStuck(int arrows) {
+         getHandle().setArrowCount(arrows);
+     }
++
++    @Override
++    public int getShieldBlockingDelay() {
++        return getHandle().getShieldBlockingDelay();
++    }
++
++    @Override
++    public void setShieldBlockingDelay(int delay) {
++        getHandle().setShieldBlockingDelay(delay);
++    }
+     // Paper end
+ }
+-- 
+2.18.0
+

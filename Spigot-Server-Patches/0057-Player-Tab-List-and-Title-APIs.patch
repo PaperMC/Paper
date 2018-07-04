@@ -1,0 +1,179 @@
+From abeaa2a2bfcde56cb470cdbcc36d5eaac6e02320 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Thu, 3 Mar 2016 02:32:10 -0600
+Subject: [PATCH] Player Tab List and Title APIs
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
+index 0663b07ca..f5ef1ba31 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
+@@ -4,6 +4,8 @@ import java.io.IOException;
+ 
+ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListenerPlayOut> {
+ 
++    public net.md_5.bungee.api.chat.BaseComponent[] header, footer; // Paper
++
+     private IChatBaseComponent a;
+     private IChatBaseComponent b;
+ 
+@@ -15,8 +17,19 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+-        packetdataserializer.a(this.a);
+-        packetdataserializer.a(this.b);
++        // Paper start
++        if (this.header != null) {
++            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.header));
++        } else {
++            packetdataserializer.a(this.a);
++        }
++
++        if (this.footer != null) {
++            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.footer));
++        } else {
++            packetdataserializer.a(this.b);
++        }
++        // Paper end
+     }
+ 
+     public void a(PacketListenerPlayOut packetlistenerplayout) {
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+index 7bcafa8bb..4f6c1c2e7 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+@@ -12,6 +12,18 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+     private int d;
+     private int e;
+ 
++    // Paper start
++    public net.md_5.bungee.api.chat.BaseComponent[] components;
++
++    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
++        this.a = action;
++        this.components = components;
++        this.c = fadeIn;
++        this.d = stay;
++        this.e = fadeOut;
++    }
++    // Paper end
++
+     public PacketPlayOutTitle() {}
+ 
+     public PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction packetplayouttitle_enumtitleaction, IChatBaseComponent ichatbasecomponent) {
+@@ -47,7 +59,13 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+         packetdataserializer.a((Enum) this.a);
+         if (this.a == PacketPlayOutTitle.EnumTitleAction.TITLE || this.a == PacketPlayOutTitle.EnumTitleAction.SUBTITLE || this.a == PacketPlayOutTitle.EnumTitleAction.ACTIONBAR) {
+-            packetdataserializer.a(this.b);
++            // Paper start
++            if (this.components != null) {
++                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components));
++            } else {
++                packetdataserializer.a(this.b);
++            }
++            // Paper end
+         }
+ 
+         if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index b2b707305..c14100ac6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.Title;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+ import com.google.common.io.BaseEncoding;
+@@ -163,6 +164,85 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
++        PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
++        packet.header = header;
++        packet.footer = footer;
++        getHandle().playerConnection.sendPacket(packet);
++    }
++
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent header, BaseComponent footer) {
++        this.setPlayerListHeaderFooter(header == null ? null : new BaseComponent[]{header},
++                footer == null ? null : new BaseComponent[]{footer});
++    }
++
++
++    @Override
++    public void setTitleTimes(int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TIMES, (BaseComponent[]) null, fadeInTicks, stayTicks, fadeOutTicks));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent[] subtitle) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, subtitle, 0, 0, 0));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent subtitle) {
++        setSubtitle(new BaseComponent[]{subtitle});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, title, 0, 0, 0));
++    }
++
++    @Override
++    public void showTitle(BaseComponent title) {
++        showTitle(new BaseComponent[]{title});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title, BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void showTitle(BaseComponent title, BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void hideTitle() {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.CLEAR, (BaseComponent[]) null, 0, 0, 0));
++    }
++    // Paper end
++
+     @Override
+     public String getDisplayName() {
+         return getHandle().displayName;
+-- 
+2.18.0
+

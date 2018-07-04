@@ -1,0 +1,71 @@
+From d03b75f5e4ea7e6ff34ebc7651c9a86e2550c6ef Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 19:55:45 -0400
+Subject: [PATCH] Option to disable BlockPhysicsEvent for Redstone
+
+Not sure of any reason a plugin would need to act on a Physics event
+for redstone. There is a BlockRedstoneEvent that plugins can also use
+for accessing redstone activity.
+
+Defaulting this to false will provide substantial performance improvement
+by saving millions of event calls on redstone heavy servers.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 38d664e00..e634c3afd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -266,4 +266,9 @@ public class PaperWorldConfig {
+     private void skeleHorseSpawnChance() {
+         skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D); // -1.0D represents a "vanilla" state
+     }
++
++    public boolean firePhysicsEventForRedstone = false;
++    private void firePhysicsEventForRedstone() {
++        firePhysicsEventForRedstone = getBoolean("fire-physics-event-for-redstone", firePhysicsEventForRedstone);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 8f0a306cc..74ae80646 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -582,7 +582,7 @@ public abstract class World implements IBlockAccess {
+             try {
+                 // CraftBukkit start
+                 CraftWorld world = ((WorldServer) this).getWorld();
+-                if (world != null) {
++                if (world != null && !((WorldServer)this).stopPhysicsEvent) { // Paper
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftMagicNumbers.getId(block));
+                     this.getServer().getPluginManager().callEvent(event);
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 96792300c..ebe397116 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -35,6 +35,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
+ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+     private static final Logger a = LogManager.getLogger();
++    boolean stopPhysicsEvent = false; // Paper
+     private final MinecraftServer server;
+     public EntityTracker tracker;
+     private final PlayerChunkMap manager;
+@@ -777,6 +778,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+                         if (iblockdata.getMaterial() != Material.AIR && Block.a(iblockdata.getBlock(), nextticklistentry.a())) {
+                             try {
++                                stopPhysicsEvent = !paperConfig.firePhysicsEventForRedstone && (iblockdata.getBlock() instanceof BlockDiodeAbstract || iblockdata.getBlock() instanceof BlockRedstoneTorch); // Paper
+                                 iblockdata.getBlock().b((World) this, nextticklistentry.a, iblockdata, this.random);
+                             } catch (Throwable throwable) {
+                                 CrashReport crashreport = CrashReport.a(throwable, "Exception while ticking a block");
+@@ -784,7 +786,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+                                 CrashReportSystemDetails.a(crashreportsystemdetails, nextticklistentry.a, iblockdata);
+                                 throw new ReportedException(crashreport);
+-                            }
++                            } finally { stopPhysicsEvent = false; } // Paper
+                         }
+                         timing.stopTiming(); // Paper
+                     } else {
+-- 
+2.18.0
+

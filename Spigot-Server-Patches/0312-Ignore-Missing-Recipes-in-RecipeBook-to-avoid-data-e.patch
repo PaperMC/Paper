@@ -1,0 +1,43 @@
+From 34db39b1a0906f9fce82f2970d924b95289a4bc7 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 16 Jun 2018 16:23:38 -0400
+Subject: [PATCH] Ignore Missing Recipes in RecipeBook to avoid data errors
+
+This code was causing NPE's in saving player data, potentially related to reloads.
+
+diff --git a/src/main/java/net/minecraft/server/RecipeBookServer.java b/src/main/java/net/minecraft/server/RecipeBookServer.java
+index 7eecdc9da..f65e74ebd 100644
+--- a/src/main/java/net/minecraft/server/RecipeBookServer.java
++++ b/src/main/java/net/minecraft/server/RecipeBookServer.java
+@@ -63,7 +63,11 @@ public class RecipeBookServer extends RecipeBook {
+         while (iterator.hasNext()) {
+             IRecipe irecipe = (IRecipe) iterator.next();
+ 
+-            nbttaglist.add(new NBTTagString(((MinecraftKey) CraftingManager.recipes.b(irecipe)).toString()));
++            // Paper start - ignore missing recipes
++            MinecraftKey key = CraftingManager.recipes.b(irecipe);
++            if (key == null) continue;
++            nbttaglist.add(new NBTTagString(key.toString()));
++            // Paper end
+         }
+ 
+         nbttagcompound.set("recipes", nbttaglist);
+@@ -71,9 +75,13 @@ public class RecipeBookServer extends RecipeBook {
+         Iterator iterator1 = this.e().iterator();
+ 
+         while (iterator1.hasNext()) {
+-            IRecipe irecipe1 = (IRecipe) iterator1.next();
++            // Paper start - ignore missing recipes
++            IRecipe irecipe = (IRecipe) iterator1.next();
+ 
+-            nbttaglist1.add(new NBTTagString(((MinecraftKey) CraftingManager.recipes.b(irecipe1)).toString()));
++            MinecraftKey key = CraftingManager.recipes.b(irecipe);
++            if (key == null) continue;
++            nbttaglist1.add(new NBTTagString(key.toString()));
++            // Paper end
+         }
+ 
+         nbttagcompound.set("toBeDisplayed", nbttaglist1);
+-- 
+2.18.0
+

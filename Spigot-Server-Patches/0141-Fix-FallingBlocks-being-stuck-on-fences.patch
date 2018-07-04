@@ -1,0 +1,105 @@
+From f9b319d2f07b629d7f0ffc68dc21d8226366fb58 Mon Sep 17 00:00:00 2001
+From: Martin Panzer <postremus1996@googlemail.com>
+Date: Fri, 3 Jun 2016 23:13:39 +0200
+Subject: [PATCH] Fix FallingBlocks being stuck on fences
+
+Fallingblocks would previously only check if directly beneath them a block exists. They also
+hover on top of the 1.5 block tall hitbox of fences during these check. This
+resulted in them always thinking they would be on air.
+
+We now first check, if if we are already on the ground.
+if not, we check if the falling block is inside of the hitbox of the block at y - 1.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 06acdaaf0..600e603bd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -334,4 +334,9 @@ public class PaperWorldConfig {
+         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
+         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
+     }
++
++    public boolean altFallingBlockOnGround;
++    private void altFallingBlockOnGround() {
++        altFallingBlockOnGround = getBoolean("use-alternate-fallingblock-onGround-detection", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockFalling.java b/src/main/java/net/minecraft/server/BlockFalling.java
+index 674395756..1086e3117 100644
+--- a/src/main/java/net/minecraft/server/BlockFalling.java
++++ b/src/main/java/net/minecraft/server/BlockFalling.java
+@@ -71,6 +71,12 @@ public class BlockFalling extends Block {
+         return block == Blocks.FIRE || material == Material.AIR || material == Material.WATER || material == Material.LAVA;
+     }
+ 
++    // Paper start - OBFHELPER
++    public static boolean canMoveThrough(IBlockData blockdata) {
++        return BlockFalling.x(blockdata);
++    }
++    // Paper end
++
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
+ 
+     public void a_(World world, BlockPosition blockposition) {}
+diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+index abdc2dea9..59acc9088 100644
+--- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import com.google.common.collect.Lists;
+ import java.util.ArrayList;
+ import java.util.Iterator;
++import java.util.List;
+ import javax.annotation.Nullable;
+ 
+ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+@@ -120,10 +121,10 @@ public class EntityFallingBlock extends Entity {
+                     }
+                 } else {
+                     IBlockData iblockdata = this.world.getType(blockposition);
+-
+-                    if (!flag1 && BlockFalling.x(this.world.getType(new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ)))) {
++                    
++                    if (!isOnGround()) {
+                         this.onGround = false;
+-                        // return; // CraftBukkit
++                        if (this.world.paperConfig.altFallingBlockOnGround) return; // Paper
+                     }
+ 
+                     this.motX *= 0.699999988079071D;
+@@ -179,6 +180,32 @@ public class EntityFallingBlock extends Entity {
+         }
+     }
+ 
++    // Paper start
++    private boolean isOnGround() {
++        BlockPosition where = new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ);
++        boolean cannotMoveThrough = !BlockFalling.canMoveThrough(this.world.getType(where));
++        if (!this.world.paperConfig.altFallingBlockOnGround) return cannotMoveThrough;
++
++        if (cannotMoveThrough) {
++            return true;
++        }
++
++        IBlockData blockData = this.world.getType(where.down());
++        if (BlockFalling.canMoveThrough(blockData)) {
++            return false;
++        }
++
++        List<AxisAlignedBB> list = new ArrayList<>();
++        addCollisions(blockData, getWorld(), where, this.getBoundingBox(), list, this);
++        return list.size() > 0;
++    }
++
++    // OBFHELPER
++    private void addCollisions(IBlockData blockData, World world, BlockPosition where, AxisAlignedBB collider, List<AxisAlignedBB> list, Entity entity) {
++        blockData.a(world, where, collider, list, entity, false);
++    }
++    // Paper end
++
+     public void e(float f, float f1) {
+         Block block = this.block.getBlock();
+ 
+-- 
+2.18.0
+

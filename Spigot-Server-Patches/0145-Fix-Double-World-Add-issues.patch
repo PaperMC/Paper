@@ -1,0 +1,37 @@
+From 244438affa544cd9fb04141577b56ef2a0b11788 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 21 Jun 2016 22:54:34 -0400
+Subject: [PATCH] Fix Double World Add issues
+
+Vanilla will double add Spider Jockeys to the world, so ignore already added.
+
+Also add debug if something else tries to, and abort before world gets bad state
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 12bd558a7..8747d9a45 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -546,7 +546,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     public static void a(Entity entity, World world, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+-        if (world.addEntity(entity, reason) && entity.isVehicle()) {
++        if (!entity.valid && world.addEntity(entity, reason) && entity.isVehicle()) { // Paper
+             // CraftBukkit end
+             Iterator iterator = entity.bF().iterator();
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 36a78daff..6e37c4366 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1103,6 +1103,7 @@ public abstract class World implements IBlockAccess {
+     public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
+         org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
+         if (entity == null) return false;
++        if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+ 
+         org.bukkit.event.Cancellable event = null;
+         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
+-- 
+2.18.0
+

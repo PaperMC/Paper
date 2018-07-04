@@ -1,0 +1,36 @@
+From 3d7dc05a042dca4e664cbabe11769c6b80da55af Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Nov 2016 20:28:12 -0400
+Subject: [PATCH] Don't load Chunks from Hoppers and other things
+
+Hoppers call this to I guess "get the primary side" of a double sided chest.
+
+If the double sided chest crosses chunk lines, it causes the chunk to load.
+This will end up causing sync chunk loads, which will unload with Chunk GC,
+only to be reloaded again the next tick.
+
+This of course is undesirable, so just return the loaded side as "primary"
+and treat it as a single chest if the other sides are unloaded
+
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index bc398ec52..90267a1fb 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -339,7 +339,13 @@ public class BlockChest extends BlockTileEntity {
+                 while (iterator.hasNext()) {
+                     EnumDirection enumdirection = (EnumDirection) iterator.next();
+                     BlockPosition blockposition1 = blockposition.shift(enumdirection);
+-                    Block block = world.getType(blockposition1).getBlock();
++                    // Paper start - don't load chunks if the other side of the chest is in unloaded chunk
++                    final IBlockData type = world.getTypeIfLoaded(blockposition1); // Paper
++                    if (type ==  null) {
++                        continue;
++                    }
++                    Block block = type.getBlock();
++                    // Paper end
+ 
+                     if (block == this) {
+                         if (this.e(world, blockposition1)) {
+-- 
+2.18.0
+

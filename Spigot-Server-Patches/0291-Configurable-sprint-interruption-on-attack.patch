@@ -1,0 +1,41 @@
+From 61350e5dcf4f5833c142aadaba0fb41f27056974 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Sat, 14 Apr 2018 20:20:46 +0200
+Subject: [PATCH] Configurable sprint interruption on attack
+
+If the sprint interruption is disabled players continue sprinting when they attack entities.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ef1fa8cf6..5a2fbf7c7 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -502,4 +502,9 @@ public class PaperWorldConfig {
+         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
+     }
++
++    public boolean disableSprintInterruptionOnAttack;
++    private void disableSprintInterruptionOnAttack() {
++        disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 35fde8b23..0b51903e2 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -1030,7 +1030,11 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+                             this.motX *= 0.6D;
+                             this.motZ *= 0.6D;
+-                            this.setSprinting(false);
++                            // Paper start - Configuration option to disable automatic sprint interruption
++                            if (!world.paperConfig.disableSprintInterruptionOnAttack) {
++                                this.setSprinting(false);
++                            }
++                            // Paper end
+                         }
+ 
+                         if (flag3) {
+-- 
+2.18.0
+

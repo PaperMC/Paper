@@ -1,0 +1,260 @@
+From 72e8da5083dce12fb49c57cebbab6ea0b7230f45 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:07:55 -0600
+Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
+
+Hot methods, so reduce # of instructions for the method.
+
+Move is valid location test to the BlockPosition class so that it can access local variables.
+
+Replace all calls to the new place to the unnecessary forward.
+
+Optimize getType and getBlockData to manually inline and optimize the calls
+
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index d55e180d7..679d5504e 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -10,6 +10,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+     private final int a;
+     private final int b;
+     private final int c;
++    // Paper start
++    public boolean isValidLocation() {
++        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
++    }
++    public boolean isInvalidYLocation() {
++        return b < 0 || b >= 256;
++    }
++    // Paper end
+ 
+     public BaseBlockPosition(int i, int j, int k) {
+         this.a = i;
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 67b476b22..008ed206d 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -339,6 +339,16 @@ public class BlockPosition extends BaseBlockPosition {
+         protected int b;
+         protected int c;
+         protected int d;
++        // Paper start
++        @Override
++        public boolean isValidLocation() {
++            return b >= -30000000 && d >= -30000000 && b < 30000000 && d < 30000000 && c >= 0 && c < 256;
++        }
++        @Override
++        public boolean isInvalidYLocation() {
++            return c < 0 || c >= 256;
++        }
++        // Paper end
+ 
+         public MutableBlockPosition() {
+             this(0, 0, 0);
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 57b23a018..bf3b64e37 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -435,11 +435,27 @@ public class Chunk {
+         return this.a(i, j, k).c();
+     }
+ 
+-    public IBlockData getBlockData(BlockPosition blockposition) {
+-        return this.a(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++    // Paper start - Optimize getBlockData to reduce instructions
++    public final IBlockData getBlockData(final BlockPosition pos) {
++        return getBlockData(pos.getX(), pos.getY(), pos.getZ());
++    }
++
++    public final IBlockData getBlockData(final int x, final int y, final int z) {
++        // Method body / logic copied from below
++        final int i = y >> 4;
++        if (y >= 0 && i < this.sections.length && this.sections[i] != null) {
++            // Inlined ChunkSection.getType() and DataPaletteBlock.a(int,int,int)
++            return this.sections[i].blockIds.a((y & 15) << 8 | (z & 15) << 4 | x & 15);
++        }
++        return Blocks.AIR.getBlockData();
+     }
+ 
+     public IBlockData a(final int i, final int j, final int k) {
++        return getBlockData(i, j, k);
++    }
++
++    public IBlockData unused(final int i, final int j, final int k) {
++    // Paper end
+         if (this.world.N() == WorldType.DEBUG_ALL_BLOCK_STATES) {
+             IBlockData iblockdata = null;
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index 3d784d0dc..afdc4a779 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -5,7 +5,7 @@ public class ChunkSection {
+     private final int yPos;
+     private int nonEmptyBlockCount;
+     private int tickingBlockCount;
+-    private final DataPaletteBlock blockIds;
++    final DataPaletteBlock blockIds; // Paper - package
+     private NibbleArray emittedLight;
+     private NibbleArray skyLight;
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b8ae41704..8f0a306cc 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -277,12 +277,12 @@ public abstract class World implements IBlockAccess {
+         return this.getType(blockposition1);
+     }
+ 
+-    private boolean isValidLocation(BlockPosition blockposition) {
+-        return !this.E(blockposition) && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000;
++    private static boolean isValidLocation(BlockPosition blockposition) { // Paper - unused but incase reflection / future uses
++        return blockposition.isValidLocation(); // Paper
+     }
+ 
+-    private boolean E(BlockPosition blockposition) {
+-        return blockposition.getY() < 0 || blockposition.getY() >= 256;
++    private static boolean E(BlockPosition blockposition) { // Paper - unused but incase reflection / future uses
++        return blockposition.isInvalidYLocation(); // Paper
+     }
+ 
+     public boolean isEmpty(BlockPosition blockposition) {
+@@ -378,7 +378,7 @@ public abstract class World implements IBlockAccess {
+             return true;
+         }
+         // CraftBukkit end
+-        if (this.E(blockposition)) {
++        if (blockposition.isInvalidYLocation()) { // Paper
+             return false;
+         } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
+             return false;
+@@ -695,7 +695,7 @@ public abstract class World implements IBlockAccess {
+     // Paper start - test if meets light level, return faster
+     // logic copied from below
+     public boolean isLightLevel(BlockPosition blockposition, int level) {
+-        if (isValidLocation(blockposition)) {
++        if (blockposition.isValidLocation()) {
+             if (this.getType(blockposition).f()) {
+                 if (this.c(blockposition.up(), false) >= level) {
+                     return true;
+@@ -814,7 +814,7 @@ public abstract class World implements IBlockAccess {
+             blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
+         }
+ 
+-        if (!this.isValidLocation(blockposition)) {
++        if (!blockposition.isValidLocation()) { // Paper
+             return enumskyblock.c;
+         } else if (!this.isLoaded(blockposition)) {
+             return enumskyblock.c;
+@@ -826,7 +826,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
+-        if (this.isValidLocation(blockposition)) {
++        if (blockposition.isValidLocation()) { // Paper
+             if (this.isLoaded(blockposition)) {
+                 Chunk chunk = this.getChunkAtWorldCoords(blockposition);
+ 
+@@ -850,19 +850,19 @@ public abstract class World implements IBlockAccess {
+     // Paper start - reduces need to do isLoaded before getType
+     public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+         // CraftBukkit start - tree generation
++        final int x = blockposition.getX();
++        final int y = blockposition.getY();
++        final int z = blockposition.getZ();
+         if (captureTreeGeneration) {
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
++            final IBlockData previous = getCapturedBlockType(x, y, z);
++            if (previous != null) {
++                return previous;
+             }
+         }
+         // CraftBukkit end
+-        Chunk chunk = this.getChunkIfLoaded(blockposition);
++        Chunk chunk = ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x >> 4, z >> 4);
+         if (chunk != null) {
+-            return this.isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
++            return chunk.getBlockData(x, y, z);
+         }
+         return null;
+     }
+@@ -870,24 +870,33 @@ public abstract class World implements IBlockAccess {
+ 
+     public IBlockData getType(BlockPosition blockposition) {
+         // CraftBukkit start - tree generation
++        // Paper start - optimize getType lookup to reduce instructions - getBlockData already enforces valid Y, move tree out
++        final int x = blockposition.getX();
++        final int y = blockposition.getY();
++        final int z = blockposition.getZ();
+         if (captureTreeGeneration) {
+-            Iterator<BlockState> it = capturedBlockStates.iterator();
+-            while (it.hasNext()) {
+-                BlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
+-                }
++            final IBlockData previous = getCapturedBlockType(x, y, z);
++            if (previous != null) {
++                return previous;
+             }
+         }
+         // CraftBukkit end
+-        if (this.E(blockposition)) {
+-            return Blocks.AIR.getBlockData();
+-        } else {
+-            Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++        return this.chunkProvider.getChunkAt(x >> 4, z >> 4).getBlockData(x, y, z);
++        // Paper end
++    }
+ 
+-            return chunk.getBlockData(blockposition);
++    // Paper start
++    private IBlockData getCapturedBlockType(int x, int y, int z) {
++        Iterator<BlockState> it = capturedBlockStates.iterator();
++        while (it.hasNext()) {
++            BlockState previous = it.next();
++            if (previous.getX() == x && previous.getY() == y && previous.getZ() == z) {
++                return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
++            }
+         }
++        return null;
+     }
++    // Paper end
+ 
+     public boolean D() {
+         return this.L < 4;
+@@ -2017,7 +2026,7 @@ public abstract class World implements IBlockAccess {
+     public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
+     @Nullable
+     public TileEntity getTileEntity(BlockPosition blockposition) {
+-        if (this.E(blockposition)) {
++        if (blockposition.isInvalidYLocation()) { // Paper
+             return null;
+         } else {
+             // CraftBukkit start
+@@ -2058,7 +2067,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
+-        if (!this.E(blockposition)) {
++        if (!blockposition.isInvalidYLocation()) {
+             if (tileentity != null && !tileentity.y()) {
+             // CraftBukkit start
+             if (captureBlockStates) {
+@@ -2121,7 +2130,7 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public boolean d(BlockPosition blockposition, boolean flag) {
+-        if (this.E(blockposition)) {
++        if (blockposition.isInvalidYLocation()) { // Paper
+             return false;
+         } else {
+             Chunk chunk = this.chunkProvider.getLoadedChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+-- 
+2.18.0
+

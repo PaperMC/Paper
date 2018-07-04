@@ -1,0 +1,26 @@
+From bf2acf1bc8d0a4281451a2bf074bfa3b0b9956ec Mon Sep 17 00:00:00 2001
+From: mezz <tehgeek@gmail.com>
+Date: Wed, 9 Aug 2017 17:51:22 -0500
+Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b85c55168..90f946e57 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1572,7 +1572,11 @@ public abstract class World implements IBlockAccess {
+         this.methodProfiler.c("blockEntities");
+         timings.tileEntityTick.startTiming(); // Spigot
+         if (!this.tileEntityListUnload.isEmpty()) {
+-            this.tileEntityListTick.removeAll(this.tileEntityListUnload);
++            // Paper start - Use alternate implementation with faster contains
++            java.util.Set<TileEntity> toRemove = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++            toRemove.addAll(tileEntityListUnload);
++            this.tileEntityListTick.removeAll(toRemove);
++            // Paper end
+             //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
+             this.tileEntityListUnload.clear();
+         }
+-- 
+2.18.0
+

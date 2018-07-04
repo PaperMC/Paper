@@ -1,0 +1,38 @@
+From 7b6363144fa307ab410333b3ad647b10ceb17aa9 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 23 Jan 2017 15:10:25 -0600
+Subject: [PATCH] Do not allow a zero max height in BiomeJungle
+
+
+diff --git a/src/main/java/net/minecraft/server/BiomeJungle.java b/src/main/java/net/minecraft/server/BiomeJungle.java
+index 8f67cb36c..8dc0b6238 100644
+--- a/src/main/java/net/minecraft/server/BiomeJungle.java
++++ b/src/main/java/net/minecraft/server/BiomeJungle.java
+@@ -40,7 +40,11 @@ public class BiomeJungle extends BiomeBase {
+         super.a(world, random, blockposition);
+         int i = random.nextInt(16) + 8;
+         int j = random.nextInt(16) + 8;
+-        int k = random.nextInt(world.getHighestBlockYAt(blockposition.a(i, 0, j)).getY() * 2);
++        // Paper start - Don't allow a 0 height
++        int height = world.getHighestBlockYAt(blockposition.add(i, 0, j)).getY() * 2;
++        if (height < 1) height = 1;
++        int k = random.nextInt(height);
++        // Paper end
+ 
+         (new WorldGenMelon()).generate(world, random, blockposition.a(i, k, j));
+         WorldGenVines worldgenvines = new WorldGenVines();
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 6a0b3a62d..38a7af58c 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -42,6 +42,7 @@ public class BlockPosition extends BaseBlockPosition {
+         this(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
+     }
+ 
++    public BlockPosition add(double x, double y, double z) { return this.a(x, y, z); } // Paper - OBFHELPER
+     public BlockPosition a(double d0, double d1, double d2) {
+         return d0 == 0.0D && d1 == 0.0D && d2 == 0.0D ? this : new BlockPosition((double) this.getX() + d0, (double) this.getY() + d1, (double) this.getZ() + d2);
+     }
+-- 
+2.18.0
+

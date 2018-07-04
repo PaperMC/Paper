@@ -1,0 +1,51 @@
+From a1991aa9db5af320aa989bf9cfc44ddda11f8001 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:02:07 -0600
+Subject: [PATCH] Optimize Pathfinding
+
+Prevents pathfinding from spamming failures for things such as
+arrow attacks.
+
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index bfc5769f7..cc44d30b5 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -118,10 +118,26 @@ public abstract class NavigationAbstract {
+     }
+ 
+     public boolean a(Entity entity, double d0) {
++        // Paper start - Pathfinding optimizations
++        if (this.pathfindFailures > 10 && this.c == null && MinecraftServer.currentTick < this.lastFailure + 40) {
++            return false;
++        }
++
+         PathEntity pathentity = this.a(entity);
+ 
+-        return pathentity != null && this.a(pathentity, d0);
++        if (pathentity != null && this.a(pathentity, d0)) {
++            this.lastFailure = 0;
++            this.pathfindFailures = 0;
++            return true;
++        } else {
++            this.pathfindFailures++;
++            this.lastFailure = MinecraftServer.currentTick;
++            return false;
++        }
+     }
++    private int lastFailure = 0;
++    private int pathfindFailures = 0;
++    // Paper end
+ 
+     public boolean a(@Nullable PathEntity pathentity, double d0) {
+         if (pathentity == null) {
+@@ -256,6 +272,7 @@ public abstract class NavigationAbstract {
+     }
+ 
+     public void p() {
++        this.pathfindFailures = 0; this.lastFailure = 0; // Paper - Pathfinding optimizations
+         this.c = null;
+     }
+ 
+-- 
+2.18.0
+

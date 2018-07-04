@@ -1,0 +1,49 @@
+From 7204f6dc262ca2d75ae865a2a27ea9a89cbd2b86 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:09:16 -0600
+Subject: [PATCH] Configurable baby zombie movement speed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4a692ac1b..d44cacc7e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -72,4 +72,10 @@ public class PaperWorldConfig {
+         log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight);
+ 
+     }
++
++    public double babyZombieMovementSpeed;
++    private void babyZombieMovementSpeed() {
++        babyZombieMovementSpeed = getDouble("baby-zombie-movement-speed", 0.5D); // Player moves at 0.1F, for reference
++        log("Baby zombies will move at the speed of " + babyZombieMovementSpeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
+index 11c0f24f1..277f1414a 100644
+--- a/src/main/java/net/minecraft/server/EntityZombie.java
++++ b/src/main/java/net/minecraft/server/EntityZombie.java
+@@ -16,7 +16,7 @@ public class EntityZombie extends EntityMonster {
+ 
+     protected static final IAttribute a = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
+     private static final UUID b = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
+-    private static final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", 0.5D, 1);
++    private final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", world.paperConfig.babyZombieMovementSpeed, 1); // Paper - Remove static - Make baby speed configurable
+     private static final DataWatcherObject<Boolean> bx = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.h);
+     private static final DataWatcherObject<Integer> by = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
+     private static final DataWatcherObject<Boolean> bz = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.h);
+@@ -102,9 +102,9 @@ public class EntityZombie extends EntityMonster {
+         if (this.world != null && !this.world.isClientSide) {
+             AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED);
+ 
+-            attributeinstance.c(EntityZombie.c);
++            attributeinstance.c(this.c);
+             if (flag) {
+-                attributeinstance.b(EntityZombie.c);
++                attributeinstance.b(this.c);
+             }
+         }
+ 
+-- 
+2.18.0
+

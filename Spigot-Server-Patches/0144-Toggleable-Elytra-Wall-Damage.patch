@@ -1,0 +1,45 @@
+From 516394ea692192adfd455d9671c2bc9427e9c4c0 Mon Sep 17 00:00:00 2001
+From: Jadon Fowler <jadonflower@gmail.com>
+Date: Sat, 18 Jun 2016 23:13:59 -0700
+Subject: [PATCH] Toggleable Elytra Wall Damage
+
+Instead of calculating the damage taken from hitting a wall, you can
+disable it in the config.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e35e72e8b..1b9eb7f45 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -358,4 +358,9 @@ public class PaperWorldConfig {
+     private void skipEntityTickingInChunksScheduledForUnload() {
+         skipEntityTickingInChunksScheduledForUnload = getBoolean("skip-entity-ticking-in-chunks-scheduled-for-unload", skipEntityTickingInChunksScheduledForUnload);
+     }
++
++    public boolean elytraHitWallDamage = true;
++    private void elytraHitWallDamage() {
++        elytraHitWallDamage = getBoolean("elytra-hit-wall-damage", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 4b6bb38ae..dda6219a7 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1739,6 +1739,7 @@ public abstract class EntityLiving extends Entity {
+                     this.motY = 0.30000001192092896D;
+                 }
+             } else if (this.cP()) {
++                if (world.paperConfig.elytraHitWallDamage) { // Paper start - Toggleable Elytra Wall Damage
+                 if (this.motY > -0.5D) {
+                     this.fallDistance = 1.0F;
+                 }
+@@ -1788,6 +1789,7 @@ public abstract class EntityLiving extends Entity {
+                         this.damageEntity(DamageSource.FLY_INTO_WALL, f8);
+                     }
+                 }
++                } // Paper end - Elyta Wall Damage if statement
+ 
+                 if (this.onGround && !this.world.isClientSide) {
+                     if (getFlag(7) && !CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) // CraftBukkit
+-- 
+2.18.0
+

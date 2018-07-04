@@ -1,0 +1,41 @@
+From 5086a12a999a530288262ae057cd49229bce127c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 15:12:22 -0400
+Subject: [PATCH] Configurable Non Player Arrow Despawn Rate
+
+Can set a much shorter despawn rate for arrows that players can not pick up.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index faacd86ba..f71580393 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -252,4 +252,13 @@ public class PaperWorldConfig {
+     private void allowLeashingUndeadHorse() {
+         allowLeashingUndeadHorse = getBoolean("allow-leashing-undead-horse", false);
+     }
++
++    public int nonPlayerArrowDespawnRate = -1;
++    private void nonPlayerArrowDespawnRate() {
++        nonPlayerArrowDespawnRate = getInt("non-player-arrow-despawn-rate", -1);
++        if (nonPlayerArrowDespawnRate == -1) {
++            nonPlayerArrowDespawnRate = spigotConfig.arrowDespawnRate;
++        }
++        log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 584782adb..86836a5d0 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -157,7 +157,7 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+                 this.ay = 0;
+             } else {
+                 ++this.ax;
+-                if (this.ax >= world.spigotConfig.arrowDespawnRate) { // Spigot - First int after shooter
++                if (this.ax >= (fromPlayer != PickupStatus.DISALLOWED ? world.spigotConfig.arrowDespawnRate : world.paperConfig.nonPlayerArrowDespawnRate)) { // Spigot - First int after shooter // Paper
+                     this.die();
+                 }
+             }
+-- 
+2.18.0
+

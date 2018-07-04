@@ -1,0 +1,69 @@
+From 12df16929d8bd8779a79431e03c8246128398d59 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 13 May 2016 01:38:06 -0400
+Subject: [PATCH] Optimize EAR
+
+
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 3265a6c25..47865c027 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -2,6 +2,8 @@ package org.spigotmc;
+ 
+ import java.util.List;
+ import java.util.Set;
++
++import co.aikar.timings.MinecraftTimings;
+ import net.minecraft.server.AxisAlignedBB;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.Entity;
+@@ -13,7 +15,7 @@ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityCreeper;
+ import net.minecraft.server.EntityEnderCrystal;
+ import net.minecraft.server.EntityEnderDragon;
+-import net.minecraft.server.EntityFallingBlock; // Paper
++import net.minecraft.server.EntityFallingBlock;
+ import net.minecraft.server.EntityFireball;
+ import net.minecraft.server.EntityFireworks;
+ import net.minecraft.server.EntityHuman;
+@@ -21,16 +23,15 @@ import net.minecraft.server.EntityLiving;
+ import net.minecraft.server.EntityMonster;
+ import net.minecraft.server.EntityProjectile;
+ import net.minecraft.server.EntitySheep;
+-import net.minecraft.server.EntitySlice;
+ import net.minecraft.server.EntitySlime;
+ import net.minecraft.server.EntityTNTPrimed;
+ import net.minecraft.server.EntityVillager;
+ import net.minecraft.server.EntityWeather;
+ import net.minecraft.server.EntityWither;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MathHelper;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.World;
+-import co.aikar.timings.MinecraftTimings;
+ 
+ public class ActivationRange
+ {
+@@ -108,6 +109,7 @@ public class ActivationRange
+         maxRange = Math.max( maxRange, miscActivationRange );
+         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
+ 
++        Chunk chunk; // Paper
+         for ( EntityHuman player : world.players )
+         {
+ 
+@@ -126,9 +128,9 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
++                    if ( (chunk = MCUtil.getLoadedChunkWithoutMarkingActive(world, i1, j1 )) != null ) // Paper
+                     {
+-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
++                        activateChunkEntities( chunk ); // Paper
+                     }
+                 }
+             }
+-- 
+2.18.0
+

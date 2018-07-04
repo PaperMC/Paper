@@ -1,0 +1,103 @@
+From 6b016f7c3218f98e813b2bcd764943528f7be99e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Jun 2017 15:18:30 -0400
+Subject: [PATCH] Shoulder Entities Release API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 9cda8a177..deb0f4a9c 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -1721,21 +1721,48 @@ public abstract class EntityHuman extends EntityLiving {
+         }
+         // CraftBukkit end
+     }
++    // Paper start
++    public Entity releaseLeftShoulderEntity() {
++        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityLeft());
++        if (entity != null) {
++            this.setShoulderEntityLeft(new NBTTagCompound());
++        }
++        return entity;
++    }
+ 
+-    private boolean spawnEntityFromShoulder(@Nullable NBTTagCompound nbttagcompound) { // CraftBukkit void->boolean
+-        if (!this.world.isClientSide && !nbttagcompound.isEmpty()) {
++    public Entity releaseRightShoulderEntity() {
++        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityRight());
++        if (entity != null) {
++            this.setShoulderEntityRight(new NBTTagCompound());
++        }
++        return entity;
++    }
++
++    // Paper - incase any plugins used NMS to call this... old method signature to avoid other diff
++    private boolean spawnEntityFromShoulder(@Nullable NBTTagCompound nbttagcompound) {
++        return spawnEntityFromShoulder0(nbttagcompound) != null;
++    }
++    // Paper - Moved to new method that now returns entity, and properly null checks
++    private Entity spawnEntityFromShoulder0(@Nullable NBTTagCompound nbttagcompound) { // CraftBukkit void->boolean - Paper - return Entity
++        if (!this.world.isClientSide && nbttagcompound != null && !nbttagcompound.isEmpty()) { // Paper - null check
+             Entity entity = EntityTypes.a(nbttagcompound, this.world);
++            if (entity == null) { // Paper - null check
++                return null;
++            }
+ 
+             if (entity instanceof EntityTameableAnimal) {
+                 ((EntityTameableAnimal) entity).setOwnerUUID(this.uniqueID);
+             }
+ 
+             entity.setPosition(this.locX, this.locY + 0.699999988079071D, this.locZ);
+-            return this.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
++            if (this.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY)) { // CraftBukkit
++                return entity;
++            }
+         }
+ 
+-        return true; // CraftBukkit
++        return null;
+     }
++    // Paper end
+ 
+     public abstract boolean isSpectator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index a54548f02..a0128426f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -444,6 +444,32 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material), ticks);
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.entity.Entity releaseLeftShoulderEntity() {
++        if (!getHandle().getShoulderEntityLeft().isEmpty()) {
++            Entity entity = getHandle().releaseLeftShoulderEntity();
++            if (entity != null) {
++                return entity.getBukkitEntity();
++            }
++        }
++
++        return null;
++    }
++
++    @Override
++    public org.bukkit.entity.Entity releaseRightShoulderEntity() {
++        if (!getHandle().getShoulderEntityRight().isEmpty()) {
++            Entity entity = getHandle().releaseRightShoulderEntity();
++            if (entity != null) {
++                return entity.getBukkitEntity();
++            }
++        }
++
++        return null;
++    }
++    // Paper end
++
+     @Override
+     public org.bukkit.entity.Entity getShoulderEntityLeft() {
+         if (!getHandle().getShoulderEntityLeft().isEmpty()) {
+-- 
+2.18.0
+

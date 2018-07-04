@@ -1,0 +1,35 @@
+From 80b97310030500c8eae0b1d7b8c4ba337b5fa17b Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:30:17 -0400
+Subject: [PATCH] Allow Reloading of Custom Permissions
+
+https://github.com/PaperMC/Paper/issues/49
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d482589b3..e53f8c58f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1863,5 +1863,20 @@ public final class CraftServer implements Server {
+             return false;
+         }
+     }
++
++    @Override
++    public void reloadPermissions() {
++        ((SimplePluginManager) pluginManager).clearPermissions();
++        loadCustomPermissions();
++        for (Plugin plugin : pluginManager.getPlugins()) {
++            plugin.getDescription().getPermissions().forEach((perm) -> {
++                try {
++                    pluginManager.addPermission(perm);
++                } catch (IllegalArgumentException ex) {
++                    getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
++                }
++            });
++        }
++    }
+     // Paper end
+ }
+-- 
+2.18.0
+

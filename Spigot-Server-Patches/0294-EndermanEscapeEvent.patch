@@ -1,0 +1,81 @@
+From a29a10be54631b0f9e7b99f343dc3d22b726c3d9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 30 Apr 2018 13:15:55 -0400
+Subject: [PATCH] EndermanEscapeEvent
+
+Fires an event anytime an enderman intends to teleport away from the player
+
+You may cancel this, enabling ranged attacks to damage the enderman for example.
+
+diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
+index 2f59e7071..e8ea231dc 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderman.java
++++ b/src/main/java/net/minecraft/server/EntityEnderman.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.event.entity.EndermanEscapeEvent;
+ import com.google.common.base.Function;
+ import com.google.common.base.Optional;
+ import com.google.common.base.Predicate;
+@@ -62,6 +63,12 @@ public class EntityEnderman extends EntityMonster {
+         setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
+     }
+ 
++    // Paper start
++    private boolean tryEscape(EndermanEscapeEvent.Reason reason) {
++        return new EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
++    }
++    // Paper end
++
+     @Override
+     public boolean setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
+         if (!super.setGoalTarget(entityliving, reason, fireEvent)) {
+@@ -182,7 +189,7 @@ public class EntityEnderman extends EntityMonster {
+         if (this.world.D() && this.ticksLived >= this.bA + 600) {
+             float f = this.aw();
+ 
+-            if (f > 0.5F && this.world.h(new BlockPosition(this)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
++            if (f > 0.5F && this.world.h(new BlockPosition(this)) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && tryEscape(EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper
+                 this.setGoalTarget((EntityLiving) null);
+                 this.dm();
+             }
+@@ -264,7 +271,7 @@ public class EntityEnderman extends EntityMonster {
+     public boolean damageEntity(DamageSource damagesource, float f) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+-        } else if (damagesource instanceof EntityDamageSourceIndirect) {
++        } else if (damagesource instanceof EntityDamageSourceIndirect && tryEscape(EndermanEscapeEvent.Reason.INDIRECT)) { // Paper
+             for (int i = 0; i < 64; ++i) {
+                 if (this.dm()) {
+                     return true;
+@@ -275,7 +282,7 @@ public class EntityEnderman extends EntityMonster {
+         } else {
+             boolean flag = super.damageEntity(damagesource, f);
+ 
+-            if (damagesource.ignoresArmor() && this.random.nextInt(10) != 0) {
++            if (damagesource.ignoresArmor() && this.random.nextInt(10) != 0 && tryEscape(damagesource == DamageSource.DROWN ? EndermanEscapeEvent.Reason.DROWN : EndermanEscapeEvent.Reason.CRITICAL_HIT)) { // Paper
+                 this.dm();
+             }
+ 
+@@ -382,7 +389,7 @@ public class EntityEnderman extends EntityMonster {
+ 
+     static class PathfinderGoalPlayerWhoLookedAtTarget extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
+ 
+-        private final EntityEnderman i;
++        private final EntityEnderman i; public EntityEnderman getEnderman() { return i; } // Paper - OBFHELPER
+         private EntityHuman j;
+         private int k;
+         private int l;
+@@ -440,7 +447,7 @@ public class EntityEnderman extends EntityMonster {
+             } else {
+                 if (this.d != null) {
+                     if (this.i.f((EntityHuman) this.d)) {
+-                        if (((EntityHuman) this.d).h(this.i) < 16.0D) {
++                        if (((EntityHuman) this.d).h(this.i) < 16.0D && this.getEnderman().tryEscape(EndermanEscapeEvent.Reason.STARE)) { // Paper
+                             this.i.dm();
+                         }
+ 
+-- 
+2.18.0
+

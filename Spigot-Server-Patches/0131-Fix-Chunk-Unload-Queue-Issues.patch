@@ -1,0 +1,38 @@
+From 43debbd620fdfdcda18b02c5826c4b1bfeea5979 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 12 May 2016 02:03:56 -0400
+Subject: [PATCH] Fix Chunk Unload Queue Issues
+
+Vanilla implemented similar logic as Paper had pre 1.9.4, but Spigot
+has not resolved all the bugs with the changes.
+
+This patch fixes known issues and really should be applied by Spigot team.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ba3ee64f8..857df2937 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -75,7 +75,7 @@ public class Chunk {
+     private long w;
+     private int x;
+     private final ConcurrentLinkedQueue<BlockPosition> y;
+-    public boolean d;
++    public boolean d; public void setShouldUnload(boolean unload) { this.d = unload; } public boolean isUnloading() { return d; } // Paper - OBFHELPER
+     protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+ 
+     // Paper start
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 1771a1794..5cc192bbd 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -299,6 +299,7 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+                     if (chunk != null && chunk.d) {
+                         // CraftBukkit start - move unload logic to own method
++                        chunk.setShouldUnload(false); // Paper
+                         if (!unloadChunk(chunk, true)) {
+                             continue;
+                         }
+-- 
+2.18.0
+

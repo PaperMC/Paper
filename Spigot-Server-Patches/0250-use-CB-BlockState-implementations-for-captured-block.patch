@@ -1,0 +1,36 @@
+From 59316f81fc224550436b7d841068d234a68ab9ae Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 16 Nov 2017 12:12:41 +0000
+Subject: [PATCH] use CB BlockState implementations for captured blocks
+
+When modifying the world, CB will store a copy of the affected
+blocks in order to restore their state in the case that the event
+is cancelled. This change only modifies the collection of blocks
+in the world by normal means, e.g. not during tree population,
+as the potentially marginal overheads would serve no advantage.
+
+CB was using a CraftBlockState for all blocks, which causes issues
+should any block that uses information beyond a data ID would suffer
+from missing information, e.g. Skulls.
+
+By using CBs CraftBlock#getState(), we will maintain a proper copy of
+the blockstate that will be valid for restoration, as opposed to dropping
+information on restoration when the event is cancelled.
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 2c69ae748..39b90fb4c 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -393,7 +393,8 @@ public abstract class World implements IBlockAccess {
+             // CraftBukkit start - capture blockstates
+             BlockState blockstate = null;
+             if (this.captureBlockStates) {
+-                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), i);
++                //blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), i); // Paper
++                blockstate = world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
+                 this.capturedBlockStates.add(blockstate);
+             }
+             // CraftBukkit end
+-- 
+2.18.0
+

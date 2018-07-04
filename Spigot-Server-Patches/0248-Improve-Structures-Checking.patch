@@ -1,0 +1,199 @@
+From 13d727f38a8615e821d1794176154b34780c0c19 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 11 Nov 2017 17:57:39 -0500
+Subject: [PATCH] Improve Structures Checking
+
+Improves performance by keying every chunk thats part of a structure to a hashmap
+instead of only the first one.
+
+This allows us to avoid iterating the entire structures value set to see
+if a block position is inside of a structure.
+
+This should have pretty decent performance improvement to any standard world
+that has been around for a whilewith lots of structures due to ineffeciencies
+in how MC stores structures (even unloaded chunks has structured data loaded)
+
+diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
+index db419cd99..d9329bd42 100644
+--- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
++++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
+@@ -4,12 +4,14 @@ import com.google.common.base.MoreObjects;
+ 
+ public class StructureBoundingBox {
+ 
+-    public int a;
+-    public int b;
+-    public int c;
+-    public int d;
+-    public int e;
+-    public int f;
++    public int a; // Paper - If changes, verify low/high getters
++    public int b; // Paper - If changes, verify low/high getters
++    public int c; // Paper - If changes, verify low/high getters
++    public int d; // Paper - If changes, verify low/high getters
++    public int e; // Paper - If changes, verify low/high getters
++    public int f; // Paper - If changes, verify low/high getters
++    public BaseBlockPosition getLowPosition() { return new BaseBlockPosition(a, b, c); } // Paper
++    public BaseBlockPosition getHighPosition() { return new BaseBlockPosition(d, e, f); } // Paper
+ 
+     public StructureBoundingBox() {}
+ 
+@@ -114,6 +116,7 @@ public class StructureBoundingBox {
+         this.f += k;
+     }
+ 
++    public boolean contains(BaseBlockPosition baseblockposition) { return b(baseblockposition); } // Paper - OBFHELPER
+     public boolean b(BaseBlockPosition baseblockposition) {
+         return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
+     }
+diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
+index e8263baa4..f4dfba8f3 100644
+--- a/src/main/java/net/minecraft/server/StructureGenerator.java
++++ b/src/main/java/net/minecraft/server/StructureGenerator.java
+@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import java.util.Iterator;
++import java.util.List;
+ import java.util.Random;
+ import javax.annotation.Nullable;
+ 
+@@ -14,6 +15,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+     private final Timing timing = MinecraftTimings.getStructureTiming(this); // Paper
+     private PersistentStructure a;
+     protected Long2ObjectMap<StructureStart> c = new Long2ObjectOpenHashMap(1024);
++    protected Long2ObjectMap<StructureStart> allStructures = new Long2ObjectOpenHashMap(1024); // Paper - Holds ref to structures for every chunk its part of, where as the one above this only holds the vanilla oriented ones.
+ 
+     public StructureGenerator() {}
+ 
+@@ -29,6 +31,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+                 if (this.a(i, j)) {
+                     StructureStart structurestart = this.b(i, j);
+ 
++                    populateStructure(structurestart); // Paper
+                     this.c.put(ChunkCoordIntPair.a(i, j), structurestart);
+                     if (structurestart.a()) {
+                         this.a(i, j, structurestart);
+@@ -106,6 +109,19 @@ public abstract class StructureGenerator extends WorldGenBase {
+ 
+     @Nullable
+     protected StructureStart c(BlockPosition blockposition) {
++        // Paper start - replace method
++        StructureStart structureStart = allStructures.get(ChunkCoordIntPair.asLong(blockposition));
++        if (structureStart != null && structureStart.isSizeable() && structureStart.getBoundingBox().contains(blockposition)) {
++            List<StructurePiece> structurePieces = structureStart.getStructurePieces();
++            for (StructurePiece piece : structurePieces) {
++                if (piece.getBoundingBox().contains(blockposition)) {
++                    return structureStart;
++                }
++            }
++        }
++
++        return null;
++        /*
+         ObjectIterator objectiterator = this.c.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+@@ -125,11 +141,16 @@ public abstract class StructureGenerator extends WorldGenBase {
+         }
+ 
+         return null;
++        */
+     }
+ 
+     public boolean a(World world, BlockPosition blockposition) {
+         if (this.g == null) return false; // Paper
+         this.a(world);
++        // Paper start - Replace method
++        StructureStart structureStart = this.allStructures.get(ChunkCoordIntPair.asLong(blockposition));
++        return structureStart != null && structureStart.isSizeable() && structureStart.getBoundingBox().contains(blockposition);
++        /* // comment out rest
+         ObjectIterator objectiterator = this.c.values().iterator();
+ 
+         StructureStart structurestart;
+@@ -142,7 +163,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+             structurestart = (StructureStart) objectiterator.next();
+         } while (!structurestart.a() || !structurestart.b().b((BaseBlockPosition) blockposition));
+ 
+-        return true;
++        return true;*/ // Paper end
+     }
+ 
+     @Nullable
+@@ -177,6 +198,7 @@ public abstract class StructureGenerator extends WorldGenBase {
+                             StructureStart structurestart = WorldGenFactory.a(nbttagcompound1, world);
+ 
+                             if (structurestart != null) {
++                                populateStructure(structurestart); // Paper
+                                 this.c.put(ChunkCoordIntPair.a(i, j), structurestart);
+                             }
+                         }
+@@ -187,6 +209,27 @@ public abstract class StructureGenerator extends WorldGenBase {
+ 
+     }
+ 
++    // Paper start
++    private void populateStructure(StructureStart structurestart) {
++        for (StructurePiece piece : structurestart.getStructurePieces()) {
++            populateStructure(structurestart, piece.getBoundingBox());
++        }
++        populateStructure(structurestart, structurestart.getBoundingBox());
++    }
++    private void populateStructure(StructureStart structurestart, StructureBoundingBox bb) {
++        if (bb == null) {
++            return;
++        }
++        final BaseBlockPosition low = bb.getLowPosition();
++        final BaseBlockPosition high = bb.getHighPosition();
++        for (int x = low.getX() >> 4, maxX = high.getX() >> 4; x <= maxX; x++) {
++            for (int z = low.getZ() >> 4, maxZ = high.getZ() >> 4; z <= maxZ; z++) {
++                allStructures.put(ChunkCoordIntPair.asLong(x, z), structurestart);
++            }
++        }
++    }
++    // Paper end
++
+     private void a(int i, int j, StructureStart structurestart) {
+         this.a.a(structurestart.a(i, j), i, j);
+         this.a.c();
+diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
+index 93903bc67..fcc13f811 100644
+--- a/src/main/java/net/minecraft/server/StructurePiece.java
++++ b/src/main/java/net/minecraft/server/StructurePiece.java
+@@ -53,6 +53,7 @@ public abstract class StructurePiece {
+ 
+     public abstract boolean a(World world, Random random, StructureBoundingBox structureboundingbox);
+ 
++    public StructureBoundingBox getBoundingBox() { return d(); } // Paper - OBFHELPER
+     public StructureBoundingBox d() {
+         return this.l;
+     }
+diff --git a/src/main/java/net/minecraft/server/StructureStart.java b/src/main/java/net/minecraft/server/StructureStart.java
+index b6abc74e0..f9bb953d0 100644
+--- a/src/main/java/net/minecraft/server/StructureStart.java
++++ b/src/main/java/net/minecraft/server/StructureStart.java
+@@ -19,10 +19,12 @@ public abstract class StructureStart {
+         this.d = j;
+     }
+ 
++    public StructureBoundingBox getBoundingBox() { return b(); } // Paper - OBFHELPER
+     public StructureBoundingBox b() {
+         return this.b;
+     }
+ 
++    public List<StructurePiece> getStructurePieces() { return c(); } // Paper - OBFHELPER
+     public List<StructurePiece> c() {
+         return this.a;
+     }
+@@ -137,7 +139,7 @@ public abstract class StructureStart {
+ 
+     }
+ 
+-    public boolean a() {
++    public boolean isSizeable() { return a(); } public boolean a() { // Paper - OBFHELPER
+         return true;
+     }
+ 
+-- 
+2.18.0
+

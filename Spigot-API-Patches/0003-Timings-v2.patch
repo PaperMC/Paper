@@ -1,4 +1,4 @@
-From 64f62bc4e2c8b60a6679fbcc608d1a5ee8fe7944 Mon Sep 17 00:00:00 2001
+From 0644771327501a754ae14c834e50fc97f6417085 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -2296,6 +2296,47 @@ index 00000000..5edaba12
 +        super.stopTiming();
 +    }
 +}
+diff --git a/src/main/java/co/aikar/util/Counter.java b/src/main/java/co/aikar/util/Counter.java
+new file mode 100644
+index 00000000..23ac07f2
+--- /dev/null
++++ b/src/main/java/co/aikar/util/Counter.java
+@@ -0,0 +1,35 @@
++package co.aikar.util;
++
++import com.google.common.collect.ForwardingMap;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public class Counter <T> extends ForwardingMap<T, Long> {
++    private final Map<T, Long> counts = new HashMap<>();
++
++    public long decrement(T key) {
++        return increment(key, -1);
++    }
++    public long increment(T key) {
++        return increment(key, 1);
++    }
++    public long decrement(T key, long amount) {
++        return decrement(key, -amount);
++    }
++    public long increment(T key, long amount) {
++        Long count = this.getCount(key);
++        count += amount;
++        this.counts.put(key, count);
++        return count;
++    }
++
++    public long getCount(T key) {
++        return this.counts.getOrDefault(key, 0L);
++    }
++
++    @Override
++    protected Map<T, Long> delegate() {
++        return this.counts;
++    }
++}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
 index 00000000..96274975
@@ -3032,7 +3073,7 @@ index 00000000..fd452bce
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 08a9739f..347d2189 100644
+index 7ca5be84..86c78098 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -32,7 +32,8 @@ public abstract class Command {
@@ -3610,7 +3651,7 @@ index 80c6a72e..759c4617 100644
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index d7d5ac7b..a657fce5 100644
+index e43db9da..ca9c7796 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -23,7 +23,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
@@ -3866,5 +3907,5 @@ index 8d982974..7e89b97b 100644
 -    }
  }
 -- 
-2.15.1.windows.2
+2.18.0
 

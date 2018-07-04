@@ -1,0 +1,39 @@
+From b3c4cbe3e4019d14276d36954449d2d91825336a Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Apr 2018 11:21:48 -0400
+Subject: [PATCH] Configurable Allowance of Permanent Chunk Loaders
+
+This disables the behavior that allows players to keep chunks permanently loaded
+by default and allows server operators to enable it if they wish.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5a2fbf7c7..99d681ef1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -507,4 +507,10 @@ public class PaperWorldConfig {
+     private void disableSprintInterruptionOnAttack() {
+         disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
+     }
++
++    public boolean allowPermaChunkLoaders = false;
++    private void allowPermaChunkLoaders() {
++        allowPermaChunkLoaders = getBoolean("game-mechanics.allow-permanent-chunk-loaders", allowPermaChunkLoaders);
++        log("Allow Perma Chunk Loaders: " + (allowPermaChunkLoaders ? "enabled" : "disabled"));
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 55dada668..0eba3df57 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -148,7 +148,7 @@ public class ChunkProviderServer implements IChunkProvider {
+     }
+ 
+     public Chunk getChunkAt(int i, int j, Runnable runnable, boolean generate) {
+-        Chunk chunk = getLoadedChunkAt(i, j);
++        Chunk chunk = world.paperConfig.allowPermaChunkLoaders ? getLoadedChunkAt(i, j) : getChunkIfLoaded(i, j); // Paper - Configurable perma chunk loaders
+         ChunkRegionLoader loader = null;
+ 
+         if (this.chunkLoader instanceof ChunkRegionLoader) {
+-- 
+2.18.0
+

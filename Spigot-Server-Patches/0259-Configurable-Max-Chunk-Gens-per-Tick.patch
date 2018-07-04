@@ -1,0 +1,112 @@
+From 9b92490838fd8805b3e867cc7235a0bcf0854f7f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 1 Jan 2018 16:10:24 -0500
+Subject: [PATCH] Configurable Max Chunk Gens per Tick
+
+Limit the number of generations that can occur in a single tick, forcing them
+to be spread out more.
+
+Defaulting to 10 as an average generation is going to be 3-6ms, which means 10 will
+likely cause the server to lose TPS, but constrain how much.
+
+This should result in no noticeable speed reduction in generation for servers not
+lagging, and let larger servers reduce this value according to their own desires.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e3ff78180..0ddf826f9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -472,4 +472,16 @@ public class PaperWorldConfig {
+         }
+         log("Max Chunk Sends Per Tick: " + maxChunkSendsPerTick);
+     }
++
++    public int maxChunkGensPerTick = 10;
++    private void maxChunkGensPerTick() {
++        maxChunkGensPerTick = getInt("max-chunk-gens-per-tick", maxChunkGensPerTick);
++        if (maxChunkGensPerTick <= 0) {
++            maxChunkGensPerTick = Integer.MAX_VALUE;
++            log("Max Chunk Gens Per Tick: Unlimited (NOT RECOMMENDED)");
++        } else {
++            log("Max Chunk Gens Per Tick: " + maxChunkGensPerTick);
++        }
++    }
++
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 395386f29..baf72404e 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -27,6 +27,7 @@ public class PlayerChunk {
+     private boolean done;
+ 
+     // CraftBukkit start - add fields
++    boolean chunkExists; // Paper
+     private boolean loadInProgress = false;
+     private Runnable loadedRunnable = new Runnable() {
+         public void run() {
+@@ -50,6 +51,7 @@ public class PlayerChunk {
+         // CraftBukkit start
+         loadInProgress = true;
+         this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getChunkAt(i, j, loadedRunnable, false);
++        this.chunkExists = this.chunk != null || ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), i, j); // Paper
+         markChunkUsed(); // Paper - delay chunk unloads
+         // CraftBukkit end
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 6ee9f6cfb..99652ae3e 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -166,6 +166,7 @@ public class PlayerChunkMap {
+             // Spigot start
+             org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
+             activityAccountant.startActivity(0.5);
++            int chunkGensAllowed = world.paperConfig.maxChunkGensPerTick; // Paper
+             // Spigot end
+ 
+             Iterator iterator1 = this.h.iterator();
+@@ -175,6 +176,11 @@ public class PlayerChunkMap {
+ 
+                 if (playerchunk1.f() == null) {
+                     boolean flag = playerchunk1.a(PlayerChunkMap.b);
++                    // Paper start
++                    if (flag && !playerchunk1.chunkExists && chunkGensAllowed-- <= 0) {
++                        continue;
++                    }
++                    // Paper end
+ 
+                     if (playerchunk1.a(flag)) {
+                         iterator1.remove();
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+index 9aaca21a7..f50d55c8e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+@@ -35,4 +35,10 @@ public class ChunkIOExecutor {
+     public static void tick() {
+         instance.finishActive();
+     }
++
++    // Paper start
++    public static boolean hasQueuedChunkLoad(World world, int x, int z) {
++        return instance.hasTask(new QueuedChunk(x, z, null, world, null));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/AsynchronousExecutor.java b/src/main/java/org/bukkit/craftbukkit/util/AsynchronousExecutor.java
+index 193c3621c..cf1258c55 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/AsynchronousExecutor.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/AsynchronousExecutor.java
+@@ -351,4 +351,10 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
+     public void setActiveThreads(final int coreSize) {
+         pool.setCorePoolSize(coreSize);
+     }
++
++    // Paper start
++    public boolean hasTask(P parameter) throws IllegalStateException {
++        return tasks.get(parameter) != null;
++    }
++    // Paper end
+ }
+-- 
+2.18.0
+

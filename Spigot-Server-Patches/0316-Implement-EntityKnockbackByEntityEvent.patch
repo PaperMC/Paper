@@ -1,0 +1,46 @@
+From ac9417f28697dc1441c73a1580541752f9dea2c3 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Mon, 18 Jun 2018 15:46:23 +0200
+Subject: [PATCH] Implement EntityKnockbackByEntityEvent
+
+This event is called when an entity receives knockback by another entity.
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 65bc19b17..156bf8ee0 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1160,6 +1160,12 @@ public abstract class EntityLiving extends Entity {
+             this.impulse = true;
+             float f1 = MathHelper.sqrt(d0 * d0 + d1 * d1);
+ 
++            // Paper start - preserve old velocity
++            double oldMotX = this.motX;
++            double oldMotY = this.motY;
++            double oldMotZ = this.motZ;
++            // Paper end
++
+             this.motX /= 2.0D;
+             this.motZ /= 2.0D;
+             this.motX -= d0 / (double) f1 * (double) f;
+@@ -1172,6 +1178,18 @@ public abstract class EntityLiving extends Entity {
+                 }
+             }
+ 
++            // Paper start - call EntityKnockbackByEntityEvent
++            org.bukkit.util.Vector delta = new org.bukkit.util.Vector(this.motX - oldMotX, this.motY - oldMotY, this.motZ - oldMotZ);
++            // Restore old velocity to be able to access it in the event
++            this.motX = oldMotX;
++            this.motY = oldMotY;
++            this.motZ = oldMotZ;
++            if (entity == null || new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((LivingEntity) getBukkitEntity(), entity.getBukkitEntity(), f, delta).callEvent()) {
++                this.motX += delta.getX();
++                this.motY += delta.getY();
++                this.motZ += delta.getZ();
++            }
++            // Paper end
+         }
+     }
+ 
+-- 
+2.18.0
+

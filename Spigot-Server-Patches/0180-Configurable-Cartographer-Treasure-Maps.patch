@@ -1,0 +1,46 @@
+From 0a8b200ed814c2a3f9b5758defb1ea16ed685839 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:26:27 -0500
+Subject: [PATCH] Configurable Cartographer Treasure Maps
+
+Allow configuring for cartographers to return the same map location
+
+Also allow turning off treasure maps all together as they can eat up Map ID's
+which are limited in quantity.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4b9bf3b4f..2ba3bcb8e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -398,4 +398,14 @@ public class PaperWorldConfig {
+             Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
+         }
+     }
++
++    public boolean enableTreasureMaps = true;
++    public boolean treasureMapsAlreadyDiscovered = false;
++    private void treasureMapsAlreadyDiscovered() {
++        enableTreasureMaps = getBoolean("enable-treasure-maps", true);
++        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
++        if (treasureMapsAlreadyDiscovered) {
++            log("Treasure Maps will return already discovered locations");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index 9d201b14e..57fcc3c05 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -783,7 +783,8 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant {
+         public void a(IMerchant imerchant, MerchantRecipeList merchantrecipelist, Random random) {
+             int i = this.a.a(random);
+             World world = imerchant.u_();
+-            BlockPosition blockposition = world.a(this.b, imerchant.v_(), true);
++            if (!world.paperConfig.enableTreasureMaps) return; //Paper
++            BlockPosition blockposition = world.a(this.b, imerchant.v_(), world.paperConfig.treasureMapsAlreadyDiscovered); // Paper - pass false to return first structure, regardless of if its been discovered. true returns only undiscovered.
+ 
+             if (blockposition != null) {
+                 ItemStack itemstack = ItemWorldMap.a(world, (double) blockposition.getX(), (double) blockposition.getZ(), (byte) 2, true, true);
+-- 
+2.18.0
+

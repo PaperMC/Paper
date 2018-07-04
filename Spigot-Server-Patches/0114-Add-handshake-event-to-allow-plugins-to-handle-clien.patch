@@ -1,0 +1,49 @@
+From 4680099c5915c8bc2ad1f64d3e1899efe5430da8 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 13 Apr 2016 20:21:38 -0700
+Subject: [PATCH] Add handshake event to allow plugins to handle client
+ handshaking logic themselves
+
+
+diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
+index c3c9c3c1f..309ab18df 100644
+--- a/src/main/java/net/minecraft/server/HandshakeListener.java
++++ b/src/main/java/net/minecraft/server/HandshakeListener.java
+@@ -72,8 +72,33 @@ public class HandshakeListener implements PacketHandshakingInListener {
+                 this.b.close(chatmessage);
+             } else {
+                 this.b.setPacketListener(new LoginListener(this.a, this.b));
++                // Paper start - handshake event
++                boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
++                boolean handledByEvent = false;
++                // Try and handle the handshake through the event
++                if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
++                    com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packethandshakinginsetprotocol.hostname, !proxyLogicEnabled);
++                    if (event.callEvent()) {
++                        // If we've failed somehow, let the client know so and go no further.
++                        if (event.isFailed()) {
++                            chatmessage = new ChatMessage(event.getFailMessage());
++                            this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
++                            this.b.close(chatmessage);
++                            return;
++                        }
++
++                        packethandshakinginsetprotocol.hostname = event.getServerHostname();
++                        this.b.l = new java.net.InetSocketAddress(event.getSocketAddressHostname(), ((java.net.InetSocketAddress) this.b.getSocketAddress()).getPort());
++                        this.b.spoofedUUID = event.getUniqueId();
++                        this.b.spoofedProfile = gson.fromJson(event.getPropertiesJson(), com.mojang.authlib.properties.Property[].class);
++                        handledByEvent = true; // Hooray, we did it!
++                    }
++                }
++                // Don't try and handle default logic if it's been handled by the event.
++                if (!handledByEvent && proxyLogicEnabled) {
++                // Paper end
+                 // Spigot Start
+-                if (org.spigotmc.SpigotConfig.bungee) {
++                //if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
+                     String[] split = packethandshakinginsetprotocol.hostname.split("\00");
+                     if ( split.length == 3 || split.length == 4 ) {
+                         packethandshakinginsetprotocol.hostname = split[0];
+-- 
+2.18.0
+

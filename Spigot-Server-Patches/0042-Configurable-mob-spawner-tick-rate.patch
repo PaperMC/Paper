@@ -1,0 +1,68 @@
+From 7687ee0d8185f0476427df0ce90d6a1f347bd385 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 15:03:53 -0600
+Subject: [PATCH] Configurable mob spawner tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 70b02f020..f431000d1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -212,4 +212,9 @@ public class PaperWorldConfig {
+     private void disableIceAndSnow(){
+         disableIceAndSnow = getBoolean("disable-ice-and-snow", false);
+     }
++
++    public int mobSpawnerTickRate;
++    private void mobSpawnerTickRate() {
++        mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index 0149726ea..a5261d70b 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -19,6 +19,7 @@ public abstract class MobSpawnerAbstract {
+     public int maxNearbyEntities = 6; // CraftBukkit private -> public
+     public int requiredPlayerRange = 16; // CraftBukkit private -> public
+     public int spawnRange = 4; // CraftBukkit private -> public
++    private int tickDelay = 0; // Paper
+ 
+     public MobSpawnerAbstract() {}
+ 
+@@ -44,6 +45,10 @@ public abstract class MobSpawnerAbstract {
+     }
+ 
+     public void c() {
++        // Paper start - Configurable mob spawner tick rate
++        if (spawnDelay > 0 && --tickDelay > 0) return;
++        tickDelay = this.a().paperConfig.mobSpawnerTickRate;
++        // Paper end
+         if (!this.h()) {
+             this.e = this.d;
+         } else {
+@@ -57,18 +62,18 @@ public abstract class MobSpawnerAbstract {
+                 this.a().addParticle(EnumParticle.SMOKE_NORMAL, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
+                 this.a().addParticle(EnumParticle.FLAME, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
+                 if (this.spawnDelay > 0) {
+-                    --this.spawnDelay;
++                    this.spawnDelay -= tickDelay; // Paper
+                 }
+ 
+                 this.e = this.d;
+                 this.d = (this.d + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
+             } else {
+-                if (this.spawnDelay == -1) {
++                if (this.spawnDelay < -tickDelay) { // Paper
+                     this.i();
+                 }
+ 
+                 if (this.spawnDelay > 0) {
+-                    --this.spawnDelay;
++                    this.spawnDelay -= tickDelay; // Paper
+                     return;
+                 }
+ 
+-- 
+2.18.0
+

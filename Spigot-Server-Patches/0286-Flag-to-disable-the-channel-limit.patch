@@ -1,0 +1,34 @@
+From 826c03435f0d281d8f6850e7db2ab9b2a225f10c Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 31 Mar 2018 17:04:26 +0100
+Subject: [PATCH] Flag to disable the channel limit
+
+In some enviroments, the channel limit set by spigot can cause issues,
+e.g. servers which allow and support the usage of mod packs.
+
+provide an optional flag to disable this check, at your own risk.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 1e73a3308..fd47065c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -93,6 +93,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     // Paper start
+     private org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus;
+     private String resourcePackHash;
++    private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+     // Paper end
+ 
+     public CraftPlayer(CraftServer server, EntityPlayer entity) {
+@@ -1337,7 +1338,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void addChannel(String channel) {
+-       com.google.common.base.Preconditions.checkState( channels.size() < 128, "Too many channels registered" ); // Spigot
++       com.google.common.base.Preconditions.checkState( DISABLE_CHANNEL_LIMIT || channels.size() < 128, "Too many channels registered" ); // Spigot // Paper - flag to disable channel limit
+         if (channels.add(channel)) {
+             server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
+         }
+-- 
+2.18.0
+

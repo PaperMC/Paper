@@ -1,0 +1,89 @@
+From 4c172f93ecc6a820530393ef7551192a1d68f55f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 27 Dec 2016 15:02:42 -0500
+Subject: [PATCH] String based Action Bar API
+
+
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index a4b0901cf..02940d697 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -1,10 +1,13 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import org.apache.commons.lang.exception.ExceptionUtils;
+ import org.bukkit.Location;
++import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.util.Waitable;
+ import org.spigotmc.AsyncCatcher;
+ 
++import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ import java.util.concurrent.ExecutionException;
+ import java.util.concurrent.Executor;
+@@ -17,6 +20,24 @@ public final class MCUtil {
+ 
+     private MCUtil() {}
+ 
++    /**
++     * Quickly generate a stack trace for current location
++     *
++     * @return Stacktrace
++     */
++    public static String stack() {
++        return ExceptionUtils.getFullStackTrace(new Throwable());
++    }
++
++    /**
++     * Quickly generate a stack trace for current location with message
++     *
++     * @param str
++     * @return Stacktrace
++     */
++    public static String stack(String str) {
++        return ExceptionUtils.getFullStackTrace(new Throwable(str));
++    }
+ 
+     /**
+      * Ensures the target code is running on the main thread
+@@ -198,4 +219,13 @@ public final class MCUtil {
+         }
+         return null;
+     }
++
++    @Nonnull
++    public static World getNMSWorld(@Nonnull org.bukkit.World world) {
++        return ((CraftWorld) world).getHandle();
++    }
++
++    public static World getNMSWorld(@Nonnull org.bukkit.entity.Entity entity) {
++        return getNMSWorld(entity.getWorld());
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 98e9da59a..a9186b77a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -169,6 +169,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     // Paper start
++    @Override
++    public void sendActionBar(String message) {
++        if (getHandle().playerConnection == null || message == null || message.isEmpty()) return;
++        getHandle().playerConnection.sendPacket(new PacketPlayOutChat(new ChatComponentText(message), ChatMessageType.GAME_INFO));
++    }
++
++    @Override
++    public void sendActionBar(char alternateChar, String message) {
++        if (message == null || message.isEmpty()) return;
++        sendActionBar(org.bukkit.ChatColor.translateAlternateColorCodes(alternateChar, message));
++    }
++
+     @Override
+     public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
+         PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
+-- 
+2.18.0
+

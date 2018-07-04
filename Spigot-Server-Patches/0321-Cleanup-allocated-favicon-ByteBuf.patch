@@ -1,0 +1,43 @@
+From b42d9cfdd497370e9fe6d0b2b684ebcd6fe28ffd Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 3 Jul 2018 19:14:38 +0100
+Subject: [PATCH] Cleanup allocated favicon ByteBuf
+
+Cleanups a bytebuffer which was allocated during the encoding of the
+favicon to be sent to the client.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f82e22b23..0399a48e1 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -724,6 +724,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+ 
+         if (file.isFile()) {
+             ByteBuf bytebuf = Unpooled.buffer();
++            ByteBuf bytebuf1 = null; // Paper - cleanup favicon bytebuf
+ 
+             try {
+                 BufferedImage bufferedimage = ImageIO.read(file);
+@@ -731,13 +732,18 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+                 Validate.validState(bufferedimage.getWidth() == 64, "Must be 64 pixels wide", new Object[0]);
+                 Validate.validState(bufferedimage.getHeight() == 64, "Must be 64 pixels high", new Object[0]);
+                 ImageIO.write(bufferedimage, "PNG", new ByteBufOutputStream(bytebuf));
+-                ByteBuf bytebuf1 = Base64.encode(bytebuf);
++                /*ByteBuf */ bytebuf1 = Base64.encode(bytebuf); // Paper - cleanup favicon bytebuf
+ 
+                 serverping.setFavicon("data:image/png;base64," + bytebuf1.toString(StandardCharsets.UTF_8));
+             } catch (Exception exception) {
+                 MinecraftServer.LOGGER.error("Couldn\'t load server icon", exception);
+             } finally {
+                 bytebuf.release();
++                // Paper start - cleanup favicon bytebuf
++                if (bytebuf1 != null) {
++                    bytebuf1.release();
++                }
++                // Paper end - cleanup favicon bytebuf
+             }
+         }
+ 
+-- 
+2.18.0
+

@@ -1,0 +1,26 @@
+From cbd0700140ece892d3de977dc69b4b2e5c585291 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 14:24:53 -0400
+Subject: [PATCH] Fix Furnace cook time bug
+
+If the server lags out and skips multiple ticks, Furnace cooking behavior would not
+cook in the expected amount of time as the cook time was not decremented correctly.
+
+This patch ensures that furnaces cook to the correct wall time expectation.
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+index 886a73e93..7a1428105 100644
+--- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
++++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+@@ -165,7 +165,7 @@ public class TileEntityFurnace extends TileEntityContainer implements ITickable,
+         if (this.isBurning() && this.canBurn()) {
+             this.cookTime += elapsedTicks;
+             if (this.cookTime >= this.cookTimeTotal) {
+-                this.cookTime = 0;
++                this.cookTime -= this.cookTimeTotal; // Paper
+                 this.cookTimeTotal = this.a((ItemStack) this.items.get(0));
+                 this.burn();
+                 flag1 = true;
+-- 
+2.18.0
+

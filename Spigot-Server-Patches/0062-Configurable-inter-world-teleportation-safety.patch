@@ -1,0 +1,61 @@
+From a1057f8d4cd02724b07e348e56022b1892e0cb40 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Thu, 3 Mar 2016 02:50:31 -0600
+Subject: [PATCH] Configurable inter-world teleportation safety
+
+People are able to abuse the way Bukkit handles teleportation across worlds since it provides a built in teleportation
+safety check.
+
+To abuse the safety check, players are required to get into a location deemed unsafe by Bukkit e.g. be within a chest
+or door block. While they are in this block, they accept a teleport request from a player within a different world. Once
+the player teleports, Minecraft will recursively search upwards for a safe location, this could eventually land within a
+player's skybase.
+
+Example setup to perform the glitch: http://puu.sh/ng3PC/cf072dcbdb.png
+The wanted destination was on top of the emerald block however the player ended on top of the diamond block.
+This only is the case if the player is teleporting between worlds.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 38ccabc0d..b241c0380 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -237,4 +237,9 @@ public class PaperWorldConfig {
+     private void portalSearchRadius() {
+         portalSearchRadius = getInt("portal-search-radius", 128);
+     }
++
++    public boolean disableTeleportationSuffocationCheck;
++    private void disableTeleportationSuffocationCheck() {
++        disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 536534d2e..bf7aaebd6 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -799,7 +799,7 @@ public abstract class PlayerList {
+         exitWorld.getTravelAgent().adjustExit(entityplayer, exit, velocity);
+ 
+         entityplayer.worldChangeInvuln = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
+-        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, true); // SPIGOT-3864
++        this.moveToWorld(entityplayer, exitWorld.dimension, true, exit, !exitWorld.paperConfig.disableTeleportationSuffocationCheck); // SPIGOT-3864 // Paper GH-1149 - Tie suffocation check to config option
+         if (entityplayer.motX != velocity.getX() || entityplayer.motY != velocity.getY() || entityplayer.motZ != velocity.getZ()) {
+             entityplayer.getBukkitEntity().setVelocity(velocity);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index c14100ac6..6a43f5674 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -614,7 +614,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (fromWorld == toWorld) {
+             entity.playerConnection.teleport(to);
+         } else {
+-            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
++            // Paper - Configurable suffocation check
++            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, !toWorld.paperConfig.disableTeleportationSuffocationCheck);
+         }
+         return true;
+     }
+-- 
+2.18.0
+

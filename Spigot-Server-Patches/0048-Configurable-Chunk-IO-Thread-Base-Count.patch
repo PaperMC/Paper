@@ -1,0 +1,43 @@
+From 128af90387c06be0da343f45b342a235228b37ea Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 2 Mar 2016 23:46:57 -0600
+Subject: [PATCH] Configurable Chunk IO Thread Base Count
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index b5795b6d3..36689db74 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -199,4 +199,9 @@ public class PaperConfig {
+                 " - Interval: " + timeSummary(Timings.getHistoryInterval() / 20) +
+                 " - Length: " + timeSummary(Timings.getHistoryLength() / 20));
+     }
++
++    public static int minChunkLoadThreads = 2;
++    private static void chunkLoadThreads() {
++        minChunkLoadThreads = Math.min(6, getInt("settings.min-chunk-load-threads", 2)); // Keep people from doing stupid things with max of 6
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+index e4fd9bc60..7b7a3d01b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.chunkio;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.ChunkRegionLoader;
+@@ -7,7 +8,7 @@ import net.minecraft.server.World;
+ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
+ 
+ public class ChunkIOExecutor {
+-    static final int BASE_THREADS = 1;
++    static final int BASE_THREADS = PaperConfig.minChunkLoadThreads; // Paper
+     static final int PLAYERS_PER_THREAD = 50;
+ 
+     private static final AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException> instance = new AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException>(new ChunkIOProvider(), BASE_THREADS);
+-- 
+2.18.0
+

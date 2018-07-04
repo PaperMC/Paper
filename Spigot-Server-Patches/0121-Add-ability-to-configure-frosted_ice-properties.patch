@@ -1,0 +1,48 @@
+From b3b76f21bc0e86a173661b9fa351c886b89394e3 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Thu, 21 Apr 2016 23:51:55 -0700
+Subject: [PATCH] Add ability to configure frosted_ice properties
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 6ea608ba9..d96311f6b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -293,4 +293,14 @@ public class PaperWorldConfig {
+     private void useVanillaScoreboardColoring() {
+         useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
+     }
++
++    public boolean frostedIceEnabled = true;
++    public int frostedIceDelayMin = 20;
++    public int frostedIceDelayMax = 40;
++    private void frostedIce() {
++        this.frostedIceEnabled = this.getBoolean("frosted-ice.enabled", this.frostedIceEnabled);
++        this.frostedIceDelayMin = this.getInt("frosted-ice.delay.min", this.frostedIceDelayMin);
++        this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
++        log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockIceFrost.java b/src/main/java/net/minecraft/server/BlockIceFrost.java
+index 950863fb9..a8dbbf20a 100644
+--- a/src/main/java/net/minecraft/server/BlockIceFrost.java
++++ b/src/main/java/net/minecraft/server/BlockIceFrost.java
+@@ -19,10 +19,14 @@ public class BlockIceFrost extends BlockIce {
+     }
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
++        if (!world.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
+         if ((random.nextInt(3) == 0 || this.c(world, blockposition) < 4) && world.getLightLevel(blockposition) > 11 - ((Integer) iblockdata.get(BlockIceFrost.a)).intValue() - iblockdata.c()) {
+             this.a(world, blockposition, iblockdata, random, true);
+         } else {
+-            world.a(blockposition, (Block) this, MathHelper.nextInt(random, 20, 40));
++            // Paper start - use configurable min/max delay
++            //world.a(blockposition, (Block) this, MathHelper.nextInt(random, 20, 40));
++            world.a(blockposition, this, MathHelper.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax));
++            // Paper end
+         }
+ 
+     }
+-- 
+2.18.0
+

@@ -1,0 +1,70 @@
+From a447b4a83b584f8af1b4b6d5fb660a9db06d2179 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 19 Aug 2016 01:52:56 +0100
+Subject: [PATCH] Optimise BlockStateEnum hashCode and equals
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
+index 21ac1e066..a241d7d8c 100644
+--- a/src/main/java/net/minecraft/server/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -16,6 +16,11 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+     private final ImmutableSet<T> a;
+     private final Map<String, T> b = Maps.newHashMap();
+ 
++    // Paper start - BlockStateEnum is a singleton, so we can use our own hashCode
++    private static int hashId = 0;
++    private int hashCode;
++    // Paper end
++
+     protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
+         super(s, oclass);
+         this.a = ImmutableSet.copyOf(collection);
+@@ -32,6 +37,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+             this.b.put(s1, (T) oenum);
+         }
+ 
++        this.hashCode = hashId++; // Paper
+     }
+ 
+     public Collection<T> c() {
+@@ -46,32 +52,15 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+         return ((INamable) t0).getName();
+     }
+ 
++    @Override // Paper - override equals as BlockStateEnum is a singleton
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (object instanceof BlockStateEnum && super.equals(object)) {
+-            BlockStateEnum blockstateenum = (BlockStateEnum) object;
+-
+-            return this.a.equals(blockstateenum.a) && this.b.equals(blockstateenum.b);
+-        } else {
+-            return false;
+-        }
++       return this == object;
+     }
+ 
+-    // Spigot start
+-    private int hashCode;
++    @Override // Paper - override equals as BlockStateEnum is a singleton
+     public int hashCode() {
+-        int hash = hashCode;
+-        if (hash == 0) {
+-            int i = super.hashCode();
+-
+-            i = 31 * i + this.a.hashCode();
+-            i = 31 * i + this.b.hashCode();
+-            hashCode = hash = i;
+-        }
+-        return hash;
++        return hashCode;
+     }
+-    // Spigot end
+ 
+     public static <T extends Enum<T> & INamable> BlockStateEnum<T> of(String s, Class<T> oclass) {
+         return a(s, oclass, Predicates.alwaysTrue());
+-- 
+2.18.0
+

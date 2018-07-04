@@ -1,0 +1,52 @@
+From 8a9b221bcd755747f0e03bb84f9ba7403eaac7fd Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 22:03:09 -0400
+Subject: [PATCH] Prevent Waterflow BlockFromToEvent from loading chunks
+
+Many protection plugins would unintentionally trigger chunk loads
+by calling .getToBlock() on an unloaded chunk, killing performance.
+
+Simply skip the event call. as CraftBukkit blocks changing the block
+of unloaded chunks anyways.
+
+This keeps behavior consistent, vs inconsistent flowing based on plugin triggered loads.
+
+diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
+index 739b9aac3..ff90e08eb 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowing.java
++++ b/src/main/java/net/minecraft/server/BlockFlowing.java
+@@ -96,6 +96,7 @@ public class BlockFlowing extends BlockFluids {
+ 
+         if (this.h(world, blockposition.down(), iblockdata2)) {
+             // CraftBukkit start
++            if (!canFlowTo(world, source, BlockFace.DOWN)) { return; } // Paper
+             BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
+             world.getServer().getPluginManager().callEvent(event);
+ 
+@@ -136,6 +137,7 @@ public class BlockFlowing extends BlockFluids {
+                 EnumDirection enumdirection1 = (EnumDirection) iterator1.next();
+ 
+                 // CraftBukkit start
++                if (!canFlowTo(world, source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1))) { continue; } // Paper
+                 BlockFromToEvent event = new BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1));
+                 world.getServer().getPluginManager().callEvent(event);
+ 
+@@ -148,8 +150,14 @@ public class BlockFlowing extends BlockFluids {
+ 
+     }
+ 
++    // Paper start
++    private boolean canFlowTo(World world, org.bukkit.block.Block source, BlockFace face) {
++        return source.getWorld().isChunkLoaded((source.getX() + face.getModX()) >> 4, (source.getZ() + face.getModZ()) >> 4);
++    }
++    // Paper end
++
+     private void flow(World world, BlockPosition blockposition, IBlockData iblockdata, int i) {
+-        if (world.isLoaded(blockposition) && this.h(world, blockposition, iblockdata)) { // CraftBukkit - add isLoaded check
++        if (/*world.isLoaded(blockposition) &&*/ this.h(world, blockposition, iblockdata)) { // CraftBukkit - add isLoaded check // Paper - Already checked before we get here for isLoaded
+             if (iblockdata.getMaterial() != Material.AIR) {
+                 if (this.material == Material.LAVA) {
+                     this.fizz(world, blockposition);
+-- 
+2.18.0
+

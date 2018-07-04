@@ -1,0 +1,53 @@
+From 6ed3ea16d5ae3197d4539bc110fcc9610b7e9888 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 17 Apr 2018 21:26:31 -0400
+Subject: [PATCH] Handle bad chunks more gracefully
+
+Prior to this change the server would crash when attempting to load a
+chunk from a region with bad data.
+
+After this change the server will defer back to vanilla behavior. At
+this time, that means attempting to generate a chunk in its place
+(and occasionally just not generating anything and leaving small
+holes in the world).
+
+Should Mojang choose to alter this behavior in the future, this change
+will simply defer to whatever that new behavior is.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index de859ffd1..55dada668 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -162,6 +162,13 @@ public class ChunkProviderServer implements IChunkProvider {
+                 return null;
+             } else {
+                 chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
++
++                // Paper start - If there was an issue loading the chunk from region, stage1 will fail and stage2 will load it sync
++                // all we need to do is fetch an instance
++                if (chunk == null) {
++                    chunk = getChunkIfLoaded(i, j);
++                }
++                // Paper end
+             }
+         } else if (chunk == null && generate) {
+             chunk = originalGetChunkAt(i, j);
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index ef9529add..cdf3b614c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -30,6 +30,11 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+             return null;
+         } catch (IOException ex) {
+             throw new RuntimeException(ex);
++        // Paper - Mirror vanilla by catching everything (else) rather than immediately crashing the server
++        // stage2 will receive a null chunk and then load it synchronously, where vanilla MC will properly log and recover
++        // stage2 will _not_ however return that instance, only load it
++        } catch (Exception ex) {
++            return null;
+         }
+     }
+ 
+-- 
+2.18.0
+

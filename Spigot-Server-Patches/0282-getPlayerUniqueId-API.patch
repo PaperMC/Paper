@@ -1,0 +1,44 @@
+From 9e931d8f67acf7dd52c07c52967e54a8ce685e81 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 22 Mar 2018 01:40:24 -0400
+Subject: [PATCH] getPlayerUniqueId API
+
+Gets the unique ID of the player currently known as the specified player name
+In Offline Mode, will return an Offline UUID
+
+This is a more performant way to obtain a UUID for a name than loading an OfflinePlayer
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6095948e8..80702f6f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1346,6 +1346,26 @@ public final class CraftServer implements Server {
+         return recipients.size();
+     }
+ 
++    // Paper start
++    @Nullable
++    public UUID getPlayerUniqueId(String name) {
++        Player player = Bukkit.getPlayerExact(name);
++        if (player != null) {
++            return player.getUniqueId();
++        }
++        GameProfile profile;
++        // Only fetch an online UUID in online mode
++        if (MinecraftServer.getServer().getOnlineMode()
++                || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) {
++            profile = console.getUserCache().getProfile( name );
++        } else {
++            // Make an OfflinePlayer using an offline mode UUID since the name has no profile
++            profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
++        }
++        return profile != null ? profile.getId() : null;
++    }
++    // Paper end
++
+     @Override
+     @Deprecated
+     public OfflinePlayer getOfflinePlayer(String name) {
+-- 
+2.18.0
+

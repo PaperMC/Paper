@@ -1,0 +1,94 @@
+From 4c7de2e2109d66a5a3911af98b61c1af58e0d8a6 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 4 Nov 2016 02:12:10 -0400
+Subject: [PATCH] Chunk Save Stats Debug Option
+
+Adds a command line flag to enable stats on how chunk saves are processing.
+
+Stats on current queue, how many was processed and how many were queued.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 93e938a9d..66ff1adf6 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -28,6 +28,11 @@ public class ChunkProviderServer implements IChunkProvider {
+     public final Set<Long> unloadQueue = Sets.newHashSet();
+     public final ChunkGenerator chunkGenerator;
+     private final IChunkLoader chunkLoader;
++    // Paper start - chunk save stats
++    private long lastQueuedSaves = 0L; // Paper
++    private long lastProcessedSaves = 0L; // Paper
++    private long lastSaveStatPrinted = System.currentTimeMillis();
++    // Paper end
+     // Paper start
+     protected Chunk lastChunkByPos = null;
+     public Long2ObjectOpenHashMap<Chunk> chunks = new Long2ObjectOpenHashMap<Chunk>(8192) {
+@@ -257,6 +262,30 @@ public class ChunkProviderServer implements IChunkProvider {
+         // Paper start
+         final ChunkRegionLoader chunkLoader = (ChunkRegionLoader) world.getChunkProviderServer().chunkLoader;
+         final int queueSize = chunkLoader.getQueueSize();
++
++        final long now = System.currentTimeMillis();
++        final long timeSince = (now - lastSaveStatPrinted) / 1000;
++        final Integer printRateSecs = Integer.getInteger("printSaveStats");
++        if (printRateSecs != null && timeSince >= printRateSecs) {
++            final String timeStr = "/" + timeSince  +"s";
++            final long queuedSaves = chunkLoader.getQueuedSaves();
++            long queuedDiff = queuedSaves - lastQueuedSaves;
++            lastQueuedSaves = queuedSaves;
++
++            final long processedSaves = chunkLoader.getProcessedSaves();
++            long processedDiff = processedSaves - lastProcessedSaves;
++            lastProcessedSaves = processedSaves;
++
++            lastSaveStatPrinted = now;
++            if (processedDiff > 0 || queueSize > 0 || queuedDiff > 0) {
++                System.out.println("[Chunk Save Stats] " + world.worldData.getName() +
++                    " - Current: " + queueSize +
++                    " - Queued: " + queuedDiff + timeStr +
++                    " - Processed: " +processedDiff + timeStr
++                );
++            }
++        }
++
+         if (queueSize > world.paperConfig.queueSizeAutoSaveThreshold){
+             return false;
+         }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 77943821e..14f88e91d 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -39,7 +39,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         this.e = dataconvertermanager;
+     }
+ 
+-    public int getQueueSize() { return queue.size(); } // Paper
++    // Paper start
++    private long queuedSaves = 0;
++    private final java.util.concurrent.atomic.AtomicLong processedSaves = new java.util.concurrent.atomic.AtomicLong(0L);
++    public int getQueueSize() { return queue.size(); }
++    public long getQueuedSaves() { return queuedSaves; }
++    public long getProcessedSaves() { return processedSaves.longValue(); }
++    // Paper end
+ 
+     // CraftBukkit start - Add async variant, provide compatibility
+     @Nullable
+@@ -163,6 +169,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         synchronized (lock) {  // Paper - Chunk queue improvements
+             this.b.put(chunkcoordintpair, nbttagcompound);
+         }
++        queuedSaves++; // Paper
+         queue.add(new QueuedChunk(chunkcoordintpair, nbttagcompound)); // Paper - Chunk queue improvements
+ 
+         FileIOThread.a().a(this);
+@@ -187,6 +194,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             return false;
+         } else {
+             ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
++            processedSaves.incrementAndGet(); // Paper
+ 
+             boolean flag;
+ 
+-- 
+2.18.0
+

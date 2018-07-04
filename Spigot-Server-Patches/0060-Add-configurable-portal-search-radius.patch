@@ -1,0 +1,58 @@
+From 0b318cc00f265124445ca5f9f0f833525e066ca9 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Thu, 3 Mar 2016 02:46:17 -0600
+Subject: [PATCH] Add configurable portal search radius
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index a289ba019..38ccabc0d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -232,4 +232,9 @@ public class PaperWorldConfig {
+     private void allChunksAreSlimeChunks() {
+         allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
+     }
++
++    public int portalSearchRadius;
++    private void portalSearchRadius() {
++        portalSearchRadius = getInt("portal-search-radius", 128);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index d1c67e396..f49729796 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -12,7 +12,7 @@ import org.bukkit.util.Vector;
+ 
+ public class PortalTravelAgent {
+ 
+-    private final WorldServer world;
++    protected final WorldServer world; // Paper - private -> protected
+     private final Random b;
+     private final Long2ObjectMap<PortalTravelAgent.ChunkCoordinatesPortal> c = new Long2ObjectOpenHashMap(4096);
+ 
+@@ -92,7 +92,7 @@ public class PortalTravelAgent {
+ 
+     public boolean b(Entity entity, float f) {
+         // CraftBukkit start - Modularize portal search process and entity teleportation
+-        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
++        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, world.paperConfig.portalSearchRadius); // Paper - Configurable search radius
+         if (found == null) {
+             return false;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
+index 1d5dce10e..7ca2617a8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftTravelAgent.java
+@@ -11,7 +11,7 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
+ 
+     public static TravelAgent DEFAULT = null;
+ 
+-    private int searchRadius = 128;
++    private int searchRadius = world.paperConfig.portalSearchRadius; // Paper - Configurable search radius
+     private int creationRadius = 16;
+     private boolean canCreatePortal = true;
+ 
+-- 
+2.18.0
+

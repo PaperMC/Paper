@@ -1,0 +1,58 @@
+From 9638089fa0dcff84f21fc77d17a984b430eb3423 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 02:13:59 -0400
+Subject: [PATCH] Store counts for each Entity/Block Entity Type
+
+Opens door for future patches to optimize performance
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index b40e60942..952c96c0c 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -34,15 +34,19 @@ public class Chunk {
+     public final Map<BlockPosition, TileEntity> tileEntities;
+     public final List<Entity>[] entitySlices; // Spigot
+     // Paper start
++    public final co.aikar.util.Counter<String> entityCounts = new co.aikar.util.Counter<>();
++    public final co.aikar.util.Counter<String> tileEntityCounts = new co.aikar.util.Counter<>();
+     private class TileEntityHashMap extends java.util.HashMap<BlockPosition, TileEntity> {
+         @Override
+         public TileEntity put(BlockPosition key, TileEntity value) {
+             TileEntity replaced = super.put(key, value);
+             if (replaced != null) {
+                 replaced.setCurrentChunk(null);
++                tileEntityCounts.decrement(replaced.tileEntityKeyString);
+             }
+             if (value != null) {
+                 value.setCurrentChunk(Chunk.this);
++                tileEntityCounts.increment(value.tileEntityKeyString);
+             }
+             return replaced;
+         }
+@@ -52,6 +56,7 @@ public class Chunk {
+             TileEntity removed = super.remove(key);
+             if (removed != null) {
+                 removed.setCurrentChunk(null);
++                tileEntityCounts.decrement(removed.tileEntityKeyString);
+             }
+             return removed;
+         }
+@@ -650,6 +655,7 @@ public class Chunk {
+         }
+         // Paper start
+         entity.setCurrentChunk(this);
++        entityCounts.increment(entity.entityKeyString);
+         // Paper end
+         // Spigot end
+     }
+@@ -685,6 +691,7 @@ public class Chunk {
+         }
+         // Paper start
+         entity.setCurrentChunk(null);
++        entityCounts.decrement(entity.entityKeyString);
+         // Paper end
+         // Spigot end
+     }
+-- 
+2.18.0
+

@@ -1,0 +1,111 @@
+From 14204e807bf59765b9126dceee7a62469db61a16 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Fri, 16 Dec 2016 21:25:39 -0600
+Subject: [PATCH] Add ProjectileCollideEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 86836a5d0..8a9e16ad6 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -190,6 +190,15 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+                 }
+             }
+ 
++            // Paper start - Call ProjectileCollideEvent
++            if (movingobjectposition != null && movingobjectposition.entity != null) {
++                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, movingobjectposition);
++                if (event.isCancelled()) {
++                    movingobjectposition = null;
++                }
++            }
++            // Paper end
++
+             if (movingobjectposition != null) {
+                 this.a(movingobjectposition);
+             }
+diff --git a/src/main/java/net/minecraft/server/EntityFireball.java b/src/main/java/net/minecraft/server/EntityFireball.java
+index 365e070f8..657b3b5ac 100644
+--- a/src/main/java/net/minecraft/server/EntityFireball.java
++++ b/src/main/java/net/minecraft/server/EntityFireball.java
+@@ -70,6 +70,15 @@ public abstract class EntityFireball extends Entity {
+             ++this.f;
+             MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, true, this.f >= 25, this.shooter);
+ 
++            // Paper start - Call ProjectileCollideEvent
++            if (movingobjectposition != null && movingobjectposition.entity != null) {
++                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = CraftEventFactory.callProjectileCollideEvent(this, movingobjectposition);
++                if (event.isCancelled()) {
++                    movingobjectposition = null;
++                }
++            }
++            // Paper end
++
+             if (movingobjectposition != null) {
+                 this.a(movingobjectposition);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
+index 7f011aef8..6ac89d1e3 100644
+--- a/src/main/java/net/minecraft/server/EntityFishingHook.java
++++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
+@@ -240,6 +240,16 @@ public class EntityFishingHook extends Entity {
+ 
+         vec3d = new Vec3D(this.locX, this.locY, this.locZ);
+         vec3d1 = new Vec3D(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
++
++        // Paper start - Call ProjectileCollideEvent
++        if (movingobjectposition != null && movingobjectposition.entity != null) {
++            com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, movingobjectposition);
++            if (event.isCancelled()) {
++                movingobjectposition = null;
++            }
++        }
++        // Paper end
++
+         if (movingobjectposition != null) {
+             vec3d1 = new Vec3D(movingobjectposition.pos.x, movingobjectposition.pos.y, movingobjectposition.pos.z);
+         }
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index cfcaf3832..01c7fcc8b 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -160,6 +160,15 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             movingobjectposition = new MovingObjectPosition(entity);
+         }
+ 
++        // Paper start - Call ProjectileCollideEvent
++        if (movingobjectposition != null && movingobjectposition.entity != null) {
++            com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, movingobjectposition);
++            if (event.isCancelled()) {
++                movingobjectposition = null;
++            }
++        }
++        // Paper end
++
+         if (movingobjectposition != null) {
+             if (movingobjectposition.type == MovingObjectPosition.EnumMovingObjectType.BLOCK && this.world.getType(movingobjectposition.a()).getBlock() == Blocks.PORTAL) {
+                 this.e(movingobjectposition.a());
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 87b4e9189..06a277b3b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -805,6 +805,16 @@ public class CraftEventFactory {
+         return CraftItemStack.asNMSCopy(bitem);
+     }
+ 
++    // Paper start
++    public static com.destroystokyo.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, MovingObjectPosition position) {
++        Projectile projectile = (Projectile) entity.getBukkitEntity();
++        org.bukkit.entity.Entity collided = position.entity.getBukkitEntity();
++        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
+         Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
+         ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);
+-- 
+2.18.0
+

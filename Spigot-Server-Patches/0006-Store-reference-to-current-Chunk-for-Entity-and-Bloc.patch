@@ -1,0 +1,137 @@
+From b55307c8ea1237c0893145e14f48e2e98a68fc5b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 02:10:36 -0400
+Subject: [PATCH] Store reference to current Chunk for Entity and Block
+ Entities
+
+This enables us a fast reference to the entities current chunk instead
+of having to look it up by hashmap lookups.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 4bbebb25a..b40e60942 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -33,6 +33,30 @@ public class Chunk {
+     private boolean m;
+     public final Map<BlockPosition, TileEntity> tileEntities;
+     public final List<Entity>[] entitySlices; // Spigot
++    // Paper start
++    private class TileEntityHashMap extends java.util.HashMap<BlockPosition, TileEntity> {
++        @Override
++        public TileEntity put(BlockPosition key, TileEntity value) {
++            TileEntity replaced = super.put(key, value);
++            if (replaced != null) {
++                replaced.setCurrentChunk(null);
++            }
++            if (value != null) {
++                value.setCurrentChunk(Chunk.this);
++            }
++            return replaced;
++        }
++
++        @Override
++        public TileEntity remove(Object key) {
++            TileEntity removed = super.remove(key);
++            if (removed != null) {
++                removed.setCurrentChunk(null);
++            }
++            return removed;
++        }
++    }
++    // Paper end
+     private boolean done;
+     private boolean lit;
+     private boolean r;
+@@ -80,7 +104,7 @@ public class Chunk {
+         this.g = new byte[256];
+         this.h = new int[256];
+         this.i = new boolean[256];
+-        this.tileEntities = Maps.newHashMap();
++        this.tileEntities = new TileEntityHashMap(); // Paper
+         this.x = 4096;
+         this.y = Queues.newConcurrentLinkedQueue();
+         this.entitySlices = (List[]) (new List[16]); // Spigot
+@@ -624,6 +648,9 @@ public class Chunk {
+                 this.entityCount.adjustOrPutValue( creatureType.a(), 1, 1 );
+             }
+         }
++        // Paper start
++        entity.setCurrentChunk(this);
++        // Paper end
+         // Spigot end
+     }
+ 
+@@ -656,6 +683,9 @@ public class Chunk {
+                 this.entityCount.adjustValue( creatureType.a(), -1 );
+             }
+         }
++        // Paper start
++        entity.setCurrentChunk(null);
++        // Paper end
+         // Spigot end
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 3a8902bf1..3829c8c40 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1703,6 +1703,13 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+     }
+ 
+     // Paper start
++    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
++    public Chunk getCurrentChunk() {
++        return currentChunk != null ? currentChunk.get() : null;
++    }
++    public void setCurrentChunk(Chunk chunk) {
++        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
++    }
+     public final MinecraftKey entityKey = EntityTypes.getKey(this);
+     public final String entityKeyString = entityKey != null ? entityKey.toString() : null;
+ 
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 672ba3134..88cd5734d 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -28,6 +28,13 @@ public abstract class TileEntity implements KeyedObject {
+     }
+ 
+     // Paper start
++    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
++    public Chunk getCurrentChunk() {
++        return currentChunk != null ? currentChunk.get() : null;
++    }
++    public void setCurrentChunk(Chunk chunk) {
++        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
++    }
+     public final MinecraftKey tileEntityKey = getKey(this.getClass());
+     public final String tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index c5a194ffe..833e3111d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -9,6 +9,7 @@ import java.util.UUID;
+ 
+ import net.minecraft.server.*;
+ 
++import org.bukkit.Chunk;
+ import org.bukkit.EntityEffect;
+ import org.bukkit.Location;
+ import org.bukkit.Server;
+@@ -39,6 +40,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         this.entity = entity;
+     }
+ 
++    @Override
++    public Chunk getChunk() {
++        net.minecraft.server.Chunk currentChunk = entity.getCurrentChunk();
++        return currentChunk != null ? currentChunk.bukkitChunk : getLocation().getChunk();
++    }
++
+     public static CraftEntity getEntity(CraftServer server, Entity entity) {
+         /**
+          * Order is *EXTREMELY* important -- keep it right! =D
+-- 
+2.18.0
+

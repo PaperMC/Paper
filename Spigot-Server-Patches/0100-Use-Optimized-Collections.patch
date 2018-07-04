@@ -1,0 +1,38 @@
+From d97129376d57c631b43c07d37bf8bc5af9081036 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 02:13:24 -0400
+Subject: [PATCH] Use Optimized Collections
+
+Swap out CraftBukkit LongObjectHashMap with Long2ObjectOpenHashMap
+Swap out Integer key HashMap for a Int2ObjectOpenHashMap For ChunkProviderServer
+
+Amaranth, the creator of LongObjectHashMap, tested it vs fastutil and determined fastutil to be 3x faster
+and could not create anything faster than fastutil.
+
+These collections are super fast as seen
+http://java-performance.info/hashmap-overview-jdk-fastutil-goldman-sachs-hppc-koloboke-trove-january-2015/
+
+diff --git a/src/main/java/net/minecraft/server/DataWatcher.java b/src/main/java/net/minecraft/server/DataWatcher.java
+index 1507f97fd..fe8484453 100644
+--- a/src/main/java/net/minecraft/server/DataWatcher.java
++++ b/src/main/java/net/minecraft/server/DataWatcher.java
+@@ -12,6 +12,7 @@ import java.util.Map;
+ import java.util.concurrent.locks.ReadWriteLock;
+ import java.util.concurrent.locks.ReentrantReadWriteLock;
+ import javax.annotation.Nullable;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap; // Paper
+ import org.apache.commons.lang3.ObjectUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -21,7 +22,7 @@ public class DataWatcher {
+     private static final Logger a = LogManager.getLogger();
+     private static final Map<Class<? extends Entity>, Integer> b = Maps.newHashMap();
+     private final Entity c;
+-    private final Map<Integer, DataWatcher.Item<?>> d = Maps.newHashMap();
++    private final Map<Integer, DataWatcher.Item<?>> d = new Int2ObjectOpenHashMap<>(); // Paper
+     private final ReadWriteLock e = new ReentrantReadWriteLock();
+     private boolean f = true;
+     private boolean g;
+-- 
+2.18.0
+

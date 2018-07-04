@@ -1,0 +1,46 @@
+From d6a8a38833e30365423d53a34ce66c467f13c403 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Jun 2018 00:32:22 -0400
+Subject: [PATCH] Don't load chunks for villager door checks
+
+This avoids villages spam loading chunks sync
+
+diff --git a/src/main/java/net/minecraft/server/PersistentVillage.java b/src/main/java/net/minecraft/server/PersistentVillage.java
+index 01f7cee38..a3aa9f82e 100644
+--- a/src/main/java/net/minecraft/server/PersistentVillage.java
++++ b/src/main/java/net/minecraft/server/PersistentVillage.java
+@@ -226,7 +226,12 @@ public class PersistentVillage extends PersistentBase {
+     }
+ 
+     private boolean f(BlockPosition blockposition) {
+-        IBlockData iblockdata = this.world.getType(blockposition);
++        // Paper start
++        IBlockData iblockdata = this.world.getTypeIfLoaded(blockposition);
++        if (iblockdata == null) {
++            return false;
++        }
++        // Paper end
+         Block block = iblockdata.getBlock();
+ 
+         return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
+diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
+index 2eb33a986..9f1867ddd 100644
+--- a/src/main/java/net/minecraft/server/Village.java
++++ b/src/main/java/net/minecraft/server/Village.java
+@@ -327,7 +327,12 @@ public class Village {
+     }
+ 
+     private boolean f(BlockPosition blockposition) {
+-        IBlockData iblockdata = this.a.getType(blockposition);
++        // Paper start
++        IBlockData iblockdata = this.a.getTypeIfLoaded(blockposition);
++        if (iblockdata == null) {
++            return false;
++        }
++        // Paper end
+         Block block = iblockdata.getBlock();
+ 
+         return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
+-- 
+2.18.0
+

@@ -1,0 +1,51 @@
+From 2d430fe2949ebdeb5057951e790b9cf0a42704f0 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 12:27:07 -0600
+Subject: [PATCH] Configurable lava flow speed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index dbd82d5a9..b0b3033e7 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -190,4 +190,11 @@ public class PaperWorldConfig {
+         fastDrainLava = getBoolean("fast-drain.lava", false);
+         fastDrainWater = getBoolean("fast-drain.water", false);
+     }
++
++    public int lavaFlowSpeedNormal;
++    public int lavaFlowSpeedNether;
++    private void lavaFlowSpeeds() {
++        lavaFlowSpeedNormal = getInt("lava-flow-speed.normal", 30);
++        lavaFlowSpeedNether = getInt("lava-flow-speed.nether", 10);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
+index 3aaa19b2f..739b9aac3 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowing.java
++++ b/src/main/java/net/minecraft/server/BlockFlowing.java
+@@ -272,6 +272,9 @@ public class BlockFlowing extends BlockFluids {
+      * Paper - Get flow speed. Throttle if its water and flowing adjacent to lava
+      */
+     public int getFlowSpeed(World world, BlockPosition blockposition) {
++        if (this.material == Material.LAVA) {
++            return world.worldProvider.isSkyMissing() ? world.paperConfig.lavaFlowSpeedNether : world.paperConfig.lavaFlowSpeedNormal;
++        }
+         if (this.material == Material.WATER && (
+                 world.getType(blockposition.north(1)).getBlock().material == Material.LAVA ||
+                         world.getType(blockposition.south(1)).getBlock().material == Material.LAVA ||
+diff --git a/src/main/java/net/minecraft/server/WorldProvider.java b/src/main/java/net/minecraft/server/WorldProvider.java
+index f3eb2a797..d0265f960 100644
+--- a/src/main/java/net/minecraft/server/WorldProvider.java
++++ b/src/main/java/net/minecraft/server/WorldProvider.java
+@@ -114,6 +114,7 @@ public abstract class WorldProvider {
+         return this.f;
+     }
+ 
++    public final boolean isSkyMissing() { return this.n(); } // Paper - OBFHELPER
+     public boolean n() {
+         return this.e;
+     }
+-- 
+2.18.0
+

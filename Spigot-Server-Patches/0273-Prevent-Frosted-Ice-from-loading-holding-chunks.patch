@@ -1,0 +1,34 @@
+From 5a88cdc6665f7185634f9938f1406e6709ba4b48 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 10 Mar 2018 16:33:15 -0500
+Subject: [PATCH] Prevent Frosted Ice from loading/holding chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockIceFrost.java b/src/main/java/net/minecraft/server/BlockIceFrost.java
+index a8dbbf20a..87f40bfcf 100644
+--- a/src/main/java/net/minecraft/server/BlockIceFrost.java
++++ b/src/main/java/net/minecraft/server/BlockIceFrost.java
+@@ -50,7 +50,9 @@ public class BlockIceFrost extends BlockIce {
+         for (int k = 0; k < j; ++k) {
+             EnumDirection enumdirection = aenumdirection[k];
+ 
+-            if (world.getType(blockposition.shift(enumdirection)).getBlock() == this) {
++            IBlockData iblockdata1 = world.getTypeIfLoaded(blockposition.shift(enumdirection)); // Paper - don't load chunks
++            if (iblockdata1 == null) continue; // Paper
++            if (iblockdata1.getBlock() == this) { // Paper
+                 ++i;
+                 if (i >= 4) {
+                     return i;
+@@ -76,7 +78,8 @@ public class BlockIceFrost extends BlockIce {
+                 for (int k = 0; k < j; ++k) {
+                     EnumDirection enumdirection = aenumdirection[k];
+                     BlockPosition blockposition1 = blockposition.shift(enumdirection);
+-                    IBlockData iblockdata1 = world.getType(blockposition1);
++                    IBlockData iblockdata1 = world.getTypeIfLoaded(blockposition1); // Paper - don't load chunks
++                    if (iblockdata1 == null) continue; // Paper
+ 
+                     if (iblockdata1.getBlock() == this) {
+                         this.a(world, blockposition1, iblockdata1, random, false);
+-- 
+2.18.0
+

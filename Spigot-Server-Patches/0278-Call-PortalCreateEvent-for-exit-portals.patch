@@ -1,0 +1,115 @@
+From 8122b5281bcc841d9eb9d5b53cef8a34adc69fd7 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Sun, 18 Mar 2018 15:44:44 +0100
+Subject: [PATCH] Call PortalCreateEvent for exit portals
+
+
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index f49729796..42e4b2d01 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -3,10 +3,17 @@ package net.minecraft.server;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Map;
+ import java.util.Random;
+ // CraftBukkit start
+ import org.bukkit.Location;
++import org.bukkit.block.Block;
+ import org.bukkit.event.entity.EntityPortalExitEvent;
++import org.bukkit.event.world.PortalCreateEvent;
+ import org.bukkit.util.Vector;
+ // CraftBukkit end
+ 
+@@ -47,6 +54,9 @@ public class PortalTravelAgent {
+             byte b0 = 1;
+             byte b1 = 0;
+ 
++            Collection<Block> bukkitBlocks = new HashSet<>(); // Paper
++            Map<BlockPosition, IBlockData> nmsBlocks = new HashMap<>(); // Paper
++
+             for (int l = -2; l <= 2; ++l) {
+                 for (int i1 = -2; i1 <= 2; ++i1) {
+                     for (int j1 = -1; j1 < 3; ++j1) {
+@@ -55,11 +65,22 @@ public class PortalTravelAgent {
+                         int i2 = k + i1 * 0 - l * 1;
+                         boolean flag2 = j1 < 0;
+ 
+-                        this.world.setTypeUpdate(new BlockPosition(k1, l1, i2), flag2 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
++                        // Paper start
++                        BlockPosition pos = new BlockPosition(k1, l1, i2);
++                        nmsBlocks.putIfAbsent(pos, flag2 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
++                        bukkitBlocks.add(this.world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                        // Paper end
+                     }
+                 }
+             }
+ 
++            // Paper start
++            PortalCreateEvent event = new PortalCreateEvent(bukkitBlocks, this.world.getWorld(), PortalCreateEvent.CreateReason.OBC_DESTINATION);
++            if(event.callEvent()){
++                nmsBlocks.forEach(this.world::setTypeUpdate);
++            }
++            // Paper end
++
+         // CraftBukkit start
+         return new BlockPosition(i, k, k);
+     }
+@@ -403,6 +424,9 @@ public class PortalTravelAgent {
+             l5 = -l5;
+         }
+ 
++        Collection<Block> bukkitBlocks = new HashSet<>(); // Paper
++        Map<BlockPosition, IBlockData> nmsBlocks = new HashMap<>(); // Paper
++
+         if (d0 < 0.0D) {
+             i1 = MathHelper.clamp(i1, 70, this.world.ab() - 10);
+             j5 = i1;
+@@ -415,7 +439,11 @@ public class PortalTravelAgent {
+                         l3 = j2 + (l2 - 1) * l5 - k2 * k5;
+                         boolean flag1 = i3 < 0;
+ 
+-                        this.world.setTypeUpdate(new BlockPosition(j3, k3, l3), flag1 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
++                        // Paper start
++                        BlockPosition pos = new BlockPosition(j3, k3, l3);
++                        nmsBlocks.putIfAbsent(pos, flag1 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
++                        bukkitBlocks.add(this.world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                        // Paper end
+                     }
+                 }
+             }
+@@ -431,7 +459,11 @@ public class PortalTravelAgent {
+                     i4 = j2 + (i3 - 1) * l5;
+                     boolean flag2 = i3 == 0 || i3 == 3 || j3 == -1 || j3 == 3;
+ 
+-                    this.world.setTypeAndData(new BlockPosition(k3, l3, i4), flag2 ? Blocks.OBSIDIAN.getBlockData() : iblockdata, 2);
++                    // Paper start
++                    BlockPosition pos = new BlockPosition(k3, l3, i4);
++                    nmsBlocks.putIfAbsent(pos, flag2 ? Blocks.OBSIDIAN.getBlockData() : iblockdata);
++                    bukkitBlocks.add(this.world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                    // Paper end
+                 }
+             }
+ 
+@@ -447,6 +479,13 @@ public class PortalTravelAgent {
+             }
+         }
+ 
++        // Paper start
++        PortalCreateEvent event = new PortalCreateEvent(bukkitBlocks, this.world.getWorld(), PortalCreateEvent.CreateReason.OBC_DESTINATION);
++        if(event.callEvent()){
++            nmsBlocks.forEach((pos, data) -> this.world.setTypeAndData(pos, data, 2));
++        }
++        // Paper end
++
+         return true;
+     }
+ 
+-- 
+2.18.0
+

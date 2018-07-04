@@ -1,0 +1,87 @@
+From 1cf126b0bdcfd085600588c678c1a9816c2ed64f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 13 Sep 2014 23:14:43 -0400
+Subject: [PATCH] Configurable Keep Spawn Loaded range per world
+
+This lets you disable it for some worlds and lower it for others.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 6555f1373..abc1aabdd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -282,4 +282,10 @@ public class PaperWorldConfig {
+         grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
+         log("Grass Spread Tick Rate: " + grassUpdateRate);
+     }
++
++    public short keepLoadedRange;
++    private void keepLoadedRange() {
++        keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 8)) * 16);
++        log( "Keep Spawn Loaded Range: " + (keepLoadedRange/16));
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 4e8ce79ff..2300ee10b 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -357,8 +357,11 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+             long j = aw();
+             i = 0;
+ 
+-            for (int k = -192; k <= 192 && this.isRunning(); k += 16) {
+-                for (int l = -192; l <= 192 && this.isRunning(); l += 16) {
++            // Paper start
++            short radius = worldserver.paperConfig.keepLoadedRange;
++            for (int k = -radius; k <= radius && this.isRunning(); k += 16) {
++                for (int l = -radius; l <= radius && this.isRunning(); l += 16) {
++            // Paper end
+                     long i1 = aw();
+ 
+                     if (i1 - j > 1000L) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 5d5003920..671927d5c 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -3200,8 +3200,9 @@ public abstract class World implements IBlockAccess {
+         int k = i * 16 + 8 - blockposition.getX();
+         int l = j * 16 + 8 - blockposition.getZ();
+         boolean flag = true;
++        short keepLoadedRange = paperConfig.keepLoadedRange; // Paper
+ 
+-        return k >= -128 && k <= 128 && l >= -128 && l <= 128 && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory'
++        return k >= -keepLoadedRange && k <= keepLoadedRange && l >= -keepLoadedRange && l <= keepLoadedRange && this.keepSpawnInMemory; // CraftBukkit - Added 'this.keepSpawnInMemory' // Paper - Re-add range var
+     }
+ 
+     public void a(Packet<?> packet) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d3e949707..054ac1b47 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -961,7 +961,7 @@ public final class CraftServer implements Server {
+         System.out.println("Preparing start region for level " + (console.worlds.size() - 1) + " (Seed: " + internal.getSeed() + ")");
+ 
+         if (internal.getWorld().getKeepSpawnInMemory()) {
+-            short short1 = 196;
++            short short1 = internal.paperConfig.keepLoadedRange; // Paper
+             long i = System.currentTimeMillis();
+             for (int j = -short1; j <= short1; j += 16) {
+                 for (int k = -short1; k <= short1; k += 16) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 01fc193db..69dc11e2b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1283,8 +1283,9 @@ public class CraftWorld implements World {
+         int chunkCoordX = chunkcoordinates.getX() >> 4;
+         int chunkCoordZ = chunkcoordinates.getZ() >> 4;
+         // Cycle through the 25x25 Chunks around it to load/unload the chunks.
+-        for (int x = -12; x <= 12; x++) {
+-            for (int z = -12; z <= 12; z++) {
++        int radius = world.paperConfig.keepLoadedRange / 16; // Paper
++        for (int x = -radius; x <= radius; x++) { // Paper
++            for (int z = -radius; z <= radius; z++) { // Paper
+                 if (keepLoaded) {
+                     loadChunk(chunkCoordX + x, chunkCoordZ + z);
+                 } else {
+-- 
+2.18.0
+

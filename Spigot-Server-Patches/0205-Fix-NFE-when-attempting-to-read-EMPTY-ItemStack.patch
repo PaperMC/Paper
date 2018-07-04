@@ -1,0 +1,23 @@
+From 070cf38a5cd2ad6ee121d9b8cefff5c0365e62cb Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Sun, 9 Apr 2017 23:50:15 -0700
+Subject: [PATCH] Fix NFE when attempting to read EMPTY ItemStack
+
+Thanks @gabizou
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 736686bed..d666088f2 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -120,7 +120,7 @@ public final class ItemStack {
+ 
+     // CraftBukkit - break into own method
+     public void load(NBTTagCompound nbttagcompound) {
+-        this.item = Item.b(nbttagcompound.getString("id"));
++        this.item = nbttagcompound.hasKeyOfType("id", 8) ? Item.b(nbttagcompound.getString("id")) : Item.getItemOf(Blocks.AIR); // Paper - fix NumberFormatException caused by attempting to read an EMPTY ItemStack
+         this.count = nbttagcompound.getByte("Count");
+         // CraftBukkit start - Route through setData for filtering
+         // this.damage = Math.max(0, nbttagcompound.getShort("Damage"));
+-- 
+2.18.0
+

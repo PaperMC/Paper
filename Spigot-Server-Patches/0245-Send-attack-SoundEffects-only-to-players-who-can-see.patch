@@ -1,0 +1,93 @@
+From 446ba2913490acc93574cbe8dab2ad241e3bdfc6 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Tue, 31 Oct 2017 03:26:18 +0100
+Subject: [PATCH] Send attack SoundEffects only to players who can see the
+ attacker
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 579996d1e..347237055 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -939,6 +939,15 @@ public abstract class EntityHuman extends EntityLiving {
+         this.j = 0;
+     }
+ 
++    // Paper start - send SoundEffect to everyone who can see fromEntity
++    private static void sendSoundEffect(EntityHuman fromEntity, double x, double y, double z, SoundEffect soundEffect, SoundCategory soundCategory, float volume, float pitch) {
++        fromEntity.world.sendSoundEffect(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity himself
++        if (fromEntity instanceof EntityPlayer) {
++            ((EntityPlayer) fromEntity).playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(soundEffect, soundCategory, x, y, z, volume, pitch));
++        }
++    }
++    // Paper end
++
+     public void attack(Entity entity) {
+         if (entity.bd()) {
+             if (!entity.t(this)) {
+@@ -963,7 +972,7 @@ public abstract class EntityHuman extends EntityLiving {
+                     int i = b0 + EnchantmentManager.b((EntityLiving) this);
+ 
+                     if (this.isSprinting() && flag) {
+-                        this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fw, this.bK(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fw, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         ++i;
+                         flag1 = true;
+                     }
+@@ -1041,7 +1050,7 @@ public abstract class EntityHuman extends EntityLiving {
+                                 }
+                             }
+ 
+-                            this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fz, this.bK(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fz, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.cX();
+                         }
+ 
+@@ -1071,15 +1080,15 @@ public abstract class EntityHuman extends EntityLiving {
+                         }
+ 
+                         if (flag2) {
+-                            this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fv, this.bK(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fv, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.a(entity);
+                         }
+ 
+                         if (!flag2 && !flag3) {
+                             if (flag) {
+-                                this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fy, this.bK(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fy, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             } else {
+-                                this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fA, this.bK(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fA, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             }
+                         }
+ 
+@@ -1135,7 +1144,7 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+                         this.applyExhaustion(world.spigotConfig.combatExhaustion); // Spigot - Change to use configurable value
+                     } else {
+-                        this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.fx, this.bK(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.fx, this.bK(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         if (flag4) {
+                             entity.extinguish();
+                         }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index ea67b61b2..29dffc3ac 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1061,6 +1061,12 @@ public abstract class World implements IBlockAccess {
+         this.a(entityhuman, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, soundeffect, soundcategory, f, f1);
+     }
+ 
++    // Paper start - OBFHELPER
++    public final void sendSoundEffect(@Nullable EntityHuman fromEntity, double x, double y, double z, SoundEffect soundeffect, SoundCategory soundcategory, float volume, float pitch) {
++        this.a(fromEntity, x, y, z, soundeffect, soundcategory, volume, pitch);
++    }
++    // Paper end
++
+     public void a(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {
+         for (int i = 0; i < this.u.size(); ++i) {
+             ((IWorldAccess) this.u.get(i)).a(entityhuman, soundeffect, soundcategory, d0, d1, d2, f, f1);
+-- 
+2.18.0
+

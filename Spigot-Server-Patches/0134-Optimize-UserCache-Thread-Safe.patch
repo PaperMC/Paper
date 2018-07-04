@@ -1,0 +1,109 @@
+From 98047b4440fafc8e21ca5562b707725067676c80 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 20:47:41 -0400
+Subject: [PATCH] Optimize UserCache / Thread Safe
+
+Because Techable keeps complaining about how this isn't thread safe,
+easier to do this than replace the entire thing.
+
+Additionally, move Saving of the User cache to be done async, incase
+the user never changed the default setting for Spigot's save on stop only.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 45d3dbde2..ab7933079 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -528,7 +528,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+         // Spigot start
+         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
+             LOGGER.info("Saving usercache.json");
+-            this.Y.c();
++            this.Y.c(false); // Paper
+         }
+         // Spigot end
+     }
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index 487fc11f1..4fb17a801 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -109,7 +109,7 @@ public class UserCache {
+         this.a(gameprofile, (Date) null);
+     }
+ 
+-    private void a(GameProfile gameprofile, Date date) {
++    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
+         UUID uuid = gameprofile.getId();
+ 
+         if (date == null) {
+@@ -123,8 +123,9 @@ public class UserCache {
+         String s = gameprofile.getName().toLowerCase(Locale.ROOT);
+         UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date, null);
+ 
+-        if (this.e.containsKey(uuid)) {
++        //if (this.e.containsKey(uuid)) { // Paper
+             UserCache.UserCacheEntry usercache_usercacheentry1 = (UserCache.UserCacheEntry) this.e.get(uuid);
++        if (usercache_usercacheentry1 != null) { // Paper
+ 
+             this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
+             this.f.remove(gameprofile);
+@@ -137,7 +138,7 @@ public class UserCache {
+     }
+ 
+     @Nullable
+-    public GameProfile getProfile(String s) {
++    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
+         String s1 = s.toLowerCase(Locale.ROOT);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
+ 
+@@ -166,14 +167,15 @@ public class UserCache {
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+     }
+ 
+-    public String[] a() {
++    public synchronized String[] a() { // Paper - synchronize
+         ArrayList arraylist = Lists.newArrayList(this.d.keySet());
+ 
+         return (String[]) arraylist.toArray(new String[arraylist.size()]);
+     }
+ 
++    @Nullable public GameProfile getProfile(UUID uuid) { return a(uuid);  } // Paper - OBFHELPER
+     @Nullable
+-    public GameProfile a(UUID uuid) {
++    public synchronized GameProfile a(UUID uuid) { // Paper - synchronize
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
+ 
+         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+@@ -228,8 +230,15 @@ public class UserCache {
+ 
+     }
+ 
++    // Paper start
+     public void c() {
++        c(true);
++    }
++    public void c(boolean asyncSave) {
++        // Paper end
+         String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
++        Runnable save = () -> {
++
+         BufferedWriter bufferedwriter = null;
+ 
+         try {
+@@ -243,6 +252,14 @@ public class UserCache {
+         } finally {
+             IOUtils.closeQuietly(bufferedwriter);
+         }
++        // Paper start
++        };
++        if (asyncSave) {
++            MCUtil.scheduleAsyncTask(save);
++        } else {
++            save.run();
++        }
++        // Paper end
+ 
+     }
+ 
+-- 
+2.18.0
+

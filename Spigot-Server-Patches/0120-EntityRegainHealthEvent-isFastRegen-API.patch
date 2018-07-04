@@ -1,0 +1,45 @@
+From 66452482b3e19d2cb4b1c67a60345302bc8fc29f Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Fri, 22 Apr 2016 01:43:11 -0500
+Subject: [PATCH] EntityRegainHealthEvent isFastRegen API
+
+Don't even get me started
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index a92b89d7c..4b6bb38ae 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -773,10 +773,16 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason) {
++        // Paper start - Forward
++        heal(f, regainReason, false);
++    }
++
++    public void heal(float f, EntityRegainHealthEvent.RegainReason regainReason, boolean isFastRegen) {
++        // Paper end
+         float f1 = this.getHealth();
+ 
+         if (f1 > 0.0F) {
+-            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), f, regainReason);
++            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), f, regainReason, isFastRegen); // Paper - Add isFastRegen
+             this.world.getServer().getPluginManager().callEvent(event);
+ 
+             if (!event.isCancelled()) {
+diff --git a/src/main/java/net/minecraft/server/FoodMetaData.java b/src/main/java/net/minecraft/server/FoodMetaData.java
+index d42db9b45..c715138ee 100644
+--- a/src/main/java/net/minecraft/server/FoodMetaData.java
++++ b/src/main/java/net/minecraft/server/FoodMetaData.java
+@@ -65,7 +65,7 @@ public class FoodMetaData {
+             if (this.foodTickTimer >= 10) {
+                 float f = Math.min(this.saturationLevel, 6.0F);
+ 
+-                entityhuman.heal(f / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
++                entityhuman.heal(f / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED, true); // CraftBukkit - added RegainReason // Paper - This is fast regen
+                 this.a(f);
+                 this.foodTickTimer = 0;
+             }
+-- 
+2.18.0
+

@@ -1,0 +1,46 @@
+From 5cdfaa0f565fc0d8893a906291c4501a2a8149a6 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 27 May 2016 21:41:26 -0400
+Subject: [PATCH] Ensure Chunks never ever load async
+
+Safely pushes the operation to main thread, then back to the posting thread
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+index 7b7a3d01b..9aaca21a7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOExecutor.java
+@@ -4,6 +4,7 @@ import com.destroystokyo.paper.PaperConfig;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.MCUtil; // Paper
+ import net.minecraft.server.World;
+ import org.bukkit.craftbukkit.util.AsynchronousExecutor;
+ 
+@@ -14,7 +15,7 @@ public class ChunkIOExecutor {
+     private static final AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException> instance = new AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException>(new ChunkIOProvider(), BASE_THREADS);
+ 
+     public static Chunk syncChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z) {
+-        return instance.getSkipQueue(new QueuedChunk(x, z, loader, world, provider));
++        return MCUtil.ensureMain("Async Chunk Load", () -> instance.getSkipQueue(new QueuedChunk(x, z, loader, world, provider))); // Paper
+     }
+ 
+     public static void queueChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z, Runnable runnable) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+index b5efb9c3f..ef9529add 100644
+--- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
++++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
+@@ -35,8 +35,8 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+ 
+     // sync stuff
+     public void callStage2(QueuedChunk queuedChunk, Chunk chunk) throws RuntimeException {
+-        if (chunk == null) {
+-            // If the chunk loading failed just do it synchronously (may generate)
++        if (chunk == null || queuedChunk.provider.chunks.containsKey(ChunkCoordIntPair.a(queuedChunk.x, queuedChunk.z))) { // Paper - also call original if it was already loaded
++            // If the chunk loading failed (or was already loaded for some reason) just do it synchronously (may generate)
+             queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
+             return;
+         }
+-- 
+2.18.0
+

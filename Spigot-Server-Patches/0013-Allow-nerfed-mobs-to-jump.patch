@@ -1,0 +1,85 @@
+From 0e0640641bbc9a2e2089ae1846e2d7899bcd9e5e Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:24:16 -0600
+Subject: [PATCH] Allow nerfed mobs to jump
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 45bddf3f4..1d9dd0e0b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -86,4 +86,9 @@ public class PaperWorldConfig {
+         fishingMaxTicks = getInt("fishing-time-range.MaximumTicks", 600);
+         log("Fishing time ranges are between " + fishingMinTicks +" and " + fishingMaxTicks + " ticks");
+     }
++
++    public boolean nerfedMobsShouldJump;
++    private void nerfedMobsShouldJump() {
++        nerfedMobsShouldJump = getBoolean("spawner-nerfed-mobs-should-jump", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ControllerJump.java b/src/main/java/net/minecraft/server/ControllerJump.java
+index 4f2fa59ac..8af52a61f 100644
+--- a/src/main/java/net/minecraft/server/ControllerJump.java
++++ b/src/main/java/net/minecraft/server/ControllerJump.java
+@@ -13,6 +13,7 @@ public class ControllerJump {
+         this.a = true;
+     }
+ 
++    public void jumpIfSet() { this.b(); } // Paper - OBFHELPER
+     public void b() {
+         this.b.l(this.a);
+         this.a = false;
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 3c48d9463..7b02b253c 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -46,6 +46,7 @@ public abstract class EntityInsentient extends EntityLiving {
+     private boolean bE;
+     private Entity leashHolder;
+     private NBTTagCompound bG;
++    @Nullable public PathfinderGoalFloat goalFloat; // Paper
+ 
+     public EntityInsentient(World world) {
+         super(world);
+@@ -651,6 +652,12 @@ public abstract class EntityInsentient extends EntityLiving {
+         // Spigot Start
+         if ( this.fromMobSpawner )
+         {
++            // Paper start - Allow nerfed mobs to jump and float
++            if (goalFloat != null) {
++                if (goalFloat.validConditions()) goalFloat.update();
++                this.getControllerJump().jumpIfSet();
++            }
++            // Paper end
+             return;
+         }
+         // Spigot End
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
+index b3b303b3b..fc6c3bf71 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
+@@ -6,6 +6,7 @@ public class PathfinderGoalFloat extends PathfinderGoal {
+ 
+     public PathfinderGoalFloat(EntityInsentient entityinsentient) {
+         this.a = entityinsentient;
++        if (entityinsentient.getWorld().paperConfig.nerfedMobsShouldJump) entityinsentient.goalFloat = this; // Paper
+         this.a(4);
+         if (entityinsentient.getNavigation() instanceof Navigation) {
+             ((Navigation) entityinsentient.getNavigation()).c(true);
+@@ -15,10 +16,12 @@ public class PathfinderGoalFloat extends PathfinderGoal {
+ 
+     }
+ 
++    public boolean validConditions() { return this.a(); } // Paper - OBFHELPER
+     public boolean a() {
+         return this.a.isInWater() || this.a.au();
+     }
+ 
++    public void update() { this.e(); } // Paper - OBFHELPER
+     public void e() {
+         if (this.a.getRandom().nextFloat() < 0.8F) {
+             this.a.getControllerJump().a();
+-- 
+2.18.0
+

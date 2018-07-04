@@ -1,0 +1,184 @@
+From 5c342142d7b1abdbce2e22f61a6bcf1cdda3e2e4 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 1 Jul 2018 22:06:29 -0400
+Subject: [PATCH] Add SentientNPC Interface to Entities
+
+Used to determine ACTUAL Living NPC's. Spigot mistakenly inversed the conditions for LivingEntity, and
+used LivingEntity for Insentient Entities, and named the actual EntityLiving class EntityInsentient.
+
+This should of all been inversed on the implementation side. To make matters worse, Spigot never
+exposed the differentiator that there are entities with AI that are not sentient/alive such as
+Armor stands and Players are the only things that do not implement the REAL EntityLiving class (named Insentient internally)
+
+This interface lets you identify NPC entities capable of sentience, and able to move about and react to the world.
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/CraftSentientNPC.java b/src/main/java/com/destroystokyo/paper/entity/CraftSentientNPC.java
+new file mode 100644
+index 000000000..a60ba1349
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/CraftSentientNPC.java
+@@ -0,0 +1,25 @@
++package com.destroystokyo.paper.entity;
++
++import net.minecraft.server.EntityInsentient;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.entity.LivingEntity;
++
++public interface CraftSentientNPC <T extends EntityInsentient> extends SentientNPC {
++    T getHandle();
++
++    default public void setTarget(LivingEntity target) {
++        T entity = getHandle();
++        if (target == null) {
++            entity.setGoalTarget(null, null, false);
++        } else if (target instanceof CraftLivingEntity) {
++            entity.setGoalTarget(((CraftLivingEntity) target).getHandle(), null, false);
++        }
++    }
++
++    default public LivingEntity getTarget() {
++        if (getHandle().getGoalTarget() == null) return null;
++
++        return (CraftLivingEntity) getHandle().getGoalTarget().getBukkitEntity();
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAmbient.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAmbient.java
+index 086980e76..ccce080ab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAmbient.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAmbient.java
+@@ -1,11 +1,12 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
+ import net.minecraft.server.EntityAmbient;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Ambient;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftAmbient extends CraftLivingEntity implements Ambient {
++public class CraftAmbient extends CraftLivingEntity implements Ambient, CraftSentientNPC { // Paper
+     public CraftAmbient(CraftServer server, EntityAmbient entity) {
+         super(server, entity);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftComplexLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftComplexLivingEntity.java
+index cc115cc36..3a4e6f0c7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftComplexLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftComplexLivingEntity.java
+@@ -1,17 +1,19 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
++import net.minecraft.server.EntityInsentient;
+ import net.minecraft.server.EntityLiving;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.ComplexLivingEntity;
+ 
+-public abstract class CraftComplexLivingEntity extends CraftLivingEntity implements ComplexLivingEntity {
++public abstract class CraftComplexLivingEntity extends CraftLivingEntity implements ComplexLivingEntity, CraftSentientNPC { // Paper
+     public CraftComplexLivingEntity(CraftServer server, EntityLiving entity) {
+         super(server, entity);
+     }
+ 
+     @Override
+-    public EntityLiving getHandle() {
+-        return (EntityLiving) entity;
++    public EntityInsentient getHandle() { // Paper
++        return (EntityInsentient) entity; // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreature.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreature.java
+index 09d42141f..30004e5e8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreature.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreature.java
+@@ -1,16 +1,18 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
+ import net.minecraft.server.EntityCreature;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Creature;
+ import org.bukkit.entity.LivingEntity;
+ 
+-public class CraftCreature extends CraftLivingEntity implements Creature {
++public class CraftCreature extends CraftLivingEntity implements Creature, CraftSentientNPC { // Paper
+     public CraftCreature(CraftServer server, EntityCreature entity) {
+         super(server, entity);
+     }
+ 
+-    public void setTarget(LivingEntity target) {
++    // Paper start - move down to SentientNPC
++    /*public void setTarget(LivingEntity target) {
+         EntityCreature entity = getHandle();
+         if (target == null) {
+             entity.setGoalTarget(null, null, false);
+@@ -23,7 +25,8 @@ public class CraftCreature extends CraftLivingEntity implements Creature {
+         if (getHandle().getGoalTarget() == null) return null;
+ 
+         return (CraftLivingEntity) getHandle().getGoalTarget().getBukkitEntity();
+-    }
++    }*/
++    // Paper end
+ 
+     @Override
+     public EntityCreature getHandle() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFlying.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFlying.java
+index f374c7b88..9e6f523bf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFlying.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFlying.java
+@@ -1,10 +1,11 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
+ import net.minecraft.server.EntityFlying;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Flying;
+ 
+-public class CraftFlying extends CraftLivingEntity implements Flying {
++public class CraftFlying extends CraftLivingEntity implements Flying, CraftSentientNPC { // Paper
+ 
+     public CraftFlying(CraftServer server, EntityFlying entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
+index 6bf30c834..3768b9573 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
+ import net.minecraft.server.EntitySlime;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+@@ -7,7 +8,7 @@ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Slime;
+ 
+-public class CraftSlime extends CraftLivingEntity implements Slime {
++public class CraftSlime extends CraftLivingEntity implements Slime, CraftSentientNPC { // Paper
+ 
+     public CraftSlime(CraftServer server, EntitySlime entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWaterMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWaterMob.java
+index ee21d7b6e..f67dff38f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWaterMob.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWaterMob.java
+@@ -1,12 +1,13 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.entity.CraftSentientNPC;
+ import net.minecraft.server.EntityWaterAnimal;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.WaterMob;
+ 
+-public class CraftWaterMob extends CraftLivingEntity implements WaterMob {
++public class CraftWaterMob extends CraftLivingEntity implements WaterMob, CraftSentientNPC { // Paper
+ 
+     public CraftWaterMob(CraftServer server, EntityWaterAnimal entity) {
+         super(server, entity);
+-- 
+2.18.0
+

@@ -1,0 +1,149 @@
+From ed9719aea67d9235b946eeb5e93922c4ceda3707 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Apr 2016 20:02:00 -0400
+Subject: [PATCH] Improve Maps (in item frames) performance and bug fixes
+
+Maps used a modified version of rendering to support plugin controlled
+imaging on maps. The Craft Map Renderer is much slower than Vanilla,
+causing maps in item frames to cause a noticeable hit on server performance.
+
+This updates the map system to not use the Craft system if we detect that no
+custom renderers are in use, defaulting to the much simpler Vanilla system.
+
+Additionally, numerous issues to player position tracking on maps has been fixed.
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 467c5bf1a..0f1d99636 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -548,6 +548,12 @@ public abstract class EntityHuman extends EntityLiving {
+                 return null;
+             }
+             // CraftBukkit end
++            // Paper start - remove player from map on drop
++            if (itemstack.getItem() == Items.FILLED_MAP) {
++                WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, this.world);
++                worldmap.updateSeenPlayers(this, itemstack);
++            }
++            // Paper stop
+ 
+             ItemStack itemstack1 = this.a(entityitem);
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 4c6eb6ed1..759dacba7 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -90,11 +90,11 @@ public class EntityTrackerEntry {
+         }
+ 
+         // PAIL : rename
+-        if (this.tracker instanceof EntityItemFrame /*&& this.a % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
++        if (this.tracker instanceof EntityItemFrame && this.a % 20 == 0) { // Paper
+             EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
+             ItemStack itemstack = entityitemframe.getItem();
+ 
+-            if (this.a % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.a % 10 logic here so item frames do not enter the other blocks
++            if (itemstack != null && itemstack.getItem() instanceof ItemWorldMap) { // Paper - moved back up
+                 WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, this.tracker.world);
+                 Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 5f92355db..eca4903ed 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1223,6 +1223,7 @@ public abstract class World implements IBlockAccess {
+                     {
+                         if ( iter.next().trackee == entity )
+                         {
++                            map.decorations.remove(entity.getUniqueID()); // Paper
+                             iter.remove();
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
+index 1096b5c1f..59173605e 100644
+--- a/src/main/java/net/minecraft/server/WorldMap.java
++++ b/src/main/java/net/minecraft/server/WorldMap.java
+@@ -28,6 +28,7 @@ public class WorldMap extends PersistentBase {
+     public List<WorldMap.WorldMapHumanTracker> i = Lists.newArrayList();
+     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> k = Maps.newHashMap(); // Spigot private -> public
+     public Map<UUID, MapIcon> decorations = Maps.newLinkedHashMap(); // Spigot
++    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
+ 
+     // CraftBukkit start
+     public final CraftMapView mapView;
+@@ -40,6 +41,7 @@ public class WorldMap extends PersistentBase {
+         // CraftBukkit start
+         mapView = new CraftMapView(this);
+         server = (CraftServer) org.bukkit.Bukkit.getServer();
++        vanillaRender.buffer = colors; // Paper
+         // CraftBukkit end
+     }
+ 
+@@ -114,6 +116,7 @@ public class WorldMap extends PersistentBase {
+                 }
+             }
+         }
++        vanillaRender.buffer = colors; // Paper
+ 
+     }
+ 
+@@ -149,6 +152,7 @@ public class WorldMap extends PersistentBase {
+         return nbttagcompound;
+     }
+ 
++    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { a(entityhuman, itemstack); } // Paper - OBFHELPER
+     public void a(EntityHuman entityhuman, ItemStack itemstack) {
+         if (!this.k.containsKey(entityhuman)) {
+             WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
+@@ -314,6 +318,21 @@ public class WorldMap extends PersistentBase {
+ 
+     public class WorldMapHumanTracker {
+ 
++        // Paper start
++        private void addSeenPlayers(java.util.Collection<MapIcon> icons) {
++            org.bukkit.entity.Player player = (org.bukkit.entity.Player) trackee.getBukkitEntity();
++            WorldMap.this.decorations.forEach((uuid, mapIcon) -> {
++                // If this cursor is for a player check visibility with vanish system
++                org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayer(uuid); // Spigot
++                if (other == null || player.canSee(other)) {
++                    icons.add(mapIcon);
++                }
++            });
++        }
++        private boolean shouldUseVanillaMap() {
++            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
++        }
++        // Paper stop
+         public final EntityHuman trackee;
+         private boolean d = true;
+         private int e;
+@@ -330,9 +349,12 @@ public class WorldMap extends PersistentBase {
+         @Nullable
+         public Packet<?> a(ItemStack itemstack) {
+             // CraftBukkit start
+-            org.bukkit.craftbukkit.map.RenderData render = WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.trackee.getBukkitEntity()); // CraftBukkit
++            if (!this.d && this.i % 5 != 0) { this.i++; return null; } // Paper - this won't end up sending, so don't render it!
++            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
++            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.trackee.getBukkitEntity()) : WorldMap.this.vanillaRender; // CraftBukkit // Paper
+ 
+             java.util.Collection<MapIcon> icons = new java.util.ArrayList<MapIcon>();
++            if (vanillaMaps) addSeenPlayers(icons); // Paper
+ 
+             for ( org.bukkit.map.MapCursor cursor : render.cursors) {
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
+index 256a13178..5768cd512 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
+@@ -5,7 +5,7 @@ import org.bukkit.map.MapCursor;
+ 
+ public class RenderData {
+ 
+-    public final byte[] buffer;
++    public byte[] buffer; // Paper
+     public final ArrayList<MapCursor> cursors;
+ 
+     public RenderData() {
+-- 
+2.18.0
+

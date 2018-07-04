@@ -1,0 +1,51 @@
+From 75da66ca4a6bd260906024ddab96c665c9231c9d Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Fri, 5 Aug 2016 01:03:08 +0200
+Subject: [PATCH] Add setting for proxy online mode status
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 011cbf5e3..cf06f8ac3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -230,4 +230,9 @@ public class PaperConfig {
+     private static void saveEmptyScoreboardTeams() {
+         saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+     }
++
++    public static boolean bungeeOnlineMode = true;
++    private static void bungeeOnlineMode() {
++        bungeeOnlineMode = getBoolean("settings.bungee-online-mode", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+index b943a9b20..8f3b93dc1 100644
+--- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
++++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
+@@ -66,7 +66,8 @@ public class NameReferencingFileConverter {
+             }
+         }), String.class);
+ 
+-        if (minecraftserver.getOnlineMode() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
++        if (minecraftserver.getOnlineMode()
++                || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
+             minecraftserver.getGameProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, profilelookupcallback);
+         } else {
+             String[] astring1 = astring;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 054ac1b47..d3165763c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1335,7 +1335,8 @@ public final class CraftServer implements Server {
+             // Spigot Start
+             GameProfile profile = null;
+             // Only fetch an online UUID in online mode
+-            if ( MinecraftServer.getServer().getOnlineMode() || org.spigotmc.SpigotConfig.bungee )
++            if ( MinecraftServer.getServer().getOnlineMode()
++                    || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) // Paper - Handle via setting
+             {
+                 profile = console.getUserCache().getProfile( name );
+             }
+-- 
+2.18.0
+
