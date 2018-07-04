@@ -1,4 +1,4 @@
-From a5bc569a599ad30157f4bc07759e08ad1d963512 Mon Sep 17 00:00:00 2001
+From 3d6e086f77f254ec5c0d22dd6f8709cc843908b9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -22,7 +22,7 @@ index 71d0db3f3..a51b648c5 100644
          this.a(entity, entity.ac);
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c0816b9f8..623290caa 100644
+index c0816b9f8..b1e7b63e0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1511,12 +1511,15 @@ public abstract class World implements IBlockAccess {
@@ -71,18 +71,20 @@ index c0816b9f8..623290caa 100644
                  boolean shouldTick = chunk != null;
                  if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
                      shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
-@@ -1663,7 +1671,10 @@ public abstract class World implements IBlockAccess {
+@@ -1663,8 +1671,11 @@ public abstract class World implements IBlockAccess {
                  tilesThisCycle--;
                  this.tileEntityListTick.remove(tileTickPosition--);
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
 -                if (this.isLoaded(tileentity.getPosition())) {
+-                    this.getChunkAtWorldCoords(tileentity.getPosition()).d(tileentity.getPosition());
 +                // Paper start
 +                net.minecraft.server.Chunk chunk = tileentity.getCurrentChunk();
 +                if (chunk != null) {
++                    chunk.removeTileEntity(tileentity.getPosition());
 +                    // Paper end
-                     this.getChunkAtWorldCoords(tileentity.getPosition()).d(tileentity.getPosition());
                  }
              }
+         }
 @@ -1805,8 +1816,11 @@ public abstract class World implements IBlockAccess {
          int k = MathHelper.floor(entity.locZ / 16.0D);
  
