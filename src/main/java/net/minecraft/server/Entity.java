@@ -176,7 +176,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
 
     public boolean isChunkLoaded() {
-        return world.isChunkLoaded((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4);
+        return getCurrentChunk() != null;
     }
     // CraftBukkit end
 
@@ -1678,6 +1678,23 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
 
     // Paper start
+    java.lang.ref.WeakReference<Chunk> currentChunk = null;
+
+    public void setCurrentChunk(Chunk chunk) {
+        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
+    }
+    /**
+     * Returns the entities current registered chunk. If the entity is not added to a chunk yet, it will return null
+     */
+    public Chunk getCurrentChunk() {
+        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
+        if (chunk != null && chunk.loaded) {
+            return chunk;
+        }
+
+        return !inChunk ? null : ((WorldServer)world).getChunkProvider().getChunkAtIfLoadedMainThreadNoCache(chunkX, chunkZ);
+    }
+
     private MinecraftKey entityKey;
     private String entityKeyString;
 

@@ -51,6 +51,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
         getMinecraftKey(); // Try to load if it doesn't exists.
         return tileEntityKeyString;
     }
+
+    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
+    public Chunk getCurrentChunk() {
+        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
+        return chunk != null && chunk.loaded ? chunk : null;
+    }
+    public void setCurrentChunk(Chunk chunk) {
+        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
+    }
     // Paper end
 
     @Nullable

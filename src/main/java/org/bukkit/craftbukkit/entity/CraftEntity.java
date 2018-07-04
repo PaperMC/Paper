@@ -143,6 +143,7 @@ import net.minecraft.server.EntityZombieHusk;
 import net.minecraft.server.EntityZombieVillager;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTTagCompound;
+import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -182,6 +183,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
         this.entity = entity;
+    }
+
+    @Override
+    public Chunk getChunk() {
+        net.minecraft.server.Chunk currentChunk = entity.getCurrentChunk();
+        return currentChunk != null ? currentChunk.bukkitChunk : getLocation().getChunk();
     }
 
     public static CraftEntity getEntity(CraftServer server, Entity entity) {
