@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityVex;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Vex;
 
 public class CraftVex extends CraftMonster implements Vex {
@@ -15,6 +17,13 @@ public class CraftVex extends CraftMonster implements Vex {
     public EntityVex getHandle() {
         return (EntityVex) super.getHandle();
     }
+
+    // Paper start
+    public Mob getSummoner() {
+        EntityInsentient owner = getHandle().getOwner();
+        return owner != null ? (Mob) owner.getBukkitEntity() : null;
+    }
+    // Paper end
 
     @Override
     public String toString() {
