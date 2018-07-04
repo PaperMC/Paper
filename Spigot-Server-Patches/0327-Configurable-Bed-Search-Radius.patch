@@ -1,0 +1,69 @@
+From 7c213dfb31781072573036f72bd0192cadb53146 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 15:22:06 -0400
+Subject: [PATCH] Configurable Bed Search Radius
+
+Allows you to increase how far to check for a safe place to respawn
+a player near their bed, allowing a better chance to respawn the
+player at their bed should it of became obstructed.
+
+Defaults to vanilla 1.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 06c54690f..50416f40a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -529,4 +529,15 @@ public class PaperWorldConfig {
+     private void scanForLegacyEnderDragon() {
+         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+     }
++
++    public int bedSearchRadius = 1;
++    private void bedSearchRadius() {
++        bedSearchRadius = getInt("bed-search-radius", 1);
++        if (bedSearchRadius < 1) {
++            bedSearchRadius = 1;
++        }
++        if (bedSearchRadius > 1) {
++            log("Bed Search Radius: " + bedSearchRadius);
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
+index 9346bddff..b12834705 100644
+--- a/src/main/java/net/minecraft/server/BlockBed.java
++++ b/src/main/java/net/minecraft/server/BlockBed.java
+@@ -164,10 +164,17 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+             int k1 = l - enumdirection.getAdjacentZ() * i1 - 1;
+             int l1 = j1 + 2;
+             int i2 = k1 + 2;
+-
+-            for (int j2 = j1; j2 <= l1; ++j2) {
+-                for (int k2 = k1; k2 <= i2; ++k2) {
+-                    BlockPosition blockposition1 = new BlockPosition(j2, k, k2);
++            // Paper start
++            int radius = world.paperConfig.bedSearchRadius - 1;
++            j1 -= radius;
++            k1 -= radius;
++            l1 += radius;
++            i2 += radius;
++            // Paper end
++
++            for (int j2 = j1 ; j2 <= l1 ; ++j2) {
++                for (int k2 = k1 ; k2 <= i2 ; ++k2) { for (int y = -radius ; y <= radius ; y++) { // Paper
++                    BlockPosition blockposition1 = new BlockPosition(j2, k + y, k2); // Paper
+ 
+                     if (b(world, blockposition1)) {
+                         if (i <= 0) {
+@@ -175,7 +182,7 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+                         }
+ 
+                         --i;
+-                    }
++                    }} // Paper
+                 }
+             }
+         }
+-- 
+2.18.0
+
