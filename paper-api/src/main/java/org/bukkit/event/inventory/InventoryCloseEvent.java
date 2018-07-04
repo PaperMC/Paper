@@ -30,9 +30,60 @@ import org.jetbrains.annotations.NotNull;
  */
 public class InventoryCloseEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();
+    // Paper start
+    private final Reason reason;
+    @NotNull
+    public Reason getReason() {
+        return reason;
+    }
+
+    public enum Reason {
+        /**
+         * Unknown reason
+         */
+        UNKNOWN,
+        /**
+         * Player is teleporting
+         */
+        TELEPORT,
+        /**
+         * Player is no longer permitted to use this inventory
+         */
+        CANT_USE,
+        /**
+         * The chunk the inventory was in was unloaded
+         */
+        UNLOADED,
+        /**
+         * Opening new inventory instead
+         */
+        OPEN_NEW,
+        /**
+         * Closed
+         */
+        PLAYER,
+        /**
+         * Closed due to disconnect
+         */
+        DISCONNECT,
+        /**
+         * The player died
+         */
+        DEATH,
+        /**
+         * Closed by Bukkit API
+         */
+        PLUGIN,
+    }
 
     public InventoryCloseEvent(@NotNull InventoryView transaction) {
+        this(transaction, Reason.UNKNOWN);
+    }
+
+    public InventoryCloseEvent(@NotNull InventoryView transaction, @NotNull Reason reason) {
         super(transaction);
+        this.reason = reason;
+        // Paper end
     }
 
     /**
