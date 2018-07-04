@@ -1173,7 +1173,7 @@ public class CraftEventFactory {
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container, boolean cancelled) {
         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
-            player.playerConnection.a(new PacketPlayInCloseWindow(player.activeContainer.windowId));
+            player.playerConnection.handleContainerClose(new PacketPlayInCloseWindow(player.activeContainer.windowId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper
         }
 
         CraftServer server = player.world.getServer();
@@ -1338,8 +1338,18 @@ public class CraftEventFactory {
         return event;
     }
 
+    // Paper start
+    /**
+     * Incase plugins hooked into this or Spigot adds a new inventory close event. Prefer to pass a reason
+     * @param human
+     */
+    @Deprecated
     public static void handleInventoryCloseEvent(EntityHuman human) {
-        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
+        handleInventoryCloseEvent(human, org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
+    }
+    public static void handleInventoryCloseEvent(EntityHuman human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
+        // Paper end
+        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView(), reason); // Paper
         human.world.getServer().getPluginManager().callEvent(event);
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
     }

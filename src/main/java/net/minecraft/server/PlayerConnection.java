@@ -37,6 +37,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent; // Paper
 import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -2072,10 +2073,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
     @Override
     public void a(PacketPlayInCloseWindow packetplayinclosewindow) {
+        // Paper start
+        handleContainerClose(packetplayinclosewindow, InventoryCloseEvent.Reason.PLAYER);
+    }
+    public void handleContainerClose(PacketPlayInCloseWindow packetplayinclosewindow, InventoryCloseEvent.Reason reason) {
+        // Paper end
         PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.getWorldServer());
 
         if (this.player.isFrozen()) return; // CraftBukkit
-        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
+        CraftEventFactory.handleInventoryCloseEvent(this.player, reason); // CraftBukkit // Paper
 
         this.player.o();
     }

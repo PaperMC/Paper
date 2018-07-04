@@ -370,7 +370,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (((EntityPlayer) getHandle()).playerConnection == null) return;
         if (getHandle().activeContainer != getHandle().defaultContainer) {
             // fire INVENTORY_CLOSE if one already open
-            ((EntityPlayer) getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
+            ((EntityPlayer) getHandle()).playerConnection.handleContainerClose(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
         }
         EntityPlayer player = (EntityPlayer) getHandle();
         Container container;
@@ -436,8 +436,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void closeInventory() {
-        getHandle().closeInventory();
+        // Paper start
+        getHandle().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
     }
+    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
+        getHandle().closeInventory(reason);
+    }
+    // Paper end
 
     @Override
     public boolean isBlocking() {

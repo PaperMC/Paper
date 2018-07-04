@@ -412,7 +412,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
         // Paper end
         if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
-            this.closeInventory();
+            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
             this.activeContainer = this.defaultContainer;
         }
 
@@ -586,7 +586,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         // SPIGOT-943 - only call if they have an inventory open
         if (this.activeContainer != this.defaultContainer) {
-            this.closeInventory();
+            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper
         }
 
         String deathMessage = event.getDeathMessage();
@@ -1139,7 +1139,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             return OptionalInt.empty();
         } else {
             if (this.activeContainer != this.defaultContainer) {
-                this.closeInventory();
+                this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
             }
 
             this.nextContainerCounter();
@@ -1199,7 +1199,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
         // CraftBukkit end
         if (this.activeContainer != this.defaultContainer) {
-            this.closeInventory();
+            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
         }
 
         // this.nextContainerCounter(); // CraftBukkit - moved up
@@ -1263,7 +1263,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     @Override
     public void closeInventory() {
-        CraftEventFactory.handleInventoryCloseEvent(this); // CraftBukkit
+        // Paper start
+        closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
+    }
+    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
+        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
+        // Paper end
         this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
         this.o();
     }
