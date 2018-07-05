@@ -1,4 +1,4 @@
-From b55307c8ea1237c0893145e14f48e2e98a68fc5b Mon Sep 17 00:00:00 2001
+From 75b50cf5c33d0049e9670329132d0d2521f7f91a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,9 +8,18 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4bbebb25a..b40e60942 100644
+index 4bbebb25a..68008fe6a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -25,7 +25,7 @@ public class Chunk {
+     private final byte[] g;
+     private final int[] h;
+     private final boolean[] i;
+-    private boolean j;
++    private boolean j; public boolean isLoaded() { return j; } // Paper - OBFHELPER
+     public final World world;
+     public final int[] heightMap;
+     public final int locX;
 @@ -33,6 +33,30 @@ public class Chunk {
      private boolean m;
      public final Map<BlockPosition, TileEntity> tileEntities;
@@ -72,16 +81,17 @@ index 4bbebb25a..b40e60942 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3a8902bf1..3829c8c40 100644
+index 3a8902bf1..ed090cc50 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1703,6 +1703,13 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -1703,6 +1703,14 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
      }
  
      // Paper start
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +    public Chunk getCurrentChunk() {
-+        return currentChunk != null ? currentChunk.get() : null;
++        final Chunk chunk = currentChunk != null ? currentChunk.get() : world.getChunkIfLoaded(getChunkX(), getChunkZ());
++        return chunk != null && chunk.isLoaded() ? chunk : null;
 +    }
 +    public void setCurrentChunk(Chunk chunk) {
 +        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
@@ -90,16 +100,17 @@ index 3a8902bf1..3829c8c40 100644
      public final String entityKeyString = entityKey != null ? entityKey.toString() : null;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 672ba3134..88cd5734d 100644
+index 672ba3134..d7132c3c0 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -28,6 +28,13 @@ public abstract class TileEntity implements KeyedObject {
+@@ -28,6 +28,14 @@ public abstract class TileEntity implements KeyedObject {
      }
  
      // Paper start
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +    public Chunk getCurrentChunk() {
-+        return currentChunk != null ? currentChunk.get() : null;
++        final Chunk chunk = currentChunk != null ? currentChunk.get() : world.getChunkIfLoaded(position.getX() >> 4, position.getZ() >> 4);
++        return chunk != null && chunk.isLoaded() ? chunk : null;
 +    }
 +    public void setCurrentChunk(Chunk chunk) {
 +        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
