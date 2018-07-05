@@ -80,8 +80,12 @@ import EULA
 import FileIOThread
 import IHopper
 import ItemBlock
+import ItemEgg
+import ItemExpBottle
 import ItemFireworks
+import ItemLingeringPotion
 import ItemMonsterEgg
+import ItemSplashPotion
 import IRangedEntity
 import LegacyPingHandler
 import LotoSelectorEntry

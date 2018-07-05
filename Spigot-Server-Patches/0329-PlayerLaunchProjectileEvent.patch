@@ -1,0 +1,264 @@
+From 2da0620b5dc566bcdba98a0150ad4a40aebcddc7 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 5 Jul 2018 09:33:10 -0500
+Subject: [PATCH] PlayerLaunchProjectileEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemEgg.java b/src/main/java/net/minecraft/server/ItemEgg.java
+index f1960adc7..b2a6d1fa5 100644
+--- a/src/main/java/net/minecraft/server/ItemEgg.java
++++ b/src/main/java/net/minecraft/server/ItemEgg.java
+@@ -10,19 +10,33 @@ public class ItemEgg extends Item {
+     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+-        if (!entityhuman.abilities.canInstantlyBuild) {
+-            itemstack.subtract(1);
+-        }
+-
+-        world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.aH, SoundCategory.PLAYERS, 0.5F, 0.4F / (ItemEgg.j.nextFloat() * 0.4F + 0.8F));
++        // Paper start - moved down
++        //if (!entityhuman.abilities.canInstantlyBuild) {
++        //    itemstack.subtract(1);
++        //}
++        //
++        //world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.aH, SoundCategory.PLAYERS, 0.5F, 0.4F / (ItemEgg.j.nextFloat() * 0.4F + 0.8F));
++        // Paper end
+         if (!world.isClientSide) {
+             EntityEgg entityegg = new EntityEgg(world, entityhuman);
+ 
+             entityegg.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+-            world.addEntity(entityegg);
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entityegg.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entityegg)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    itemstack.subtract(1);
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++
++                world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.aH, SoundCategory.PLAYERS, 0.5F, 0.4F / (ItemEgg.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.b(StatisticList.b((Item) this));
++            } else if (entityhuman instanceof EntityPlayer) {
++                ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++            }
++            // Paper end
+         }
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        // entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemEnderPearl.java b/src/main/java/net/minecraft/server/ItemEnderPearl.java
+index a0bf985da..2e808bfd9 100644
+--- a/src/main/java/net/minecraft/server/ItemEnderPearl.java
++++ b/src/main/java/net/minecraft/server/ItemEnderPearl.java
+@@ -15,7 +15,18 @@ public class ItemEnderPearl extends Item {
+             EntityEnderPearl entityenderpearl = new EntityEnderPearl(world, entityhuman);
+ 
+             entityenderpearl.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+-            if (!world.addEntity(entityenderpearl)) {
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entityenderpearl.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entityenderpearl)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    itemstack.subtract(1);
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++
++                world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bn, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemEnderPearl.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.getCooldownTracker().a(this, 20);
++                entityhuman.b(StatisticList.b((Item) this));
++            } else {
++                // Paper end
+                 if (entityhuman instanceof EntityPlayer) {
+                     ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+                 }
+@@ -23,15 +34,17 @@ public class ItemEnderPearl extends Item {
+             }
+         }
+ 
+-        if (!entityhuman.abilities.canInstantlyBuild) {
+-            itemstack.subtract(1);
+-        }
+-
+-        world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bn, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemEnderPearl.j.nextFloat() * 0.4F + 0.8F));
+-        entityhuman.getCooldownTracker().a(this, 20);
++        // Paper start - moved up
++        //if (!entityhuman.abilities.canInstantlyBuild) {
++        //    itemstack.subtract(1);
++        //}
++        //
++        //world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bn, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemEnderPearl.j.nextFloat() * 0.4F + 0.8F));
++        //entityhuman.getCooldownTracker().a(this, 20);
++        // Paper end
+         // CraftBukkit end
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        //entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemExpBottle.java b/src/main/java/net/minecraft/server/ItemExpBottle.java
+index 98ffbbeff..fcf30c0f2 100644
+--- a/src/main/java/net/minecraft/server/ItemExpBottle.java
++++ b/src/main/java/net/minecraft/server/ItemExpBottle.java
+@@ -9,19 +9,33 @@ public class ItemExpBottle extends Item {
+     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+-        if (!entityhuman.abilities.canInstantlyBuild) {
+-            itemstack.subtract(1);
+-        }
+-
+-        world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bz, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemExpBottle.j.nextFloat() * 0.4F + 0.8F));
++        // Paper start - moved down
++        //if (!entityhuman.abilities.canInstantlyBuild) {
++        //    itemstack.subtract(1);
++        //}
++        //
++        //world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bz, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemExpBottle.j.nextFloat() * 0.4F + 0.8F));
++        // Paper end
+         if (!world.isClientSide) {
+             EntityThrownExpBottle entitythrownexpbottle = new EntityThrownExpBottle(world, entityhuman);
+ 
+             entitythrownexpbottle.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.7F, 1.0F);
+-            world.addEntity(entitythrownexpbottle);
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitythrownexpbottle.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entitythrownexpbottle)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    itemstack.subtract(1);
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++
++                world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.bz, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemExpBottle.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.b(StatisticList.b((Item) this));
++            } else if (entityhuman instanceof EntityPlayer) {
++                ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++            }
++            // Paper end
+         }
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        //entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemLingeringPotion.java b/src/main/java/net/minecraft/server/ItemLingeringPotion.java
+index aadf9e88d..043c7ed2b 100644
+--- a/src/main/java/net/minecraft/server/ItemLingeringPotion.java
++++ b/src/main/java/net/minecraft/server/ItemLingeringPotion.java
+@@ -10,17 +10,31 @@ public class ItemLingeringPotion extends ItemPotion {
+ 
+     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.b(enumhand);
+-        ItemStack itemstack1 = entityhuman.abilities.canInstantlyBuild ? itemstack.cloneItemStack() : itemstack.cloneAndSubtract(1);
+-
+-        world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.dL, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemLingeringPotion.j.nextFloat() * 0.4F + 0.8F));
++        // Paper start - moved down
++        //ItemStack itemstack1 = entityhuman.abilities.canInstantlyBuild ? itemstack.cloneItemStack() : itemstack.cloneAndSubtract(1);
++        //
++        //world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.dL, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemLingeringPotion.j.nextFloat() * 0.4F + 0.8F));
++        // Paper end
+         if (!world.isClientSide) {
+-            EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack1);
++            EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack.cloneItemStack()); // Paper - clone itemstack
+ 
+             entitypotion.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.5F, 1.0F);
+-            world.addEntity(entitypotion);
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitypotion.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entitypotion)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    entitypotion.setItem(itemstack.cloneAndSubtract(1));
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++
++                world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.dL, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemLingeringPotion.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.b(StatisticList.b((Item) this));
++            } else if (entityhuman instanceof EntityPlayer) {
++                ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++            }
++            // Paper end
+         }
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        //entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemSnowball.java b/src/main/java/net/minecraft/server/ItemSnowball.java
+index 2e73c93aa..babe74896 100644
+--- a/src/main/java/net/minecraft/server/ItemSnowball.java
++++ b/src/main/java/net/minecraft/server/ItemSnowball.java
+@@ -22,19 +22,23 @@ public class ItemSnowball extends Item {
+             EntitySnowball entitysnowball = new EntitySnowball(world, entityhuman);
+ 
+             entitysnowball.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+-            if (world.addEntity(entitysnowball)) {
+-                if (!entityhuman.abilities.canInstantlyBuild) {
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitysnowball.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entitysnowball)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    // Paper end
+                     itemstack.subtract(1);
+-                }
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // Paper
+ 
+                 world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.hp, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemSnowball.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.b(StatisticList.b((Item) this));
+             } else if (entityhuman instanceof EntityPlayer) {
+                 ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+             }
+         }
+         // CraftBukkit end
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        //entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemSplashPotion.java b/src/main/java/net/minecraft/server/ItemSplashPotion.java
+index cdf2200fd..38d609552 100644
+--- a/src/main/java/net/minecraft/server/ItemSplashPotion.java
++++ b/src/main/java/net/minecraft/server/ItemSplashPotion.java
+@@ -10,17 +10,31 @@ public class ItemSplashPotion extends ItemPotion {
+ 
+     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.b(enumhand);
+-        ItemStack itemstack1 = entityhuman.abilities.canInstantlyBuild ? itemstack.cloneItemStack() : itemstack.cloneAndSubtract(1);
+-
+-        world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.hE, SoundCategory.PLAYERS, 0.5F, 0.4F / (ItemSplashPotion.j.nextFloat() * 0.4F + 0.8F));
++        // Paper start - move down
++        //ItemStack itemstack1 = entityhuman.abilities.canInstantlyBuild ? itemstack.cloneItemStack() : itemstack.cloneAndSubtract(1);
++        //
++        //world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.hE, SoundCategory.PLAYERS, 0.5F, 0.4F / (ItemSplashPotion.j.nextFloat() * 0.4F + 0.8F));
++        // Paper end
+         if (!world.isClientSide) {
+-            EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack1);
++            EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack.cloneItemStack()); // Paper - clone itemstack
+ 
+             entitypotion.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.5F, 1.0F);
+-            world.addEntity(entitypotion);
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitypotion.getBukkitEntity());
++            if (event.callEvent() && world.addEntity(entitypotion)) {
++                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                    entitypotion.setItem(itemstack.cloneAndSubtract(1));
++                } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++
++                world.a((EntityHuman) null, entityhuman.locX, entityhuman.locY, entityhuman.locZ, SoundEffects.dL, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemLingeringPotion.j.nextFloat() * 0.4F + 0.8F));
++                entityhuman.b(StatisticList.b((Item) this));
++            } else if (entityhuman instanceof EntityPlayer) {
++                ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++            }
++            // Paper end
+         }
+ 
+-        entityhuman.b(StatisticList.b((Item) this));
++        //entityhuman.b(StatisticList.b((Item) this)); // Paper - moved up
+         return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
+     }
+ }
+-- 
+2.11.0
+
