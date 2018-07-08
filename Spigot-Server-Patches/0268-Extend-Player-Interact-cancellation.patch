@@ -1,4 +1,4 @@
-From 03400dce0f1bbac2abbebee1377a6deed603018c Mon Sep 17 00:00:00 2001
+From fb1d0169082ac42cca48e8d3721de2f467ab9ed9 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 11 Feb 2018 10:43:46 +0000
 Subject: [PATCH] Extend Player Interact cancellation
@@ -9,11 +9,70 @@ However, it is possible to close these GUIs from the server.
 Flower pots are also not updated on the client when interaction is cancelled, this patch
 also resolves this.
 
+Update adjacent blocks of doors, double plants, pistons and beds
+when cancelling interaction.
+
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 5ec7f5819..24f14337a 100644
+index 5ec7f5819..fcb64666e 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-@@ -468,6 +468,24 @@ public class PlayerInteractManager {
+@@ -110,6 +110,7 @@ public class PlayerInteractManager {
+         if (event.isCancelled()) {
+             // Let the client know the block still exists
+             ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++            cancelBreakBlock(blockposition, this.world.getType(blockposition)); // Paper - Avoid visual issues on the client
+             // Update any tile entity data for this block
+             TileEntity tileentity = this.world.getTileEntity(blockposition);
+             if (tileentity != null) {
+@@ -250,6 +251,34 @@ public class PlayerInteractManager {
+         return flag;
+     }
+ 
++    // Paper start - Extra method to avoid visual issues on the client when cancelling block breaks
++    private void cancelBreakBlock(BlockPosition position, IBlockData data) {
++        Block block = data.getBlock();
++        // Send other half of the door
++        if (block instanceof BlockDoor) {
++            boolean bottom = data.get(BlockDoor.HALF) == BlockDoor.EnumDoorHalf.LOWER;
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? position.up() : position.down()));
++        } else if (block instanceof BlockTallPlant) {
++            boolean bottom = data.get(BlockTallPlant.HALF) == BlockTallPlant.EnumTallPlantHalf.LOWER;
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? position.up() : position.down()));
++        } else if (block instanceof BlockPistonExtension) {
++            BlockPosition piston = position.shift(data.get(BlockPistonExtension.FACING).opposite());
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, piston));
++        } else if (block instanceof BlockBed) {
++            if (data.get(BlockBed.PART) == BlockBed.EnumBedPart.FOOT) {
++                // Restore head of bed
++                BlockPosition head = position.shift(data.get(BlockBed.FACING));
++                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, head));
++
++                TileEntity tileentity = this.world.getTileEntity(head);
++                if (tileentity != null) {
++                    this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++                }
++            }
++        }
++    }
++    // Paper end
++
+     public boolean breakBlock(BlockPosition blockposition) {
+         // CraftBukkit start - fire BlockBreakEvent
+         BlockBreakEvent event = null;
+@@ -297,11 +326,7 @@ public class PlayerInteractManager {
+                 }
+                 // Let the client know the block still exists
+                 ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
+-                // Send other half of the door
+-                if (nmsBlock instanceof BlockDoor) {
+-                    boolean bottom = nmsData.get(BlockDoor.HALF) == BlockDoor.EnumDoorHalf.LOWER;
+-                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
+-                }
++                cancelBreakBlock(blockposition, nmsData); // Paper - Move cancellation code to extra "cancelBreakBlock" method
+                 // Update any tile entity data for this block
+                 TileEntity tileentity = this.world.getTileEntity(blockposition);
+                 if (tileentity != null) {
+@@ -468,6 +493,24 @@ public class PlayerInteractManager {
                      ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
                  } else if (blockdata.getBlock() instanceof BlockCake) {
                      ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
