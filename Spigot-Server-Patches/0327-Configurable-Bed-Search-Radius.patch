@@ -1,4 +1,4 @@
-From 7c213dfb31781072573036f72bd0192cadb53146 Mon Sep 17 00:00:00 2001
+From a246ceabeb00b56874af023516184f8ef320c62f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 15:22:06 -0400
 Subject: [PATCH] Configurable Bed Search Radius
@@ -30,40 +30,75 @@ index 06c54690f..50416f40a 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
-index 9346bddff..b12834705 100644
+index 9346bddff..f1a107991 100644
 --- a/src/main/java/net/minecraft/server/BlockBed.java
 +++ b/src/main/java/net/minecraft/server/BlockBed.java
-@@ -164,10 +164,17 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
-             int k1 = l - enumdirection.getAdjacentZ() * i1 - 1;
-             int l1 = j1 + 2;
-             int i2 = k1 + 2;
--
--            for (int j2 = j1; j2 <= l1; ++j2) {
--                for (int k2 = k1; k2 <= i2; ++k2) {
--                    BlockPosition blockposition1 = new BlockPosition(j2, k, k2);
-+            // Paper start
-+            int radius = world.paperConfig.bedSearchRadius - 1;
-+            j1 -= radius;
-+            k1 -= radius;
-+            l1 += radius;
-+            i2 += radius;
-+            // Paper end
+@@ -155,6 +155,51 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+     @Nullable
+     public static BlockPosition a(World world, BlockPosition blockposition, int i) {
+         EnumDirection enumdirection = (EnumDirection) world.getType(blockposition).get(BlockBed.FACING);
++        // Paper - replace whole method
++        int radius = world.paperConfig.bedSearchRadius;
++        for (int r = 1; r <= radius; r++) {
++            int x = -r;
++            int z = r;
 +
-+            for (int j2 = j1 ; j2 <= l1 ; ++j2) {
-+                for (int k2 = k1 ; k2 <= i2 ; ++k2) { for (int y = -radius ; y <= radius ; y++) { // Paper
-+                    BlockPosition blockposition1 = new BlockPosition(j2, k + y, k2); // Paper
- 
-                     if (b(world, blockposition1)) {
-                         if (i <= 0) {
-@@ -175,7 +182,7 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
-                         }
- 
-                         --i;
--                    }
-+                    }} // Paper
-                 }
++            // Iterates the edge of half of the box; then negates for other half.
++            while (x <= r && z > -r) {
++                for (int y = -1; y <= 1; y++) {
++                    BlockPosition pos = blockposition.add(x, y, z);
++                    if (isSafeRespawn(world, pos)) {
++                        if (i-- <= 0) {
++                            return pos;
++                        }
++                    }
++                    pos = blockposition.add(-x, y, -z);
++                    if (isSafeRespawn(world, pos)) {
++                        if (i-- <= 0) {
++                            return pos;
++                        }
++                    }
++
++                    pos = blockposition.add(enumdirection.getAdjacentX() + x, y, enumdirection.getAdjacentZ() + z);
++                    if (isSafeRespawn(world, pos)) {
++                        if (i-- <= 0) {
++                            return pos;
++                        }
++                    }
++
++                    pos = blockposition.add(enumdirection.getAdjacentX() - x, y, enumdirection.getAdjacentZ() - z);
++                    if (isSafeRespawn(world, pos)) {
++                        if (i-- <= 0) {
++                            return pos;
++                        }
++                    }
++                }
++                if (x < r) {
++                    x++;
++                } else {
++                    z--;
++                }
++            }
++        }
++
++        return null; /* // Paper comment out
+         int j = blockposition.getX();
+         int k = blockposition.getY();
+         int l = blockposition.getZ();
+@@ -180,9 +225,12 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
              }
          }
+ 
+-        return null;
++        return null;*/ // Paper
+     }
+ 
++    protected static boolean isSafeRespawn(World world, BlockPosition blockposition) { // Paper - OBFHELPER + behavior improvement
++        return b(world, blockposition) && world.getType(blockposition.down()).getMaterial().isBuildable(); // Paper - ensure solid block
++    }
+     protected static boolean b(World world, BlockPosition blockposition) {
+         return world.getType(blockposition.down()).q() && !world.getType(blockposition).getMaterial().isBuildable() && !world.getType(blockposition.up()).getMaterial().isBuildable();
+     }
 -- 
 2.18.0
 
