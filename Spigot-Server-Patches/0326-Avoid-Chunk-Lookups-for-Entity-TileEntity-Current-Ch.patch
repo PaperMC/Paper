@@ -1,4 +1,4 @@
-From 3d6e086f77f254ec5c0d22dd6f8709cc843908b9 Mon Sep 17 00:00:00 2001
+From 2d1fee2dfb5ead97bc5af3ad7b86158993a65fdf Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -10,7 +10,7 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 71d0db3f3..a51b648c5 100644
+index 3e80825f7..4a94fd5a6 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -704,6 +704,7 @@ public class Chunk {
@@ -22,7 +22,7 @@ index 71d0db3f3..a51b648c5 100644
          this.a(entity, entity.ac);
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c0816b9f8..b1e7b63e0 100644
+index c0816b9f8..33ac57e6b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1511,12 +1511,15 @@ public abstract class World implements IBlockAccess {
@@ -85,20 +85,6 @@ index c0816b9f8..b1e7b63e0 100644
                  }
              }
          }
-@@ -1805,8 +1816,11 @@ public abstract class World implements IBlockAccess {
-         int k = MathHelper.floor(entity.locZ / 16.0D);
- 
-         if (!entity.aa || entity.ab != i || entity.ac != j || entity.ad != k) {
--            if (entity.aa && this.isChunkLoaded(entity.ab, entity.ad, true)) {
--                this.getChunkAt(entity.ab, entity.ad).a(entity, entity.ac);
-+            // Paper start
-+            Chunk currentChunk = entity.getCurrentChunk();
-+            if (entity.aa && currentChunk != null) {
-+                currentChunk.removeEntity(entity);
-+                // Paper end
-             }
- 
-             if (!entity.bD() && !this.isChunkLoaded(i, k, true)) {
 -- 
-2.18.0
+2.17.1
 
