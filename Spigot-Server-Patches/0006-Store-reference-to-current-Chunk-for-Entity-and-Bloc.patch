@@ -1,4 +1,4 @@
-From 75b50cf5c33d0049e9670329132d0d2521f7f91a Mon Sep 17 00:00:00 2001
+From 3fbe4af7bcafee200f8492e070b8ea2d98a00181 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -81,17 +81,22 @@ index 4bbebb25a..68008fe6a 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3a8902bf1..ed090cc50 100644
+index 3a8902bf1..f7750a05c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1703,6 +1703,14 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -1703,6 +1703,19 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
      }
  
      // Paper start
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +    public Chunk getCurrentChunk() {
-+        final Chunk chunk = currentChunk != null ? currentChunk.get() : world.getChunkIfLoaded(getChunkX(), getChunkZ());
-+        return chunk != null && chunk.isLoaded() ? chunk : null;
++        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
++        final int cx = getChunkX();
++        final int cz = getChunkZ();
++        if (chunk != null && chunk.isLoaded() && chunk.locX == cx && chunk.locZ == cz) {
++            return chunk;
++        }
++        return world.getChunkIfLoaded(cx, cz);
 +    }
 +    public void setCurrentChunk(Chunk chunk) {
 +        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
