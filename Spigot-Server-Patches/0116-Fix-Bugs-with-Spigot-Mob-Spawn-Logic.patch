@@ -1,4 +1,4 @@
-From 2f2537d89386121b38fd335b5b8d48102a97d8ae Mon Sep 17 00:00:00 2001
+From 868e6d9441457ad084678875f8c583f27d306916 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 14 Apr 2016 21:01:39 -0400
 Subject: [PATCH] Fix Bugs with Spigot Mob Spawn Logic
@@ -14,7 +14,7 @@ Specially with servers using smaller mob spawn ranges than view distance, as wel
 This patch returns mob counting to use all loaded chunks, and 17x17 division.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 6b13e1d7d..1e78fc625 100644
+index e07ef14ed..aca1457b0 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -716,7 +716,7 @@ public class Chunk {
@@ -27,7 +27,7 @@ index 6b13e1d7d..1e78fc625 100644
          if (entity instanceof EntityItem) {
              itemCounts[i]--;
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 45a83ae99..2cd063829 100644
+index 45a83ae99..ed22607d9 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -23,6 +23,15 @@ public final class SpawnerCreature {
@@ -36,11 +36,11 @@ index 45a83ae99..2cd063829 100644
      {
 +        // Paper start - use entire world, not just active chunks. Spigot broke vanilla expectations.
 +        if (true) {
-+            return server
-+                    .getChunkProviderServer()
-+                    .chunks.values()
-+                    .stream()
-+                    .collect(java.util.stream.Collectors.summingInt(c -> c.entityCount.get(oClass)));
++            int sum = 0;
++            for (Chunk c : server.getChunkProviderServer().chunks.values()) {
++                sum += c.entityCount.get(oClass);
++            }
++            return sum;
 +        }
 +        // Paper end
          int i = 0;
