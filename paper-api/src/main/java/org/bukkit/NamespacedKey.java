@@ -3,11 +3,19 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
 
 /**
  * Represents a String based key which consists of two components - a namespace
  * and a key.
+ *
+ * Namespaces may only contain lowercase alphanumeric characters, periods,
+ * underscores, and hyphens.
+ * <p>
+ * Keys may only contain lowercase alphanumeric characters, periods,
+ * underscores, hyphens, and forward slashes.
+ *
  */
 public final class NamespacedKey {
 
@@ -21,6 +29,9 @@ public final class NamespacedKey {
      */
     public static final String BUKKIT = "bukkit";
     //
+    private static final Pattern VALID_NAMESPACE = Pattern.compile("[a-z0-9._-]+");
+    private static final Pattern VALID_KEY = Pattern.compile("[a-z0-9/._-]+");
+    //
     private final String namespace;
     private final String key;
 
@@ -33,14 +44,13 @@ public final class NamespacedKey {
      */
     @Deprecated
     public NamespacedKey(String namespace, String key) {
-        Preconditions.checkArgument(namespace != null && !namespace.isEmpty(), "namespace");
-        Preconditions.checkArgument(key != null, "key");
+        Preconditions.checkArgument(namespace != null && VALID_NAMESPACE.matcher(namespace).matches(), "namespace");
+        Preconditions.checkArgument(key != null && VALID_KEY.matcher(key).matches(), "key");
 
         this.namespace = namespace;
         this.key = key;
 
         String string = toString();
-        Preconditions.checkArgument(string.indexOf(' ') == -1, "NamespacedKey cannot contain spaces (%s)", string);
         Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters", string);
     }
 
@@ -54,11 +64,12 @@ public final class NamespacedKey {
         Preconditions.checkArgument(plugin != null, "plugin");
         Preconditions.checkArgument(key != null, "key");
 
-        // Plugin names cannot have spaces anymore (SimplePluginManager)
-        Preconditions.checkArgument(key.indexOf(' ') == -1, "key cannot contain spaces (%s)", key);
-
         this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
         this.key = key.toLowerCase().toLowerCase(Locale.ROOT);
+
+        // Check validity after normalization
+        Preconditions.checkArgument(VALID_NAMESPACE.matcher(namespace).matches(), "namespace");
+        Preconditions.checkArgument(VALID_KEY.matcher(key).matches(), "key");
 
         String string = toString();
         Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
