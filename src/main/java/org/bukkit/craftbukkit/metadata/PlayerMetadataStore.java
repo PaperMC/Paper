@@ -10,7 +10,7 @@ import org.bukkit.metadata.MetadataStoreBase;
 public class PlayerMetadataStore extends MetadataStoreBase<OfflinePlayer> implements MetadataStore<OfflinePlayer> {
     /**
      * Generates a unique metadata key for {@link org.bukkit.entity.Player} and {@link OfflinePlayer} using the player
-     * name.
+     * UUID.
      * @see MetadataStoreBase#disambiguate(Object, String)
      * @param player the player
      * @param metadataKey The name identifying the metadata value
@@ -18,6 +18,6 @@ public class PlayerMetadataStore extends MetadataStoreBase<OfflinePlayer> implem
      */
     @Override
     protected String disambiguate(OfflinePlayer player, String metadataKey) {
-        return player.getName().toLowerCase(java.util.Locale.ENGLISH) + ":" + metadataKey;
+        return player.getUniqueId() + ":" + metadataKey;
     }
 }
