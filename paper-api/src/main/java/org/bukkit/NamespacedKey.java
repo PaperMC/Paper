@@ -68,8 +68,8 @@ public final class NamespacedKey {
         this.key = key.toLowerCase().toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
-        Preconditions.checkArgument(VALID_NAMESPACE.matcher(namespace).matches(), "namespace");
-        Preconditions.checkArgument(VALID_KEY.matcher(key).matches(), "key");
+        Preconditions.checkArgument(VALID_NAMESPACE.matcher(this.namespace).matches(), "namespace");
+        Preconditions.checkArgument(VALID_KEY.matcher(this.key).matches(), "key");
 
         String string = toString();
         Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
