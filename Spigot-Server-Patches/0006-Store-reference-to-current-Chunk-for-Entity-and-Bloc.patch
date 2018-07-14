@@ -1,4 +1,4 @@
-From 12051b946e1a2fbe7faba1a7011db4dd05b3e727 Mon Sep 17 00:00:00 2001
+From 8613a4e2ae9a4bb6faef75b90d69728a88692dc1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -81,28 +81,42 @@ index 4bbebb25a..68008fe6a 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3a8902bf1..f140d5e28 100644
+index 3a8902bf1..4af566b36 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1703,6 +1703,24 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -1703,6 +1703,38 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
      }
  
      // Paper start
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
++
++    public void setCurrentChunk(Chunk chunk) {
++        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
++    }
++    /**
++     * Returns the entities current registered chunk. If the entity is not added to a chunk yet, it will return null
++     */
 +    public Chunk getCurrentChunk() {
 +        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
 +        return chunk != null && chunk.isLoaded() ? chunk : null;
 +    }
-+    public void setCurrentChunk(Chunk chunk) {
-+        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
-+    }
++    /**
++     * Returns the chunk at the location, using the entities local cache if avail
++     * Will only return null if the location specified is not loaded
++     */
 +    public Chunk getCurrentChunkAt(int x, int z) {
 +        if (getChunkX() == x && getChunkZ() == z) {
-+            return getCurrentChunk();
-+        } else {
-+            return world.getChunkIfLoaded(x, z);
++            Chunk chunk = getCurrentChunk();
++            if (chunk != null) {
++                return chunk;
++            }
 +        }
++        return world.getChunkIfLoaded(x, z);
 +    }
++    /**
++     * Returns the chunk at the entities current location, using the entities local cache if avail
++     * Will only return null if the location specified is not loaded
++     */
 +    public Chunk getChunkAtLocation() {
 +        return getCurrentChunkAt((int)Math.floor(locX) >> 4, (int)Math.floor(locZ) >> 4);
 +    }
