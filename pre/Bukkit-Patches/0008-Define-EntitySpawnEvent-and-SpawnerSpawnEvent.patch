@@ -1,0 +1,219 @@
+From cf02bc5cea506a51b858066b8baec21020d43030 Mon Sep 17 00:00:00 2001
+From: Andy Shulman <andy.shulman@hotmail.com>
+Date: Mon, 15 Apr 2013 20:06:01 -0500
+Subject: [PATCH] Define EntitySpawnEvent and SpawnerSpawnEvent
+
+Defines EntitySpawnEvent and SpawnerSpawnEvent. Adds BUKKIT-267 and BUKKIT-1559
+
+diff --git a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+index 4a8f2e18..70212ea5 100644
+--- a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+@@ -3,17 +3,13 @@ package org.bukkit.event.entity;
+ import org.bukkit.Location;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.LivingEntity;
+-import org.bukkit.event.Cancellable;
+-import org.bukkit.event.HandlerList;
+ 
+ /**
+  * Called when a creature is spawned into a world.
+  * <p>
+  * If a Creature Spawn event is cancelled, the creature will not spawn.
+  */
+-public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
+-    private static final HandlerList handlers = new HandlerList();
+-    private boolean canceled;
++public class CreatureSpawnEvent extends EntitySpawnEvent {
+     private final SpawnReason spawnReason;
+ 
+     public CreatureSpawnEvent(final LivingEntity spawnee, final SpawnReason spawnReason) {
+@@ -21,28 +17,11 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
+         this.spawnReason = spawnReason;
+     }
+ 
+-    public boolean isCancelled() {
+-        return canceled;
+-    }
+-
+-    public void setCancelled(boolean cancel) {
+-        canceled = cancel;
+-    }
+-
+     @Override
+     public LivingEntity getEntity() {
+         return (LivingEntity) entity;
+     }
+ 
+-    /**
+-     * Gets the location at which the creature is spawning.
+-     *
+-     * @return The location at which the creature is spawning
+-     */
+-    public Location getLocation() {
+-        return getEntity().getLocation();
+-    }
+-
+     /**
+      * Gets the reason for why the creature is being spawned.
+      *
+@@ -53,15 +32,6 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
+         return spawnReason;
+     }
+ 
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
+-
+     /**
+      * An enum to specify the type of spawning
+      */
+diff --git a/src/main/java/org/bukkit/event/entity/EntitySpawnEvent.java b/src/main/java/org/bukkit/event/entity/EntitySpawnEvent.java
+new file mode 100644
+index 00000000..5dcf98f3
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/entity/EntitySpawnEvent.java
+@@ -0,0 +1,45 @@
++package org.bukkit.event.entity;
++
++import org.bukkit.Location;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.HandlerList;
++
++/**
++ * Called when an entity is spawned into a world.
++ * <p>
++ * If an Entity Spawn event is cancelled, the entity will not spawn.
++ */
++public class EntitySpawnEvent extends EntityEvent implements org.bukkit.event.Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private boolean canceled;
++
++    public EntitySpawnEvent(final Entity spawnee) {
++        super(spawnee);
++    }
++
++    public boolean isCancelled() {
++        return canceled;
++    }
++
++    public void setCancelled(boolean cancel) {
++        canceled = cancel;
++    }
++
++    /**
++     * Gets the location at which the entity is spawning.
++     *
++     * @return The location at which the entity is spawning
++     */
++    public Location getLocation() {
++        return getEntity().getLocation();
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/ItemSpawnEvent.java b/src/main/java/org/bukkit/event/entity/ItemSpawnEvent.java
+index bafd934a..776f8e72 100644
+--- a/src/main/java/org/bukkit/event/entity/ItemSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/ItemSpawnEvent.java
+@@ -1,51 +1,23 @@
+ package org.bukkit.event.entity;
+ 
+-import org.bukkit.entity.Item;
+ import org.bukkit.Location;
+-import org.bukkit.event.Cancellable;
+-import org.bukkit.event.HandlerList;
++import org.bukkit.entity.Item;
+ 
+ /**
+  * Called when an item is spawned into a world
+  */
+-public class ItemSpawnEvent extends EntityEvent implements Cancellable {
+-    private static final HandlerList handlers = new HandlerList();
+-    private final Location location;
+-    private boolean canceled;
+-
+-    public ItemSpawnEvent(final Item spawnee, final Location loc) {
++public class ItemSpawnEvent extends EntitySpawnEvent {
++    public ItemSpawnEvent(final Item spawnee) {
+         super(spawnee);
+-        this.location = loc;
+     }
+ 
+-    public boolean isCancelled() {
+-        return canceled;
+-    }
+-
+-    public void setCancelled(boolean cancel) {
+-        canceled = cancel;
++    @Deprecated
++    public ItemSpawnEvent(final Item spawnee, final Location loc) {
++        this(spawnee);
+     }
+ 
+     @Override
+     public Item getEntity() {
+         return (Item) entity;
+     }
+-
+-    /**
+-     * Gets the location at which the item is spawning.
+-     *
+-     * @return The location at which the item is spawning
+-     */
+-    public Location getLocation() {
+-        return location;
+-    }
+-
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
+ }
+diff --git a/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java b/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java
+new file mode 100644
+index 00000000..1acb3c40
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/entity/SpawnerSpawnEvent.java
+@@ -0,0 +1,22 @@
++package org.bukkit.event.entity;
++
++import org.bukkit.block.CreatureSpawner;
++import org.bukkit.entity.Entity;
++
++/**
++ * Called when an entity is spawned into a world by a spawner.
++ * <p>
++ * If a Spawner Spawn event is cancelled, the entity will not spawn.
++ */
++public class SpawnerSpawnEvent extends EntitySpawnEvent {
++    private final CreatureSpawner spawner;
++
++    public SpawnerSpawnEvent(final Entity spawnee, final CreatureSpawner spawner) {
++        super(spawnee);
++        this.spawner = spawner;
++    }
++
++    public CreatureSpawner getSpawner() {
++        return spawner;
++    }
++}
+-- 
+2.18.0
+

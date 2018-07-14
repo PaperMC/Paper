@@ -1,0 +1,54 @@
+From b3545a19c3480cccaece21d8a8215d1ef00ca1bf Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 7 Jul 2013 10:32:05 -0400
+Subject: [PATCH] InventoryClickEvent getClickedInventory
+
+Add InventoryClickEvent.getClickedInventory. Adds BUKKIT-4495
+Plugins currently have to do the logic themselves on the raw slot ID
+in order to determine the inventory clicked. This provides the logic for plugins to
+readily identify which inventory was clicked.
+
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
+index 55527652..60feaf3b 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
+@@ -47,6 +47,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
+     private static final HandlerList handlers = new HandlerList();
+     private final ClickType click;
+     private final InventoryAction action;
++    private final Inventory clickedInventory;
+     private SlotType slot_type;
+     private int whichSlot;
+     private int rawSlot;
+@@ -57,6 +58,13 @@ public class InventoryClickEvent extends InventoryInteractEvent {
+         super(view);
+         this.slot_type = type;
+         this.rawSlot = slot;
++        if (slot < 0) {
++            this.clickedInventory = null;
++        } else if (view.getTopInventory() != null && slot < view.getTopInventory().getSize()) {
++            this.clickedInventory = view.getTopInventory();
++        } else {
++            this.clickedInventory = view.getBottomInventory();
++        }
+         this.whichSlot = view.convertSlot(slot);
+         this.click = click;
+         this.action = action;
+@@ -67,6 +75,14 @@ public class InventoryClickEvent extends InventoryInteractEvent {
+         this.hotbarKey = key;
+     }
+ 
++    /**
++     * Gets the inventory that was clicked, or null if outside of window
++     * @return The clicked inventory
++     */
++    public Inventory getClickedInventory() {
++        return clickedInventory;
++    }
++
+     /**
+      * Gets the type of slot that was clicked.
+      *
+-- 
+2.18.0
+

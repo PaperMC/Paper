@@ -1,0 +1,67 @@
+From c920b663bcb6e08866c0847561424f87c95855a2 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Wed, 16 Jul 2014 17:24:21 +1000
+Subject: [PATCH] Ease ClassLoader Deadlocks Where Possible
+
+When on Java 7 we can register the classloader as parallel capable to prevent deadlocks caused by certain scenarios. Due to the nature of PluginClassLoader this isn't completely safe, but we can make it safer by switching to concurrency focused collections. Either way this is far better than crashing the server.
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 73372534..80c6a72e 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -49,7 +49,7 @@ import org.yaml.snakeyaml.error.YAMLException;
+ public final class JavaPluginLoader implements PluginLoader {
+     final Server server;
+     private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
+-    private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
++    private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
+     public static final CustomTimingsHandler pluginParentTimer = new CustomTimingsHandler("** Plugins"); // Spigot
+ 
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 5eb42df3..a9fc08e0 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -25,7 +25,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
+  */
+ final class PluginClassLoader extends URLClassLoader {
+     private final JavaPluginLoader loader;
+-    private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
++    private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final PluginDescriptionFile description;
+     private final File dataFolder;
+     private final File file;
+@@ -36,6 +36,30 @@ final class PluginClassLoader extends URLClassLoader {
+     private JavaPlugin pluginInit;
+     private IllegalStateException pluginState;
+ 
++    // Spigot Start
++    static
++    {
++        try
++        {
++            java.lang.reflect.Method method = ClassLoader.class.getDeclaredMethod( "registerAsParallelCapable" );
++            if ( method != null )
++            {
++                boolean oldAccessible = method.isAccessible();
++                method.setAccessible( true );
++                method.invoke( null );
++                method.setAccessible( oldAccessible );
++                org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.INFO, "Set PluginClassLoader as parallel capable" );
++            }
++        } catch ( NoSuchMethodException ex )
++        {
++            // Ignore
++        } catch ( Exception ex )
++        {
++            org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Error setting PluginClassLoader as parallel capable", ex );
++        }
++    }
++    // Spigot End
++
+     PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws IOException, InvalidPluginException, MalformedURLException {
+         super(new URL[] {file.toURI().toURL()}, parent);
+         Validate.notNull(loader, "Loader cannot be null");
+-- 
+2.18.0
+
