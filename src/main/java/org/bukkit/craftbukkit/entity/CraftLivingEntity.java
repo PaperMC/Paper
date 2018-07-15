@@ -470,6 +470,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean isSwimming() {
+        return getHandle().bb();
+    }
+
+    @Override
+    public void setSwimming(boolean swimming) {
+        getHandle().g(swimming);
+    }
+
+    @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         return getHandle().craftAttributes.getAttribute(attribute);
     }

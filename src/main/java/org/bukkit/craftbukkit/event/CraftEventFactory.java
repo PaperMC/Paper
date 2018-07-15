@@ -1015,6 +1015,12 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityToggleSwimEvent callToggleSwimEvent(EntityLiving entity, boolean swimming) {
+        EntityToggleSwimEvent event = new EntityToggleSwimEvent((LivingEntity) entity.getBukkitEntity(), swimming);
+        entity.world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
     public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(EntityAreaEffectCloud cloud, List<LivingEntity> entities) {
         AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
         cloud.world.getServer().getPluginManager().callEvent(event);
