@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.EntityType;
 
-public class CraftDolphin extends CraftCreature implements Dolphin {
+public class CraftDolphin extends CraftWaterMob implements Dolphin {
 
     public CraftDolphin(CraftServer server, EntityDolphin entity) {
         super(server, entity);
