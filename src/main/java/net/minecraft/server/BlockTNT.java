@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import javax.annotation.Nullable;
+import com.destroystokyo.paper.event.block.TNTPrimeEvent; // Paper - TNTPrimeEvent
 
 public class BlockTNT extends Block {
 
@@ -15,6 +16,11 @@ public class BlockTNT extends Block {
     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
         if (!iblockdata1.a(iblockdata.getBlock())) {
             if (world.isBlockIndirectlyPowered(blockposition)) {
+                // Paper start - TNTPrimeEvent
+                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
+                if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.REDSTONE, null).callEvent())
+                    return;
+                // Paper end
                 a(world, blockposition);
                 world.a(blockposition, false);
             }
@@ -25,6 +31,11 @@ public class BlockTNT extends Block {
     @Override
     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
         if (world.isBlockIndirectlyPowered(blockposition)) {
+            // Paper start - TNTPrimeEvent
+            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
+            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.REDSTONE, null).callEvent())
+                return;
+            // Paper end
             a(world, blockposition);
             world.a(blockposition, false);
         }
@@ -43,6 +54,12 @@ public class BlockTNT extends Block {
     @Override
     public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
         if (!world.isClientSide) {
+            // Paper start - TNTPrimeEvent
+            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
+            org.bukkit.entity.Entity source = explosion.source != null ? explosion.source.getBukkitEntity() : null;
+            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.EXPLOSION, source).callEvent())
+                return;
+            // Paper end
             EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, explosion.getSource());
 
             entitytntprimed.setFuseTicks((short) (world.random.nextInt(entitytntprimed.getFuseTicks() / 4) + entitytntprimed.getFuseTicks() / 8));
@@ -71,6 +88,11 @@ public class BlockTNT extends Block {
         if (item != Items.FLINT_AND_STEEL && item != Items.FIRE_CHARGE) {
             return super.interact(iblockdata, world, blockposition, entityhuman, enumhand, movingobjectpositionblock);
         } else {
+            // Paper start - TNTPrimeEvent
+            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
+            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.ITEM, entityhuman.getBukkitEntity()).callEvent())
+                return EnumInteractionResult.FAIL;
+            // Paper end
             a(world, blockposition, (EntityLiving) entityhuman);
             world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 11);
             if (!entityhuman.isCreative()) {
@@ -99,6 +121,13 @@ public class BlockTNT extends Block {
                     return;
                 }
                 // CraftBukkit end
+
+                // Paper start - TNTPrimeEvent
+                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
+                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.PROJECTILE, iprojectile.getBukkitEntity()).callEvent()) {
+                    return;
+                }
+                // Paper end
 
                 a(world, blockposition, entity instanceof EntityLiving ? (EntityLiving) entity : null);
                 world.a(blockposition, false);

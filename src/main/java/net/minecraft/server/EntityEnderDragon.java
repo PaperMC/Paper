@@ -11,6 +11,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 // CraftBukkit end
+import com.destroystokyo.paper.event.block.TNTPrimeEvent; // Paper - TNTPrimeEvent
 
 // PAIL: Fixme
 public class EntityEnderDragon extends EntityInsentient implements IMonster {
@@ -466,6 +467,11 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
                     });
                     craftBlock.getNMS().dropNaturally((WorldServer) world, blockposition, ItemStack.b);
                 }
+                // Paper start - TNTPrimeEvent
+                org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getSource().getBukkitEntity()).callEvent())
+                    continue;
+                // Paper end
                 nmsBlock.wasExploded(world, blockposition, explosionSource);
 
                 this.world.a(blockposition, false);
