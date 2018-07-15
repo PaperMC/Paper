@@ -1,22 +1,46 @@
 --- a/net/minecraft/server/BlockConcretePowder.java
 +++ b/net/minecraft/server/BlockConcretePowder.java
-@@ -11,8 +11,8 @@
+@@ -1,5 +1,10 @@
+ package net.minecraft.server;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.event.block.BlockFormEvent;
++// CraftBukkit end
++
+ public class BlockConcretePowder extends BlockFalling {
+ 
+     private final IBlockData a;
+@@ -10,8 +15,8 @@
      }
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {
 -        if (iblockdata1.getMaterial().isLiquid()) {
--            world.setTypeAndData(blockposition, Blocks.dR.getBlockData().set(BlockCloth.COLOR, iblockdata.get(BlockConcretePowder.a)), 3);
-+        if (iblockdata1.getMaterial().isLiquid() && world.getType(blockposition).getBlock() != Blocks.dR) { // CraftBukkit - don't double concrete
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, Blocks.dR.getBlockData().set(BlockCloth.COLOR, iblockdata.get(BlockConcretePowder.a)), null); // CraftBukkit
+-            world.setTypeAndData(blockposition, this.a, 3);
++        if (iblockdata1.getMaterial().isLiquid() && !(world.getType(blockposition).getBlock() instanceof BlockConcretePowder)) { // CraftBukkit - don't double concrete
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.a, 3);
          }
  
      }
-@@ -36,7 +36,7 @@
-         }
+@@ -45,6 +50,20 @@
+     }
  
-         if (flag) {
--            world.setTypeAndData(blockposition, Blocks.dR.getBlockData().set(BlockCloth.COLOR, iblockdata.get(BlockConcretePowder.a)), 3);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, Blocks.dR.getBlockData().set(BlockCloth.COLOR, iblockdata.get(BlockConcretePowder.a)), null); // CraftBukkit
-         }
- 
-         return flag;
+     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+-        return a((IBlockAccess) generatoraccess, blockposition) ? this.a : super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++        // CraftBukkit start
++        if (a((IBlockAccess) generatoraccess, blockposition)) {
++            CraftBlockState blockState = CraftBlockState.getBlockState(generatoraccess, blockposition);
++            blockState.setData(this.a);
++
++            BlockFormEvent event = new BlockFormEvent(blockState.getBlock(), blockState);
++            generatoraccess.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                return blockState.getHandle();
++            }
++        }
++
++        return super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++        // CraftBukkit end
+     }
+ }

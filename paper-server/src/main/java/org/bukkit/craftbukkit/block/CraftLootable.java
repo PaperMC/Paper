@@ -4,6 +4,7 @@ import net.minecraft.server.TileEntityLootable;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public abstract class CraftLootable<T extends TileEntityLootable> extends CraftContainer<T> implements Nameable {
 
@@ -18,12 +19,12 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
     @Override
     public String getCustomName() {
         T lootable = this.getSnapshot();
-        return lootable.hasCustomName() ? lootable.getName() : null;
+        return lootable.hasCustomName() ? CraftChatMessage.fromComponent(lootable.getCustomName()) : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(name);
+        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override

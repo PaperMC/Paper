@@ -158,7 +158,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     boolean applicableTo(Material type) {
         switch (type) {
         case WRITTEN_BOOK:
-        case BOOK_AND_QUILL:
+        case WRITABLE_BOOK:
             return true;
         default:
             return false;

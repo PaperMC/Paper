@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import net.minecraft.server.Item;
+import net.minecraft.server.MinecraftKey;
 
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
@@ -19,13 +20,13 @@ public class MaterialTest extends AbstractTestingBase {
 
     @Test
     public void verifyMapping() {
-        Map<Integer, Material> materials = Maps.newHashMap();
+        Map<MinecraftKey, Material> materials = Maps.newHashMap();
         for (Material material : Material.values()) {
             if (INVALIDATED_MATERIALS.contains(material)) {
                 continue;
             }
 
-            materials.put(material.getId(), material);
+            materials.put(CraftMagicNumbers.key(material), material);
         }
 
         Iterator<Item> items = Item.REGISTRY.iterator();
@@ -34,12 +35,13 @@ public class MaterialTest extends AbstractTestingBase {
             Item item = items.next();
             if (item == null) continue;
 
-            int id = CraftMagicNumbers.getId(item);
+            MinecraftKey id = Item.REGISTRY.b(item);
             String name = item.getName();
 
             Material material = materials.remove(id);
 
             assertThat("Missing " + name + "(" + id + ")", material, is(not(nullValue())));
+            assertNotNull("No item mapping for " + name, CraftMagicNumbers.getMaterial(item));
         }
 
         assertThat(materials, is(Collections.EMPTY_MAP));

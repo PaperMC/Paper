@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPainting;
-import net.minecraft.server.EntityPainting.EnumArt;
+import net.minecraft.server.Paintings;
 import net.minecraft.server.WorldServer;
 
 import org.bukkit.Art;
@@ -19,7 +19,7 @@ public class CraftPainting extends CraftHanging implements Painting {
     }
 
     public Art getArt() {
-        EnumArt art = getHandle().art;
+        Paintings art = getHandle().art;
         return CraftArt.NotchToBukkit(art);
     }
 
@@ -29,7 +29,7 @@ public class CraftPainting extends CraftHanging implements Painting {
 
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = this.getHandle();
-        EnumArt oldArt = painting.art;
+        Paintings oldArt = painting.art;
         painting.art = CraftArt.BukkitToNotch(art);
         painting.setDirection(painting.direction);
         if (!force && !painting.survives()) {

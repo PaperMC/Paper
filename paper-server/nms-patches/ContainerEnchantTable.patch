@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ContainerEnchantTable.java
 +++ b/net/minecraft/server/ContainerEnchantTable.java
-@@ -3,6 +3,19 @@
+@@ -3,6 +3,21 @@
  import java.util.List;
  import java.util.Random;
  
@@ -8,9 +8,11 @@
 +import java.util.Collections;
 +import java.util.Map;
 +import org.bukkit.Location;
++import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.enchantments.EnchantmentOffer;
 +import org.bukkit.event.enchantment.EnchantItemEvent;
 +import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -19,8 +21,8 @@
 +
  public class ContainerEnchantTable extends Container {
  
-     public IInventory enchantSlots = new InventorySubcontainer("Enchant", true, 2) {
-@@ -14,6 +27,13 @@
+     public IInventory enchantSlots = new InventorySubcontainer(new ChatComponentText("Enchant"), 2) {
+@@ -14,6 +29,13 @@
              super.update();
              ContainerEnchantTable.this.a((IInventory) this);
          }
@@ -34,7 +36,7 @@
      };
      public World world;
      private final BlockPosition position;
-@@ -22,6 +42,10 @@
+@@ -22,6 +44,10 @@
      public int[] costs = new int[3];
      public int[] h = new int[] { -1, -1, -1};
      public int[] i = new int[] { -1, -1, -1};
@@ -45,7 +47,7 @@
  
      public ContainerEnchantTable(PlayerInventory playerinventory, World world, BlockPosition blockposition) {
          this.world = world;
-@@ -54,6 +78,9 @@
+@@ -54,6 +80,9 @@
              this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
          }
  
@@ -55,7 +57,7 @@
      }
  
      protected void c(ICrafting icrafting) {
-@@ -90,7 +117,7 @@
+@@ -90,7 +119,7 @@
              ItemStack itemstack = iinventory.getItem(0);
              int i;
  
@@ -64,7 +66,14 @@
                  if (!this.world.isClientSide) {
                      i = 0;
  
-@@ -152,6 +179,41 @@
+@@ -146,12 +175,47 @@
+                             if (list != null && !list.isEmpty()) {
+                                 WeightedRandomEnchant weightedrandomenchant = (WeightedRandomEnchant) list.get(this.l.nextInt(list.size()));
+ 
+-                                this.h[j] = Enchantment.enchantments.a((Object) weightedrandomenchant.enchantment);
++                                this.h[j] = Enchantment.enchantments.a(weightedrandomenchant.enchantment); // CraftBukkit - decompile error
+                                 this.i[j] = weightedrandomenchant.level;
+                             }
                          }
                      }
  
@@ -72,7 +81,7 @@
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +                    org.bukkit.enchantments.EnchantmentOffer[] offers = new EnchantmentOffer[3];
 +                    for (j = 0; j < 3; ++j) {
-+                        org.bukkit.enchantments.Enchantment enchantment = (this.h[j] >= 0) ? org.bukkit.enchantments.Enchantment.getById(this.h[j]) : null;
++                        org.bukkit.enchantments.Enchantment enchantment = (this.h[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(Enchantment.getId(Enchantment.enchantments.getId(this.h[j])))) : null;
 +                        offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, this.i[j], this.costs[j]) : null;
 +                    }
 +
@@ -93,7 +102,7 @@
 +                        EnchantmentOffer offer = event.getOffers()[j];
 +                        if (offer != null) {
 +                            this.costs[j] = offer.getCost();
-+                            this.h[j] = offer.getEnchantment().getId();
++                            this.h[j] = Enchantment.enchantments.a(Enchantment.fromId(CraftNamespacedKey.toMinecraft(offer.getEnchantment().getKey())));
 +                            this.i[j] = offer.getEnchantmentLevel();
 +                        } else {
 +                            this.costs[j] = 0;
@@ -106,7 +115,7 @@
                      this.b();
                  }
              } else {
-@@ -176,25 +238,52 @@
+@@ -176,25 +240,53 @@
              if (!this.world.isClientSide) {
                  List list = this.a(itemstack, i, this.costs[i]);
  
@@ -119,7 +128,7 @@
 +                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                    for (Object obj : list) {
 +                        WeightedRandomEnchant instance = (WeightedRandomEnchant) obj;
-+                        enchants.put(org.bukkit.enchantments.Enchantment.getById(Enchantment.getId(instance.enchantment)), instance.level);
++                        enchants.put(org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(Enchantment.getId(instance.enchantment))), instance.level);
 +                    }
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +
@@ -141,8 +150,9 @@
 +                    for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
 +                        try {
 +                            if (flag) {
-+                                int enchantId = entry.getKey().getId();
-+                                if (Enchantment.c(enchantId) == null) {
++                                NamespacedKey enchantId = entry.getKey().getKey();
++                                Enchantment nms = Enchantment.fromId(CraftNamespacedKey.toMinecraft(enchantId));
++                                if (nms == null) {
 +                                    continue;
 +                                }
  
@@ -150,7 +160,7 @@
 -                            ItemEnchantedBook.a(itemstack, weightedrandomenchant);
 -                        } else {
 -                            itemstack.addEnchantment(weightedrandomenchant.enchantment, weightedrandomenchant.level);
-+                                WeightedRandomEnchant weightedrandomenchant = new WeightedRandomEnchant(Enchantment.c(enchantId), entry.getValue());
++                                WeightedRandomEnchant weightedrandomenchant = new WeightedRandomEnchant(nms, entry.getValue());
 +                                ItemEnchantedBook.a(itemstack, weightedrandomenchant);
 +                            } else {
 +                                item.addUnsafeEnchantment(entry.getKey(), entry.getValue());
@@ -167,7 +177,7 @@
                      if (!entityhuman.abilities.canInstantlyBuild) {
                          itemstack1.subtract(j);
                          if (itemstack1.isEmpty()) {
-@@ -233,12 +322,18 @@
+@@ -233,12 +325,18 @@
  
      public void b(EntityHuman entityhuman) {
          super.b(entityhuman);
@@ -186,7 +196,7 @@
          return this.world.getType(this.position).getBlock() != Blocks.ENCHANTING_TABLE ? false : entityhuman.d((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
      }
  
-@@ -291,4 +386,17 @@
+@@ -291,4 +389,17 @@
  
          return itemstack;
      }

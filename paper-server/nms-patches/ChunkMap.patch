@@ -1,0 +1,88 @@
+--- a/net/minecraft/server/ChunkMap.java
++++ b/net/minecraft/server/ChunkMap.java
+@@ -31,6 +31,54 @@
+             }
+         }
+ 
++        org.bukkit.Server server = chunk.world.getServer();
++        if (server != null) {
++            /*
++             * If it's a new world, the first few chunks are generated inside
++             * the World constructor. We can't reliably alter that, so we have
++             * no way of creating a CraftWorld/CraftServer at that point.
++             */
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(chunk.bukkitChunk, chunk.newChunk));
++        }
++
++        // Update neighbor counts
++        for (int x = -2; x < 3; x++) {
++            for (int z = -2; z < 3; z++) {
++                if (x == 0 && z == 0) {
++                    continue;
++                }
++
++                Chunk neighbor = this.get(ChunkCoordIntPair.a(chunkcoordintpair.x + x, chunkcoordintpair.z + z));
++                if (neighbor != null) {
++                    neighbor.setNeighborLoaded(-x, -z);
++                    chunk.setNeighborLoaded(x, z);
++                }
++            }
++        }
++
++        if (chunk.newChunk) {
++            BlockSand.instaFall = true;
++            java.util.Random random = new java.util.Random();
++            random.setSeed(chunk.world.getSeed());
++            long xRand = random.nextLong() / 2L * 2L + 1L;
++            long zRand = random.nextLong() / 2L * 2L + 1L;
++            random.setSeed((long) chunk.locX * xRand + (long) chunk.locZ * zRand ^ chunk.world.getSeed());
++
++            org.bukkit.World world = chunk.world.getWorld();
++            if (world != null) {
++                chunk.world.populating = true;
++                try {
++                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                        populator.populate(world, random, chunk.bukkitChunk);
++                    }
++                } finally {
++                    chunk.world.populating = false;
++                }
++            }
++            BlockSand.instaFall = false;
++            chunk.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(chunk.bukkitChunk));
++        }
++
+         return chunk1;
+     }
+ 
+@@ -69,23 +117,25 @@
+         throw new RuntimeException("Not yet implemented");
+     }
+ 
+-    public Object remove(Object object) {
++    // CraftBukkit start - decompile errors
++    public Chunk remove(Object object) {
+         return this.a(object);
+     }
+ 
+-    public Object remove(long i) {
++    public Chunk remove(long i) {
+         return this.a(i);
+     }
+ 
+-    public Object put(Long olong, Object object) {
++    public Chunk put(Long olong, Chunk object) {
+         return this.a(olong, (Chunk) object);
+     }
+ 
+-    public Object put(long i, Object object) {
++    public Chunk put(long i, Chunk object) {
+         return this.a(i, (Chunk) object);
+     }
+ 
+-    public Object put(Object object, Object object1) {
++    public Object put(Object object, Chunk object1) {
+         return this.a((Long) object, (Chunk) object1);
+     }
++    // CraftBukkit end
+ }

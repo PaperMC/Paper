@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.WhiteListEntry;
 import net.minecraft.server.WorldNBTStorage;
 
 import org.bukkit.BanList;
@@ -115,9 +116,9 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public void setWhitelisted(boolean value) {
         if (value) {
-            server.getHandle().addWhitelist(profile);
+            server.getHandle().getWhitelist().add(new WhiteListEntry(profile));
         } else {
-            server.getHandle().removeWhitelist(profile);
+            server.getHandle().getWhitelist().remove(profile);
         }
     }
 

@@ -68,7 +68,7 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public String getTitle() {
-        return CraftChatMessage.fromComponent(handle.e());
+        return CraftChatMessage.fromComponent(handle.title);
     }
 
     @Override

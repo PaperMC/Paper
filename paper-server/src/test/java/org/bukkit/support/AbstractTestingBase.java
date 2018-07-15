@@ -1,10 +1,16 @@
 package org.bukkit.support;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Collections;
 import java.util.List;
 import net.minecraft.server.DispenserRegistry;
+import net.minecraft.server.EnumResourcePackType;
+import net.minecraft.server.ResourceManager;
+import net.minecraft.server.ResourcePackVanilla;
+import net.minecraft.server.TagRegistry;
 import org.bukkit.Material;
-import org.junit.BeforeClass;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.junit.Assert;
 
 /**
  *  If you are getting: java.lang.ExceptionInInitializerError
@@ -15,67 +21,28 @@ import org.junit.BeforeClass;
  *  extend this class to solve it.
  */
 public abstract class AbstractTestingBase {
-    public static final List<Material> INVALIDATED_MATERIALS = ImmutableList.<Material>builder()
-            .add(
-                    Material.BREWING_STAND,
-                    Material.BED_BLOCK,
-                    Material.NETHER_WARTS,
-                    Material.CAULDRON,
-                    Material.FLOWER_POT,
-                    Material.CROPS,
-                    Material.SUGAR_CANE_BLOCK,
-                    Material.CAKE_BLOCK,
-                    Material.SKULL,
-                    Material.PISTON_EXTENSION,
-                    Material.PISTON_MOVING_PIECE,
-                    Material.GLOWING_REDSTONE_ORE,
-                    Material.DIODE_BLOCK_ON,
-                    Material.PUMPKIN_STEM,
-                    Material.SIGN_POST,
-                    Material.REDSTONE_COMPARATOR_ON,
-                    Material.TRIPWIRE,
-                    Material.REDSTONE_LAMP_ON,
-                    Material.MELON_STEM,
-                    Material.REDSTONE_TORCH_OFF,
-                    Material.REDSTONE_COMPARATOR_OFF,
-                    Material.REDSTONE_WIRE,
-                    Material.WALL_SIGN,
-                    Material.DIODE_BLOCK_OFF,
-                    Material.IRON_DOOR_BLOCK,
-                    Material.WOODEN_DOOR,
-                    Material.WATER,
-                    Material.STATIONARY_WATER,
-                    Material.LAVA,
-                    Material.STATIONARY_LAVA,
-                    Material.DOUBLE_STEP,
-                    Material.DOUBLE_STEP,
-                    Material.FIRE,
-                    Material.PORTAL,
-                    Material.ENDER_PORTAL,
-                    Material.WOOD_DOUBLE_STEP,
-                    Material.COCOA,
-                    Material.CARROT,
-                    Material.POTATO,
-                    Material.STANDING_BANNER,
-                    Material.WALL_BANNER,
-                    Material.DAYLIGHT_DETECTOR_INVERTED,
-                    Material.DOUBLE_STONE_SLAB2,
-                    Material.SPRUCE_DOOR,
-                    Material.BIRCH_DOOR,
-                    Material.JUNGLE_DOOR,
-                    Material.ACACIA_DOOR,
-                    Material.DARK_OAK_DOOR,
-                    Material.PURPUR_DOUBLE_SLAB,
-                    Material.BEETROOT_BLOCK,
-                    Material.END_GATEWAY,
-                    Material.BURNING_FURNACE,
-                    Material.FROSTED_ICE
-            ).build();
+    // Materials that only exist in block form (or are legacy)
+    public static final List<Material> INVALIDATED_MATERIALS;
 
-    @BeforeClass
-    public static void setup() {
+    static {
         DispenserRegistry.c();
+        // Set up resource manager
+        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA);
+        // add tags for unit tests
+        resourceManager.a(new TagRegistry());
+        // Register vanilla pack
+        resourceManager.a(Collections.singletonList(new ResourcePackVanilla("minecraft")));
+
         DummyServer.setup();
         DummyEnchantments.setup();
+
+        ImmutableList.Builder<Material> builder = ImmutableList.builder();
+        for (Material m : Material.values()) {
+            if (m.isLegacy() || CraftMagicNumbers.getItem(m) == null) {
+                builder.add(m);
+            }
+        }
+        INVALIDATED_MATERIALS = builder.build();
+        Assert.assertTrue("Expected 533 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", INVALIDATED_MATERIALS.size() == 533);
     }
 }

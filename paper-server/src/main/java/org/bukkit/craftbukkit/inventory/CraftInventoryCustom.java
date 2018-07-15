@@ -17,6 +17,7 @@ import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.NonNullList;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftInventoryCustom extends CraftInventory {
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type) {
@@ -39,7 +40,7 @@ public class CraftInventoryCustom extends CraftInventory {
         private final NonNullList<ItemStack> items;
         private int maxStack = MAX_STACK;
         private final List<HumanEntity> viewers;
-        private final String title;
+        private final IChatBaseComponent title;
         private InventoryType type;
         private final InventoryHolder owner;
 
@@ -60,7 +61,7 @@ public class CraftInventoryCustom extends CraftInventory {
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
             this.items = NonNullList.a(size, ItemStack.a);
-            this.title = title;
+            this.title = CraftChatMessage.fromStringOrNull(title);
             this.viewers = new ArrayList<HumanEntity>();
             this.owner = owner;
             this.type = InventoryType.CHEST;
@@ -182,7 +183,12 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public String getName() {
+        public IChatBaseComponent getDisplayName() {
+            return title;
+        }
+
+        @Override
+        public IChatBaseComponent getCustomName() {
             return title;
         }
 
@@ -193,7 +199,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         @Override
         public IChatBaseComponent getScoreboardDisplayName() {
-            return new ChatComponentText(title);
+            return title;
         }
 
         @Override
@@ -202,7 +208,7 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public boolean x_() {
+        public boolean P_() {
             Iterator iterator = this.items.iterator();
 
             ItemStack itemstack;

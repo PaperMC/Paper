@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/BlockPiston.java
 +++ b/net/minecraft/server/BlockPiston.java
-@@ -5,6 +5,18 @@
+@@ -7,6 +7,18 @@
+ import java.util.Iterator;
  import java.util.List;
- import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import java.util.AbstractList;
@@ -18,39 +18,30 @@
 +
  public class BlockPiston extends BlockDirectional {
  
-     public static final BlockStateBoolean EXTENDED = BlockStateBoolean.of("extended");
-@@ -103,6 +115,18 @@
-                 world.playBlockAction(blockposition, this, 0, enumdirection.a());
-             }
-         } else if (!flag && ((Boolean) iblockdata.get(BlockPiston.EXTENDED)).booleanValue()) {
-+            // CraftBukkit start
-+            if (!this.sticky) {
-+                org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
-+                world.getServer().getPluginManager().callEvent(event);
-+
-+                if (event.isCancelled()) {
-+                    return;
-+                }
-+            }
-+            // PAIL: checkME - what happened to setTypeAndData?
-+            // CraftBukkit end
-             world.playBlockAction(blockposition, this, 1, enumdirection.a());
-         }
- 
-@@ -193,7 +217,7 @@
+     public static final BlockStateBoolean EXTENDED = BlockProperties.f;
+@@ -109,6 +121,18 @@
+                         b0 = 2;
                      }
                  }
++                // CraftBukkit start
++                if (!this.sticky) {
++                    org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
++                    world.getServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                }
++                // PAIL: checkME - what happened to setTypeAndData?
++                // CraftBukkit end
+             }
  
--                if (!flag1 && iblockdata1.getMaterial() != Material.AIR && a(iblockdata1, world, blockposition1, enumdirection.opposite(), false, enumdirection) && (iblockdata1.o() == EnumPistonReaction.NORMAL || block == Blocks.PISTON || block == Blocks.STICKY_PISTON)) {
-+                if (!flag1 && a(iblockdata1, world, blockposition1, enumdirection.opposite(), false, enumdirection) && (iblockdata1.o() == EnumPistonReaction.NORMAL || block == Blocks.PISTON || block == Blocks.STICKY_PISTON)) { // CraftBukkit - remove 'block.getMaterial() != Material.AIR' condition
-                     this.a(world, blockposition, enumdirection, false);
-                 }
-             } else {
-@@ -277,6 +301,48 @@
-             int j = list.size() + list1.size();
+             world.playBlockAction(blockposition, this, b0, enumdirection.a());
+@@ -271,6 +295,48 @@
              IBlockData[] aiblockdata = new IBlockData[j];
              EnumDirection enumdirection1 = flag ? enumdirection : enumdirection.opposite();
+             HashSet hashset = Sets.newHashSet(list);
 +            // CraftBukkit start
 +            final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +

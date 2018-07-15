@@ -1,45 +1,38 @@
 --- a/net/minecraft/server/CustomFunctionData.java
 +++ b/net/minecraft/server/CustomFunctionData.java
-@@ -23,7 +23,14 @@
-     private CustomFunction f;
-     private final ArrayDeque<CustomFunctionData.a> g = new ArrayDeque();
-     private boolean h = false;
--    private final ICommandListener i = new ICommandListener() {
-+    // CraftBukkit start
-+    private final ICommandListener i = new CustomFunctionListener();
-+
-+    public class CustomFunctionListener implements ICommandListener {
-+
-+        protected org.bukkit.command.CommandSender sender = new org.bukkit.craftbukkit.command.CraftFunctionCommandSender(this);
-+        // CraftBukkit end
-+
-         public String getName() {
-             return CustomFunctionData.this.e;
-         }
-@@ -33,7 +40,7 @@
-         }
+@@ -32,14 +32,16 @@
+     private final Map<MinecraftKey, CustomFunction> g = Maps.newHashMap();
+     private final ArrayDeque<CustomFunctionData.a> h = new ArrayDeque();
+     private boolean i;
+-    private final Tags<CustomFunction> j = new Tags((minecraftkey) -> {
++    private final Tags<CustomFunction> j = new Tags<>((minecraftkey) -> { // CraftBukkit - decompile error
+         return this.a(minecraftkey) != null;
+     }, this::a, "tags/functions", true, "function");
+     private final List<CustomFunction> k = Lists.newArrayList();
+     private boolean l;
++    private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> dispatcher; // CraftBukkit
  
-         public World getWorld() {
--            return CustomFunctionData.this.c.worldServer[0];
-+            return CustomFunctionData.this.c.worlds.get(0); // CraftBukkit
-         }
- 
-         public MinecraftServer C_() {
-@@ -57,7 +64,7 @@
+     public CustomFunctionData(MinecraftServer minecraftserver) {
+         this.f = minecraftserver;
++        this.dispatcher = this.f.getCommandDispatcher().a(); // CraftBukkit
      }
  
-     public int c() {
--        return this.c.worldServer[0].getGameRules().c("maxCommandChainLength");
-+        return this.c.worlds.get(0).getGameRules().c("maxCommandChainLength"); // CraftBukkit
+     @Nullable
+@@ -60,7 +62,7 @@
      }
  
-     public Map<MinecraftKey, CustomFunction> d() {
-@@ -65,7 +72,7 @@
+     public com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> d() {
+-        return this.f.getCommandDispatcher().a();
++        return dispatcher; // CraftBukkit
      }
  
-     public void e() {
--        String s = this.c.worldServer[0].getGameRules().get("gameLoopFunction");
-+        String s = this.c.worlds.get(0).getGameRules().get("gameLoopFunction"); // CraftBukkit
- 
-         if (!s.equals(this.e)) {
-             this.e = s;
+     public void X_() {
+@@ -164,7 +166,7 @@
+             arraylist.add(CompletableFuture.supplyAsync(() -> {
+                 return a(iresourcemanager, minecraftkey);
+             }, Resource.a).thenApplyAsync((list) -> {
+-                return CustomFunction.a(minecraftkey, this, list);
++                return CustomFunction.a(minecraftkey1, this, list); // CraftBukkit - decompile error
+             }).handle((customfunction, throwable) -> {
+                 return this.a(customfunction, throwable, minecraftkey);
+             }));

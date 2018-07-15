@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import net.minecraft.server.CommandAbstract;
+import net.minecraft.server.IAnimal;
 import net.minecraft.server.IAttribute;
 
 import org.bukkit.support.AbstractTestingBase;
@@ -20,7 +20,7 @@ public class ItemFactoryTest extends AbstractTestingBase {
 
     @Test
     public void testKnownAttributes() throws Throwable {
-        final ZipInputStream nmsZipStream = new ZipInputStream(CommandAbstract.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream());
+        final ZipInputStream nmsZipStream = new ZipInputStream(IAnimal.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream());
         final Collection<String> names = new HashSet<String>();
         for (ZipEntry clazzEntry; (clazzEntry = nmsZipStream.getNextEntry()) != null; ) {
             final String entryName = clazzEntry.getName();

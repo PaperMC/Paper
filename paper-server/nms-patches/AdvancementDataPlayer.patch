@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/net/minecraft/server/AdvancementDataPlayer.java
-@@ -31,7 +31,7 @@
+@@ -38,7 +38,7 @@
  
      private static final Logger a = LogManager.getLogger();
      private static final Gson b = (new GsonBuilder()).registerTypeAdapter(AdvancementProgress.class, new AdvancementProgress.a()).registerTypeAdapter(MinecraftKey.class, new MinecraftKey.a()).setPrettyPrinting().create();
@@ -9,7 +9,7 @@
      };
      private final MinecraftServer d;
      private final File e;
-@@ -93,7 +93,7 @@
+@@ -100,7 +100,7 @@
          Iterator iterator = this.data.entrySet().iterator();
  
          while (iterator.hasNext()) {
@@ -18,29 +18,38 @@
  
              if (((AdvancementProgress) entry.getValue()).isDone()) {
                  arraylist.add(entry.getKey());
-@@ -129,7 +129,7 @@
-         if (this.e.isFile()) {
-             try {
-                 String s = Files.toString(this.e, StandardCharsets.UTF_8);
--                Map map = (Map) ChatDeserializer.a(AdvancementDataPlayer.b, s, AdvancementDataPlayer.c.getType());
-+                Map<MinecraftKey, AdvancementProgress> map = (Map) ChatDeserializer.a(AdvancementDataPlayer.b, s, AdvancementDataPlayer.c.getType()); // CraftBukkit
+@@ -140,7 +140,7 @@
  
-                 if (map == null) {
-                     throw new JsonParseException("Found null for advancements");
-@@ -143,7 +143,11 @@
-                     Advancement advancement = this.d.getAdvancementData().a((MinecraftKey) entry.getKey());
+                 try {
+                     jsonreader.setLenient(false);
+-                    Dynamic dynamic = new Dynamic(JsonOps.INSTANCE, Streams.parse(jsonreader));
++                    Dynamic<?> dynamic = new Dynamic(JsonOps.INSTANCE, Streams.parse(jsonreader)); // CraftBukkit - decompile error
  
-                     if (advancement == null) {
--                        AdvancementDataPlayer.a.warn("Ignored advancement \'" + entry.getKey() + "\' in progress file " + this.e + " - it doesn\'t exist anymore?");
-+                        // CraftBukkit start
-+                        if (((MinecraftKey) entry.getKey()).b().equals("minecraft")) {
-+                            AdvancementDataPlayer.a.warn("Ignored advancement \'" + entry.getKey() + "\' in progress file " + this.e + " - it doesn\'t exist anymore?");
-+                        }
-+                        // CraftBukkit end
-                     } else {
-                         this.a(advancement, (AdvancementProgress) entry.getValue());
-                     }
-@@ -195,6 +199,7 @@
+                     if (!dynamic.get("DataVersion").flatMap(Dynamic::getNumberValue).isPresent()) {
+                         dynamic = dynamic.set("DataVersion", dynamic.createInt(1343));
+@@ -148,7 +148,7 @@
+ 
+                     dynamic = this.d.aB().update(DataFixTypes.ADVANCEMENTS, dynamic, dynamic.getInt("DataVersion"), 1513);
+                     dynamic = dynamic.remove("DataVersion");
+-                    Map map = (Map) AdvancementDataPlayer.b.getAdapter(AdvancementDataPlayer.c).fromJsonTree((JsonElement) dynamic.getValue());
++                    Map<MinecraftKey, AdvancementProgress> map = (Map) AdvancementDataPlayer.b.getAdapter(AdvancementDataPlayer.c).fromJsonTree((JsonElement) dynamic.getValue()); // CraftBukkit - decompile error
+ 
+                     if (map == null) {
+                         throw new JsonParseException("Found null for advancements");
+@@ -162,7 +162,11 @@
+                         Advancement advancement = this.d.getAdvancementData().a((MinecraftKey) entry.getKey());
+ 
+                         if (advancement == null) {
+-                            AdvancementDataPlayer.a.warn("Ignored advancement \'{}\' in progress file {} - it doesn\'t exist anymore?", entry.getKey(), this.e);
++                            // CraftBukkit start
++                            if (((MinecraftKey) entry.getKey()).b().equals("minecraft")) {
++                                AdvancementDataPlayer.a.warn("Ignored advancement \'{}\' in progress file {} - it doesn\'t exist anymore?", entry.getKey(), this.e);
++                            }
++                            // CraftBukkit end
+                         } else {
+                             this.a(advancement, (AdvancementProgress) entry.getValue());
+                         }
+@@ -231,6 +235,7 @@
              this.i.add(advancement);
              flag = true;
              if (!flag1 && advancementprogress.isDone()) {

@@ -5,10 +5,12 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.server.EntityPainting.EnumArt;
+import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.Paintings;
 
 import org.bukkit.craftbukkit.CraftArt;
 import org.junit.Test;
@@ -22,15 +24,15 @@ public class ArtTest {
     public void verifyMapping() {
         List<Art> arts = Lists.newArrayList(Art.values());
 
-        for (EnumArt enumArt : EnumArt.values()) {
-            int id = enumArt.ordinal();
-            String name = enumArt.B;
-            int width = enumArt.C / UNIT_MULTIPLIER;
-            int height = enumArt.D / UNIT_MULTIPLIER;
+        for (MinecraftKey key : Paintings.a.keySet()) {
+            Paintings enumArt = Paintings.a.get(key);
+            String name = key.getKey();
+            int width = enumArt.b() / UNIT_MULTIPLIER;
+            int height = enumArt.c() / UNIT_MULTIPLIER;
 
-            Art subject = Art.getById(id);
+            Art subject = CraftArt.NotchToBukkit(enumArt);
 
-            String message = String.format("org.bukkit.Art is missing id: %d named: '%s'", id, name);
+            String message = String.format("org.bukkit.Art is missing '%s'", name);
             assertNotNull(message, subject);
 
             assertThat(Art.getByName(name), is(subject));
@@ -45,9 +47,9 @@ public class ArtTest {
 
     @Test
     public void testCraftArtToNotch() {
-        Map<EnumArt, Art> cache = new EnumMap(EnumArt.class);
+        Map<Paintings, Art> cache = new HashMap<>();
         for (Art art : Art.values()) {
-            EnumArt enumArt = CraftArt.BukkitToNotch(art);
+            Paintings enumArt = CraftArt.BukkitToNotch(art);
             assertNotNull(art.name(), enumArt);
             assertThat(art.name(), cache.put(enumArt, art), is(nullValue()));
         }
@@ -55,11 +57,11 @@ public class ArtTest {
 
     @Test
     public void testCraftArtToBukkit() {
-        Map<Art, EnumArt> cache = new EnumMap(Art.class);
-        for (EnumArt enumArt : EnumArt.values()) {
+        Map<Art, Paintings> cache = new EnumMap(Art.class);
+        for (Paintings enumArt : (Iterable<Paintings>) Paintings.a) { // Eclipse fail
             Art art = CraftArt.NotchToBukkit(enumArt);
-            assertNotNull(enumArt.name(), art);
-            assertThat(enumArt.name(), cache.put(art, enumArt), is(nullValue()));
+            assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
+            assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));
         }
     }
 }

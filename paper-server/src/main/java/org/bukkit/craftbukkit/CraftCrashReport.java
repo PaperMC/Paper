@@ -12,6 +12,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
 import net.minecraft.server.MinecraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class CraftCrashReport implements CrashReportCallable<Object> {
 
@@ -22,7 +23,8 @@ public class CraftCrashReport implements CrashReportCallable<Object> {
             value.append("\n   Plugins: {");
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
                 PluginDescriptionFile description = plugin.getDescription();
-                value.append(' ').append(description.getFullName()).append(' ').append(description.getMain()).append(' ').append(Arrays.toString(description.getAuthors().toArray())).append(',');
+                boolean legacy = CraftMagicNumbers.isLegacy(description);
+                value.append(' ').append(description.getFullName()).append(legacy ? "*" : "").append(' ').append(description.getMain()).append(' ').append(Arrays.toString(description.getAuthors().toArray())).append(',');
             }
             value.append("}\n   Warnings: ").append(Bukkit.getWarningState().name());
             value.append("\n   Reload Count: ").append(String.valueOf(MinecraftServer.getServer().server.reloadCount));

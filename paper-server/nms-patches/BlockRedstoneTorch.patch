@@ -8,29 +8,19 @@
 +
  public class BlockRedstoneTorch extends BlockTorch {
  
-     private static final Map<World, List<BlockRedstoneTorch.RedstoneUpdateInfo>> g = Maps.newHashMap();
-@@ -13,7 +15,7 @@
- 
-     private boolean a(World world, BlockPosition blockposition, boolean flag) {
-         if (!BlockRedstoneTorch.g.containsKey(world)) {
--            BlockRedstoneTorch.g.put(world, Lists.newArrayList());
-+            BlockRedstoneTorch.g.put(world, Lists.<BlockRedstoneTorch.RedstoneUpdateInfo>newArrayList()); // CraftBukkit - fix decompile error
-         }
- 
-         List list = (List) BlockRedstoneTorch.g.get(world);
-@@ -96,8 +98,25 @@
+     public static final BlockStateBoolean LIT = BlockProperties.o;
+@@ -65,8 +67,24 @@
              list.remove(0);
          }
  
 +        // CraftBukkit start
 +        org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
 +        org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+        int oldCurrent = this.isOn ? 15 : 0;
++        int oldCurrent = ((Boolean) iblockdata.get(BlockRedstoneTorch.LIT)).booleanValue() ? 15 : 0;
 +
 +        BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
 +        // CraftBukkit end
-+
-         if (this.isOn) {
+         if (((Boolean) iblockdata.get(BlockRedstoneTorch.LIT)).booleanValue()) {
              if (flag) {
 +                // CraftBukkit start
 +                if (oldCurrent != 0) {
@@ -41,13 +31,13 @@
 +                    }
 +                }
 +                // CraftBukkit end
-                 world.setTypeAndData(blockposition, Blocks.UNLIT_REDSTONE_TORCH.getBlockData().set(BlockRedstoneTorch.FACING, iblockdata.get(BlockRedstoneTorch.FACING)), 3);
-                 if (this.a(world, blockposition, true)) {
-                     world.a((EntityHuman) null, blockposition, SoundEffects.gm, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
-@@ -114,6 +133,15 @@
+                 world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneTorch.LIT, Boolean.valueOf(false)), 3);
+                 if (a(world, blockposition, true)) {
+                     world.a((EntityHuman) null, blockposition, SoundEffects.BLOCK_REDSTONE_TORCH_BURNOUT, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+@@ -83,6 +101,15 @@
                  }
              }
-         } else if (!flag && !this.a(world, blockposition, false)) {
+         } else if (!flag && !a(world, blockposition, false)) {
 +            // CraftBukkit start
 +            if (oldCurrent != 15) {
 +                event.setNewCurrent(15);
@@ -57,6 +47,15 @@
 +                }
 +            }
 +            // CraftBukkit end
-             world.setTypeAndData(blockposition, Blocks.REDSTONE_TORCH.getBlockData().set(BlockRedstoneTorch.FACING, iblockdata.get(BlockRedstoneTorch.FACING)), 3);
+             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneTorch.LIT, Boolean.valueOf(true)), 3);
          }
  
+@@ -112,7 +139,7 @@
+     }
+ 
+     private static boolean a(World world, BlockPosition blockposition, boolean flag) {
+-        Object object = (List) BlockRedstoneTorch.b.get(world);
++        List<RedstoneUpdateInfo> object = (List) BlockRedstoneTorch.b.get(world); // CraftBukkit - decompile error
+ 
+         if (object == null) {
+             object = Lists.newArrayList();

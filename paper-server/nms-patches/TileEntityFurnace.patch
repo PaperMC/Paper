@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/TileEntityFurnace.java
 +++ b/net/minecraft/server/TileEntityFurnace.java
-@@ -1,6 +1,15 @@
- package net.minecraft.server;
- 
- import java.util.Iterator;
+@@ -9,6 +9,15 @@
+ import java.util.Map;
+ import java.util.Map.Entry;
+ import javax.annotation.Nullable;
 +// CraftBukkit start
 +import java.util.List;
 +
@@ -14,11 +14,11 @@
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +// CraftBukkit end
  
- public class TileEntityFurnace extends TileEntityContainer implements ITickable, IWorldInventory {
+ public class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput, ITickable {
  
-@@ -14,6 +23,32 @@
-     private int cookTimeTotal;
-     private String m;
+@@ -98,6 +107,32 @@
+         return linkedhashmap;
+     }
  
 +    // CraftBukkit start - add fields and methods
 +    private int lastTick = MinecraftServer.currentTick;
@@ -47,14 +47,14 @@
 +    // CraftBukkit end
 +
      public TileEntityFurnace() {
+         super(TileEntityTypes.b);
          this.items = NonNullList.a(3, ItemStack.a);
-     }
-@@ -119,11 +154,29 @@
+@@ -225,11 +260,30 @@
      }
  
-     public void e() {
+     public void X_() {
 -        boolean flag = this.isBurning();
-+        boolean flag = (this.getBlock() == Blocks.LIT_FURNACE); // CraftBukkit - SPIGOT-844 - Check if furnace block is lit using the block instead of burn time
++        boolean flag = this.getBlock().get(BlockFurnace.LIT); // CraftBukkit - SPIGOT-844 - Check if furnace block is lit using the block instead of burn time
          boolean flag1 = false;
  
 +        // CraftBukkit start - Use wall time instead of ticks for cooking
@@ -62,12 +62,13 @@
 +        this.lastTick = MinecraftServer.currentTick;
 +
 +        // CraftBukkit - moved from below - edited for wall time
-+        if (this.isBurning() && this.canBurn()) {
++        IRecipe irecipe = this.world.D().b(this, this.world);
++        if (this.isBurning() && this.canBurn(irecipe)) {
 +            this.cookTime += elapsedTicks;
 +            if (this.cookTime >= this.cookTimeTotal) {
 +                this.cookTime = 0;
-+                this.cookTimeTotal = this.a((ItemStack) this.items.get(0));
-+                this.burn();
++                this.cookTimeTotal = this.s();
++                this.burn(irecipe);
 +                flag1 = true;
 +            }
 +        } else {
@@ -81,21 +82,22 @@
          }
  
          if (!this.world.isClientSide) {
-@@ -134,10 +187,21 @@
+@@ -240,12 +294,21 @@
                      this.cookTime = MathHelper.clamp(this.cookTime - 2, 0, this.cookTimeTotal);
                  }
              } else {
--                if (!this.isBurning() && this.canBurn()) {
--                    this.burnTime = fuelTime(itemstack);
--                    this.ticksForCurrentFuel = this.burnTime;
--                    if (this.isBurning()) {
+-                IRecipe irecipe = this.world.D().b(this, this.world);
 +                // CraftBukkit start - Handle multiple elapsed ticks
-+                if (this.burnTime <= 0 && this.canBurn()) { // CraftBukkit - == to <=
++                if (this.burnTime <= 0 && this.canBurn(irecipe)) { // CraftBukkit - == to <=
 +                    CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
 +
 +                    FurnaceBurnEvent furnaceBurnEvent = new FurnaceBurnEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), fuel, fuelTime(itemstack));
 +                    this.world.getServer().getPluginManager().callEvent(furnaceBurnEvent);
-+
+ 
+-                if (!this.isBurning() && this.canBurn(irecipe)) {
+-                    this.burnTime = fuelTime(itemstack);
+-                    this.ticksForCurrentFuel = this.burnTime;
+-                    if (this.isBurning()) {
 +                    if (furnaceBurnEvent.isCancelled()) {
 +                        return;
 +                    }
@@ -107,15 +109,15 @@
                          flag1 = true;
                          if (!itemstack.isEmpty()) {
                              Item item = itemstack.getItem();
-@@ -152,6 +216,7 @@
+@@ -260,6 +323,7 @@
                      }
                  }
  
 +                /* CraftBukkit start - Moved up
-                 if (this.isBurning() && this.canBurn()) {
+                 if (this.isBurning() && this.canBurn(irecipe)) {
                      ++this.cookTime;
                      if (this.cookTime == this.cookTimeTotal) {
-@@ -163,11 +228,13 @@
+@@ -271,11 +335,13 @@
                  } else {
                      this.cookTime = 0;
                  }
@@ -124,12 +126,12 @@
  
              if (flag != this.isBurning()) {
                  flag1 = true;
-                 BlockFurnace.a(this.isBurning(), this.world, this.position);
-+                this.invalidateBlockCache(); // CraftBukkit - Invalidate tile entity's cached block type 
+                 this.world.setTypeAndData(this.position, (IBlockData) this.world.getType(this.position).set(BlockFurnace.LIT, Boolean.valueOf(this.isBurning())), 3);
++                this.invalidateBlockCache(); // CraftBukkit - Invalidate tile entity's cached block type
              }
          }
  
-@@ -192,7 +259,8 @@
+@@ -300,7 +366,8 @@
              } else {
                  ItemStack itemstack1 = (ItemStack) this.items.get(2);
  
@@ -137,10 +139,10 @@
 +                // CraftBukkit - consider resultant count instead of current count
 +                return itemstack1.isEmpty() ? true : (!itemstack1.doMaterialsMatch(itemstack) ? false : (itemstack1.getCount() + itemstack.getCount() <= this.getMaxStackSize() && itemstack1.getCount() + itemstack.getCount() < itemstack1.getMaxStackSize() ? true : itemstack1.getCount() + itemstack.getCount() <= itemstack.getMaxStackSize()));
              }
-         }
-     }
-@@ -203,11 +271,38 @@
-             ItemStack itemstack1 = RecipesFurnace.getInstance().getResult(itemstack);
+         } else {
+             return false;
+@@ -313,11 +380,38 @@
+             ItemStack itemstack1 = irecipe.d();
              ItemStack itemstack2 = (ItemStack) this.items.get(2);
  
 +            // CraftBukkit start - fire FurnaceSmeltEvent
@@ -176,5 +178,5 @@
 +            */
 +            // CraftBukkit end
  
-             if (itemstack.getItem() == Item.getItemOf(Blocks.SPONGE) && itemstack.getData() == 1 && !((ItemStack) this.items.get(1)).isEmpty() && ((ItemStack) this.items.get(1)).getItem() == Items.BUCKET) {
-                 this.items.set(1, new ItemStack(Items.WATER_BUCKET));
+             if (!this.world.isClientSide) {
+                 this.a(this.world, (EntityPlayer) null, irecipe);

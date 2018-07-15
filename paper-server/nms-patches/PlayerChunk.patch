@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/PlayerChunk.java
 +++ b/net/minecraft/server/PlayerChunk.java
-@@ -8,32 +8,48 @@
+@@ -7,21 +7,36 @@
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -25,6 +25,8 @@
      private boolean done;
  
 +    // CraftBukkit start - add fields
++    // You know the drill, https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/browse
++    // All may seem good at first, but there's deeper issues if you play for a bit
 +    private boolean loadInProgress = false;
 +    private Runnable loadedRunnable = new Runnable() {
 +        public void run() {
@@ -37,71 +39,3 @@
      public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
          this.playerChunkMap = playerchunkmap;
          this.location = new ChunkCoordIntPair(i, j);
--        this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getOrLoadChunkAt(i, j);
-+        // CraftBukkit start
-+        loadInProgress = true;
-+        this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getChunkAt(i, j, loadedRunnable, false);
-+        // CraftBukkit end
-     }
- 
-     public ChunkCoordIntPair a() {
-         return this.location;
-     }
- 
--    public void a(EntityPlayer entityplayer) {
-+    public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument
-         if (this.c.contains(entityplayer)) {
-             PlayerChunk.a.debug("Failed to add player. {} already is in chunk {}, {}", entityplayer, Integer.valueOf(this.location.x), Integer.valueOf(this.location.z));
-         } else {
-@@ -42,15 +58,32 @@
-             }
- 
-             this.c.add(entityplayer);
-+            // CraftBukkit start - use async chunk io
-+            // if (this.done) {
-+            //     this.sendChunk(entityplayer);
-+            // }
-             if (this.done) {
-                 this.sendChunk(entityplayer);
-             }
-+            // CraftBukkit end
- 
-         }
-     }
- 
-     public void b(EntityPlayer entityplayer) {
-         if (this.c.contains(entityplayer)) {
-+            // CraftBukkit start - If we haven't loaded yet don't load the chunk just so we can clean it up
-+            if (!this.done) {
-+                this.c.remove(entityplayer);
-+
-+                if (this.c.isEmpty()) {
-+                    ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.getWorld(), this.location.x, this.location.z, this.loadedRunnable);
-+                    this.playerChunkMap.b(this);
-+                }
-+
-+                return;
-+            }
-+            // CraftBukkit end
-             if (this.done) {
-                 entityplayer.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(this.location.x, this.location.z));
-             }
-@@ -67,11 +100,18 @@
-         if (this.chunk != null) {
-             return true;
-         } else {
-+            /* CraftBukkit start
-             if (flag) {
-                 this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z);
-             } else {
-                 this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getOrLoadChunkAt(this.location.x, this.location.z);
-             }
-+            */
-+            if (!loadInProgress) {
-+                loadInProgress = true;
-+                this.chunk = playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, loadedRunnable, flag);
-+            }
-+            // CraftBukkit end
- 
-             return this.chunk != null;
-         }

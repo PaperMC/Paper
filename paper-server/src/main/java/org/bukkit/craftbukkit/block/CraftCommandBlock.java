@@ -4,6 +4,7 @@ import net.minecraft.server.TileEntityCommand;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CommandBlock;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> implements CommandBlock {
 
@@ -23,7 +24,7 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
         super.load(commandBlock);
 
         command = commandBlock.getCommandBlock().getCommand();
-        name = commandBlock.getCommandBlock().getName();
+        name = CraftChatMessage.fromComponent(commandBlock.getCommandBlock().getName());
     }
 
     @Override
@@ -51,6 +52,6 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> 
         super.applyTo(commandBlock);
 
         commandBlock.getCommandBlock().setCommand(command);
-        commandBlock.getCommandBlock().setName(name);
+        commandBlock.getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name));
     }
 }

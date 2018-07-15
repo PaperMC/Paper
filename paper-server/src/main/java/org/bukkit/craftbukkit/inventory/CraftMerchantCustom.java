@@ -62,12 +62,12 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public World u_() {
+        public World getWorld() {
             return null;
         }
 
         @Override
-        public BlockPosition v_() {
+        public BlockPosition getPosition() {
             return null;
         }
     }

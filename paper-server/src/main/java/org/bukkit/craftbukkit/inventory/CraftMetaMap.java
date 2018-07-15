@@ -99,7 +99,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     @Override
     boolean applicableTo(Material type) {
         switch (type) {
-            case MAP:
+            case FILLED_MAP:
                 return true;
             default:
                 return false;

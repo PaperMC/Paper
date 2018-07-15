@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/LoginListener.java
 +++ b/net/minecraft/server/LoginListener.java
-@@ -22,6 +22,12 @@
+@@ -19,6 +19,12 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -13,7 +13,7 @@
  public class LoginListener implements PacketLoginInListener, ITickable {
  
      private static final AtomicInteger b = new AtomicInteger(0);
-@@ -36,6 +42,7 @@
+@@ -33,6 +39,7 @@
      private final String j;
      private SecretKey loginKey;
      private EntityPlayer l;
@@ -21,7 +21,7 @@
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -64,6 +71,20 @@
+@@ -61,6 +68,20 @@
  
      }
  
@@ -41,33 +41,24 @@
 +
      public void disconnect(IChatBaseComponent ichatbasecomponent) {
          try {
-             LoginListener.c.info("Disconnecting {}: {}", this.c(), ichatbasecomponent.toPlainText());
-@@ -80,10 +101,12 @@
+             LoginListener.c.info("Disconnecting {}: {}", this.c(), ichatbasecomponent.getString());
+@@ -77,10 +98,12 @@
              this.i = this.a(this.i);
          }
  
--        String s = this.server.getPlayerList().attemptLogin(this.networkManager.getSocketAddress(), this.i);
+-        IChatBaseComponent ichatbasecomponent = this.server.getPlayerList().attemptLogin(this.networkManager.getSocketAddress(), this.i);
 +        // CraftBukkit start - fire PlayerLoginEvent
 +        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, hostname);
  
--        if (s != null) {
--            this.disconnect(new ChatMessage(s, new Object[0]));
+-        if (ichatbasecomponent != null) {
+-            this.disconnect(ichatbasecomponent);
 +        if (s == null) {
-+            // this.disconnect(new ChatMessage(s, new Object[0]));
++            // this.disconnect(ichatbasecomponent);
 +            // CraftBukkit end
          } else {
              this.g = LoginListener.EnumProtocolState.ACCEPTED;
-             if (this.server.aG() >= 0 && !this.networkManager.isLocal()) {
-@@ -92,7 +115,7 @@
-                         LoginListener.this.networkManager.setCompressionLevel(LoginListener.this.server.aG());
-                     }
- 
--                    public void operationComplete(Future future) throws Exception {
-+                    public void operationComplete(ChannelFuture future) throws Exception { // CraftBukkit - fix decompile error
-                         this.a((ChannelFuture) future);
-                     }
-                 }, new GenericFutureListener[0]);
-@@ -103,9 +126,9 @@
+             if (this.server.ay() >= 0 && !this.networkManager.isLocal()) {
+@@ -94,9 +117,9 @@
  
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
@@ -79,9 +70,9 @@
              }
          }
  
-@@ -150,6 +173,43 @@
+@@ -141,6 +164,43 @@
  
-                         LoginListener.this.i = LoginListener.this.server.az().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
+                         LoginListener.this.i = LoginListener.this.server.ar().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
                          if (LoginListener.this.i != null) {
 +                            // CraftBukkit start - fire PlayerPreLoginEvent
 +                            if (!networkManager.isConnected()) {
@@ -122,8 +113,8 @@
 +                            // CraftBukkit end
                              LoginListener.c.info("UUID of player {} is {}", LoginListener.this.i.getName(), LoginListener.this.i.getId());
                              LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
-                         } else if (LoginListener.this.server.R()) {
-@@ -169,6 +229,11 @@
+                         } else if (LoginListener.this.server.J()) {
+@@ -160,6 +220,11 @@
                              LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down", new Object[0]));
                              LoginListener.c.error("Couldn\'t verify username because servers are unavailable");
                          }

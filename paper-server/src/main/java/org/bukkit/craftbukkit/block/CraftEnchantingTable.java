@@ -4,6 +4,7 @@ import net.minecraft.server.TileEntityEnchantTable;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.EnchantingTable;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchantTable> implements EnchantingTable {
 
@@ -18,12 +19,12 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
     @Override
     public String getCustomName() {
         TileEntityEnchantTable enchant = this.getSnapshot();
-        return enchant.hasCustomName() ? enchant.getName() : null;
+        return enchant.hasCustomName() ? CraftChatMessage.fromComponent(enchant.getCustomName()) : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(name);
+        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override

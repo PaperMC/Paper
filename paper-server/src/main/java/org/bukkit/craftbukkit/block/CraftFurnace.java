@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.FurnaceInventory;
 
 public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements Furnace {
@@ -54,12 +55,12 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
     @Override
     public String getCustomName() {
         TileEntityFurnace furnace = this.getSnapshot();
-        return furnace.hasCustomName() ? furnace.getName() : null;
+        return furnace.hasCustomName() ? CraftChatMessage.fromComponent(furnace.getCustomName()) : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(name);
+        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override

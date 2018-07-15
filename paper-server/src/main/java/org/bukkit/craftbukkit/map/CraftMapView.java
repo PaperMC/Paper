@@ -29,7 +29,7 @@ public final class CraftMapView implements MapView {
     }
 
     public short getId() {
-        String text = worldMap.id;
+        String text = worldMap.getId();
         if (text.startsWith("map_")) {
             try {
                 return Short.parseShort(text.substring("map_".length()));

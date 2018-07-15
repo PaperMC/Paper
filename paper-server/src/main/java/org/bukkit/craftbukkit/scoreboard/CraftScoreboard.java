@@ -24,14 +24,22 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         this.board = board;
     }
 
+    @Override
     public CraftObjective registerNewObjective(String name, String criteria) throws IllegalArgumentException {
+        return registerNewObjective(name, criteria, name);
+    }
+
+    @Override
+    public CraftObjective registerNewObjective(String name, String criteria, String displayName) throws IllegalArgumentException {
         Validate.notNull(name, "Objective name cannot be null");
         Validate.notNull(criteria, "Criteria cannot be null");
+        Validate.notNull(displayName, "Display name cannot be null");
         Validate.isTrue(name.length() <= 16, "The name '" + name + "' is longer than the limit of 16 characters");
+        Validate.isTrue(displayName.length() <= 32, "The display name '" + displayName + "' is longer than the limit of 32 characters");
         Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
 
         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria);
+        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, displayName);
         return new CraftObjective(this, objective);
     }
 

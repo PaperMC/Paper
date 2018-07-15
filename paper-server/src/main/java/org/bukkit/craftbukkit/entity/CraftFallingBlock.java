@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntityFallingBlock;
 
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
@@ -29,15 +31,11 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     }
 
     public Material getMaterial() {
-        return Material.getMaterial(getBlockId());
+        return CraftMagicNumbers.getMaterial(getHandle().getBlock()).getItemType();
     }
 
-    public int getBlockId() {
-        return CraftMagicNumbers.getId(getHandle().getBlock().getBlock());
-    }
-
-    public byte getBlockData() {
-        return (byte) getHandle().getBlock().getBlock().toLegacyData(getHandle().getBlock());
+    public BlockData getBlockData() {
+        return CraftBlockData.fromData(getHandle().getBlock());
     }
 
     public boolean getDropItem() {

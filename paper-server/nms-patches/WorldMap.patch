@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/WorldMap.java
 +++ b/net/minecraft/server/WorldMap.java
-@@ -7,6 +7,14 @@
+@@ -7,6 +7,15 @@
  import java.util.Map;
  import javax.annotation.Nullable;
  
@@ -10,13 +10,14 @@
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.map.CraftMapView;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
 +// CraftBukkit end
 +
  public class WorldMap extends PersistentBase {
  
      public int centerX;
-@@ -20,8 +28,18 @@
-     private final Map<EntityHuman, WorldMap.WorldMapHumanTracker> k = Maps.newHashMap();
+@@ -21,8 +30,18 @@
+     private final Map<String, MapIconBanner> k = Maps.newHashMap();
      public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
  
 +    // CraftBukkit start
@@ -33,8 +34,8 @@
 +        // CraftBukkit end
      }
  
-     public void a(double d0, double d1, int i) {
-@@ -34,7 +52,30 @@
+     public void a(int i, int j, int k, boolean flag, boolean flag1, int l) {
+@@ -44,7 +63,30 @@
      }
  
      public void a(NBTTagCompound nbttagcompound) {
@@ -65,8 +66,8 @@
 +        // CraftBukkit end
          this.centerX = nbttagcompound.getInt("xCenter");
          this.centerZ = nbttagcompound.getInt("zCenter");
-         this.scale = nbttagcompound.getByte("scale");
-@@ -76,6 +117,25 @@
+         this.scale = (byte) MathHelper.clamp(nbttagcompound.getByte("scale"), 0, 4);
+@@ -67,6 +109,25 @@
      }
  
      public NBTTagCompound b(NBTTagCompound nbttagcompound) {
@@ -92,7 +93,7 @@
          nbttagcompound.setByte("dimension", this.map);
          nbttagcompound.setInt("xCenter", this.centerX);
          nbttagcompound.setInt("zCenter", this.centerZ);
-@@ -265,12 +325,26 @@
+@@ -315,12 +376,25 @@
  
          @Nullable
          public Packet<?> a(ItemStack itemstack) {
@@ -104,18 +105,17 @@
 +            for ( org.bukkit.map.MapCursor cursor : render.cursors) {
 +
 +                if (cursor.isVisible()) {
-+                    icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection()));
++                    icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrNull(cursor.getCaption())));
 +                }
 +            }
 +
              if (this.d) {
                  this.d = false;
--                return new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
-+                // PAIL: this.e
-+                return new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
+-                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
++                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
              } else {
--                return this.i++ % 5 == 0 ? new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, 0, 0, 0, 0) : null;
-+                return this.i++ % 5 == 0 ? new PacketPlayOutMap(itemstack.getData(), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, 0, 0, 0, 0) : null;
+-                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, 0, 0, 0, 0) : null;
++                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, 0, 0, 0, 0) : null;
              }
 +            // CraftBukkit end
          }

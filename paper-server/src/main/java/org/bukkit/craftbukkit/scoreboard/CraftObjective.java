@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import net.minecraft.server.Scoreboard;
 import net.minecraft.server.ScoreboardObjective;
+import net.minecraft.server.ScoreboardServer;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.OfflinePlayer;
@@ -40,7 +41,8 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         Validate.isTrue(displayName.length() <= 32, "Display name '" + displayName + "' is longer than the limit of 32 characters");
         CraftScoreboard scoreboard = checkState();
 
-        objective.setDisplayName(displayName);
+        objective.displayName = displayName;
+        ((ScoreboardServer) scoreboard.board).handleObjectiveChanged(objective);
     }
 
     public String getCriteria() throws IllegalStateException {

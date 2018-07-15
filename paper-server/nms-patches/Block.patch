@@ -1,28 +1,28 @@
 --- a/net/minecraft/server/Block.java
 +++ b/net/minecraft/server/Block.java
-@@ -37,7 +37,7 @@
-     private String name;
- 
-     public static int getId(Block block) {
--        return Block.REGISTRY.a((Object) block);
-+        return Block.REGISTRY.a(block); // CraftBukkit - decompile error
+@@ -213,7 +213,7 @@
      }
  
-     public static int getCombinedId(IBlockData iblockdata) {
-@@ -343,7 +343,8 @@
-             int j = this.getDropCount(i, world.random);
+     public Block(Block.Info block_info) {
+-        BlockStateList.a blockstatelist_a = new BlockStateList.a(this);
++        BlockStateList.a<Block, IBlockData> blockstatelist_a = new BlockStateList.a(this); // CraftBukkit - decompile error
+ 
+         this.a(blockstatelist_a);
+         this.blockStateList = blockstatelist_a.a(BlockData::new);
+@@ -428,7 +428,8 @@
+             int j = this.getDropCount(iblockdata, i, world, blockposition, world.random);
  
              for (int k = 0; k < j; ++k) {
--                if (world.random.nextFloat() <= f) {
+-                if (f >= 1.0F || world.random.nextFloat() <= f) {
 +                // CraftBukkit - <= to < to allow for plugins to completely disable block drops from explosions
-+                if (world.random.nextFloat() < f) {
-                     Item item = this.getDropType(iblockdata, world.random, i);
++                if (f >= 1.0F || world.random.nextFloat() < f) {
+                     Item item = this.getDropType(iblockdata, world, blockposition, i).getItem();
  
-                     if (item != Items.a) {
-@@ -364,7 +365,13 @@
+                     if (item != Items.AIR) {
+@@ -449,7 +450,13 @@
              EntityItem entityitem = new EntityItem(world, (double) blockposition.getX() + d0, (double) blockposition.getY() + d1, (double) blockposition.getZ() + d2, itemstack);
  
-             entityitem.q();
+             entityitem.n();
 -            world.addEntity(entityitem);
 +            // CraftBukkit start
 +            if (world.captureDrops != null) {
@@ -34,34 +34,25 @@
          }
      }
  
-@@ -931,7 +938,7 @@
+@@ -668,7 +675,7 @@
+     }
  
-             if (hashset.contains(block16)) {
-                 for (int i = 0; i < 15; ++i) {
--                    int j = Block.REGISTRY.a((Object) block16) << 4 | i;
-+                    int j = Block.REGISTRY.a(block16) << 4 | i; // CraftBukkit - decompile error
+     public String toString() {
+-        return "Block{" + Block.REGISTRY.b(this) + "}";
++        return Block.REGISTRY.b(this).toString(); // CraftBukkit - cheap hack
+     }
  
-                     Block.REGISTRY_ID.a(block16.fromLegacyData(i), j);
-                 }
-@@ -940,7 +947,7 @@
- 
-                 while (unmodifiableiterator.hasNext()) {
-                     IBlockData iblockdata = (IBlockData) unmodifiableiterator.next();
--                    int k = Block.REGISTRY.a((Object) block16) << 4 | block16.toLegacyData(iblockdata);
-+                    int k = Block.REGISTRY.a(block16) << 4 | block16.toLegacyData(iblockdata); // CraftBukkit - decompile error
- 
-                     Block.REGISTRY_ID.a(iblockdata, k);
-                 }
-@@ -949,6 +956,12 @@
+     public static boolean c(Block block) {
+@@ -1380,6 +1387,12 @@
  
      }
  
 +    // CraftBukkit start
-+    public int getExpDrop(World world, IBlockData data, int enchantmentLevel) {
++    public int getExpDrop(IBlockData iblockdata, World world, BlockPosition blockposition, int enchantmentLevel) {
 +        return 0;
 +    }
 +    // CraftBukkit end
 +
-     private static void a(int i, MinecraftKey minecraftkey, Block block) {
-         Block.REGISTRY.a(i, minecraftkey, block);
+     private static void a(MinecraftKey minecraftkey, Block block) {
+         Block.REGISTRY.a(minecraftkey, block);
      }

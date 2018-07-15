@@ -138,22 +138,30 @@ public final class CraftChatMessage {
         }
     }
 
+    public static IChatBaseComponent fromStringOrNull(String message) {
+        return (message == null) ? null : fromString(message)[0];
+    }
+
     public static IChatBaseComponent[] fromString(String message) {
         return fromString(message, false);
     }
-    
+
     public static IChatBaseComponent[] fromString(String message, boolean keepNewlines) {
         return new StringMessage(message, keepNewlines).getOutput();
     }
-    
+
     public static String fromComponent(IChatBaseComponent component) {
         return fromComponent(component, EnumChatFormat.BLACK);
+    }
+
+    public static String toJSON(IChatBaseComponent component) {
+        return IChatBaseComponent.ChatSerializer.a(component);
     }
 
     public static String fromComponent(IChatBaseComponent component, EnumChatFormat defaultColor) {
         if (component == null) return "";
         StringBuilder out = new StringBuilder();
-        
+
         for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
             ChatModifier modi = c.getChatModifier();
             out.append(modi.getColor() == null ? defaultColor : modi.getColor());
@@ -185,7 +193,7 @@ public final class CraftChatMessage {
     private static IChatBaseComponent fixComponent(IChatBaseComponent component, Matcher matcher) {
         if (component instanceof ChatComponentText) {
             ChatComponentText text = ((ChatComponentText) component);
-            String msg = text.g();
+            String msg = text.f();
             if (matcher.reset(msg).find()) {
                 matcher.reset();
 
@@ -236,7 +244,7 @@ public final class CraftChatMessage {
         }
 
         if (component instanceof ChatMessage) {
-            Object[] subs = ((ChatMessage) component).j();
+            Object[] subs = ((ChatMessage) component).i();
             for (int i = 0; i < subs.length; i++) {
                 Object comp = subs[i];
                 if (comp instanceof IChatBaseComponent) {

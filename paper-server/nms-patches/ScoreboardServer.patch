@@ -1,31 +1,32 @@
 --- a/net/minecraft/server/ScoreboardServer.java
 +++ b/net/minecraft/server/ScoreboardServer.java
-@@ -21,7 +21,7 @@
+@@ -22,7 +22,7 @@
      public void handleScoreChanged(ScoreboardScore scoreboardscore) {
          super.handleScoreChanged(scoreboardscore);
          if (this.b.contains(scoreboardscore.getObjective())) {
--            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(scoreboardscore));
-+            this.sendAll(new PacketPlayOutScoreboardScore(scoreboardscore));
+-            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getPlayerName(), scoreboardscore.getScore()));
++            this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getPlayerName(), scoreboardscore.getScore()));
          }
  
          this.b();
-@@ -29,13 +29,13 @@
+@@ -30,14 +30,14 @@
  
      public void handlePlayerRemoved(String s) {
          super.handlePlayerRemoved(s);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(s));
-+        this.sendAll(new PacketPlayOutScoreboardScore(s));
+-        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
++        this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
          this.b();
      }
  
      public void a(String s, ScoreboardObjective scoreboardobjective) {
          super.a(s, scoreboardobjective);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(s, scoreboardobjective));
-+        this.sendAll(new PacketPlayOutScoreboardScore(s, scoreboardobjective));
-         this.b();
-     }
+         if (this.b.contains(scoreboardobjective)) {
+-            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
++            this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
+         }
  
-@@ -45,7 +45,7 @@
+         this.b();
+@@ -49,7 +49,7 @@
          super.setDisplaySlot(i, scoreboardobjective);
          if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
              if (this.h(scoreboardobjective1) > 0) {
@@ -34,7 +35,7 @@
              } else {
                  this.g(scoreboardobjective1);
              }
-@@ -53,7 +53,7 @@
+@@ -57,7 +57,7 @@
  
          if (scoreboardobjective != null) {
              if (this.b.contains(scoreboardobjective)) {
@@ -43,16 +44,16 @@
              } else {
                  this.e(scoreboardobjective);
              }
-@@ -66,7 +66,7 @@
-         if (super.addPlayerToTeam(s, s1)) {
-             ScoreboardTeam scoreboardteam = this.getTeam(s1);
+@@ -68,7 +68,7 @@
  
+     public boolean addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
+         if (super.addPlayerToTeam(s, scoreboardteam)) {
 -            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3));
 +            this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3));
              this.b();
              return true;
          } else {
-@@ -76,7 +76,7 @@
+@@ -78,7 +78,7 @@
  
      public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
          super.removePlayerFromTeam(s, scoreboardteam);
@@ -61,7 +62,7 @@
          this.b();
      }
  
-@@ -88,7 +88,7 @@
+@@ -90,7 +90,7 @@
      public void handleObjectiveChanged(ScoreboardObjective scoreboardobjective) {
          super.handleObjectiveChanged(scoreboardobjective);
          if (this.b.contains(scoreboardobjective)) {
@@ -70,7 +71,7 @@
          }
  
          this.b();
-@@ -105,19 +105,19 @@
+@@ -107,19 +107,19 @@
  
      public void handleTeamAdded(ScoreboardTeam scoreboardteam) {
          super.handleTeamAdded(scoreboardteam);
@@ -93,7 +94,7 @@
          this.b();
      }
  
-@@ -166,6 +166,7 @@
+@@ -168,6 +168,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -101,7 +102,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -198,6 +199,7 @@
+@@ -200,6 +201,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -109,11 +110,10 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -221,4 +223,14 @@
- 
+@@ -224,6 +226,16 @@
          return i;
      }
-+
+ 
 +    // CraftBukkit start - Send to players
 +    private void sendAll(Packet packet) {
 +        for (EntityPlayer entityplayer : (List<EntityPlayer>) this.a.getPlayerList().players) {
@@ -123,4 +123,7 @@
 +        }
 +    }
 +    // CraftBukkit end
- }
++
+     public static enum Action {
+ 
+         CHANGE, REMOVE;

@@ -7,6 +7,7 @@ import net.minecraft.server.EntityMinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.permissions.PermissibleBase;
@@ -40,7 +41,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public void setName(String name) {
-        getHandle().getCommandBlock().setName(name != null ? name : "@");
+        getHandle().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override
@@ -63,7 +64,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public String getName() {
-        return getHandle().getCommandBlock().getName();
+        return CraftChatMessage.fromComponent(getHandle().getCommandBlock().getName());
     }
 
     @Override

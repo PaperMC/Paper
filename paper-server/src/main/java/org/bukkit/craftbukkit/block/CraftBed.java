@@ -10,8 +10,6 @@ import org.bukkit.block.Block;
 
 public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Bed {
 
-    private DyeColor color;
-
     public CraftBed(Block block) {
         super(block, TileEntityBed.class);
     }
@@ -21,28 +19,47 @@ public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Be
     }
 
     @Override
-    public void load(TileEntityBed bed) {
-        super.load(bed);
-
-        color = DyeColor.getByWoolData((byte) bed.a().getColorIndex());
-    }
-
-    @Override
     public DyeColor getColor() {
-        return color;
+        switch (getType()) {
+            case BLACK_BED:
+                return DyeColor.BLACK;
+            case BLUE_BED:
+                return DyeColor.BLUE;
+            case BROWN_BED:
+                return DyeColor.BROWN;
+            case CYAN_BED:
+                return DyeColor.CYAN;
+            case GRAY_BED:
+                return DyeColor.GRAY;
+            case GREEN_BED:
+                return DyeColor.GREEN;
+            case LIGHT_BLUE_BED:
+                return DyeColor.LIGHT_BLUE;
+            case LIGHT_GRAY_BED:
+                return DyeColor.SILVER;
+            case LIME_BED:
+                return DyeColor.LIME;
+            case MAGENTA_BED:
+                return DyeColor.MAGENTA;
+            case ORANGE_BED:
+                return DyeColor.ORANGE;
+            case PINK_BED:
+                return DyeColor.PINK;
+            case PURPLE_BED:
+                return DyeColor.PURPLE;
+            case RED_BED:
+                return DyeColor.RED;
+            case WHITE_BED:
+                return DyeColor.WHITE;
+            case YELLOW_BED:
+                return DyeColor.YELLOW;
+            default:
+                throw new IllegalArgumentException("Unknown DyeColor for " + getType());
+        }
     }
 
     @Override
     public void setColor(DyeColor color) {
-        Preconditions.checkArgument(color != null, "color");
-
-        this.color = color;
-    }
-
-    @Override
-    public void applyTo(TileEntityBed bed) {
-        super.applyTo(bed);
-
-        bed.a(EnumColor.fromColorIndex(color.getWoolData()));
+        throw new UnsupportedOperationException("Must set block type to appropriate bed colour");
     }
 }

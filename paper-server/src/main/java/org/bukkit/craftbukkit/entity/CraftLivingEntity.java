@@ -27,6 +27,7 @@ import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntityThrownExpBottle;
 import net.minecraft.server.EntityTippedArrow;
 import net.minecraft.server.EntitySpectralArrow;
+import net.minecraft.server.EntityThrownTrident;
 import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.GenericAttributes;
@@ -65,6 +66,7 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
+import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
@@ -318,6 +320,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 ((EntityTippedArrow) launch).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
                 launch = new EntitySpectralArrow(world, getHandle());
+            } else if (Trident.class.isAssignableFrom(projectile)) {
+                launch = new EntityThrownTrident(world, getHandle(), net.minecraft.server.ItemStack.a);
             } else {
                 launch = new EntityTippedArrow(world, getHandle());
             }

@@ -1,40 +1,40 @@
 --- a/net/minecraft/server/EntityFallingBlock.java
 +++ b/net/minecraft/server/EntityFallingBlock.java
-@@ -5,6 +5,8 @@
+@@ -4,6 +4,8 @@
+ import java.util.ArrayList;
  import java.util.Iterator;
- import javax.annotation.Nullable;
  
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 +
  public class EntityFallingBlock extends Entity {
  
      private IBlockData block;
-@@ -69,7 +71,7 @@
+@@ -71,7 +73,7 @@
  
              if (this.ticksLived++ == 0) {
                  blockposition = new BlockPosition(this);
 -                if (this.world.getType(blockposition).getBlock() == block) {
-+                if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR, 0).isCancelled()) {
++                if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
                      this.world.setAir(blockposition);
                  } else if (!this.world.isClientSide) {
                      this.die();
-@@ -110,7 +112,7 @@
+@@ -112,7 +114,7 @@
  
-                     if (!flag1 && BlockFalling.x(this.world.getType(new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ)))) {
+                     if (!flag1 && BlockFalling.j(this.world.getType(new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ)))) {
                          this.onGround = false;
 -                        return;
 +                        // return; // CraftBukkit
                      }
  
                      this.motX *= 0.699999988079071D;
-@@ -119,7 +121,13 @@
-                     if (iblockdata.getBlock() != Blocks.PISTON_EXTENSION) {
+@@ -121,7 +123,13 @@
+                     if (iblockdata.getBlock() != Blocks.MOVING_PISTON) {
                          this.die();
                          if (!this.f) {
--                            if (this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null) && (flag1 || !BlockFalling.x(this.world.getType(blockposition.down()))) && this.world.setTypeAndData(blockposition, this.block, 3)) {
+-                            if (iblockdata.getMaterial().isReplaceable() && (flag1 || !BlockFalling.j(this.world.getType(blockposition.down()))) && this.world.setTypeAndData(blockposition, this.block, 3)) {
 +                            // CraftBukkit start
-+                            if (this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null) && (flag1 || !BlockFalling.x(this.world.getType(blockposition.down())))) {
-+                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
++                            if (iblockdata.getMaterial().isReplaceable() && (flag1 || !BlockFalling.j(this.world.getType(blockposition.down())))) {
++                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.block).isCancelled()) {
 +                                    return;
 +                                }
 +                                this.world.setTypeAndData(blockposition, this.block, 3);

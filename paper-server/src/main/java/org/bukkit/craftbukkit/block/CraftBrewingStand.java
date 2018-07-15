@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.BrewerInventory;
 
 public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> implements BrewingStand {
@@ -54,12 +55,12 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
     @Override
     public String getCustomName() {
         TileEntityBrewingStand brewingStand = this.getSnapshot();
-        return brewingStand.hasCustomName() ? brewingStand.getName() : null;
+        return brewingStand.hasCustomName() ? CraftChatMessage.fromComponent(brewingStand.getCustomName()) : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(name);
+        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override

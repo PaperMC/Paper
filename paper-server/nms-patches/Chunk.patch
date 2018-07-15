@@ -1,18 +1,17 @@
 --- a/net/minecraft/server/Chunk.java
 +++ b/net/minecraft/server/Chunk.java
-@@ -14,6 +14,9 @@
+@@ -23,6 +23,8 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +import com.google.common.collect.Lists; // CraftBukkit
-+import org.bukkit.Server; // CraftBukkit
 +
- public class Chunk {
+ public class Chunk implements IChunkAccess {
  
      private static final Logger e = LogManager.getLogger();
-@@ -42,6 +45,35 @@
-     private final ConcurrentLinkedQueue<BlockPosition> y;
-     public boolean d;
+@@ -58,6 +60,35 @@
+     private int E;
+     private final AtomicInteger F;
  
 +    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 +    private int neighbors = 0x1 << 12;
@@ -43,13 +42,13 @@
 +    }
 +    // CraftBukkit end
 +
-     public Chunk(World world, int i, int j) {
+     public Chunk(World world, int i, int j, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long k) {
          this.sections = new ChunkSection[16];
-         this.g = new byte[256];
-@@ -62,8 +94,15 @@
- 
-         Arrays.fill(this.h, -999);
-         Arrays.fill(this.g, (byte) -1);
+         this.h = new boolean[256];
+@@ -95,8 +126,16 @@
+         this.t = ticklist;
+         this.u = ticklist1;
+         this.A = k;
 +        // CraftBukkit start
 +        this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
 +        this.chunkKey = ChunkCoordIntPair.a(this.locX, this.locZ);
@@ -57,22 +56,41 @@
  
 +    public org.bukkit.Chunk bukkitChunk;
 +    public boolean mustSave;
++    public boolean newChunk;
 +    // CraftBukkit end
 +
-     public Chunk(World world, ChunkSnapshot chunksnapshot, int i, int j) {
-         this(world, i, j);
-         boolean flag = true;
-@@ -467,7 +506,8 @@
+     public Chunk(World world, ProtoChunk protochunk, int i, int j) {
+         this(world, i, j, protochunk.getBiomeIndex(), protochunk.v(), protochunk.n(), protochunk.o(), protochunk.m());
+ 
+@@ -136,14 +175,15 @@
+             HeightMap.Type heightmap_type = (HeightMap.Type) iterator.next();
+ 
+             if (heightmap_type.c() == HeightMap.Use.LIVE_WORLD) {
+-                ((HeightMap) this.heightMap.computeIfAbsent(heightmap_type, (heightmap_type) -> {
+-                    return new HeightMap(this, heightmap_type);
++                ((HeightMap) this.heightMap.computeIfAbsent(heightmap_type, (heightmap_type1) -> { // CraftBukkit - decompile error
++                    return new HeightMap(this, heightmap_type1); // CraftBukkit - decompile error
+                 })).a(protochunk.b(heightmap_type).b());
+             }
+         }
+ 
+         this.y = true;
+         this.a(ChunkStatus.FULLCHUNK);
++        this.newChunk = true; // CraftBukkit
+     }
+ 
+     public Set<BlockPosition> t() {
+@@ -474,7 +514,8 @@
                      }
                  }
  
--                if (!this.world.isClientSide && block1 != block) {
+-                if (!this.world.isClientSide) {
 +                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-+                if (!this.world.isClientSide && block1 != block  && (!this.world.captureBlockStates || block instanceof BlockTileEntity)) {
-                     block.onPlace(this.world, blockposition, iblockdata);
++                if (!this.world.isClientSide && (!this.world.captureBlockStates || block instanceof BlockTileEntity)) {
+                     iblockdata.onPlace(this.world, blockposition, iblockdata1);
                  }
  
-@@ -604,7 +644,15 @@
+@@ -654,7 +695,15 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -89,21 +107,21 @@
  
          if (tileentity == null) {
              if (chunk_enumtileentitystate == Chunk.EnumTileEntityState.IMMEDIATE) {
-@@ -639,6 +687,13 @@
+@@ -689,6 +738,13 @@
  
-             tileentity.A();
+             tileentity.z();
              this.tileEntities.put(blockposition, tileentity);
 +            // CraftBukkit start
 +        } else {
 +            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
-+                + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getBlockData(blockposition).getBlock()) + ") where there was no entity tile!");
++                + " (" + getType(blockposition) + ") where there was no entity tile!");
 +            System.out.println("Chunk coordinates: " + (this.locX * 16) + "," + (this.locZ * 16));
 +            new Exception().printStackTrace();
 +            // CraftBukkit end
          }
      }
  
-@@ -681,9 +736,21 @@
+@@ -735,9 +791,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -127,80 +145,49 @@
          }
  
      }
-@@ -745,8 +812,8 @@
+@@ -799,8 +867,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
--                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.apply(entity))) {
+-                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(entity))) {
 -                    list.add(entity);
-+                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.apply((T) entity))) { // CraftBukkit - fix decompile error
++                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test((T) entity))) { // CraftBukkit - fix decompile error
 +                    list.add((T) entity); // Fix decompile error
                  }
              }
          }
-@@ -773,7 +840,34 @@
-         return false;
+@@ -1006,13 +1074,13 @@
+ 
+     @Nullable
+     public LongSet b(String s) {
+-        return (LongSet) this.r.computeIfAbsent(s, (s) -> {
++        return (LongSet) this.r.computeIfAbsent(s, (s1) -> { // CraftBukkit - decompile error
+             return new LongOpenHashSet();
+         });
      }
  
--    public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator) {
-+    // CraftBukkit start
-+    public void loadNearby(IChunkProvider ichunkprovider, ChunkGenerator chunkgenerator, boolean newChunk) {
-+        Server server = world.getServer();
-+        if (server != null) {
-+            /*
-+             * If it's a new world, the first few chunks are generated inside
-+             * the World constructor. We can't reliably alter that, so we have
-+             * no way of creating a CraftWorld/CraftServer at that point.
-+             */
-+            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, newChunk));
-+        }
-+
-+        // Update neighbor counts
-+        for (int x = -2; x < 3; x++) {
-+            for (int z = -2; z < 3; z++) {
-+                if (x == 0 && z == 0) {
-+                    continue;
-+                }
-+
-+                Chunk neighbor = getWorld().getChunkIfLoaded(locX + x, locZ + z);
-+                if (neighbor != null) {
-+                    neighbor.setNeighborLoaded(-x, -z);
-+                    setNeighborLoaded(x, z);
-+                }
-+            }
-+        }
-+        // CraftBukkit end
-+
-         Chunk chunk = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ - 1);
-         Chunk chunk1 = ichunkprovider.getLoadedChunkAt(this.locX + 1, this.locZ);
-         Chunk chunk2 = ichunkprovider.getLoadedChunkAt(this.locX, this.locZ + 1);
-@@ -809,6 +903,29 @@
-         } else {
-             this.o();
-             chunkgenerator.recreateStructures(this.locX, this.locZ);
-+
-+            // CraftBukkit start
-+            BlockSand.instaFall = true;
-+            Random random = new Random();
-+            random.setSeed(world.getSeed());
-+            long xRand = random.nextLong() / 2L * 2L + 1L;
-+            long zRand = random.nextLong() / 2L * 2L + 1L;
-+            random.setSeed((long) locX * xRand + (long) locZ * zRand ^ world.getSeed());
-+
-+            org.bukkit.World world = this.world.getWorld();
-+            if (world != null) {
-+                this.world.populating = true;
-+                try {
-+                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
-+                        populator.populate(world, random, bukkitChunk);
-+                    }
-+                } finally {
-+                    this.world.populating = false;
-+                }
-+            }
-+            BlockSand.instaFall = false;
-+            this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
-+            // CraftBukkit end
-             this.markDirty();
-         }
+     public void a(String s, long i) {
+-        ((LongSet) this.r.computeIfAbsent(s, (s) -> {
++        ((LongSet) this.r.computeIfAbsent(s, (s1) -> { // CraftBukkit - decompile error
+             return new LongOpenHashSet();
+         })).add(i);
+     }
+@@ -1061,14 +1129,14 @@
+             }
+ 
+             if (this.t instanceof ProtoChunkTickList) {
+-                ((ProtoChunkTickList) this.t).a(this.world.I(), (blockposition) -> {
+-                    return this.world.getType(blockposition).getBlock();
++                ((ProtoChunkTickList<Block>) this.t).a(this.world.I(), (blockposition1) -> { // CraftBukkit - decompile error
++                    return this.world.getType(blockposition1).getBlock();
+                 });
+             }
+ 
+             if (this.u instanceof ProtoChunkTickList) {
+-                ((ProtoChunkTickList) this.u).a(this.world.H(), (blockposition) -> {
+-                    return this.world.b(blockposition).c();
++                ((ProtoChunkTickList<FluidType>) this.u).a(this.world.H(), (blockposition1) -> { // CraftBukkit - decompile error
++                    return this.world.b(blockposition1).c();
+                 });
+             }
  

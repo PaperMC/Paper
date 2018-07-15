@@ -1,43 +1,41 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.AdvancementDataWorld;
 
+import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.Block;
-import net.minecraft.server.Blocks;
 import net.minecraft.server.ChatDeserializer;
+import net.minecraft.server.IBlockData;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.MojangsonParseException;
 import net.minecraft.server.MojangsonParser;
 import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.StatisticList;
 
-import org.bukkit.Achievement;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Statistic;
 import org.bukkit.UnsafeValues;
 import org.bukkit.advancement.Advancement;
-import org.bukkit.craftbukkit.CraftStatistic;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.StringUtil;
+import org.bukkit.material.MaterialData;
+import org.bukkit.plugin.PluginAwareness;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.UnknownDependencyException;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -45,81 +43,106 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
-    public static Block getBlock(org.bukkit.block.Block block) {
-        return getBlock(block.getType());
+    public static IBlockData getBlock(MaterialData material) {
+        return getBlock(material.getItemType(), material.getData());
     }
 
-    @Deprecated
-    // A bad method for bad magic.
-    public static Block getBlock(int id) {
-        return getBlock(Material.getMaterial(id));
+    public static IBlockData getBlock(Material material, byte data) {
+        return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), getBlock(material), data);
     }
 
-    @Deprecated
-    // A bad method for bad magic.
-    public static int getId(Block block) {
-        return Block.getId(block);
+    public static MaterialData getMaterial(IBlockData data) {
+        return CraftLegacy.toLegacy(getMaterial(data.getBlock())).getNewData(toLegacyData(data));
+    }
+
+    public static Item getItem(Material material, short data) {
+        if (material.isLegacy()) {
+            return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), getItem(material), data);
+        }
+
+        return getItem(material);
+    }
+
+    public static MaterialData getMaterialData(Item item) {
+        return CraftLegacy.toLegacyData(getMaterial(item));
+    }
+
+    // ========================================================================
+    private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
+    private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
+    private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
+    private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
+
+    static {
+        for (Block block : (Iterable<Block>) Block.REGISTRY) { // Eclipse fail
+            BLOCK_MATERIAL.put(block, Material.getMaterial(Block.REGISTRY.b(block).getKey().toUpperCase(Locale.ROOT)));
+        }
+
+        for (Item item : (Iterable<Item>) Item.REGISTRY) { // Eclipse fail
+            ITEM_MATERIAL.put(item, Material.getMaterial(Item.REGISTRY.b(item).getKey().toUpperCase(Locale.ROOT)));
+        }
+
+        for (Material material : Material.values()) {
+            MinecraftKey key = key(material);
+            MATERIAL_ITEM.put(material, Item.REGISTRY.get(key));
+            MATERIAL_BLOCK.put(material, Block.REGISTRY.get(key));
+        }
     }
 
     public static Material getMaterial(Block block) {
-        return Material.getMaterial(Block.getId(block));
-    }
-
-    public static Item getItem(Material material) {
-        // TODO: Don't use ID
-        Item item = Item.getById(material.getId());
-        return item;
-    }
-
-    @Deprecated
-    // A bad method for bad magic.
-    public static Item getItem(int id) {
-        return Item.getById(id);
-    }
-
-    @Deprecated
-    // A bad method for bad magic.
-    public static int getId(Item item) {
-        return Item.getId(item);
+        return BLOCK_MATERIAL.get(block);
     }
 
     public static Material getMaterial(Item item) {
-        // TODO: Don't use ID
-        Material material = Material.getMaterial(Item.getId(item));
+        return ITEM_MATERIAL.getOrDefault(item, Material.AIR);
+    }
 
-        if (material == null) {
-            return Material.AIR;
-        }
-
-        return material;
+    public static Item getItem(Material material) {
+        return MATERIAL_ITEM.get(material);
     }
 
     public static Block getBlock(Material material) {
-        if (material == null) {
-            return null;
-        }
-        // TODO: Don't use ID
-        Block block = Block.getById(material.getId());
+        return MATERIAL_BLOCK.get(material);
+    }
 
-        if (block == null) {
-            return Blocks.AIR;
+    public static MinecraftKey key(Material mat) {
+        if (mat.isLegacy()) {
+            mat = CraftLegacy.fromLegacy(mat);
         }
 
-        return block;
+        return CraftNamespacedKey.toMinecraft(mat.getKey());
+    }
+    // ========================================================================
+
+    public static byte toLegacyData(IBlockData data) {
+        return CraftLegacy.toLegacyData(data);
     }
 
     @Override
-    public Material getMaterialFromInternalName(String name) {
-        return getMaterial((Item) Item.REGISTRY.get(new MinecraftKey(name)));
+    public Material toLegacy(Material material) {
+        return CraftLegacy.toLegacy(material);
     }
 
     @Override
-    public List<String> tabCompleteInternalMaterialName(String token, List<String> completions) {
-        ArrayList<String> results = Lists.newArrayList();
-        for (MinecraftKey key : (Set<MinecraftKey>)Item.REGISTRY.keySet()) {
-            results.add(key.toString());
-        }
-        return StringUtil.copyPartialMatches(token, results, completions);
+    public Material fromLegacy(Material material) {
+        return CraftLegacy.fromLegacy(material);
+    }
+
+    @Override
+    public Material fromLegacy(MaterialData material) {
+        return CraftLegacy.fromLegacy(material);
+    }
+
+    @Override
+    public BlockData fromLegacy(Material material, byte data) {
+        return CraftBlockData.fromData(getBlock(material, data));
+    }
+
+    public static final int DATA_VERSION = 1513;
+
+    @Override
+    public int getDataVersion() {
+        return DATA_VERSION;
     }
 
     @Override
@@ -128,36 +151,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         try {
             nmsStack.setTag((NBTTagCompound) MojangsonParser.parse(arguments));
-        } catch (MojangsonParseException ex) {
+        } catch (CommandSyntaxException ex) {
             Logger.getLogger(CraftMagicNumbers.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
 
         return stack;
-    }
-
-    @Override
-    public Statistic getStatisticFromInternalName(String name) {
-        return CraftStatistic.getBukkitStatisticByName(name);
-    }
-
-    @Override
-    public Achievement getAchievementFromInternalName(String name) {
-        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
-    }
-
-    @Override
-    public List<String> tabCompleteInternalStatisticOrAchievementName(String token, List<String> completions) {
-        List<String> matches = new ArrayList<String>();
-        Iterator iterator = StatisticList.stats.iterator();
-        while (iterator.hasNext()) {
-            String statistic = ((net.minecraft.server.Statistic) iterator.next()).name;
-            if (statistic.startsWith(token)) {
-                matches.add(statistic);
-            }
-        }
-        return matches;
     }
 
     @Override
@@ -172,7 +172,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
-                File file = new File(MinecraftServer.getServer().getAdvancementData().folder, key.getNamespace() + File.separator + key.getKey() + ".json");
+                File file = new File(MinecraftServer.getServer().bukkitDataPackFolder, "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
                 file.getParentFile().mkdirs();
 
                 try {
@@ -192,8 +192,32 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public boolean removeAdvancement(NamespacedKey key) {
-        File file = new File(MinecraftServer.getServer().getAdvancementData().folder, key.getNamespace() + File.separator + key.getKey() + ".json");
+        File file = new File(MinecraftServer.getServer().bukkitDataPackFolder, "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
         return file.delete();
+    }
+
+    @Override
+    public void checkSupported(PluginDescriptionFile pdf) {
+        if (pdf.getAPIVersion() != null) {
+            if (!pdf.getAPIVersion().equals("1.13")) {
+                throw new UnknownDependencyException("Unsupported API version " + pdf.getAPIVersion());
+            }
+        }
+    }
+
+    public static boolean isLegacy(PluginDescriptionFile pdf) {
+        return pdf.getAPIVersion() == null;
+    }
+
+    @Override
+    public byte[] processClass(PluginDescriptionFile pdf, byte[] clazz) {
+        try {
+            clazz = Commodore.convert(clazz, !isLegacy(pdf));
+        } catch (Exception ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName(), ex);
+        }
+
+        return clazz;
     }
 
     /**
