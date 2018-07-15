@@ -11,7 +11,7 @@ Defaulting this to false will provide substantial performance improvement
 by saving millions of event calls on redstone heavy servers.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 38d664e00..e634c3afd 100644
+index 9f586774d..1c2209270 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -25,20 +25,20 @@ index 38d664e00..e634c3afd 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 8f0a306cc..74ae80646 100644
+index 9e56b046f..c9d0c22d5 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
              try {
                  // CraftBukkit start
                  CraftWorld world = ((WorldServer) this).getWorld();
 -                if (world != null) {
 +                if (world != null && !((WorldServer)this).stopPhysicsEvent) { // Paper
-                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftMagicNumbers.getId(block));
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                      this.getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 96792300c..ebe397116 100644
+index 88868b4c4..e3d62fc9c 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.weather.LightningStrikeEvent;
@@ -50,20 +50,11 @@ index 96792300c..ebe397116 100644
      public EntityTracker tracker;
      private final PlayerChunkMap manager;
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         IBlockData iblockdata = this.getType(nextticklistentry.a);
  
-                         if (iblockdata.getMaterial() != Material.AIR && Block.a(iblockdata.getBlock(), nextticklistentry.a())) {
-                             try {
-+                                stopPhysicsEvent = !paperConfig.firePhysicsEventForRedstone && (iblockdata.getBlock() instanceof BlockDiodeAbstract || iblockdata.getBlock() instanceof BlockRedstoneTorch); // Paper
-                                 iblockdata.getBlock().b((World) this, nextticklistentry.a, iblockdata, this.random);
-                             } catch (Throwable throwable) {
-                                 CrashReport crashreport = CrashReport.a(throwable, "Exception while ticking a block");
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         if (iblockdata.getBlock() == nextticklistentry.a()) {
++            stopPhysicsEvent = !paperConfig.firePhysicsEventForRedstone && (iblockdata.getBlock() instanceof BlockDiodeAbstract || iblockdata.getBlock() instanceof BlockRedstoneTorch); // Paper
+             iblockdata.a((World) this, nextticklistentry.a, this.random);
+         }
  
-                                 CrashReportSystemDetails.a(crashreportsystemdetails, nextticklistentry.a, iblockdata);
-                                 throw new ReportedException(crashreport);
--                            }
-+                            } finally { stopPhysicsEvent = false; } // Paper
-                         }
-                         timing.stopTiming(); // Paper
-                     } else {
 --

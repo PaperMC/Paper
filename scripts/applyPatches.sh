@@ -37,10 +37,7 @@ function applyPatch {
     echo "  Applying patches to $target..."
 
     $gitcmd am --abort >/dev/null 2>&1
-    #TODO: remove
-    if [ "$what_name" == "Bukkit" ]; then
-        what_name="../../pre/Bukkit";
-    fi
+
     # Special case Windows handling because of ARG_MAX constraint
     if [[ $windows == "true" ]]; then
         echo "  Using workaround for Windows ARG_MAX constraint"
@@ -72,13 +69,11 @@ function applyPatch {
 
 # Move into spigot dir
 cd "$workdir/Spigot"
-
 basedir=$(pwd)
 # Apply Spigot
 (
-#TODO: remove ../pre/ and reset to HEAD
-    applyPatch ../Bukkit Spigot-API origin/preview # &&
-    #applyPatch ../CraftBukkit Spigot-Server patched
+    applyPatch ../Bukkit Spigot-API HEAD &&
+    applyPatch ../CraftBukkit Spigot-Server patched
 ) || (
     echo "Failed to apply Spigot Patches"
     exit 1
@@ -89,15 +84,13 @@ cd "$basedir"
 
 echo "Importing MC Dev"
 
-# TODO: Remove comment
-# ./scripts/importmcdev.sh "$basedir" >/dev/null 2>&1
+./scripts/importmcdev.sh "$basedir" || exit 1
 
 # Apply paper
 cd "$basedir"
 (
-#TODO remove comment
-    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD # &&
-    # applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
+    applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
 ) || (
     echo "Failed to apply Paper Patches"
     exit 1

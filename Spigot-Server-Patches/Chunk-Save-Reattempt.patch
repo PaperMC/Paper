@@ -6,11 +6,11 @@ Subject: [PATCH] Chunk Save Reattempt
 We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 4c3faa201..12bd558a7 100644
+index 17996af9c..faaa1b36b 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 // CraftBukkit
+                 NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(chunk.compoundSupplier); // Spigot // Paper
  
                  if (nbttagcompound != null) {
 +                    int attempts = 0; Exception laste = null; while (attempts++ < 5) { // Paper
@@ -25,15 +25,15 @@ index 4c3faa201..12bd558a7 100644
 +                    try {Thread.sleep(10);} catch (InterruptedException e) {e.printStackTrace();} } // Paper
 +                    if (laste != null) { com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste); MinecraftServer.LOGGER.error("Failed to save chunk", laste); } // Paper
                  }
-                 synchronized (lock) { if (this.b.get(chunkcoordintpair) == chunk.compoundSupplier) { this.b.remove(chunkcoordintpair); } }// Paper - This will not equal if a newer version is still pending
  
+                 flag = true;
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 6a92b5af8..5bcbd718f 100644
+index c80d724f0..3f9aa5923 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile {
  
-             this.b(i, j, (int) (MinecraftServer.aw() / 1000L));
+             this.b(i, j, (int) (SystemUtils.d() / 1000L));
          } catch (IOException ioexception) {
 -            ioexception.printStackTrace();
 -            ServerInternalException.reportInternalException(ioexception); // Paper

@@ -18,64 +18,46 @@ index ec4643384..430b5d0cd 100644
 +        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/CommandScoreboard.java b/src/main/java/net/minecraft/server/CommandScoreboard.java
-index b08274d93..0607e55d3 100644
---- a/src/main/java/net/minecraft/server/CommandScoreboard.java
-+++ b/src/main/java/net/minecraft/server/CommandScoreboard.java
-@@ -0,0 +0,0 @@ public class CommandScoreboard extends CommandAbstract {
-                             throw new ExceptionUsage("commands.scoreboard.teams.option.usage", new Object[0]);
-                         }
- 
-+                        // Paper start - Block setting options on our collideRule team as it is not persistent
-+                        if (astring[2].equals(MinecraftServer.getServer().getPlayerList().collideRuleTeamName)) {
-+                            icommandlistener.sendMessage(new ChatMessage("You cannot set team options on the collideRule team"));
-+                            return;
-+                        }
-+                        // Paper  end
-+
-                         this.c(icommandlistener, astring, 2, minecraftserver);
-                     }
-                 }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2300ee10b..b6c4d98fd 100644
+index b7aa9e869..c5670fe8d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-         this.v.setPlayerFileData(this.worldServer);
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
          this.a(this.getDifficulty());
-         this.l();
+         this.g_();
 +
 +        // Paper start - Handle collideRule team for player collision toggle
-+        final Scoreboard scoreboard = this.getWorld().getScoreboard();
++        final Scoreboard scoreboard = this.getScoreboard();
 +        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
 +        for (String teamName : toRemove) {
 +            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
-+            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + this.getWorld().random.nextInt(), 16);
++            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + worlds.get(0).random.nextInt(), 16);
 +            ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
 +            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
      }
  
-     protected void l() {
+     protected void a(File file, WorldData worlddata) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
-index 549d4e89d..df11764e0 100644
+index 5f54e7b9c..759288b97 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutScoreboardTeam implements Packet<PacketListenerPlayOut
-             packetdataserializer.a(this.d);
+             packetdataserializer.a(this.b);
              packetdataserializer.writeByte(this.j);
              packetdataserializer.a(this.e);
 -            packetdataserializer.a(this.f);
 +            packetdataserializer.a(!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions ? "never" : this.f); // Paper
-             packetdataserializer.writeByte(this.g);
-         }
- 
+             packetdataserializer.a((Enum) this.g);
+             packetdataserializer.a(this.c);
+             packetdataserializer.a(this.d);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index baf288210..950dbdc50 100644
+index 8e1edde31..801a147f0 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -97,7 +79,7 @@ index baf288210..950dbdc50 100644
 +        }
 +        // Paper end
          // CraftBukkit - Moved from above, added world
-         PlayerList.f.info(entityplayer.getName() + "[" + s1 + "] logged in with entity id " + entityplayer.getId() + " at ([" + entityplayer.world.worldData.getName() + "]" + entityplayer.locX + ", " + entityplayer.locY + ", " + entityplayer.locZ + ")");
+         PlayerList.f.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getDisplayName().getString(), s1, Integer.valueOf(entityplayer.getId()), entityplayer.world.worldData.getName(), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ));
      }
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          entityplayer.playerTick();// SPIGOT-924
@@ -115,7 +97,7 @@ index baf288210..950dbdc50 100644
 +
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
-             Entity entity = entityplayer.getVehicle();
+             Entity entity = entityplayer.getRootVehicle();
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
              player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
          }

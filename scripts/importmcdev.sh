@@ -6,6 +6,7 @@ nms="net/minecraft/server"
 export MODLOG=""
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
+source "$basedir/scripts/functions.sh"
 gitcmd="git -c commit.gpgsign=false"
 
 workdir="$basedir/work"
@@ -21,8 +22,8 @@ function import {
 
     if [[ ! -f "$target" ]]; then
         export MODLOG="$MODLOG  Imported $file from mc-dev\n";
-        echo "Copying $base to $target"
-        cp "$base" "$target"
+        #echo "Copying $base to $target"
+        cp "$base" "$target" || exit 1
     else
         echo "UN-NEEDED IMPORT: $file"
     fi
@@ -36,85 +37,42 @@ function import {
     fi
 )
 
-import AxisAlignedBB
-import BaseBlockPosition
-import BiomeBase
-import BlockBed
-import BiomeBigHills
-import BiomeJungle
-import BiomeMesa
-import BlockBeacon
-import BlockChest
-import BlockFalling
-import BlockFurnace
-import BlockIceFrost
-import BlockPosition
-import BlockSnowBlock
-import BlockStateEnum
-import ChunkCache
-import ChunkCoordIntPair
-import ChunkProviderFlat
-import ChunkProviderGenerate
-import ChunkProviderHell
-import CommandAbstract
-import CommandScoreboard
-import CommandWhitelist
-import ControllerJump
-import DataBits
-import DataConverterMaterialId
-import DataInspectorBlockEntity
-import DataPalette
-import DefinedStructure
-import DragonControllerLandedFlame
-import EnchantmentManager
-import Enchantments
-import EnderDragonBattle
-import EntityIllagerIllusioner
-import EntityLlama
-import EntitySquid
-import EntityTypes
-import EntityWaterAnimal
-import EntityWitch
-import EnumItemSlot
-import EULA
-import FileIOThread
-import IHopper
-import ItemBlock
-import ItemFireworks
-import ItemMonsterEgg
-import IRangedEntity
-import LegacyPingHandler
-import LotoSelectorEntry
-import NavigationAbstract
-import NBTTagCompound
-import NBTTagList
-import PacketPlayInUseEntity
-import PacketPlayOutMapChunk
-import PacketPlayOutPlayerListHeaderFooter
-import PacketPlayOutScoreboardTeam
-import PacketPlayOutTitle
-import PacketPlayOutUpdateTime
-import PathfinderAbstract
-import PathfinderGoal
-import PathfinderGoalFloat
-import PathfinderGoalGotoTarget
-import PathfinderWater
-import PersistentScoreboard
-import PersistentVillage
-import PlayerConnectionUtils
-import RegionFile
-import RegistryBlockID
-import RemoteControlListener
-import RecipeBookServer
-import ServerPing
-import StructureBoundingBox
-import StructurePiece
-import StructureStart
-import TileEntityEnderChest
-import TileEntityLootable
-import WorldGenStronghold
-import WorldProvider
 
+
+files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
+
+nonnms=$(cat "$basedir/Spigot-Server-Patches/"* | grep "create mode " | grep -Po "src/main/java/net/minecraft/server/(.*?).java" | sort | uniq | sed 's/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g' ;
+    # TODO: Fix non nms to work for Paper, hard code these for now
+    echo "KeyedObject" ;
+    echo "MCUtil" ;
+    echo "PaperLightingQueue"
+)
+
+function containsElement {
+	local e
+	for e in "${@:2}"; do
+		[[ "$e" == "$1" ]] && return 0;
+	done
+	return 1
+}
+set +e
+for f in $files; do
+	containsElement "$f" ${nonnms[@]}
+	if [ "$?" == "1" ]; then
+		if [ ! -f "$workdir/Spigot/Spigot-Server/src/main/java/net/minecraft/server/$f.java" ]; then
+			if [ ! -f "$decompiledir/$nms/$f.java" ]; then
+				echo "$(color 1 31) ERROR!!! Missing NMS$(color 1 34) $f $(colorend)";
+			else
+				import $f
+			fi
+		fi
+	fi
+done
+
+import NBTList
+import TileEntityTypes
+
+set -e
 cd "$workdir/Spigot/Spigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh >/dev/null 2>&1
 $gitcmd add . -A >/dev/null 2>&1

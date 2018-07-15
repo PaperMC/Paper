@@ -10,12 +10,12 @@ This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7e5cd8042..15675efbf 100644
+index dccccbf5b..3626aa717 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         disableExtremeHillsMonsterEggs = getBoolean("generator-settings.disable-extreme-hills-monster-eggs", false);
-         disableMesaAdditionalGold = getBoolean("generator-settings.disable-mesa-additional-gold", false);
+         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+         log("End credits disabled: " + disableEndCredits);
      }
 +
 +    public boolean optimizeExplosions;
@@ -25,7 +25,7 @@ index 7e5cd8042..15675efbf 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index a1ebcf858..e7f0e84d4 100644
+index e30219258..ddbf667c4 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
 @@ -0,0 +0,0 @@ public class Explosion {
@@ -124,22 +124,22 @@ index a1ebcf858..e7f0e84d4 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d63a243f3..4e8ce79ff 100644
+index 4473c3b51..1027b0588 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  worldserver.getTracker().updatePlayers();
-                 this.methodProfiler.b();
-                 this.methodProfiler.b();
+                 this.methodProfiler.e();
+                 this.methodProfiler.e();
 +                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
-             // } // CraftBukkit
+             }
  
-             // this.i[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
+             // this.f[i][this.ticks % 100] = SystemUtils.c() - j; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 77ed2d249..fc7315f7d 100644
+index f57bd081b..04493a1f9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
  
  // CraftBukkit start
  import com.google.common.collect.Maps;
@@ -147,7 +147,7 @@ index 77ed2d249..fc7315f7d 100644
  import java.util.Map;
  import org.bukkit.Bukkit;
  import org.bukkit.block.BlockState;
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;

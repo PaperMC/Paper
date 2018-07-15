@@ -11,7 +11,7 @@ So avoid looking up scoreboards and short circuit to the "not on a team"
 logic which is most likely to be true.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index b241c0380..a4c94845b 100644
+index 6fc3b7621..93486b4b8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -24,28 +24,28 @@ index b241c0380..a4c94845b 100644
 +        nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/CommandScoreboard.java b/src/main/java/net/minecraft/server/CommandScoreboard.java
-index ec9a87239..b08274d93 100644
---- a/src/main/java/net/minecraft/server/CommandScoreboard.java
-+++ b/src/main/java/net/minecraft/server/CommandScoreboard.java
-@@ -0,0 +0,0 @@ public class CommandScoreboard extends CommandAbstract {
- 
-                     while (iterator.hasNext()) {
-                         Entity entity = (Entity) iterator.next();
-+                        if (!entity.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(entity instanceof EntityHuman)) { continue; } // Paper
-                         String s2 = f(minecraftserver, icommandlistener, entity.bn());
- 
-                         if (scoreboard.addPlayerToTeam(s2, s)) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 804104818..f547dbfd0 100644
+index d378f1a9d..e16579116 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
  
      @Nullable
-     public ScoreboardTeamBase aY() {
+     public ScoreboardTeamBase be() {
 +        if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
-         return this.world.getScoreboard().getPlayerTeam(this.bn());
+         return this.world.getScoreboard().getPlayerTeam(this.getName());
      }
  
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 43715902e..f57e0136c 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+         if (nbttagcompound.hasKeyOfType("Team", 8)) {
+             String s = nbttagcompound.getString("Team");
+             ScoreboardTeam scoreboardteam = this.world.getScoreboard().getTeam(s);
++            if (!world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { scoreboardteam = null; } // Paper
+             boolean flag = scoreboardteam != null && this.world.getScoreboard().addPlayerToTeam(this.bu(), scoreboardteam);
+ 
+             if (!flag) {
 --

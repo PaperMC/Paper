@@ -5,12 +5,12 @@ Subject: [PATCH] Configurable top of nether void damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d3484489b..bf7af475c 100644
+index 4da846719..a340866f3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
-         log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
+         if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
+         if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
      }
 +
 +    public boolean netherVoidTopDamage;
@@ -20,10 +20,10 @@ index d3484489b..bf7af475c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 43b802855..aadc426fd 100644
+index 2288df268..111eeeecc 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
              this.fallDistance *= 0.5F;
          }
  
@@ -31,7 +31,7 @@ index 43b802855..aadc426fd 100644
 +        // Extracted to own function
 +        /*
          if (this.locY < -64.0D) {
-             this.ac();
+             this.aa();
          }
 +        */
 +        this.checkAndDoHeightDamage();
@@ -39,35 +39,31 @@ index 43b802855..aadc426fd 100644
  
          if (!this.world.isClientSide) {
              this.setFlag(0, this.fireTicks > 0);
-@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
-         this.world.methodProfiler.b();
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.world.methodProfiler.e();
      }
  
-+    // Paper start - Configurable top of nether void damage
-+    private boolean paperNetherCheck() {
-+        return this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D;
-+    }
-+
++    // Paper start
 +    protected void checkAndDoHeightDamage() {
-+        if (this.locY < -64.0D || paperNetherCheck()) {
++        if (this.locY < -64.0D || (this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D)) {
 +            this.kill();
 +        }
 +    }
 +    // Paper end
 +
-     protected void I() {
+     protected void E() {
          if (this.portalCooldown > 0) {
              --this.portalCooldown;
-@@ -0,0 +0,0 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          this.fireTicks = 0;
      }
  
-+    protected final void kill() { this.ac(); } // Paper - OBFHELPER
-     protected void ac() {
++    protected final void kill() { this.aa(); } // Paper - OBFHELPER
+     protected void aa() {
          this.die();
      }
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-index a9412d4e0..1f4025486 100644
+index 2f4e1a280..3598998b5 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
@@ -78,7 +74,7 @@ index a9412d4e0..1f4025486 100644
 +        // Extracted to own function
 +        /*
          if (this.locY < -64.0D) {
-             this.ac();
+             this.aa();
          }
 +        */
 +        this.checkAndDoHeightDamage();

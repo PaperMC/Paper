@@ -5,28 +5,28 @@ Subject: [PATCH] Prevent tile entity and entity crashes
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 15f18ba1d..33e245e4c 100644
+index 5b7f6ca84..8cab71c0e 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject {
-             }
+             return TileEntityTypes.a.b(this.C()) + " // " + this.getClass().getCanonicalName();
          });
          if (this.world != null) {
--            CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.getBlock(), this.v());
+-            CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.getBlock());
 +            // Paper start - Prevent TileEntity and Entity crashes
-+            Block block = this.getBlock();
++            IBlockData block = this.getBlock();
 +            if (block != null) {
-+                CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.getBlock(), this.v());
++                CrashReportSystemDetails.a(crashreportsystemdetails, this.position, block);
 +            }
 +            // Paper end
-             crashreportsystemdetails.a("Actual block type", new CrashReportCallable() {
-                 public String a() throws Exception {
-                     int i = Block.getId(TileEntity.this.world.getType(TileEntity.this.position).getBlock());
+             CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.world.getType(this.position));
+         }
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 31b765dea..fd5f8102a 100644
+index 3f0b6ac26..c605d7e52 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                      entity.tickTimer.stopTiming(); // Paper
                  } catch (Throwable throwable1) {
                      entity.tickTimer.stopTiming();
@@ -43,9 +43,9 @@ index 31b765dea..fd5f8102a 100644
                  }
              }
  
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-                         ((ITickable) tileentity).e();
-                         this.methodProfiler.b();
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+                         ((ITickable) tileentity).X_();
+                         this.methodProfiler.e();
                      } catch (Throwable throwable2) {
 -                        crashreport1 = CrashReport.a(throwable2, "Ticking block entity");
 -                        crashreportsystemdetails1 = crashreport1.a("Block entity being ticked");

@@ -6,65 +6,57 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 0788f7712..57b23a018 100644
+index fa500e93f..f376b3a34 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk {
- 
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         }
      }
  
 +    public final int getLightSubtracted(BlockPosition blockposition, int i) { return this.a(blockposition, i); } // Paper - OBFHELPER
      public int a(BlockPosition blockposition, int i) {
-         int j = blockposition.getX() & 15;
-         int k = blockposition.getY();
+         return this.a(blockposition, i, this.world.o().g());
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 6be9c1815..b8ae41704 100644
+index d51ed0f80..1c939e523 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-     public final List<Entity> j = Lists.newArrayList();
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     public final List<Entity> k = Lists.newArrayList();
      protected final IntHashMap<Entity> entitiesById = new IntHashMap();
-     private final long K = 16777215L;
--    private int L;
-+    private int L; private int getSkylightSubtracted() { return this.L; } // Paper - OBFHELPER
-     protected int l = (new Random()).nextInt();
-     protected final int m = 1013904223;
-     protected float n;
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         return (CraftServer) Bukkit.getServer();
+     private final long G = 16777215L;
+-    private int H;
++    private int H; private int getSkylightSubtracted() { return this.H; } // Paper - OBFHELPER
+     protected int m = (new Random()).nextInt();
+     protected final int n = 1013904223;
+     protected float o;
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         return this.getType(blockposition).isAir();
      }
  
 +    // Paper start
 +    public Chunk getChunkIfLoaded(BlockPosition blockposition) {
 +        return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +    }
-+    // Paper end
-+
-     public Chunk getChunkIfLoaded(int x, int z) {
-         return ((ChunkProviderServer) this.chunkProvider).getChunkIfLoaded(x, z);
-     }
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         }
-     }
- 
-+    // Paper start - test if meets light level, return faster
++    // test if meets light level, return faster
 +    // logic copied from below
 +    public boolean isLightLevel(BlockPosition blockposition, int level) {
 +        if (isValidLocation(blockposition)) {
-+            if (this.getType(blockposition).f()) {
-+                if (this.c(blockposition.up(), false) >= level) {
++            if (this.getType(blockposition).c(this, blockposition)) {
++                int sky = getSkylightSubtracted();
++                if (this.getLightLevel(blockposition.up(), sky) >= level) {
 +                    return true;
 +                }
-+                if (this.c(blockposition.east(), false) >= level) {
++                if (this.getLightLevel(blockposition.east(), sky) >= level) {
 +                    return true;
 +                }
-+                if (this.c(blockposition.west(), false) >= level) {
++                if (this.getLightLevel(blockposition.west(), sky) >= level) {
 +                    return true;
 +                }
-+                if (this.c(blockposition.south(), false) >= level) {
++                if (this.getLightLevel(blockposition.south(), sky) >= level) {
 +                    return true;
 +                }
-+                if (this.c(blockposition.north(), false) >= level) {
++                if (this.getLightLevel(blockposition.north(), sky) >= level) {
 +                    return true;
 +                }
 +                return false;
@@ -80,42 +72,26 @@ index 6be9c1815..b8ae41704 100644
 +            return true;
 +        }
 +    }
-+    // Paper end
-+
-     public int getLightLevel(BlockPosition blockposition) {
-         return this.c(blockposition, true);
-     }
- 
-+    public final int getLight(BlockPosition blockposition, boolean checkNeighbors) { return this.c(blockposition, checkNeighbors); } // Paper - OBFHELPER
-     public int c(BlockPosition blockposition, boolean flag) {
-         if (blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000) {
-             if (flag && this.getType(blockposition).f()) {
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-         return this.worldProvider.o()[this.getLightLevel(blockposition)];
-     }
- 
-+    // Paper start - reduces need to do isLoaded before getType
++    //  reduces need to do isLoaded before getType
 +    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
-+            Iterator<BlockState> it = capturedBlockStates.iterator();
-+            while (it.hasNext()) {
-+                BlockState previous = it.next();
++            for (CraftBlockState previous : capturedBlockStates) {
 +                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
-+                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
++                    return previous.getHandle();
 +                }
 +            }
 +        }
 +        // CraftBukkit end
 +        Chunk chunk = this.getChunkIfLoaded(blockposition);
 +        if (chunk != null) {
-+            return this.isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
++            return isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
 +        }
 +        return null;
 +    }
 +    // Paper end
 +
-     public IBlockData getType(BlockPosition blockposition) {
-         // CraftBukkit start - tree generation
-         if (captureTreeGeneration) {
+     public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
 --

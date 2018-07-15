@@ -11,7 +11,7 @@ gitcmd="git -c commit.gpgsign=false"
 #
 # FUNCTIONS
 #
-. $basedir/scripts/functions.sh
+source $basedir/scripts/functions.sh
 
 updateTest() {
     paperstash
