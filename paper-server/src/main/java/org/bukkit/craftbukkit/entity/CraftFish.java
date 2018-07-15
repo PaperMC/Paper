@@ -4,7 +4,7 @@ import net.minecraft.server.EntityFish;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Fish;
 
-public class CraftFish extends CraftCreature implements Fish {
+public class CraftFish extends CraftWaterMob implements Fish {
 
     public CraftFish(CraftServer server, EntityFish entity) {
         super(server, entity);
