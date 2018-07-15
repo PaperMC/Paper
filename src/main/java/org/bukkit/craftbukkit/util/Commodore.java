@@ -196,6 +196,9 @@ public class Commodore
                                     case "values":
                                         super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, desc, itf );
                                         return;
+                                    case "ordinal":
+                                        super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, "(Lorg/bukkit/Material;)I", false );
+                                        return;
                                 }
                             }
 
