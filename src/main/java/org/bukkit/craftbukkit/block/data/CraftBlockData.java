@@ -45,10 +45,27 @@ public class CraftBlockData implements BlockData {
         return state;
     }
 
+    /**
+     * Get a given BlockStateEnum's value as its Bukkit counterpart.
+     *
+     * @param nms the NMS state to convert
+     * @param bukkit the Bukkit class
+     * @param <B> the type
+     * @return the matching Bukkit type
+     */
     protected <B extends Enum<B>> B get(BlockStateEnum<?> nms, Class<B> bukkit) {
         return toBukkit(state.get(nms), bukkit);
     }
 
+    /**
+     * Convert all values from the given BlockStateEnum to their appropriate
+     * Bukkit counterpart.
+     *
+     * @param nms the NMS state to get values from
+     * @param bukkit the bukkit class to convert the values to
+     * @param <B> the bukkit class type
+     * @return an immutable Set of values in their appropriate Bukkit type
+     */
     @SuppressWarnings("unchecked")
     protected <B extends Enum<B>> Set<B> getValues(BlockStateEnum<?> nms, Class<B> bukkit) {
         ImmutableSet.Builder<B> values = ImmutableSet.builder();
@@ -60,12 +77,26 @@ public class CraftBlockData implements BlockData {
         return values.build();
     }
 
+    /**
+     * Set a given {@link BlockStateEnum} with the matching enum from Bukkit.
+     *
+     * @param nms the NMS BlockStateEnum to set
+     * @param bukkit the matching Bukkit Enum
+     * @param <B> the Bukkit type
+     * @param <N> the NMS type
+     */
     protected <B extends Enum<B>, N extends Enum<N> & INamable> void set(BlockStateEnum<N> nms, Enum<B> bukkit) {
         this.state = this.state.set(nms, toNMS(bukkit, nms.b()));
     }
 
     private static final BiMap<Enum<?>, Enum<?>> nmsToBukkit = HashBiMap.create();
 
+    /**
+     * Convert an NMS Enum (usually a BlockStateEnum) to its appropriate Bukkit
+     * enum from the given class.
+     *
+     * @throws IllegalStateException if the Enum could not be converted
+     */
     @SuppressWarnings("unchecked")
     private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
         Enum<?> converted = nmsToBukkit.get(nms);
@@ -85,6 +116,14 @@ public class CraftBlockData implements BlockData {
         return (B) converted;
     }
 
+    /**
+     * Convert a given Bukkit enum to its matching NMS enum type.
+     *
+     * @param bukkit the Bukkit enum to convert
+     * @param nms the NMS class
+     * @return the matching NMS type
+     * @throws IllegalStateException if the Enum could not be converted
+     */
     @SuppressWarnings("unchecked")
     private static <N extends Enum<N> & INamable> N toNMS(Enum<?> bukkit, Class<N> nms) {
         Enum<?> converted = nmsToBukkit.inverse().get(bukkit);
@@ -104,11 +143,26 @@ public class CraftBlockData implements BlockData {
         return (N) converted;
     }
 
+    /**
+     * Get the current value of a given state.
+     *
+     * @param ibs the state to check
+     * @param <T> the type
+     * @return the current value of the given state
+     */
     protected <T extends Comparable<T>> T get(IBlockState<T> ibs) {
         // Straight integer or boolean getter
         return this.state.get(ibs);
     }
 
+    /**
+     * Set the specified state's value.
+     *
+     * @param ibs the state to set
+     * @param v the new value
+     * @param <T> the state's type
+     * @param <V> the value's type. Must match the state's type.
+     */
     public <T extends Comparable<T>, V extends T> void set(IBlockState<T> ibs, V v) {
         // Straight integer or boolean setter
         this.state = this.state.set(ibs, v);
@@ -175,6 +229,17 @@ public class CraftBlockData implements BlockData {
         return (BlockStateInteger) getState(block, name, false);
     }
 
+    /**
+     * Get a specified {@link IBlockState} from a given block's class with a
+     * given name
+     *
+     * @param block the class to retrieve the state from
+     * @param name the name of the state to retrieve
+     * @param optional if the state can be null
+     * @return the specified state or null
+     * @throws IllegalStateException if the state is null and {@code optional}
+     * is false.
+     */
     private static IBlockState<?> getState(Class<? extends Block> block, String name, boolean optional) {
         IBlockState<?> state = null;
 
@@ -195,10 +260,22 @@ public class CraftBlockData implements BlockData {
         return state;
     }
 
+    /**
+     * Get the minimum value allowed by the BlockStateInteger.
+     *
+     * @param state the state to check
+     * @return the minimum value allowed
+     */
     protected static int getMin(BlockStateInteger state) {
         return state.min;
     }
 
+    /**
+     * Get the maximum value allowed by the BlockStateInteger.
+     *
+     * @param state the state to check
+     * @return the maximum value allowed
+     */
     protected static int getMax(BlockStateInteger state) {
         return state.max;
     }
