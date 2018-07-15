@@ -120,7 +120,7 @@
                                      }
                                  }
                              }
-@@ -241,24 +275,40 @@
+@@ -241,24 +275,47 @@
          return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(state.getBlock());
      }
  
@@ -159,18 +159,25 @@
 +                world.setBlock(blockposition, this.getStateWithAge(world, blockposition, l), 3);
              } else {
 -                world.removeBlock(pos, false);
-+                world.removeBlock(blockposition, false);
++                if(iblockdata.getBlock() != Blocks.TNT) world.removeBlock(blockposition, false); // Paper - TNTPrimeEvent; We might be cancelling it below, move the setAir down
              }
  
              Block block = iblockdata.getBlock();
  
              if (block instanceof TntBlock) {
 -                TntBlock.explode(world, pos);
++                // Paper start - TNTPrimeEvent
++                org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition);
++                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.FIRE, null).callEvent()) {
++                    return;
++                }
++                world.removeBlock(blockposition, false);
++                // Paper end - TNTPrimeEvent
 +                TntBlock.explode(world, blockposition);
              }
          }
  
-@@ -310,9 +360,11 @@
+@@ -310,9 +367,11 @@
      }
  
      @Override

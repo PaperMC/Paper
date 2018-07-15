@@ -100,7 +100,7 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -467,14 +494,61 @@
+@@ -467,7 +494,11 @@
  
                      if (!iblockdata.isAir() && !iblockdata.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(BlockTags.DRAGON_IMMUNE)) {
@@ -113,11 +113,10 @@
                          } else {
                              flag = true;
                          }
-                     }
-+                }
-+            }
-+        }
-+
+@@ -476,6 +507,54 @@
+             }
+         }
+ 
 +        // CraftBukkit start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
 +        // SPIGOT-4882: don't fire event if nothing hit
 +        if (!flag1) {
@@ -153,17 +152,23 @@
 +                        Block.popResource(this.level(), blockposition, itemstack);
 +                    });
 +                    craftBlock.getNMS().spawnAfterBreak((ServerLevel) this.level(), blockposition, ItemStack.EMPTY, false);
-                 }
++                }
++                // Paper start - TNTPrimeEvent
++                org.bukkit.block.Block tntBlock = CraftBlock.at(this.level(), blockposition);
++                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
++                    continue;
++                // Paper end - TNTPrimeEvent
 +                nmsBlock.wasExploded((ServerLevel) this.level(), blockposition, this.explosionSource);
 +
 +                this.level().removeBlock(blockposition, false);
-             }
-         }
++            }
++        }
 +        // CraftBukkit end
- 
++
          if (flag1) {
              BlockPos blockposition1 = new BlockPos(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
-@@ -531,7 +605,7 @@
+ 
+@@ -531,7 +610,7 @@
  
      @Override
      public void kill(ServerLevel world) {
@@ -172,7 +177,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -540,7 +614,22 @@
+@@ -540,7 +619,22 @@
  
      }
  
@@ -195,7 +200,7 @@
      protected void tickDeath() {
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -555,21 +644,44 @@
+@@ -555,21 +649,44 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
@@ -243,7 +248,7 @@
              }
          }
  
-@@ -592,15 +704,15 @@
+@@ -592,15 +709,15 @@
              if (world1 instanceof ServerLevel) {
                  ServerLevel worldserver1 = (ServerLevel) world1;
  
@@ -262,7 +267,7 @@
                  this.gameEvent(GameEvent.ENTITY_DIE);
              }
          }
-@@ -814,6 +926,7 @@
+@@ -814,6 +931,7 @@
          super.addAdditionalSaveData(nbt);
          nbt.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbt.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -270,7 +275,7 @@
      }
  
      @Override
-@@ -827,6 +940,11 @@
+@@ -827,6 +945,11 @@
              this.dragonDeathTime = nbt.getInt("DragonDeathTime");
          }
  
