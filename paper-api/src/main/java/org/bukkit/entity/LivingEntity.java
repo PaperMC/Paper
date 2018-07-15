@@ -326,6 +326,22 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     public void setGliding(boolean gliding);
 
     /**
+     * Checks to see if an entity is swimming.
+     *
+     * @return True if this entity is swimming.
+     */
+    public boolean isSwimming();
+
+    /**
+     * Makes entity start or stop swimming.
+     *
+     * This may have unexpected results if the entity is not in water.
+     *
+     * @param swimming True if the entity is swimming.
+     */
+    public void setSwimming(boolean swimming);
+
+    /**
      * Sets whether an entity will have AI.
      *
      * @param ai whether the mob will have AI or not.
