@@ -14,7 +14,7 @@ And since minecart hoppers are used _very_ rarely near we can avoid alot of sear
 Combined, this adds up a lot.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index aaf253c89..a5db14343 100644
+index d6f6cfef2..08d6ef09a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk {
@@ -32,33 +32,29 @@ index aaf253c89..a5db14343 100644
      private int neighbors = 0x1 << 12;
      public long chunkKey;
 @@ -0,0 +0,0 @@ public class Chunk {
-         entity.ac = k;
-         entity.ad = this.locZ;
-         this.entitySlices[k].add(entity);
-+        // Paper start - update count
+         // Paper start
+         entity.setCurrentChunk(this);
+         entityCounts.increment(entity.entityKeyString);
 +        if (entity instanceof EntityItem) {
 +            itemCounts[k]++;
 +        } else if (entity instanceof IInventory) {
 +            inventoryEntityCounts[k]++;
 +        }
-+        // Paper end
+         // Paper end
          // Spigot start - increment creature type count
          // Keep this synced up with World.a(Class)
-         if (entity instanceof EntityInsentient) {
 @@ -0,0 +0,0 @@ public class Chunk {
-         }
- 
-         this.entitySlices[i].remove(entity);
-+        // Paper start - update counts
+         // Paper start
+         entity.setCurrentChunk(null);
+         entityCounts.decrement(entity.entityKeyString);
 +        if (entity instanceof EntityItem) {
 +            itemCounts[i]--;
 +        } else if (entity instanceof IInventory) {
 +            inventoryEntityCounts[i]--;
 +        }
-+        // Paper end
+         // Paper end
          // Spigot start - decrement creature type count
          // Keep this synced up with World.a(Class)
-         if (entity instanceof EntityInsentient) {
 @@ -0,0 +0,0 @@ public class Chunk {
              if (!this.entitySlices[k].isEmpty()) {
                  Iterator iterator = this.entitySlices[k].iterator();
