@@ -1019,11 +1019,7 @@ public final class PluginDescriptionFile {
         }
 
         if (map.get("api-version") != null) {
-            try {
-                apiVersion = map.get("api-version").toString();
-            } catch (ClassCastException ex) {
-                throw new InvalidDescriptionException(ex, "api-version is of wrong type");
-            }
+            apiVersion = map.get("api-version").toString();
         }
 
         try {
