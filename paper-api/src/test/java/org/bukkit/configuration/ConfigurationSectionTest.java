@@ -498,7 +498,7 @@ public abstract class ConfigurationSectionTest {
     public void testGetItemStack_String() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
-        ItemStack value = new ItemStack(Material.WOOD, 50, (short) 2);
+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
 
         section.set(key, value);
 
@@ -510,7 +510,7 @@ public abstract class ConfigurationSectionTest {
     public void testGetItemStack_String_ItemStack() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
-        ItemStack value = new ItemStack(Material.WOOD, 50, (short) 2);
+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
         ItemStack def = new ItemStack(Material.STONE, 1);
 
         section.set(key, value);
@@ -523,7 +523,7 @@ public abstract class ConfigurationSectionTest {
     public void testIsItemStack() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
-        ItemStack value = new ItemStack(Material.WOOD, 50, (short) 2);
+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
 
         section.set(key, value);
 

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -167,16 +168,16 @@ public class StandardMessenger implements Messenger {
     }
 
     public boolean isReservedChannel(String channel) {
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
-        return channel.equals("REGISTER") || channel.equals("UNREGISTER");
+        return channel.contains("minecraft");
     }
 
     public void registerOutgoingPluginChannel(Plugin plugin, String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
         if (isReservedChannel(channel)) {
             throw new ReservedChannelException(channel);
         }
@@ -188,7 +189,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         removeFromOutgoing(plugin, channel);
     }
@@ -205,7 +206,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
         if (isReservedChannel(channel)) {
             throw new ReservedChannelException(channel);
         }
@@ -227,7 +228,7 @@ public class StandardMessenger implements Messenger {
         if (listener == null) {
             throw new IllegalArgumentException("Listener cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         removeFromIncoming(new PluginMessageListenerRegistration(this, plugin, channel, listener));
     }
@@ -236,7 +237,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         removeFromIncoming(plugin, channel);
     }
@@ -318,7 +319,7 @@ public class StandardMessenger implements Messenger {
     }
 
     public Set<PluginMessageListenerRegistration> getIncomingChannelRegistrations(String channel) {
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         synchronized (incomingLock) {
             Set<PluginMessageListenerRegistration> registrations = incomingByChannel.get(channel);
@@ -335,7 +336,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         synchronized (incomingLock) {
             Set<PluginMessageListenerRegistration> registrations = incomingByPlugin.get(plugin);
@@ -376,7 +377,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         synchronized (incomingLock) {
             Set<PluginMessageListenerRegistration> registrations = incomingByPlugin.get(plugin);
@@ -397,7 +398,7 @@ public class StandardMessenger implements Messenger {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         synchronized (outgoingLock) {
             Set<String> channels = outgoingByPlugin.get(plugin);
@@ -417,7 +418,7 @@ public class StandardMessenger implements Messenger {
         if (message == null) {
             throw new IllegalArgumentException("Message cannot be null");
         }
-        validateChannel(channel);
+        channel = validateAndCorrectChannel(channel);
 
         Set<PluginMessageListenerRegistration> registrations = getIncomingChannelRegistrations(channel);
 
@@ -437,14 +438,46 @@ public class StandardMessenger implements Messenger {
      * Validates a Plugin Channel name.
      *
      * @param channel Channel name to validate.
+     * @deprecated not an API method
      */
+    @Deprecated
     public static void validateChannel(String channel) {
+        validateAndCorrectChannel(channel);
+    }
+
+    /**
+     * Validates and corrects a Plugin Channel name. Method is not reentrant / idempotent.
+     *
+     * @param channel Channel name to validate.
+     * @return corrected channel name
+     * @deprecated not an API method
+     */
+    @Deprecated
+    public static String validateAndCorrectChannel(String channel) {
         if (channel == null) {
             throw new IllegalArgumentException("Channel cannot be null");
+        }
+        // This will correct registrations / outgoing messages
+        // It is not legal to send "BungeeCord" incoming anymore so we are fine there,
+        // but we must make sure that none of the API methods repeatedly call validate
+        if (channel.equals("BungeeCord")) {
+            return "bungeecord:main";
+        }
+        // And this will correct incoming messages.
+        if (channel.equals("bungeecord:main")) {
+            return "BungeeCord";
         }
         if (channel.length() > Messenger.MAX_CHANNEL_SIZE) {
             throw new ChannelNameTooLongException(channel);
         }
+        if (channel.indexOf(':') == -1) {
+            throw new IllegalArgumentException("Channel must contain : separator");
+        }
+        if (!channel.toLowerCase(Locale.ROOT).equals(channel)) {
+            // TODO: use NamespacedKey validation here
+            throw new IllegalArgumentException("Channel must be entirely lowercase");
+        }
+        return channel;
     }
 
     /**

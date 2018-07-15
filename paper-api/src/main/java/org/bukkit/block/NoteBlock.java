@@ -5,7 +5,9 @@ import org.bukkit.Note;
 
 /**
  * Represents a captured state of a note block.
+ * @deprecated not a tile entity in future versions of Minecraft
  */
+@Deprecated
 public interface NoteBlock extends BlockState {
 
     /**

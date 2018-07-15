@@ -7,30 +7,11 @@ import org.bukkit.Material;
  */
 public class Command extends MaterialData implements Redstone {
     public Command() {
-        super(Material.COMMAND);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Command(final int type) {
-        super(type);
+        super(Material.LEGACY_COMMAND);
     }
 
     public Command(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Command(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

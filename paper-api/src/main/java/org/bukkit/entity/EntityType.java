@@ -28,7 +28,7 @@ public enum EntityType {
     /**
      * An experience orb.
      */
-    EXPERIENCE_ORB("xp_orb", ExperienceOrb.class, 2),
+    EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
     /**
      * @see AreaEffectCloud
      */
@@ -80,7 +80,7 @@ public enum EntityType {
     /**
      * An ender eye signal.
      */
-    ENDER_SIGNAL("eye_of_ender_signal", EnderSignal.class, 15),
+    ENDER_SIGNAL("eye_of_ender", EnderSignal.class, 15),
     /**
      * A flying splash potion.
      */
@@ -88,7 +88,7 @@ public enum EntityType {
     /**
      * A flying experience bottle.
      */
-    THROWN_EXP_BOTTLE("xp_bottle", ThrownExpBottle.class, 17),
+    THROWN_EXP_BOTTLE("experience_bottle", ThrownExpBottle.class, 17),
     /**
      * An item frame on a wall.
      */
@@ -108,7 +108,7 @@ public enum EntityType {
     /**
      * Internal representation of a Firework once it has been launched.
      */
-    FIREWORK("fireworks_rocket", Firework.class, 22, false),
+    FIREWORK("firework_rocket", Firework.class, 22, false),
     /**
      * @see Husk
      */
@@ -152,11 +152,11 @@ public enum EntityType {
     /**
      * @see EvokerFangs
      */
-    EVOKER_FANGS("evocation_fangs", EvokerFangs.class, 33),
+    EVOKER_FANGS("evoker_fangs", EvokerFangs.class, 33),
     /**
      * @see Evoker
      */
-    EVOKER("evocation_illager", Evoker.class, 34),
+    EVOKER("evoker", Evoker.class, 34),
     /**
      * @see Vex
      */
@@ -164,15 +164,15 @@ public enum EntityType {
     /**
      * @see Vindicator
      */
-    VINDICATOR("vindication_illager", Vindicator.class, 36),
+    VINDICATOR("vindicator", Vindicator.class, 36),
     /**
      * @see Illusioner
      */
-    ILLUSIONER("illusion_illager", Illusioner.class, 37),
+    ILLUSIONER("illusioner", Illusioner.class, 37),
     /**
      * @see CommandMinecart
      */
-    MINECART_COMMAND("commandblock_minecart", CommandMinecart.class, 40),
+    MINECART_COMMAND("command_block_minecart", CommandMinecart.class, 40),
     /**
      * A placed boat.
      */
@@ -228,9 +228,9 @@ public enum EntityType {
     SQUID("squid", Squid.class, 94),
     WOLF("wolf", Wolf.class, 95),
     MUSHROOM_COW("mooshroom", MushroomCow.class, 96),
-    SNOWMAN("snowman", Snowman.class, 97),
+    SNOWMAN("snow_golem", Snowman.class, 97),
     OCELOT("ocelot", Ocelot.class, 98),
-    IRON_GOLEM("villager_golem", IronGolem.class, 99),
+    IRON_GOLEM("iron_golem", IronGolem.class, 99),
     HORSE("horse", Horse.class, 100),
     RABBIT("rabbit", Rabbit.class, 101),
     POLAR_BEAR("polar_bear", PolarBear.class, 102),
@@ -238,7 +238,16 @@ public enum EntityType {
     LLAMA_SPIT("llama_spit", LlamaSpit.class, 104),
     PARROT("parrot", Parrot.class, 105),
     VILLAGER("villager", Villager.class, 120),
-    ENDER_CRYSTAL("ender_crystal", EnderCrystal.class, 200),
+    ENDER_CRYSTAL("end_crystal", EnderCrystal.class, 200),
+    TURTLE("turtle", Turtle.class, -1),
+    PHANTOM("phantom", Phantom.class, -1),
+    TRIDENT("trident", Trident.class, -1),
+    COD("cod", Cod.class, -1),
+    SALMON("salmon", Salmon.class, -1),
+    PUFFERFISH("pufferfish", PufferFish.class, -1),
+    TROPICAL_FISH("tropical_fish", TropicalFish.class, -1),
+    DROWNED("drowned", Drowned.class, -1),
+    DOLPHIN("dolphin", Dolphin.class, -1),
     // These don't have an entity ID in nms.EntityTypes.
     /**
      * A flying lingering potion
@@ -247,15 +256,15 @@ public enum EntityType {
     /**
      * A fishing line and bobber.
      */
-    FISHING_HOOK(null, FishHook.class, -1, false),
+    FISHING_HOOK("fishing_bobber", FishHook.class, -1, false),
     /**
      * A bolt of lightning.
      * <p>
      * Spawn with {@link World#strikeLightning(Location)}.
      */
-    LIGHTNING(null, LightningStrike.class, -1, false),
+    LIGHTNING("lightning_bolt", LightningStrike.class, -1, false),
     WEATHER(null, Weather.class, -1, false),
-    PLAYER(null, Player.class, -1, false),
+    PLAYER("player", Player.class, -1, false),
     COMPLEX_PART(null, ComplexEntityPart.class, -1, false),
     /**
      * Like {@link #ARROW} but tipped with a specific potion which is applied on

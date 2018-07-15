@@ -15,7 +15,7 @@ public enum PotionType {
     JUMP(PotionEffectType.JUMP, true, true),
     FIRE_RESISTANCE(PotionEffectType.FIRE_RESISTANCE, false, true),
     SPEED(PotionEffectType.SPEED, true, true),
-    SLOWNESS(PotionEffectType.SLOW, false, true),
+    SLOWNESS(PotionEffectType.SLOW, true, true),
     WATER_BREATHING(PotionEffectType.WATER_BREATHING, false, true),
     INSTANT_HEAL(PotionEffectType.HEAL, true, false),
     INSTANT_DAMAGE(PotionEffectType.HARM, true, false),
@@ -23,7 +23,9 @@ public enum PotionType {
     REGEN(PotionEffectType.REGENERATION, true, true),
     STRENGTH(PotionEffectType.INCREASE_DAMAGE, true, true),
     WEAKNESS(PotionEffectType.WEAKNESS, false, true),
-    LUCK(PotionEffectType.LUCK, false, false);
+    LUCK(PotionEffectType.LUCK, false, false),
+    TURTLE_MASTER(PotionEffectType.SLOW, true, true), // TODO: multiple effects
+    SLOW_FALLING(PotionEffectType.SLOW_FALLING, false, true),
     ;
 
     private final PotionEffectType effect;

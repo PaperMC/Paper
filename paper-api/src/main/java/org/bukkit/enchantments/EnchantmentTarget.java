@@ -40,7 +40,7 @@ public enum EnchantmentTarget {
                 || item.equals(Material.CHAINMAIL_BOOTS)
                 || item.equals(Material.IRON_BOOTS)
                 || item.equals(Material.DIAMOND_BOOTS)
-                || item.equals(Material.GOLD_BOOTS);
+                || item.equals(Material.GOLDEN_BOOTS);
         }
     },
 
@@ -54,7 +54,7 @@ public enum EnchantmentTarget {
                 || item.equals(Material.CHAINMAIL_LEGGINGS)
                 || item.equals(Material.IRON_LEGGINGS)
                 || item.equals(Material.DIAMOND_LEGGINGS)
-                || item.equals(Material.GOLD_LEGGINGS);
+                || item.equals(Material.GOLDEN_LEGGINGS);
         }
     },
 
@@ -68,7 +68,7 @@ public enum EnchantmentTarget {
                 || item.equals(Material.CHAINMAIL_CHESTPLATE)
                 || item.equals(Material.IRON_CHESTPLATE)
                 || item.equals(Material.DIAMOND_CHESTPLATE)
-                || item.equals(Material.GOLD_CHESTPLATE);
+                || item.equals(Material.GOLDEN_CHESTPLATE);
         }
     },
 
@@ -82,7 +82,7 @@ public enum EnchantmentTarget {
                 || item.equals(Material.CHAINMAIL_HELMET)
                 || item.equals(Material.DIAMOND_HELMET)
                 || item.equals(Material.IRON_HELMET)
-                || item.equals(Material.GOLD_HELMET);
+                || item.equals(Material.GOLDEN_HELMET);
         }
     },
 
@@ -92,11 +92,11 @@ public enum EnchantmentTarget {
     WEAPON {
         @Override
         public boolean includes(Material item) {
-            return item.equals(Material.WOOD_SWORD)
+            return item.equals(Material.WOODEN_SWORD)
                 || item.equals(Material.STONE_SWORD)
                 || item.equals(Material.IRON_SWORD)
                 || item.equals(Material.DIAMOND_SWORD)
-                || item.equals(Material.GOLD_SWORD);
+                || item.equals(Material.GOLDEN_SWORD);
         }
     },
 
@@ -107,26 +107,26 @@ public enum EnchantmentTarget {
     TOOL {
         @Override
         public boolean includes(Material item) {
-            return item.equals(Material.WOOD_SPADE)
-                || item.equals(Material.STONE_SPADE)
-                || item.equals(Material.IRON_SPADE)
-                || item.equals(Material.DIAMOND_SPADE)
-                || item.equals(Material.GOLD_SPADE)
-                || item.equals(Material.WOOD_PICKAXE)
+            return item.equals(Material.WOODEN_SHOVEL)
+                || item.equals(Material.STONE_SHOVEL)
+                || item.equals(Material.IRON_SHOVEL)
+                || item.equals(Material.DIAMOND_SHOVEL)
+                || item.equals(Material.GOLDEN_SHOVEL)
+                || item.equals(Material.WOODEN_PICKAXE)
                 || item.equals(Material.STONE_PICKAXE)
                 || item.equals(Material.IRON_PICKAXE)
                 || item.equals(Material.DIAMOND_PICKAXE)
-                || item.equals(Material.GOLD_PICKAXE)
-                || item.equals(Material.WOOD_HOE)
+                || item.equals(Material.GOLDEN_PICKAXE)
+                || item.equals(Material.WOODEN_HOE)
                 || item.equals(Material.STONE_HOE)
                 || item.equals(Material.IRON_HOE)
                 || item.equals(Material.DIAMOND_HOE)
-                || item.equals(Material.GOLD_HOE)
-                || item.equals(Material.WOOD_AXE)
+                || item.equals(Material.GOLDEN_HOE)
+                || item.equals(Material.WOODEN_AXE)
                 || item.equals(Material.STONE_AXE)
                 || item.equals(Material.IRON_AXE)
                 || item.equals(Material.DIAMOND_AXE)
-                || item.equals(Material.GOLD_AXE)
+                || item.equals(Material.GOLDEN_AXE)
                 || item.equals(Material.SHEARS)
                 || item.equals(Material.FLINT_AND_STEEL);
         }
@@ -171,8 +171,24 @@ public enum EnchantmentTarget {
             return ARMOR.includes(item)
                     || item.equals(Material.ELYTRA)
                     || item.equals(Material.PUMPKIN)
+                    || item.equals(Material.CARVED_PUMPKIN)
                     || item.equals(Material.JACK_O_LANTERN)
-                    || item.equals(Material.SKULL_ITEM);
+                    || item.equals(Material.SKELETON_SKULL)
+                    || item.equals(Material.WITHER_SKELETON_SKULL)
+                    || item.equals(Material.ZOMBIE_HEAD)
+                    || item.equals(Material.PLAYER_HEAD)
+                    || item.equals(Material.CREEPER_HEAD)
+                    || item.equals(Material.DRAGON_HEAD);
+        }
+    },
+
+    /**
+     * Allow the Enchantment to be placed on tridents.
+     */
+    TRIDENT {
+        @Override
+        public boolean includes(Material item) {
+            return item.equals(Material.TRIDENT);
         }
     };
 

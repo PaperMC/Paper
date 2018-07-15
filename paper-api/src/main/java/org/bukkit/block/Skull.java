@@ -1,7 +1,9 @@
 package org.bukkit.block;
 
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
+import org.bukkit.block.data.BlockData;
 
 /**
  * Represents a captured state of a skull block.
@@ -57,27 +59,35 @@ public interface Skull extends BlockState {
      * Gets the rotation of the skull in the world
      *
      * @return the rotation of the skull
+     * @deprecated use {@link BlockData}
      */
+    @Deprecated
     public BlockFace getRotation();
 
     /**
      * Sets the rotation of the skull in the world
      *
      * @param rotation the rotation of the skull
+     * @deprecated use {@link BlockData}
      */
+    @Deprecated
     public void setRotation(BlockFace rotation);
 
     /**
      * Gets the type of skull
      *
      * @return the type of skull
+     * @deprecated check {@link Material} instead
      */
+    @Deprecated
     public SkullType getSkullType();
 
     /**
      * Sets the type of skull
      *
      * @param skullType the type of skull
+     * @deprecated check {@link Material} instead
      */
+    @Deprecated
     public void setSkullType(SkullType skullType);
 }

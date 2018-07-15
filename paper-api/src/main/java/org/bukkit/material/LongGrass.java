@@ -8,7 +8,7 @@ import org.bukkit.Material;
  */
 public class LongGrass extends MaterialData {
     public LongGrass() {
-        super(Material.LONG_GRASS);
+        super(Material.LEGACY_LONG_GRASS);
     }
 
     public LongGrass(GrassSpecies species) {
@@ -16,27 +16,8 @@ public class LongGrass extends MaterialData {
         setSpecies(species);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public LongGrass(final int type) {
-        super(type);
-    }
-
     public LongGrass(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public LongGrass(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

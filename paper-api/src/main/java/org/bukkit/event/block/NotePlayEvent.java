@@ -53,7 +53,9 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * Overrides the {@link Instrument} to be used.
      *
      * @param instrument the Instrument. Has no effect if null.
+     * @deprecated no effect on newer Minecraft versions
      */
+    @Deprecated
     public void setInstrument(Instrument instrument) {
         if (instrument != null) {
             this.instrument = instrument;
@@ -65,7 +67,9 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * Overrides the {@link Note} to be played.
      *
      * @param note the Note. Has no effect if null.
+     * @deprecated no effect on newer Minecraft versions
      */
+    @Deprecated
     public void setNote(Note note) {
         if (note != null) {
             this.note = note;

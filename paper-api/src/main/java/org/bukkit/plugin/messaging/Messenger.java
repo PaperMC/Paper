@@ -1,12 +1,17 @@
 package org.bukkit.plugin.messaging;
 
 import java.util.Set;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
  * A class responsible for managing the registrations of plugin channels and
  * their listeners.
+ *
+ * Channel names must contain a colon separator and consist of only [a-z0-9/._-]
+ * - i.e. they MUST be valid {@link NamespacedKey}. The "BungeeCord" channel is
+ * an exception and may only take this form.
  */
 public interface Messenger {
 
@@ -18,7 +23,7 @@ public interface Messenger {
     /**
      * Represents the largest size that a Plugin Channel may be.
      */
-    public static final int MAX_CHANNEL_SIZE = 20;
+    public static final int MAX_CHANNEL_SIZE = 32;
 
     /**
      * Checks if the specified channel is a reserved name.

@@ -12,39 +12,20 @@ public class MonsterEggs extends TexturedMaterial {
 
     private static final List<Material> textures = new ArrayList<Material>();
     static {
-        textures.add(Material.STONE);
-        textures.add(Material.COBBLESTONE);
-        textures.add(Material.SMOOTH_BRICK);
+        textures.add(Material.LEGACY_STONE);
+        textures.add(Material.LEGACY_COBBLESTONE);
+        textures.add(Material.LEGACY_SMOOTH_BRICK);
     }
 
     public MonsterEggs() {
-        super(Material.MONSTER_EGGS);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public MonsterEggs(final int type) {
-        super(type);
+        super(Material.LEGACY_MONSTER_EGGS);
     }
 
     public MonsterEggs(final Material type) {
-        super((textures.contains(type)) ? Material.MONSTER_EGGS : type);
+        super((textures.contains(type)) ? Material.LEGACY_MONSTER_EGGS : type);
         if (textures.contains(type)) {
             setMaterial(type);
         }
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public MonsterEggs(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

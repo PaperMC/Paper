@@ -6,6 +6,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
 
@@ -14,6 +15,11 @@ import org.bukkit.metadata.Metadatable;
  * any given location in a world. The state of the block may change
  * concurrently to your own handling of it; use block.getState() to get a
  * snapshot state of a block which will not be modified.
+ *
+ * <br>
+ * Note that parts of this class which require access to the world at large
+ * (i.e. lighting and power) may not be able to be safely accessed during world
+ * generation when used in cases like BlockPhysicsEvent!!!!
  */
 public interface Block extends Metadatable {
 
@@ -25,6 +31,13 @@ public interface Block extends Metadatable {
      */
     @Deprecated
     byte getData();
+
+    /**
+     * Gets the complete block data for this block
+     *
+     * @return block specific data
+     */
+    BlockData getBlockData();
 
     /**
      * Gets the block at the given offsets
@@ -71,15 +84,6 @@ public interface Block extends Metadatable {
      * @return block type
      */
     Material getType();
-
-    /**
-     * Gets the type-id of this block
-     *
-     * @return block type-id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    int getTypeId();
 
     /**
      * Gets the light level between 0-15
@@ -180,6 +184,21 @@ public interface Block extends Metadatable {
     void setData(byte data, boolean applyPhysics);
 
     /**
+     * Sets the complete data for this block
+     *
+     * @param data new block specific data
+     */
+    void setBlockData(BlockData data);
+
+    /**
+     * Sets the complete data for this block
+     *
+     * @param data new block specific data
+     * @param applyPhysics false to cancel physics from the changed block
+     */
+    void setBlockData(BlockData data, boolean applyPhysics);
+
+    /**
      * Sets the type of this block
      *
      * @param type Material to change this block to
@@ -193,39 +212,6 @@ public interface Block extends Metadatable {
      * @param applyPhysics False to cancel physics on the changed block.
      */
     void setType(Material type, boolean applyPhysics);
-
-    /**
-     * Sets the type-id of this block
-     *
-     * @param type Type-Id to change this block to
-     * @return whether the block was changed
-     * @deprecated Magic value
-     */
-    @Deprecated
-    boolean setTypeId(int type);
-
-    /**
-     * Sets the type-id of this block
-     *
-     * @param type Type-Id to change this block to
-     * @param applyPhysics False to cancel physics on the changed block.
-     * @return whether the block was changed
-     * @deprecated Magic value
-     */
-    @Deprecated
-    boolean setTypeId(int type, boolean applyPhysics);
-
-    /**
-     * Sets the type-id of this block
-     *
-     * @param type Type-Id to change this block to
-     * @param data The data value to change this block to
-     * @param applyPhysics False to cancel physics on the changed block
-     * @return whether the block was changed
-     * @deprecated Magic value
-     */
-    @Deprecated
-    boolean setTypeIdAndData(int type, byte data, boolean applyPhysics);
 
     /**
      * Gets the face relation of this block compared to the given block.
@@ -330,8 +316,7 @@ public interface Block extends Metadatable {
      * Checks if this block is liquid.
      * <p>
      * A block is considered liquid when {@link #getType()} returns {@link
-     * Material#WATER}, {@link Material#STATIONARY_WATER}, {@link
-     * Material#LAVA} or {@link Material#STATIONARY_LAVA}.
+     * Material#WATER} or {@link Material#LAVA}.
      *
      * @return true if this block is liquid
      */

@@ -7,30 +7,11 @@ import org.bukkit.Material;
  */
 public class RedstoneTorch extends Torch implements Redstone {
     public RedstoneTorch() {
-        super(Material.REDSTONE_TORCH_ON);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public RedstoneTorch(final int type) {
-        super(type);
+        super(Material.LEGACY_REDSTONE_TORCH_ON);
     }
 
     public RedstoneTorch(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public RedstoneTorch(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -50,7 +31,7 @@ public class RedstoneTorch extends Torch implements Redstone {
      * @return true if powered, otherwise false
      */
     public boolean isPowered() {
-        return getItemType() == Material.REDSTONE_TORCH_ON;
+        return getItemType() == Material.LEGACY_REDSTONE_TORCH_ON;
     }
 
     @Override

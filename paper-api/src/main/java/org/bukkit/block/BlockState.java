@@ -4,6 +4,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 
@@ -34,20 +35,18 @@ public interface BlockState extends Metadatable {
     MaterialData getData();
 
     /**
+     * Gets the data for this block state.
+     *
+     * @return block specific data
+     */
+    BlockData getBlockData();
+
+    /**
      * Gets the type of this block state.
      *
      * @return block type
      */
     Material getType();
-
-    /**
-     * Gets the type-id of this block state.
-     *
-     * @return block type-id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    int getTypeId();
 
     /**
      * Gets the current light level of the block represented by this block state.
@@ -124,21 +123,18 @@ public interface BlockState extends Metadatable {
     void setData(MaterialData data);
 
     /**
+     * Sets the data for this block state.
+     *
+     * @param data New block specific data
+     */
+    void setBlockData(BlockData data);
+
+    /**
      * Sets the type of this block state.
      *
      * @param type Material to change this block state to
      */
     void setType(Material type);
-
-    /**
-     * Sets the type-id of this block state.
-     *
-     * @param type Type-Id to change this block state to
-     * @return Whether it worked?
-     * @deprecated Magic value
-     */
-    @Deprecated
-    boolean setTypeId(int type);
 
     /**
      * Attempts to update the block represented by this state, setting it to

@@ -6,7 +6,7 @@ import org.bukkit.TreeSpecies;
 /**
  * Represents the different types of Tree block that face a direction.
  *
- * @see Material#SAPLING
+ * @see Material#LEGACY_SAPLING
  */
 public class Sapling extends Wood {
 
@@ -34,7 +34,7 @@ public class Sapling extends Wood {
      * @param isInstantGrowable true if the Sapling should grow when next ticked with bonemeal
      */
     public Sapling(TreeSpecies species, boolean isInstantGrowable) {
-        this(Material.SAPLING, species, isInstantGrowable);
+        this(Material.LEGACY_SAPLING, species, isInstantGrowable);
     }
 
     /**
@@ -68,16 +68,6 @@ public class Sapling extends Wood {
     public Sapling(final Material type, TreeSpecies species, boolean isInstantGrowable) {
         super(type, species);
         setIsInstantGrowable(isInstantGrowable);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Sapling(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

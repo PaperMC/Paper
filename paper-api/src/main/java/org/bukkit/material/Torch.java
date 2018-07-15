@@ -8,30 +8,11 @@ import org.bukkit.Material;
  */
 public class Torch extends SimpleAttachableMaterialData {
     public Torch() {
-        super(Material.TORCH);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Torch(final int type) {
-        super(type);
+        super(Material.LEGACY_TORCH);
     }
 
     public Torch(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Torch(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

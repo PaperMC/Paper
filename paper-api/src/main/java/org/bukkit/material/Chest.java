@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
 public class Chest extends DirectionalContainer {
 
     public Chest() {
-        super(Material.CHEST);
+        super(Material.LEGACY_CHEST);
     }
 
     /**
@@ -22,27 +22,8 @@ public class Chest extends DirectionalContainer {
         setFacingDirection(direction);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Chest(final int type) {
-        super(type);
-    }
-
     public Chest(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Chest(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

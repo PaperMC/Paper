@@ -122,6 +122,8 @@ public final class JavaPluginLoader implements PluginLoader {
             }
         }
 
+        server.getUnsafe().checkSupported(description);
+
         final PluginClassLoader loader;
         try {
             loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file);

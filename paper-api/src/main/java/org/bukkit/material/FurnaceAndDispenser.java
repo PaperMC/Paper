@@ -7,27 +7,8 @@ import org.bukkit.Material;
  */
 public class FurnaceAndDispenser extends DirectionalContainer {
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public FurnaceAndDispenser(final int type) {
-        super(type);
-    }
-
     public FurnaceAndDispenser(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public FurnaceAndDispenser(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

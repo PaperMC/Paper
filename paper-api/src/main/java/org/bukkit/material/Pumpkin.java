@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
 public class Pumpkin extends MaterialData implements Directional {
 
     public Pumpkin() {
-        super(Material.PUMPKIN);
+        super(Material.LEGACY_PUMPKIN);
     }
 
     /**
@@ -22,27 +22,8 @@ public class Pumpkin extends MaterialData implements Directional {
         setFacingDirection(direction);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Pumpkin(final int type) {
-        super(type);
-    }
-
     public Pumpkin(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Pumpkin(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -56,7 +37,7 @@ public class Pumpkin extends MaterialData implements Directional {
     }
 
     public boolean isLit() {
-        return getItemType() == Material.JACK_O_LANTERN;
+        return getItemType() == Material.LEGACY_JACK_O_LANTERN;
     }
 
     public void setFacingDirection(BlockFace face) {

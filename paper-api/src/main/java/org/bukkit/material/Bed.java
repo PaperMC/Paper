@@ -12,7 +12,7 @@ public class Bed extends MaterialData implements Directional {
      * Default constructor for a bed.
      */
     public Bed() {
-        super(Material.BED_BLOCK);
+        super(Material.LEGACY_BED_BLOCK);
     }
 
     /**
@@ -25,28 +25,8 @@ public class Bed extends MaterialData implements Directional {
         setFacingDirection(direction);
     }
 
-    /**
-     *
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Bed(final int type) {
-        super(type);
-    }
-
     public Bed(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Bed(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

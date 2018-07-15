@@ -100,6 +100,8 @@ final class PluginClassLoader extends URLClassLoader {
                         throw new ClassNotFoundException(name, ex);
                     }
 
+                    classBytes = loader.server.getUnsafe().processClass(description, classBytes);
+
                     int dot = name.lastIndexOf('.');
                     if (dot != -1) {
                         String pkgName = name.substring(0, dot);

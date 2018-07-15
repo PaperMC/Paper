@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
 public class Dispenser extends FurnaceAndDispenser {
 
     public Dispenser() {
-        super(Material.DISPENSER);
+        super(Material.LEGACY_DISPENSER);
     }
 
     public Dispenser(BlockFace direction) {
@@ -17,27 +17,8 @@ public class Dispenser extends FurnaceAndDispenser {
         setFacingDirection(direction);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Dispenser(final int type) {
-        super(type);
-    }
-
     public Dispenser(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Dispenser(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

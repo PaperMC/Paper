@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.inventory.ItemStack;
@@ -31,8 +32,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Block at the given coordinates
-     * @see #getBlockTypeIdAt(int, int, int) Returns the current type ID of
-     *     the block
      */
     public Block getBlockAt(int x, int y, int z);
 
@@ -41,36 +40,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param location Location of the block
      * @return Block at the given location
-     * @see #getBlockTypeIdAt(org.bukkit.Location) Returns the current type ID
-     *     of the block
      */
     public Block getBlockAt(Location location);
-
-    /**
-     * Gets the block type ID at the given coordinates
-     *
-     * @param x X-coordinate of the block
-     * @param y Y-coordinate of the block
-     * @param z Z-coordinate of the block
-     * @return Type ID of the block at the given coordinates
-     * @see #getBlockAt(int, int, int) Returns a live Block object at the
-     *     given location
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getBlockTypeIdAt(int x, int y, int z);
-
-    /**
-     * Gets the block type ID at the given {@link Location}
-     *
-     * @param location Location of the block
-     * @return Type ID of the block at the given location
-     * @see #getBlockAt(org.bukkit.Location) Returns a live Block object at
-     *     the given location
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getBlockTypeIdAt(Location location);
 
     /**
      * Gets the y coordinate of the lowest block at this position such that the
@@ -358,9 +329,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param delegate A class to call for each block changed as a result of
      *     this method
      * @return true if the tree was created successfully, otherwise false
-     * @deprecated rarely used API that was largely for implementation purposes
      */
-    @Deprecated
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
 
     /**
@@ -757,6 +726,22 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * material.isBlock()}. The Material may not be air.
      *
      * @param location The {@link Location} to spawn the FallingBlock
+     * @param data The block data
+     * @return The spawned {@link FallingBlock} instance
+     * @throws IllegalArgumentException if {@link Location} or {@link
+     *     BlockData} are null
+     */
+    public FallingBlock spawnFallingBlock(Location location, BlockData data) throws IllegalArgumentException;
+
+    /**
+     * Spawn a {@link FallingBlock} entity at the given {@link Location} of the
+     * specified {@link Material}. The material dictates what is falling.
+     * When the FallingBlock hits the ground, it will place that block.
+     * <p>
+     * The Material must be a block type, check with {@link Material#isBlock()
+     * material.isBlock()}. The Material may not be air.
+     *
+     * @param location The {@link Location} to spawn the FallingBlock
      * @param material The block {@link Material} type
      * @param data The block data
      * @return The spawned {@link FallingBlock} instance
@@ -766,22 +751,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     @Deprecated
     public FallingBlock spawnFallingBlock(Location location, Material material, byte data) throws IllegalArgumentException;
-
-    /**
-     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
-     * the specified blockId (converted to {@link Material})
-     *
-     * @param location The {@link Location} to spawn the FallingBlock
-     * @param blockId The id of the intended material
-     * @param blockData The block data
-     * @return The spawned FallingBlock instance
-     * @throws IllegalArgumentException if location is null, or blockId is
-     *     invalid
-     * @see #spawnFallingBlock(org.bukkit.Location, org.bukkit.Material, byte)
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public FallingBlock spawnFallingBlock(Location location, int blockId, byte blockData) throws IllegalArgumentException;
 
     /**
      * Plays an effect to all players within a default radius around a given
@@ -838,11 +807,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param z - chunk z coordinate
      * @param includeBiome - if true, snapshot includes per-coordinate biome
      *     type
-     * @param includeBiomeTempRain - if true, snapshot includes per-coordinate
-     *     raw biome temperature and rainfall
+     * @param includeBiomeTemp - if true, snapshot includes per-coordinate
+     *     raw biome temperature
      * @return The empty snapshot.
      */
-    public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTempRain);
+    public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTemp);
 
     /**
      * Sets the spawn flags for this.

@@ -10,17 +10,17 @@ public class Cauldron extends MaterialData {
     private static final int CAULDRON_EMPTY = 0;
 
     public Cauldron() {
-        super(Material.CAULDRON);
+        super(Material.LEGACY_CAULDRON);
     }
 
     /**
      *
-     * @param type the raw type id
+     * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
      */
     @Deprecated
-    public Cauldron(int type, byte data) {
+    public Cauldron(final Material type, final byte data) {
         super(type, data);
     }
 
@@ -31,7 +31,7 @@ public class Cauldron extends MaterialData {
      */
     @Deprecated
     public Cauldron(byte data) {
-        super(Material.CAULDRON, data);
+        super(Material.LEGACY_CAULDRON, data);
     }
 
     /**

@@ -4,30 +4,11 @@ import org.bukkit.Material;
 
 public class Cake extends MaterialData {
     public Cake() {
-        super(Material.CAKE_BLOCK);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Cake(int type) {
-        super(type);
+        super(Material.LEGACY_CAKE_BLOCK);
     }
 
     public Cake(Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Cake(int type, byte data) {
-        super(type, data);
     }
 
     /**

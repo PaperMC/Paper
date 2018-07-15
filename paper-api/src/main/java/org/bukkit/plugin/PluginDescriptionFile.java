@@ -118,6 +118,10 @@ import com.google.common.collect.ImmutableSet;
  *     <td><code>awareness</code></td>
  *     <td>{@link #getAwareness()}</td>
  *     <td>The concepts that the plugin acknowledges</td>
+ * </tr><tr>
+ *     <td><code>api-version</code></td>
+ *     <td>{@link #getAPIVersion()}</td>
+ *     <td>The API version which this plugin was programmed against</td>
  * </tr>
  * </table>
  * <p>
@@ -134,6 +138,7 @@ import com.google.common.collect.ImmutableSet;
  *
  *main: com.captaininflamo.bukkit.inferno.Inferno
  *depend: [NewFire, FlameWire]
+ *api-version: 1.13
  *
  *commands:
  *  flagrate:
@@ -223,6 +228,7 @@ public final class PluginDescriptionFile {
     private Map<?, ?> lazyPermissions = null;
     private PermissionDefault defaultPerm = PermissionDefault.OP;
     private Set<PluginAwareness> awareness = ImmutableSet.of();
+    private String apiVersion = null;
 
     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
         loadMap(asMap(YAML.get().load(stream)));
@@ -847,6 +853,23 @@ public final class PluginDescriptionFile {
     }
 
     /**
+     * Gives the API version which this plugin is designed to support. No
+     * specific format is guaranteed.
+     * <ul>
+     * <li>Refer to release notes for supported API versions.
+     * </ul>
+     * <p>
+     * In the plugin.yml, this entry is named <code>api-version</code>.
+     * <p>
+     * Example:<blockquote><pre>api-version: 1.13</pre></blockquote>
+     *
+     * @return the version of the plugin
+     */
+    public String getAPIVersion() {
+        return apiVersion;
+    }
+
+    /**
      * @return unused
      * @deprecated unused
      */
@@ -995,6 +1018,14 @@ public final class PluginDescriptionFile {
             this.awareness = ImmutableSet.copyOf(awareness);
         }
 
+        if (map.get("api-version") != null) {
+            try {
+                apiVersion = map.get("api-version").toString();
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "api-version is of wrong type");
+            }
+        }
+
         try {
             lazyPermissions = (Map<?, ?>) map.get("permissions");
         } catch (ClassCastException ex) {
@@ -1054,6 +1085,10 @@ public final class PluginDescriptionFile {
             map.put("author", authors.get(0));
         } else if (authors.size() > 1) {
             map.put("authors", authors);
+        }
+
+        if (apiVersion != null) {
+            map.put("api-version", apiVersion);
         }
 
         if (classLoaderOf != null) {

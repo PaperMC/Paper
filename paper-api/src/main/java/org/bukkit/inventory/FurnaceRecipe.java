@@ -1,76 +1,61 @@
 package org.bukkit.inventory;
 
+import com.google.common.base.Preconditions;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
 
 /**
  * Represents a smelting recipe.
  */
-public class FurnaceRecipe implements Recipe {
+public class FurnaceRecipe implements Recipe, Keyed {
+    private final NamespacedKey key;
     private ItemStack output;
     private ItemStack ingredient;
     private float experience;
+    private int cookingTime;
 
-    /**
-     * Create a furnace recipe to craft the specified ItemStack.
-     *
-     * @param result The item you want the recipe to create.
-     * @param source The input material.
-     */
+    @Deprecated
     public FurnaceRecipe(ItemStack result, Material source) {
-        this(result, source, 0, 0);
+        this(NamespacedKey.randomKey(), result, source, 0, 0, 200);
     }
 
-    /**
-     * Create a furnace recipe to craft the specified ItemStack.
-     *
-     * @param result The item you want the recipe to create.
-     * @param source The input material.
-     */
+    @Deprecated
     public FurnaceRecipe(ItemStack result, MaterialData source) {
-        this(result, source.getItemType(), source.getData(), 0);
+        this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), 0, 200);
     }
 
-    /**
-     * Create a furnace recipe to craft the specified ItemStack.
-     *
-     * @param result The item you want the recipe to create.
-     * @param source The input material.
-     * @param experience The experience given by this recipe
-     */
+    @Deprecated
     public FurnaceRecipe(ItemStack result, MaterialData source, float experience) {
-        this(result, source.getItemType(), source.getData(), experience);
+        this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), experience, 200);
     }
 
-    /**
-     * Create a furnace recipe to craft the specified ItemStack.
-     *
-     * @param result The item you want the recipe to create.
-     * @param source The input material.
-     * @param data The data value. (Note: This is currently ignored by the
-     *     CraftBukkit server.)
-     * @deprecated Magic value
-     */
     @Deprecated
     public FurnaceRecipe(ItemStack result, Material source, int data) {
-        this(result, source, data, 0);
+        this(NamespacedKey.randomKey(), result, source, data, 0, 200);
     }
 
     /**
      * Create a furnace recipe to craft the specified ItemStack.
      *
+     * @param key The unique recipe key
      * @param result The item you want the recipe to create.
      * @param source The input material.
-     * @param data The data value. (Note: This is currently ignored by the
-     *     CraftBukkit server.)
      * @param experience The experience given by this recipe
-     * @deprecated Magic value
+     * @param cookingTime The cooking time (in ticks)
      */
+    public FurnaceRecipe(NamespacedKey key, ItemStack result, Material source, float experience, int cookingTime) {
+        this(key, result, source, 0, experience, cookingTime);
+    }
+
     @Deprecated
-    public FurnaceRecipe(ItemStack result, Material source, int data, float experience) {
+    public FurnaceRecipe(NamespacedKey key, ItemStack result, Material source, int data, float experience, int cookingTime) {
+        this.key = key;
         this.output = new ItemStack(result);
         this.ingredient = new ItemStack(source, 1, (short) data);
         this.experience = experience;
+        this.cookingTime = cookingTime;
     }
 
     /**
@@ -142,5 +127,29 @@ public class FurnaceRecipe implements Recipe {
      */
     public float getExperience() {
         return experience;
+    }
+
+    /**
+     * Set the cooking time for this recipe in ticks.
+     *
+     * @param cookingTime new cooking time
+     */
+    public void setCookingTime(int cookingTime) {
+        Preconditions.checkArgument(cookingTime >= 0, "cookingTime must be >= 0");
+        this.cookingTime = cookingTime;
+    }
+
+    /**
+     * Get the cooking time for this recipe in ticks.
+     *
+     * @return cooking time
+     */
+    public int getCookingTime() {
+        return cookingTime;
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 }

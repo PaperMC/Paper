@@ -6,8 +6,8 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents a comparator in the on or off state, in normal or subtraction mode and facing in a specific direction.
  *
- * @see Material#REDSTONE_COMPARATOR_OFF
- * @see Material#REDSTONE_COMPARATOR_ON
+ * @see Material#LEGACY_REDSTONE_COMPARATOR_OFF
+ * @see Material#LEGACY_REDSTONE_COMPARATOR_ON
  */
 public class Comparator extends MaterialData implements Directional, Redstone {
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.NORTH;
@@ -54,32 +54,13 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      * @see BlockFace
      */
     public Comparator(BlockFace facingDirection, boolean isSubtraction, boolean state) {
-        super(state ? Material.REDSTONE_COMPARATOR_ON : Material.REDSTONE_COMPARATOR_OFF);
+        super(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF);
         setFacingDirection(facingDirection);
         setSubtractionMode(isSubtraction);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Comparator(int type) {
-        super(type);
-    }
-
     public Comparator(Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Comparator(int type, byte data) {
-        super(type, data);
     }
 
     /**
@@ -186,7 +167,7 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      */
     @Override
     public boolean isPowered() {
-        return getItemType() == Material.REDSTONE_COMPARATOR_ON;
+        return getItemType() == Material.LEGACY_REDSTONE_COMPARATOR_ON;
     }
 
     /**

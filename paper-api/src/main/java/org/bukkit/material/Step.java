@@ -11,44 +11,25 @@ import org.bukkit.Material;
 public class Step extends TexturedMaterial {
     private static final List<Material> textures = new ArrayList<Material>();
     static {
-        textures.add(Material.STONE);
-        textures.add(Material.SANDSTONE);
-        textures.add(Material.WOOD);
-        textures.add(Material.COBBLESTONE);
-        textures.add(Material.BRICK);
-        textures.add(Material.SMOOTH_BRICK);
-        textures.add(Material.NETHER_BRICK);
-        textures.add(Material.QUARTZ_BLOCK);
+        textures.add(Material.LEGACY_STONE);
+        textures.add(Material.LEGACY_SANDSTONE);
+        textures.add(Material.LEGACY_WOOD);
+        textures.add(Material.LEGACY_COBBLESTONE);
+        textures.add(Material.LEGACY_BRICK);
+        textures.add(Material.LEGACY_SMOOTH_BRICK);
+        textures.add(Material.LEGACY_NETHER_BRICK);
+        textures.add(Material.LEGACY_QUARTZ_BLOCK);
     }
 
     public Step() {
-        super(Material.STEP);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Step(final int type) {
-        super(type);
+        super(Material.LEGACY_STEP);
     }
 
     public Step(final Material type) {
-        super((textures.contains(type)) ? Material.STEP : type);
+        super((textures.contains(type)) ? Material.LEGACY_STEP : type);
         if (textures.contains(type)) {
             setMaterial(type);
         }
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Step(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

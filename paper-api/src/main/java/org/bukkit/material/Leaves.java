@@ -7,11 +7,11 @@ import org.bukkit.TreeSpecies;
  * Represents the different types of leaf block that may be permanent or can
  * decay when too far from a log.
  *
- * @see Material#LEAVES
- * @see Material#LEAVES_2
+ * @see Material#LEGACY_LEAVES
+ * @see Material#LEGACY_LEAVES_2
  */
 public class Leaves extends Wood {
-    protected static final Material DEFAULT_TYPE = Material.LEAVES;
+    protected static final Material DEFAULT_TYPE = Material.LEGACY_LEAVES;
     protected static final boolean DEFAULT_DECAYABLE = true;
 
     /**
@@ -39,15 +39,6 @@ public class Leaves extends Wood {
      */
     public Leaves(TreeSpecies species, boolean isDecayable) {
         this(DEFAULT_TYPE, species, isDecayable);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Leaves(final int type) {
-        super(type);
     }
 
     /**
@@ -80,16 +71,6 @@ public class Leaves extends Wood {
     public Leaves(final Material type, TreeSpecies species, boolean isDecayable) {
         super(type, species);
         setDecayable(isDecayable);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Leaves(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

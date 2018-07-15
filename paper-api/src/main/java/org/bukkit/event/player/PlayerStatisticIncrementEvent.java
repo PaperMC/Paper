@@ -10,8 +10,8 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player statistic is incremented.
  * <p>
- * This event is not called for {@link org.bukkit.Statistic#PLAY_ONE_TICK} or
- * movement based statistics.
+ * This event is not called for some high frequency statistics, e.g. movement
+ * based statistics.
  *
  */
 public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {

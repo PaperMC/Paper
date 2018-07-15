@@ -9,30 +9,11 @@ import org.bukkit.block.BlockFace;
 public class Rails extends MaterialData {
 
     public Rails() {
-        super(Material.RAILS);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Rails(final int type) {
-        super(type);
+        super(Material.LEGACY_RAILS);
     }
 
     public Rails(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Rails(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

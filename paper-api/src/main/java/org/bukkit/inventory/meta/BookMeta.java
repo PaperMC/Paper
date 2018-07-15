@@ -5,7 +5,7 @@ import java.util.List;
 import org.bukkit.Material;
 
 /**
- * Represents a book ({@link Material#BOOK_AND_QUILL} or {@link
+ * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
  * Material#WRITTEN_BOOK}) that can have a title, an author, and pages.
  */
 public interface BookMeta extends ItemMeta {

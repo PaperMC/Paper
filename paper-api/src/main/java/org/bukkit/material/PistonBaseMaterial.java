@@ -8,31 +8,8 @@ import org.bukkit.block.BlockFace;
  */
 public class PistonBaseMaterial extends MaterialData implements Directional, Redstone {
     
-    /**
-     * Constructs a PistonBaseMaterial
-     * 
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public PistonBaseMaterial(final int type) {
-        super(type);
-    }
-
     public PistonBaseMaterial(final Material type) {
         super(type);
-    }
-
-    /**
-     * Constructs a PistonBaseMaterial.
-     * 
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public PistonBaseMaterial(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -113,7 +90,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
      * @return true if this piston is "sticky", or false
      */
     public boolean isSticky() {
-        return this.getItemType() == Material.PISTON_STICKY_BASE;
+        return this.getItemType() == Material.LEGACY_PISTON_STICKY_BASE;
     }
 
     @Override

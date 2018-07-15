@@ -33,9 +33,9 @@ public enum Art {
     FIGHTERS(20, 4, 2),
     POINTER(21, 4, 4),
     PIGSCENE(22, 4, 4),
-    BURNINGSKULL(23, 4, 4),
+    BURNING_SKULL(23, 4, 4),
     SKELETON(24, 4, 3),
-    DONKEYKONG(25, 4, 3);
+    DONKEY_KONG(25, 4, 3);
 
     private int id, width, height;
     private static final HashMap<String, Art> BY_NAME = Maps.newHashMap();
@@ -99,13 +99,13 @@ public enum Art {
     public static Art getByName(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH).replaceAll("_", ""));
+        return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
     static {
         for (Art art : values()) {
             BY_ID.put(art.id, art);
-            BY_NAME.put(art.toString().toLowerCase(java.util.Locale.ENGLISH).replaceAll("_", ""), art);
+            BY_NAME.put(art.toString().toLowerCase(java.util.Locale.ENGLISH), art);
         }
     }
 }

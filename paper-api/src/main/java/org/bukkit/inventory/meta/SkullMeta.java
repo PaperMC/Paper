@@ -1,10 +1,9 @@
 package org.bukkit.inventory.meta;
 
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 
 /**
- * Represents a skull ({@link Material#SKULL_ITEM}) that can have an owner.
+ * Represents a skull that can have an owner.
  */
 public interface SkullMeta extends ItemMeta {
 

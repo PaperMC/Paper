@@ -6,12 +6,12 @@ import org.bukkit.TreeSpecies;
 /**
  * Represents wood blocks of different species.
  *
- * @see Material#WOOD
- * @see Material#SAPLING
- * @see Material#WOOD_DOUBLE_STEP
+ * @see Material#LEGACY_WOOD
+ * @see Material#LEGACY_SAPLING
+ * @see Material#LEGACY_WOOD_DOUBLE_STEP
  */
 public class Wood extends MaterialData {
-    protected static final Material DEFAULT_TYPE = Material.WOOD;
+    protected static final Material DEFAULT_TYPE = Material.LEGACY_WOOD;
     protected static final TreeSpecies DEFAULT_SPECIES = TreeSpecies.GENERIC;
 
     /**
@@ -28,15 +28,6 @@ public class Wood extends MaterialData {
      */
     public Wood(TreeSpecies species) {
         this(DEFAULT_TYPE, species);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Wood(final int type) {
-        super(type);
     }
 
     /**
@@ -61,16 +52,6 @@ public class Wood extends MaterialData {
     }
 
     /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Wood(final int type, final byte data) {
-        super(type, data);
-    }
-
-    /**
      * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
@@ -87,17 +68,17 @@ public class Wood extends MaterialData {
      */
     public TreeSpecies getSpecies() {
         switch (getItemType()) {
-            case WOOD:
-            case WOOD_DOUBLE_STEP:
+            case LEGACY_WOOD:
+            case LEGACY_WOOD_DOUBLE_STEP:
                 return TreeSpecies.getByData((byte) getData());
-            case LOG:
-            case LEAVES:
+            case LEGACY_LOG:
+            case LEGACY_LEAVES:
                 return TreeSpecies.getByData((byte) (getData() & 0x3));
-            case LOG_2:
-            case LEAVES_2:
+            case LEGACY_LOG_2:
+            case LEGACY_LEAVES_2:
                 return TreeSpecies.getByData((byte) ((getData() & 0x3) | 0x4));
-            case SAPLING:
-            case WOOD_STEP:
+            case LEGACY_SAPLING:
+            case LEGACY_WOOD_STEP:
                 return TreeSpecies.getByData((byte) (getData() & 0x7));
             default:
                 throw new IllegalArgumentException("Invalid block type for tree species");
@@ -118,20 +99,20 @@ public class Wood extends MaterialData {
             case BIRCH:
             case JUNGLE:
                 switch (type) {
-                    case LOG_2:
-                        return Material.LOG;
-                    case LEAVES_2:
-                        return Material.LEAVES;
+                    case LEGACY_LOG_2:
+                        return Material.LEGACY_LOG;
+                    case LEGACY_LEAVES_2:
+                        return Material.LEGACY_LEAVES;
                     default:
                 }
                 break;
             case ACACIA:
             case DARK_OAK:
                 switch (type) {
-                    case LOG:
-                        return Material.LOG_2;
-                    case LEAVES:
-                        return Material.LEAVES_2;
+                    case LEGACY_LOG:
+                        return Material.LEGACY_LOG_2;
+                    case LEGACY_LEAVES:
+                        return Material.LEGACY_LEAVES_2;
                     default:
                 }
                 break;
@@ -147,16 +128,16 @@ public class Wood extends MaterialData {
     public void setSpecies(final TreeSpecies species) {
         boolean firstType = false;
         switch (getItemType()) {
-            case WOOD:
-            case WOOD_DOUBLE_STEP:
+            case LEGACY_WOOD:
+            case LEGACY_WOOD_DOUBLE_STEP:
                 setData(species.getData());
                 break;
-            case LOG:
-            case LEAVES:
+            case LEGACY_LOG:
+            case LEGACY_LEAVES:
                 firstType = true;
             // fall through to next switch statement below
-            case LOG_2:
-            case LEAVES_2:
+            case LEGACY_LOG_2:
+            case LEGACY_LEAVES_2:
                 switch (species) {
                     case GENERIC:
                     case REDWOOD:
@@ -175,8 +156,8 @@ public class Wood extends MaterialData {
                 }
                 setData((byte) ((getData() & 0xC) | (species.getData() & 0x3)));
                 break;
-            case SAPLING:
-            case WOOD_STEP:
+            case LEGACY_SAPLING:
+            case LEGACY_WOOD_STEP:
                 setData((byte) ((getData() & 0x8) | species.getData()));
                 break;
             default:

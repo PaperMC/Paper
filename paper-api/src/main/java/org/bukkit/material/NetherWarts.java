@@ -8,7 +8,7 @@ import org.bukkit.NetherWartsState;
  */
 public class NetherWarts extends MaterialData {
     public NetherWarts() {
-        super(Material.NETHER_WARTS);
+        super(Material.LEGACY_NETHER_WARTS);
     }
 
     public NetherWarts(NetherWartsState state) {
@@ -16,27 +16,8 @@ public class NetherWarts extends MaterialData {
         setState(state);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public NetherWarts(final int type) {
-        super(type);
-    }
-
     public NetherWarts(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public NetherWarts(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

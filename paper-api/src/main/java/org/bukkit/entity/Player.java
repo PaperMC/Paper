@@ -18,6 +18,7 @@ import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
@@ -338,6 +339,15 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void sendBlockChange(Location loc, Material material, byte data);
 
     /**
+     * Send a block change. This fakes a block change packet for a user at a
+     * certain location. This will not actually change the world in any way.
+     *
+     * @param loc The location of the changed block
+     * @param block The new block
+     */
+    public void sendBlockChange(Location loc, BlockData block);
+
+    /**
      * Send a chunk change. This fakes a chunk change packet for a user at a
      * certain location. The updated cuboid must be entirely within a single
      * chunk. This will not actually change the world in any way.
@@ -358,22 +368,10 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data);
 
     /**
-     * Send a block change. This fakes a block change packet for a user at a
-     * certain location. This will not actually change the world in any way.
-     *
-     * @param loc The location of the changed block
-     * @param material The new block ID
-     * @param data The block data
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public void sendBlockChange(Location loc, int material, byte data);
-
-    /**
      * Send a sign change. This fakes a sign change packet for a user at
      * a certain location. This will not actually change the world in any way.
      * This method will use a sign at the location's block or a faked sign
-     * sent via {@link #sendBlockChange(org.bukkit.Location, int, byte)} or
+     * sent via
      * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
      * <p>
      * If the client does not have a sign at the given location it will

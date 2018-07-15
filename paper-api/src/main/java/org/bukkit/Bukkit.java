@@ -10,9 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.bukkit.Warning.WarningState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -1152,6 +1154,77 @@ public final class Bukkit {
      */
     public static Iterator<Advancement> advancementIterator() {
         return server.advancementIterator();
+    }
+
+    /**
+     * Creates a new {@link BlockData} instance for the specified Material, with
+     * all properties initialized to unspecified defaults.
+     *
+     * @param material the material
+     * @return new data instance
+     */
+    public static BlockData createBlockData(Material material) {
+        return server.createBlockData(material);
+    }
+
+    /**
+     * Creates a new {@link BlockData} instance for the specified Material, with
+     * all properties initialized to unspecified defaults.
+     *
+     * @param material the material
+     * @param consumer consumer to run on new instance before returning
+     * @return new data instance
+     */
+    public static BlockData createBlockData(Material material, Consumer<BlockData> consumer) {
+        return server.createBlockData(material, consumer);
+    }
+
+    /**
+     * Creates a new {@link BlockData} instance with material and properties
+     * parsed from provided data.
+     *
+     * @param data data string
+     * @return new data instance
+     * @throws IllegalArgumentException if the specified data is not valid
+     */
+    public static BlockData createBlockData(String data) throws IllegalArgumentException {
+        return server.createBlockData(data);
+    }
+
+    /**
+     * Creates a new {@link BlockData} instance for the specified Material, with
+     * all properties initialized to unspecified defaults, except for those
+     * provided in data.
+     *
+     * @param material the material
+     * @param data data string
+     * @return new data instance
+     * @throws IllegalArgumentException if the specified data is not valid
+     */
+    public static BlockData createBlockData(Material material, String data) throws IllegalArgumentException {
+        return server.createBlockData(material, data);
+    }
+
+    /**
+     * Gets a tag which has already been defined within the server. Plugins are
+     * suggested to use the concrete tags in {@link Tag} rather than this method
+     * which makes no guarantees about which tags are available, and may also be
+     * less performant due to lack of caching.
+     * <br>
+     * Tags will be searched for in an implementation specific manner, but a
+     * path consisting of namespace/tags/registry/key is expected.
+     * <br>
+     * Server implementations are allowed to handle only the registries
+     * indicated in {@link Tag}.
+     *
+     * @param <T> type of the tag
+     * @param registry the tag registry to look at
+     * @param tag the name of the tag
+     * @param clazz the class of the tag entries
+     * @return the tag or null
+     */
+    public static <T extends Keyed> Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz) {
+        return server.getTag(registry, tag, clazz);
     }
 
     /**

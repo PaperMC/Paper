@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.Utility;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 
@@ -17,25 +18,13 @@ import org.bukkit.material.MaterialData;
  * Represents a stack of items
  */
 public class ItemStack implements Cloneable, ConfigurationSerializable {
-    private int type = 0;
+    private Material type = Material.AIR;
     private int amount = 0;
     private MaterialData data = null;
-    private short durability = 0;
     private ItemMeta meta;
 
     @Utility
     protected ItemStack() {}
-
-    /**
-     * Defaults stack size to 1, with no extra data
-     *
-     * @param type item material id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public ItemStack(final int type) {
-        this(type, 1);
-    }
 
     /**
      * Defaults stack size to 1, with no extra data
@@ -49,38 +38,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * An item stack with no extra data
      *
-     * @param type item material id
-     * @param amount stack size
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public ItemStack(final int type, final int amount) {
-        this(type, amount, (short) 0);
-    }
-
-    /**
-     * An item stack with no extra data
-     *
      * @param type item material
      * @param amount stack size
      */
     public ItemStack(final Material type, final int amount) {
-        this(type.getId(), amount);
-    }
-
-    /**
-     * An item stack with the specified damage / durability
-     *
-     * @param type item material id
-     * @param amount stack size
-     * @param damage durability / damage
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public ItemStack(final int type, final int amount, final short damage) {
-        this.type = type;
-        this.amount = amount;
-        this.durability = damage;
+        this(type, amount, (short) 0);
     }
 
     /**
@@ -91,25 +53,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param damage durability / damage
      */
     public ItemStack(final Material type, final int amount, final short damage) {
-        this(type.getId(), amount, damage);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param amount the amount in the stack
-     * @param damage the damage value of the item
-     * @param data the data value or null
-     * @deprecated this method uses an ambiguous data byte object
-     */
-    @Deprecated
-    public ItemStack(final int type, final int amount, final short damage, final Byte data) {
-        this.type = type;
-        this.amount = amount;
-        this.durability = damage;
-        if (data != null) {
-            createData(data);
-            this.durability = data;
-        }
+        this(type, amount, damage, null);
     }
 
     /**
@@ -121,7 +65,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Deprecated
     public ItemStack(final Material type, final int amount, final short damage, final Byte data) {
-        this(type.getId(), amount, damage, data);
+        Validate.notNull(type, "Material cannot be null");
+        this.type = type;
+        this.amount = amount;
+        if (damage != 0) {
+            setDurability(damage);
+        }
+        if (data != null) {
+            createData(data);
+        }
     }
 
     /**
@@ -133,12 +85,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     public ItemStack(final ItemStack stack) throws IllegalArgumentException {
         Validate.notNull(stack, "Cannot copy null stack");
-        this.type = stack.getTypeId();
+        this.type = stack.getType();
         this.amount = stack.getAmount();
-        this.durability = stack.getDurability();
         this.data = stack.getData();
         if (stack.hasItemMeta()) {
-            setItemMeta0(stack.getItemMeta(), getType0());
+            setItemMeta0(stack.getItemMeta(), type);
         }
     }
 
@@ -149,16 +100,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Utility
     public Material getType() {
-        return getType0(getTypeId());
-    }
-
-    private Material getType0() {
-        return getType0(this.type);
-    }
-
-    private static Material getType0(int id) {
-        Material material = Material.getMaterial(id);
-        return material == null ? Material.AIR : material;
+        return type;
     }
 
     /**
@@ -171,35 +113,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     @Utility
     public void setType(Material type) {
         Validate.notNull(type, "Material cannot be null");
-        setTypeId(type.getId());
-    }
-
-    /**
-     * Gets the type id of this item
-     *
-     * @return Type Id of the items in this stack
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getTypeId() {
-        return type;
-    }
-
-    /**
-     * Sets the type id of this item
-     * <p>
-     * Note that in doing so you will reset the MaterialData for this stack
-     *
-     * @param type New type id to set the items in this stack to
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public void setTypeId(int type) {
         this.type = type;
         if (this.meta != null) {
-            this.meta = Bukkit.getItemFactory().asMetaFor(meta, getType0());
+            this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
         }
-        createData((byte) 0);
+        if (type.isLegacy()) {
+            createData((byte) 0);
+        }
     }
 
     /**
@@ -226,7 +146,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return MaterialData for this item
      */
     public MaterialData getData() {
-        Material mat = getType();
+        Material mat = Bukkit.getUnsafe().toLegacy(getType());
         if (data == null && mat != null && mat.getData() != null) {
             data = mat.getNewData((byte) this.getDurability());
         }
@@ -240,7 +160,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param data New MaterialData for this item
      */
     public void setData(MaterialData data) {
-        Material mat = getType();
+        Material mat = Bukkit.getUnsafe().toLegacy(getType());
 
         if (data == null || mat == null || mat.getData() == null) {
             this.data = data;
@@ -259,7 +179,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param durability Durability of this item
      */
     public void setDurability(final short durability) {
-        this.durability = durability;
+        ItemMeta meta = getItemMeta();
+        if (meta != null) {
+            ((Damageable) meta).setDamage(durability);
+            setItemMeta(meta);
+        }
     }
 
     /**
@@ -268,7 +192,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return Durability of this item
      */
     public short getDurability() {
-        return durability;
+        ItemMeta meta = getItemMeta();
+        return (meta == null) ? 0 : (short) ((Damageable) meta).getDamage();
     }
 
     /**
@@ -287,13 +212,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     private void createData(final byte data) {
-        Material mat = Material.getMaterial(type);
-
-        if (mat == null) {
-            this.data = new MaterialData(type, data);
-        } else {
-            this.data = mat.getNewData(data);
-        }
+        this.data = type.getNewData(data);
     }
 
     @Override
@@ -335,7 +254,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         if (stack == this) {
             return true;
         }
-        return getTypeId() == stack.getTypeId() && getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
+        return getType()== stack.getType()&& getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
     }
 
     @Override
@@ -362,7 +281,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     public int hashCode() {
         int hash = 1;
 
-        hash = hash * 31 + getTypeId();
+        hash = hash * 31 + getType().hashCode();
         hash = hash * 31 + getAmount();
         hash = hash * 31 + (getDurability() & 0xffff);
         hash = hash * 31 + (hasItemMeta() ? (meta == null ? getItemMeta().hashCode() : meta.hashCode()) : 0);
@@ -472,7 +391,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param level Level of the enchantment
      */
     public void addUnsafeEnchantment(Enchantment ench, int level) {
-        (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(getType0()) : meta).addEnchant(ench, level, true);
+        (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(type) : meta).addEnchant(ench, level, true);
     }
 
     /**
@@ -495,11 +414,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
 
+        result.put("v", Bukkit.getUnsafe().getDataVersion()); // Include version to indicate we are using modern material names (or LEGACY prefix)
         result.put("type", getType().name());
-
-        if (getDurability() != 0) {
-            result.put("damage", getDurability());
-        }
 
         if (getAmount() != 1) {
             result.put("amount", getAmount());
@@ -521,7 +437,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @see ConfigurationSerializable
      */
     public static ItemStack deserialize(Map<String, Object> args) {
-        Material type = Material.getMaterial((String) args.get("type"));
+        int version = (args.containsKey("v")) ? ((Number) args.get("v")).intValue() : -1;
+        Material type = Material.getMaterial((String) args.get("type"), version < 0);
+
         short damage = 0;
         int amount = 1;
 
@@ -556,6 +474,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
             }
         }
 
+        // Set damage again incase meta overwrote it
+        if (args.containsKey("damage")) {
+            result.setDurability(damage);
+        }
+
         return result;
     }
 
@@ -565,7 +488,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return a copy of the current ItemStack's ItemData
      */
     public ItemMeta getItemMeta() {
-        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(getType0()) : this.meta.clone();
+        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
     }
 
     /**
@@ -587,7 +510,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *     the {@link ItemFactory}
      */
     public boolean setItemMeta(ItemMeta itemMeta) {
-        return setItemMeta0(itemMeta, getType0());
+        return setItemMeta0(itemMeta, type);
     }
 
     /*
@@ -602,6 +525,12 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
             return false;
         }
         this.meta = Bukkit.getItemFactory().asMetaFor(itemMeta, material);
+
+        Material newType = Bukkit.getItemFactory().updateMaterial(meta, material);
+        if (this.type != newType) {
+            this.type = newType;
+        }
+
         if (this.meta == itemMeta) {
             this.meta = itemMeta.clone();
         }

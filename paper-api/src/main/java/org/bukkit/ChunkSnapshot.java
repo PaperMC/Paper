@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import org.bukkit.block.Biome;
+import org.bukkit.block.data.BlockData;
 
 /**
  * Represents a static, thread-safe snapshot of chunk of blocks.
@@ -42,16 +43,14 @@ public interface ChunkSnapshot {
     Material getBlockType(int x, int y, int z);
 
     /**
-     * Get block type for block at corresponding coordinate in the chunk
+     * Get block data for block at corresponding coordinate in the chunk
      *
      * @param x 0-15
      * @param y 0-127
      * @param z 0-15
-     * @return 0-255
-     * @deprecated Magic value
+     * @return block material type
      */
-    @Deprecated
-    int getBlockTypeId(int x, int y, int z);
+    BlockData getBlockData(int x, int y, int z);
 
     /**
      * Get block data for block at corresponding coordinate in the chunk
@@ -63,7 +62,7 @@ public interface ChunkSnapshot {
      * @deprecated Magic value
      */
     @Deprecated
-    int getBlockData(int x, int y, int z);
+    int getData(int x, int y, int z);
 
     /**
      * Get sky light level for block at corresponding coordinate in the chunk
@@ -112,17 +111,6 @@ public interface ChunkSnapshot {
      * @return temperature at given coordinate
      */
     double getRawBiomeTemperature(int x, int z);
-
-    /**
-     * Get raw biome rainfall (0.0-1.0) at given coordinate
-     *
-     * @param x X-coordinate
-     * @param z Z-coordinate
-     * @return rainfall at given coordinate
-     * @deprecated this is not a chunk property in current Minecraft versions
-     */
-    @Deprecated
-    double getRawBiomeRainfall(int x, int z);
 
     /**
      * Get world full time when chunk snapshot was captured

@@ -6,14 +6,14 @@ import org.bukkit.Material;
 /**
  * Represents the different types of crops in different states of growth.
  *
- * @see Material#CROPS
- * @see Material#CARROT
- * @see Material#POTATO
- * @see Material#BEETROOT_BLOCK
- * @see Material#NETHER_WARTS
+ * @see Material#LEGACY_CROPS
+ * @see Material#LEGACY_CARROT
+ * @see Material#LEGACY_POTATO
+ * @see Material#LEGACY_BEETROOT_BLOCK
+ * @see Material#LEGACY_NETHER_WARTS
  */
 public class Crops extends MaterialData {
-    protected static final Material DEFAULT_TYPE = Material.CROPS;
+    protected static final Material DEFAULT_TYPE = Material.LEGACY_CROPS;
     protected static final CropState DEFAULT_STATE = CropState.SEEDED;
 
     /**
@@ -45,31 +45,12 @@ public class Crops extends MaterialData {
     }
 
     /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Crops(final int type) {
-        super(type);
-    }
-
-    /**
      * Constructs a crop block of the given type and in the seeded state
      *
      * @param type The type of crops
      */
     public Crops(final Material type) {
         this(type, DEFAULT_STATE);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Crops(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -92,13 +73,13 @@ public class Crops extends MaterialData {
      */
     public CropState getState() {
         switch (getItemType()) {
-            case CROPS:
-            case CARROT:
-            case POTATO:
+            case LEGACY_CROPS:
+            case LEGACY_CARROT:
+            case LEGACY_POTATO:
                 // Mask the data just in case top bit set
                 return CropState.getByData((byte) (getData() & 0x7));
-            case BEETROOT_BLOCK:
-            case NETHER_WARTS:
+            case LEGACY_BEETROOT_BLOCK:
+            case LEGACY_NETHER_WARTS:
                 // Mask the data just in case top bits are set
                 // Will return SEEDED, SMALL, TALL, RIPE for the three growth data values
                 return CropState.getByData((byte) (((getData() & 0x3) * 7 + 2) / 3));
@@ -123,14 +104,14 @@ public class Crops extends MaterialData {
      */
     public void setState(CropState state) {
         switch (getItemType()) {
-            case CROPS:
-            case CARROT:
-            case POTATO:
+            case LEGACY_CROPS:
+            case LEGACY_CARROT:
+            case LEGACY_POTATO:
                 // Preserve the top bit in case it is set
                 setData((byte) ((getData() & 0x8) | state.getData()));
                 break;
-            case NETHER_WARTS:
-            case BEETROOT_BLOCK:
+            case LEGACY_NETHER_WARTS:
+            case LEGACY_BEETROOT_BLOCK:
                 // Preserve the top bits in case they are set
                 setData((byte) ((getData() & 0xC) | (state.getData() >> 1)));
                 break;

@@ -8,7 +8,7 @@ import org.bukkit.SandstoneType;
  */
 public class Sandstone extends MaterialData {
     public Sandstone() {
-        super(Material.SANDSTONE);
+        super(Material.LEGACY_SANDSTONE);
     }
 
     public Sandstone(SandstoneType type) {
@@ -16,27 +16,8 @@ public class Sandstone extends MaterialData {
         setType(type);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Sandstone(final int type) {
-        super(type);
-    }
-
     public Sandstone(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Sandstone(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

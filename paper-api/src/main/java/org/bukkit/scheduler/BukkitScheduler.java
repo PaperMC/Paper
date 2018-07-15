@@ -156,11 +156,6 @@ public interface BukkitScheduler {
     public void cancelTasks(Plugin plugin);
 
     /**
-     * Removes all tasks from the scheduler.
-     */
-    public void cancelAllTasks();
-
-    /**
      * Check if the task currently running.
      * <p>
      * A repeating task might not be running currently, but will be running in

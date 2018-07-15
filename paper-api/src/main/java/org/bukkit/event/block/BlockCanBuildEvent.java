@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -12,32 +13,25 @@ import org.bukkit.event.HandlerList;
  * <li>The Block returned by getBlock() is the block we are trying to place
  *     on, not the block we are trying to place.
  * <li>If you want to figure out what is being placed, use {@link
- *     #getMaterial()} or {@link #getMaterialId()} instead.
+ *     #getMaterial()} instead.
  * </ul>
  */
 public class BlockCanBuildEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
     protected boolean buildable;
 
-    /**
-     *
-     * @deprecated Magic value
-     */
-    @Deprecated
-    protected int material;
+    protected BlockData blockData;
 
     /**
      *
-     * @deprecated Magic value
      * @param block the block involved in this event
-     * @param id the id of the block to place
+     * @param type the id of the block to place
      * @param canBuild whether we can build 
      */
-    @Deprecated
-    public BlockCanBuildEvent(final Block block, final int id, final boolean canBuild) {
+    public BlockCanBuildEvent(final Block block, final BlockData type, final boolean canBuild) {
         super(block);
         buildable = canBuild;
-        material = id;
+        blockData = type;
     }
 
     /**
@@ -68,18 +62,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      * @return The Material that we are trying to place
      */
     public Material getMaterial() {
-        return Material.getMaterial(material);
-    }
-
-    /**
-     * Gets the Material ID for the Material that we are trying to place.
-     *
-     * @return The Material ID for the Material that we are trying to place
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getMaterialId() {
-        return material;
+        return blockData.getMaterial();
     }
 
     @Override

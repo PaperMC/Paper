@@ -6,7 +6,7 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 
 /**
- * Represents a {@link Material#FIREWORK} and its effects.
+ * Represents a {@link Material#FIREWORK_ROCKET} and its effects.
  */
 public interface FireworkMeta extends ItemMeta {
 

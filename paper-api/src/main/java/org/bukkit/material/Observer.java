@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
 public class Observer extends MaterialData implements Directional, Redstone {
 
     public Observer() {
-        super(Material.OBSERVER);
+        super(Material.LEGACY_OBSERVER);
     }
 
     public Observer(BlockFace direction) {
@@ -17,27 +17,8 @@ public class Observer extends MaterialData implements Directional, Redstone {
         setFacingDirection(direction);
     }
 
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Observer(final int type) {
-        super(type);
-    }
-
     public Observer(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public Observer(final int type, final byte data) {
-        super(type, data);
     }
 
     /**

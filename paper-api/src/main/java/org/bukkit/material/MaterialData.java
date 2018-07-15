@@ -2,36 +2,21 @@ package org.bukkit.material;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 
 /**
  * Handles specific metadata for certain items or blocks
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link BlockData}.
  */
+@Deprecated
 public class MaterialData implements Cloneable {
-    private final int type;
+    private final Material type;
     private byte data = 0;
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public MaterialData(final int type) {
-        this(type, (byte) 0);
-    }
 
     public MaterialData(final Material type) {
         this(type, (byte) 0);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public MaterialData(final int type, final byte data) {
-        this.type = type;
-        this.data = data;
     }
 
     /**
@@ -41,7 +26,8 @@ public class MaterialData implements Cloneable {
      */
     @Deprecated
     public MaterialData(final Material type, final byte data) {
-        this(type.getId(), data);
+        this.type = type;
+        this.data = data;
     }
 
     /**
@@ -72,17 +58,6 @@ public class MaterialData implements Cloneable {
      * @return Material represented by this MaterialData
      */
     public Material getItemType() {
-        return Material.getMaterial(type);
-    }
-
-    /**
-     * Gets the Material Id that this MaterialData represents
-     *
-     * @return Material Id represented by this MaterialData
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getItemTypeId() {
         return type;
     }
 
@@ -115,7 +90,7 @@ public class MaterialData implements Cloneable {
 
     @Override
     public int hashCode() {
-        return ((getItemTypeId() << 8) ^ getData());
+        return ((getItemType().hashCode() << 8) ^ getData());
     }
 
     @Override
@@ -123,7 +98,7 @@ public class MaterialData implements Cloneable {
         if (obj != null && obj instanceof MaterialData) {
             MaterialData md = (MaterialData) obj;
 
-            return (md.getItemTypeId() == getItemTypeId() && md.getData() == getData());
+            return (md.getItemType() == getItemType() && md.getData() == getData());
         } else {
             return false;
         }

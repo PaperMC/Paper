@@ -121,4 +121,17 @@ public interface ItemFactory {
      * @return the default color for leather armor
      */
     Color getDefaultLeatherColor();
+
+    /**
+     * Apply a material change for an item meta. Do not use under any
+     * circumstances.
+     *
+     * @param meta
+     * @param material
+     * @return updated material
+     * @throws IllegalArgumentException
+     * @deprecated for internal use only
+     */
+    @Deprecated
+    Material updateMaterial(final ItemMeta meta, final Material material) throws IllegalArgumentException;
 }

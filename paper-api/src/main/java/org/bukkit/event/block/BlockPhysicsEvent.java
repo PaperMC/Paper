@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -10,30 +11,18 @@ import org.bukkit.event.HandlerList;
  */
 public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final int changed;
+    private final BlockData changed;
     private boolean cancel = false;
 
     /**
      *
-     * @deprecated Magic value
      * @param block the block involved in this event
-     * @param changed the changed block's type id
+     * @param changed the changed block's type
      */
     @Deprecated
-    public BlockPhysicsEvent(final Block block, final int changed) {
+    public BlockPhysicsEvent(final Block block, final BlockData changed) {
         super(block);
         this.changed = changed;
-    }
-
-    /**
-     * Gets the type of block that changed, causing this event
-     *
-     * @return Changed block's type id
-     * @deprecated Magic value
-     */
-    @Deprecated
-    public int getChangedTypeId() {
-        return changed;
     }
 
     /**
@@ -42,7 +31,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
      * @return Changed block's type
      */
     public Material getChangedType() {
-        return Material.getMaterial(changed);
+        return changed.getMaterial();
     }
 
     public boolean isCancelled() {
