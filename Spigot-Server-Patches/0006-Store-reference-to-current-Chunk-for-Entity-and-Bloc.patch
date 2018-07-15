@@ -1,4 +1,4 @@
-From 8613a4e2ae9a4bb6faef75b90d69728a88692dc1 Mon Sep 17 00:00:00 2001
+From ada548d469ddfd07d7ee05b4473b46eafbe104e0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,7 +8,7 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4bbebb25a..68008fe6a 100644
+index 4bbebb25a..ea167a17b 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -25,7 +25,7 @@ public class Chunk {
@@ -60,26 +60,26 @@ index 4bbebb25a..68008fe6a 100644
          this.x = 4096;
          this.y = Queues.newConcurrentLinkedQueue();
          this.entitySlices = (List[]) (new List[16]); // Spigot
-@@ -624,6 +648,9 @@ public class Chunk {
-                 this.entityCount.adjustOrPutValue( creatureType.a(), 1, 1 );
-             }
-         }
+@@ -609,6 +633,9 @@ public class Chunk {
+         entity.ac = k;
+         entity.ad = this.locZ;
+         this.entitySlices[k].add(entity);
 +        // Paper start
 +        entity.setCurrentChunk(this);
 +        // Paper end
-         // Spigot end
-     }
- 
-@@ -656,6 +683,9 @@ public class Chunk {
-                 this.entityCount.adjustValue( creatureType.a(), -1 );
-             }
+         // Spigot start - increment creature type count
+         // Keep this synced up with World.a(Class)
+         if (entity instanceof EntityInsentient) {
+@@ -641,6 +668,9 @@ public class Chunk {
          }
+ 
+         this.entitySlices[i].remove(entity);
 +        // Paper start
 +        entity.setCurrentChunk(null);
 +        // Paper end
-         // Spigot end
-     }
- 
+         // Spigot start - decrement creature type count
+         // Keep this synced up with World.a(Class)
+         if (entity instanceof EntityInsentient) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 3a8902bf1..4af566b36 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
