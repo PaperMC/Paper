@@ -1684,6 +1684,7 @@ public final class CraftServer implements Server {
 
     @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
+        Validate.notNull(world, "World cannot be null");
         return new CraftChunkData(world);
     }
 
