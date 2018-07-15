@@ -221,6 +221,15 @@ public class CraftLegacy {
         return Arrays.copyOfRange(values, 0, Material.LEGACY_AIR.ordinal());
     }
 
+    public static int modern_ordinal(Material material) {
+        if (material.isLegacy()) {
+            // SPIGOT-4002: Fix for eclipse compiler manually compiling in default statements to lookupswitch
+            throw new NoSuchFieldError("Legacy field ordinal: " + material);
+        }
+
+        return material.ordinal();
+    }
+
     static {
         SPAWN_EGGS.put(EntityType.BAT, Material.BAT_SPAWN_EGG);
         SPAWN_EGGS.put(EntityType.BLAZE, Material.BLAZE_SPAWN_EGG);
