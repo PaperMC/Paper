@@ -1,4 +1,4 @@
-From 8613a4e2ae9a4bb6faef75b90d69728a88692dc1 Mon Sep 17 00:00:00 2001
+From 9f15dcf160d9412793b5069dfa9d92e692ac1abc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,22 +8,22 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4bbebb25a..68008fe6a 100644
+index 9500c456d..120e66c78 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -25,7 +25,7 @@ public class Chunk {
-     private final byte[] g;
-     private final int[] h;
-     private final boolean[] i;
+@@ -33,7 +33,7 @@ public class Chunk implements IChunkAccess {
+     private final BiomeBase[] g;
+     private final boolean[] h;
+     private final Map<BlockPosition, NBTTagCompound> i;
 -    private boolean j;
 +    private boolean j; public boolean isLoaded() { return j; } // Paper - OBFHELPER
      public final World world;
-     public final int[] heightMap;
+     public final Map<HeightMap.Type, HeightMap> heightMap;
      public final int locX;
-@@ -33,6 +33,30 @@ public class Chunk {
-     private boolean m;
-     public final Map<BlockPosition, TileEntity> tileEntities;
-     public final List<Entity>[] entitySlices; // Spigot
+@@ -63,7 +63,30 @@ public class Chunk implements IChunkAccess {
+     // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+     private int neighbors = 0x1 << 12;
+     public long chunkKey;
 +    // Paper start
 +    private class TileEntityHashMap extends java.util.HashMap<BlockPosition, TileEntity> {
 +        @Override
@@ -37,7 +37,7 @@ index 4bbebb25a..68008fe6a 100644
 +            }
 +            return replaced;
 +        }
-+
+ 
 +        @Override
 +        public TileEntity remove(Object key) {
 +            TileEntity removed = super.remove(key);
@@ -48,46 +48,52 @@ index 4bbebb25a..68008fe6a 100644
 +        }
 +    }
 +    // Paper end
-     private boolean done;
-     private boolean lit;
-     private boolean r;
-@@ -80,7 +104,7 @@ public class Chunk {
-         this.g = new byte[256];
-         this.h = new int[256];
-         this.i = new boolean[256];
+     public boolean areNeighborsLoaded(final int radius) {
+         switch (radius) {
+             case 2:
+@@ -94,7 +117,7 @@ public class Chunk implements IChunkAccess {
+         this.h = new boolean[256];
+         this.i = Maps.newHashMap();
+         this.heightMap = Maps.newHashMap();
 -        this.tileEntities = Maps.newHashMap();
 +        this.tileEntities = new TileEntityHashMap(); // Paper
-         this.x = 4096;
-         this.y = Queues.newConcurrentLinkedQueue();
-         this.entitySlices = (List[]) (new List[16]); // Spigot
-@@ -624,6 +648,9 @@ public class Chunk {
-                 this.entityCount.adjustOrPutValue( creatureType.a(), 1, 1 );
-             }
-         }
+         this.q = Maps.newHashMap();
+         this.r = Maps.newHashMap();
+         this.s = new ShortList[16];
+@@ -646,6 +669,9 @@ public class Chunk implements IChunkAccess {
+         entity.af = k;
+         entity.ag = this.locZ;
+         this.entitySlices[k].add(entity);
 +        // Paper start
 +        entity.setCurrentChunk(this);
 +        // Paper end
-         // Spigot end
      }
  
-@@ -656,6 +683,9 @@ public class Chunk {
-                 this.entityCount.adjustValue( creatureType.a(), -1 );
-             }
+     public void a(HeightMap.Type heightmap_type, long[] along) {
+@@ -664,8 +690,12 @@ public class Chunk implements IChunkAccess {
+         if (i >= this.entitySlices.length) {
+             i = this.entitySlices.length - 1;
          }
+-
+-        this.entitySlices[i].remove(entity);
 +        // Paper start
++        if (!this.entitySlices[i].remove(entity)) {
++            return;
++        }
 +        entity.setCurrentChunk(null);
 +        // Paper end
-         // Spigot end
      }
  
+     public boolean c(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3a8902bf1..4af566b36 100644
+index 53fc37088..1ef52cc6d 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1703,6 +1703,38 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+@@ -1786,6 +1786,40 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      // Paper start
++
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +
 +    public void setCurrentChunk(Chunk chunk) {
@@ -120,17 +126,19 @@ index 3a8902bf1..4af566b36 100644
 +    public Chunk getChunkAtLocation() {
 +        return getCurrentChunkAt((int)Math.floor(locX) >> 4, (int)Math.floor(locZ) >> 4);
 +    }
-     public final MinecraftKey entityKey = EntityTypes.getKey(this);
-     public final String entityKeyString = entityKey != null ? entityKey.toString() : null;
++
+     public final MinecraftKey entityKey;
+     public final String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 672ba3134..d7132c3c0 100644
+index b09325097..b992360ac 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -28,6 +28,14 @@ public abstract class TileEntity implements KeyedObject {
+@@ -38,6 +38,15 @@ public abstract class TileEntity implements KeyedObject {
+     public String getMinecraftKeyString() {
+         return tileEntityKeyString;
      }
- 
-     // Paper start
++
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +    public Chunk getCurrentChunk() {
 +        final Chunk chunk = currentChunk != null ? currentChunk.get() : world.getChunkIfLoaded(position.getX() >> 4, position.getZ() >> 4);
@@ -139,11 +147,11 @@ index 672ba3134..d7132c3c0 100644
 +    public void setCurrentChunk(Chunk chunk) {
 +        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
 +    }
-     public final MinecraftKey tileEntityKey = getKey(this.getClass());
-     public final String tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
+     // Paper end
  
+     @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index c5a194ffe..833e3111d 100644
+index 70143c4d3..1e3675e4f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -9,6 +9,7 @@ import java.util.UUID;
@@ -154,7 +162,7 @@ index c5a194ffe..833e3111d 100644
  import org.bukkit.EntityEffect;
  import org.bukkit.Location;
  import org.bukkit.Server;
-@@ -39,6 +40,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -40,6 +41,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          this.entity = entity;
      }
  

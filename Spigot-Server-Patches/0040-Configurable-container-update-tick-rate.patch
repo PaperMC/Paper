@@ -1,0 +1,49 @@
+From b0906baff3e381342e84d50728bbeebb32c4bf30 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 23:34:44 -0600
+Subject: [PATCH] Configurable container update tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 47f391243..26d8dbb60 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -167,4 +167,9 @@ public class PaperWorldConfig {
+     private void mobSpawnerTickRate() {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
++
++    public int containerUpdateTickRate;
++    private void containerUpdateTickRate() {
++        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 0531812fb..5ca0dec1f 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -81,6 +81,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.viewDistance = viewDistance;
+     }
+     // Paper end
++    private int containerUpdateDelay; // Paper
+ 
+     // CraftBukkit start
+     public String displayName;
+@@ -331,7 +332,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             --this.noDamageTicks;
+         }
+ 
+-        this.activeContainer.b();
++        // Paper start - Configurable container update tick rate
++        if (--containerUpdateDelay <= 0) {
++            this.activeContainer.b();
++            containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
++        }
++        // Paper end
+         if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
+             this.closeInventory();
+             this.activeContainer = this.defaultContainer;
+-- 
+2.18.0
+

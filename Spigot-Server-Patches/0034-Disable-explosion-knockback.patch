@@ -1,0 +1,74 @@
+From 708fa230efe63dcc4d1ab4f42f956002e27443c6 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 14:48:03 -0600
+Subject: [PATCH] Disable explosion knockback
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 3626aa717..be92c1af6 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -147,4 +147,9 @@ public class PaperWorldConfig {
+         optimizeExplosions = getBoolean("optimize-explosions", false);
+         log("Optimize explosions: " + optimizeExplosions);
+     }
++
++    public boolean disableExplosionKnockback;
++    private void disableExplosionKnockback(){
++        disableExplosionKnockback = getBoolean("disable-explosion-knockback", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 1ee54fa45..43715902e 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -927,6 +927,7 @@ public abstract class EntityLiving extends Entity {
+                     }
+                 }
+ 
++                boolean knockbackCancelled = world.paperConfig.disableExplosionKnockback && damagesource.isExplosion() && this instanceof EntityHuman; // Paper - Disable explosion knockback
+                 if (flag1) {
+                     if (flag) {
+                         this.world.broadcastEntityEffect(this, (byte) 29);
+@@ -943,6 +944,7 @@ public abstract class EntityLiving extends Entity {
+                             b0 = 2;
+                         }
+ 
++                        if (!knockbackCancelled) // Paper - Disable explosion knockback
+                         this.world.broadcastEntityEffect(this, b0);
+                     }
+ 
+@@ -966,6 +968,8 @@ public abstract class EntityLiving extends Entity {
+                     }
+                 }
+ 
++                if (knockbackCancelled) this.world.broadcastEntityEffect(this, (byte) 2); // Paper - Disable explosion knockback
++
+                 if (this.getHealth() <= 0.0F) {
+                     if (!this.e(damagesource)) {
+                         SoundEffect soundeffect = this.cr();
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index ddbf667c4..2652b1575 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -152,7 +152,7 @@ public class Explosion {
+                         double d14 = d13;
+ 
+                         if (entity instanceof EntityLiving) {
+-                            d14 = EnchantmentProtection.a((EntityLiving) entity, d13);
++                            d14 = entity instanceof EntityHuman && world.paperConfig.disableExplosionKnockback ? 0 : EnchantmentProtection.a((EntityLiving) entity, d13); // Paper - Disable explosion knockback
+                         }
+ 
+                         entity.motX += d8 * d14;
+@@ -161,7 +161,7 @@ public class Explosion {
+                         if (entity instanceof EntityHuman) {
+                             EntityHuman entityhuman = (EntityHuman) entity;
+ 
+-                            if (!entityhuman.isSpectator() && (!entityhuman.u() || !entityhuman.abilities.isFlying)) {
++                            if (!entityhuman.isSpectator() && (!entityhuman.u() && !world.paperConfig.disableExplosionKnockback || !entityhuman.abilities.isFlying)) { // Paper - Disable explosion knockback
+                                 this.l.put(entityhuman, new Vec3D(d8 * d13, d9 * d13, d10 * d13));
+                             }
+                         }
+-- 
+2.18.0
+

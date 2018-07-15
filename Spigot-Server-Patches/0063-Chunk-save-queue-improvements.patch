@@ -1,0 +1,188 @@
+From dcb8cb2a5d04086bb7e7b7870c8db52fddecc418 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 4 Mar 2016 18:18:37 -0600
+Subject: [PATCH] Chunk save queue improvements
+
+For some unknown reason, Minecraft is sleeping 10ms between every single chunk being saved to disk.
+Under high chunk load/unload activity (lots of movement / teleporting), this causes the chunk unload queue
+to build up in size.
+
+This has multiple impacts:
+1) Performance of the unload queue itself - The save thread is pretty ineffecient for how it accesses it
+   By letting the queue get larger, checking and popping work off the queue can get less performant.
+2) Performance of chunk loading - As with #1, chunk loads also have to check this queue when loading
+   chunk data so that it doesn't load stale data if new data is pending write to disk.
+3) Memory Usage - The entire chunk has been serialized to NBT, and now sits in this queue. This leads to
+   elevated memory usage, and then the objects used in the serialization sit around longer than needed,
+   resulting in promotion to Old Generation instead of dying young.
+
+To optimize this, we change the entire unload queue to be a proper queue. This improves the behavior of popping
+the first queued chunk off, instead of abusing iterators like Mojang was doing.
+
+This also improves reliability of chunk saving, as the previous hack job had a race condition that could
+fail to save some chunks.
+
+Then finally, Sleeping will by default be removed, but due to known issues with 1.9, a config option was added.
+But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 36689db74..3898ad8fa 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -204,4 +204,10 @@ public class PaperConfig {
+     private static void chunkLoadThreads() {
+         minChunkLoadThreads = Math.min(6, getInt("settings.min-chunk-load-threads", 2)); // Keep people from doing stupid things with max of 6
+     }
++
++    public static boolean enableFileIOThreadSleep;
++    private static void enableFileIOThreadSleep() {
++        enableFileIOThreadSleep = getBoolean("settings.sleep-between-chunk-saves", false);
++        if (enableFileIOThreadSleep) Bukkit.getLogger().info("Enabled sleeping between chunk saves, beware of memory issues");
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index e26860516..17996af9c 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -25,6 +25,7 @@ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++import java.util.concurrent.ConcurrentLinkedQueue; // Paper
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ // Spigot start
+@@ -34,8 +35,21 @@ import org.spigotmc.SupplierUtils;
+ 
+ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
++    // Paper start - Chunk queue improvements
++    private static class QueuedChunk {
++        public ChunkCoordIntPair coords;
++        public Supplier<NBTTagCompound> compoundSupplier;
++
++        public QueuedChunk(ChunkCoordIntPair coords, Supplier<NBTTagCompound> compoundSupplier) {
++            this.coords = coords;
++            this.compoundSupplier = compoundSupplier;
++        }
++    }
++    private ConcurrentLinkedQueue<QueuedChunk> queue = new ConcurrentLinkedQueue<>();
++    // Paper end
++
+     private static final Logger a = LogManager.getLogger();
+-    private final Object2ObjectMap<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = Object2ObjectMaps.synchronize(new Object2ObjectLinkedOpenHashMap()); // Spigot
++    private final Object2ObjectMap<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = new Object2ObjectLinkedOpenHashMap(); // Spigot // Paper - remove synchronized
+     private final File c;
+     private final DataFixer d;
+     private PersistentStructureLegacy e;
+@@ -247,7 +261,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                     }
+                 };
+             } else {
+-                if (this.b.containsKey(chunkcoordintpair) && this.a(this.b.get(chunkcoordintpair).get()) == ChunkStatus.Type.LEVELCHUNK || this.a(this.b(world, chunkcoordintpair.x, chunkcoordintpair.z)) == ChunkStatus.Type.LEVELCHUNK) {
++                // Paper start
++                Supplier<NBTTagCompound> existingSave;
++                synchronized (this) {
++                    existingSave = this.b.get(chunkcoordintpair);
++                }
++                if (existingSave != null && this.a(existingSave.get()) == ChunkStatus.Type.LEVELCHUNK || this.a(this.b(world, chunkcoordintpair.x, chunkcoordintpair.z)) == ChunkStatus.Type.LEVELCHUNK) { // Paper - extract existingSave to synchronized lookup
++                    // Paper end
+                     return;
+                 }
+ 
+@@ -258,8 +278,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                     }
+                 };
+             }
+-
+-            this.a(chunkcoordintpair, SupplierUtils.createUnivaluedSupplier(completion, unloaded && this.b.size() < SAVE_QUEUE_TARGET_SIZE));
++            this.a(chunkcoordintpair, SupplierUtils.createUnivaluedSupplier(completion, unloaded)); // Paper - Remove save queue target size
++            // Paper end
+             // Spigot end
+         } catch (Exception exception) {
+             ChunkRegionLoader.a.error("Failed to save chunk", exception);
+@@ -268,18 +288,22 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
++        queue.add(new QueuedChunk(chunkcoordintpair, nbttagcompound)); // Paper - Chunk queue improvements
+         this.b.put(chunkcoordintpair, nbttagcompound);
+         FileIOThread.a().a(this);
+     }
+ 
+-    public synchronized boolean a() {
++    public boolean a() { // Paper - remove synchronized
+         // CraftBukkit start
+         return this.processSaveQueueEntry(false);
+     }
+ 
+-    private synchronized boolean processSaveQueueEntry(boolean logCompletion) {
+-        Iterator<Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>>> iter = this.b.entrySet().iterator(); // Spigot
+-        if (!iter.hasNext()) {
++    private boolean processSaveQueueEntry(boolean logCompletion) { // Paper - dont synchronize during save
++        // CraftBukkit start
++        // Paper start - Chunk queue improvements
++        QueuedChunk chunk = queue.poll();
++        if (chunk == null) {
++        // Paper - end
+             if (logCompletion) {
+                 // CraftBukkit end
+                 ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.c.getName());
+@@ -287,17 +311,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+             return false;
+         } else {
+-            // CraftBukkit start
+-            Map.Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>> entry = iter.next(); // Spigot
+-            ChunkCoordIntPair chunkcoordintpair = entry.getKey();
+-            Supplier<NBTTagCompound> value = entry.getValue(); // Spigot
+-            // CraftBukkit end
++            ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
+ 
+             boolean flag;
+ 
+             try {
+                 // NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(chunkcoordintpair); // CraftBukkit
+-                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(value); // Spigot
++                NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(chunk.compoundSupplier); // Spigot // Paper
+ 
+                 if (nbttagcompound != null) {
+                     try {
+@@ -309,7 +329,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+                 flag = true;
+             } finally {
+-                this.b.remove(chunkcoordintpair, value); // CraftBukkit // Spigot
++                // Paper start - only synchronize here
++                synchronized (this) {
++                    // This will not equal if a newer version is still pending - wait until newest is saved to remove
++                    if (this.b.get(chunkcoordintpair) == chunk.compoundSupplier) {
++                        this.b.remove(chunkcoordintpair);
++                    }
++                }
++                // Paper start
+             }
+ 
+             return flag;
+diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
+index 34312667a..549fab9a5 100644
+--- a/src/main/java/net/minecraft/server/FileIOThread.java
++++ b/src/main/java/net/minecraft/server/FileIOThread.java
+@@ -43,11 +43,12 @@ public class FileIOThread implements Runnable {
+                 ++this.e;
+             }
+ 
++            if (com.destroystokyo.paper.PaperConfig.enableFileIOThreadSleep) { // Paper
+             try {
+-                Thread.sleep(this.f ? 0L : 10L);
++                Thread.sleep(this.f ? 0L : 1L); // Paper
+             } catch (InterruptedException interruptedexception) {
+                 interruptedexception.printStackTrace();
+-            }
++            }} // Paper
+         }
+ 
+         if (this.c.isEmpty()) {
+-- 
+2.18.0
+

@@ -1,24 +1,24 @@
-From 5e79bbc7dee8f1a2e42930e6899b7cf8e928b548 Mon Sep 17 00:00:00 2001
+From d39477408cd88601ee08c0c33ba9a3e56a588f8b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 952c96c0c..cbb1f2cae 100644
+index 0ae780c8e..3b97981bc 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -20,7 +20,7 @@ import org.bukkit.Server; // CraftBukkit
- public class Chunk {
+@@ -28,7 +28,7 @@ import com.google.common.collect.Lists; // CraftBukkit
+ public class Chunk implements IChunkAccess {
  
      private static final Logger e = LogManager.getLogger();
 -    public static final ChunkSection a = null;
 +    public static final ChunkSection a = null; public static final ChunkSection EMPTY_CHUNK_SECTION = Chunk.a; // Paper - OBFHELPER
      private final ChunkSection[] sections;
-     private final byte[] g;
-     private final int[] h;
-@@ -712,6 +712,7 @@ public class Chunk {
-         return !block.isTileEntity() ? null : ((ITileEntity) block).a(this.world, iblockdata.getBlock().toLegacyData(iblockdata));
+     private final BiomeBase[] g;
+     private final boolean[] h;
+@@ -730,6 +730,7 @@ public class Chunk implements IChunkAccess {
+         return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
      }
  
 +    @Nullable public final TileEntity getTileEntityImmediately(BlockPosition pos) { return this.a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
@@ -26,11 +26,11 @@ index 952c96c0c..cbb1f2cae 100644
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-index 239440888..aafd23beb 100644
+index 00a530c51..2947d9ff6 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 +++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-@@ -15,6 +15,8 @@ public class ChunkCoordIntPair {
-         this.z = blockposition.getZ() >> 4;
+@@ -24,6 +24,8 @@ public class ChunkCoordIntPair {
+         return a(this.x, this.z);
      }
  
 +    public static long asLong(final BlockPosition pos) { return a(pos.getX() >> 4, pos.getZ() >> 4); } // Paper - OBFHELPER
@@ -38,49 +38,51 @@ index 239440888..aafd23beb 100644
      public static long a(int i, int j) {
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
-diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 1f2fe87b6..2cb462b8e 100644
---- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
-+++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
- public class DataPaletteBlock implements DataPaletteExpandable {
- 
-     private static final DataPalette d = new DataPaletteGlobal();
--    protected static final IBlockData a = Blocks.AIR.getBlockData();
-+    protected static final IBlockData a = Blocks.AIR.getBlockData(); public static final IBlockData DEFAULT_BLOCK_DATA = DataPaletteBlock.a; // Paper - OBFHELPER
-     protected DataBits b;
-     protected DataPalette c;
-     private int e;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index ba461ad48..2359b31f4 100644
+index 97cfd6695..05ed0abe7 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
-@@ -13,6 +13,11 @@ import org.apache.logging.log4j.Logger;
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import com.mojang.datafixers.DataFixUtils;
+ import com.mojang.datafixers.types.Type;
  
- public class EntityTypes {
++import java.util.Map;
+ import java.util.Set;
+ import java.util.UUID;
+ import java.util.function.Function;
+@@ -121,9 +122,17 @@ public class EntityTypes<T extends Entity> {
+     public static <T extends Entity> EntityTypes<T> a(String s, EntityTypes.a<T> entitytypes_a) {
+         EntityTypes entitytypes = entitytypes_a.a(s);
  
-+    // Paper start
+-        EntityTypes.REGISTRY.a(new MinecraftKey(s), entitytypes);
++        // Paper start
++        MinecraftKey key = new MinecraftKey(s);
++        Class<? extends T> entityClass = entitytypes_a.getEntityClass();
++        EntityTypes.REGISTRY.a(key, entitytypes);
++        clsToKeyMap.put(entityClass, key);
++        clsToTypeMap.put(entityClass, org.bukkit.entity.EntityType.fromName(s));
+         return entitytypes;
+     }
 +    public static Map<Class<? extends Entity>, MinecraftKey> clsToKeyMap = new java.util.HashMap<>();
 +    public static Map<Class<? extends Entity>, org.bukkit.entity.EntityType> clsToTypeMap = new java.util.HashMap<>();
 +    // Paper end
-+
-     public static final MinecraftKey a = new MinecraftKey("lightning_bolt");
-     private static final MinecraftKey e = new MinecraftKey("player");
-     private static final Logger f = LogManager.getLogger();
-@@ -252,6 +257,8 @@ public class EntityTypes {
  
-             EntityTypes.b.a(i, minecraftkey, oclass);
-             EntityTypes.d.add(minecraftkey);
-+            clsToKeyMap.put(oclass, minecraftkey); // Paper
-+            clsToTypeMap.put(oclass, org.bukkit.entity.EntityType.fromName(s)); // Paper
+     @Nullable
+     public static MinecraftKey getName(EntityTypes<?> entitytypes) {
+@@ -278,7 +287,7 @@ public class EntityTypes<T extends Entity> {
  
-             while (EntityTypes.g.size() <= i) {
-                 EntityTypes.g.add(null); // Paper - Decompile fix
+     public static class a<T extends Entity> {
+ 
+-        private final Class<? extends T> a;
++        private final Class<? extends T> a; public Class<? extends T> getEntityClass() { return a; } // Paper - OBFHELPER
+         private final Function<? super World, ? extends T> b;
+         private boolean c = true;
+         private boolean d = true;
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 76bfbaa81..82d72ea15 100644
+index cc96294f4..7f249a975 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -14,6 +14,7 @@ import org.bukkit.Location;
+@@ -25,6 +25,7 @@ import org.bukkit.Location;
  import org.bukkit.TreeType;
  import org.bukkit.block.BlockState;
  import org.bukkit.craftbukkit.block.CraftBlockState;
@@ -88,8 +90,8 @@ index 76bfbaa81..82d72ea15 100644
  import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.entity.Player;
  import org.bukkit.event.world.StructureGrowEvent;
-@@ -583,6 +584,17 @@ public final class ItemStack {
-         return this.tag != null ? this.tag.getList("ench", 10) : new NBTTagList();
+@@ -547,6 +548,17 @@ public final class ItemStack {
+         return this.tag != null ? this.tag.getList("Enchantments", 10) : new NBTTagList();
      }
  
 +    // Paper start - (this is just a good no conflict location)
@@ -314,19 +316,19 @@ index 000000000..a4b0901cf
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
-index aa1ca6d91..e15c23367 100644
+index 7fc9b5ff3..e658816c2 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
 +++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
-@@ -22,7 +22,7 @@ public class NBTTagCompound extends NBTBase {
+@@ -24,7 +24,7 @@ public class NBTTagCompound implements NBTBase {
  
-     private static final Logger b = LogManager.getLogger();
-     private static final Pattern c = Pattern.compile("[A-Za-z0-9._+-]+");
+     private static final Logger f = LogManager.getLogger();
+     private static final Pattern g = Pattern.compile("[A-Za-z0-9._+-]+");
 -    private final Map<String, NBTBase> map = Maps.newHashMap();
 +    public final Map<String, NBTBase> map = Maps.newHashMap(); // Paper
  
      public NBTTagCompound() {}
  
-@@ -94,11 +94,13 @@ public class NBTTagCompound extends NBTBase {
+@@ -96,11 +96,13 @@ public class NBTTagCompound implements NBTBase {
          this.map.put(s, new NBTTagLong(i));
      }
  
@@ -340,24 +342,54 @@ index aa1ca6d91..e15c23367 100644
      @Nullable
      public UUID a(String s) {
          return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
+@@ -492,8 +494,4 @@ public class NBTTagCompound implements NBTBase {
+             return chatcomponenttext;
+         }
+     }
+-
+-    public NBTBase clone() {
+-        return this.clone();
+-    }
+ }
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index e0cb6aa6e..bc6383669 100644
+index b3c944d70..e56d4836d 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
-@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
- public class NBTTagList extends NBTBase {
+@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
+ public class NBTTagList extends NBTList<NBTBase> {
  
-     private static final Logger b = LogManager.getLogger();
+     private static final Logger f = LogManager.getLogger();
 -    private List<NBTBase> list = Lists.newArrayList();
 +    public List<NBTBase> list = Lists.newArrayList(); // Paper
      private byte type = 0;
  
      public NBTTagList() {}
+@@ -297,20 +297,4 @@ public class NBTTagList extends NBTList<NBTBase> {
+     public NBTBase clone() {
+         return this.c();
+     }
+-
+-    public Object remove(int i) {
+-        return this.remove(i);
+-    }
+-
+-    public Object set(int i, Object object) {
+-        return this.set(i, (NBTBase) object);
+-    }
+-
+-    public Object get(int i) {
+-        return this.get(i);
+-    }
+-
+-    public boolean add(Object object) {
+-        return this.add((NBTBase) object);
+-    }
+ }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 8cede938a..cd2d58bfb 100644
+index 3cb868299..227bc857e 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -65,9 +65,9 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -66,9 +66,9 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
      private final MinecraftServer minecraftServer;
      public EntityPlayer player;
      private int e;
@@ -370,14 +402,6 @@ index 8cede938a..cd2d58bfb 100644
      // CraftBukkit start - multithreaded fields
      private volatile int chatThrottle;
      private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
-@@ -2158,6 +2158,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
- 
-     }
- 
-+    private long getCurrentMillis() { return d(); } // Paper - OBFHELPER
-     private long d() {
-         return System.nanoTime() / 1000000L;
-     }
 -- 
 2.18.0
 

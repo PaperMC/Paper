@@ -1,0 +1,68 @@
+From a44894177052ab64b102687ed47812440f2289b7 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 15:03:53 -0600
+Subject: [PATCH] Configurable mob spawner tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0130e5860..47f391243 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -162,4 +162,9 @@ public class PaperWorldConfig {
+     private void disableIceAndSnow(){
+         disableIceAndSnow = getBoolean("disable-ice-and-snow", false);
+     }
++
++    public int mobSpawnerTickRate;
++    private void mobSpawnerTickRate() {
++        mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index e9650d962..61472a0eb 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -22,6 +22,7 @@ public abstract class MobSpawnerAbstract {
+     public int maxNearbyEntities = 6;
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
++    private int tickDelay = 0; // Paper
+ 
+     public MobSpawnerAbstract() {}
+ 
+@@ -51,6 +52,10 @@ public abstract class MobSpawnerAbstract {
+     }
+ 
+     public void c() {
++        // Paper start - Configurable mob spawner tick rate
++        if (spawnDelay > 0 && --tickDelay > 0) return;
++        tickDelay = this.a().paperConfig.mobSpawnerTickRate;
++        // Paper end
+         if (!this.h()) {
+             this.f = this.e;
+         } else {
+@@ -64,18 +69,18 @@ public abstract class MobSpawnerAbstract {
+                 this.a().addParticle(Particles.M, d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                 this.a().addParticle(Particles.y, d0, d1, d2, 0.0D, 0.0D, 0.0D);
+                 if (this.spawnDelay > 0) {
+-                    --this.spawnDelay;
++                    this.spawnDelay -= tickDelay; // Paper
+                 }
+ 
+                 this.f = this.e;
+                 this.e = (this.e + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
+             } else {
+-                if (this.spawnDelay == -1) {
++                if (this.spawnDelay < -tickDelay) { // Paper
+                     this.i();
+                 }
+ 
+                 if (this.spawnDelay > 0) {
+-                    --this.spawnDelay;
++                    this.spawnDelay -= tickDelay; // Paper
+                     return;
+                 }
+ 
+-- 
+2.18.0
+

@@ -39,10 +39,11 @@ function savePatches {
         echo "REBASE DETECTED - PARTIAL SAVE"
         last=$(cat "$basedir/$target/.git/rebase-apply/last")
         next=$(cat "$basedir/$target/.git/rebase-apply/next")
+        orderedfiles=$(find . -name "*.patch" | sort)
         for i in $(seq -f "%04g" 1 1 $last)
         do
             if [ $i -lt $next ]; then
-                rm ${i}-*.patch
+                rm $(echo "$orderedfiles{@}" | sed -n "${i}p")
             fi
         done
     else

@@ -1,0 +1,36 @@
+From f7491b43e43d1a84ac5ba371a65c3e7d6d3fb3aa Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 Apr 2016 16:28:17 -0400
+Subject: [PATCH] Configurable Grass Spread Tick Rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 17fb883f6..eb09be512 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -226,4 +226,10 @@ public class PaperWorldConfig {
+     private void useInhabitedTime() {
+         useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
+     }
++
++    public int grassUpdateRate = 1;
++    private void grassUpdateRate() {
++        grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
++        log("Grass Spread Tick Rate: " + grassUpdateRate);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java b/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
+index 6343fb1e0..903e8241b 100644
+--- a/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
++++ b/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
+@@ -21,6 +21,7 @@ public abstract class BlockDirtSnowSpreadable extends BlockDirtSnow {
+     }
+ 
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
++        if (this instanceof BlockGrass && world.paperConfig.grassUpdateRate != 1 && (world.paperConfig.grassUpdateRate < 1 || (MinecraftServer.currentTick + blockposition.hashCode()) % world.paperConfig.grassUpdateRate != 0)) { return; } // Paper
+         if (!world.isClientSide) {
+             if (!a((IWorldReader) world, blockposition)) {
+                 // CraftBukkit start
+-- 
+2.18.0
+
