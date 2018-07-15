@@ -11,18 +11,7 @@
  
  public class EntityCreeper extends EntityMonster {
  
-@@ -11,8 +15,8 @@
-     private static final DataWatcherObject<Boolean> c = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.h);
-     private int bx;
-     private int fuseTicks;
--    private int maxFuseTicks = 30;
--    private int explosionRadius = 3;
-+    public int maxFuseTicks = 30; // PAIL private -> public
-+    public int explosionRadius = 3; // PAIL private -> public
-     private int bB;
- 
-     public EntityCreeper(World world) {
-@@ -125,7 +129,7 @@
+@@ -121,7 +125,7 @@
      }
  
      public void die(DamageSource damagesource) {
@@ -30,16 +19,16 @@
 +        // super.die(damagesource); // CraftBukkit - Moved to end
          if (this.world.getGameRules().getBoolean("doMobLoot")) {
              if (damagesource.getEntity() instanceof EntitySkeleton) {
-                 int i = Item.getId(Items.RECORD_13);
-@@ -138,6 +142,7 @@
-                 this.a(new ItemStack(Items.SKULL, 1, 4), 0.0F);
+                 this.a((IMaterial) ItemRecord.a(this.random));
+@@ -130,6 +134,7 @@
+                 this.a((IMaterial) Items.CREEPER_HEAD);
              }
          }
 +        super.die(damagesource); // CraftBukkit - Moved from above
  
      }
  
-@@ -164,9 +169,19 @@
+@@ -156,9 +161,19 @@
  
      public void onLightningStrike(EntityLightning entitylightning) {
          super.onLightningStrike(entitylightning);
@@ -60,22 +49,22 @@
      protected boolean a(EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.b(enumhand);
  
-@@ -188,10 +203,18 @@
+@@ -180,10 +195,18 @@
              boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
              float f = this.isPowered() ? 2.0F : 1.0F;
  
--            this.aU = true;
+-            this.aX = true;
 -            this.world.explode(this, this.locX, this.locY, this.locZ, (float) this.explosionRadius * f, flag);
 -            this.die();
--            this.ds();
+-            this.dF();
 +            // CraftBukkit start
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
 +            this.world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
-+                this.aU = true;
++                this.aX = true;
 +                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), flag);
 +                this.die();
-+                this.ds();
++                this.dF();
 +            } else {
 +                fuseTicks = 0;
 +            }
@@ -83,7 +72,7 @@
          }
  
      }
-@@ -202,6 +225,7 @@
+@@ -194,6 +217,7 @@
          if (!collection.isEmpty()) {
              EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.world, this.locX, this.locY, this.locZ);
  

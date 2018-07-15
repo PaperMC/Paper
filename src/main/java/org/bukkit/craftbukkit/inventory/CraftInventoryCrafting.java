@@ -5,7 +5,6 @@ import java.util.List;
 
 import net.minecraft.server.IRecipe;
 import net.minecraft.server.IInventory;
-import net.minecraft.server.InventoryCrafting;
 
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
@@ -14,7 +13,7 @@ import org.bukkit.inventory.Recipe;
 public class CraftInventoryCrafting extends CraftInventory implements CraftingInventory {
     private final IInventory resultInventory;
 
-    public CraftInventoryCrafting(InventoryCrafting inventory, IInventory resultInventory) {
+    public CraftInventoryCrafting(IInventory inventory, IInventory resultInventory) {
         super(inventory);
         this.resultInventory = resultInventory;
     }
@@ -116,7 +115,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     }
 
     public Recipe getRecipe() {
-        IRecipe recipe = ((InventoryCrafting)getInventory()).currentRecipe;
+        IRecipe recipe = getInventory().getCurrentRecipe();
         return recipe == null ? null : recipe.toBukkitRecipe();
     }
 }

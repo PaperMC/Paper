@@ -15,112 +15,41 @@
 +
  public class BlockSapling extends BlockPlant implements IBlockFragilePlantElement {
  
-     public static final BlockStateEnum<BlockWood.EnumLogVariant> TYPE = BlockStateEnum.of("type", BlockWood.EnumLogVariant.class);
-     public static final BlockStateInteger STAGE = BlockStateInteger.of("stage", 0, 1);
-     protected static final AxisAlignedBB d = new AxisAlignedBB(0.09999999403953552D, 0.0D, 0.09999999403953552D, 0.8999999761581421D, 0.800000011920929D, 0.8999999761581421D);
+     public static final BlockStateInteger STAGE = BlockProperties.al;
+     protected static final VoxelShape b = Block.a(2.0D, 0.0D, 2.0D, 14.0D, 12.0D, 14.0D);
+     private final WorldGenTreeProvider c;
 +    public static TreeType treeType; // CraftBukkit
  
-     protected BlockSapling() {
-         this.w(this.blockStateList.getBlockData().set(BlockSapling.TYPE, BlockWood.EnumLogVariant.OAK).set(BlockSapling.STAGE, Integer.valueOf(0)));
-@@ -25,7 +35,30 @@
-         if (!world.isClientSide) {
-             super.b(world, blockposition, iblockdata, random);
-             if (world.getLightLevel(blockposition.up()) >= 9 && random.nextInt(7) == 0) {
-+                // CraftBukkit start
-+                world.captureTreeGeneration = true;
-+                // CraftBukkit end
-                 this.grow(world, blockposition, iblockdata, random);
-+                // CraftBukkit start
-+                world.captureTreeGeneration = false;
-+                if (world.capturedBlockStates.size() > 0) {
-+                    TreeType treeType = BlockSapling.treeType;
-+                    BlockSapling.treeType = null;
-+                    Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                    List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
-+                    world.capturedBlockStates.clear();
-+                    StructureGrowEvent event = null;
-+                    if (treeType != null) {
-+                        event = new StructureGrowEvent(location, treeType, false, null, blocks);
-+                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+                    }
-+                    if (event == null || !event.isCancelled()) {
-+                        for (BlockState blockstate : blocks) {
-+                            blockstate.update(true);
-+                        }
+     protected BlockSapling(WorldGenTreeProvider worldgentreeprovider, Block.Info block_info) {
+         super(block_info);
+@@ -21,7 +31,30 @@
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
+         super.a(iblockdata, world, blockposition, random);
+         if (world.getLightLevel(blockposition.up()) >= 9 && random.nextInt(7) == 0) {
++            // CraftBukkit start
++            world.captureTreeGeneration = true;
++            // CraftBukkit end
+             this.grow(world, blockposition, iblockdata, random);
++            // CraftBukkit start
++            world.captureTreeGeneration = false;
++            if (world.capturedBlockStates.size() > 0) {
++                TreeType treeType = BlockSapling.treeType;
++                BlockSapling.treeType = null;
++                Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
++                world.capturedBlockStates.clear();
++                StructureGrowEvent event = null;
++                if (treeType != null) {
++                    event = new StructureGrowEvent(location, treeType, false, null, blocks);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                }
++                if (event == null || !event.isCancelled()) {
++                    for (BlockState blockstate : blocks) {
++                        blockstate.update(true);
 +                    }
 +                }
-+                // CraftBukkit end
-             }
- 
++            }
++            // CraftBukkit end
          }
-@@ -41,7 +74,17 @@
+ 
      }
- 
-     public void d(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
--        Object object = random.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
-+        // CraftBukkit start - Turn ternary operator into if statement to set treeType
-+        // Object object = random.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
-+        Object object;
-+        if (random.nextInt(10) == 0) {
-+            treeType = TreeType.BIG_TREE;
-+            object = new WorldGenBigTree(true);
-+        } else {
-+            treeType = TreeType.TREE;
-+            object = new WorldGenTrees(true);
-+        }
-+        // CraftBukkit end
-         int i = 0;
-         int j = 0;
-         boolean flag = false;
-@@ -53,6 +96,7 @@
-             for (i = 0; i >= -1; --i) {
-                 for (j = 0; j >= -1; --j) {
-                     if (this.a(world, blockposition, i, j, BlockWood.EnumLogVariant.SPRUCE)) {
-+                        treeType = TreeType.MEGA_REDWOOD; // CraftBukkit
-                         object = new WorldGenMegaTree(false, random.nextBoolean());
-                         flag = true;
-                         break label66;
-@@ -63,11 +107,13 @@
-             if (!flag) {
-                 i = 0;
-                 j = 0;
-+                treeType = TreeType.REDWOOD; // CraftBukkit
-                 object = new WorldGenTaiga2(true);
-             }
-             break;
- 
-         case BIRCH:
-+            treeType = TreeType.BIRCH; // CraftBukkit
-             object = new WorldGenForest(true, false);
-             break;
- 
-@@ -79,6 +125,7 @@
-             for (i = 0; i >= -1; --i) {
-                 for (j = 0; j >= -1; --j) {
-                     if (this.a(world, blockposition, i, j, BlockWood.EnumLogVariant.JUNGLE)) {
-+                        treeType = TreeType.JUNGLE; // CraftBukkit
-                         object = new WorldGenJungleTree(true, 10, 20, iblockdata1, iblockdata2);
-                         flag = true;
-                         break label78;
-@@ -89,11 +136,13 @@
-             if (!flag) {
-                 i = 0;
-                 j = 0;
-+                treeType = TreeType.SMALL_JUNGLE; // CraftBukkit
-                 object = new WorldGenTrees(true, 4 + random.nextInt(7), iblockdata1, iblockdata2, false);
-             }
-             break;
- 
-         case ACACIA:
-+            treeType = TreeType.ACACIA; // CraftBukkit
-             object = new WorldGenAcaciaTree(true);
-             break;
- 
-@@ -102,6 +151,7 @@
-             for (i = 0; i >= -1; --i) {
-                 for (j = 0; j >= -1; --j) {
-                     if (this.a(world, blockposition, i, j, BlockWood.EnumLogVariant.DARK_OAK)) {
-+                        treeType = TreeType.DARK_OAK; // CraftBukkit
-                         object = new WorldGenForestTree(true);
-                         flag = true;
-                         break label90;

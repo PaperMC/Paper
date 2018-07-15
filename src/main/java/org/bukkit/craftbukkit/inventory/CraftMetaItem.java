@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
@@ -25,9 +26,12 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.Overridden;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 
@@ -70,7 +74,7 @@ import org.apache.commons.codec.binary.Base64;
  * <li> SerializableMeta.Deserializers deserializer()
  */
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
-class CraftMetaItem implements ItemMeta, Repairable {
+class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     static class ItemMetaKey {
 
@@ -120,6 +124,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                     .put(CraftMetaFirework.class, "FIREWORK")
                     .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
                     .put(CraftMetaKnowledgeBook.class, "KNOWLEDGE_BOOK")
+                    .put(CraftMetaTropicalFishBucket.class, "TROPICAL_FISH_BUCKET")
                     .put(CraftMetaItem.class, "UNSPECIFIC")
                     .build();
 
@@ -192,7 +197,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Specific(Specific.To.NBT)
     static final ItemMetaKey DISPLAY = new ItemMetaKey("display");
     static final ItemMetaKey LORE = new ItemMetaKey("Lore", "lore");
-    static final ItemMetaKey ENCHANTMENTS = new ItemMetaKey("ench", "enchants");
+    static final ItemMetaKey ENCHANTMENTS = new ItemMetaKey("Enchantments", "enchants");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ENCHANTMENTS_ID = new ItemMetaKey("id");
     @Specific(Specific.To.NBT)
@@ -216,14 +221,17 @@ class CraftMetaItem implements ItemMeta, Repairable {
     static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("HideFlags", "ItemFlags");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
+    @Specific(Specific.To.NBT)
+    static final ItemMetaKey DAMAGE = new ItemMetaKey("Damage");
 
-    private String displayName;
-    private String locName;
+    private IChatBaseComponent displayName;
+    private IChatBaseComponent locName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
     private int repairCost;
     private int hideFlag;
     private boolean unbreakable;
+    private int damage;
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
 
@@ -249,6 +257,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         this.repairCost = meta.repairCost;
         this.hideFlag = meta.hideFlag;
         this.unbreakable = meta.unbreakable;
+        this.damage = meta.damage;
         this.unhandledTags.putAll(meta.unhandledTags);
 
         this.internalTag = meta.internalTag;
@@ -262,11 +271,11 @@ class CraftMetaItem implements ItemMeta, Repairable {
             NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
 
             if (display.hasKey(NAME.NBT)) {
-                displayName = display.getString(NAME.NBT);
+                displayName = IChatBaseComponent.ChatSerializer.a(display.getString(NAME.NBT));
             }
 
             if (display.hasKey(LOCNAME.NBT)) {
-                locName = display.getString(LOCNAME.NBT);
+                locName = IChatBaseComponent.ChatSerializer.a(display.getString(LOCNAME.NBT));
             }
 
             if (display.hasKey(LORE.NBT)) {
@@ -291,6 +300,9 @@ class CraftMetaItem implements ItemMeta, Repairable {
         }
         if (tag.hasKey(UNBREAKABLE.NBT)) {
             unbreakable = tag.getBoolean(UNBREAKABLE.NBT);
+        }
+        if (tag.hasKey(DAMAGE.NBT)) {
+            damage = tag.getInt(DAMAGE.NBT);
         }
 
         if (tag.get(ATTRIBUTES.NBT) instanceof NBTTagList) {
@@ -339,7 +351,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
             unhandledTags.put(ATTRIBUTES.NBT, save);
         }
 
-        Set<String> keys = tag.c();
+        Set<String> keys = tag.getKeys();
         for (String key : keys) {
             if (!getHandledTags().contains(key)) {
                 unhandledTags.put(key, tag.get(key));
@@ -356,10 +368,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
         Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
 
         for (int i = 0; i < ench.size(); i++) {
-            int id = 0xffff & ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_ID.NBT);
+            String id = ((NBTTagCompound) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
             int level = 0xffff & ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
 
-            Enchantment enchant = Enchantment.getById(id);
+            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromString(id));
             if (enchant != null) {
                 enchantments.put(enchant, level);
             }
@@ -402,13 +414,18 @@ class CraftMetaItem implements ItemMeta, Repairable {
             setUnbreakable(unbreakable);
         }
 
+        Integer damage = SerializableMeta.getObject(Integer.class, map, DAMAGE.BUKKIT, true);
+        if (damage != null) {
+            setDamage(damage);
+        }
+
         String internal = SerializableMeta.getString(map, "internal", true);
         if (internal != null) {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
             try {
                 internalTag = NBTCompressedStreamTools.a(buf);
                 deserializeInternal(internalTag);
-                Set<String> keys = internalTag.c();
+                Set<String> keys = internalTag.getKeys();
                 for (String key : keys) {
                     if (!getHandledTags().contains(key)) {
                         unhandledTags.put(key, internalTag.get(key));
@@ -449,10 +466,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Overridden
     void applyToItem(NBTTagCompound itemTag) {
         if (hasDisplayName()) {
-            setDisplayTag(itemTag, NAME.NBT, new NBTTagString(displayName));
+            setDisplayTag(itemTag, NAME.NBT, new NBTTagString(CraftChatMessage.toJSON(displayName)));
         }
         if (hasLocalizedName()){
-            setDisplayTag(itemTag, LOCNAME.NBT, new NBTTagString(locName));
+            setDisplayTag(itemTag, LOCNAME.NBT, new NBTTagString(CraftChatMessage.toJSON(locName)));
         }
 
         if (hasLore()) {
@@ -471,6 +488,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
         if (isUnbreakable()) {
             itemTag.setBoolean(UNBREAKABLE.NBT, unbreakable);
+        }
+
+        if (hasDamage()) {
+            itemTag.setInt(DAMAGE.NBT, damage);
         }
 
         for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
@@ -501,7 +522,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             NBTTagCompound subtag = new NBTTagCompound();
 
-            subtag.setShort(ENCHANTMENTS_ID.NBT, (short) entry.getKey().getId());
+            subtag.setString(ENCHANTMENTS_ID.NBT, entry.getKey().getKey().toString());
             subtag.setShort(ENCHANTMENTS_LVL.NBT, entry.getValue().shortValue());
 
             list.add(subtag);
@@ -527,34 +548,34 @@ class CraftMetaItem implements ItemMeta, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable());
+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage());
     }
 
     public String getDisplayName() {
-        return displayName;
+        return CraftChatMessage.fromComponent(displayName);
     }
 
     public final void setDisplayName(String name) {
-        this.displayName = name;
+        this.displayName = CraftChatMessage.fromStringOrNull(name);
     }
 
     public boolean hasDisplayName() {
-        return !Strings.isNullOrEmpty(displayName);
+        return displayName != null;
     }
 
     @Override
     public String getLocalizedName() {
-        return locName;
+        return CraftChatMessage.fromComponent(locName);
     }
 
     @Override
     public void setLocalizedName(String name) {
-        this.locName = name;
+        this.locName = CraftChatMessage.fromStringOrNull(name);
     }
 
     @Override
     public boolean hasLocalizedName() {
-        return !Strings.isNullOrEmpty(locName);
+        return locName != null;
     }
 
     public boolean hasLore() {
@@ -682,6 +703,21 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     @Override
+    public boolean hasDamage() {
+        return damage > 0;
+    }
+
+    @Override
+    public int getDamage() {
+        return damage;
+    }
+
+    @Override
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
+    @Override
     public final boolean equals(Object object) {
         if (object == null) {
             return false;
@@ -709,7 +745,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                 && (this.unhandledTags.equals(that.unhandledTags))
                 && (this.hideFlag == that.hideFlag)
-                && (this.isUnbreakable() == that.isUnbreakable());
+                && (this.isUnbreakable() == that.isUnbreakable())
+                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage());
     }
 
     /**
@@ -738,6 +775,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
         hash = 61 * hash + unhandledTags.hashCode();
         hash = 61 * hash + hideFlag;
         hash = 61 * hash + (isUnbreakable() ? 1231 : 1237);
+        hash = 61 * hash + (hasDamage() ? this.damage : 0);
         return hash;
     }
 
@@ -754,6 +792,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
             }
             clone.hideFlag = this.hideFlag;
             clone.unbreakable = this.unbreakable;
+            clone.damage = this.damage;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
@@ -770,10 +809,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
     @Overridden
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         if (hasDisplayName()) {
-            builder.put(NAME.BUKKIT, displayName);
+            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName));
         }
         if (hasLocalizedName()) {
-            builder.put(LOCNAME.BUKKIT, locName);
+            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName));
         }
 
         if (hasLore()) {
@@ -798,6 +837,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
             builder.put(UNBREAKABLE.BUKKIT, unbreakable);
         }
 
+        if (hasDamage()) {
+            builder.put(DAMAGE.BUKKIT, damage);
+        }
+
         final Map<String, NBTBase> internalTags = new HashMap<String, NBTBase>(unhandledTags);
         serializeInternal(internalTags);
         if (!internalTags.isEmpty()) {
@@ -818,6 +861,10 @@ class CraftMetaItem implements ItemMeta, Repairable {
     }
 
     void serializeInternal(final Map<String, NBTBase> unhandledTags) {
+    }
+
+    Material updateMaterial(Material material) {
+        return material;
     }
 
     static void serializeEnchantments(Map<Enchantment, Integer> enchantments, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
@@ -885,6 +932,7 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         ENCHANTMENTS.NBT,
                         HIDEFLAGS.NBT,
                         UNBREAKABLE.NBT,
+                        DAMAGE.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
                         CraftMetaPotion.DEFAULT_POTION.NBT,
@@ -901,7 +949,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
                         CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
                         CraftMetaCharge.EXPLOSION.NBT,
                         CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
-                        CraftMetaKnowledgeBook.BOOK_RECIPES.NBT
+                        CraftMetaKnowledgeBook.BOOK_RECIPES.NBT,
+                        CraftMetaTropicalFishBucket.VARIANT.NBT
                 ));
             }
             return HANDLED_TAGS;

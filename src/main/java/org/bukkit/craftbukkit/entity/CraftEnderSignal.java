@@ -30,7 +30,7 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
 
     @Override
     public Location getTargetLocation() {
-        return new Location(getWorld(), getHandle().a, getHandle().b, getHandle().c, getHandle().yaw, getHandle().pitch); // PAIL rename targetX, targetY, targetZ
+        return new Location(getWorld(), getHandle().targetX, getHandle().targetY, getHandle().targetZ, getHandle().yaw, getHandle().pitch);
     }
 
     @Override
@@ -41,21 +41,21 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
 
     @Override
     public boolean getDropItem() {
-        return getHandle().e; // PAIL rename getDropItem
+        return getHandle().shouldDropItem;
     }
 
     @Override
     public void setDropItem(boolean shouldDropItem) {
-        getHandle().e = shouldDropItem; // PAIL rename getDropItem
+        getHandle().shouldDropItem = shouldDropItem;
     }
 
     @Override
     public int getDespawnTimer() {
-        return getHandle().d; // PAIL rename despawnTimer
+        return getHandle().despawnTimer;
     }
 
     @Override
     public void setDespawnTimer(int time) {
-        getHandle().d = time; // PAIL rename despawnTimer
+        getHandle().despawnTimer = time;
     }
 }

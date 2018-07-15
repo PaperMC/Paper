@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.IScoreboardCriteria;
@@ -99,13 +100,10 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     }
 
     // CraftBukkit method
-    public Collection<ScoreboardScore> getScoreboardScores(IScoreboardCriteria criteria, String name, Collection<ScoreboardScore> collection) {
+    public void getScoreboardScores(IScoreboardCriteria criteria, String name, Consumer<ScoreboardScore> consumer) {
         for (CraftScoreboard scoreboard : scoreboards) {
             Scoreboard board = scoreboard.board;
-            for (ScoreboardObjective objective : (Iterable<ScoreboardObjective>) board.getObjectivesForCriteria(criteria)) {
-                collection.add(board.getPlayerScoreForObjective(name, objective));
-            }
+            board.getObjectivesForCriteria(criteria, name, (score) -> consumer.accept(score));
         }
-        return collection;
     }
 }

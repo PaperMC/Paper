@@ -59,7 +59,7 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         }
 
         EntityArrow handle = getHandle();
-        return getWorld().getBlockAt(handle.h, handle.at, handle.au); // PAIL: rename tileX, tileY, tileZ
+        return getWorld().getBlockAt(handle.tileX, handle.tileY, handle.tileZ);
     }
 
     @Override

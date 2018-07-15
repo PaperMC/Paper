@@ -1,55 +1,41 @@
 --- a/net/minecraft/server/BlockMushroom.java
 +++ b/net/minecraft/server/BlockMushroom.java
-@@ -3,6 +3,12 @@
+@@ -3,6 +3,10 @@
  import java.util.Iterator;
  import java.util.Random;
  
 +// CraftBukkit start
 +import org.bukkit.TreeType;
-+import org.bukkit.block.BlockState;
-+import org.bukkit.event.block.BlockSpreadEvent;
 +// CraftBukkit end
 +
  public class BlockMushroom extends BlockPlant implements IBlockFragilePlantElement {
  
-     protected static final AxisAlignedBB a = new AxisAlignedBB(0.30000001192092896D, 0.0D, 0.30000001192092896D, 0.699999988079071D, 0.4000000059604645D, 0.699999988079071D);
-@@ -16,6 +22,7 @@
+     protected static final VoxelShape a = Block.a(5.0D, 0.0D, 5.0D, 11.0D, 6.0D, 11.0D);
+@@ -16,6 +20,7 @@
      }
  
-     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
 +        final int sourceX = blockposition.getX(), sourceY = blockposition.getY(), sourceZ = blockposition.getZ(); // CraftBukkit
          if (random.nextInt(25) == 0) {
              int i = 5;
              boolean flag = true;
-@@ -43,7 +50,19 @@
+@@ -43,7 +48,7 @@
              }
  
-             if (world.isEmpty(blockposition2) && this.f(world, blockposition2, this.getBlockData())) {
--                world.setTypeAndData(blockposition2, this.getBlockData(), 2);
-+                // CraftBukkit start
-+                // world.setTypeAndData(blockposition2, this.getBlockData(), 2);
-+                org.bukkit.World bworld = world.getWorld();
-+                BlockState blockState = bworld.getBlockAt(blockposition2.getX(), blockposition2.getY(), blockposition2.getZ()).getState();
-+                blockState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this)); // nms: this.id, 0, 2
-+
-+                BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(sourceX, sourceY, sourceZ), blockState);
-+                world.getServer().getPluginManager().callEvent(event);
-+
-+                if (!event.isCancelled()) {
-+                    blockState.update(true);
-+                }
-+                // CraftBukkit end
+             if (world.isEmpty(blockposition2) && iblockdata.canPlace(world, blockposition2)) {
+-                world.setTypeAndData(blockposition2, iblockdata, 2);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, blockposition, blockposition2, iblockdata, 2); // CraftBukkit
              }
          }
  
-@@ -72,8 +91,10 @@
-         WorldGenHugeMushroom worldgenhugemushroom = null;
+@@ -66,8 +71,10 @@
+         WorldGenerator worldgenerator = null;
  
          if (this == Blocks.BROWN_MUSHROOM) {
 +            BlockSapling.treeType = TreeType.BROWN_MUSHROOM; // CraftBukkit
-             worldgenhugemushroom = new WorldGenHugeMushroom(Blocks.BROWN_MUSHROOM_BLOCK);
+             worldgenerator = WorldGenerator.U;
          } else if (this == Blocks.RED_MUSHROOM) {
 +            BlockSapling.treeType = TreeType.RED_MUSHROOM; // CraftBukkit
-             worldgenhugemushroom = new WorldGenHugeMushroom(Blocks.RED_MUSHROOM_BLOCK);
+             worldgenerator = WorldGenerator.T;
          }
  

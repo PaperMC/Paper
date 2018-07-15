@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/TileEntityBeacon.java
 +++ b/net/minecraft/server/TileEntityBeacon.java
 @@ -9,6 +9,13 @@
- import java.util.Set;
+ import java.util.stream.Collectors;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
@@ -11,13 +11,13 @@
 +import org.bukkit.potion.PotionEffect;
 +// CraftBukkit end
 +
- public class TileEntityBeacon extends TileEntityContainer implements ITickable, IWorldInventory {
+ public class TileEntityBeacon extends TileEntityContainer implements IWorldInventory, ITickable {
  
      public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
-@@ -22,6 +29,38 @@
+@@ -23,6 +30,38 @@
      public MobEffectList secondaryEffect;
      private ItemStack inventorySlot;
-     private String o;
+     private IChatBaseComponent o;
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
@@ -52,13 +52,13 @@
 +    // CraftBukkit end
  
      public TileEntityBeacon() {
-         this.inventorySlot = ItemStack.a;
-@@ -42,41 +81,79 @@
- 
+         super(TileEntityTypes.o);
+@@ -56,41 +95,79 @@
+         this.world.a((EntityHuman) null, this.position, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
      }
  
--    private void E() {
--        if (this.j && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
+-    private void D() {
+-        if (this.i && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
 -            double d0 = (double) (this.levels * 10 + 10);
 +    // CraftBukkit start - split into components
 +    private byte getAmplification() {
@@ -123,8 +123,8 @@
 +        }
 +    }
 +
-+    private void E() {
-+        if (this.j && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
++    private void D() {
++        if (this.i && this.levels > 0 && !this.world.isClientSide && this.primaryEffect != null) {
 +            byte b0 = getAmplification();
 +
 +            int i = getLevel();
@@ -140,14 +140,14 @@
      }
 +    // CraftBukkit end
  
-     private void F() {
+     private void E() {
          int i = this.position.getX();
-@@ -195,8 +272,10 @@
+@@ -210,8 +287,10 @@
  
      public void load(NBTTagCompound nbttagcompound) {
          super.load(nbttagcompound);
--        this.primaryEffect = f(nbttagcompound.getInt("Primary"));
--        this.secondaryEffect = f(nbttagcompound.getInt("Secondary"));
+-        this.primaryEffect = e(nbttagcompound.getInt("Primary"));
+-        this.secondaryEffect = e(nbttagcompound.getInt("Secondary"));
 +        // Craftbukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
 +        this.primaryEffect = MobEffectList.fromId(nbttagcompound.getInt("Primary"));
 +        this.secondaryEffect = MobEffectList.fromId(nbttagcompound.getInt("Secondary"));

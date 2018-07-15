@@ -30,7 +30,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void load(TileEntityBanner banner) {
         super.load(banner);
 
-        base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
+        base = DyeColor.getByWoolData((byte) banner.color.getColorIndex());
         patterns = new ArrayList<Pattern>();
 
         if (banner.patterns != null) {
@@ -90,7 +90,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void applyTo(TileEntityBanner banner) {
         super.applyTo(banner);
 
-        banner.color = EnumColor.fromInvColorIndex(base.getDyeData());
+        banner.color = EnumColor.fromColorIndex(base.getWoolData());
 
         NBTTagList newPatterns = new NBTTagList();
 

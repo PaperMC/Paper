@@ -11,76 +11,75 @@
 +
  public class BlockRedstoneOre extends Block {
  
-     private final boolean a;
-@@ -20,23 +25,45 @@
+     public static final BlockStateBoolean a = BlockRedstoneTorch.LIT;
+@@ -16,23 +21,44 @@
      }
  
-     public void attack(World world, BlockPosition blockposition, EntityHuman entityhuman) {
--        this.interact(world, blockposition);
-+        this.interact(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
-         super.attack(world, blockposition, entityhuman);
+     public void attack(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman) {
+-        interact(iblockdata, world, blockposition);
++        interact(iblockdata, world, blockposition, entityhuman); // CraftBukkit - add entityhuman
+         super.attack(iblockdata, world, blockposition, entityhuman);
      }
  
      public void stepOn(World world, BlockPosition blockposition, Entity entity) {
--        this.interact(world, blockposition);
+-        interact(world.getType(blockposition), world, blockposition);
 -        super.stepOn(world, blockposition, entity);
 +        // CraftBukkit start
-+        // this.interact(world, blockposition);
++        // interact(world.getType(blockposition), world, blockposition);
 +        // super.stepOn(world, blockposition, entity);
 +        if (entity instanceof EntityHuman) {
 +            org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
 +            if (!event.isCancelled()) {
-+                this.interact(world, blockposition, entity); // add entity
++                interact(world.getType(blockposition), world, blockposition, entity); // add entity
 +                super.stepOn(world, blockposition, entity);
 +            }
 +        } else {
 +            EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
-+                this.interact(world, blockposition, entity); // add entity
++                interact(world.getType(blockposition), world, blockposition, entity); // add entity
 +                super.stepOn(world, blockposition, entity);
 +            }
 +        }
 +        // CraftBukkit end
      }
  
-+
-     public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
--        this.interact(world, blockposition);
-+        this.interact(world, blockposition, entityhuman); // CraftBukkit - add entityhuman
-         return super.interact(world, blockposition, iblockdata, entityhuman, enumhand, enumdirection, f, f1, f2);
+     public boolean interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
+-        interact(iblockdata, world, blockposition);
++        interact(iblockdata, world, blockposition, entityhuman); // CraftBukkit - add entityhuman
+         return super.interact(iblockdata, world, blockposition, entityhuman, enumhand, enumdirection, f, f1, f2);
      }
  
--    private void interact(World world, BlockPosition blockposition) {
-+    private void interact(World world, BlockPosition blockposition, Entity entity) { // CraftBukkit - add Entity
-         this.playEffect(world, blockposition);
-         if (this == Blocks.REDSTONE_ORE) {
+-    private static void interact(IBlockData iblockdata, World world, BlockPosition blockposition) {
++    private static void interact(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) { // CraftBukkit - add Entity
+         playEffect(world, blockposition);
+         if (!((Boolean) iblockdata.get(BlockRedstoneOre.a)).booleanValue()) {
 +            // CraftBukkit start
-+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.LIT_REDSTONE_ORE, 0).isCancelled()) {
++            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.set(BlockRedstoneOre.a, Boolean.valueOf(true))).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             world.setTypeUpdate(blockposition, Blocks.LIT_REDSTONE_ORE.getBlockData());
+             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.a, Boolean.valueOf(true)), 3);
          }
  
-@@ -44,6 +71,11 @@
+@@ -40,6 +66,11 @@
  
-     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-         if (this == Blocks.LIT_REDSTONE_ORE) {
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
+         if (((Boolean) iblockdata.get(BlockRedstoneOre.a)).booleanValue()) {
 +            // CraftBukkit start
-+            if (CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), Blocks.REDSTONE_ORE).isCancelled()) {
++            if (CraftEventFactory.callBlockFadeEvent(world, blockposition, iblockdata.set(BlockRedstoneOre.a, Boolean.valueOf(false))).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             world.setTypeUpdate(blockposition, Blocks.REDSTONE_ORE.getBlockData());
+             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.a, Boolean.valueOf(false)), 3);
          }
  
-@@ -63,12 +95,25 @@
+@@ -59,12 +90,25 @@
  
-     public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
-         super.dropNaturally(world, blockposition, iblockdata, f, i);
+     public void dropNaturally(IBlockData iblockdata, World world, BlockPosition blockposition, float f, int i) {
+         super.dropNaturally(iblockdata, world, blockposition, f, i);
 +        /* CraftBukkit start - Delegated to getExpDrop
-         if (this.getDropType(iblockdata, world.random, i) != Item.getItemOf(this)) {
+         if (this.getDropType(iblockdata, world, blockposition, i) != this) {
              int j = 1 + world.random.nextInt(5);
  
              this.dropExperience(world, blockposition, j);
@@ -88,16 +87,16 @@
 +        // */
 +
 +    }
-+
-+    @Override
-+    public int getExpDrop(World world, IBlockData data, int i) {
-+        if (this.getDropType(data, world.random, i) != Item.getItemOf(this)) {
-+            int j = 1 + world.random.nextInt(5);
  
++    @Override
++    public int getExpDrop(IBlockData iblockdata, World world, BlockPosition blockposition, int enchantmentLevel) {
++        if (this.getDropType(iblockdata, world, blockposition, enchantmentLevel) != this) {
++            int j = 1 + world.random.nextInt(5);
++
 +            return j;
 +        }
 +        return 0;
 +        // CraftBukkit end
      }
  
-     private void playEffect(World world, BlockPosition blockposition) {
+     private static void playEffect(World world, BlockPosition blockposition) {

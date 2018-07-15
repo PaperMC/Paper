@@ -1,0 +1,45 @@
+--- a/net/minecraft/server/BlockSkullAbstract.java
++++ b/net/minecraft/server/BlockSkullAbstract.java
+@@ -17,7 +17,32 @@
+         return new TileEntitySkull();
+     }
+ 
+-    public void dropNaturally(IBlockData iblockdata, World world, BlockPosition blockposition, float f, int i) {}
++    // CraftBukkit start - Special case dropping so we can get info from the tile entity
++    @Override
++    public void dropNaturally(IBlockData iblockdata, World world, BlockPosition blockposition, float f, int i) {
++        if (world.random.nextFloat() < f) {
++            TileEntity tileentity = world.getTileEntity(blockposition);
++
++            if (tileentity instanceof TileEntitySkull) {
++                TileEntitySkull tileentityskull = (TileEntitySkull) tileentity;
++
++                if (tileentityskull.shouldDrop()) {
++                    ItemStack itemstack = this.a((IBlockAccess) world, blockposition, iblockdata);
++                    Block block = tileentityskull.getBlock().getBlock();
++
++                    if ((block == Blocks.PLAYER_HEAD || block == Blocks.PLAYER_WALL_HEAD) && tileentityskull.getGameProfile() != null) {
++                        NBTTagCompound nbttagcompound = new NBTTagCompound();
++
++                        GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
++                        itemstack.getOrCreateTag().set("SkullOwner", nbttagcompound);
++                    }
++
++                    a(world, blockposition, itemstack);
++                }
++            }
++        }
++    }
++    // CraftBukkit end
+ 
+     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+         if (!world.isClientSide && entityhuman.abilities.canInstantlyBuild) {
+@@ -35,7 +60,7 @@
+         if (iblockdata.getBlock() != iblockdata1.getBlock() && !world.isClientSide) {
+             TileEntity tileentity = world.getTileEntity(blockposition);
+ 
+-            if (tileentity instanceof TileEntitySkull) {
++            if (false && tileentity instanceof TileEntitySkull) { // CraftBukkit - Drop item in code above, not here
+                 TileEntitySkull tileentityskull = (TileEntitySkull) tileentity;
+ 
+                 if (tileentityskull.shouldDrop()) {

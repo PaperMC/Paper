@@ -24,7 +24,7 @@ public class MapTest {
             if (nmsColors[i] == null) {
                 break;
             }
-            int rgb = nmsColors[i].ac;
+            int rgb = nmsColors[i].rgb;
 
             int r = (rgb >> 16) & 0xFF;
             int g = (rgb >> 8) & 0xFF;

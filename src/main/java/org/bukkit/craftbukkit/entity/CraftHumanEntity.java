@@ -48,10 +48,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         enderChest = new CraftInventory(entity.getEnderChest());
     }
 
-    public String getName() {
-        return getHandle().getName();
-    }
-
     public PlayerInventory getInventory() {
         return inventory;
     }
@@ -295,7 +291,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public InventoryView openWorkbench(Location location, boolean force) {
         if (!force) {
             Block block = location.getBlock();
-            if (block.getType() != Material.WORKBENCH) {
+            if (block.getType() != Material.CRAFTING_TABLE) {
                 return null;
             }
         }
@@ -312,7 +308,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public InventoryView openEnchanting(Location location, boolean force) {
         if (!force) {
             Block block = location.getBlock();
-            if (block.getType() != Material.ENCHANTMENT_TABLE) {
+            if (block.getType() != Material.ENCHANTING_TABLE) {
                 return null;
             }
         }
@@ -325,7 +321,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         TileEntity container = getHandle().world.getTileEntity(pos);
         if (container == null && force) {
             container = new TileEntityEnchantTable();
-            container.a(getHandle().world);
+            container.setWorld(getHandle().world);
             container.setPosition(pos);
         }
         getHandle().openTileEntity((ITileEntityContainer) container);

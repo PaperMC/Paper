@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -15,6 +15,11 @@
+@@ -20,6 +20,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,40 +12,31 @@
  public class ChunkProviderServer implements IChunkProvider {
  
      private static final Logger a = LogManager.getLogger();
-@@ -70,19 +75,82 @@
-         Chunk chunk = this.getLoadedChunkAt(i, j);
+@@ -35,7 +40,7 @@
+         this.world = worldserver;
+         this.chunkLoader = ichunkloader;
+         this.chunkGenerator = chunkgenerator;
+-        this.f = new ChunkTaskScheduler(2, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler);
++        this.f = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
+         this.g = new SchedulerBatch(this.f);
+     }
  
-         if (chunk == null) {
-+            // CraftBukkit start
-+            ChunkRegionLoader loader = null;
-+
-+            if (this.chunkLoader instanceof ChunkRegionLoader) {
-+                loader = (ChunkRegionLoader) this.chunkLoader;
-+            }
-+            if (loader != null && loader.chunkExists(i, j)) {
-+                chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
-+            }
-+        }
-+
-+        return chunk;
-+    }
-+
-+    @Nullable
-+    public Chunk originalGetOrLoadChunkAt(int i, int j) {
-+        // CraftBukkit end
-+        Chunk chunk = this.getLoadedChunkAt(i, j);
-+
-+        if (chunk == null) {
-             chunk = this.loadChunk(i, j);
+@@ -77,9 +82,10 @@
+     @Nullable
+     private Chunk loadChunkAt(int i, int j) {
+         try {
+-            Chunk chunk = this.chunkLoader.a(this.world, i, j, (chunk) -> {
+-                chunk.setLastSaved(this.world.getTime());
+-                this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
++            // CraftBukkit - decompile error
++            Chunk chunk = this.chunkLoader.a(this.world, i, j, (chunk1) -> {
++                chunk1.setLastSaved(this.world.getTime());
++                this.chunks.put(ChunkCoordIntPair.a(i, j), chunk1);
+             });
+ 
              if (chunk != null) {
-                 this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
-                 chunk.addEntities();
--                chunk.loadNearby(this, this.chunkGenerator);
-+                chunk.loadNearby(this, this.chunkGenerator, false); // CraftBukkit
-             }
+@@ -104,6 +110,12 @@
          }
- 
-         return chunk;
      }
  
 +    // CraftBukkit start
@@ -55,74 +46,27 @@
 +    // CraftBukkit end
 +
      public Chunk getChunkAt(int i, int j) {
--        Chunk chunk = this.getOrLoadChunkAt(i, j);
-+        return getChunkAt(i, j, null);
-+    }
-+
-+    public Chunk getChunkAt(int i, int j, Runnable runnable) {
-+        return getChunkAt(i, j, runnable, true);
-+    }
-+
-+    public Chunk getChunkAt(int i, int j, Runnable runnable, boolean generate) {
-+        Chunk chunk = getLoadedChunkAt(i, j);
-+        ChunkRegionLoader loader = null;
-+
-+        if (this.chunkLoader instanceof ChunkRegionLoader) {
-+            loader = (ChunkRegionLoader) this.chunkLoader;
-+
-+        }
-+        // We can only use the queue for already generated chunks
-+        if (chunk == null && loader != null && loader.chunkExists(i, j)) {
-+            if (runnable != null) {
-+                ChunkIOExecutor.queueChunkLoad(world, loader, this, i, j, runnable);
-+                return null;
-+            } else {
-+                chunk = ChunkIOExecutor.syncChunkLoad(world, loader, this, i, j);
-+            }
-+        } else if (chunk == null && generate) {
-+            chunk = originalGetChunkAt(i, j);
-+        }
-+
-+        // If we didn't load the chunk async and have a callback run it now
-+        if (runnable != null) {
-+            runnable.run();
-+        }
-+
-+        return chunk;
-+    }
-+
-+    public Chunk originalGetChunkAt(int i, int j) {
-+        Chunk chunk = this.originalGetOrLoadChunkAt(i, j);
-+        // CraftBukkit end
+         Chunk chunk = this.getOrLoadChunkAt(i, j);
  
-         if (chunk == null) {
-             long k = ChunkCoordIntPair.a(i, j);
-@@ -101,7 +169,7 @@
+@@ -125,7 +137,7 @@
+         synchronized (this.chunks) {
+             IChunkAccess ichunkaccess = (IChunkAccess) this.chunks.get(ChunkCoordIntPair.a(i, j));
  
-             this.chunks.put(k, chunk);
-             chunk.addEntities();
--            chunk.loadNearby(this, this.chunkGenerator);
-+            chunk.loadNearby(this, this.chunkGenerator, true); // CraftBukkit
+-            return ichunkaccess != null ? ichunkaccess : (IChunkAccess) this.f.c((Object) (new ChunkCoordIntPair(i, j)));
++            return ichunkaccess != null ? ichunkaccess : (IChunkAccess) this.f.c((new ChunkCoordIntPair(i, j))); // CraftBukkit - decompile error
          }
+     }
  
-         return chunk;
-@@ -147,10 +215,12 @@
+@@ -150,7 +162,7 @@
+     public CompletableFuture<Chunk> generateChunk(int i, int j) {
+         this.g.b();
+         this.g.a(new ChunkCoordIntPair(i, j));
+-        CompletableFuture completablefuture = this.g.c();
++        CompletableFuture<ProtoChunk> completablefuture = this.g.c(); // CraftBukkit - decompile error
  
-     public boolean a(boolean flag) {
-         int i = 0;
--        ArrayList arraylist = Lists.newArrayList(this.chunks.values());
- 
--        for (int j = 0; j < arraylist.size(); ++j) {
--            Chunk chunk = (Chunk) arraylist.get(j);
-+        // CraftBukkit start
-+        Iterator iterator = this.chunks.values().iterator();
-+        while (iterator.hasNext()) {
-+            Chunk chunk = (Chunk) iterator.next();
-+            // CraftBukkit end
- 
-             if (flag) {
-                 this.saveChunkNOP(chunk);
-@@ -183,10 +253,12 @@
+         return completablefuture.thenApply(this::a);
+     }
+@@ -268,10 +280,12 @@
                      Chunk chunk = (Chunk) this.chunks.get(olong);
  
                      if (chunk != null && chunk.d) {
@@ -139,7 +83,7 @@
                          ++i;
                      }
                  }
-@@ -198,6 +270,40 @@
+@@ -284,6 +298,40 @@
          return false;
      }
  

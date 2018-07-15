@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/BlockStem.java
 +++ b/net/minecraft/server/BlockStem.java
-@@ -4,6 +4,8 @@
+@@ -3,6 +3,8 @@
  import java.util.Random;
  import javax.annotation.Nullable;
  
@@ -8,34 +8,30 @@
 +
  public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
  
-     public static final BlockStateInteger AGE = BlockStateInteger.of("age", 0, 7);
-@@ -54,7 +56,8 @@
+     public static final BlockStateInteger AGE = BlockProperties.V;
+@@ -33,14 +35,14 @@
  
                  if (i < 7) {
-                     iblockdata = iblockdata.set(BlockStem.AGE, Integer.valueOf(i + 1));
+                     iblockdata = (IBlockData) iblockdata.set(BlockStem.AGE, Integer.valueOf(i + 1));
 -                    world.setTypeAndData(blockposition, iblockdata, 2);
-+                    // world.setTypeAndData(blockposition, iblockdata, 2); // CraftBukkit
-+                    CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, toLegacyData(iblockdata)); // CraftBukkit
++                    CraftEventFactory.handleBlockGrowEvent(world, blockposition, iblockdata, 2); // CraftBukkit
                  } else {
-                     Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
+                     EnumDirection enumdirection = EnumDirection.EnumDirectionLimit.HORIZONTAL.a(random);
+                     BlockPosition blockposition1 = blockposition.shift(enumdirection);
+                     Block block = world.getType(blockposition1.down()).getBlock();
  
-@@ -70,7 +73,8 @@
-                     Block block = world.getType(blockposition.down()).getBlock();
- 
-                     if (world.getType(blockposition).getBlock().material == Material.AIR && (block == Blocks.FARMLAND || block == Blocks.DIRT || block == Blocks.GRASS)) {
--                        world.setTypeUpdate(blockposition, this.blockFruit.getBlockData());
-+                        // world.setTypeUpdate(blockposition, this.blockFruit.getBlockData()); // CraftBukkit
-+                        CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.blockFruit, 0); // CraftBukkit
+                     if (world.getType(blockposition1).isAir() && (block == Blocks.FARMLAND || block == Blocks.DIRT || block == Blocks.COARSE_DIRT || block == Blocks.PODZOL || block == Blocks.GRASS_BLOCK)) {
+-                        world.setTypeUpdate(blockposition1, this.blockFruit.getBlockData());
++                        CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.blockFruit.getBlockData()); // CraftBukkit
+                         world.setTypeUpdate(blockposition, (IBlockData) this.blockFruit.d().getBlockData().set(BlockFacingHorizontal.FACING, enumdirection));
                      }
                  }
-             }
-@@ -81,7 +85,8 @@
-     public void g(World world, BlockPosition blockposition, IBlockData iblockdata) {
-         int i = ((Integer) iblockdata.get(BlockStem.AGE)).intValue() + MathHelper.nextInt(world.random, 2, 5);
+@@ -94,7 +96,7 @@
+         int i = Math.min(7, ((Integer) iblockdata.get(BlockStem.AGE)).intValue() + MathHelper.nextInt(world.random, 2, 5));
+         IBlockData iblockdata1 = (IBlockData) iblockdata.set(BlockStem.AGE, Integer.valueOf(i));
  
--        world.setTypeAndData(blockposition, iblockdata.set(BlockStem.AGE, Integer.valueOf(Math.min(7, i))), 2);
-+        // world.setTypeAndData(blockposition, iblockdata.set(BlockStem.AGE, Integer.valueOf(Math.min(7, i))), 2);
-+        CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, Math.min(7, i)); // CraftBukkit
-     }
- 
-     public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
+-        world.setTypeAndData(blockposition, iblockdata1, 2);
++        CraftEventFactory.handleBlockGrowEvent(world, blockposition, iblockdata1, 2); // CraftBukkit
+         if (i == 7) {
+             iblockdata1.a(world, blockposition, world.random);
+         }

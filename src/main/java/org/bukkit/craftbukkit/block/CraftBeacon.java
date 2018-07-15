@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Beacon;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.potion.PotionEffect;
@@ -87,11 +88,11 @@ public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Bea
     @Override
     public String getCustomName() {
         TileEntityBeacon beacon = this.getSnapshot();
-        return beacon.hasCustomName() ? beacon.getName() : null;
+        return beacon.hasCustomName() ? CraftChatMessage.fromComponent(beacon.getCustomName()) : null;
     }
 
     @Override
     public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(name);
+        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 }

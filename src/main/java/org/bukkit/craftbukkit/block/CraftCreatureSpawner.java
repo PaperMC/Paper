@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.server.EntityTypes;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.TileEntityMobSpawner;
 import org.bukkit.Material;
@@ -31,7 +32,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        this.getSnapshot().getSpawner().setMobName(new MinecraftKey(entityType.getName()));
+        this.getSnapshot().getSpawner().setMobName(EntityTypes.a(entityType.getName()));
     }
 
     @Override

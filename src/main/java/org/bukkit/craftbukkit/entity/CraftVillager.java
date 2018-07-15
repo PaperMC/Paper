@@ -51,7 +51,7 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
 
     @Override
     public Career getCareer() {
-        return getCareer(getProfession(), getHandle().bK);
+        return getCareer(getProfession(), getHandle().careerId);
     }
 
     @Override
@@ -62,15 +62,15 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
     @Override
     public void setCareer(Career career, boolean resetTrades) {
         if (career == null) {
-            getHandle().bK = 0; // reset career
+            getHandle().careerId = 0; // reset career
         } else {
             Validate.isTrue(career.getProfession() == getProfession(), "Career assignment mismatch. Found (" + getProfession() + ") Required (" + career.getProfession() + ")");
-            getHandle().bK = getCareerID(career);
+            getHandle().careerId = getCareerID(career);
         }
 
         if (resetTrades) {
             getHandle().trades = null;
-            getHandle().dx();
+            getHandle().populateTrades();
         }
     }
 

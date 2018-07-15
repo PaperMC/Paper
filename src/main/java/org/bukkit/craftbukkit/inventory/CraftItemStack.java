@@ -18,9 +18,11 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.MaterialData;
 
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -30,17 +32,17 @@ public final class CraftItemStack extends ItemStack {
             CraftItemStack stack = (CraftItemStack) original;
             return stack.handle == null ? net.minecraft.server.ItemStack.a : stack.handle.cloneItemStack();
         }
-        if (original == null || original.getTypeId() <= 0) {
+        if (original == null || original.getType() == Material.AIR) {
             return net.minecraft.server.ItemStack.a;
         }
 
-        Item item = CraftMagicNumbers.getItem(original.getType());
+        Item item = CraftMagicNumbers.getItem(original.getType(), original.getDurability());
 
         if (item == null) {
             return net.minecraft.server.ItemStack.a;
         }
 
-        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount(), original.getDurability(), false);
+        net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount());
         if (original.hasItemMeta()) {
             setItemMeta(stack, original.getItemMeta());
         } else {
@@ -63,7 +65,7 @@ public final class CraftItemStack extends ItemStack {
         if (original.isEmpty()) {
             return new ItemStack(Material.AIR);
         }
-        ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.getCount(), (short) original.getData());
+        ItemStack stack = new ItemStack(CraftMagicNumbers.getMaterial(original.getItem()), original.getCount());
         if (hasItemMeta(original)) {
             stack.setItemMeta(getItemMeta(original));
         }
@@ -100,7 +102,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     private CraftItemStack(ItemStack item) {
-        this(item.getTypeId(), item.getAmount(), item.getDurability(), item.hasItemMeta() ? item.getItemMeta() : null);
+        this(item.getType(), item.getAmount(), item.getDurability(), item.hasItemMeta() ? item.getItemMeta() : null);
     }
 
     private CraftItemStack(Material type, int amount, short durability, ItemMeta itemMeta) {
@@ -110,26 +112,26 @@ public final class CraftItemStack extends ItemStack {
         setItemMeta(itemMeta);
     }
 
-    private CraftItemStack(int typeId, int amount, short durability, ItemMeta itemMeta) {
-        this(Material.getMaterial(typeId), amount, durability, itemMeta);
-
+    @Override
+    public MaterialData getData() {
+        return handle != null ? CraftMagicNumbers.getMaterialData(handle.getItem()) : super.getData();
     }
 
     @Override
-    public int getTypeId() {
-        return handle != null ? CraftMagicNumbers.getId(handle.getItem()) : 0;
+    public Material getType() {
+        return handle != null ? CraftMagicNumbers.getMaterial(handle.getItem()) : Material.AIR;
     }
 
     @Override
-    public void setTypeId(int type) {
-        if (getTypeId() == type) {
+    public void setType(Material type) {
+        if (getType() == type) {
             return;
-        } else if (type == 0) {
+        } else if (type == Material.AIR) {
             handle = null;
         } else if (CraftMagicNumbers.getItem(type) == null) { // :(
             handle = null;
         } else if (handle == null) {
-            handle = new net.minecraft.server.ItemStack(CraftMagicNumbers.getItem(type), 1, 0);
+            handle = new net.minecraft.server.ItemStack(CraftMagicNumbers.getItem(type), 1);
         } else {
             handle.setItem(CraftMagicNumbers.getItem(type));
             if (hasItemMeta()) {
@@ -161,14 +163,14 @@ public final class CraftItemStack extends ItemStack {
     public void setDurability(final short durability) {
         // Ignore damage if item is null
         if (handle != null) {
-            handle.setData(durability);
+            handle.setDamage(durability);
         }
     }
 
     @Override
     public short getDurability() {
         if (handle != null) {
-            return (short) handle.getData();
+            return (short) handle.getDamage();
         } else {
             return -1;
         }
@@ -195,14 +197,14 @@ public final class CraftItemStack extends ItemStack {
 
         for (int i = 0; i < size; i++) {
             NBTTagCompound tag = (NBTTagCompound) list.get(i);
-            short id = tag.getShort(ENCHANTMENTS_ID.NBT);
-            if (id == ench.getId()) {
+            String id = tag.getString(ENCHANTMENTS_ID.NBT);
+            if (id.equals(ench.getKey().toString())) {
                 tag.setShort(ENCHANTMENTS_LVL.NBT, (short) level);
                 return;
             }
         }
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setShort(ENCHANTMENTS_ID.NBT, (short) ench.getId());
+        tag.setString(ENCHANTMENTS_ID.NBT, ench.getKey().toString());
         tag.setShort(ENCHANTMENTS_LVL.NBT, (short) level);
         list.add(tag);
     }
@@ -247,8 +249,8 @@ public final class CraftItemStack extends ItemStack {
 
         for (int i = 0; i < size; i++) {
             NBTTagCompound enchantment = (NBTTagCompound) list.get(i);
-            int id = 0xffff & enchantment.getShort(ENCHANTMENTS_ID.NBT);
-            if (id == ench.getId()) {
+            String id = enchantment.getString(ENCHANTMENTS_ID.NBT);
+            if (id.equals(ench.getKey().toString())) {
                 index = i;
                 level = 0xffff & enchantment.getShort(ENCHANTMENTS_LVL.NBT);
                 break;
@@ -293,10 +295,10 @@ public final class CraftItemStack extends ItemStack {
         ImmutableMap.Builder<Enchantment, Integer> result = ImmutableMap.builder();
 
         for (int i = 0; i < list.size(); i++) {
-            int id = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_ID.NBT);
+            String id = ((NBTTagCompound) list.get(i)).getString(ENCHANTMENTS_ID.NBT);
             int level = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
 
-            result.put(Enchantment.getById(id), level);
+            result.put(Enchantment.getByKey(CraftNamespacedKey.fromString(id)), level);
         }
 
         return result.build();
@@ -327,9 +329,21 @@ public final class CraftItemStack extends ItemStack {
         switch (getType(item)) {
             case WRITTEN_BOOK:
                 return new CraftMetaBookSigned(item.getTag());
-            case BOOK_AND_QUILL:
+            case WRITABLE_BOOK:
                 return new CraftMetaBook(item.getTag());
-            case SKULL_ITEM:
+            case CREEPER_HEAD:
+            case CREEPER_WALL_HEAD:
+            case DRAGON_HEAD:
+            case DRAGON_WALL_HEAD:
+            case PISTON_HEAD:
+            case PLAYER_HEAD:
+            case PLAYER_WALL_HEAD:
+            case SKELETON_SKULL:
+            case SKELETON_WALL_SKULL:
+            case WITHER_SKELETON_SKULL:
+            case WITHER_SKELETON_WALL_SKULL:
+            case ZOMBIE_HEAD:
+            case ZOMBIE_WALL_HEAD:
                 return new CraftMetaSkull(item.getTag());
             case LEATHER_HELMET:
             case LEATHER_CHESTPLATE:
@@ -341,17 +355,90 @@ public final class CraftItemStack extends ItemStack {
             case LINGERING_POTION:
             case TIPPED_ARROW:
                 return new CraftMetaPotion(item.getTag());
-            case MAP:
+            case FILLED_MAP:
                 return new CraftMetaMap(item.getTag());
-            case FIREWORK:
+            case FIREWORK_ROCKET:
                 return new CraftMetaFirework(item.getTag());
-            case FIREWORK_CHARGE:
+            case FIREWORK_STAR:
                 return new CraftMetaCharge(item.getTag());
             case ENCHANTED_BOOK:
                 return new CraftMetaEnchantedBook(item.getTag());
-            case BANNER:
+            case BLACK_BANNER:
+            case BLACK_WALL_BANNER:
+            case BLUE_BANNER:
+            case BLUE_WALL_BANNER:
+            case BROWN_BANNER:
+            case BROWN_WALL_BANNER:
+            case CYAN_BANNER:
+            case CYAN_WALL_BANNER:
+            case GRAY_BANNER:
+            case GRAY_WALL_BANNER:
+            case GREEN_BANNER:
+            case GREEN_WALL_BANNER:
+            case LIGHT_BLUE_BANNER:
+            case LIGHT_BLUE_WALL_BANNER:
+            case LIGHT_GRAY_BANNER:
+            case LIGHT_GRAY_WALL_BANNER:
+            case LIME_BANNER:
+            case LIME_WALL_BANNER:
+            case MAGENTA_BANNER:
+            case MAGENTA_WALL_BANNER:
+            case ORANGE_BANNER:
+            case ORANGE_WALL_BANNER:
+            case PINK_BANNER:
+            case PINK_WALL_BANNER:
+            case PURPLE_BANNER:
+            case PURPLE_WALL_BANNER:
+            case RED_BANNER:
+            case RED_WALL_BANNER:
+            case WHITE_BANNER:
+            case WHITE_WALL_BANNER:
+            case YELLOW_BANNER:
+            case YELLOW_WALL_BANNER:
                 return new CraftMetaBanner(item.getTag());
-            case MONSTER_EGG:
+            case BAT_SPAWN_EGG:
+            case BLAZE_SPAWN_EGG:
+            case CAVE_SPIDER_SPAWN_EGG:
+            case CHICKEN_SPAWN_EGG:
+            case COW_SPAWN_EGG:
+            case CREEPER_SPAWN_EGG:
+            case DONKEY_SPAWN_EGG:
+            case ELDER_GUARDIAN_SPAWN_EGG:
+            case ENDERMAN_SPAWN_EGG:
+            case ENDERMITE_SPAWN_EGG:
+            case EVOKER_SPAWN_EGG:
+            case GHAST_SPAWN_EGG:
+            case GUARDIAN_SPAWN_EGG:
+            case HORSE_SPAWN_EGG:
+            case HUSK_SPAWN_EGG:
+            case LLAMA_SPAWN_EGG:
+            case MAGMA_CUBE_SPAWN_EGG:
+            case MOOSHROOM_SPAWN_EGG:
+            case MULE_SPAWN_EGG:
+            case OCELOT_SPAWN_EGG:
+            case PARROT_SPAWN_EGG:
+            case PIG_SPAWN_EGG:
+            case POLAR_BEAR_SPAWN_EGG:
+            case RABBIT_SPAWN_EGG:
+            case SHEEP_SPAWN_EGG:
+            case SHULKER_SPAWN_EGG:
+            case SILVERFISH_SPAWN_EGG:
+            case SKELETON_HORSE_SPAWN_EGG:
+            case SKELETON_SPAWN_EGG:
+            case SLIME_SPAWN_EGG:
+            case SPIDER_SPAWN_EGG:
+            case SQUID_SPAWN_EGG:
+            case STRAY_SPAWN_EGG:
+            case VEX_SPAWN_EGG:
+            case VILLAGER_SPAWN_EGG:
+            case VINDICATOR_SPAWN_EGG:
+            case WITCH_SPAWN_EGG:
+            case WITHER_SKELETON_SPAWN_EGG:
+            case WOLF_SPAWN_EGG:
+            case ZOMBIE_HORSE_SPAWN_EGG:
+            case ZOMBIE_PIGMAN_SPAWN_EGG:
+            case ZOMBIE_SPAWN_EGG:
+            case ZOMBIE_VILLAGER_SPAWN_EGG:
                 return new CraftMetaSpawnEgg(item.getTag());
             case KNOWLEDGE_BOOK:
                 return new CraftMetaKnowledgeBook(item.getTag());
@@ -362,19 +449,17 @@ public final class CraftItemStack extends ItemStack {
             case DISPENSER:
             case DROPPER:
             case SIGN:
-            case MOB_SPAWNER:
+            case SPAWNER:
             case NOTE_BLOCK:
-            case BREWING_STAND_ITEM:
-            case ENCHANTMENT_TABLE:
-            case COMMAND:
-            case COMMAND_REPEATING:
-            case COMMAND_CHAIN:
+            case BREWING_STAND:
+            case ENCHANTING_TABLE:
+            case COMMAND_BLOCK:
+            case REPEATING_COMMAND_BLOCK:
+            case CHAIN_COMMAND_BLOCK:
             case BEACON:
             case DAYLIGHT_DETECTOR:
-            case DAYLIGHT_DETECTOR_INVERTED:
             case HOPPER:
-            case REDSTONE_COMPARATOR:
-            case FLOWER_POT_ITEM:
+            case COMPARATOR:
             case SHIELD:
             case STRUCTURE_BLOCK:
             case WHITE_SHULKER_BOX:
@@ -385,7 +470,7 @@ public final class CraftItemStack extends ItemStack {
             case LIME_SHULKER_BOX:
             case PINK_SHULKER_BOX:
             case GRAY_SHULKER_BOX:
-            case SILVER_SHULKER_BOX:
+            case LIGHT_GRAY_SHULKER_BOX:
             case CYAN_SHULKER_BOX:
             case PURPLE_SHULKER_BOX:
             case BLUE_SHULKER_BOX:
@@ -395,14 +480,15 @@ public final class CraftItemStack extends ItemStack {
             case BLACK_SHULKER_BOX:
             case ENDER_CHEST:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
+            case TROPICAL_FISH_BUCKET:
+                return new CraftMetaTropicalFishBucket(item.getTag());
             default:
                 return new CraftMetaItem(item.getTag());
         }
     }
 
     static Material getType(net.minecraft.server.ItemStack item) {
-        Material material = Material.getMaterial(item == null ? 0 : CraftMagicNumbers.getId(item.getItem()));
-        return material == null ? Material.AIR : material;
+        return item == null ? Material.AIR : CraftMagicNumbers.getMaterial(item.getItem());
     }
 
     @Override
@@ -424,6 +510,12 @@ public final class CraftItemStack extends ItemStack {
 
         itemMeta = CraftItemFactory.instance().asMetaFor(itemMeta, getType(item));
         if (itemMeta == null) return true;
+
+        Item oldItem = item.getItem();
+        Item newItem = CraftMagicNumbers.getItem(CraftItemFactory.instance().updateMaterial(itemMeta, CraftMagicNumbers.getMaterial(oldItem)));
+        if (oldItem != newItem) {
+            item.setItem(newItem);
+        }
 
         NBTTagCompound tag = new NBTTagCompound();
         item.setTag(tag);
@@ -453,7 +545,7 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null || that.handle == null) {
             return false;
         }
-        if (!(that.getTypeId() == getTypeId() && getDurability() == that.getDurability())) {
+        if (!(that.getType() == getType() && getDurability() == that.getDurability())) {
             return false;
         }
         return hasItemMeta() ? that.hasItemMeta() && handle.getTag().equals(that.handle.getTag()) : !that.hasItemMeta();

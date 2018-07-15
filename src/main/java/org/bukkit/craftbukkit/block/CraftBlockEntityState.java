@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
+import net.minecraft.server.World;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -23,7 +24,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         this.tileEntity = tileEntityClass.cast(world.getTileEntityAt(this.getX(), this.getY(), this.getZ()));
 
         // copy tile entity data:
-        this.snapshot = this.createSnapshot(tileEntity);
+        this.snapshot = this.createSnapshot(tileEntity, world.getHandle());
         this.load(snapshot);
     }
 
@@ -34,17 +35,17 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         this.tileEntity = tileEntity;
 
         // copy tile entity data:
-        this.snapshot = this.createSnapshot(tileEntity);
+        this.snapshot = this.createSnapshot(tileEntity, null);
         this.load(snapshot);
     }
 
-    private T createSnapshot(T tileEntity) {
+    private T createSnapshot(T tileEntity, World world) {
         if (tileEntity == null) {
             return null;
         }
 
         NBTTagCompound nbtTagCompound = tileEntity.save(new NBTTagCompound());
-        T snapshot = (T) TileEntity.create(null, nbtTagCompound);
+        T snapshot = (T) TileEntity.create(nbtTagCompound, world);
 
         return snapshot;
     }

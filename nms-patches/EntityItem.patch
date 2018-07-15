@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/EntityItem.java
 +++ b/net/minecraft/server/EntityItem.java
-@@ -4,6 +4,10 @@
+@@ -3,6 +3,10 @@
+ import java.util.Iterator;
+ import java.util.UUID;
  import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
 +import org.bukkit.event.entity.EntityPickupItemEvent;
 +import org.bukkit.event.player.PlayerPickupItemEvent;
@@ -11,18 +11,18 @@
  
  public class EntityItem extends Entity {
  
-@@ -15,6 +19,7 @@
-     private String g;
-     private String h;
+@@ -13,6 +17,7 @@
+     private UUID f;
+     private UUID g;
      public float a;
 +    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
  
-     public EntityItem(World world, double d0, double d1, double d2) {
-         super(world);
-@@ -54,9 +59,12 @@
+     public EntityItem(World world) {
+         super(EntityTypes.ITEM, world);
+@@ -48,9 +53,12 @@
              this.die();
          } else {
-             super.B_();
+             super.tick();
 -            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
 -                --this.pickupDelay;
 -            }
@@ -35,7 +35,7 @@
  
              this.lastX = this.locX;
              this.lastY = this.locY;
-@@ -104,9 +112,11 @@
+@@ -100,9 +108,11 @@
                  this.motY *= -0.5D;
              }
  
@@ -45,9 +45,9 @@
              }
 +            // Craftbukkit end */
  
-             this.aq();
+             this.impulse |= this.at();
              if (!this.world.isClientSide) {
-@@ -121,6 +131,12 @@
+@@ -117,6 +127,12 @@
              }
  
              if (!this.world.isClientSide && this.age >= 6000) {
@@ -60,7 +60,7 @@
                  this.die();
              }
  
-@@ -162,6 +178,7 @@
+@@ -165,6 +181,7 @@
                      } else if (itemstack1.getCount() + itemstack.getCount() > itemstack1.getMaxStackSize()) {
                          return false;
                      } else {
@@ -68,7 +68,7 @@
                          itemstack1.add(itemstack.getCount());
                          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
                          entityitem.age = Math.min(entityitem.age, this.age);
-@@ -208,6 +225,11 @@
+@@ -197,6 +214,11 @@
          } else if (!this.getItemStack().isEmpty() && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
              return false;
          } else {
@@ -77,10 +77,10 @@
 +                return false;
 +            }
 +            // CraftBukkit end
-             this.ax();
-             this.f = (int) ((float) this.f - f);
-             if (this.f <= 0) {
-@@ -270,6 +292,35 @@
+             this.aA();
+             this.e = (int) ((float) this.e - f);
+             if (this.e <= 0) {
+@@ -255,6 +277,35 @@
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
  
@@ -113,6 +113,14 @@
 +            }
 +            // CraftBukkit end
 +
-             if (this.pickupDelay == 0 && (this.h == null || 6000 - this.age <= 200 || this.h.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
+             if (this.pickupDelay == 0 && (this.g == null || 6000 - this.age <= 200 || this.g.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
                  entityhuman.receive(this, i);
                  if (itemstack.isEmpty()) {
+@@ -294,6 +345,7 @@
+     }
+ 
+     public void setItemStack(ItemStack itemstack) {
++        com.google.common.base.Preconditions.checkArgument(!itemstack.isEmpty(), "Cannot drop air"); // CraftBukkit
+         this.getDataWatcher().set(EntityItem.b, itemstack);
+     }
+ 

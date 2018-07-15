@@ -34,6 +34,8 @@ public class CraftPotionUtil {
             .put(PotionType.STRENGTH, "strength")
             .put(PotionType.WEAKNESS, "weakness")
             .put(PotionType.LUCK, "luck")
+            .put(PotionType.TURTLE_MASTER, "turtle_master")
+            .put(PotionType.SLOW_FALLING, "slow_falling")
             .build();
     private static final BiMap<PotionType, String> upgradeable = ImmutableBiMap.<PotionType, String>builder()
             .put(PotionType.JUMP, "strong_leaping")
@@ -43,6 +45,8 @@ public class CraftPotionUtil {
             .put(PotionType.POISON, "strong_poison")
             .put(PotionType.REGEN, "strong_regeneration")
             .put(PotionType.STRENGTH, "strong_strength")
+            .put(PotionType.SLOWNESS, "strong_slowness")
+            .put(PotionType.TURTLE_MASTER, "strong_turtle_master")
             .build();
     private static final BiMap<PotionType, String> extendable = ImmutableBiMap.<PotionType, String>builder()
             .put(PotionType.NIGHT_VISION, "long_night_vision")
@@ -56,6 +60,8 @@ public class CraftPotionUtil {
             .put(PotionType.REGEN, "long_regeneration")
             .put(PotionType.STRENGTH, "long_strength")
             .put(PotionType.WEAKNESS, "long_weakness")
+            .put(PotionType.TURTLE_MASTER, "long_turtle_master")
+            .put(PotionType.SLOW_FALLING, "long_slow_falling")
             .build();
 
     public static String fromBukkit(PotionData data) {

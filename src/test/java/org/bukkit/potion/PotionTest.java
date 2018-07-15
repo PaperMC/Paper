@@ -30,6 +30,6 @@ public class PotionTest extends AbstractTestingBase {
             effects.put(enumType, enumType.name());
         }
 
-        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no Effects */ 5);
+        assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no/shared Effects */ 6);
     }
 }

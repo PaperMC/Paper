@@ -3,13 +3,14 @@ package org.bukkit.craftbukkit.inventory;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.server.Block;
 import net.minecraft.server.ITileEntity;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemBlock;
-import net.minecraft.server.ItemReed;
+import net.minecraft.server.ItemBlockWallable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -26,6 +27,7 @@ import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -39,6 +41,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SpawnEggMeta;
+import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
@@ -125,12 +128,12 @@ public class ItemMetaTest extends AbstractTestingBase {
     }
 
     private static FireworkMeta newFireworkMeta() {
-        return ((FireworkMeta) Bukkit.getItemFactory().getItemMeta(Material.FIREWORK));
+        return ((FireworkMeta) Bukkit.getItemFactory().getItemMeta(Material.FIREWORK_ROCKET));
     }
 
     @Test
     public void testCrazyEquality() {
-        CraftItemStack craft = CraftItemStack.asCraftCopy(new ItemStack(1));
+        CraftItemStack craft = CraftItemStack.asCraftCopy(new ItemStack(Material.STONE));
         craft.setItemMeta(craft.getItemMeta());
         ItemStack bukkit = new ItemStack(craft);
         assertThat(craft, is(bukkit));
@@ -139,21 +142,24 @@ public class ItemMetaTest extends AbstractTestingBase {
 
     @Test
     public void testBlockStateMeta() {
-        for (Item item : (Iterable<Item>) Item.REGISTRY) {
-            Block block = null;
+        List<Block> queue = new ArrayList<>();
 
+        for (Item item : (Iterable<Item>) Item.REGISTRY) { // Eclipse fail
             if (item instanceof ItemBlock) {
-                block = ((ItemBlock) item).getBlock();
-            } else if (item instanceof ItemReed) {
-                block = ((ItemReed) item).a;
+                queue.add(((ItemBlock) item).getBlock());
             }
+            if (item instanceof ItemBlockWallable) {
+                queue.add(((ItemBlockWallable) item).wallBlock);
+            }
+        }
 
+        for (Block block : queue) {
             if (block != null) {
                 if (block instanceof ITileEntity) {
                     ItemStack stack = CraftItemStack.asNewCraftStack(Item.getItemOf(block));
 
                     // Command blocks aren't unit testable atm
-                    if (stack.getType() == Material.AIR || stack.getType() == Material.COMMAND || stack.getType() == Material.COMMAND_CHAIN || stack.getType() == Material.COMMAND_REPEATING) {
+                    if (stack.getType() == Material.COMMAND_BLOCK || stack.getType() == Material.CHAIN_COMMAND_BLOCK || stack.getType() == Material.REPEATING_COMMAND_BLOCK) {
                         return;
                     }
 
@@ -172,7 +178,7 @@ public class ItemMetaTest extends AbstractTestingBase {
     @Test
     public void testEachExtraData() {
         final List<StackProvider> providers = Arrays.asList(
-            new StackProvider(Material.BOOK_AND_QUILL) {
+            new StackProvider(Material.WRITABLE_BOOK) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                     meta.setAuthor("Some author");
@@ -202,7 +208,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                 }
             },
             */
-            new StackProvider(Material.MAP) {
+            new StackProvider(Material.FILLED_MAP) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                     meta.setScaling(true);
@@ -227,7 +233,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.FIREWORK) {
+            new StackProvider(Material.FIREWORK_ROCKET) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                     meta.addEffect(FireworkEffect.builder().withColor(Color.GREEN).withFade(Color.OLIVE).with(Type.BALL_LARGE).build());
@@ -243,7 +249,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.FIREWORK_CHARGE) {
+            new StackProvider(Material.FIREWORK_STAR) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final FireworkEffectMeta meta = (FireworkEffectMeta) cleanStack.getItemMeta();
                     meta.setEffect(FireworkEffect.builder().withColor(Color.MAROON, Color.BLACK).with(Type.CREEPER).withFlicker().build());
@@ -251,7 +257,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.BANNER) {
+            new StackProvider(Material.WHITE_BANNER) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
                     meta.setBaseColor(DyeColor.CYAN);
@@ -259,26 +265,38 @@ public class ItemMetaTest extends AbstractTestingBase {
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
-            }, 
-            new StackProvider(Material.MONSTER_EGG) {
+            },
+            /* No distinguishing features, add back with virtual entity API
+            new StackProvider(Material.ZOMBIE_SPAWN_EGG) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final SpawnEggMeta meta = (SpawnEggMeta) cleanStack.getItemMeta();
                     meta.setSpawnedType(EntityType.ZOMBIE);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
-            }
-        },
-          new StackProvider(Material.KNOWLEDGE_BOOK) {
+                }
+            },
+            */
+            new StackProvider(Material.KNOWLEDGE_BOOK) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final KnowledgeBookMeta meta = (KnowledgeBookMeta) cleanStack.getItemMeta();
                     meta.addRecipe(new NamespacedKey("minecraft", "test"), new NamespacedKey("plugin", "test"));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
+            },
+            new StackProvider(Material.TROPICAL_FISH_BUCKET) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final TropicalFishBucketMeta meta = (TropicalFishBucketMeta) cleanStack.getItemMeta();
+                    meta.setBodyColor(DyeColor.ORANGE);
+                    meta.setPatternColor(DyeColor.BLACK);
+                    meta.setPattern(TropicalFish.Pattern.DASHER);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
             }
         );
 
-        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 3/* Normal item meta, skulls and tile entities */));
+        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 4/* Normal item meta, skulls, eggs and tile entities */));
 
         for (final StackProvider provider : providers) {
             downCastTest(new BukkitWrapper(provider));
@@ -288,7 +306,7 @@ public class ItemMetaTest extends AbstractTestingBase {
 
     private void downCastTest(final StackWrapper provider) {
         final String name = provider.toString();
-        final ItemStack blank = new ItemStack(1);
+        final ItemStack blank = new ItemStack(Material.STONE);
         final ItemStack craftBlank = CraftItemStack.asCraftCopy(blank);
 
         downCastTest(name, provider.stack(), blank);
@@ -304,7 +322,7 @@ public class ItemMetaTest extends AbstractTestingBase {
         assertThat(name, stack, is(not(blank)));
         assertThat(name, stack.getItemMeta(), is(not(blank.getItemMeta())));
 
-        stack.setTypeId(1);
+        stack.setType(Material.STONE);
 
         assertThat(name, stack, is(blank));
     }

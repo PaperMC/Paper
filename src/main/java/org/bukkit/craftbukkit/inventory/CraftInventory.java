@@ -25,6 +25,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftInventory implements Inventory {
     protected final IInventory inventory;
@@ -42,7 +43,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getName() {
-        return getInventory().getName();
+        return CraftChatMessage.fromComponent(getInventory().getDisplayName());
     }
 
     public ItemStack getItem(int index) {
@@ -96,18 +97,14 @@ public class CraftInventory implements Inventory {
         getInventory().setItem(index, CraftItemStack.asNMSCopy(item));
     }
 
-    public boolean contains(int materialId) {
+    public boolean contains(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         for (ItemStack item : getStorageContents()) {
-            if (item != null && item.getTypeId() == materialId) {
+            if (item != null && item.getType() == material) {
                 return true;
             }
         }
         return false;
-    }
-
-    public boolean contains(Material material) {
-        Validate.notNull(material, "Material cannot be null");
-        return contains(material.getId());
     }
 
     public boolean contains(ItemStack item) {
@@ -122,23 +119,19 @@ public class CraftInventory implements Inventory {
         return false;
     }
 
-    public boolean contains(int materialId, int amount) {
+    public boolean contains(Material material, int amount) {
+        Validate.notNull(material, "Material cannot be null");
         if (amount <= 0) {
             return true;
         }
         for (ItemStack item : getStorageContents()) {
-            if (item != null && item.getTypeId() == materialId) {
+            if (item != null && item.getType()== material) {
                 if ((amount -= item.getAmount()) <= 0) {
                     return true;
                 }
             }
         }
         return false;
-    }
-
-    public boolean contains(Material material, int amount) {
-        Validate.notNull(material, "Material cannot be null");
-        return contains(material.getId(), amount);
     }
 
     public boolean contains(ItemStack item, int amount) {
@@ -171,22 +164,18 @@ public class CraftInventory implements Inventory {
         return false;
     }
 
-    public HashMap<Integer, ItemStack> all(int materialId) {
+    public HashMap<Integer, ItemStack> all(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
 
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getTypeId() == materialId) {
+            if (item != null && item.getType()== material) {
                 slots.put(i, item);
             }
         }
         return slots;
-    }
-
-    public HashMap<Integer, ItemStack> all(Material material) {
-        Validate.notNull(material, "Material cannot be null");
-        return all(material.getId());
     }
 
     public HashMap<Integer, ItemStack> all(ItemStack item) {
@@ -202,20 +191,16 @@ public class CraftInventory implements Inventory {
         return slots;
     }
 
-    public int first(int materialId) {
-        ItemStack[] inventory = getStorageContents();
+    public int first(Material material) {
+        Validate.notNull(material, "Material cannot be null");
+       ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getTypeId() == materialId) {
+            if (item != null && item.getType()== material) {
                 return i;
             }
         }
         return -1;
-    }
-
-    public int first(Material material) {
-        Validate.notNull(material, "Material cannot be null");
-        return first(material.getId());
     }
 
     public int first(ItemStack item) {
@@ -247,20 +232,16 @@ public class CraftInventory implements Inventory {
         return -1;
     }
 
-    public int firstPartial(int materialId) {
+    public int firstPartial(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getTypeId() == materialId && item.getAmount() < item.getMaxStackSize()) {
+            if (item != null && item.getType()== material && item.getAmount() < item.getMaxStackSize()) {
                 return i;
             }
         }
         return -1;
-    }
-
-    public int firstPartial(Material material) {
-        Validate.notNull(material, "Material cannot be null");
-        return firstPartial(material.getId());
     }
 
     private int firstPartial(ItemStack item) {
@@ -390,18 +371,14 @@ public class CraftInventory implements Inventory {
         return getInventory().getMaxStackSize();
     }
 
-    public void remove(int materialId) {
+    public void remove(Material material) {
+        Validate.notNull(material, "Material cannot be null");
         ItemStack[] items = getStorageContents();
         for (int i = 0; i < items.length; i++) {
-            if (items[i] != null && items[i].getTypeId() == materialId) {
+            if (items[i] != null && items[i].getType()== material) {
                 clear(i);
             }
         }
-    }
-
-    public void remove(Material material) {
-        Validate.notNull(material, "Material cannot be null");
-        remove(material.getId());
     }
 
     public void remove(ItemStack item) {
@@ -439,7 +416,7 @@ public class CraftInventory implements Inventory {
     }
 
     public String getTitle() {
-        return inventory.getName();
+        return getName();
     }
 
     public InventoryType getType() {

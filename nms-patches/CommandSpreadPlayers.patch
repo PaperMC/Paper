@@ -1,50 +1,32 @@
 --- a/net/minecraft/server/CommandSpreadPlayers.java
 +++ b/net/minecraft/server/CommandSpreadPlayers.java
-@@ -240,9 +240,16 @@
-     }
- 
-     public List<String> tabComplete(MinecraftServer minecraftserver, ICommandListener icommandlistener, String[] astring, @Nullable BlockPosition blockposition) {
--        return astring.length >= 1 && astring.length <= 2 ? b(astring, 0, blockposition) : Collections.emptyList();
-+        return astring.length >= 1 && astring.length <= 2 ? b(astring, 0, blockposition) : Collections.<String>emptyList(); // CraftBukkit - decompile error
-     }
- 
-+    // CraftBukkit start - fix decompile error
-+    @Override
-+    public int compareTo(ICommand o) {
-+        return a(o);
-+    }
-+    // CraftBukkit end
-+
-     static class Location2D {
- 
-         double a;
-@@ -309,7 +316,7 @@
+@@ -269,7 +269,7 @@
                  }
  
                  blockposition = blockposition.down();
--            } while (world.getType(blockposition).getMaterial() == Material.AIR);
-+            } while (getType(world, blockposition).getMaterial() == Material.AIR); // CraftBukkit
+-            } while (iblockaccess.getType(blockposition).isAir());
++            } while (getType(iblockaccess, blockposition).isAir()); // CraftBukkit
  
              return blockposition.getY() + 1;
          }
-@@ -325,7 +332,7 @@
+@@ -285,7 +285,7 @@
                  }
  
                  blockposition = blockposition.down();
--                material = world.getType(blockposition).getMaterial();
-+                material = getType(world, blockposition).getMaterial(); // CraftBukkit
-             } while (material == Material.AIR);
+-                iblockdata = iblockaccess.getType(blockposition);
++                iblockdata = getType(iblockaccess, blockposition); // CraftBukkit
+             } while (iblockdata.isAir());
  
-             return !material.isLiquid() && material != Material.FIRE;
-@@ -335,5 +342,12 @@
+             Material material = iblockdata.getMaterial();
+@@ -297,5 +297,12 @@
              this.a = MathHelper.a(random, d0, d2);
              this.b = MathHelper.a(random, d1, d3);
          }
 +
 +        // CraftBukkit start - add a version of getType which force loads chunks
-+        private static IBlockData getType(World world, BlockPosition position) {
-+            ((ChunkProviderServer) world.chunkProvider).getChunkAt(position.getX() >> 4, position.getZ() >> 4);
-+            return world.getType(position);
++        private static IBlockData getType(IBlockAccess iblockaccess, BlockPosition position) {
++            ((ChunkProviderServer) ((World) iblockaccess).chunkProvider).getChunkAt(position.getX() >> 4, position.getZ() >> 4);
++            return iblockaccess.getType(position);
 +        }
 +        // CraftBukkit end
      }

@@ -1,11 +1,39 @@
 --- a/net/minecraft/server/ItemBlock.java
 +++ b/net/minecraft/server/ItemBlock.java
-@@ -36,7 +36,7 @@
+@@ -2,6 +2,11 @@
  
-                 SoundEffectType soundeffecttype = this.a.getStepSound();
+ import java.util.Map;
+ import javax.annotation.Nullable;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.event.block.BlockCanBuildEvent;
++// CraftBukkit end
+ 
+ public class ItemBlock extends Item {
+ 
+@@ -45,7 +50,7 @@
+ 
+                 SoundEffectType soundeffecttype = block.getStepSound();
  
 -                world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F);
 +                // world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F); // CraftBukkit - SPIGOT-1288
                  itemstack.subtract(1);
+                 return EnumInteractionResult.SUCCESS;
              }
+@@ -64,7 +69,14 @@
+     }
  
+     protected boolean b(BlockActionContext blockactioncontext, IBlockData iblockdata) {
+-        return iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition());
++        // CraftBukkit start - store default return
++        boolean defaultReturn = iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition());
++
++        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), CraftBlockData.fromData(iblockdata), defaultReturn);
++        blockactioncontext.getWorld().getServer().getPluginManager().callEvent(event);
++
++        return event.isBuildable();
++        // CraftBukkit end
+     }
+ 
+     protected boolean a(BlockActionContext blockactioncontext, IBlockData iblockdata) {

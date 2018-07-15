@@ -21,7 +21,6 @@ public class NMSCraftItemStackTest extends AbstractTestingBase {
         assertThat(clone.getAmount(), is(itemStack.getAmount()));
         assertThat(clone.getDurability(), is(itemStack.getDurability()));
         assertThat(clone.getEnchantments(), is(itemStack.getEnchantments()));
-        assertThat(clone.getTypeId(), is(itemStack.getTypeId()));
         assertThat(clone.getData(), is(itemStack.getData()));
         assertThat(clone, is(itemStack));
     }

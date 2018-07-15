@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityArrow.java
 +++ b/net/minecraft/server/EntityArrow.java
 @@ -5,6 +5,13 @@
- import java.util.List;
+ import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
@@ -13,58 +13,44 @@
 +
  public abstract class EntityArrow extends Entity implements IProjectile {
  
-     private static final Predicate<Entity> f = Predicates.and(new Predicate[] { IEntitySelector.e, IEntitySelector.a, new Predicate() {
-@@ -17,9 +24,9 @@
-         }
-     }});
-     private static final DataWatcherObject<Byte> g = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
--    private int h;
--    private int at;
--    private int au;
-+    public int h; // PAIL: private->public
-+    public int at; // PAIL: private->public
-+    public int au; // PAIL: private->public
-     private Block av;
-     private int aw;
-     public boolean inGround;
-@@ -50,6 +57,7 @@
-     public EntityArrow(World world, EntityLiving entityliving) {
-         this(world, entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight() - 0.10000000149011612D, entityliving.locZ);
+     private static final Predicate<Entity> f = IEntitySelector.e.and(IEntitySelector.a.and(Entity::isInteractable));
+@@ -42,6 +49,7 @@
+     protected EntityArrow(EntityTypes<?> entitytypes, EntityLiving entityliving, World world) {
+         this(entitytypes, entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight() - 0.10000000149011612D, entityliving.locZ, world);
          this.shooter = entityliving;
 +        this.projectileSource = (LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
          if (entityliving instanceof EntityHuman) {
              this.fromPlayer = EntityArrow.PickupStatus.ALLOWED;
          }
-@@ -236,7 +244,7 @@
+@@ -245,6 +253,7 @@
+     }
  
      protected void a(MovingObjectPosition movingobjectposition) {
-         Entity entity = movingobjectposition.entity;
--
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // CraftBukkit - Call event
-         if (entity != null) {
-             float f = MathHelper.sqrt(this.motX * this.motX + this.motY * this.motY + this.motZ * this.motZ);
-             int i = MathHelper.f((double) f * this.damage);
-@@ -254,7 +262,13 @@
-             }
+         if (movingobjectposition.entity != null) {
+             this.b(movingobjectposition);
+         } else {
+@@ -293,7 +302,13 @@
+         }
  
-             if (this.isBurning() && !(entity instanceof EntityEnderman)) {
--                entity.setOnFire(5);
-+                // CraftBukkit start
-+                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
-+                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
-+                if (!combustEvent.isCancelled()) {
-+                    entity.setOnFire(combustEvent.getDuration());
-+                }
-+                // CraftBukkit end
-             }
+         if (this.isBurning() && !(entity instanceof EntityEnderman)) {
+-            entity.setOnFire(5);
++            // CraftBukkit start
++            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
++            if (!combustEvent.isCancelled()) {
++                entity.setOnFire(combustEvent.getDuration());
++            }
++            // CraftBukkit end
+         }
  
-             if (entity.damageEntity(damagesource, (float) i)) {
-@@ -422,9 +436,22 @@
+         if (entity.damageEntity(damagesource, (float) i)) {
+@@ -430,9 +445,22 @@
  
      public void d(EntityHuman entityhuman) {
-         if (!this.world.isClientSide && this.inGround && this.shake <= 0) {
+         if (!this.world.isClientSide && (this.inGround || this.p()) && this.shake <= 0) {
 +            // CraftBukkit start
-+            ItemStack itemstack = this.j(); // PAIL: rename
++            ItemStack itemstack = this.getItemStack();
 +            EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
 +            if (this.fromPlayer == PickupStatus.ALLOWED && entityhuman.inventory.canHold(itemstack) > 0) {
 +                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), (org.bukkit.entity.Arrow) this.getBukkitEntity());
@@ -75,15 +61,15 @@
 +                    return;
 +                }
 +            }
-             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild;
+             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.p() && this.shooter == entityhuman;
  
--            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.j())) {
+-            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.getItemStack())) {
 +            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(item.getItemStack())) {
 +                // CraftBukkit end
                  flag = false;
              }
  
-@@ -493,7 +520,14 @@
+@@ -505,7 +533,14 @@
          }
  
          if (EnchantmentManager.a(Enchantments.ARROW_FIRE, entityliving) > 0) {

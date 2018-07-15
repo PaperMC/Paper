@@ -145,6 +145,12 @@ public class Main {
                 return;
             }
 
+            float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
+            if (javaVersion > 55.0) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 11 is supported.");
+                return;
+            }
+
             try {
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                 String jline_UnsupportedTerminal = new String(new char[] {'j','l','i','n','e','.','U','n','s','u','p','p','o','r','t','e','d','T','e','r','m','i','n','a','l'});
@@ -169,11 +175,11 @@ public class Main {
                     useConsole = false;
                 }
 
-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new SimpleDateFormat("yyyyMMdd-HHmm").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -14);
+                    deadline.add(Calendar.DAY_OF_YEAR, -3);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
                         System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/ ***");
@@ -181,6 +187,8 @@ public class Main {
                         Thread.sleep(TimeUnit.SECONDS.toMillis(15));
                     }
                 }
+
+                System.err.println("*** WARNING: This is a development build. It is not meant for production server usage! Please keep backups and update frequently.");
 
                 System.out.println("Loading libraries, please wait...");
                 MinecraftServer.main(options);

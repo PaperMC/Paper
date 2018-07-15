@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/DedicatedServer.java
 +++ b/net/minecraft/server/DedicatedServer.java
-@@ -19,11 +19,21 @@
+@@ -23,11 +23,22 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -8,6 +8,7 @@
 +import java.io.PrintStream;
 +import org.apache.logging.log4j.Level;
 +
++import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.LoggerOutputStream;
 +import org.bukkit.event.server.ServerCommandEvent;
 +import org.bukkit.craftbukkit.util.Waitable;
@@ -17,26 +18,26 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private static final Pattern l = Pattern.compile("^[a-fA-F0-9]{40}$");
+     private static final Pattern i = Pattern.compile("^[a-fA-F0-9]{40}$");
 -    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.newArrayList());
 +    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.<ServerCommand>newArrayList()); // CraftBukkit - fix decompile error
-     private RemoteStatusListener n;
+     private RemoteStatusListener k;
      public final RemoteControlCommandListener remoteControlCommandListener = new RemoteControlCommandListener(this);
-     private RemoteControlListener p;
-@@ -33,8 +43,10 @@
-     private EnumGamemode t;
-     private boolean u;
+     private RemoteControlListener m;
+@@ -37,8 +48,10 @@
+     private EnumGamemode q;
+     private boolean r;
  
--    public DedicatedServer(File file, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
--        super(file, Proxy.NO_PROXY, dataconvertermanager, yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
+-    public DedicatedServer(File file, DataFixer datafixer, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+-        super(file, Proxy.NO_PROXY, datafixer, new CommandDispatcher(true), yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
 +    // CraftBukkit start - Signature changed
-+    public DedicatedServer(joptsimple.OptionSet options, DataConverterManager dataconvertermanager, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
-+        super(options, Proxy.NO_PROXY, dataconvertermanager, yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
++    public DedicatedServer(joptsimple.OptionSet options, DataFixer datafixer, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
++        super(options, Proxy.NO_PROXY, datafixer, new CommandDispatcher().init(true), yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache);
 +        // CraftBukkit end
          Thread thread = new Thread("Server Infinisleeper") {
              {
                  this.setDaemon(true);
-@@ -53,16 +65,30 @@
+@@ -58,16 +71,30 @@
          };
      }
  
@@ -56,22 +57,22 @@
  
                  try {
 -                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning() && (s = bufferedreader.readLine()) != null) {
--                        DedicatedServer.this.issueCommand(s, DedicatedServer.this);
+-                        DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
 +                    // CraftBukkit start - JLine disabling compatibility
-+                    while (!isStopped() && isRunning()) {
++                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning()) {
 +                        if (org.bukkit.craftbukkit.Main.useJline) {
 +                            s = bufferedreader.readLine(">", null);
 +                        } else {
 +                            s = bufferedreader.readLine();
 +                        }
 +                        if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
-+                            issueCommand(s, DedicatedServer.this);
++                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
 +                        }
 +                        // CraftBukkit end
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -71,6 +97,27 @@
+@@ -76,6 +103,27 @@
              }
          };
  
@@ -97,18 +98,18 @@
 +        // CraftBukkit end
 +
          thread.setDaemon(true);
+         thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-         DedicatedServer.LOGGER.info("Starting minecraft server version 1.12.2");
-@@ -79,7 +126,7 @@
+@@ -85,7 +133,7 @@
          }
  
          DedicatedServer.LOGGER.info("Loading properties");
 -        this.propertyManager = new PropertyManager(new File("server.properties"));
 +        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-         this.r = new EULA(new File("eula.txt"));
-         if (!this.r.a()) {
+         this.o = new EULA(new File("eula.txt"));
+         if (!this.o.a()) {
              DedicatedServer.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
-@@ -136,6 +183,12 @@
+@@ -143,6 +191,12 @@
                  return false;
              }
  
@@ -121,28 +122,19 @@
              if (!this.getOnlineMode()) {
                  DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
                  DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -150,7 +203,7 @@
+@@ -157,7 +211,7 @@
              if (!NameReferencingFileConverter.a(this.propertyManager)) {
                  return false;
              } else {
 -                this.a((PlayerList) (new DedicatedPlayerList(this)));
-+                this.convertable = new WorldLoaderServer(server.getWorldContainer(), this.dataConverterManager); // CraftBukkit - moved from MinecraftServer constructor
-                 long j = System.nanoTime();
++                this.convertable = new WorldLoaderServer(server.getWorldContainer().toPath(), server.getWorldContainer().toPath().resolve("../backups"), this.dataConverterManager); // CraftBukkit - moved from MinecraftServer constructor
+                 long j = SystemUtils.c();
  
-                 if (this.S() == null) {
-@@ -198,7 +251,7 @@
- 
-                 DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\" or \"?\"", s3);
-                 if (this.propertyManager.a("announce-player-achievements")) {
--                    this.worldServer[0].getGameRules().set("announceAdvancements", this.propertyManager.getBoolean("announce-player-achievements", true) ? "true" : "false");
-+                    this.worlds.get(0).getGameRules().set("announceAdvancements", this.propertyManager.getBoolean("announce-player-achievements", true) ? "true" : "false"); // CraftBukkit
-                     this.propertyManager.b("announce-player-achievements");
-                     this.propertyManager.savePropertiesFile();
-                 }
-@@ -213,7 +266,18 @@
+                 if (this.K() == null) {
+@@ -228,7 +282,18 @@
                      DedicatedServer.LOGGER.info("Starting remote control listener");
-                     this.p = new RemoteControlListener(this);
-                     this.p.a();
+                     this.m = new RemoteControlListener(this);
+                     this.m.a();
 +                    this.remoteConsole = new org.bukkit.craftbukkit.command.CraftRemoteConsoleCommandSender(this.remoteControlCommandListener); // CraftBukkit
 +                }
 +
@@ -156,40 +148,40 @@
                  }
 +                // CraftBukkit end
  
-                 if (this.aT() > 0L) {
+                 if (this.ba() > 0L) {
                      Thread thread1 = new Thread(new ThreadWatchdog(this));
-@@ -299,11 +363,11 @@
+@@ -303,11 +368,11 @@
          return crashreport;
      }
  
--    protected void B() {
-+    public void B() {
+-    protected void u() {
++    public void u() { // CraftBukkit - decompile error
          System.exit(0);
      }
  
--    protected void D() {
-+    public void D() { // CraftBukkit - fix decompile error
-         super.D();
-         this.aP();
+-    protected void w() {
++    public void w() { // CraftBukkit - fix decompile error
+         super.w();
+         this.aW();
      }
-@@ -334,7 +398,15 @@
+@@ -342,7 +407,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
--            this.getCommandHandler().a(servercommand.source, servercommand.command);
+-            this.getCommandDispatcher().a(servercommand.source, servercommand.command);
 +            // CraftBukkit start - ServerCommand for preprocessing
 +            ServerCommandEvent event = new ServerCommandEvent(console, servercommand.command);
 +            server.getPluginManager().callEvent(event);
 +            if (event.isCancelled()) continue;
 +            servercommand = new ServerCommand(event.getCommand(), servercommand.source);
 +
-+            // this.getCommandHandler().a(servercommand.source, servercommand.command); // Called in dispatchServerCommand
++            // this.getCommandDispatcher().a(servercommand.source, servercommand.command); // Called in dispatchServerCommand
 +            server.dispatchServerCommand(console, servercommand);
 +            // CraftBukkit end
          }
  
      }
-@@ -537,16 +609,70 @@
+@@ -549,16 +622,75 @@
      }
  
      public String getPlugins() {
@@ -210,17 +202,17 @@
 +                if (i > 0) {
 +                    result.append("; ");
 +                }
-+
+ 
+-    public String executeRemoteCommand(String s) {
+-        this.remoteControlCommandListener.clearMessages();
+-        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
+-        return this.remoteControlCommandListener.getMessages();
 +                result.append(plugins[i].getDescription().getName());
 +                result.append(" ");
 +                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
 +            }
 +        }
- 
--    public String executeRemoteCommand(String s) {
--        this.remoteControlCommandListener.clearMessages();
--        this.b.a(this.remoteControlCommandListener, s);
--        return this.remoteControlCommandListener.getMessages();
++
 +        return result.toString();
 +        // CraftBukkit end
 +    }
@@ -238,7 +230,7 @@
 +                    return "";
 +                }
 +                // Event change end
-+                ServerCommand serverCommand = new ServerCommand(event.getCommand(), remoteControlCommandListener);
++                ServerCommand serverCommand = new ServerCommand(event.getCommand(), remoteControlCommandListener.f());
 +                server.dispatchServerCommand(remoteConsole, serverCommand);
 +                return remoteControlCommandListener.getMessages();
 +            }
@@ -256,13 +248,18 @@
      }
  
      public PlayerList getPlayerList() {
-         return this.aQ();
+         return this.aX();
      }
 +
 +    // CraftBukkit start
 +    @Override
 +    public PropertyManager getPropertyManager() {
 +        return this.propertyManager;
++    }
++
++    @Override
++    public CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
++        return console;
 +    }
 +    // CraftBukkit end
  }

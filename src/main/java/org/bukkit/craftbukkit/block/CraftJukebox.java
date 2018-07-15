@@ -1,11 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.BlockJukeBox;
-import net.minecraft.server.BlockJukeBox.TileEntityRecordPlayer;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
+import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.TileEntity;
+import net.minecraft.server.TileEntityJukeBox;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -13,13 +14,13 @@ import org.bukkit.block.Jukebox;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
-public class CraftJukebox extends CraftBlockEntityState<TileEntityRecordPlayer> implements Jukebox {
+public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> implements Jukebox {
 
     public CraftJukebox(final Block block) {
-        super(block, TileEntityRecordPlayer.class);
+        super(block, TileEntityJukeBox.class);
     }
 
-    public CraftJukebox(final Material material, TileEntityRecordPlayer te) {
+    public CraftJukebox(final Material material, TileEntityJukeBox te) {
         super(material, te);
     }
 
@@ -39,7 +40,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityRecordPlayer> 
                     Blocks.JUKEBOX.getBlockData()
                         .set(BlockJukeBox.HAS_RECORD, true), 3);
             }
-            world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record.getId());
+            world.playEffect(this.getLocation(), Effect.RECORD_PLAY, Item.getId(CraftMagicNumbers.getItem((Material) record)));
         }
 
         return result;
@@ -77,12 +78,12 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityRecordPlayer> 
     public boolean eject() {
         requirePlaced();
         TileEntity tileEntity = this.getTileEntityFromWorld();
-        if (!(tileEntity instanceof TileEntityRecordPlayer)) return false;
+        if (!(tileEntity instanceof TileEntityJukeBox)) return false;
 
-        TileEntityRecordPlayer jukebox = (TileEntityRecordPlayer) tileEntity;
+        TileEntityJukeBox jukebox = (TileEntityJukeBox) tileEntity;
         boolean result = !jukebox.getRecord().isEmpty();
         CraftWorld world = (CraftWorld) this.getWorld();
-        ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), new BlockPosition(getX(), getY(), getZ()), null);
+        ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
         return result;
     }
 }

@@ -1,0 +1,46 @@
+--- a/net/minecraft/server/CommandListenerWrapper.java
++++ b/net/minecraft/server/CommandListenerWrapper.java
+@@ -7,6 +7,7 @@
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import com.mojang.brigadier.suggestion.Suggestions;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.CommandNode;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.Iterator;
+@@ -31,9 +32,10 @@
+     private final ResultConsumer<CommandListenerWrapper> l;
+     private final ArgumentAnchor.Anchor m;
+     private final Vec2F n;
++    public CommandNode currentCommand; // CraftBukkit
+ 
+     public CommandListenerWrapper(ICommandListener icommandlistener, Vec3D vec3d, Vec2F vec2f, WorldServer worldserver, int i, String s, IChatBaseComponent ichatbasecomponent, MinecraftServer minecraftserver, @Nullable Entity entity) {
+-        this(icommandlistener, vec3d, vec2f, worldserver, i, s, ichatbasecomponent, minecraftserver, entity, false, (commandcontext, flag, i) -> {
++        this(icommandlistener, vec3d, vec2f, worldserver, i, s, ichatbasecomponent, minecraftserver, entity, false, (commandcontext, flag, ix) -> { // CraftBukkit - decompile error
+         }, ArgumentAnchor.Anchor.FEET);
+     }
+ 
+@@ -119,6 +121,12 @@
+     }
+ 
+     public boolean hasPermission(int i) {
++        // CraftBukkit start
++        if (currentCommand != null) {
++            return this.f >= i || getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
++        }
++        // CraftBukkit end
++
+         return this.f >= i;
+     }
+ 
+@@ -232,4 +240,10 @@
+     public Collection<ICompletionProvider.a> a(boolean flag) {
+         return Collections.singleton(ICompletionProvider.a.b);
+     }
++
++    // CraftBukkit start
++    public org.bukkit.command.CommandSender getBukkitSender() {
++        return base.getBukkitSender(this);
++    }
++    // CraftBukkit end
+ }

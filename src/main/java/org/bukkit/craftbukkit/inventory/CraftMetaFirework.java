@@ -253,7 +253,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     @Override
     boolean applicableTo(Material type) {
         switch(type) {
-            case FIREWORK:
+            case FIREWORK_ROCKET:
                 return true;
             default:
                 return false;

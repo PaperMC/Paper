@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/World.java
 +++ b/net/minecraft/server/World.java
-@@ -14,6 +14,21 @@
- import java.util.function.Supplier;
- import javax.annotation.Nullable;
+@@ -15,6 +15,23 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import com.google.common.collect.Maps;
@@ -11,6 +11,8 @@
 +import org.bukkit.block.BlockState;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.event.block.BlockCanBuildEvent;
@@ -19,12 +21,12 @@
 +import org.bukkit.generator.ChunkGenerator;
 +// CraftBukkit end
 +
- public abstract class World implements IBlockAccess {
+ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoCloseable {
  
-     private int a = 63;
-@@ -59,7 +74,52 @@
-     private final WorldBorder P;
-     int[] J;
+     protected static final Logger e = LogManager.getLogger();
+@@ -55,7 +72,52 @@
+     private final WorldBorder K;
+     int[] F;
  
 -    protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag) {
 +    // CraftBukkit start Added the following
@@ -35,18 +37,18 @@
 +
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
-+    public ArrayList<BlockState> capturedBlockStates= new ArrayList<BlockState>(){
++    public ArrayList<CraftBlockState> capturedBlockStates = new ArrayList<CraftBlockState>() {
 +        @Override
-+        public boolean add( BlockState blockState ) {
-+            Iterator<BlockState> blockStateIterator = this.iterator();
-+            while( blockStateIterator.hasNext() ) {
++        public boolean add(CraftBlockState blockState) {
++            Iterator<CraftBlockState> blockStateIterator = this.iterator();
++            while (blockStateIterator.hasNext()) {
 +                BlockState blockState1 = blockStateIterator.next();
-+                if ( blockState1.getLocation().equals( blockState.getLocation() ) ) {
++                if (blockState1.getLocation().equals(blockState.getLocation())) {
 +                    return false;
 +                }
 +            }
 +
-+            return super.add( blockState );
++            return super.add(blockState);
 +        }
 +    };
 +    public List<EntityItem> captureDrops;
@@ -73,13 +75,13 @@
 +        this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 +        this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
 +        // CraftBukkit end
-         this.u = Lists.newArrayList(new IWorldAccess[] { this.t});
-         this.N = Calendar.getInstance();
-         this.scoreboard = new Scoreboard();
-@@ -72,6 +132,36 @@
+         this.v = Lists.newArrayList(new IWorldAccess[] { this.u});
+         this.allowMonsters = true;
+         this.allowAnimals = true;
+@@ -66,6 +128,36 @@
          this.worldProvider = worldprovider;
          this.isClientSide = flag;
-         this.P = worldprovider.getWorldBorder();
+         this.K = worldprovider.getWorldBorder();
 +        // CraftBukkit start
 +        getWorldBorder().world = (WorldServer) this;
 +        // From PlayerList.setPlayerFileData
@@ -112,17 +114,17 @@
 +        // CraftBukkit end
      }
  
-     public World b() {
-@@ -209,6 +299,27 @@
+     public GeneratorAccess b() {
+@@ -138,6 +230,26 @@
      }
  
      public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
 +        // CraftBukkit start - tree generation
 +        if (this.captureTreeGeneration) {
-+            BlockState blockstate = null;
-+            Iterator<BlockState> it = capturedBlockStates.iterator();
++            CraftBlockState blockstate = null;
++            Iterator<CraftBlockState> it = capturedBlockStates.iterator();
 +            while (it.hasNext()) {
-+                BlockState previous = it.next();
++                CraftBlockState previous = it.next();
 +                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
 +                    blockstate = previous;
 +                    it.remove();
@@ -130,31 +132,30 @@
 +                }
 +            }
 +            if (blockstate == null) {
-+                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), i);
++                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition, i);
 +            }
-+            blockstate.setTypeId(CraftMagicNumbers.getId(iblockdata.getBlock()));
-+            blockstate.setRawData((byte) iblockdata.getBlock().toLegacyData(iblockdata));
++            blockstate.setData(iblockdata);
 +            this.capturedBlockStates.add(blockstate);
 +            return true;
 +        }
 +        // CraftBukkit end
-         if (this.E(blockposition)) {
+         if (k(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-@@ -216,9 +327,23 @@
+@@ -145,9 +257,23 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
 +
 +            // CraftBukkit start - capture blockstates
-+            BlockState blockstate = null;
++            CraftBlockState blockstate = null;
 +            if (this.captureBlockStates) {
-+                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), i);
++                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition, i);
 +                this.capturedBlockStates.add(blockstate);
 +            }
 +            // CraftBukkit end
 +
-             IBlockData iblockdata1 = chunk.a(blockposition, iblockdata);
+             IBlockData iblockdata1 = chunk.a(blockposition, iblockdata, (i & 64) != 0);
  
              if (iblockdata1 == null) {
 +                // CraftBukkit start - remove blockstate if failed
@@ -164,25 +165,25 @@
 +                // CraftBukkit end
                  return false;
              } else {
-                 if (iblockdata.c() != iblockdata1.c() || iblockdata.d() != iblockdata1.d()) {
-@@ -227,6 +352,7 @@
-                     this.methodProfiler.b();
+                 IBlockData iblockdata2 = this.getType(blockposition);
+@@ -158,6 +284,7 @@
+                     this.methodProfiler.e();
                  }
  
 +                /*
-                 if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && chunk.isReady()) {
-                     this.notify(blockposition, iblockdata1, iblockdata, i);
-                 }
-@@ -239,12 +365,37 @@
-                 } else if (!this.isClientSide && (i & 16) == 0) {
-                     this.c(blockposition, block);
+                 if (iblockdata2 == iblockdata) {
+                     if (iblockdata1 != iblockdata2) {
+                         this.a(blockposition, blockposition);
+@@ -182,12 +309,52 @@
+                         iblockdata.b(this, blockposition, j);
+                     }
                  }
 +                */
 +
 +                // CraftBukkit start
 +                if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
 +                    // Modularize client and physic updates
-+                    notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, i);
++                    notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, iblockdata2, i);
 +                }
 +                // CraftBukkit end
  
@@ -192,45 +193,60 @@
      }
  
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, IBlockData oldBlock, IBlockData newBlock, int i) {
-+        if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (chunk == null || chunk.isReady())) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
-+            this.notify(blockposition, oldBlock, newBlock, i);
-+        }
-+
-+        if (!this.isClientSide && (i & 1) != 0) {
-+            this.update(blockposition, oldBlock.getBlock(), true);
-+            if (newBlock.n()) {
-+                this.updateAdjacentComparators(blockposition, newBlock.getBlock());
++    public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, IBlockData oldBlock, IBlockData newBlock, IBlockData actualBlock, int i) {
++        IBlockData iblockdata = newBlock;
++        IBlockData iblockdata1 = oldBlock;
++        IBlockData iblockdata2 = actualBlock;
++        if (iblockdata2 == iblockdata) {
++            if (iblockdata1 != iblockdata2) {
++                this.a(blockposition, blockposition);
 +            }
-+        } else if (!this.isClientSide && (i & 16) == 0) {
-+            this.c(blockposition, newBlock.getBlock());
++
++            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (chunk == null || chunk.isReady())) {  // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++                this.notify(blockposition, iblockdata1, iblockdata, i);
++            }
++
++            if (!this.isClientSide && (i & 1) != 0) {
++                this.update(blockposition, iblockdata1.getBlock());
++                if (iblockdata.isComplexRedstone()) {
++                    this.updateAdjacentComparators(blockposition, newBlock.getBlock());
++                }
++            }
++
++            if ((i & 16) == 0) {
++                int j = i & -2;
++
++                iblockdata1.b(this, blockposition, j);
++                iblockdata.a((GeneratorAccess) this, blockposition, j);
++                iblockdata.b(this, blockposition, j);
++            }
 +        }
 +    }
 +    // CraftBukkit end
 +
      public boolean setAir(BlockPosition blockposition) {
-         return this.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
-     }
-@@ -278,6 +429,11 @@
+         Fluid fluid = this.b(blockposition);
  
-     public void update(BlockPosition blockposition, Block block, boolean flag) {
+@@ -224,6 +391,11 @@
+ 
+     public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
 +            // CraftBukkit start
 +            if (populating) {
 +                return;
 +            }
 +            // CraftBukkit end
-             this.applyPhysics(blockposition, block, flag);
+             this.applyPhysics(blockposition, block);
          }
  
-@@ -366,6 +522,17 @@
+@@ -299,6 +471,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
 +                // CraftBukkit start
 +                CraftWorld world = ((WorldServer) this).getWorld();
 +                if (world != null) {
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftMagicNumbers.getId(block));
++                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
 +                    this.getServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
@@ -241,25 +257,34 @@
                  iblockdata.doPhysics(this, blockposition, block, blockposition1);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -583,6 +750,17 @@
+@@ -307,7 +490,7 @@
+                 crashreportsystemdetails.a("Source block type", () -> {
+                     try {
+                         return String.format("ID #%s (%s // %s)", new Object[] { Block.REGISTRY.b(block), block.m(), block.getClass().getCanonicalName()});
+-                    } catch (Throwable throwable) {
++                    } catch (Throwable throwablex) { // CraftBukkit - decompile error
+                         return "ID #" + Block.REGISTRY.b(block);
+                     }
+                 });
+@@ -393,6 +576,17 @@
      }
  
      public IBlockData getType(BlockPosition blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
-+            Iterator<BlockState> it = capturedBlockStates.iterator();
++            Iterator<CraftBlockState> it = capturedBlockStates.iterator();
 +            while (it.hasNext()) {
-+                BlockState previous = it.next();
++                CraftBlockState previous = it.next();
 +                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
-+                    return CraftMagicNumbers.getBlock(previous.getTypeId()).fromLegacyData(previous.getRawData());
++                    return previous.getHandle();
 +                }
 +            }
 +        }
 +        // CraftBukkit end
-         if (this.E(blockposition)) {
-             return Blocks.AIR.getBlockData();
+         if (k(blockposition)) {
+             return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -788,6 +966,42 @@
+@@ -639,6 +833,42 @@
      }
  
      public boolean addEntity(Entity entity) {
@@ -302,23 +327,23 @@
          int i = MathHelper.floor(entity.locX / 16.0D);
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
-@@ -818,6 +1032,7 @@
-             ((IWorldAccess) this.u.get(i)).a(entity);
+@@ -669,6 +899,7 @@
+             ((IWorldAccess) this.v.get(i)).a(entity);
          }
  
 +        entity.valid = true; // CraftBukkit
      }
  
      protected void c(Entity entity) {
-@@ -825,6 +1040,7 @@
-             ((IWorldAccess) this.u.get(i)).b(entity);
+@@ -676,6 +907,7 @@
+             ((IWorldAccess) this.v.get(i)).b(entity);
          }
  
 +        entity.valid = false; // CraftBukkit
      }
  
      public void kill(Entity entity) {
-@@ -860,7 +1076,15 @@
+@@ -711,7 +943,15 @@
              this.getChunkAt(i, j).b(entity);
          }
  
@@ -335,19 +360,10 @@
          this.c(entity);
      }
  
-@@ -977,7 +1201,7 @@
-     }
+@@ -746,6 +986,11 @@
  
-     public boolean a(AxisAlignedBB axisalignedbb) {
--        return this.a((Entity) null, axisalignedbb, true, Lists.newArrayList());
-+        return this.a((Entity) null, axisalignedbb, true, Lists.<AxisAlignedBB>newArrayList()); // CraftBukkit - decompile error
-     }
- 
-     public int a(float f) {
-@@ -1047,6 +1271,11 @@
- 
-         for (i = 0; i < this.j.size(); ++i) {
-             entity = (Entity) this.j.get(i);
+         for (i = 0; i < this.k.size(); ++i) {
+             entity = (Entity) this.k.get(i);
 +            // CraftBukkit start - Fixed an NPE
 +            if (entity == null) {
 +                continue;
@@ -356,7 +372,7 @@
  
              try {
                  ++entity.ticksLived;
-@@ -1095,8 +1324,10 @@
+@@ -794,8 +1039,10 @@
          CrashReportSystemDetails crashreportsystemdetails1;
          CrashReport crashreport1;
  
@@ -366,10 +382,10 @@
 +        for (this.tickPosition = 0; this.tickPosition < this.entityList.size(); ++this.tickPosition) {
 +            entity = (Entity) this.entityList.get(this.tickPosition);
 +            // CraftBukkit end
-             Entity entity1 = entity.bJ();
+             Entity entity1 = entity.getVehicle();
  
              if (entity1 != null) {
-@@ -1129,7 +1360,7 @@
+@@ -828,7 +1075,7 @@
                      this.getChunkAt(j, l).b(entity);
                  }
  
@@ -378,10 +394,10 @@
                  this.c(entity);
              }
  
-@@ -1184,9 +1415,11 @@
-                 TileEntity tileentity1 = (TileEntity) this.b.get(i1);
+@@ -883,9 +1130,11 @@
+                 TileEntity tileentity1 = (TileEntity) this.c.get(i1);
  
-                 if (!tileentity1.y()) {
+                 if (!tileentity1.x()) {
 +                    /* CraftBukkit start - Order matters, moved down
                      if (!this.tileEntityList.contains(tileentity1)) {
                          this.a(tileentity1);
@@ -390,7 +406,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
-@@ -1194,6 +1427,12 @@
+@@ -893,6 +1142,12 @@
  
                          chunk.a(tileentity1.getPosition(), tileentity1);
                          this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
@@ -403,7 +419,7 @@
                      }
                  }
              }
-@@ -1247,15 +1486,13 @@
+@@ -946,15 +1201,13 @@
          int i;
          int j;
  
@@ -423,24 +439,24 @@
          }
 +        // CraftBukkit end
  
-         entity.M = entity.locX;
-         entity.N = entity.locY;
-@@ -1268,6 +1505,7 @@
-                 entity.aE();
+         entity.N = entity.locX;
+         entity.O = entity.locY;
+@@ -967,6 +1220,7 @@
+                 entity.aH();
              } else {
-                 entity.B_();
+                 entity.tick();
 +                entity.postTick(); // CraftBukkit
              }
          }
  
-@@ -1559,11 +1797,18 @@
+@@ -1296,11 +1550,18 @@
          }
      }
  
 +    public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
      @Nullable
      public TileEntity getTileEntity(BlockPosition blockposition) {
-         if (this.E(blockposition)) {
+         if (k(blockposition)) {
              return null;
          } else {
 +            // CraftBukkit start
@@ -451,26 +467,26 @@
 +
              TileEntity tileentity = null;
  
-             if (this.O) {
-@@ -1598,6 +1843,14 @@
+             if (this.J) {
+@@ -1335,6 +1596,14 @@
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
-         if (!this.E(blockposition)) {
-             if (tileentity != null && !tileentity.y()) {
-+            // CraftBukkit start
-+            if (captureBlockStates) {
-+                tileentity.a(this);
-+                tileentity.setPosition(blockposition);
-+                capturedTileEntities.put(blockposition, tileentity);
-+                return;
-+            }
-+            // CraftBukkit end
-                 if (this.O) {
+         if (!k(blockposition)) {
+             if (tileentity != null && !tileentity.x()) {
++                // CraftBukkit start
++                if (captureBlockStates) {
++                    tileentity.setWorld(this);
++                    tileentity.setPosition(blockposition);
++                    capturedTileEntities.put(blockposition, tileentity);
++                    return;
++                }
++                // CraftBukkit end
+                 if (this.J) {
                      tileentity.setPosition(blockposition);
-                     Iterator iterator = this.b.iterator();
-@@ -1757,6 +2010,14 @@
+                     Iterator iterator = this.c.iterator();
+@@ -1494,6 +1763,14 @@
                  }
  
-                 this.o = MathHelper.a(this.o, 0.0F, 1.0F);
+                 this.p = MathHelper.a(this.p, 0.0F, 1.0F);
 +
 +                // CraftBukkit start
 +                for (int idx = 0; idx < this.players.size(); ++idx) {
@@ -482,7 +498,7 @@
              }
          }
      }
-@@ -1894,7 +2155,10 @@
+@@ -1579,7 +1856,10 @@
      }
  
      public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
@@ -494,25 +510,25 @@
              return false;
          } else {
              int i = 0;
-@@ -2061,7 +2325,7 @@
+@@ -1750,7 +2030,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
--            if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply(entity)) {
-+            if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply((T) entity)) {
+-            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test(entity)) {
++            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) {
                  arraylist.add(entity);
              }
          }
-@@ -2076,7 +2340,7 @@
+@@ -1765,7 +2045,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
--            if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply(entity)) {
-+            if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply((T) entity)) { // CraftBukkit - fix decompile error
+-            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test(entity)) {
++            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) { // CraftBukkit - fix decompile error
                  arraylist.add(entity);
              }
          }
-@@ -2125,7 +2389,7 @@
+@@ -1814,7 +2094,7 @@
              }
          }
  
@@ -521,7 +537,7 @@
      }
  
      @Nullable
-@@ -2146,8 +2410,17 @@
+@@ -1835,8 +2115,17 @@
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -540,7 +556,7 @@
                  ++i;
              }
          }
-@@ -2156,12 +2429,18 @@
+@@ -1845,12 +2134,18 @@
      }
  
      public void a(Collection<Entity> collection) {
@@ -560,22 +576,7 @@
              this.b(entity);
          }
  
-@@ -2175,7 +2454,13 @@
-         IBlockData iblockdata = this.getType(blockposition);
-         AxisAlignedBB axisalignedbb = flag ? null : block.getBlockData().d(this, blockposition);
- 
--        return axisalignedbb != Block.k && !this.a(axisalignedbb.a(blockposition), entity) ? false : (iblockdata.getMaterial() == Material.ORIENTABLE && block == Blocks.ANVIL ? true : iblockdata.getMaterial().isReplaceable() && block.canPlace(this, blockposition, enumdirection));
-+        // CraftBukkit start - store default return
-+        boolean defaultReturn = axisalignedbb != Block.k && !this.a(axisalignedbb.a(blockposition), entity) ? false : (iblockdata.getMaterial() == Material.ORIENTABLE && block == Blocks.ANVIL ? true : iblockdata.getMaterial().isReplaceable() && block.canPlace(this, blockposition, enumdirection));
-+        BlockCanBuildEvent event = new BlockCanBuildEvent(this.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftMagicNumbers.getId(block), defaultReturn);
-+        this.getServer().getPluginManager().callEvent(event);
-+
-+        return event.isBuildable();
-+        // CraftBukkit end
-     }
- 
-     public int getSeaLevel() {
-@@ -2285,6 +2570,11 @@
+@@ -1954,6 +2249,11 @@
  
          for (int i = 0; i < this.players.size(); ++i) {
              EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
@@ -585,9 +586,9 @@
 +            }
 +            // CraftBukkit end
  
-             if (predicate.apply(entityhuman1)) {
+             if (predicate.test(entityhuman1)) {
                  double d5 = entityhuman1.d(d0, d1, d2);
-@@ -2453,6 +2743,16 @@
+@@ -2122,6 +2422,16 @@
  
      public void everyoneSleeping() {}
  
@@ -601,10 +602,10 @@
 +    }
 +    // CraftBukkit end
 +
-     public float h(float f) {
-         return (this.p + (this.q - this.p) * f) * this.j(f);
+     public float g(float f) {
+         return (this.q + (this.r - this.q) * f) * this.i(f);
      }
-@@ -2670,7 +2970,7 @@
+@@ -2296,7 +2606,7 @@
          int l = j * 16 + 8 - blockposition.getZ();
          boolean flag = true;
  

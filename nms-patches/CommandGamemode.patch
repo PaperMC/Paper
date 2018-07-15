@@ -1,34 +1,15 @@
 --- a/net/minecraft/server/CommandGamemode.java
 +++ b/net/minecraft/server/CommandGamemode.java
-@@ -28,6 +28,12 @@
-             EntityPlayer entityplayer = astring.length >= 2 ? b(minecraftserver, icommandlistener, astring[1]) : a(icommandlistener);
+@@ -57,6 +57,12 @@
  
-             entityplayer.a(enumgamemode);
-+            // CraftBukkit start - handle event cancelling the change
-+            if (entityplayer.playerInteractManager.getGameMode() != enumgamemode) {
-+                icommandlistener.sendMessage(new ChatComponentText("Failed to set the gamemode of '" + entityplayer.getName() + "'"));
-+                return;
-+            }
-+            // CraftBukkit end
-             ChatMessage chatmessage = new ChatMessage("gameMode." + enumgamemode.b(), new Object[0]);
- 
-             if (icommandlistener.getWorld().getGameRules().getBoolean("sendCommandFeedback")) {
-@@ -50,10 +56,17 @@
-     }
- 
-     public List<String> tabComplete(MinecraftServer minecraftserver, ICommandListener icommandlistener, String[] astring, @Nullable BlockPosition blockposition) {
--        return astring.length == 1 ? a(astring, new String[] { "survival", "creative", "adventure", "spectator"}) : (astring.length == 2 ? a(astring, minecraftserver.getPlayers()) : Collections.emptyList());
-+        return astring.length == 1 ? a(astring, new String[] { "survival", "creative", "adventure", "spectator"}) : (astring.length == 2 ? a(astring, minecraftserver.getPlayers()) : Collections.<String>emptyList()); // CraftBukkit - decompile error
-     }
- 
-     public boolean isListStart(String[] astring, int i) {
-         return i == 1;
-     }
-+
-+    // CraftBukkit start - fix decompiler error
-+    @Override
-+    public int compareTo(ICommand o) {
-+        return a((ICommand) o);
-+    }
-+    // CraftBukkit end
- }
+             if (entityplayer.playerInteractManager.getGameMode() != enumgamemode) {
+                 entityplayer.a(enumgamemode);
++                // CraftBukkit start - handle event cancelling the change
++                if (entityplayer.playerInteractManager.getGameMode() != enumgamemode) {
++                    commandcontext.getSource().sendFailureMessage(new ChatComponentText("Failed to set the gamemode of '" + entityplayer.getName() + "'"));
++                    continue;
++                }
++                // CraftBukkit end
+                 a((CommandListenerWrapper) commandcontext.getSource(), entityplayer, enumgamemode);
+                 ++i;
+             }

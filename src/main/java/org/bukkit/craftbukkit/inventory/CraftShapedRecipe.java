@@ -1,8 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
-import net.minecraft.server.CraftingManager;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NonNullList;
 import net.minecraft.server.RecipeItemStack;
 import net.minecraft.server.ShapedRecipes;
@@ -21,7 +22,7 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
     }
 
     public CraftShapedRecipe(ItemStack result, ShapedRecipes recipe) {
-        this(CraftNamespacedKey.fromMinecraft(recipe.key), result);
+        this(CraftNamespacedKey.fromMinecraft(recipe.getKey()), result);
         this.recipe = recipe;
     }
 
@@ -51,10 +52,10 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
         for (int i = 0; i < shape.length; i++) {
             String row = shape[i];
             for (int j = 0; j < row.length(); j++) {
-                data.set(i * width + j, RecipeItemStack.a(new net.minecraft.server.ItemStack[]{CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))}));
+                data.set(i * width + j, new RecipeItemStack(Stream.of(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))))));
             }
         }
 
-        CraftingManager.a(CraftNamespacedKey.toMinecraft(this.getKey()), new ShapedRecipes("", width, shape.length, data, CraftItemStack.asNMSCopy(this.getResult())));
+        MinecraftServer.getServer().getCraftingManager().a(new ShapedRecipes(CraftNamespacedKey.toMinecraft(this.getKey()), "", width, shape.length, data, CraftItemStack.asNMSCopy(this.getResult())));
     }
 }

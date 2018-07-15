@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/TileEntitySign.java
 +++ b/net/minecraft/server/TileEntitySign.java
-@@ -21,6 +21,12 @@
+@@ -23,6 +23,12 @@
              nbttagcompound.setString("Text" + (i + 1), s);
          }
  
@@ -10,12 +10,12 @@
 +        }
 +        // CraftBukkit end
 +
-         this.i.b(nbttagcompound);
          return nbttagcompound;
      }
-@@ -58,14 +64,34 @@
-             }
-         };
+ 
+@@ -30,18 +36,38 @@
+         this.isEditable = false;
+         super.load(nbttagcompound);
  
 +        // CraftBukkit start - Add an option to convert signs correctly
 +        // This is done with a flag instead of all the time because
@@ -30,10 +30,11 @@
 +                s = "\"\"";
 +            }
  
-             try {
--                this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
--            } catch (CommandException commandexception) {
--                this.lines[i] = ichatbasecomponent;
+-            if (this.world instanceof WorldServer) {
+-                try {
+-                    this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatbasecomponent, (Entity) null);
+-                } catch (CommandSyntaxException commandsyntaxexception) {
++            try {
 +                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
 +
 +                if (oldSign) {
@@ -42,29 +43,33 @@
 +                }
 +                // CraftBukkit end
 +
-+                try {
-+                    this.lines[i] = ChatComponentUtils.filterForDisplay(icommandlistener, ichatbasecomponent, (Entity) null);
-+                } catch (CommandException commandexception) {
-+                    this.lines[i] = ichatbasecomponent;
-+                }
++                if (this.world instanceof WorldServer) {
++                    try {
++                        this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatbasecomponent, (Entity) null);
++                    } catch (CommandSyntaxException commandsyntaxexception) {
++                        this.lines[i] = ichatbasecomponent;
++                    }
++                } else {
+                     this.lines[i] = ichatbasecomponent;
+                 }
+-            } else {
+-                this.lines[i] = ichatbasecomponent;
 +            } catch (com.google.gson.JsonParseException jsonparseexception) {
 +                this.lines[i] = new ChatComponentText(s);
              }
          }
  
-@@ -155,7 +181,14 @@
-                 ChatClickable chatclickable = chatmodifier.h();
+@@ -94,6 +120,13 @@
  
-                 if (chatclickable.a() == ChatClickable.EnumClickAction.RUN_COMMAND) {
--                    entityhuman.C_().getCommandHandler().a(icommandlistener, chatclickable.b());
-+                    // CraftBukkit start
-+                    // entityhuman.C_().getCommandHandler().a(icommandlistener, chatclickable.b());
-+                    CommandBlockListenerAbstract.executeSafely(icommandlistener, new org.bukkit.craftbukkit.command.ProxiedNativeCommandSender(
-+                            icommandlistener,
-+                            new org.bukkit.craftbukkit.command.CraftBlockCommandSender(icommandlistener),
-+                            entityhuman.getBukkitEntity()
-+                    ), chatclickable.b());
-+                    // CraftBukkit end
-                 }
-             }
-         }
+     public void sendMessage(IChatBaseComponent ichatbasecomponent) {}
+ 
++    // CraftBukkit start
++    @Override
++    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
++        return wrapper.f() != null ? wrapper.f().getBukkitSender(wrapper) : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper);
++    }
++    // CraftBukkit end
++
+     public CommandListenerWrapper a(@Nullable EntityPlayer entityplayer) {
+         String s = entityplayer == null ? "Sign" : entityplayer.getDisplayName().getString();
+         Object object = entityplayer == null ? new ChatComponentText("Sign") : entityplayer.getScoreboardDisplayName();

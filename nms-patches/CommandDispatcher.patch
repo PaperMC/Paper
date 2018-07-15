@@ -1,0 +1,189 @@
+--- a/net/minecraft/server/CommandDispatcher.java
++++ b/net/minecraft/server/CommandDispatcher.java
+@@ -26,12 +26,19 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++// CraftBukkit start
++import com.google.common.base.Joiner;
++import org.apache.logging.log4j.Level;
++import org.bukkit.event.server.ServerCommandEvent;
++// CraftBukkit end
++
+ public class CommandDispatcher {
+ 
+     private static final Logger a = LogManager.getLogger();
+     private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> b = new com.mojang.brigadier.CommandDispatcher();
+ 
+-    public CommandDispatcher(boolean flag) {
++    // CraftBukkit start
++    public final CommandDispatcher init(boolean flag) {
+         CommandAdvancement.a(this.b);
+         CommandExecute.a(this.b);
+         CommmandBossBar.a(this.b);
+@@ -100,6 +107,11 @@
+         this.b.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
+             CommandDispatcher.a.warn("Ambiguity between arguments {} and {} with inputs: {}", this.b.getPath(commandnode1), this.b.getPath(commandnode2), collection);
+         });
++        return this;
++    }
++
++    public CommandDispatcher() {
++        // CraftBukkit end
+         this.b.setConsumer((commandcontext, flag, i) -> {
+             ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag, i);
+         });
+@@ -114,7 +126,58 @@
+ 
+     }
+ 
++    // CraftBukkit start
++    public int dispatchServerCommand(CommandListenerWrapper sender, String command) {
++        Joiner joiner = Joiner.on(" ");
++        if (command.startsWith("/")) {
++            command = command.substring(1);
++        }
++
++        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return 0;
++        }
++        command = event.getCommand();
++
++        String[] args = command.split(" ");
++
++        String cmd = args[0];
++        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
++        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
++
++        // Block disallowed commands
++        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
++                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
++                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
++            return 0;
++        }
++
++        // Handle vanilla commands;
++        if (sender.getWorld().getServer().getCommandBlockOverride(args[0])) {
++            args[0] = "minecraft:" + args[0];
++        }
++
++        return this.a(sender, joiner.join(args));
++    }
++
+     public int a(CommandListenerWrapper commandlistenerwrapper, String s) {
++        // Some commands use the worldserver variable but we leave it full of null values,
++        // so we must temporarily populate it with the world of the commandsender
++        WorldServer[] prev = MinecraftServer.getServer().worldServer;
++        MinecraftServer server = MinecraftServer.getServer();
++        server.worldServer = new WorldServer[server.worlds.size()];
++        server.worldServer[0] = (WorldServer) commandlistenerwrapper.getWorld();
++        int bpos = 0;
++        for (int pos = 1; pos < server.worldServer.length; pos++) {
++            WorldServer world = server.worlds.get(bpos++);
++            if (server.worldServer[0] == world) {
++                pos--;
++                continue;
++            }
++            server.worldServer[pos] = world;
++        }
++        // CraftBukkit end
+         String s1 = s;
+ 
+         if (s.startsWith("/")) {
+@@ -126,7 +189,6 @@
+         byte b0;
+ 
+         try {
+-            byte b1;
+             ChatComponentText chatcomponenttext;
+ 
+             try {
+@@ -135,54 +197,59 @@
+                 return i;
+             } catch (CommandException commandexception) {
+                 commandlistenerwrapper.sendFailureMessage(commandexception.a());
+-                b1 = 0;
+-                return b1;
++                b0 = 0;
++                return b0;
+             } catch (CommandSyntaxException commandsyntaxexception) {
+                 commandlistenerwrapper.sendFailureMessage(ChatComponentUtils.a(commandsyntaxexception.getRawMessage()));
+                 if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                     int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+-                    IChatBaseComponent ichatbasecomponent = (new ChatComponentText("")).a(EnumChatFormat.GRAY).a((chatmodifier) -> {
+-                        chatmodifier.setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s));
+-                    });
+ 
++                    chatcomponenttext = new ChatComponentText("");
+                     if (j > 10) {
+-                        ichatbasecomponent.a("...");
++                        chatcomponenttext.a("...");
+                     }
+ 
+-                    ichatbasecomponent.a(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
++                    chatcomponenttext.a(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
+                     if (j < commandsyntaxexception.getInput().length()) {
+-                        IChatBaseComponent ichatbasecomponent1 = (new ChatComponentText(commandsyntaxexception.getInput().substring(j))).a(new EnumChatFormat[] { EnumChatFormat.RED, EnumChatFormat.UNDERLINE});
++                        ChatComponentText chatcomponenttext1 = new ChatComponentText(commandsyntaxexception.getInput().substring(j));
+ 
+-                        ichatbasecomponent.addSibling(ichatbasecomponent1);
++                        chatcomponenttext1.getChatModifier().setColor(EnumChatFormat.RED);
++                        chatcomponenttext1.getChatModifier().setUnderline(Boolean.valueOf(true));
++                        chatcomponenttext.addSibling(chatcomponenttext1);
+                     }
+ 
+-                    ichatbasecomponent.addSibling((new ChatMessage("command.context.here", new Object[0])).a(new EnumChatFormat[] { EnumChatFormat.RED, EnumChatFormat.ITALIC}));
+-                    commandlistenerwrapper.sendFailureMessage(ichatbasecomponent);
++                    ChatMessage chatmessage = new ChatMessage("command.context.here", new Object[0]);
++
++                    chatmessage.getChatModifier().setItalic(Boolean.valueOf(true));
++                    chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
++                    chatcomponenttext.addSibling(chatmessage);
++                    chatcomponenttext.getChatModifier().setColor(EnumChatFormat.GRAY);
++                    chatcomponenttext.getChatModifier().setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s1));
++                    commandlistenerwrapper.sendFailureMessage(chatcomponenttext);
+                 }
+ 
+-                b1 = 0;
+-                return b1;
++                b0 = 0;
+             } catch (Exception exception) {
+-                chatcomponenttext = new ChatComponentText;
+-            }
++                ChatMessage chatmessage1 = new ChatMessage("command.failed", new Object[0]);
+ 
+-            chatcomponenttext.<init>(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+-            ChatComponentText chatcomponenttext1 = chatcomponenttext;
++                chatcomponenttext = new ChatComponentText(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
++                if (CommandDispatcher.a.isDebugEnabled()) {
++                    StackTraceElement[] astacktraceelement = exception.getStackTrace();
+ 
+-            if (CommandDispatcher.a.isDebugEnabled()) {
+-                StackTraceElement[] astacktraceelement = exception.getStackTrace();
+-
+-                for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
+-                    chatcomponenttext1.a("\n\n").a(astacktraceelement[k].getMethodName()).a("\n ").a(astacktraceelement[k].getFileName()).a(":").a(String.valueOf(astacktraceelement[k].getLineNumber()));
++                    for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
++                        chatcomponenttext.a("\n\n" + astacktraceelement[k].getMethodName() + "\n " + astacktraceelement[k].getFileName() + ":" + astacktraceelement[k].getLineNumber());
++                    }
+                 }
+-            }
+ 
+-            commandlistenerwrapper.sendFailureMessage((new ChatMessage("command.failed", new Object[0])).a((chatmodifier) -> {
+-                chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, ichatbasecomponent));
+-            }));
+-            b0 = 0;
++                chatmessage1.getChatModifier().setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext));
++                commandlistenerwrapper.sendFailureMessage(chatmessage1);
++                byte b1 = 0;
++
++                return b1;
++            }
+         } finally {
+             commandlistenerwrapper.getServer().methodProfiler.e();
++            MinecraftServer.getServer().worldServer = prev; // CraftBukkit
+         }
+ 
+         return b0;

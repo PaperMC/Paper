@@ -1,62 +1,53 @@
 --- a/net/minecraft/server/ItemBucket.java
 +++ b/net/minecraft/server/ItemBucket.java
-@@ -1,6 +1,12 @@
+@@ -1,6 +1,13 @@
  package net.minecraft.server;
  
  import javax.annotation.Nullable;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.DummyGeneratorAccess;
 +import org.bukkit.event.player.PlayerBucketEmptyEvent;
 +import org.bukkit.event.player.PlayerBucketFillEvent;
 +// CraftBukkit end
  
  public class ItemBucket extends Item {
  
-@@ -34,15 +40,29 @@
-                     Material material = iblockdata.getMaterial();
- 
-                     if (material == Material.WATER && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
+@@ -28,12 +35,20 @@
+                 if (this.a == FluidTypes.a) {
+                     iblockdata = world.getType(blockposition);
+                     if (iblockdata.getBlock() instanceof IFluidSource) {
 +                        // CraftBukkit start
-+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.WATER_BUCKET);
-+ 
-+                        if (event.isCancelled()) {
-+                            return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
-+                        }
-+                        // CraftBukkit end
-                         world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 11);
-                         entityhuman.b(StatisticList.b((Item) this));
-                         entityhuman.a(SoundEffects.S, 1.0F, 1.0F);
--                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.WATER_BUCKET));
-+                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.WATER_BUCKET, event.getItemStack())); // CraftBukkit
-                     } else if (material == Material.LAVA && ((Integer) iblockdata.get(BlockFluids.LEVEL)).intValue() == 0) {
-+                        // CraftBukkit start
-+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, Items.LAVA_BUCKET);
++                        FluidType dummyFluid = ((IFluidSource) iblockdata.getBlock()).b(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, dummyFluid.b());
 +
 +                        if (event.isCancelled()) {
 +                            return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
 +                        }
 +                        // CraftBukkit end
-                         entityhuman.a(SoundEffects.T, 1.0F, 1.0F);
-                         world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 11);
-                         entityhuman.b(StatisticList.b((Item) this));
--                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.LAVA_BUCKET));
-+                        return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, this.a(itemstack, entityhuman, Items.LAVA_BUCKET, event.getItemStack())); // CraftBukkit
-                     } else {
-                         return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
-                     }
-@@ -53,7 +73,7 @@
+                         FluidType fluidtype = ((IFluidSource) iblockdata.getBlock()).b(world, blockposition, iblockdata);
  
-                 if (!entityhuman.a(blockposition1, movingobjectposition.direction, itemstack)) {
-                     return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
--                } else if (this.a(entityhuman, world, blockposition1)) {
-+                } else if (this.a(entityhuman, world, blockposition1, movingobjectposition.direction, blockposition, itemstack)) { // CraftBukkit
-                     if (entityhuman instanceof EntityPlayer) {
-                         CriterionTriggers.x.a((EntityPlayer) entityhuman, blockposition1, itemstack);
-                     }
-@@ -67,16 +87,19 @@
-         }
-     }
+                         if (fluidtype != FluidTypes.a) {
+                             entityhuman.b(StatisticList.ITEM_USED.b(this));
+                             entityhuman.a(fluidtype.a(TagsFluid.b) ? SoundEffects.ITEM_BUCKET_FILL_LAVA : SoundEffects.ITEM_BUCKET_FILL, 1.0F, 1.0F);
+-                            ItemStack itemstack1 = this.a(itemstack, entityhuman, fluidtype.b());
++                            ItemStack itemstack1 = this.a(itemstack, entityhuman, fluidtype.b(), event.getItemStack()); // CraftBukkit
+ 
+                             if (!world.isClientSide) {
+                                 CriterionTriggers.j.a((EntityPlayer) entityhuman, new ItemStack(fluidtype.b()));
+@@ -48,7 +63,7 @@
+                     iblockdata = world.getType(blockposition);
+                     BlockPosition blockposition1 = this.a(iblockdata, blockposition, movingobjectposition);
+ 
+-                    if (this.a(entityhuman, world, blockposition1, movingobjectposition)) {
++                    if (this.a(entityhuman, world, blockposition1, movingobjectposition, blockposition, itemstack)) { // CraftBukkit
+                         this.a(world, itemstack, blockposition1);
+                         if (entityhuman instanceof EntityPlayer) {
+                             CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition1, itemstack);
+@@ -76,16 +91,19 @@
+ 
+     public void a(World world, ItemStack itemstack, BlockPosition blockposition) {}
  
 -    private ItemStack a(ItemStack itemstack, EntityHuman entityhuman, Item item) {
 +    // CraftBukkit - added ob.ItemStack result - TODO: Is this... the right way to handle this?
@@ -78,33 +69,33 @@
                  }
  
                  return itemstack;
-@@ -84,7 +107,13 @@
+@@ -93,7 +111,13 @@
          }
      }
  
 +    // CraftBukkit start
-     public boolean a(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition) {
-+        return a(entityhuman, world, blockposition, null, blockposition, null);
+     public boolean a(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPosition movingobjectposition) {
++        return a(entityhuman, world, blockposition, movingobjectposition, null, null);
 +    }
 +
-+    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack) {
++    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPosition movingobjectposition, BlockPosition clicked, ItemStack itemstack) {
 +        // CraftBukkit end
-         if (this.a == Blocks.AIR) {
+         if (!(this.a instanceof FluidTypeFlowing)) {
              return false;
          } else {
-@@ -96,6 +125,15 @@
-             if (!world.isEmpty(blockposition) && !flag && !flag1) {
-                 return false;
+@@ -105,6 +129,15 @@
+             if (!world.isEmpty(blockposition) && !flag && !flag1 && (!(iblockdata.getBlock() instanceof IFluidContainer) || !((IFluidContainer) iblockdata.getBlock()).a((IBlockAccess) world, blockposition, iblockdata, this.a))) {
+                 return movingobjectposition == null ? false : this.a(entityhuman, world, movingobjectposition.a().shift(movingobjectposition.direction), (MovingObjectPosition) null);
              } else {
 +                // CraftBukkit start
 +                if (entityhuman != null) {
-+                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clicked.getX(), clicked.getY(), clicked.getZ(), enumdirection, itemstack);
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clicked.getX(), clicked.getY(), clicked.getZ(), movingobjectposition.direction, itemstack);
 +                    if (event.isCancelled()) {
 +                        // TODO: inventory not updated
 +                        return false;
 +                    }
 +                }
 +                // CraftBukkit end
-                 if (world.worldProvider.l() && this.a == Blocks.FLOWING_WATER) {
+                 if (world.worldProvider.isNether() && this.a.a(TagsFluid.a)) {
                      int i = blockposition.getX();
                      int j = blockposition.getY();

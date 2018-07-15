@@ -184,23 +184,6 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         setSlots(items, getInventory().items.size() + getInventory().armor.size(), getInventory().extraSlots.size());
     }
 
-    public int clear(int id, int data) {
-        int count = 0;
-        ItemStack[] items = getContents();
-
-        for (int i = 0; i < items.length; i++) {
-            ItemStack item = items[i];
-            if (item == null) continue;
-            if (id > -1 && item.getTypeId() != id) continue;
-            if (data > -1 && item.getData().getData() != data) continue;
-
-            count += item.getAmount();
-            setItem(i, null);
-        }
-
-        return count;
-    }
-
     @Override
     public HumanEntity getHolder() {
         return (HumanEntity) inventory.getOwner();

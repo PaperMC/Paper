@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntitySheep.java
 +++ b/net/minecraft/server/EntitySheep.java
-@@ -5,6 +5,12 @@
- import java.util.Random;
+@@ -10,6 +10,12 @@
+ import java.util.stream.Collectors;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
@@ -12,8 +12,8 @@
 +
  public class EntitySheep extends EntityAnimal {
  
-     private static final DataWatcherObject<Byte> bx = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
-@@ -12,6 +18,13 @@
+     private static final DataWatcherObject<Byte> bC = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
+@@ -17,8 +23,15 @@
          public boolean canUse(EntityHuman entityhuman) {
              return false;
          }
@@ -25,17 +25,12 @@
 +        }
 +        // CraftBukkit end
      }, 2, 1);
-     private static final Map<EnumColor, float[]> bz = Maps.newEnumMap(EnumColor.class);
-     private int bB;
-@@ -29,6 +42,7 @@
-         this.setSize(0.9F, 1.3F);
-         this.container.setItem(0, new ItemStack(Items.DYE));
-         this.container.setItem(1, new ItemStack(Items.DYE));
-+        this.container.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
-     }
- 
-     protected void r() {
-@@ -131,11 +145,22 @@
+-    private static final Map<EnumColor, IMaterial> bE = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumColor.class), (enummap) -> {
++    private static final Map<EnumColor, IMaterial> bE = (Map) SystemUtils.a(Maps.newEnumMap(EnumColor.class), (enummap) -> { // CraftBukkit - decompile error
+         enummap.put(EnumColor.WHITE, Blocks.WHITE_WOOL);
+         enummap.put(EnumColor.ORANGE, Blocks.ORANGE_WOOL);
+         enummap.put(EnumColor.MAGENTA, Blocks.MAGENTA_WOOL);
+@@ -158,11 +171,22 @@
  
          if (itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
              if (!this.world.isClientSide) {
@@ -53,15 +48,15 @@
  
                  for (int j = 0; j < i; ++j) {
 +                    this.forceDrops = true; // CraftBukkit
-                     EntityItem entityitem = this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor().getColorIndex()), 1.0F);
+                     EntityItem entityitem = this.a((IMaterial) EntitySheep.bE.get(this.getColor()), 1);
 +                    this.forceDrops = false; // CraftBukkit
  
-                     entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
-                     entityitem.motX += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
-@@ -222,6 +247,12 @@
+                     if (entityitem != null) {
+                         entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
+@@ -247,6 +271,12 @@
      }
  
-     public void A() {
+     public void x() {
 +        // CraftBukkit start
 +        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
 +        this.world.getServer().getPluginManager().callEvent(event);
@@ -71,3 +66,11 @@
          this.setSheared(false);
          if (this.isBaby()) {
              this.setAge(60);
+@@ -267,6 +297,7 @@
+ 
+         this.container.setItem(0, new ItemStack(ItemDye.a(enumcolor)));
+         this.container.setItem(1, new ItemStack(ItemDye.a(enumcolor1)));
++        this.container.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+         ItemStack itemstack = entityanimal.world.D().craft(this.container, ((EntitySheep) entityanimal).world);
+         Item item = itemstack.getItem();
+         EnumColor enumcolor2;

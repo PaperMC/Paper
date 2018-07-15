@@ -1,0 +1,111 @@
+--- a/net/minecraft/server/TickListServer.java
++++ b/net/minecraft/server/TickListServer.java
+@@ -11,14 +11,15 @@
+ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.function.Predicate;
++import org.bukkit.craftbukkit.util.HashTreeSet; // CraftBukkit
+ 
+ public class TickListServer<T> implements TickList<T> {
+ 
+     protected final Predicate<T> a;
+     protected final Function<T, MinecraftKey> b;
+     protected final Function<MinecraftKey, T> c;
+-    protected final Set<NextTickListEntry<T>> nextTickListHash = Sets.newHashSet();
+-    protected final TreeSet<NextTickListEntry<T>> nextTickList = new TreeSet();
++    // protected final Set<NextTickListEntry<T>> nextTickListHash = Sets.newHashSet();
++    protected final HashTreeSet<NextTickListEntry> nextTickList = new HashTreeSet<>(); // CraftBukkit - HashTreeSet
+     private final WorldServer f;
+     private final List<NextTickListEntry<T>> g = Lists.newArrayList();
+     private final Consumer<NextTickListEntry<T>> h;
+@@ -34,16 +35,22 @@
+     public void a() {
+         int i = this.nextTickList.size();
+ 
+-        if (i != this.nextTickListHash.size()) {
++        if (false) { // CraftBukkit
+             throw new IllegalStateException("TickNextTick list out of synch");
+         } else {
+             if (i > 65536) {
+-                i = 65536;
++                // CraftBukkit start - If the server has too much to process over time, try to alleviate that
++                if (i > 20 * 65536) {
++                    i = i / 20;
++                } else {
++                    i = 65536;
++                }
++                // CraftBukkit end
+             }
+ 
+             this.f.methodProfiler.a("cleaning");
+ 
+-            NextTickListEntry nextticklistentry;
++            NextTickListEntry<T> nextticklistentry; // CraftBukkit - decompile error
+ 
+             for (int j = 0; j < i; ++j) {
+                 nextticklistentry = (NextTickListEntry) this.nextTickList.first();
+@@ -52,7 +59,7 @@
+                 }
+ 
+                 this.nextTickList.remove(nextticklistentry);
+-                this.nextTickListHash.remove(nextticklistentry);
++                // this.nextTickListHash.remove(nextticklistentry); // CraftBukkit - use nextTickList
+                 this.g.add(nextticklistentry);
+             }
+ 
+@@ -118,7 +125,7 @@
+                 if (blockposition.getX() >= structureboundingbox.a && blockposition.getX() < structureboundingbox.d && blockposition.getZ() >= structureboundingbox.c && blockposition.getZ() < structureboundingbox.f) {
+                     if (flag) {
+                         if (i == 0) {
+-                            this.nextTickListHash.remove(nextticklistentry);
++                            // this.nextTickListHash.remove(nextticklistentry); // CraftBukkit - removed
+                         }
+ 
+                         iterator.remove();
+@@ -141,7 +148,7 @@
+         Iterator iterator = list.iterator();
+ 
+         while (iterator.hasNext()) {
+-            NextTickListEntry nextticklistentry = (NextTickListEntry) iterator.next();
++            NextTickListEntry<T> nextticklistentry = (NextTickListEntry) iterator.next(); // CraftBukkit - decompile error
+ 
+             if (structureboundingbox.b((BaseBlockPosition) nextticklistentry.a)) {
+                 BlockPosition blockposition1 = nextticklistentry.a.a((BaseBlockPosition) blockposition);
+@@ -159,7 +166,7 @@
+         Iterator iterator = list.iterator();
+ 
+         while (iterator.hasNext()) {
+-            NextTickListEntry nextticklistentry = (NextTickListEntry) iterator.next();
++            NextTickListEntry<T> nextticklistentry = (NextTickListEntry) iterator.next(); // CraftBukkit - decompile error
+             NBTTagCompound nbttagcompound = new NBTTagCompound();
+ 
+             nbttagcompound.setString("i", ((MinecraftKey) this.b.apply(nextticklistentry.a())).toString());
+@@ -177,7 +184,7 @@
+     public void a(NBTTagList nbttaglist) {
+         for (int i = 0; i < nbttaglist.size(); ++i) {
+             NBTTagCompound nbttagcompound = nbttaglist.getCompound(i);
+-            Object object = this.c.apply(new MinecraftKey(nbttagcompound.getString("i")));
++            T object = this.c.apply(new MinecraftKey(nbttagcompound.getString("i"))); // CraftBukkit - decompile error
+ 
+             if (object != null) {
+                 this.b(new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z")), object, nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p")));
+@@ -187,7 +194,7 @@
+     }
+ 
+     public boolean a(BlockPosition blockposition, T t0) {
+-        return this.nextTickListHash.contains(new NextTickListEntry(blockposition, t0));
++        return this.nextTickList.contains(new NextTickListEntry(blockposition, t0)); // CraftBukkit
+     }
+ 
+     public void a(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
+@@ -209,8 +216,8 @@
+     private void c(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
+         NextTickListEntry nextticklistentry = new NextTickListEntry(blockposition, t0, (long) i + this.f.getTime(), ticklistpriority);
+ 
+-        if (!this.nextTickListHash.contains(nextticklistentry)) {
+-            this.nextTickListHash.add(nextticklistentry);
++        // CraftBukkit - use nextTickList
++        if (!this.nextTickList.contains(nextticklistentry)) {
+             this.nextTickList.add(nextticklistentry);
+         }
+ 

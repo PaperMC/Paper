@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.Versioning;
 
 public class DummyServer implements InvocationHandler {
@@ -56,6 +59,23 @@ public class DummyServer implements InvocationHandler {
                         final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
                         public Object handle(DummyServer server, Object[] args) {
                             return logger;
+                        }
+                    }
+                );
+            methods.put(
+                    Server.class.getMethod("getUnsafe"),
+                    new MethodHandler() {
+                        public Object handle(DummyServer server, Object[] args) {
+                            return CraftMagicNumbers.INSTANCE;
+                        }
+                    }
+                );
+            methods.put(
+                    Server.class.getMethod("createBlockData", Material.class),
+                    new MethodHandler() {
+                        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
+                        public Object handle(DummyServer server, Object[] args) {
+                            return CraftBlockData.newData((Material) args[0], null);
                         }
                     }
                 );

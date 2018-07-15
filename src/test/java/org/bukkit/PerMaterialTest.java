@@ -43,12 +43,21 @@ public class PerMaterialTest extends AbstractTestingBase {
     public static List<Object[]> data() {
         List<Object[]> list = Lists.newArrayList();
         for (Material material : Material.values()) {
-            list.add(new Object[] {material});
+            if (!material.isLegacy()) {
+                list.add(new Object[] {material});
+            }
         }
         return list;
     }
 
     @Parameter public Material material;
+
+    @Test
+    public void isBlock() {
+        if (material != Material.AIR && material != Material.CAVE_AIR && material != Material.VOID_AIR) {
+            assertThat(material.isBlock(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().isAir())));
+        }
+    }
 
     @Test
     public void isSolid() {
@@ -106,7 +115,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertTrue(material.isTransparent());
         } else if (material.isBlock()) {
-            assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().blocksLight())));
+            // assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().blocksLight()))); // PAIL: not unit testable anymore (17w50a)
         } else {
             assertFalse(material.isTransparent());
         }
@@ -160,6 +169,15 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(EnchantmentTarget.BREAKABLE.includes(material), is(CraftMagicNumbers.getItem(material).usesDurability()));
         } else {
             assertFalse(EnchantmentTarget.BREAKABLE.includes(material));
+        }
+    }
+
+    @Test
+    public void testDurability() {
+        if (!material.isBlock()) {
+            assertThat(material.getMaxDurability(), is((short) CraftMagicNumbers.getItem(material).getMaxDurability()));
+        } else {
+            assertThat(material.getMaxDurability(), is((short) 0));
         }
     }
 
