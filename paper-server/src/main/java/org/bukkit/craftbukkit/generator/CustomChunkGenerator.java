@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.generator;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
@@ -57,8 +58,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         CustomBiomeGrid biomegrid = new CustomBiomeGrid();
         biomegrid.biome = chunkManager.getBiomeBlock(x << 4, z << 4, 16, 16);
 
-        CraftChunkData data = (CraftChunkData) generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
-        ChunkSection[] sections = data.getRawChunkData();
+        ChunkData data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
+        Preconditions.checkArgument(data instanceof CraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
+        ChunkSection[] sections = ((CraftChunkData) data).getRawChunkData();
 
         ChunkSection[] csect = ichunkaccess.getSections();
         int scnt = Math.min(csect.length, sections.length);
