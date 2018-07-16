@@ -92,6 +92,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().sleepTicks;
     }
 
+    @Override
+    public String getName() {
+        return getHandle().getName();
+    }
+
     public boolean isOp() {
         return op;
     }
