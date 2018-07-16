@@ -10,20 +10,20 @@ Additionally, move Saving of the User cache to be done async, incase
 the user never changed the default setting for Spigot's save on stop only.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 45d3dbde2..ab7933079 100644
+index e11289217..49b2c27c6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // Spigot start
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              LOGGER.info("Saving usercache.json");
--            this.Y.c();
-+            this.Y.c(false); // Paper
+-            this.getUserCache().c();
++            this.getUserCache().c(false); // Paper
          }
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 487fc11f1..4fb17a801 100644
+index 0e168ad34..f8b7d695c 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
 @@ -0,0 +0,0 @@ public class UserCache {
@@ -36,7 +36,7 @@ index 487fc11f1..4fb17a801 100644
  
          if (date == null) {
 @@ -0,0 +0,0 @@ public class UserCache {
-         String s = gameprofile.getName().toLowerCase(Locale.ROOT);
+ 
          UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date, null);
  
 -        if (this.e.containsKey(uuid)) {
@@ -57,13 +57,6 @@ index 487fc11f1..4fb17a801 100644
  
 @@ -0,0 +0,0 @@ public class UserCache {
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
-     }
- 
--    public String[] a() {
-+    public synchronized String[] a() { // Paper - synchronize
-         ArrayList arraylist = Lists.newArrayList(this.d.keySet());
- 
-         return (String[]) arraylist.toArray(new String[arraylist.size()]);
      }
  
 +    @Nullable public GameProfile getProfile(UUID uuid) { return a(uuid);  } // Paper - OBFHELPER

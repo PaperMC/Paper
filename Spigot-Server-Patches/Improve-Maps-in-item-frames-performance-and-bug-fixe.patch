@@ -13,7 +13,7 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 467c5bf1a..0f1d99636 100644
+index 1aa32bf11..36a961cb7 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
@@ -30,7 +30,7 @@ index 467c5bf1a..0f1d99636 100644
              ItemStack itemstack1 = this.a(entityitem);
  
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 4c6eb6ed1..759dacba7 100644
+index 6ae576a2e..af1981967 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -0,0 +0,0 @@ public class EntityTrackerEntry {
@@ -42,16 +42,11 @@ index 4c6eb6ed1..759dacba7 100644
              EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
              ItemStack itemstack = entityitemframe.getItem();
  
--            if (this.a % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.a % 10 logic here so item frames do not enter the other blocks
-+            if (itemstack != null && itemstack.getItem() instanceof ItemWorldMap) { // Paper - moved back up
-                 WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, this.tracker.world);
-                 Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
- 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 5f92355db..eca4903ed 100644
+index 3b3cc69de..4588df4b1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                      {
                          if ( iter.next().trackee == entity )
                          {
@@ -60,13 +55,13 @@ index 5f92355db..eca4903ed 100644
                          }
                      }
 diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
-index 1096b5c1f..59173605e 100644
+index 445a016b7..4c64f90be 100644
 --- a/src/main/java/net/minecraft/server/WorldMap.java
 +++ b/src/main/java/net/minecraft/server/WorldMap.java
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
-     public List<WorldMap.WorldMapHumanTracker> i = Lists.newArrayList();
-     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> k = Maps.newHashMap(); // Spigot private -> public
-     public Map<UUID, MapIcon> decorations = Maps.newLinkedHashMap(); // Spigot
+     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> j = Maps.newHashMap(); // Spigot private -> public
+     private final Map<String, MapIconBanner> k = Maps.newHashMap();
+     public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
@@ -80,8 +75,8 @@ index 1096b5c1f..59173605e 100644
      }
  
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
-                 }
-             }
+             this.k.put(mapiconbanner.f(), mapiconbanner);
+             this.a(mapiconbanner.c(), (GeneratorAccess) null, mapiconbanner.f(), (double) mapiconbanner.a().getX(), (double) mapiconbanner.a().getZ(), 180.0D, mapiconbanner.d());
          }
 +        vanillaRender.buffer = colors; // Paper
  
@@ -93,7 +88,7 @@ index 1096b5c1f..59173605e 100644
  
 +    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { a(entityhuman, itemstack); } // Paper - OBFHELPER
      public void a(EntityHuman entityhuman, ItemStack itemstack) {
-         if (!this.k.containsKey(entityhuman)) {
+         if (!this.j.containsKey(entityhuman)) {
              WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
  
