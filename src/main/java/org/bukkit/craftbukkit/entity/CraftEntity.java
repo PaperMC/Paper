@@ -527,12 +527,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setCustomName(String name) {
-        if (name == null) {
-            name = "";
-        }
-
         // sane limit for name length
-        if (name.length() > 256) {
+        if (name != null && name.length() > 256) {
             name = name.substring(0, 256);
         }
 
