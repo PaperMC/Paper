@@ -47,7 +47,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public String getPrefix() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return team.getPrefix();
+        return CraftChatMessage.fromComponent(team.e());
     }
 
     public void setPrefix(String prefix) throws IllegalStateException, IllegalArgumentException {
@@ -55,13 +55,13 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.isTrue(prefix.length() <= 16, "Prefix '" + prefix + "' is longer than the limit of 16 characters");
         CraftScoreboard scoreboard = checkState();
 
-        team.setPrefix(prefix);
+        team.a(CraftChatMessage.fromStringOrNull(prefix));
     }
 
     public String getSuffix() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return team.getSuffix();
+        return CraftChatMessage.fromComponent(team.f());
     }
 
     public void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException {
@@ -69,7 +69,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.isTrue(suffix.length() <= 16, "Suffix '" + suffix + "' is longer than the limit of 16 characters");
         CraftScoreboard scoreboard = checkState();
 
-        team.setSuffix(suffix);
+        team.b(CraftChatMessage.fromStringOrNull(suffix));
     }
 
     @Override
@@ -85,7 +85,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         team.setColor(CraftChatMessage.getColor(color));
-        scoreboard.board.handleTeamChanged(team); // SPIGOT-3684 - backing team fires this for prefix/suffix but not colour
     }
 
     public boolean allowFriendlyFire() throws IllegalStateException {
