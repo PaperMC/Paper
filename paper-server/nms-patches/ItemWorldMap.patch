@@ -30,7 +30,7 @@
          }
  
          return worldmap;
-@@ -33,26 +38,40 @@
+@@ -33,26 +38,42 @@
      public static int e(ItemStack itemstack) {
          NBTTagCompound nbttagcompound = itemstack.getTag();
  
@@ -59,12 +59,14 @@
      @Nullable
      public static WorldMap a(GeneratorAccess generatoraccess, String s) {
 -        return (WorldMap) generatoraccess.a(WorldMap::new, s);
-+        // CraftBukkit start
-+        WorldMap worldmap = (WorldMap) MinecraftServer.getServer().worlds.get(0).a(WorldMap::new, s); // CraftBukkit - use primary world for maps
-+        if (worldmap != null) {
-+            MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
++        // CraftBukkit start - use primary world for maps and call event
++        WorldMap worldmap = (WorldMap) MinecraftServer.getServer().worlds.get(0).a((id) -> {
++            // We only get here when the data file exists, but is not a valid map
++            WorldMap newMap = new WorldMap(id);
++            MapInitializeEvent event = new MapInitializeEvent(newMap.mapView);
 +            Bukkit.getServer().getPluginManager().callEvent(event);
-+        }
++            return newMap;
++        }, s);
 +        return worldmap;
 +        // CraftBukkit end
      }
@@ -76,7 +78,7 @@
              int i = 1 << worldmap.scale;
              int j = worldmap.centerX;
              int k = worldmap.centerZ;
-@@ -199,7 +218,8 @@
+@@ -199,7 +220,8 @@
          WorldMap worldmap = getSavedMap(itemstack, world);
  
          if (worldmap != null) {
