@@ -43,7 +43,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (!testPermission(sender)) return true;
 
         CommandListenerWrapper icommandlistener = getListener(sender);
-        dispatcher.a(icommandlistener, toDispatcher(args));
+        dispatcher.a(icommandlistener, toDispatcher(args, getName()), toDispatcher(args, commandLabel));
         return true;
     }
 
@@ -54,7 +54,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         Validate.notNull(alias, "Alias cannot be null");
 
         CommandListenerWrapper icommandlistener = getListener(sender);
-        ParseResults<CommandListenerWrapper> parsed = dispatcher.a().parse(toDispatcher(args), icommandlistener);
+        ParseResults<CommandListenerWrapper> parsed = dispatcher.a().parse(toDispatcher(args, getName()), icommandlistener);
 
         List<String> results = new ArrayList<>();
         dispatcher.a().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
@@ -91,7 +91,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         return "minecraft.command." + ((vanillaCommand.getRedirect() == null) ? vanillaCommand.getName() : vanillaCommand.getRedirect().getName());
     }
 
-    private String toDispatcher(String[] args) {
-        return getName() + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
+    private String toDispatcher(String[] args, String name) {
+        return "/" + name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
     }
 }
