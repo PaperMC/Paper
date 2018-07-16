@@ -1,14 +1,14 @@
-From a447b4a83b584f8af1b4b6d5fb660a9db06d2179 Mon Sep 17 00:00:00 2001
+From 7c023b2177ae11b64004ab1ab12096db67d4352d Mon Sep 17 00:00:00 2001
 From: Alfie Cleveland <alfeh@me.com>
 Date: Fri, 19 Aug 2016 01:52:56 +0100
 Subject: [PATCH] Optimise BlockStateEnum hashCode and equals
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 21ac1e066..a241d7d8c 100644
+index 725087de5..5e6cb5d7d 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
-@@ -16,6 +16,11 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+@@ -17,6 +17,11 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
      private final ImmutableSet<T> a;
      private final Map<String, T> b = Maps.newHashMap();
  
@@ -20,19 +20,23 @@ index 21ac1e066..a241d7d8c 100644
      protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
          super(s, oclass);
          this.a = ImmutableSet.copyOf(collection);
-@@ -32,6 +37,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
-             this.b.put(s1, (T) oenum);
+@@ -30,9 +35,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+                 throw new IllegalArgumentException("Multiple values have the same name \'" + s1 + "\'");
+             }
+ 
+-            this.b.put(s1, oenum);
++            this.b.put(s1, (T) oenum); // Paper - decompile fix
          }
  
 +        this.hashCode = hashId++; // Paper
      }
  
-     public Collection<T> c() {
-@@ -46,32 +52,15 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+     public Collection<T> d() {
+@@ -47,24 +53,14 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
          return ((INamable) t0).getName();
      }
  
-+    @Override // Paper - override equals as BlockStateEnum is a singleton
++    @Override // Paper start - override equals as BlockStateEnum is a singleton
      public boolean equals(Object object) {
 -        if (this == object) {
 -            return true;
@@ -44,27 +48,19 @@ index 21ac1e066..a241d7d8c 100644
 -            return false;
 -        }
 +       return this == object;
++        // Paper end - override equals as BlockStateEnum is a singleton
      }
  
--    // Spigot start
--    private int hashCode;
-+    @Override // Paper - override equals as BlockStateEnum is a singleton
-     public int hashCode() {
--        int hash = hashCode;
--        if (hash == 0) {
--            int i = super.hashCode();
+     public int c() {
+-        int i = super.c();
 -
--            i = 31 * i + this.a.hashCode();
--            i = 31 * i + this.b.hashCode();
--            hashCode = hash = i;
--        }
--        return hash;
-+        return hashCode;
+-        i = 31 * i + this.a.hashCode();
+-        i = 31 * i + this.b.hashCode();
+-        return i;
++        return hashCode; // Paper - hashCode method is final, but we can do this here
      }
--    // Spigot end
  
      public static <T extends Enum<T> & INamable> BlockStateEnum<T> of(String s, Class<T> oclass) {
-         return a(s, oclass, Predicates.alwaysTrue());
 -- 
 2.18.0
 

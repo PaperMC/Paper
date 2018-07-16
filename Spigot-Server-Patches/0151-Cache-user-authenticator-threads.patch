@@ -1,14 +1,14 @@
-From 9f3a20649274a2ecc29be930cb9257172ce21902 Mon Sep 17 00:00:00 2001
+From a2e44a310b6d7c52649acda35aba0cd677d3a7e7 Mon Sep 17 00:00:00 2001
 From: vemacs <d@nkmem.es>
 Date: Wed, 23 Nov 2016 08:31:45 -0500
 Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 57f728567..2158fcd32 100644
+index 2f6d79b03..89a11a496 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -96,6 +96,12 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -93,6 +93,12 @@ public class LoginListener implements PacketLoginInListener, ITickable {
  
      }
  
@@ -21,8 +21,8 @@ index 57f728567..2158fcd32 100644
      // Spigot start
      public void initUUID()
      {
-@@ -178,8 +184,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
-             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.O().getPublic(), this.e));
+@@ -169,8 +175,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.G().getPublic(), this.e));
          } else {
              // Spigot start
 -            new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
@@ -32,7 +32,7 @@ index 57f728567..2158fcd32 100644
                  @Override
                  public void run() {
                      try {
-@@ -191,7 +197,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -182,7 +188,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
                          server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
                      }
                  }
@@ -42,21 +42,24 @@ index 57f728567..2158fcd32 100644
              // Spigot end
          }
  
-@@ -207,7 +214,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -198,7 +205,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
              this.loginKey = packetlogininencryptionbegin.a(privatekey);
              this.g = LoginListener.EnumProtocolState.AUTHENTICATING;
              this.networkManager.a(this.loginKey);
--            (new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
+-            Thread thread = new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
 +            // Paper start - Cache authenticator threads
 +            authenticatorPool.execute(new Runnable() {
                  public void run() {
                      GameProfile gameprofile = LoginListener.this.i;
  
-@@ -254,7 +262,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -245,10 +253,8 @@ public class LoginListener implements PacketLoginInListener, ITickable {
  
-                     return LoginListener.this.server.ac() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+                     return LoginListener.this.server.U() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
                  }
--            }).start();
+-            };
+-
+-            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LoginListener.c));
+-            thread.start();
 +            });
 +            // Paper end
          }

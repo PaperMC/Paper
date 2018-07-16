@@ -1,4 +1,4 @@
-From 3116c6b8cd13ddce911fcb81a43a7a8b6696bd67 Mon Sep 17 00:00:00 2001
+From 9c20a3d7127f062b7270bafc120ccb55f69e3900 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -32,7 +32,7 @@ index 621c585e7..459c86bce 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1b9eb7f45..ce848d63e 100644
+index 0e6c18b32..c182ceffb 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -2,6 +2,7 @@ package com.destroystokyo.paper;
@@ -43,9 +43,9 @@ index 1b9eb7f45..ce848d63e 100644
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
  
-@@ -363,4 +364,19 @@ public class PaperWorldConfig {
-     private void elytraHitWallDamage() {
-         elytraHitWallDamage = getBoolean("elytra-hit-wall-damage", true);
+@@ -298,4 +299,19 @@ public class PaperWorldConfig {
+     private void skipEntityTickingInChunksScheduledForUnload() {
+         skipEntityTickingInChunksScheduledForUnload = getBoolean("skip-entity-ticking-in-chunks-scheduled-for-unload", skipEntityTickingInChunksScheduledForUnload);
      }
 +
 +    public int autoSavePeriod = -1;
@@ -64,25 +64,25 @@ index 1b9eb7f45..ce848d63e 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index cc9c8b2e0..a59f5b190 100644
+index 6c6924937..5163bd11b 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -1000,11 +1000,9 @@ public class Chunk {
-             if (this.t && this.world.getTime() != this.lastSaved || this.s) {
+@@ -1013,11 +1013,9 @@ public class Chunk implements IChunkAccess {
+             if (this.w && this.world.getTime() != this.lastSaved || this.y) {
                  return true;
              }
--        } else if (this.t && this.world.getTime() >= this.lastSaved + MinecraftServer.getServer().autosavePeriod * 4) { // Spigot - Only save if we've passed 2 auto save intervals without modification
+-        } else if (this.w && this.world.getTime() >= this.lastSaved + MinecraftServer.getServer().autosavePeriod * 4) { // Spigot - Only save if we've passed 2 auto save intervals without modification
 -            return true;
          }
 -
--        return this.s;
-+        // This !flag section should say if s(isModified) or t(hasEntities), then check auto save
-+        return ((this.s || this.t) && this.world.getTime() >= this.lastSaved + world.paperConfig.autoSavePeriod); // Paper - Make world configurable and incremental
+-        return this.y;
++        // This !flag section should say if y(isModified) or w(hasEntities), then check auto save
++        return ((this.y || this.w) && this.world.getTime() >= this.lastSaved + world.paperConfig.autoSavePeriod); // Paper - Make world configurable and incremental
      }
  
-     public Random a(long i) {
+     public boolean isEmpty() {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 47159bff3..db81b4a8c 100644
+index 2e72a294d..1e6ea3084 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -1,5 +1,6 @@
@@ -90,11 +90,11 @@ index 47159bff3..db81b4a8c 100644
  
 +import com.destroystokyo.paper.PaperConfig;
  import com.google.common.collect.Lists;
- import com.google.common.collect.Sets;
  import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-@@ -266,7 +267,7 @@ public class ChunkProviderServer implements IChunkProvider {
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
+@@ -260,7 +261,7 @@ public class ChunkProviderServer implements IChunkProvider {
                  this.saveChunk(chunk, false); // Spigot
-                 chunk.f(false);
+                 chunk.a(false);
                  ++i;
 -                if (i == 24 && !flag && false) { // Spigot
 +                if (!flag && i >= world.paperConfig.maxAutoSaveChunksPerTick) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
@@ -102,36 +102,36 @@ index 47159bff3..db81b4a8c 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 2391adac7..8b7eb47a2 100644
+index 5aafa4e23..f5fae7ba8 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -32,6 +32,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
- 
-     private static final Logger bV = LogManager.getLogger();
-     public String locale = null; // PAIL: private -> public // Paper - default to null
+@@ -38,6 +38,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private static final Logger cc = LogManager.getLogger();
+     private static final IChatBaseComponent cd = (new ChatMessage("multiplayer.message_not_delivered", new Object[0])).a(EnumChatFormat.RED);
+     public String locale = null; // CraftBukkit - lowercase // Paper - default to null
 +    public long lastSave = MinecraftServer.currentTick; // Paper
      public PlayerConnection playerConnection;
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ab7933079..5c09c6ff7 100644
+index 49b2c27c6..bf020293d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -119,6 +119,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-     public final Thread primaryThread;
+@@ -147,6 +147,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
+     public File bukkitDataPackFolder;
 +    public boolean serverAutoSave = false; // Paper
      // CraftBukkit end
      // Spigot start
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
-@@ -766,22 +767,30 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-             this.q.b().a(agameprofile);
+@@ -868,22 +869,30 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             this.n.b().a(agameprofile);
          }
  
 -        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
              this.methodProfiler.a("save");
--            this.v.savePlayers();
+-            this.s.savePlayers();
 +
 +        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
 +        int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
@@ -139,7 +139,7 @@ index ab7933079..5c09c6ff7 100644
 +            playerSaveInterval = autosavePeriod;
 +        }
 +        if (playerSaveInterval > 0) { // CraftBukkit // Paper
-+            this.v.savePlayers(playerSaveInterval);
++            this.s.savePlayers(playerSaveInterval);
              // Spigot Start
 +        } // Paper - Incremental Auto Saving
 +
@@ -154,17 +154,17 @@ index ab7933079..5c09c6ff7 100644
              server.playerCommandState = false;
              // this.saveChunks(true);
              // Spigot End
-             this.methodProfiler.b();
+             this.methodProfiler.e();
 -        }
 +        //} // Paper - Incremental Auto Saving
  
-         this.methodProfiler.a("tallying");
-         // Spigot start
+         this.methodProfiler.a("snooper");
+         if (getSnooperEnabled() && !this.j.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 950dbdc50..23ed9efbf 100644
+index 801a147f0..1f2265231 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -343,6 +343,7 @@ public abstract class PlayerList {
+@@ -340,6 +340,7 @@ public abstract class PlayerList {
      }
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
@@ -172,7 +172,7 @@ index 950dbdc50..23ed9efbf 100644
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -1245,13 +1246,25 @@ public abstract class PlayerList {
+@@ -1219,13 +1220,25 @@ public abstract class PlayerList {
  
      }
  
@@ -197,13 +197,13 @@ index 950dbdc50..23ed9efbf 100644
      }
 +    // Paper end
  
-     public void addWhitelist(GameProfile gameprofile) {
-         this.whitelist.add(new WhiteListEntry(gameprofile));
+     public WhiteList getWhitelist() {
+         return this.whitelist;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index ebe397116..53cea76e2 100644
+index e3d62fc9c..72b3a6d40 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1053,8 +1053,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -872,8 +872,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
          if (chunkproviderserver.e()) {
@@ -212,11 +212,11 @@ index ebe397116..53cea76e2 100644
              timings.worldSave.startTiming(); // Paper
 +            if (flag || server.serverAutoSave) { // Paper
              if (iprogressupdate != null) {
-                 iprogressupdate.a("Saving level");
+                 iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
              }
-@@ -1063,6 +1064,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -882,6 +883,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              if (iprogressupdate != null) {
-                 iprogressupdate.c("Saving chunks");
+                 iprogressupdate.c(new ChatMessage("menu.savingChunks", new Object[0]));
              }
 +            } // Paper
  

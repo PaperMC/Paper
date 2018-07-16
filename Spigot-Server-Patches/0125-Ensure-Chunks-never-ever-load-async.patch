@@ -1,4 +1,4 @@
-From 3f8a86086738570a1913027002282e9644e5a40c Mon Sep 17 00:00:00 2001
+From a9063e4c96a63299f95371c012667bef2f741867 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 27 May 2016 21:41:26 -0400
 Subject: [PATCH] Ensure Chunks never ever load async
@@ -27,18 +27,21 @@ index 7b7a3d01b..9aaca21a7 100644
  
      public static void queueChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z, Runnable runnable) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
-index 52a8c48fa..a4fcdbe04 100644
+index 52a8c48fa..2bbd5a7e2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
 +++ b/src/main/java/org/bukkit/craftbukkit/chunkio/ChunkIOProvider.java
-@@ -35,7 +35,7 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
+@@ -35,9 +35,9 @@ class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChu
  
      // sync stuff
      public void callStage2(QueuedChunk queuedChunk, Chunk chunk) throws RuntimeException {
 -        if (chunk == null) {
 +        if (chunk == null || queuedChunk.provider.chunks.containsKey(ChunkCoordIntPair.a(queuedChunk.x, queuedChunk.z))) { // Paper - also call original if it was already loaded
              // If the chunk loading failed just do it synchronously (may generate)
-             // queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
+-            // queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
++            queuedChunk.provider.getChunkAt(queuedChunk.x, queuedChunk.z); // Paper - actually call original if it was already loaded
              return;
+         }
+         try (Timing ignored = queuedChunk.provider.world.timings.chunkIOStage2.startTimingIfSync()) { // Paper
 -- 
-2.17.1
+2.18.0
 

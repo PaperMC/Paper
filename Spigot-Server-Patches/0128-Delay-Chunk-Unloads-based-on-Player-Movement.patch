@@ -1,4 +1,4 @@
-From f4451963bcdefb63b5331539e134a7d553c06fe0 Mon Sep 17 00:00:00 2001
+From 9ea3a3e7a7eb8e3e4d3c6289684125f195081e0e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -17,12 +17,12 @@ This allows servers with smaller worlds who do less long distance exploring to s
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ce43e7bb7..e35e72e8b 100644
+index 321da3be3..0e6c18b32 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -344,4 +344,18 @@ public class PaperWorldConfig {
-     private void isHopperPushBased() {
-         isHopperPushBased = getBoolean("hopper.push-based", false);
+@@ -284,4 +284,18 @@ public class PaperWorldConfig {
+         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
+         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
      }
 +
 +    public long delayChunkUnloadsBy;
@@ -40,22 +40,22 @@ index ce43e7bb7..e35e72e8b 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 3904a1b8f..bcf68af4f 100644
+index 718ebfea0..6c6924937 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -30,6 +30,7 @@ public class Chunk {
+@@ -39,6 +39,7 @@ public class Chunk implements IChunkAccess {
      private boolean j; public boolean isLoaded() { return j; } // Paper - OBFHELPER
      public final World world;
-     public final int[] heightMap;
+     public final Map<HeightMap.Type, HeightMap> heightMap;
 +    public Long scheduledForUnload; // Paper - delay chunk unloads
      public final int locX;
      public final int locZ;
      private boolean m;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 5cc192bbd..47159bff3 100644
+index 7825dc91b..2e72a294d 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -315,6 +315,19 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -318,6 +318,19 @@ public class ChunkProviderServer implements IChunkProvider {
  
                  activityAccountant.endActivity(); // Spigot
              }
@@ -73,13 +73,13 @@ index 5cc192bbd..47159bff3 100644
 +            }
 +            // Paper end
  
+             this.f.a();
              this.chunkLoader.b();
-         }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 3d30e1831..48a008e0a 100644
+index ffff87dc0..344b95233 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -32,8 +32,16 @@ public class PlayerChunk {
+@@ -33,14 +33,23 @@ public class PlayerChunk {
          public void run() {
              loadInProgress = false;
              PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getOrLoadChunkAt(location.x, location.z);
@@ -96,27 +96,26 @@ index 3d30e1831..48a008e0a 100644
      // CraftBukkit end
  
      public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
-@@ -42,6 +50,7 @@ public class PlayerChunk {
-         // CraftBukkit start
-         loadInProgress = true;
-         this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getChunkAt(i, j, loadedRunnable, false);
+         this.playerChunkMap = playerchunkmap;
+         this.location = new ChunkCoordIntPair(i, j);
+         this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getOrLoadChunkAt(i, j);
 +        markChunkUsed(); // Paper - delay chunk unloads
-         // CraftBukkit end
      }
  
-@@ -110,6 +119,7 @@ public class PlayerChunk {
-             if (!loadInProgress) {
-                 loadInProgress = true;
-                 this.chunk = playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, loadedRunnable, flag);
+     public ChunkCoordIntPair a() {
+@@ -85,6 +94,7 @@ public class PlayerChunk {
+                 this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z);
+             } else {
+                 this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getOrLoadChunkAt(this.location.x, this.location.z);
 +                markChunkUsed(); // Paper - delay chunk unloads
              }
-             // CraftBukkit end
  
+             return this.chunk != null;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index ad1d90b56..0b10f1684 100644
+index 4d888d6d4..cf5c76a78 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -487,7 +487,13 @@ public class PlayerChunkMap {
+@@ -461,7 +461,13 @@ public class PlayerChunkMap {
          Chunk chunk = playerchunk.f();
  
          if (chunk != null) {
@@ -132,29 +131,29 @@ index ad1d90b56..0b10f1684 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index eca4903ed..36a78daff 100644
+index 4588df4b1..c34f42efc 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1594,7 +1594,13 @@ public abstract class World implements IBlockAccess {
-             if (!tileentity.y() && tileentity.u()) {
+@@ -1294,7 +1294,13 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             if (!tileentity.x() && tileentity.u()) {
                  BlockPosition blockposition = tileentity.getPosition();
  
--                if (this.isLoaded(blockposition) && this.P.a(blockposition)) {
+-                if (this.isLoaded(blockposition) && this.K.a(blockposition)) {
 +                // Paper start - Skip ticking in chunks scheduled for unload
 +                net.minecraft.server.Chunk chunk = this.getChunkIfLoaded(blockposition);
 +                boolean shouldTick = chunk != null;
 +                if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
 +                    shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
-+                if (shouldTick && this.P.a(blockposition)) {
++                if (shouldTick && this.K.a(blockposition)) {
 +                    // Paper end
                      try {
                          this.methodProfiler.a(() -> {
-                             return String.valueOf(TileEntity.a(tileentity.getClass()));
+                             return String.valueOf(TileEntityTypes.a(tileentity.C()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 69dc11e2b..284dc6391 100644
+index 9d88b9ddb..e516ec603 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1576,7 +1576,7 @@ public class CraftWorld implements World {
+@@ -1601,7 +1601,7 @@ public class CraftWorld implements World {
          ChunkProviderServer cps = world.getChunkProviderServer();
          for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
              // If in use, skip it
@@ -164,10 +163,10 @@ index 69dc11e2b..284dc6391 100644
              }
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 47865c027..b79bf70f0 100644
+index a9b84fdec..e02647f80 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -283,6 +283,10 @@ public class ActivationRange
+@@ -284,6 +284,10 @@ public class ActivationRange
          {
              isActive = false;
          }
