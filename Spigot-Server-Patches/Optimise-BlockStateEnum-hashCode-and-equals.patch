@@ -5,7 +5,7 @@ Subject: [PATCH] Optimise BlockStateEnum hashCode and equals
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 21ac1e066..a241d7d8c 100644
+index 725087de5..5e6cb5d7d 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
 @@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
@@ -21,18 +21,22 @@ index 21ac1e066..a241d7d8c 100644
          super(s, oclass);
          this.a = ImmutableSet.copyOf(collection);
 @@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
-             this.b.put(s1, (T) oenum);
+                 throw new IllegalArgumentException("Multiple values have the same name \'" + s1 + "\'");
+             }
+ 
+-            this.b.put(s1, oenum);
++            this.b.put(s1, (T) oenum); // Paper - decompile fix
          }
  
 +        this.hashCode = hashId++; // Paper
      }
  
-     public Collection<T> c() {
+     public Collection<T> d() {
 @@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
          return ((INamable) t0).getName();
      }
  
-+    @Override // Paper - override equals as BlockStateEnum is a singleton
++    @Override // Paper start - override equals as BlockStateEnum is a singleton
      public boolean equals(Object object) {
 -        if (this == object) {
 -            return true;
@@ -44,25 +48,17 @@ index 21ac1e066..a241d7d8c 100644
 -            return false;
 -        }
 +       return this == object;
++        // Paper end - override equals as BlockStateEnum is a singleton
      }
  
--    // Spigot start
--    private int hashCode;
-+    @Override // Paper - override equals as BlockStateEnum is a singleton
-     public int hashCode() {
--        int hash = hashCode;
--        if (hash == 0) {
--            int i = super.hashCode();
+     public int c() {
+-        int i = super.c();
 -
--            i = 31 * i + this.a.hashCode();
--            i = 31 * i + this.b.hashCode();
--            hashCode = hash = i;
--        }
--        return hash;
-+        return hashCode;
+-        i = 31 * i + this.a.hashCode();
+-        i = 31 * i + this.b.hashCode();
+-        return i;
++        return hashCode; // Paper - hashCode method is final, but we can do this here
      }
--    // Spigot end
  
      public static <T extends Enum<T> & INamable> BlockStateEnum<T> of(String s, Class<T> oclass) {
-         return a(s, oclass, Predicates.alwaysTrue());
 --

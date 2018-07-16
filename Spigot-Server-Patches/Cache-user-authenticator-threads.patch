@@ -5,7 +5,7 @@ Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 57f728567..2158fcd32 100644
+index 2f6d79b03..89a11a496 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener, ITickable {
@@ -22,7 +22,7 @@ index 57f728567..2158fcd32 100644
      public void initUUID()
      {
 @@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener, ITickable {
-             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.O().getPublic(), this.e));
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.G().getPublic(), this.e));
          } else {
              // Spigot start
 -            new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
@@ -46,7 +46,7 @@ index 57f728567..2158fcd32 100644
              this.loginKey = packetlogininencryptionbegin.a(privatekey);
              this.g = LoginListener.EnumProtocolState.AUTHENTICATING;
              this.networkManager.a(this.loginKey);
--            (new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
+-            Thread thread = new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
 +            // Paper start - Cache authenticator threads
 +            authenticatorPool.execute(new Runnable() {
                  public void run() {
@@ -54,9 +54,12 @@ index 57f728567..2158fcd32 100644
  
 @@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener, ITickable {
  
-                     return LoginListener.this.server.ac() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+                     return LoginListener.this.server.U() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
                  }
--            }).start();
+-            };
+-
+-            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LoginListener.c));
+-            thread.start();
 +            });
 +            // Paper end
          }
