@@ -139,7 +139,7 @@ public final class CraftChatMessage {
     }
 
     public static IChatBaseComponent fromStringOrNull(String message) {
-        return (message == null) ? null : fromString(message)[0];
+        return (message == null || message.isEmpty()) ? null : fromString(message)[0];
     }
 
     public static IChatBaseComponent[] fromString(String message) {
