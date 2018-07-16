@@ -568,7 +568,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public String getName() {
-        return getHandle().getName();
+        return CraftChatMessage.fromComponent(getHandle().getDisplayName(), EnumChatFormat.WHITE);
     }
 
     @Override
