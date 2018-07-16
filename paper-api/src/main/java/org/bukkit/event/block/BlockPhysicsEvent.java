@@ -14,12 +14,6 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private final BlockData changed;
     private boolean cancel = false;
 
-    /**
-     *
-     * @param block the block involved in this event
-     * @param changed the changed block's type
-     */
-    @Deprecated
     public BlockPhysicsEvent(final Block block, final BlockData changed) {
         super(block);
         this.changed = changed;
