@@ -182,6 +182,10 @@ public class EntityItem extends Entity {
 
     private void mergeNearby() {
         if (this.z()) {
+            // Paper start - avoid item merge if stack size above max stack size
+            ItemStack stack = getItemStack();
+            if (stack.getCount() >= stack.getMaxStackSize()) return;
+            // Paper end
             // Spigot start
             double radius = world.spigotConfig.itemMerge;
             List<EntityItem> list = this.world.a(EntityItem.class, this.getBoundingBox().grow(radius, radius, radius), (entityitem) -> {
