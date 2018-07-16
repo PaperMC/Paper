@@ -133,7 +133,9 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.base64.Base64;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import jline.console.ConsoleReader;
 import org.bukkit.Keyed;
@@ -1667,9 +1669,9 @@ public final class CraftServer implements Server {
         Validate.isTrue(image.getWidth() == 64, "Must be 64 pixels wide");
         Validate.isTrue(image.getHeight() == 64, "Must be 64 pixels high");
         ImageIO.write(image, "PNG", new ByteBufOutputStream(bytebuf));
-        ByteBuf bytebuf1 = Base64.encode(bytebuf);
+        ByteBuffer bytebuffer = Base64.getEncoder().encode(bytebuf.nioBuffer());
 
-        return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8));
+        return new CraftIconCache("data:image/png;base64," + StandardCharsets.UTF_8.decode(bytebuffer));
     }
 
     @Override
