@@ -185,6 +185,7 @@ public final class CraftServer implements Server {
     private boolean printSaveWarning;
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
+    public boolean ignoreVanillaPermissions = false;
     private final List<CraftPlayer> playerView;
     public int reloadCount;
 
@@ -261,6 +262,7 @@ public final class CraftServer implements Server {
 
         saveCommandsConfig();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
         pluginManager.useTimings(configuration.getBoolean("settings.plugin-profiling"));
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
@@ -741,6 +743,7 @@ public final class CraftServer implements Server {
         resetRecipes();
         reloadData();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+        ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
 
         int pollCount = 0;
 
