@@ -1,4 +1,4 @@
-From e390dbccabd0c678c953bc4769e771a54e4c38bb Mon Sep 17 00:00:00 2001
+From 1ccbd86167f75dcdfa7824285a9b772ae1b8dcfb Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 21:19:14 -0400
 Subject: [PATCH] LootTable API & Replenishable Lootables Feature
@@ -11,10 +11,10 @@ This feature is good for long term worlds so that newer players
 do not suffer with "Every chest has been looted"
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d96311f6b..067cb233e 100644
+index 0c50cb4bd..38de48ebc 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -303,4 +303,26 @@ public class PaperWorldConfig {
+@@ -253,4 +253,26 @@ public class PaperWorldConfig {
          this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
          log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
      }
@@ -231,7 +231,7 @@ index 000000000..668097620
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java
 new file mode 100644
-index 000000000..de2eff17e
+index 000000000..9a65603bc
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/CraftLootableInventoryData.java
 @@ -0,0 +1,182 @@
@@ -364,7 +364,7 @@ index 000000000..de2eff17e
 +                this.lootedPlayers = new HashMap<>(list.size());
 +            }
 +            for (int i = 0; i < size; i++) {
-+                final NBTTagCompound cmp = list.get(i);
++                final NBTTagCompound cmp = list.getCompound(i);
 +                lootedPlayers.put(cmp.getUUID("UUID"), cmp.getLong("Time"));
 +            }
 +        }
@@ -418,7 +418,7 @@ index 000000000..de2eff17e
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index d6afa4aa6..50d7d34b8 100644
+index dc329dcc5..d3bf88585 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -6,17 +6,21 @@ import javax.annotation.Nullable;
@@ -445,7 +445,7 @@ index d6afa4aa6..50d7d34b8 100644
  
      // CraftBukkit start
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-@@ -164,12 +168,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -159,12 +163,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
  
      protected void b(NBTTagCompound nbttagcompound) {
          super.b(nbttagcompound);
@@ -460,7 +460,7 @@ index d6afa4aa6..50d7d34b8 100644
              ContainerUtil.a(nbttagcompound, this.items);
          }
  
-@@ -177,11 +182,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -172,11 +177,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
  
      protected void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
@@ -474,20 +474,20 @@ index d6afa4aa6..50d7d34b8 100644
              ContainerUtil.b(nbttagcompound, this.items);
          }
  
-@@ -230,10 +236,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -225,10 +231,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
      public void f(@Nullable EntityHuman entityhuman) {
--        if (this.c != null) {
-+        if (lootableData.shouldReplenish(entityhuman)) { // Paper
-             LootTable loottable = this.world.getLootTableRegistry().a(this.c);
+-        if (this.c != null && this.world.getMinecraftServer() != null) {
++        if (lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
+             LootTable loottable = this.world.getMinecraftServer().aP().a(this.c);
  
 -            this.c = null;
 +            lootableData.processRefill(entityhuman); // Paper
              Random random;
  
              if (this.d == 0L) {
-@@ -258,12 +264,52 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -253,12 +259,51 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
          this.items.clear();
      }
  
@@ -497,9 +497,8 @@ index d6afa4aa6..50d7d34b8 100644
          this.d = i;
      }
  
-+
-+    public MinecraftKey getLootTableKey() { return b(); } // Paper - OBFHELPER
-     public MinecraftKey b() {
++    public MinecraftKey getLootTableKey() { return Q_(); } // Paper - OBFHELPER
+     public MinecraftKey Q_() {
          return this.c;
      }
 +
@@ -541,10 +540,10 @@ index d6afa4aa6..50d7d34b8 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
-index a97ad2037..618521304 100644
+index ce710d219..9c8bebe4b 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLootable.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
-@@ -1,44 +1,50 @@
+@@ -1,12 +1,16 @@
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.loottable.CraftLootableInventoryData; // Paper
@@ -557,18 +556,20 @@ index a97ad2037..618521304 100644
 -public abstract class TileEntityLootable extends TileEntityContainer implements ILootable {
 +public abstract class TileEntityLootable extends TileEntityContainer implements ILootable, CraftLootableInventory { // Paper
  
-     protected MinecraftKey m;
--    protected long n;
-+    protected long n; public long getLootTableSeed() { return n; } // Paper - OBFHELPER
-     protected String o;
+     protected MinecraftKey g;
+-    protected long h;
++    protected long h; public long getLootTableSeed() { return h; } // Paper - OBFHELPER
+     protected IChatBaseComponent i;
  
-     public TileEntityLootable() {}
+     protected TileEntityLootable(TileEntityTypes<?> tileentitytypes) {
+@@ -23,16 +27,18 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+     }
  
-     protected boolean c(NBTTagCompound nbttagcompound) {
+     protected boolean d(NBTTagCompound nbttagcompound) {
 +        lootableData.loadNbt(nbttagcompound); // Paper
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
-             this.m = new MinecraftKey(nbttagcompound.getString("LootTable"));
-             this.n = nbttagcompound.getLong("LootTableSeed");
+             this.g = new MinecraftKey(nbttagcompound.getString("LootTable"));
+             this.h = nbttagcompound.getLong("LootTableSeed");
 -            return true;
 +            return false; // Paper - always load the items, table may still remain
          } else {
@@ -576,49 +577,47 @@ index a97ad2037..618521304 100644
          }
      }
  
-     protected boolean d(NBTTagCompound nbttagcompound) {
+     protected boolean e(NBTTagCompound nbttagcompound) {
 +        lootableData.saveNbt(nbttagcompound); // Paper
-         if (this.m != null) {
-             nbttagcompound.setString("LootTable", this.m.toString());
-             if (this.n != 0L) {
-                 nbttagcompound.setLong("LootTableSeed", this.n);
+         if (this.g == null) {
+             return false;
+         } else {
+@@ -41,15 +47,15 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+                 nbttagcompound.setLong("LootTableSeed", this.h);
              }
  
 -            return true;
 +            return false; // Paper - always save the items, table may still remain
-         } else {
-             return false;
          }
      }
  
      public void d(@Nullable EntityHuman entityhuman) {
--        if (this.m != null) {
-+        if (lootableData.shouldReplenish(entityhuman)) { // Paper
-             LootTable loottable = this.world.getLootTableRegistry().a(this.m);
+-        if (this.g != null && this.world.getMinecraftServer() != null) {
++        if (lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
+             LootTable loottable = this.world.getMinecraftServer().aP().a(this.g);
  
--            this.m = null;
+-            this.g = null;
 +            lootableData.processRefill(entityhuman); // Paper
              Random random;
  
-             if (this.n == 0L) {
-@@ -58,10 +64,12 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+             if (this.h == 0L) {
+@@ -70,10 +76,12 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
  
      }
  
-+    public MinecraftKey getLootTableKey() { return b(); } // Paper - OBFHELPER
-     public MinecraftKey b() {
-         return this.m;
++    public MinecraftKey getLootTableKey() { return Q_(); } // Paper - OBFHELPER
+     public MinecraftKey Q_() {
+         return this.g;
      }
  
 +    public void setLootTable(MinecraftKey key, long seed) { a(key, seed);} // Paper - OBFHELPER
      public void a(MinecraftKey minecraftkey, long i) {
-         this.m = minecraftkey;
-         this.n = i;
-@@ -134,4 +142,42 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
-     }
- 
+         this.g = minecraftkey;
+         this.h = i;
+@@ -152,4 +160,41 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      protected abstract NonNullList<ItemStack> q();
-+
+ 
+     protected abstract void a(NonNullList<ItemStack> nonnulllist);
 +    // Paper start - LootTable API
 +    private final CraftLootableInventoryData lootableData = new CraftLootableInventoryData(this);
 +
@@ -652,16 +651,16 @@ index a97ad2037..618521304 100644
 +    @Override
 +    public void clearLootTable() {
 +        //noinspection RedundantCast
-+        this.m = (MinecraftKey) null;
++        this.g = (MinecraftKey) null;
 +    }
 +    // Paper end
 +
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 8328ed005..266f87d7f 100644
+index ac9b4297b..0558cafe3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-@@ -60,7 +60,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
+@@ -61,7 +61,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
      }
  
      // gets the wrapped TileEntity
@@ -671,17 +670,18 @@ index 8328ed005..266f87d7f 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-index 85f3bb272..733c04ef7 100644
+index 6a54f2a16..a94c78512 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-@@ -1,5 +1,6 @@
+@@ -1,6 +1,7 @@
  package org.bukkit.craftbukkit.block;
  
+ import net.minecraft.server.BlockChest;
 +import com.destroystokyo.paper.loottable.CraftLootableBlockInventory; // Paper
  import net.minecraft.server.BlockPosition;
- import net.minecraft.server.TileEntityChest;
- 
-@@ -11,7 +12,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import net.minecraft.server.Blocks;
+ import net.minecraft.server.ITileInventory;
+@@ -15,7 +16,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
  import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
  import org.bukkit.inventory.Inventory;
  
@@ -791,5 +791,5 @@ index e9963e21c..acb4dee04 100644
  
      CraftMinecartHopper(CraftServer server, EntityMinecartHopper entity) {
 -- 
-2.18.0
+2.17.1
 

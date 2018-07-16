@@ -1,4 +1,4 @@
-From ed9719aea67d9235b946eeb5e93922c4ceda3707 Mon Sep 17 00:00:00 2001
+From 2cfae6d7882500d8af89756f8353d22d148098f1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 29 Apr 2016 20:02:00 -0400
 Subject: [PATCH] Improve Maps (in item frames) performance and bug fixes
@@ -13,10 +13,10 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 467c5bf1a..0f1d99636 100644
+index 1aa32bf11..36a961cb7 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -548,6 +548,12 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -610,6 +610,12 @@ public abstract class EntityHuman extends EntityLiving {
                  return null;
              }
              // CraftBukkit end
@@ -30,10 +30,10 @@ index 467c5bf1a..0f1d99636 100644
              ItemStack itemstack1 = this.a(entityitem);
  
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 4c6eb6ed1..759dacba7 100644
+index 6ae576a2e..af1981967 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-@@ -90,11 +90,11 @@ public class EntityTrackerEntry {
+@@ -90,7 +90,7 @@ public class EntityTrackerEntry {
          }
  
          // PAIL : rename
@@ -42,16 +42,11 @@ index 4c6eb6ed1..759dacba7 100644
              EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
              ItemStack itemstack = entityitemframe.getItem();
  
--            if (this.a % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.a % 10 logic here so item frames do not enter the other blocks
-+            if (itemstack != null && itemstack.getItem() instanceof ItemWorldMap) { // Paper - moved back up
-                 WorldMap worldmap = Items.FILLED_MAP.getSavedMap(itemstack, this.tracker.world);
-                 Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
- 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 5f92355db..eca4903ed 100644
+index 3b3cc69de..4588df4b1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1223,6 +1223,7 @@ public abstract class World implements IBlockAccess {
+@@ -1075,6 +1075,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                      {
                          if ( iter.next().trackee == entity )
                          {
@@ -60,18 +55,18 @@ index 5f92355db..eca4903ed 100644
                          }
                      }
 diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
-index 1096b5c1f..59173605e 100644
+index 445a016b7..4c64f90be 100644
 --- a/src/main/java/net/minecraft/server/WorldMap.java
 +++ b/src/main/java/net/minecraft/server/WorldMap.java
-@@ -28,6 +28,7 @@ public class WorldMap extends PersistentBase {
-     public List<WorldMap.WorldMapHumanTracker> i = Lists.newArrayList();
-     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> k = Maps.newHashMap(); // Spigot private -> public
-     public Map<UUID, MapIcon> decorations = Maps.newLinkedHashMap(); // Spigot
+@@ -29,6 +29,7 @@ public class WorldMap extends PersistentBase {
+     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> j = Maps.newHashMap(); // Spigot private -> public
+     private final Map<String, MapIconBanner> k = Maps.newHashMap();
+     public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
      public final CraftMapView mapView;
-@@ -40,6 +41,7 @@ public class WorldMap extends PersistentBase {
+@@ -41,6 +42,7 @@ public class WorldMap extends PersistentBase {
          // CraftBukkit start
          mapView = new CraftMapView(this);
          server = (CraftServer) org.bukkit.Bukkit.getServer();
@@ -79,23 +74,23 @@ index 1096b5c1f..59173605e 100644
          // CraftBukkit end
      }
  
-@@ -114,6 +116,7 @@ public class WorldMap extends PersistentBase {
-                 }
-             }
+@@ -105,6 +107,7 @@ public class WorldMap extends PersistentBase {
+             this.k.put(mapiconbanner.f(), mapiconbanner);
+             this.a(mapiconbanner.c(), (GeneratorAccess) null, mapiconbanner.f(), (double) mapiconbanner.a().getX(), (double) mapiconbanner.a().getZ(), 180.0D, mapiconbanner.d());
          }
 +        vanillaRender.buffer = colors; // Paper
  
      }
  
-@@ -149,6 +152,7 @@ public class WorldMap extends PersistentBase {
+@@ -148,6 +151,7 @@ public class WorldMap extends PersistentBase {
          return nbttagcompound;
      }
  
 +    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { a(entityhuman, itemstack); } // Paper - OBFHELPER
      public void a(EntityHuman entityhuman, ItemStack itemstack) {
-         if (!this.k.containsKey(entityhuman)) {
+         if (!this.j.containsKey(entityhuman)) {
              WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
-@@ -314,6 +318,21 @@ public class WorldMap extends PersistentBase {
+@@ -361,6 +365,21 @@ public class WorldMap extends PersistentBase {
  
      public class WorldMapHumanTracker {
  
@@ -117,7 +112,7 @@ index 1096b5c1f..59173605e 100644
          public final EntityHuman trackee;
          private boolean d = true;
          private int e;
-@@ -330,9 +349,12 @@ public class WorldMap extends PersistentBase {
+@@ -377,9 +396,12 @@ public class WorldMap extends PersistentBase {
          @Nullable
          public Packet<?> a(ItemStack itemstack) {
              // CraftBukkit start
@@ -145,5 +140,5 @@ index 256a13178..5768cd512 100644
  
      public RenderData() {
 -- 
-2.18.0
+2.17.1
 
