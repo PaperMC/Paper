@@ -11,6 +11,7 @@ import net.minecraft.server.ITileEntity;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemBlock;
 import net.minecraft.server.ItemBlockWallable;
+import net.minecraft.server.NBTTagInt;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -138,6 +139,20 @@ public class ItemMetaTest extends AbstractTestingBase {
         ItemStack bukkit = new ItemStack(craft);
         assertThat(craft, is(bukkit));
         assertThat(bukkit, is((ItemStack) craft));
+    }
+
+    @Test
+    public void testTaggedButNotMeta() {
+        CraftItemStack craft = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
+        craft.handle.setDamage(0);
+
+        assertThat("Should have NBT tag", CraftItemStack.hasItemMeta(craft.handle), is(true));
+        assertThat("NBT Tag should contain Damage", craft.handle.getTag().get("Damage"), instanceOf(NBTTagInt.class));
+        assertThat("But we should not have meta", craft.hasItemMeta(), is(false));
+
+        ItemStack pureBukkit = new ItemStack(Material.SHEARS);
+        assertThat("Bukkit and craft stacks should be similar", craft.isSimilar(pureBukkit), is(true));
+        assertThat("Bukkit and craft stacks should be equal", craft.equals(pureBukkit), is(true));
     }
 
     @Test
