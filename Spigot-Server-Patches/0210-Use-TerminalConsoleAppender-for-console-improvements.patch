@@ -1,4 +1,4 @@
-From 0140f0a679cb39eb069e0ea08f22775885ee9a16 Mon Sep 17 00:00:00 2001
+From 0d577c1a44e062b5c0fb4d6d7abbca6cf737ccf6 Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Fri, 9 Jun 2017 19:03:43 +0200
 Subject: [PATCH] Use TerminalConsoleAppender for console improvements
@@ -15,12 +15,11 @@ New features:
     IntelliJ IDEA
 
 Other changes:
-  - Update JLine to 3.3.1 (from 2.12.1)
   - Server starts 1-2 seconds faster thanks to optimizations in Log4j
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 9d273c6d9..26775156b 100644
+index 9d273c6d9..13fa95891 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -53,12 +53,6 @@
@@ -44,12 +43,12 @@ index 9d273c6d9..26775156b 100644
 +        <dependency>
 +            <groupId>net.minecrell</groupId>
 +            <artifactId>terminalconsoleappender</artifactId>
-+            <version>1.0.0</version>
++            <version>1.1.0</version>
 +        </dependency>
 +        <dependency>
 +            <groupId>net.java.dev.jna</groupId>
 +            <artifactId>jna</artifactId>
-+            <version>4.4.0</version>
++            <version>4.5.2</version>
 +            <scope>runtime</scope>
 +        </dependency>
 +
@@ -88,6 +87,52 @@ index 9d273c6d9..26775156b 100644
              </plugin>
              <plugin>
                  <groupId>org.apache.maven.plugins</groupId>
+diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+new file mode 100644
+index 000000000..116d1b3bf
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+@@ -0,0 +1,40 @@
++package com.destroystokyo.paper.console;
++
++import net.minecraft.server.DedicatedServer;
++import net.minecrell.terminalconsole.SimpleTerminalConsole;
++import org.bukkit.craftbukkit.command.ConsoleCommandCompleter;
++import org.jline.reader.LineReader;
++import org.jline.reader.LineReaderBuilder;
++
++public final class PaperConsole extends SimpleTerminalConsole {
++
++    private final DedicatedServer server;
++
++    public PaperConsole(DedicatedServer server) {
++        this.server = server;
++    }
++
++    @Override
++    protected LineReader buildReader(LineReaderBuilder builder) {
++        return super.buildReader(builder
++                .appName("Paper")
++                .completer(new ConsoleCommandCompleter(this.server))
++        );
++    }
++
++    @Override
++    protected boolean isRunning() {
++        return !this.server.isStopped() && this.server.isRunning();
++    }
++
++    @Override
++    protected void runCommand(String command) {
++        this.server.issueCommand(command, this.server);
++    }
++
++    @Override
++    protected void shutdown() {
++        this.server.safeShutdown();
++    }
++
++}
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 new file mode 100644
 index 000000000..685deaa0e
@@ -111,108 +156,30 @@ index 000000000..685deaa0e
 +    }
 +
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalHandler.java b/src/main/java/com/destroystokyo/paper/console/TerminalHandler.java
-new file mode 100644
-index 000000000..626bfeec8
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/console/TerminalHandler.java
-@@ -0,0 +1,61 @@
-+package com.destroystokyo.paper.console;
-+
-+import net.minecraft.server.DedicatedServer;
-+import net.minecrell.terminalconsole.TerminalConsoleAppender;
-+import org.bukkit.craftbukkit.command.ConsoleCommandCompleter;
-+import org.jline.reader.EndOfFileException;
-+import org.jline.reader.LineReader;
-+import org.jline.reader.LineReaderBuilder;
-+import org.jline.reader.UserInterruptException;
-+import org.jline.terminal.Terminal;
-+
-+public class TerminalHandler {
-+
-+    private TerminalHandler() {
-+    }
-+
-+    public static boolean handleCommands(DedicatedServer server) {
-+        final Terminal terminal = TerminalConsoleAppender.getTerminal();
-+        if (terminal == null) {
-+            return false;
-+        }
-+
-+        LineReader reader = LineReaderBuilder.builder()
-+                .appName("Paper")
-+                .terminal(terminal)
-+                .completer(new ConsoleCommandCompleter(server))
-+                .build();
-+        reader.setOpt(LineReader.Option.DISABLE_EVENT_EXPANSION);
-+        reader.unsetOpt(LineReader.Option.INSERT_TAB);
-+
-+        TerminalConsoleAppender.setReader(reader);
-+
-+        try {
-+            String line;
-+            while (!server.isStopped() && server.isRunning()) {
-+                try {
-+                    line = reader.readLine("> ");
-+                } catch (EndOfFileException ignored) {
-+                    // Continue reading after EOT
-+                    continue;
-+                }
-+
-+                if (line == null) {
-+                    break;
-+                }
-+
-+                line = line.trim();
-+                if (!line.isEmpty()) {
-+                    server.issueCommand(line, server);
-+                }
-+            }
-+        } catch (UserInterruptException e) {
-+            server.safeShutdown();
-+        } finally {
-+            TerminalConsoleAppender.setReader(null);
-+        }
-+
-+        return true;
-+    }
-+
-+}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 8f2afcc32..b3f1aa999 100644
+index 8f2afcc32..895ea0aad 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -73,7 +73,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -73,6 +73,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                  if (!org.bukkit.craftbukkit.Main.useConsole) {
                      return;
                  }
--                jline.console.ConsoleReader bufferedreader = reader;
-+                // Paper start - Use TerminalConsoleAppender implementation
-+                if (com.destroystokyo.paper.console.TerminalHandler.handleCommands(DedicatedServer.this)) return;
-+                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-+                // Paper end
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
+                 jline.console.ConsoleReader bufferedreader = reader;
                  // CraftBukkit end
  
-                 String s;
-@@ -81,11 +84,17 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-                 try {
-                     // CraftBukkit start - JLine disabling compatibility
-                     while (!isStopped() && isRunning()) {
-+                        // Paper start - code is not used for jline
-+                        /*
-                         if (org.bukkit.craftbukkit.Main.useJline) {
-                             s = bufferedreader.readLine(">", null);
-                         } else {
-                             s = bufferedreader.readLine();
-                         }
-+                        */
-+                        s = bufferedreader.readLine();
-+                        // Paper end
-+
-                         if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
-                             issueCommand(s, DedicatedServer.this);
-                         }
-@@ -106,6 +115,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -95,6 +98,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
+                 }
+ 
++                */
++                // Paper end
+             }
+         };
+ 
+@@ -106,6 +111,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
          global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
  
@@ -222,7 +189,7 @@ index 8f2afcc32..b3f1aa999 100644
          final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
          for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
              if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-@@ -114,6 +126,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -114,6 +122,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
  
          new Thread(new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader)).start();
