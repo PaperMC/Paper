@@ -1,9 +1,35 @@
-From d39477408cd88601ee08c0c33ba9a3e56a588f8b Mon Sep 17 00:00:00 2001
+From 5fb4ac36f7ca32dd67392c2ad7e9fb5b3ad90cb7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
 
 
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index c3e990bdf..e2a7b4be2 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -93,7 +93,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+         return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+     }
+ 
+-    public int compareTo(Object object) {
++    public int compareTo(BaseBlockPosition object) { // Paper - decompile fix
+         return this.l((BaseBlockPosition) object);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 002da2a19..b04ca5071 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
+ @Immutable
+ public class BlockPosition extends BaseBlockPosition {
+ 
+-    private static final Logger b = LogManager.getLogger();
++    private static final Logger LOGGER = LogManager.getLogger(); // Paper - b > LOGGER - attempts to avoid /some/ stupidity
+     public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
+     private static final int c = 1 + MathHelper.e(MathHelper.c(30000000));
+     private static final int d = BlockPosition.c;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index 0ae780c8e..3b97981bc 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -315,6 +341,32 @@ index 000000000..a4b0901cf
 +        return null;
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/NBTList.java b/src/main/java/net/minecraft/server/NBTList.java
+index 1a81d8e5f..08db5e332 100644
+--- a/src/main/java/net/minecraft/server/NBTList.java
++++ b/src/main/java/net/minecraft/server/NBTList.java
+@@ -13,7 +13,7 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
+     }
+ 
+     public T set(int i, T t0) {
+-        NBTBase nbtbase = this.get(i);
++        T nbtbase = this.get(i); // Paper - decompile fix
+ 
+         this.a(i, t0);
+         return nbtbase;
+@@ -24,12 +24,4 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
+     public abstract void a(int i, NBTBase nbtbase);
+ 
+     public abstract void b(int i);
+-
+-    public Object set(int i, Object object) {
+-        return this.set(i, (NBTBase) object);
+-    }
+-
+-    public Object get(int i) {
+-        return this.get(i);
+-    }
+ }
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
 index 7fc9b5ff3..e658816c2 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
