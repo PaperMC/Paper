@@ -1,4 +1,4 @@
-From 3da653ac5594ecd2407621dc2d303c63816df5a4 Mon Sep 17 00:00:00 2001
+From d44c3c626673c4d10d9e15823fe3f7abadacfcb3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 27 Dec 2016 22:38:06 -0500
 Subject: [PATCH] Activation Range Improvements
@@ -6,44 +6,44 @@ Subject: [PATCH] Activation Range Improvements
 Fixes and adds new Immunities to improve gameplay behavior
 
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
-index 0c82c6f5b..9659a45ef 100644
+index e2e109511..34dcd01de 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
 +++ b/src/main/java/net/minecraft/server/EntityCreature.java
-@@ -10,6 +10,7 @@ public abstract class EntityCreature extends EntityInsentient {
+@@ -6,6 +6,7 @@ import org.bukkit.event.entity.EntityUnleashEvent;
  
-     public static final UUID bv = UUID.fromString("E199AD21-BA8A-4C53-8D13-6182D5C69D3A");
-     public static final AttributeModifier bw = (new AttributeModifier(EntityCreature.bv, "Fleeing speed bonus", 2.0D, 2)).a(false);
+ public abstract class EntityCreature extends EntityInsentient {
+ 
 +    public BlockPosition movingTarget = null; public BlockPosition getMovingTarget() { return movingTarget; } // Paper
      private BlockPosition a;
      private float b;
-     private final float c;
+ 
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index dda6219a7..9e864864d 100644
+index b12c9e461..1b2e802ea 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -73,7 +73,7 @@ public abstract class EntityLiving extends Entity {
-     public float aQ;
-     public float aR;
+     public float aT;
+     public float aU;
      public EntityHuman killer;
 -    protected int lastDamageByPlayerTime;
 +    public int lastDamageByPlayerTime; // Paper - public
-     protected boolean aU;
+     protected boolean aX;
      protected int ticksFarFromPlayer;
-     protected float aW;
+     protected float aZ;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
-index dbda68dd0..af49b7273 100644
+index 269857960..864ca3cc6 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -363,6 +363,7 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
-         return this.bM != null;
+         return this.bR != null;
      }
  
-+    public boolean inCaravan() { return this.dW(); } // Paper - OBFHELPER
-     public boolean dW() {
-         return this.bL != null;
++    public boolean inCaravan() { return this.em(); } // Paper - OBFHELPER
+     public boolean em() {
+         return this.bQ != null;
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
-index 83d9c43f3..1cb6652c2 100644
+index a146a8b45..a19853463 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
 @@ -18,7 +18,10 @@ public abstract class PathfinderGoal {
@@ -59,44 +59,47 @@ index 83d9c43f3..1cb6652c2 100644
      public void e() {}
  
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
-index e5b5e9887..e3781f3a8 100644
+index d5c08aa7c..fe6570c88 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
-@@ -2,12 +2,21 @@ package net.minecraft.server;
+@@ -2,17 +2,24 @@ package net.minecraft.server;
  
  public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
  
--    private final EntityCreature c;
-+    private final EntityCreature c; public EntityCreature getEntity() { return c; } // Paper - OBFHELPER
-     private final double d;
-     protected int a;
-     private int e;
-     private int f;
--    protected BlockPosition b;
-+    protected BlockPosition b; public BlockPosition getTarget() { return b; } public void setTarget(BlockPosition pos) { this.b = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
-+
-+    // Paper start
+-    private final EntityCreature f;
++    private final EntityCreature f; public EntityCreature getEntity() { return f; } // Paper - OBFHELPER
+     public double a;
+     protected int b;
+     protected int c;
+     private int g;
+-    protected BlockPosition d;
++    protected BlockPosition d; public BlockPosition getTarget() { return d; } public void setTarget(BlockPosition pos) { this.d = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
+     private boolean h;
+     private final int i;
+     private final int j;
+     public int e;
+ 
++    // Paper start - activation range improvements
 +    @Override
 +    public void onTaskReset() {
 +        super.onTaskReset();
 +        setTarget(BlockPosition.ZERO);
 +    }
 +    // Paper end
-+
-     private boolean g;
-     private final int h;
- 
-@@ -69,7 +78,7 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
-                         BlockPosition blockposition1 = blockposition.a(l, j - 1, i1);
- 
-                         if (this.c.f(blockposition1) && this.a(this.c.world, blockposition1)) {
--                            this.b = blockposition1;
-+                            setTarget(blockposition1); // Paper
+     public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i) {
+         this(entitycreature, d0, i, 1);
+     }
+@@ -93,7 +100,7 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
+                     for (int j1 = i1 < l && i1 > -l ? l : 0; j1 <= l; j1 = j1 > 0 ? -j1 : 1 - j1) {
+                         blockposition_mutableblockposition.g(blockposition).d(i1, k - 1, j1);
+                         if (this.f.f((BlockPosition) blockposition_mutableblockposition) && this.a(this.f.world, blockposition_mutableblockposition)) {
+-                            this.d = blockposition_mutableblockposition;
++                            setTarget(blockposition_mutableblockposition); // Paper
                              return true;
                          }
                      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index b79bf70f0..33ae73890 100644
+index e02647f80..cdbf769e7 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -20,6 +20,7 @@ import net.minecraft.server.EntityFireball;
@@ -107,7 +110,7 @@ index b79bf70f0..33ae73890 100644
  import net.minecraft.server.EntityMonster;
  import net.minecraft.server.EntityProjectile;
  import net.minecraft.server.EntitySheep;
-@@ -210,18 +211,29 @@ public class ActivationRange
+@@ -212,18 +213,29 @@ public class ActivationRange
          if ( entity instanceof EntityLiving )
          {
              EntityLiving living = (EntityLiving) entity;
@@ -140,16 +143,7 @@ index b79bf70f0..33ae73890 100644
              if ( entity instanceof EntityAnimal )
              {
                  EntityAnimal animal = (EntityAnimal) entity;
-@@ -251,7 +263,7 @@ public class ActivationRange
-     {
-         // Never safe to skip fireworks or entities not yet added to chunk
-         // PAIL: inChunk - boolean under datawatchers
--        if ( !entity.aa || entity instanceof EntityFireworks ) {
-+        if ( !entity.isAddedToChunk() || entity instanceof EntityFireworks ) { // Paper (use obf helper)
-             return true;
-         }
- 
-@@ -275,10 +287,10 @@ public class ActivationRange
+@@ -276,10 +288,10 @@ public class ActivationRange
          {
              isActive = false;
          }
