@@ -186,6 +186,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case COMPARATOR:
             case SHIELD:
             case STRUCTURE_BLOCK:
+            case SHULKER_BOX:
             case WHITE_SHULKER_BOX:
             case ORANGE_SHULKER_BOX:
             case MAGENTA_SHULKER_BOX:
@@ -229,6 +230,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 case SHIELD:
                     blockEntityTag.setString("id", "banner");
                     break;
+                case SHULKER_BOX:
                 case WHITE_SHULKER_BOX:
                 case ORANGE_SHULKER_BOX:
                 case MAGENTA_SHULKER_BOX:
@@ -375,6 +377,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntityStructure();
             }
             return new CraftStructureBlock(material, (TileEntityStructure) te);
+        case SHULKER_BOX:
         case WHITE_SHULKER_BOX:
         case ORANGE_SHULKER_BOX:
         case MAGENTA_SHULKER_BOX:
@@ -519,6 +522,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case STRUCTURE_BLOCK:
             valid = blockState instanceof CraftStructureBlock;
             break;
+        case SHULKER_BOX:
         case WHITE_SHULKER_BOX:
         case ORANGE_SHULKER_BOX:
         case MAGENTA_SHULKER_BOX:
