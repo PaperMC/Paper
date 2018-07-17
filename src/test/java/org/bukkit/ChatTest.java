@@ -35,15 +35,15 @@ public class ChatTest {
     public void testURLJsonConversion() {
         IChatBaseComponent[] components;
         components = CraftChatMessage.fromString("https://spigotmc.org/test Test Message");
-        assertEquals("TextComponent{text='', siblings=[TextComponent{text='https://spigotmc.org/test', siblings=[], style=Style{hasParent=true, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=ClickEvent{action=OPEN_URL, value='https://spigotmc.org/test'}, hoverEvent=null, insertion=null}}, TextComponent{text=' Test Message', siblings=[], style=Style{hasParent=true, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}], style=Style{hasParent=false, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}",
-                components[0].toString());
+        assertEquals("{\"extra\":[{\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org/test\"},\"text\":\"https://spigotmc.org/test\"},{\"text\":\" Test Message\"}],\"text\":\"\"}",
+                CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("123 " + ChatColor.GOLD + "https://spigotmc.org " + ChatColor.BOLD + "test");
-        assertEquals("TextComponent{text='', siblings=[TextComponent{text='123 ', siblings=[], style=Style{hasParent=true, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}, TextComponent{text='https://spigotmc.org', siblings=[], style=Style{hasParent=true, color=§6, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=ClickEvent{action=OPEN_URL, value='https://spigotmc.org'}, hoverEvent=null, insertion=null}}, TextComponent{text=' ', siblings=[], style=Style{hasParent=true, color=§6, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}, TextComponent{text='test', siblings=[], style=Style{hasParent=true, color=§6, bold=true, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}], style=Style{hasParent=false, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}",
-                components[0].toString());
+        assertEquals("{\"extra\":[{\"text\":\"123 \"},{\"color\":\"gold\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org\"},\"text\":\"https://spigotmc.org\"},{\"color\":\"gold\",\"text\":\" \"},{\"bold\":true,\"color\":\"gold\",\"text\":\"test\"}],\"text\":\"\"}",
+                CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("multiCase http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE");
-        assertEquals("TextComponent{text='', siblings=[TextComponent{text='multiCase ', siblings=[], style=Style{hasParent=true, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}, TextComponent{text='http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE', siblings=[], style=Style{hasParent=true, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=ClickEvent{action=OPEN_URL, value='http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE'}, hoverEvent=null, insertion=null}}], style=Style{hasParent=false, color=null, bold=null, italic=null, underlined=null, obfuscated=null, clickEvent=null, hoverEvent=null, insertion=null}}",
-                components[0].toString());
+        assertEquals("{\"extra\":[{\"text\":\"multiCase \"},{\"clickEvent\":{\"action\":\"open_url\",\"value\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\"},\"text\":\"http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE\"}],\"text\":\"\"}",
+                CraftChatMessage.toJSON(components[0]));
     }
 }
