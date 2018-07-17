@@ -11,6 +11,10 @@ import org.jetbrains.annotations.NotNull;
  * Note that whilst all tags defined within this interface must be present in
  * implementations, their existence is not guaranteed across future versions.
  *
+ * <p>Custom tags defined by Paper are not present (as constants) in this class.
+ * To access them please refer to {@link com.destroystokyo.paper.MaterialTags}
+ * and {@link io.papermc.paper.tag.EntityTags}.</p>
+ *
  * @param <T> the type of things grouped by this tag
  */
 public interface Tag<T extends Keyed> extends Keyed {
