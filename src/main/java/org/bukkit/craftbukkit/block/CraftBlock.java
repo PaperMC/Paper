@@ -347,6 +347,7 @@ public class CraftBlock implements Block {
             return new CraftBanner(this);
         case STRUCTURE_BLOCK:
             return new CraftStructureBlock(this);
+        case SHULKER_BOX:
         case WHITE_SHULKER_BOX:
         case ORANGE_SHULKER_BOX:
         case MAGENTA_SHULKER_BOX:

@@ -204,6 +204,7 @@ public final class CraftItemFactory implements ItemFactory {
         case COMPARATOR:
         case SHIELD:
         case STRUCTURE_BLOCK:
+        case SHULKER_BOX:
         case WHITE_SHULKER_BOX:
         case ORANGE_SHULKER_BOX:
         case MAGENTA_SHULKER_BOX:
