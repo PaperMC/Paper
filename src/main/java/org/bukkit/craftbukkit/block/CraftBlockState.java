@@ -20,6 +20,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.List;
 import net.minecraft.server.GeneratorAccess;
 import net.minecraft.server.IBlockData;
+import org.bukkit.craftbukkit.util.CraftLegacy;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
@@ -101,7 +102,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public void setData(final MaterialData data) {
-        Material mat = getType();
+        Material mat = CraftMagicNumbers.getMaterial(this.data).getItemType();
 
         if ((mat == null) || (mat.getData() == null)) {
             this.data = CraftMagicNumbers.getBlock(data);
