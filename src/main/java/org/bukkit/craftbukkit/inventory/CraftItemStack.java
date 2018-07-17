@@ -553,7 +553,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public boolean hasItemMeta() {
-        return hasItemMeta(handle);
+        return hasItemMeta(handle) && !CraftItemFactory.instance().equals(getItemMeta(), null);
     }
 
     static boolean hasItemMeta(net.minecraft.server.ItemStack item) {
