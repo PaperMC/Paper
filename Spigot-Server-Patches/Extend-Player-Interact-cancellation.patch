@@ -13,7 +13,7 @@ Update adjacent blocks of doors, double plants, pistons and beds
 when cancelling interaction.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 5ec7f5819..fcb64666e 100644
+index ce8f76871..126c17d1b 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
@@ -33,16 +33,16 @@ index 5ec7f5819..fcb64666e 100644
 +        Block block = data.getBlock();
 +        // Send other half of the door
 +        if (block instanceof BlockDoor) {
-+            boolean bottom = data.get(BlockDoor.HALF) == BlockDoor.EnumDoorHalf.LOWER;
++            boolean bottom = data.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
 +            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? position.up() : position.down()));
 +        } else if (block instanceof BlockTallPlant) {
-+            boolean bottom = data.get(BlockTallPlant.HALF) == BlockTallPlant.EnumTallPlantHalf.LOWER;
++            boolean bottom = data.get(BlockTallPlant.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
 +            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? position.up() : position.down()));
 +        } else if (block instanceof BlockPistonExtension) {
 +            BlockPosition piston = position.shift(data.get(BlockPistonExtension.FACING).opposite());
 +            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, piston));
 +        } else if (block instanceof BlockBed) {
-+            if (data.get(BlockBed.PART) == BlockBed.EnumBedPart.FOOT) {
++            if (data.get(BlockBed.PART) == BlockPropertyBedPart.FOOT) {
 +                // Restore head of bed
 +                BlockPosition head = position.shift(data.get(BlockBed.FACING));
 +                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, head));
@@ -57,15 +57,15 @@ index 5ec7f5819..fcb64666e 100644
 +    // Paper end
 +
      public boolean breakBlock(BlockPosition blockposition) {
+         IBlockData iblockdata = this.world.getType(blockposition);
          // CraftBukkit start - fire BlockBreakEvent
-         BlockBreakEvent event = null;
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
                  }
                  // Let the client know the block still exists
                  ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 -                // Send other half of the door
 -                if (nmsBlock instanceof BlockDoor) {
--                    boolean bottom = nmsData.get(BlockDoor.HALF) == BlockDoor.EnumDoorHalf.LOWER;
+-                    boolean bottom = nmsData.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
 -                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
 -                }
 +                cancelBreakBlock(blockposition, nmsData); // Paper - Move cancellation code to extra "cancelBreakBlock" method
@@ -73,28 +73,29 @@ index 5ec7f5819..fcb64666e 100644
                  TileEntity tileentity = this.world.getTileEntity(blockposition);
                  if (tileentity != null) {
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
-                     ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
-                 } else if (blockdata.getBlock() instanceof BlockCake) {
-                     ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
-+                // Paper start - extend Player Interact cancellation
-+                } else if (blockdata.getBlock() instanceof BlockStructure) {
+                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
+             } else if (iblockdata.getBlock() instanceof BlockCake) {
+                 ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
++            // Paper start  - extend Player Interact cancellation // TODO: consider merging this into the extracted method
++            } else if (iblockdata.getBlock() instanceof BlockStructure) {
 +                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
-+                } else if (blockdata.getBlock() instanceof BlockCommand) {
++            } else if (iblockdata.getBlock() instanceof BlockCommand) {
 +                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
-+                } else if (blockdata.getBlock() instanceof BlockFlowerPot) {
-+                    // Send a block change to air and then send back the correct block, just to make the client happy
-+                    PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(this.world, blockposition);
-+                    packet.block = Blocks.AIR.getBlockData();
-+                    this.player.playerConnection.sendPacket(packet);
++            } else if (iblockdata.getBlock() instanceof BlockFlowerPot) {
++                // Send a block change to air and then send back the correct block, just to make the client happy
++                PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(this.world, blockposition);
++                packet.block = Blocks.AIR.getBlockData();
++                this.player.playerConnection.sendPacket(packet);
 +
-+                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +
-+                    TileEntity tileentity = this.world.getTileEntity(blockposition);
-+                    if (tileentity != null) {
-+                        player.playerConnection.sendPacket(tileentity.getUpdatePacket());
-+                    }
-+                // Paper end - extend Player Interact cancellation
-                 }
-                 ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-2867
-                 enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
++                TileEntity tileentity = this.world.getTileEntity(blockposition);
++                if (tileentity != null) {
++                    player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++                }
+             }
++            // Paper end - extend Player Interact cancellation
+             ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-2867
+             enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
+         } else if (this.gamemode == EnumGamemode.SPECTATOR) {
 --

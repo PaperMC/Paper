@@ -84,7 +84,7 @@ index 000000000..74c012fd4
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/LegacyPingHandler.java b/src/main/java/net/minecraft/server/LegacyPingHandler.java
-index a89a86e6d..2762bcc2e 100644
+index 07c53f505..91acfceec 100644
 --- a/src/main/java/net/minecraft/server/LegacyPingHandler.java
 +++ b/src/main/java/net/minecraft/server/LegacyPingHandler.java
 @@ -0,0 +0,0 @@ import java.net.InetSocketAddress;
@@ -96,42 +96,44 @@ index a89a86e6d..2762bcc2e 100644
  public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
  
 @@ -0,0 +0,0 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-                 MinecraftServer minecraftserver = this.b.d();
-                 int i = bytebuf.readableBytes();
-                 String s;
-+                com.destroystokyo.paper.event.server.PaperServerListPingEvent event; // Paper
+             MinecraftServer minecraftserver = this.b.d();
+             int i = bytebuf.readableBytes();
+             String s;
++            com.destroystokyo.paper.event.server.PaperServerListPingEvent event; // Paper
  
-                 switch (i) {
-                 case 0:
-                     LegacyPingHandler.a.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort()));
--                    s = String.format("%s\u00a7%d\u00a7%d", new Object[] { minecraftserver.getMotd(), Integer.valueOf(minecraftserver.H()), Integer.valueOf(minecraftserver.I())});
-+                    // Paper start - Call PaperServerListPingEvent and use results
-+                    event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
-+                    if (event == null) {
-+                        channelhandlercontext.close();
-+                        break;
-+                    }
-+                    s = String.format("%s\u00a7%d\u00a7%d", PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
-+                    // Paper end
-                     this.a(channelhandlercontext, this.a(s));
-                     break;
+             switch (i) {
+             case 0:
+                 LegacyPingHandler.a.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort()));
+-                s = String.format("%s\u00a7%d\u00a7%d", new Object[] { minecraftserver.getMotd(), Integer.valueOf(minecraftserver.A()), Integer.valueOf(minecraftserver.B())});
++                // Paper start - Call PaperServerListPingEvent and use results
++                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
++                if (event == null) {
++                    channelhandlercontext.close();
++                    break;
++                }
++                s = String.format("%s\u00a7%d\u00a7%d", PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++
++                // Paper end
+                 this.a(channelhandlercontext, this.a(s));
+                 break;
  
 @@ -0,0 +0,0 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-                     }
+                     return;
+                 }
  
-                     LegacyPingHandler.a.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort()));
--                    s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { Integer.valueOf(127), minecraftserver.getVersion(), minecraftserver.getMotd(), Integer.valueOf(minecraftserver.H()), Integer.valueOf(minecraftserver.I())});
-+                    // Paper start - Call PaperServerListPingEvent and use results
-+                    event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 61, null);
-+                    if (event == null) {
-+                        channelhandlercontext.close();
-+                        break;
-+                    }
-+                    s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(),
-+                            PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
-+                    // Paper end
-                     this.a(channelhandlercontext, this.a(s));
-                     break;
+-                LegacyPingHandler.a.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort()));
+-                s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { Integer.valueOf(127), minecraftserver.getVersion(), minecraftserver.getMotd(), Integer.valueOf(minecraftserver.A()), Integer.valueOf(minecraftserver.B())});
++                // Paper start - Call PaperServerListPingEvent and use results
++                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 61, null);
++                if (event == null) {
++                    channelhandlercontext.close();
++                    break;
++                }
++                s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(),
++                        PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++                // Paper end
+                 this.a(channelhandlercontext, this.a(s));
+                 break;
  
 @@ -0,0 +0,0 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
  

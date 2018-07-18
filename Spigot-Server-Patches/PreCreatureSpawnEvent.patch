@@ -15,7 +15,7 @@ instead and save a lot of server resources.
 See: https://github.com/PaperMC/Paper/issues/917
 
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index 87fe4775f..9466bcdc7 100644
+index c76dbe74a..b88160a2e 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@
@@ -27,9 +27,9 @@ index 87fe4775f..9466bcdc7 100644
  import java.util.List;
  import javax.annotation.Nullable;
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
-                     double d3 = j >= 1 ? nbttaglist.f(0) : (double) blockposition.getX() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
-                     double d4 = j >= 2 ? nbttaglist.f(1) : (double) (blockposition.getY() + world.random.nextInt(3) - 1);
-                     double d5 = j >= 3 ? nbttaglist.f(2) : (double) blockposition.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
+                     double d3 = j >= 1 ? nbttaglist.k(0) : (double) blockposition.getX() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
+                     double d4 = j >= 2 ? nbttaglist.k(1) : (double) (blockposition.getY() + world.random.nextInt(3) - 1);
+                     double d5 = j >= 3 ? nbttaglist.k(2) : (double) blockposition.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
 +                    // Paper start
 +                    if (this.getMobName() == null) {
 +                        return;
@@ -55,33 +55,39 @@ index 87fe4775f..9466bcdc7 100644
  
                      if (entity == null) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 2cd063829..e217d3340 100644
+index 6d842df62..8c6c68c9e 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
-                                                     }
  
-                                                     if (worldserver.a(enumcreaturetype, biomebase_biomemeta, (BlockPosition) blockposition_mutableblockposition) && a(EntityPositionTypes.a(biomebase_biomemeta.b), worldserver, blockposition_mutableblockposition)) {
-+                                                        // Paper start
-+                                                        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                                                        Class<? extends EntityInsentient> cls = biomebase_biomemeta.b;
-+                                                        org.bukkit.entity.EntityType type = EntityTypes.clsToTypeMap.get(cls);
-+                                                        if (type != null) {
-+                                                            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                                                                    MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
-+                                                                    type, SpawnReason.NATURAL
-+                                                            );
-+                                                            if (!event.callEvent()) {
-+                                                                if (event.shouldAbortSpawn()) {
-+                                                                    continue label120;
+                                                     if (worldserver.a(enumcreaturetype, biomebase_biomemeta, (BlockPosition) blockposition_mutableblockposition)) {
+                                                         EntityPositionTypes.Surface entitypositiontypes_surface = EntityPositionTypes.a(biomebase_biomemeta.b);
+-
+                                                         if (entitypositiontypes_surface != null && a(entitypositiontypes_surface, worldserver, blockposition_mutableblockposition, biomebase_biomemeta.b)) {
+                                                             EntityInsentient entityinsentient;
+ 
++                                                            // Paper start
++                                                            com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++                                                            EntityTypes<? extends EntityInsentient> cls = biomebase_biomemeta.b;
++                                                            org.bukkit.entity.EntityType type = EntityTypes.clsToTypeMap.get(cls);
++                                                            if (type != null) {
++                                                                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                                                                        MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
++                                                                        type, SpawnReason.NATURAL
++                                                                );
++                                                                if (!event.callEvent()) {
++                                                                    if (event.shouldAbortSpawn()) {
++                                                                        continue label128; // right above the iterator for c (Chunk Pos Set)
++                                                                    }
++                                                                    j1 += l2;
++                                                                    ++j4;
++                                                                    continue;
 +                                                                }
-+                                                                j1 += l2;
-+                                                                ++j4;
-+                                                                continue;
 +                                                            }
-+                                                        }
-+                                                        // Paper end
-                                                         EntityInsentient entityinsentient;
- 
-                                                         try {
++                                                            // Paper end
++
++
+                                                             try {
+                                                                 entityinsentient = (EntityInsentient) biomebase_biomemeta.b.a((World) worldserver);
+                                                             } catch (Exception exception) {
 --

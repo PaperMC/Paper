@@ -13,7 +13,7 @@ starting point for future additions in this area.
 Fixes GH-559
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index c2f26577c..851960afb 100644
+index 6fc0ce050..152a677e5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -0,0 +0,0 @@ public final class CraftItemFactory implements ItemFactory {
@@ -26,7 +26,7 @@ index c2f26577c..851960afb 100644
          case CHEST:
          case TRAPPED_CHEST:
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index cdf16e15a..aa99254ff 100644
+index cadff64bf..b1e0d6185 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
@@ -350,23 +350,21 @@ index 000000000..dc372f6db
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0cdc8007a..2ab4a1cf4 100644
+index e43a24989..5bff99edd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                     .put(CraftMetaFirework.class, "FIREWORK")
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                      .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
                      .put(CraftMetaKnowledgeBook.class, "KNOWLEDGE_BOOK")
+                     .put(CraftMetaTropicalFishBucket.class, "TROPICAL_FISH_BUCKET")
 +                    .put(CraftMetaArmorStand.class, "ARMOR_STAND")
                      .put(CraftMetaItem.class, "UNSPECIFIC")
                      .build();
  
-@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Repairable {
-                         CraftMetaEnchantedBook.STORED_ENCHANTMENTS.NBT,
-                         CraftMetaCharge.EXPLOSION.NBT,
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                          CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
--                        CraftMetaKnowledgeBook.BOOK_RECIPES.NBT
-+                        CraftMetaKnowledgeBook.BOOK_RECIPES.NBT,
+                         CraftMetaKnowledgeBook.BOOK_RECIPES.NBT,
+                         CraftMetaTropicalFishBucket.VARIANT.NBT
 +                        // Paper start
 +                        CraftMetaArmorStand.ENTITY_TAG.NBT,
 +                        CraftMetaArmorStand.INVISIBLE.NBT,
@@ -379,15 +377,14 @@ index 0cdc8007a..2ab4a1cf4 100644
              }
              return HANDLED_TAGS;
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-index 1f537d584..a29731f1d 100644
+index f66cc81d9..eb6cf1bb3 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
 @@ -0,0 +0,0 @@ import static org.hamcrest.Matchers.*;
- 
+ import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.List;
-+
-+import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
++import com.destroystokyo.paper.inventory.meta.ArmorStandMeta; // Paper
  import net.minecraft.server.Block;
  import net.minecraft.server.ITileEntity;
  import net.minecraft.server.Item;
@@ -396,14 +393,18 @@ index 1f537d584..a29731f1d 100644
                      return cleanStack;
                  }
 +            },
++            // Paper start
 +            new StackProvider(Material.ARMOR_STAND) {
-+                @Override ItemStack operate(ItemStack cleanStack) {
++                @Override
++                ItemStack operate(ItemStack cleanStack) {
 +                    final ArmorStandMeta meta = (ArmorStandMeta) cleanStack.getItemMeta();
 +                    meta.setInvisible(true);
 +                    cleanStack.setItemMeta(meta);
 +                    return cleanStack;
 +                }
              }
++            // paper end
          );
  
+         assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 4/* Normal item meta, skulls, eggs and tile entities */));
 --
