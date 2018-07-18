@@ -33,7 +33,7 @@ public interface Team {
      * Sets the name displayed to entries for this team
      *
      * @param displayName New display name
-     * @throws IllegalArgumentException if displayName is longer than 64
+     * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
      * @throws IllegalStateException if this team has been unregistered
      */
@@ -52,7 +52,7 @@ public interface Team {
      *
      * @param prefix New prefix
      * @throws IllegalArgumentException if prefix is null
-     * @throws IllegalArgumentException if prefix is longer than 32
+     * @throws IllegalArgumentException if prefix is longer than 64
      *     characters
      * @throws IllegalStateException if this team has been unregistered
      */
@@ -71,7 +71,7 @@ public interface Team {
      *
      * @param suffix the new suffix for this team.
      * @throws IllegalArgumentException if suffix is null
-     * @throws IllegalArgumentException if suffix is longer than 32
+     * @throws IllegalArgumentException if suffix is longer than 64
      *     characters
      * @throws IllegalStateException if this team has been unregistered
      */
