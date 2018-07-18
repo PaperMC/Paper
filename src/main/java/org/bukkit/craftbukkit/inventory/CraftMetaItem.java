@@ -466,10 +466,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     @Overridden
     void applyToItem(NBTTagCompound itemTag) {
         if (hasDisplayName()) {
-            setDisplayTag(itemTag, NAME.NBT, new NBTTagString(CraftChatMessage.toJSON(displayName)));
+            setDisplayTag(itemTag, NAME.NBT, new NBTTagString(CraftChatMessage.fromComponent(displayName))); // SPIGOT-4041: Should be JSON, but we're still aggressively converting stacks & old+new are both valid
         }
         if (hasLocalizedName()){
-            setDisplayTag(itemTag, LOCNAME.NBT, new NBTTagString(CraftChatMessage.toJSON(locName)));
+            setDisplayTag(itemTag, LOCNAME.NBT, new NBTTagString(CraftChatMessage.fromComponent(locName))); // SPIGOT-4041: Should be JSON, but we're still aggressively converting stacks & old+new are both valid
         }
 
         if (hasLore()) {
