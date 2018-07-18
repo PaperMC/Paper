@@ -165,25 +165,6 @@ public interface Block extends Metadatable {
     Chunk getChunk();
 
     /**
-     * Sets the metadata for this block
-     *
-     * @param data New block specific metadata
-     * @deprecated Magic value
-     */
-    @Deprecated
-    void setData(byte data);
-
-    /**
-     * Sets the metadata for this block
-     *
-     * @param data New block specific metadata
-     * @param applyPhysics False to cancel physics from the changed block.
-     * @deprecated Magic value
-     */
-    @Deprecated
-    void setData(byte data, boolean applyPhysics);
-
-    /**
      * Sets the complete data for this block
      *
      * @param data new block specific data
