@@ -227,6 +227,11 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         }
 
         if (spawnedType != null) {
+            if (entityTag != null) {
+                // Remove ID tag as it is now in the material
+                entityTag.remove(ENTITY_ID.NBT);
+            }
+
             return CraftLegacy.fromLegacy(new MaterialData(Material.LEGACY_MONSTER_EGG, (byte) spawnedType.getTypeId()));
         }
 

@@ -21,16 +21,22 @@
  public final class ItemStack {
  
      private static final Logger c = LogManager.getLogger();
-@@ -50,25 +64,43 @@
+@@ -50,25 +64,49 @@
          this.E();
      }
  
 +    // Called to run this stack through the data converter to handle older storage methods and serialized items
 +    public void convertStack() {
 +        if (MinecraftServer.getServer() != null) {
++            // Don't convert some things - both the old and new data values are valid
++            // Conversion would make getting then impossible
++            if (this.item == Blocks.PUMPKIN.getItem() || this.item == Blocks.GRASS.getItem() || this.item == Blocks.SNOW.getItem()) {
++                return;
++            }
++
 +            NBTTagCompound savedStack = new NBTTagCompound();
 +            this.save(savedStack);
-+            // MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ITEM_STACK, new Dynamic(DynamicOpsNBT.a, savedStack), -1, CraftMagicNumbers.DATA_VERSION); // This changed late in development and hasn't been doing anything. Needs to be fixed.
++            savedStack = (NBTTagCompound) MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ITEM_STACK, new Dynamic(DynamicOpsNBT.a, savedStack), -1, CraftMagicNumbers.DATA_VERSION).getValue();
 +            this.load(savedStack);
 +        }
 +    }
@@ -68,7 +74,7 @@
          this.E();
      }
  
-@@ -98,7 +130,7 @@
+@@ -98,7 +136,7 @@
          return this.h ? Items.AIR : this.item;
      }
  
@@ -77,7 +83,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -106,12 +138,124 @@
+@@ -106,12 +144,124 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().E(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -203,7 +209,7 @@
  
              return enuminteractionresult;
          }
-@@ -135,7 +279,7 @@
+@@ -135,7 +285,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -212,7 +218,7 @@
          }
  
          return nbttagcompound;
-@@ -213,6 +357,11 @@
+@@ -213,6 +363,11 @@
                  if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.c(this);
                      Item item = this.getItem();
@@ -224,7 +230,7 @@
  
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
-@@ -480,6 +629,14 @@
+@@ -480,6 +635,14 @@
      }
  
      public void setRepairCost(int i) {
@@ -239,7 +245,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -522,6 +679,13 @@
+@@ -522,6 +685,13 @@
          nbttaglist.add((NBTBase) nbttagcompound);
      }
  
