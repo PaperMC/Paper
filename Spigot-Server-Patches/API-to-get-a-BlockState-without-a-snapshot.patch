@@ -13,7 +13,7 @@ also Avoid NPE during CraftBlockEntityState load if could not get TE
 If Tile Entity was null, correct Sign to return empty lines instead of null
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 358c99227..5b5f102e2 100644
+index 2cfe2202e..909432d51 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject {
@@ -38,28 +38,13 @@ index 358c99227..5b5f102e2 100644
          if (state instanceof InventoryHolder) return (InventoryHolder) state;
          return null;
      }
-diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
-index 54b719d91..3f2c5b2d5 100644
---- a/src/main/java/net/minecraft/server/TileEntitySign.java
-+++ b/src/main/java/net/minecraft/server/TileEntitySign.java
-@@ -0,0 +0,0 @@ public class TileEntitySign extends TileEntity {
-             }
- 
-             public MinecraftServer C_() {
--                return TileEntitySign.this.world.getMinecraftServer();
-+                return MinecraftServer.getServer(); // Paper - world may be null
-             }
-         };
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 46670c346..a9d3f12bc 100644
+index bfed2d988..d1eea2133 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 @@ -0,0 +0,0 @@ public class CraftBlock implements Block {
-         }
      }
  
-+
      public BlockState getState() {
 +        // Paper start - allow disabling the use of snapshots
 +        return getState(true);
@@ -79,7 +64,7 @@ index 46670c346..a9d3f12bc 100644
  
          switch (material) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 266f87d7f..fe112812d 100644
+index 0558cafe3..d4d9c5fc5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 @@ -0,0 +0,0 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
@@ -91,10 +76,10 @@ index 266f87d7f..fe112812d 100644
 +        if (DISABLE_SNAPSHOT) {
 +            this.snapshot = this.tileEntity;
 +        } else {
-+            this.snapshot = this.createSnapshot(this.tileEntity);
++            this.snapshot = this.createSnapshot(this.tileEntity, world.getHandle());
 +        }
          // copy tile entity data:
--        this.snapshot = this.createSnapshot(tileEntity);
+-        this.snapshot = this.createSnapshot(tileEntity, world.getHandle());
 -        this.load(snapshot);
 +        if(this.snapshot != null) {
 +            this.load(this.snapshot);
@@ -116,10 +101,10 @@ index 266f87d7f..fe112812d 100644
 +        if (DISABLE_SNAPSHOT) {
 +            this.snapshot = this.tileEntity;
 +        } else {
-+            this.snapshot = this.createSnapshot(this.tileEntity);
++            this.snapshot = this.createSnapshot(this.tileEntity, null);
 +        }
          // copy tile entity data:
--        this.snapshot = this.createSnapshot(tileEntity);
+-        this.snapshot = this.createSnapshot(tileEntity, null);
 -        this.load(snapshot);
 +        if(this.snapshot != null) {
 +            this.load(this.snapshot);
@@ -127,7 +112,7 @@ index 266f87d7f..fe112812d 100644
 +        // Paper end
      }
  
-     private T createSnapshot(T tileEntity) {
+     private T createSnapshot(T tileEntity, World world) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 index 7a8d44529..97b4e6910 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java

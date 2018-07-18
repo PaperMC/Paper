@@ -20,22 +20,28 @@ Other changes:
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 9d273c6d9..26775156b 100644
+index 17bc80776..4dd5fed25 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -0,0 +0,0 @@
-             <version>5.0.4</version>
              <scope>compile</scope>
          </dependency>
--        <dependency>
+         <dependency>
 -            <groupId>jline</groupId>
 -            <artifactId>jline</artifactId>
 -            <version>2.12.1</version>
 -            <scope>compile</scope>
 -        </dependency>
+-        <dependency>
+-            <groupId>org.ow2.asm</groupId>
+-            <artifactId>asm</artifactId>
+-            <version>6.2</version>
++            <groupId>net.sf.jopt-simple</groupId>
++            <artifactId>jopt-simple</artifactId>
++            <version>5.0.4</version>
+             <scope>compile</scope>
+         </dependency>
          <dependency>
-             <groupId>org.xerial</groupId>
-             <artifactId>sqlite-jdbc</artifactId>
 @@ -0,0 +0,0 @@
              <version>3.0.3</version>
              <scope>compile</scope>
@@ -179,7 +185,7 @@ index 000000000..626bfeec8
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 8f2afcc32..b3f1aa999 100644
+index a3d58b5ce..069eb7d68 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -197,7 +203,7 @@ index 8f2afcc32..b3f1aa999 100644
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                  try {
                      // CraftBukkit start - JLine disabling compatibility
-                     while (!isStopped() && isRunning()) {
+                     while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning()) {
 +                        // Paper start - code is not used for jline
 +                        /*
                          if (org.bukkit.craftbukkit.Main.useJline) {
@@ -210,7 +216,7 @@ index 8f2afcc32..b3f1aa999 100644
 +                        // Paper end
 +
                          if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
-                             issueCommand(s, DedicatedServer.this);
+                             DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
                          }
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
@@ -232,7 +238,7 @@ index 8f2afcc32..b3f1aa999 100644
          System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
          System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 908a5d273..e8bddc171 100644
+index f679c6bc2..39a8b1d69 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.apache.commons.lang3.Validate;
@@ -243,7 +249,7 @@ index 908a5d273..e8bddc171 100644
  import joptsimple.OptionSet;
  import org.bukkit.Bukkit;
  import org.bukkit.craftbukkit.CraftServer;
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
@@ -252,8 +258,8 @@ index 908a5d273..e8bddc171 100644
      public static int currentTick = 0; // Paper - Further improve tick loop
      public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
-         this.dataConverterManager = dataconvertermanager;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         this.ac.a((IResourcePackListener) this.al);
          // CraftBukkit start
          this.options = options;
 +        // Paper start - Handled by TerminalConsoleAppender
@@ -262,7 +268,7 @@ index 908a5d273..e8bddc171 100644
          if (System.console() == null && System.getProperty("jline.terminal") == null) {
              System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
              Main.useJline = false;
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  LOGGER.warn((String) null, ex);
              }
          }
@@ -271,7 +277,7 @@ index 908a5d273..e8bddc171 100644
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
  
          this.serverThread = primaryThread = new Thread(this, "Server thread"); // Moved from main
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              } finally {
                  // CraftBukkit start - Restore terminal to original settings
                  try {
@@ -280,18 +286,17 @@ index 908a5d273..e8bddc171 100644
                  } catch (Exception ignored) {
                  }
                  // CraftBukkit end
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
--        MinecraftServer.LOGGER.info(ichatbasecomponent.toPlainText());
-+        // Paper - Log message with colors
-+        MinecraftServer.LOGGER.info(org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(ichatbasecomponent, net.minecraft.server.EnumChatFormat.WHITE));
+-        MinecraftServer.LOGGER.info(ichatbasecomponent.getString());
++        MinecraftServer.LOGGER.info(org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(ichatbasecomponent, net.minecraft.server.EnumChatFormat.WHITE));// Paper - Log message with colors
      }
  
-     public boolean a(int i, String s) {
+     public KeyPair G() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 85357a003..3e5122486 100644
+index 5e833c378..0f39fa49f 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -305,17 +310,19 @@ index 85357a003..3e5122486 100644
  
          this.k = new GameProfileBanList(PlayerList.a);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 27c6caddc..539f492e0 100644
+index 6c611c0df..3b10c5e61 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -0,0 +0,0 @@ import io.netty.buffer.ByteBuf;
- import io.netty.buffer.ByteBufOutputStream;
- import io.netty.buffer.Unpooled;
- import io.netty.handler.codec.base64.Base64;
+@@ -0,0 +0,0 @@ import java.nio.ByteBuffer;
+ import java.nio.charset.StandardCharsets;
+ import java.util.Base64;
+ import java.util.HashMap;
 -import jline.console.ConsoleReader;
- import org.apache.commons.lang.StringUtils;
+ import org.bukkit.Keyed;
++import org.apache.commons.lang.StringUtils;
  import org.bukkit.NamespacedKey;
- import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return logger;
      }
@@ -331,7 +338,7 @@ index 27c6caddc..539f492e0 100644
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index d565a720f..c9e8a8737 100644
+index aad208f47..ac38028d7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -0,0 +0,0 @@ import java.util.logging.Logger;
@@ -370,7 +377,7 @@ index d565a720f..c9e8a8737 100644
 +                    System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                  }
  
-                 if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
 deleted file mode 100644
 index 26a2fb894..000000000

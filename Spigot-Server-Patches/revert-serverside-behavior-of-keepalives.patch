@@ -17,7 +17,7 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 869a2b402..284db9b9e 100644
+index 20bac8bc3..4f9b4afdf 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -30,9 +30,9 @@ index 869a2b402..284db9b9e 100644
      private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
      // CraftBukkit start - multithreaded fields
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private int E;
      private int receivedMovePackets;
      private int processedMovePackets;
-     private AutoRecipe H = new AutoRecipe();
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
@@ -41,25 +41,24 @@ index 869a2b402..284db9b9e 100644
          }
  
          this.minecraftServer.methodProfiler.a("keepAlive");
--        long i = this.d();
+-        long i = SystemUtils.b();
 -
 -        if (i - this.f >= 25000L) { // CraftBukkit
 -            if (this.g) {
--                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
++        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
++        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
++        long currentTime = SystemUtils.b();
++        long elapsedTime = currentTime - this.getLastPing();
++
++        if (this.isPendingPing()) {
++            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
++                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
+                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
 -            } else {
 -                this.g = true;
 -                this.f = i;
 -                this.h = i;
 -                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
-+        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
-+        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        long currentTime = this.getCurrentMillis();
-+        long elapsedTime = currentTime - this.getLastPing();
-+        if (this.isPendingPing()) {
-+            // We're pending a ping from the client
-+            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
-+                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
-+                this.disconnect(new ChatMessage("disconnect.timeout"));
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
@@ -67,10 +66,11 @@ index 869a2b402..284db9b9e 100644
 +                this.setLastPing(currentTime);
 +                this.setKeepAliveID(currentTime);
 +                this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
++
              }
          }
 +        // Paper end
  
-         this.minecraftServer.methodProfiler.b();
+         this.minecraftServer.methodProfiler.e();
          // CraftBukkit start
 --
