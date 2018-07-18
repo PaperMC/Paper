@@ -130,7 +130,7 @@ public class CraftBlock implements Block {
 
     @Override
     public void setType(Material type, boolean applyPhysics) {
-        setTypeAndData(type, (byte) 0, applyPhysics);
+        setBlockData(type.createBlockData(), applyPhysics);
     }
 
     @Override
@@ -141,10 +141,6 @@ public class CraftBlock implements Block {
     @Override
     public void setBlockData(BlockData data, boolean applyPhysics) {
         setTypeAndData(((CraftBlockData) data).getState(), applyPhysics);
-    }
-
-    public boolean setTypeAndData(final Material type, final byte data, final boolean applyPhysics) {
-        return setTypeAndData(CraftMagicNumbers.getBlock(type, data), applyPhysics);
     }
 
     public boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
@@ -529,7 +525,7 @@ public class CraftBlock implements Block {
         if (itemCausesDrops(item)) {
             return breakNaturally();
         } else {
-            return setTypeAndData(Material.AIR, (byte) 0, true);
+            return setTypeAndData(Blocks.AIR.getBlockData(), true);
         }
     }
 
