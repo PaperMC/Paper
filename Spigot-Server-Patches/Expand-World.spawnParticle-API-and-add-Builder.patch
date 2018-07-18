@@ -9,31 +9,35 @@ the standard API is to send the packet to everyone in the world, which is ineffe
 This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c06158e02..49019d54d 100644
+index c5da2cde3..4ac2d39c5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-         sendParticles(null, enumparticle, flag, d0, d1, d2, i, d3, d4, d5, d6, aint);
+         // CraftBukkit - visibility api support
+         return sendParticles(null, t0, d0, d1, d2, i, d3, d4, d5, d6);
      }
- 
+-
 +    // Paper start - Particle API Expansion
-     public void sendParticles(EntityPlayer sender, EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
-+        sendParticles(this.players, sender, enumparticle, flag, d0, d1, d2, i, d3, d4, d5, d6, aint);
++    // TODO: rework this, "flag" should probably be exposed as it was before
+     public <T extends ParticleParam> int sendParticles(EntityPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
++        return sendParticles(this.players, sender, t0, d0, d1, d2, i, d3, d5, d5, d6);
 +    }
-+    public void sendParticles(List<? extends EntityHuman> receivers, EntityPlayer sender, EnumParticle enumparticle, boolean flag, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6, int... aint) {
++
++    public <T extends ParticleParam> int sendParticles(List<EntityHuman> receivers, EntityPlayer sender, T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
 +        // Paper end
          // CraftBukkit end
-         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(enumparticle, flag, (float) d0, (float) d1, (float) d2, (float) d3, (float) d4, (float) d5, (float) d6, i, aint);
+         PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(t0, false, (float) d0, (float) d1, (float) d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
+         int j = 0;
  
--        for (int j = 0; j < this.players.size(); ++j) {
--            EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            EntityPlayer entityplayer = (EntityPlayer) this.players.get(k);
 +        for (EntityHuman entityhuman : receivers) { // Paper - Particle API Expansion
 +            EntityPlayer entityplayer = (EntityPlayer) entityhuman; // Paper - Particle API Expansion
              if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
-             BlockPosition blockposition = entityplayer.getChunkCoordinates();
-             double d7 = blockposition.distanceSquared(d0, d1, d2);
+ 
+             if (this.a(entityplayer, false, d0, d1, d2, packetplayoutworldparticles)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 568a50ec4..36dd8ad60 100644
+index 817e29474..3ee663293 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
@@ -41,6 +45,7 @@ index 568a50ec4..36dd8ad60 100644
      }
  
 +    // Paper start - Particle API Expansion
++    // TODO: Add back extended?
      @Override
 -    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
 +    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
@@ -52,7 +57,7 @@ index 568a50ec4..36dd8ad60 100644
 -                null, // Sender
 +                receivers == null ? getHandle().players : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API Expansion
 +                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API Expansion
-                 CraftParticle.toNMS(particle), // Particle
-                 true, // Extended range
+                 CraftParticle.toNMS(particle, data), // Particle
                  x, y, z, // Position
+                 count,  // Count
 --

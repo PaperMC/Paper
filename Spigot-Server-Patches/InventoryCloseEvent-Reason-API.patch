@@ -7,10 +7,10 @@ Allows you to determine why an inventory was closed, enabling plugin developers
 to "confirm" things based on if it was player triggered close or not.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 8c96e7318..3e80825f7 100644
+index f31524eb0..2612d4207 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk {
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
                  {
                      if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
                      {
@@ -19,7 +19,7 @@ index 8c96e7318..3e80825f7 100644
                      }
                  }
              }
-@@ -0,0 +0,0 @@ public class Chunk {
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
                      {
                          if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
                          {
@@ -29,12 +29,12 @@ index 8c96e7318..3e80825f7 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 0b51903e2..aa0b27f0e 100644
+index a766a1467..cbf663573 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
- 
-         super.B_();
+         this.df();
+         super.tick();
          if (!this.world.isClientSide && this.activeContainer != null && !this.activeContainer.canUse(this)) {
 -            this.closeInventory();
 +            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
@@ -56,7 +56,7 @@ index 0b51903e2..aa0b27f0e 100644
          this.activeContainer = this.defaultContainer;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index cce3f98da..4ff505cfa 100644
+index c91caf578..59dc239b8 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -78,7 +78,7 @@ index cce3f98da..4ff505cfa 100644
          // CraftBukkit end
  
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-             this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).setChatModifier((new ChatModifier()).setColor(EnumChatFormat.RED)), true);
+             this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).a(EnumChatFormat.RED), true);
          } else {
              if (this.activeContainer != this.defaultContainer) {
 -                this.closeInventory();
@@ -107,27 +107,27 @@ index cce3f98da..4ff505cfa 100644
 +        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
 +        // Paper end
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
-         this.r();
+         this.m();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 36833b961..a54203c56 100644
+index 5fe01e7ef..4ed107eac 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
-         PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.x());
+         PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.getWorldServer());
  
          if (this.player.isFrozen()) return; // CraftBukkit
 -        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
 +        CraftEventFactory.handleInventoryCloseEvent(this.player, org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLAYER); // CraftBukkit // Paper
  
-         this.player.r();
+         this.player.m();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index b478f385a..eaaa54acd 100644
+index c1de6564a..d397c6c74 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         entityplayer.b(StatisticList.f);
+         entityplayer.a(StatisticList.LEAVE_GAME);
  
          // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
 -        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer);
@@ -136,7 +136,7 @@ index b478f385a..eaaa54acd 100644
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
          cserver.getPluginManager().callEvent(playerQuitEvent);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-index d85b5defc..05ca403e8 100644
+index 4b9ecb4a6..b602a5d1b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 @@ -0,0 +0,0 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
@@ -155,7 +155,7 @@ index d85b5defc..05ca403e8 100644
      public boolean isBlocking() {
          return getHandle().isBlocking();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index c0f4cec4d..6cbf429ff 100644
+index 3b76c7080..79ade89c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -168,7 +168,7 @@ index c0f4cec4d..6cbf429ff 100644
  
          // Check if the fromWorld and toWorld are the same.
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 248873fb4..cce4acc0b 100644
+index c129e8629..81ba63bab 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {

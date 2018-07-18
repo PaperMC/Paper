@@ -10,59 +10,58 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 3e80825f7..4a94fd5a6 100644
+index 2612d4207..b3cdc0b7d 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk {
-         // Spigot end
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
 +    public void removeEntity(Entity entity) { b(entity); } // Paper - OBFHELPER
      public void b(Entity entity) {
-         this.a(entity, entity.ac);
+         this.a(entity, entity.af);
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c0816b9f8..52adee880 100644
+index ee061d693..1b9013ab4 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          int j;
          // Paper start - Set based removal lists
-         for (Entity e : this.f) {
+         for (Entity e : this.g) {
 +            /*
              j = e.getChunkZ();
              int k = e.getChunkX();
  
-             if (e.isAddedToChunk() && this.isChunkLoaded(k, j, true)) {
+             if (e.inChunk && this.isChunkLoaded(k, j, true)) {
                  this.getChunkAt(k, j).b(e);
 -            }
 +            }*/
-+            Chunk chunk = e.isAddedToChunk() ? e.getCurrentChunk() : null;
++            Chunk chunk = e.inChunk ? e.getCurrentChunk() : null;
 +            if (chunk != null) chunk.removeEntity(e);
          }
  
-         for (Entity e : this.f) {
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
-             this.methodProfiler.b();
+         for (Entity e : this.g) {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             this.methodProfiler.e();
              this.methodProfiler.a("remove");
              if (entity.dead) {
 +                // Paper start
 +                /*
-                 j = entity.ab;
-                 int l = entity.ad;
+                 j = entity.ae;
+                 int l = entity.ag;
  
--                if (entity.aa && this.isChunkLoaded(j, l, true)) {
-+                /*if (entity.aa && this.isChunkLoaded(j, l, true)) {
+                 if (entity.inChunk && this.isChunkLoaded(j, l, true)) {
                      this.getChunkAt(j, l).b(entity);
 -                }
 +                }*/
-+                Chunk chunk = entity.isAddedToChunk() ? entity.getCurrentChunk() : null;
++                Chunk chunk = entity.inChunk ? entity.getCurrentChunk() : null;
 +                if (chunk != null) chunk.removeEntity(entity);
 +                // Paper end
  
                  guardEntityList = false; // Spigot
                  this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                  BlockPosition blockposition = tileentity.getPosition();
  
                  // Paper start - Skip ticking in chunks scheduled for unload
@@ -71,7 +70,7 @@ index c0816b9f8..52adee880 100644
                  boolean shouldTick = chunk != null;
                  if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
                      shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
-@@ -0,0 +0,0 @@ public abstract class World implements IBlockAccess {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                  tilesThisCycle--;
                  this.tileEntityListTick.remove(tileTickPosition--);
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
