@@ -39,6 +39,8 @@ public class Commodore
             "org/bukkit/block/Block (I)Z setTypeId",
             "org/bukkit/block/Block (IZ)Z setTypeId",
             "org/bukkit/block/Block (IBZ)Z setTypeIdAndData",
+            "org/bukkit/block/Block (B)V setData",
+            "org/bukkit/block/Block (BZ)V setData",
             "org/bukkit/inventory/ItemStack ()I getTypeId",
             "org/bukkit/inventory/ItemStack (I)V setTypeId"
     ) );

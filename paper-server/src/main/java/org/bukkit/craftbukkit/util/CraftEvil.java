@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -49,8 +50,16 @@ public class CraftEvil {
 
     public static boolean setTypeIdAndData(Block block, int type, byte data, boolean applyPhysics) {
         block.setType(getMaterial(type), applyPhysics);
-        block.setData(data);
+        setData(block, data);
         return true;
+    }
+
+    public static void setData(Block block, byte data) {
+        ((CraftBlock) block).setData(data);
+    }
+
+    public static void setData(Block block, byte data, boolean applyPhysics) {
+        ((CraftBlock) block).setData(data, applyPhysics);
     }
 
     public static int getTypeId(BlockState state) {
