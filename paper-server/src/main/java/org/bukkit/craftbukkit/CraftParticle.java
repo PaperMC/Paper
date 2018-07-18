@@ -136,7 +136,7 @@ public enum CraftParticle {
         if (particle.getDataType() == Particle.DustOptions.class) {
             Particle.DustOptions data = (Particle.DustOptions) obj;
             Color color = data.getColor();
-            return new ParticleParamRedstone(color.getRed(), color.getGreen(), color.getBlue(), data.getSize());
+            return new ParticleParamRedstone(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f, data.getSize());
         }
         throw new IllegalArgumentException(particle.getDataType().toString());
     }
