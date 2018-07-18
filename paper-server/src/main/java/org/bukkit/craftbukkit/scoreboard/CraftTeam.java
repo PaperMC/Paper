@@ -38,7 +38,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     public void setDisplayName(String displayName) throws IllegalStateException {
         Validate.notNull(displayName, "Display name cannot be null");
-        Validate.isTrue(displayName.length() <= 64, "Display name '" + displayName + "' is longer than the limit of 64 characters");
+        Validate.isTrue(displayName.length() <= 128, "Display name '" + displayName + "' is longer than the limit of 128 characters");
         CraftScoreboard scoreboard = checkState();
 
         team.setDisplayName(displayName);
@@ -52,7 +52,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     public void setPrefix(String prefix) throws IllegalStateException, IllegalArgumentException {
         Validate.notNull(prefix, "Prefix cannot be null");
-        Validate.isTrue(prefix.length() <= 32, "Prefix '" + prefix + "' is longer than the limit of 32 characters");
+        Validate.isTrue(prefix.length() <= 64, "Prefix '" + prefix + "' is longer than the limit of 64 characters");
         CraftScoreboard scoreboard = checkState();
 
         team.a(CraftChatMessage.fromStringOrNull(prefix));
@@ -66,7 +66,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     public void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException {
         Validate.notNull(suffix, "Suffix cannot be null");
-        Validate.isTrue(suffix.length() <= 32, "Suffix '" + suffix + "' is longer than the limit of 32 characters");
+        Validate.isTrue(suffix.length() <= 64, "Suffix '" + suffix + "' is longer than the limit of 64 characters");
         CraftScoreboard scoreboard = checkState();
 
         team.b(CraftChatMessage.fromStringOrNull(suffix));
