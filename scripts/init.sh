@@ -21,6 +21,17 @@ cd "$workdir/CraftBukkit"
 $gitcmd checkout -B patched HEAD >/dev/null 2>&1
 rm -rf "$cb"
 mkdir -p "$cb"
+# create baseline NMS import so we can see diff of what CB changed
+for file in $(ls nms-patches)
+do
+    patchFile="nms-patches/$file"
+    file="$(echo "$file" | cut -d. -f1).java"
+    cp "$nms/$file" "$cb/$file"
+done
+$gitcmd add src
+$gitcmd commit -m "Minecraft $ $(date)" --author="Auto <auto@mated.null>"
+
+# apply patches
 for file in $(ls nms-patches)
 do
     patchFile="nms-patches/$file"
@@ -31,11 +42,10 @@ do
     sed -i 's/\r//' "$nms/$file" > /dev/null
     set -e
 
-    cp "$nms/$file" "$cb/$file"
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
 done
 
 $gitcmd add src
 $gitcmd commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>"
-$gitcmd checkout -f HEAD^
+$gitcmd checkout -f HEAD~2
 )
