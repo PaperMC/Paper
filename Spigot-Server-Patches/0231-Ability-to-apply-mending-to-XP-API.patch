@@ -1,4 +1,4 @@
-From 5a07c0ee8d6b1ae0143448473c2e081ec6517412 Mon Sep 17 00:00:00 2001
+From 07b82eb3e7d10b50aedf8b73f80d3952fd65536c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 20 Dec 2017 17:36:49 -0500
 Subject: [PATCH] Ability to apply mending to XP API
@@ -10,11 +10,11 @@ of giving the player experience points.
 Both an API To standalone mend, and apply mending logic to .giveExp has been added.
 
 diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
-index 98300d0a2..f714dc326 100644
+index 3204d94c5..e4ed9e206 100644
 --- a/src/main/java/net/minecraft/server/EnchantmentManager.java
 +++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
-@@ -226,6 +226,7 @@ public class EnchantmentManager {
-         return getEnchantmentLevel(Enchantments.D, itemstack) > 0;
+@@ -245,6 +245,7 @@ public class EnchantmentManager {
+         return getEnchantmentLevel(Enchantments.F, itemstack) > 0;
      }
  
 +    public static ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, EntityLiving entityliving) { return b(enchantment, entityliving); } // Paper - OBFHELPER
@@ -22,66 +22,40 @@ index 98300d0a2..f714dc326 100644
          List list = enchantment.a(entityliving);
  
 diff --git a/src/main/java/net/minecraft/server/Enchantments.java b/src/main/java/net/minecraft/server/Enchantments.java
-index 35e87eb1c..74a6a4f60 100644
+index 0f4aad20f..3a5263fd9 100644
 --- a/src/main/java/net/minecraft/server/Enchantments.java
 +++ b/src/main/java/net/minecraft/server/Enchantments.java
-@@ -32,7 +32,7 @@ public class Enchantments {
-     public static final Enchantment ARROW_INFINITE = a("infinity");
-     public static final Enchantment LUCK = a("luck_of_the_sea");
-     public static final Enchantment LURE = a("lure");
--    public static final Enchantment C = a("mending");
-+    public static final Enchantment C = a("mending"); public static final Enchantment MENDING = C; // Paper - OBFHELPER
-     public static final Enchantment D = a("vanishing_curse");
+@@ -36,7 +36,7 @@ public class Enchantments {
+     public static final Enchantment D = a("impaling");
+     public static final Enchantment E = a("riptide");
+     public static final Enchantment F = a("channeling");
+-    public static final Enchantment G = a("mending");
++    public static final Enchantment G = a("mending");public static final Enchantment MENDING = G; // Paper - OBFHELPER
+     public static final Enchantment H = a("vanishing_curse");
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
-index ff5cc74ba..1c59fd966 100644
+index a87ef5fb8..b8bfc7577 100644
 --- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
 +++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
-@@ -234,10 +234,12 @@ public class EntityExperienceOrb extends Entity {
+@@ -246,10 +246,12 @@ public class EntityExperienceOrb extends Entity {
          }
      }
  
-+    public int durToXp(int i) { return c(i); } // Paper OBFHELPER
-     private int c(int i) {
++    public int durToXp(int i) { return b(i); } // Paper OBFHELPER
+     private int b(int i) {
          return i / 2;
      }
  
-+    public int xpToDur(int i) { return d(i); } // Paper OBFHELPER
-     private int d(int i) {
++    public int xpToDur(int i) { return c(i); } // Paper OBFHELPER
+     private int c(int i) {
          return i * 2;
      }
-diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index d666088f2..f6b802dc8 100644
---- a/src/main/java/net/minecraft/server/ItemStack.java
-+++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -29,7 +29,7 @@ public final class ItemStack {
-     private Item item;
-     private NBTTagCompound tag;
-     private boolean g;
--    private int damage;
-+    private int damage; public void setDamage(int i) { this.damage = i; } // Paper - OBFHELPER
-     private EntityItemFrame i;
-     private Block j;
-     private boolean k;
-@@ -350,10 +350,12 @@ public final class ItemStack {
-         return this.getItem().k();
-     }
- 
-+    public boolean hasDamage() { return h(); } // Paper OBFHELPER
-     public boolean h() {
-         return this.f() && this.damage > 0;
-     }
- 
-+    public int getDamage() { return i(); } // Paper OBFHELPER
-     public int i() {
-         return this.damage;
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index d69784386..77c50ba14 100644
+index 9f9002dd8..c2cd5ac4b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -927,8 +927,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -970,8 +970,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().getId());
      }
  
