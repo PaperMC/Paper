@@ -1,4 +1,4 @@
-From 602dc96cc78e46affde033a48393ca3c722a7c75 Mon Sep 17 00:00:00 2001
+From 68857c2aac1bd54c01818909cbcd0ca010e2affa Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -18,7 +18,7 @@ index c3e990bdf..e2a7b4be2 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 002da2a19..80cdf5528 100644
+index 002da2a19..70a7edf57 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
@@ -38,6 +38,22 @@ index 002da2a19..80cdf5528 100644
      public BlockPosition a(int i, int j, int k) {
          return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
      }
+@@ -382,6 +383,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return this.d;
+         }
+ 
++        public BlockPosition.MutableBlockPosition setValues(int i, int j, int k) { return c(i, j, k);} // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
+             this.b = i;
+             this.c = j;
+@@ -389,6 +391,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return this;
+         }
+ 
++        public BlockPosition.MutableBlockPosition setValues(double d0, double d1, double d2) { return c(d0, d1, d2);} // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
+             return this.c(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
+         }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index 0ae780c8e..3b97981bc 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -73,7 +89,7 @@ index 00a530c51..2947d9ff6 100644
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 97cfd6695..05ed0abe7 100644
+index 97cfd6695..81605b10f 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -84,12 +100,15 @@ index 97cfd6695..05ed0abe7 100644
  import java.util.Set;
  import java.util.UUID;
  import java.util.function.Function;
-@@ -121,9 +122,17 @@ public class EntityTypes<T extends Entity> {
+@@ -121,9 +122,20 @@ public class EntityTypes<T extends Entity> {
      public static <T extends Entity> EntityTypes<T> a(String s, EntityTypes.a<T> entitytypes_a) {
          EntityTypes entitytypes = entitytypes_a.a(s);
  
 -        EntityTypes.REGISTRY.a(new MinecraftKey(s), entitytypes);
 +        // Paper start
++        if (clsToKeyMap == null ) clsToKeyMap = new java.util.HashMap<>();
++        if (clsToTypeMap == null ) clsToTypeMap = new java.util.HashMap<>();
++
 +        MinecraftKey key = new MinecraftKey(s);
 +        Class<? extends T> entityClass = entitytypes_a.getEntityClass();
 +        EntityTypes.REGISTRY.a(key, entitytypes);
@@ -97,13 +116,13 @@ index 97cfd6695..05ed0abe7 100644
 +        clsToTypeMap.put(entityClass, org.bukkit.entity.EntityType.fromName(s));
          return entitytypes;
      }
-+    public static Map<Class<? extends Entity>, MinecraftKey> clsToKeyMap = new java.util.HashMap<>();
-+    public static Map<Class<? extends Entity>, org.bukkit.entity.EntityType> clsToTypeMap = new java.util.HashMap<>();
++    public static Map<Class<? extends Entity>, MinecraftKey> clsToKeyMap;
++    public static Map<Class<? extends Entity>, org.bukkit.entity.EntityType> clsToTypeMap;
 +    // Paper end
  
      @Nullable
      public static MinecraftKey getName(EntityTypes<?> entitytypes) {
-@@ -278,7 +287,7 @@ public class EntityTypes<T extends Entity> {
+@@ -278,7 +290,7 @@ public class EntityTypes<T extends Entity> {
  
      public static class a<T extends Entity> {
  
@@ -113,7 +132,7 @@ index 97cfd6695..05ed0abe7 100644
          private boolean c = true;
          private boolean d = true;
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index cc96294f4..7f249a975 100644
+index 3f0c5d7dd..68a59e708 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -25,6 +25,7 @@ import org.bukkit.Location;
@@ -124,7 +143,7 @@ index cc96294f4..7f249a975 100644
  import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.entity.Player;
  import org.bukkit.event.world.StructureGrowEvent;
-@@ -547,6 +548,17 @@ public final class ItemStack {
+@@ -553,6 +554,17 @@ public final class ItemStack {
          return this.tag != null ? this.tag.getList("Enchantments", 10) : new NBTTagList();
      }
  
@@ -141,6 +160,24 @@ index cc96294f4..7f249a975 100644
 +    // Paper end
      public void setTag(@Nullable NBTTagCompound nbttagcompound) {
          this.tag = nbttagcompound;
+     }
+diff --git a/src/main/java/net/minecraft/server/LotoSelectorEntry.java b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
+index a540167d6..add618866 100644
+--- a/src/main/java/net/minecraft/server/LotoSelectorEntry.java
++++ b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
+@@ -85,11 +85,11 @@ public abstract class LotoSelectorEntry {
+             return jsonobject;
+         }
+ 
+-        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++        public JsonElement serialize(LotoSelectorEntry object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+             return this.a((LotoSelectorEntry) object, type, jsonserializationcontext);
+         }
+ 
+-        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++        public LotoSelectorEntry deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+             return this.a(jsonelement, type, jsondeserializationcontext);
+         }
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
@@ -349,8 +386,30 @@ index 000000000..a4b0901cf
 +        return null;
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
+index 8170a8428..e21e60b00 100644
+--- a/src/main/java/net/minecraft/server/NBTBase.java
++++ b/src/main/java/net/minecraft/server/NBTBase.java
+@@ -20,7 +20,7 @@ public interface NBTBase {
+ 
+     byte getTypeId();
+ 
+-    static default NBTBase createTag(byte b0) {
++    static NBTBase createTag(byte b0) { // Paper - decompile fix
+         switch (b0) {
+         case 0:
+             return new NBTTagEnd();
+@@ -66,7 +66,7 @@ public interface NBTBase {
+         }
+     }
+ 
+-    static default String n(int i) {
++    static String n(int i) { // Paper - decompile fix
+         switch (i) {
+         case 0:
+             return "TAG_End";
 diff --git a/src/main/java/net/minecraft/server/NBTList.java b/src/main/java/net/minecraft/server/NBTList.java
-index 1a81d8e5f..08db5e332 100644
+index 1a81d8e5f..057c2077a 100644
 --- a/src/main/java/net/minecraft/server/NBTList.java
 +++ b/src/main/java/net/minecraft/server/NBTList.java
 @@ -13,7 +13,7 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
@@ -362,11 +421,10 @@ index 1a81d8e5f..08db5e332 100644
  
          this.a(i, t0);
          return nbtbase;
-@@ -24,12 +24,4 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
-     public abstract void a(int i, NBTBase nbtbase);
+@@ -25,11 +25,5 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
  
      public abstract void b(int i);
--
+ 
 -    public Object set(int i, Object object) {
 -        return this.set(i, (NBTBase) object);
 -    }
@@ -374,7 +432,22 @@ index 1a81d8e5f..08db5e332 100644
 -    public Object get(int i) {
 -        return this.get(i);
 -    }
++    public abstract NBTList<T> clone(); // Paper - decompile fix
  }
+diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+index 11ffa6c34..3ff3a2983 100644
+--- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+@@ -66,7 +66,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+         return stringbuilder.append(']').toString();
+     }
+ 
+-    public NBTBase clone() {
++    @Override
++    public NBTTagByteArray clone() {
+         byte[] abyte = new byte[this.data.length];
+ 
+         System.arraycopy(this.data, 0, abyte, 0, this.data.length);
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
 index 7fc9b5ff3..e658816c2 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
@@ -411,8 +484,21 @@ index 7fc9b5ff3..e658816c2 100644
 -        return this.clone();
 -    }
  }
+diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+index f5c9b97d5..d121ad4f7 100644
+--- a/src/main/java/net/minecraft/server/NBTTagIntArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+@@ -132,7 +132,7 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
+         return this.a(i);
+     }
+ 
+-    public NBTBase clone() {
++    public NBTTagIntArray clone() { // Paper - decompile fix
+         return this.c();
+     }
+ }
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index b3c944d70..e56d4836d 100644
+index b3c944d70..a8280acf9 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
 @@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
@@ -424,8 +510,12 @@ index b3c944d70..e56d4836d 100644
      private byte type = 0;
  
      public NBTTagList() {}
-@@ -297,20 +297,4 @@ public class NBTTagList extends NBTList<NBTBase> {
-     public NBTBase clone() {
+@@ -294,23 +294,7 @@ public class NBTTagList extends NBTList<NBTBase> {
+         return this.type;
+     }
+ 
+-    public NBTBase clone() {
++    public NBTTagList clone() {
          return this.c();
      }
 -
@@ -446,7 +536,7 @@ index b3c944d70..e56d4836d 100644
 -    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index fa4a7fa63..749be86fe 100644
+index 2fb86aa19..6f21b01a8 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -66,9 +66,9 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -462,6 +552,74 @@ index fa4a7fa63..749be86fe 100644
      // CraftBukkit start - multithreaded fields
      private volatile int chatThrottle;
      private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
+diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
+index ef332d651..7cc7eb773 100644
+--- a/src/main/java/net/minecraft/server/RegistryBlockID.java
++++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
+@@ -8,7 +8,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import javax.annotation.Nullable;
+ 
+-public class RegistryBlockID<T> implements Registry<T> {
++public class RegistryBlockID<T> implements Registry { // Paper - decompile fix
+ 
+     private int a;
+     private final IdentityHashMap<T, Integer> b;
+@@ -27,7 +27,7 @@ public class RegistryBlockID<T> implements Registry<T> {
+         this.b.put(t0, Integer.valueOf(i));
+ 
+         while (this.c.size() <= i) {
+-            this.c.add((Object) null);
++            this.c.add(null); // Paper - decompile fix
+         }
+ 
+         this.c.set(i, t0);
+diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
+index 2179664a0..d7e1ecc03 100644
+--- a/src/main/java/net/minecraft/server/ServerPing.java
++++ b/src/main/java/net/minecraft/server/ServerPing.java
+@@ -102,11 +102,11 @@ public class ServerPing {
+             return jsonobject;
+         }
+ 
+-        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++        public JsonElement serialize(ServerPing object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+             return this.a((ServerPing) object, type, jsonserializationcontext);
+         }
+ 
+-        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++        public ServerPing deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+             return this.a(jsonelement, type, jsondeserializationcontext);
+         }
+     }
+@@ -147,11 +147,11 @@ public class ServerPing {
+                 return jsonobject;
+             }
+ 
+-            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++            public JsonElement serialize(ServerPing.ServerData object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+                 return this.a((ServerPing.ServerData) object, type, jsonserializationcontext);
+             }
+ 
+-            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++            public ServerPing.ServerData deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+                 return this.a(jsonelement, type, jsondeserializationcontext);
+             }
+         }
+@@ -235,11 +235,11 @@ public class ServerPing {
+                 return jsonobject;
+             }
+ 
+-            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++            public JsonElement serialize(ServerPing.ServerPingPlayerSample object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+                 return this.a((ServerPing.ServerPingPlayerSample) object, type, jsonserializationcontext);
+             }
+ 
+-            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++            public ServerPing.ServerPingPlayerSample deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+                 return this.a(jsonelement, type, jsondeserializationcontext);
+             }
+         }
 -- 
 2.18.0
 

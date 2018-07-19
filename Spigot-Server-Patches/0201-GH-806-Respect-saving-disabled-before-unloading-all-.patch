@@ -1,0 +1,26 @@
+From d8b44f39e8fefbad27e051d8d8ad1b52d687409e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 27 Jul 2017 00:06:43 -0400
+Subject: [PATCH] GH-806: Respect saving disabled before unloading all chunks
+ in a world
+
+This behavior causes a save to occur even though saving was supposed to be turned off.
+
+It's triggered when Hell/End worlds are empty of players.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index cf5c76a78..bfe2d03a5 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -194,7 +194,7 @@ public class PlayerChunkMap {
+             try (Timing ignored = world.timings.doChunkMapUnloadChunks.startTiming()) { // Paper
+             WorldProvider worldprovider = this.world.worldProvider;
+ 
+-            if (!worldprovider.p()) {
++            if (!worldprovider.p() && !this.world.savingDisabled) { // Paper - respect saving disabled setting
+                 this.world.getChunkProviderServer().b();
+             }
+             } // Paper timing
+-- 
+2.18.0
+

@@ -1,0 +1,46 @@
+From b5c4f4748f637c8ddccffbcdef249b4abe7f4401 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 22 Jul 2015 18:50:41 -0400
+Subject: [PATCH] Add sender name to commands.yml replacement
+
+This allows you to use $sender in commands.yml definitions to make
+commands that auto target self.
+
+diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+index 9c80f464..631be1cb 100644
+--- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
++++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+@@ -1,6 +1,9 @@
+ package org.bukkit.command;
+ 
+ import java.util.ArrayList;
++import java.util.logging.Level;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
+ 
+ import org.bukkit.Bukkit;
+ 
+@@ -19,7 +22,7 @@ public class FormattedCommandAlias extends Command {
+         ArrayList<String> commands = new ArrayList<String>();
+         for (String formatString : formatStrings) {
+             try {
+-                commands.add(buildCommand(formatString, args));
++                commands.add(buildCommand(sender, formatString, args)); // Paper
+             } catch (Throwable throwable) {
+                 if (throwable instanceof IllegalArgumentException) {
+                     sender.sendMessage(throwable.getMessage());
+@@ -37,7 +40,10 @@ public class FormattedCommandAlias extends Command {
+         return result;
+     }
+ 
+-    private String buildCommand(String formatString, String[] args) {
++    private String buildCommand(CommandSender sender, String formatString, String[] args) { // Paper
++        if (formatString.contains("$sender")) { // Paper
++            formatString = formatString.replaceAll(Pattern.quote("$sender"), Matcher.quoteReplacement(sender.getName())); // Paper
++        } // Paper
+         int index = formatString.indexOf('$');
+         while (index != -1) {
+             int start = index;
+-- 
+2.18.0
+

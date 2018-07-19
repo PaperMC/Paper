@@ -1,0 +1,45 @@
+From 3813dcf8105186f2ad6b22b3e3c8e129656c6dbb Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Fri, 22 Apr 2016 18:20:05 -0500
+Subject: [PATCH] Vehicle Event Cancellation Changes
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 88092d823..9af242380 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -80,7 +80,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public boolean j;
+     public final List<Entity> passengers;
+     protected int k;
+-    private Entity ax;
++    private Entity ax;public void setVehicle(Entity entity) { this.ax = entity; } // Paper - OBFHELPER
+     public boolean attachedToPlayer;
+     public World world;
+     public double lastX;
+@@ -2110,6 +2110,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
+         } else {
+             // CraftBukkit start
++            entity.setVehicle(this); // Paper - Set the vehicle back for the event
+             CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
+             Entity orig = craft == null ? null : craft.getHandle();
+             if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
+@@ -2125,7 +2126,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 }
+             }
+             // CraftBukkit end
+-            Bukkit.getPluginManager().callEvent( new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity())); // Spigot
++            // Paper start - make EntityDismountEvent cancellable
++            if (!new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity()).callEvent()) {
++                return;
++            }
++            entity.setVehicle(null);
++            // Paper end
++
+             this.passengers.remove(entity);
+             entity.k = 60;
+         }
+-- 
+2.18.0
+

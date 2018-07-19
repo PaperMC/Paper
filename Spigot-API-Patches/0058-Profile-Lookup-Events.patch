@@ -1,0 +1,245 @@
+From c836087cd8822e93732c4f292489a13b77223a89 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Jun 2017 16:30:44 -0400
+Subject: [PATCH] Profile Lookup Events
+
+Adds a Pre Lookup Event and a Post Lookup Event so that plugins may prefill in profile data, and cache the responses from
+profiles that had to be looked up.
+
+diff --git a/pom.xml b/pom.xml
+index bd9146dd..44a8b2a5 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -61,6 +61,13 @@
+             <!-- Trove Provided by CraftBukkit -->
+             <scope>provided</scope>
+         </dependency>
++        <!-- Paper - Add Authlib for Profile API -->
++        <dependency>
++            <groupId>com.mojang</groupId>
++            <artifactId>authlib</artifactId>
++            <version>1.5.25</version> <!-- keep in sync with major MC versions -->
++            <scope>compile</scope> <!-- expose to Plugins -->
++        </dependency>
+         <dependency>
+             <groupId>co.aikar</groupId>
+             <artifactId>fastutil-lite</artifactId>
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
+new file mode 100644
+index 00000000..3b6995a7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
+@@ -0,0 +1,55 @@
++package com.destroystokyo.paper.event.profile;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import com.mojang.authlib.GameProfile;
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import javax.annotation.Nonnull;
++
++/**
++ * Allows a plugin to be notified anytime AFTER a Profile has been looked up from the Mojang API
++ * This is an opportunity to view the response and potentially cache things.
++ *
++ * No guarantees are made about thread execution context for this event. If you need to know, check
++ * event.isAsync()
++ */
++public class LookupProfileEvent extends Event {
++
++    private static final HandlerList handlers = new HandlerList();
++
++    private final PlayerProfile profile;
++
++    public LookupProfileEvent(@Nonnull PlayerProfile profile) {
++        super(!Bukkit.isPrimaryThread());
++        this.profile = profile;
++    }
++
++    /**
++     * @return The profile that was recently looked up. This profile can be mutated
++     * @deprecated will be removed with 1.13, use {@link #getPlayerProfile()}
++     */
++    @Deprecated
++    @Nonnull
++    public GameProfile getProfile() {
++        return profile.getGameProfile();
++    }
++
++    /**
++     * @return The profile that was recently looked up. This profile can be mutated
++     */
++    @Nonnull
++    public PlayerProfile getPlayerProfile() {
++        return profile;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
+new file mode 100644
+index 00000000..aa0666d5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
+@@ -0,0 +1,149 @@
++package com.destroystokyo.paper.event.profile;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import com.destroystokyo.paper.profile.ProfileProperty;
++import com.google.common.collect.ArrayListMultimap;
++import com.google.common.collect.Multimap;
++import com.mojang.authlib.properties.Property;
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import java.util.HashSet;
++import java.util.Set;
++import java.util.UUID;
++
++/**
++ * Allows a plugin to intercept a Profile Lookup for a Profile by name
++ *
++ * At the point of event fire, the UUID and properties are unset.
++ *
++ * If a plugin sets the UUID, and optionally the properties, the API call to look up the profile may be skipped.
++ *
++ * No guarantees are made about thread execution context for this event. If you need to know, check
++ * event.isAsync()
++ */
++public class PreLookupProfileEvent extends Event {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final String name;
++    private UUID uuid;
++    private Set<ProfileProperty> properties = new HashSet<>();
++
++    public PreLookupProfileEvent(@Nonnull String name) {
++        super(!Bukkit.isPrimaryThread());
++        this.name = name;
++    }
++
++    /**
++     * @return Name of the profile
++     */
++    @Nonnull
++    public String getName() {
++        return name;
++    }
++
++    /**
++     * If this value is left null by the completion of the event call, then the server will
++     * trigger a call to the Mojang API to look up the UUID (Network Request), and subsequently, fire a
++     * {@link LookupProfileEvent}
++     *
++     * @return The UUID of the profile if it has already been provided by a plugin
++     */
++    @Nullable
++    public UUID getUUID() {
++        return uuid;
++    }
++
++    /**
++     * Sets the UUID for this player name. This will skip the initial API call to find the players UUID.
++     *
++     * However, if Profile Properties are needed by the server, you must also set them or else an API call might still be made.
++     *
++     * @param uuid the UUID to set for the profile or null to reset
++     */
++    public void setUUID(@Nullable UUID uuid) {
++        this.uuid = uuid;
++    }
++
++    /**
++     * Get the properties for this profile
++     *
++     * @return the property map to attach to the new {@link PlayerProfile}
++     * @deprecated will be removed with 1.13  Use {@link #getProfileProperties()}
++     */
++    @Deprecated
++    @Nonnull
++    public Multimap<String, Property> getProperties() {
++        Multimap<String, Property> props = ArrayListMultimap.create();
++
++        for (ProfileProperty property : properties) {
++            props.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
++        }
++        return props;
++    }
++
++    /**
++     * Completely replaces all Properties with the new provided properties
++     * @param properties the properties to set on the new profile
++     * @deprecated will be removed with 1.13 Use {@link #setProfileProperties(Set)}
++     */
++    @Deprecated
++    public void setProperties(Multimap<String, Property> properties) {
++        this.properties = new HashSet<>();
++        properties.values().forEach(property -> {
++            this.properties.add(new ProfileProperty(property.getName(), property.getValue(), property.getSignature()));
++        });
++    }
++
++    /**
++     * Adds additional properties, without removing the original properties
++     * @param properties the properties to add to the existing properties
++     * @deprecated will be removed with 1.13 use {@link #addProfileProperties(Set)}
++     */
++    @Deprecated
++    public void addProperties(Multimap<String, Property> properties) {
++        properties.values().forEach(property -> {
++            this.properties.add(new ProfileProperty(property.getName(), property.getValue(), property.getSignature()));
++        });
++    }
++
++    /**
++     * @return The currently pending prepopulated properties.
++     * Any property in this Set will be automatically prefilled on this Profile
++     */
++    public Set<ProfileProperty> getProfileProperties() {
++        return this.properties;
++    }
++
++    /**
++     * Clears any existing prepopulated properties and uses the supplied properties
++     * Any property in this Set will be automatically prefilled on this Profile
++     * @param properties The properties to add
++     */
++    public void setProfileProperties(Set<ProfileProperty> properties) {
++        this.properties = new HashSet<>();
++        this.properties.addAll(properties);
++    }
++
++    /**
++     * Adds any properties currently missing to the prepopulated properties set, replacing any that already were set.
++     * Any property in this Set will be automatically prefilled on this Profile
++     * @param properties The properties to add
++     */
++    public void addProfileProperties(Set<ProfileProperty> properties) {
++        this.properties.addAll(properties);
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++}
+-- 
+2.18.0
+

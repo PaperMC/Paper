@@ -1,0 +1,39 @@
+From 4d81780db6fefcf2f2854874aaff39f758fd2c23 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 16 Jun 2018 16:23:38 -0400
+Subject: [PATCH] Ignore Missing Recipes in RecipeBook to avoid data errors
+
+This code was causing NPE's in saving player data, potentially related to reloads.
+
+diff --git a/src/main/java/net/minecraft/server/RecipeBookServer.java b/src/main/java/net/minecraft/server/RecipeBookServer.java
+index 71d6c4552..799f2be70 100644
+--- a/src/main/java/net/minecraft/server/RecipeBookServer.java
++++ b/src/main/java/net/minecraft/server/RecipeBookServer.java
+@@ -77,7 +77,11 @@ public class RecipeBookServer extends RecipeBook {
+         while (iterator.hasNext()) {
+             MinecraftKey minecraftkey = (MinecraftKey) iterator.next();
+ 
+-            nbttaglist.add((NBTBase) (new NBTTagString(minecraftkey.toString())));
++            // Paper start - ignore missing recipes
++            IRecipe recipe = this.h.a(minecraftkey);
++            if (recipe == null) continue;
++            nbttaglist.add(new NBTTagString(minecraftkey.toString()));
++            // Paper end
+         }
+ 
+         nbttagcompound.set("recipes", nbttaglist);
+@@ -87,6 +91,11 @@ public class RecipeBookServer extends RecipeBook {
+         while (iterator1.hasNext()) {
+             MinecraftKey minecraftkey1 = (MinecraftKey) iterator1.next();
+ 
++            // Paper start - ignore missing recipes
++            IRecipe recipe = this.h.a(minecraftkey1);
++            if (recipe == null) continue;
++            // Paper end
++
+             nbttaglist1.add((NBTBase) (new NBTTagString(minecraftkey1.toString())));
+         }
+ 
+-- 
+2.18.0
+

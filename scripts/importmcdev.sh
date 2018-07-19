@@ -70,7 +70,7 @@ for f in $files; do
 done
 
 import NBTList
-import TileEntityTypes
+import NBTBase
 
 set -e
 cd "$workdir/Spigot/Spigot-Server/"

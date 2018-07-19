@@ -1,0 +1,45 @@
+From 57383fb576aa72fde6d72aa34d7c7f60e8984c52 Mon Sep 17 00:00:00 2001
+From: DoctorDark <doctordark11@gmail.com>
+Date: Wed, 16 Mar 2016 02:21:39 -0500
+Subject: [PATCH] Configurable end credits
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 1e3405cc1..dccccbf5b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -135,4 +135,10 @@ public class PaperWorldConfig {
+         queueLightUpdates = getBoolean("queue-light-updates", false);
+         log("Lighting Queue enabled: " + queueLightUpdates);
+     }
++
++    public boolean disableEndCredits;
++    private void disableEndCredits() {
++        disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
++        log("End credits disabled: " + disableEndCredits);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index d4e9f489d..ace6db1fa 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -62,7 +62,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private long cv = SystemUtils.b();
+     private Entity cw;
+     public boolean worldChangeInvuln;
+-    private boolean cy;
++    private boolean cy; private void setHasSeenCredits(boolean has) { this.cy = has; } // Paper - OBFHELPER
+     private final RecipeBookServer cz;
+     private Vec3D cA;
+     private int cB;
+@@ -621,6 +621,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.world.kill(this);
+             if (!this.viewingCredits) {
+                 this.viewingCredits = true;
++                if (world.paperConfig.disableEndCredits) this.setHasSeenCredits(true); // Paper - Toggle to always disable end credits
+                 this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(4, this.cy ? 0.0F : 1.0F));
+                 this.cy = true;
+             }
+-- 
+2.18.0
+

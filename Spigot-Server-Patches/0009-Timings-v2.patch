@@ -1,4 +1,4 @@
-From 7ac235f6e19a3c24fa6d3e8bef538626e3aac1fe Mon Sep 17 00:00:00 2001
+From 52b1fafdb9623e6c1bc74b830a5acf51f70b5ffb Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -137,10 +137,10 @@ index 000000000..4f624e39c
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedChunkGenerator.java b/src/main/java/co/aikar/timings/TimedChunkGenerator.java
 new file mode 100644
-index 000000000..089154f62
+index 000000000..0bb63600f
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedChunkGenerator.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,180 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -167,11 +167,20 @@ index 000000000..089154f62
 +
 +package co.aikar.timings;
 +
++import net.minecraft.server.BiomeBase;
 +import net.minecraft.server.BiomeBase.BiomeMeta;
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.EnumCreatureType;
++import net.minecraft.server.GeneratorSettings;
++import net.minecraft.server.IChunkAccess;
++import net.minecraft.server.RegionLimitedWorldAccess;
++import net.minecraft.server.StructureGenerator;
++import net.minecraft.server.StructureStart;
 +import net.minecraft.server.World;
++import net.minecraft.server.WorldChunkManager;
++import net.minecraft.server.WorldGenFeatureConfiguration;
++import net.minecraft.server.WorldGenStage;
 +import net.minecraft.server.WorldServer;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
@@ -181,6 +190,10 @@ index 000000000..089154f62
 +import java.util.List;
 +import java.util.Random;
 +
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import it.unimi.dsi.fastutil.longs.LongSet;
++
++// TODO: timing handlers
 +public class TimedChunkGenerator extends InternalChunkGenerator {
 +    private final WorldServer world;
 +    private final InternalChunkGenerator timedGenerator;
@@ -190,25 +203,6 @@ index 000000000..089154f62
 +        timedGenerator = gen;
 +    }
 +
-+    @Override
-+    @Deprecated
-+    public byte[] generate(org.bukkit.World world, Random random, int x, int z) {
-+        return timedGenerator.generate(world, random, x, z);
-+    }
-+
-+    @Override
-+    @Deprecated
-+    public short[][] generateExtBlockSections(org.bukkit.World world, Random random, int x, int z,
-+                                              BiomeGrid biomes) {
-+        return timedGenerator.generateExtBlockSections(world, random, x, z, biomes);
-+    }
-+
-+    @Override
-+    @Deprecated
-+    public byte[][] generateBlockSections(org.bukkit.World world, Random random, int x, int z,
-+                                          BiomeGrid biomes) {
-+        return timedGenerator.generateBlockSections(world, random, x, z, biomes);
-+    }
 +
 +    @Override
 +    public ChunkData generateChunkData(org.bukkit.World world, Random random, int x, int z, BiomeGrid biome) {
@@ -229,47 +223,102 @@ index 000000000..089154f62
 +    public Location getFixedSpawnLocation(org.bukkit.World world, Random random) {
 +        return timedGenerator.getFixedSpawnLocation(world, random);
 +    }
-+
++    /*
 +    @Override
 +    public Chunk getOrCreateChunk(int i, int j) {
 +        try (Timing ignored = world.timings.chunkGeneration.startTiming()) {
 +            return timedGenerator.getOrCreateChunk(i, j);
 +        }
 +    }
++    */
 +
 +    @Override
-+    public void recreateStructures(int i, int j) {
-+        try (Timing ignored = world.timings.syncChunkLoadStructuresTimer.startTiming()) {
-+            timedGenerator.recreateStructures(i, j);
++    public void createChunk(IChunkAccess ichunkaccess) {
++        try (Timing ignored = world.timings.chunkGeneration.startTiming()) {
++            timedGenerator.createChunk(ichunkaccess);
 +        }
 +    }
 +
 +    @Override
-+    public boolean a(Chunk chunk, int i, int j) {
-+        return timedGenerator.a(chunk, i, j);
++    public void addFeatures(RegionLimitedWorldAccess regionlimitedworldaccess, WorldGenStage.Features worldgenstage_features) {
++        timedGenerator.addFeatures(regionlimitedworldaccess, worldgenstage_features);
 +    }
 +
 +    @Override
-+    public List<BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
++    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess) {
++        timedGenerator.addDecorations(regionlimitedworldaccess);
++    }
++
++    @Override
++    public void addMobs(RegionLimitedWorldAccess regionlimitedworldaccess) {
++        timedGenerator.addMobs(regionlimitedworldaccess);
++    }
++
++    @Override
++    public List<BiomeBase.BiomeMeta> getMobsFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
 +        return timedGenerator.getMobsFor(enumcreaturetype, blockposition);
 +    }
 +
-+    @Override
 +    @Nullable
-+    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition, boolean flag) {
-+        return timedGenerator.findNearestMapFeature(world, s, blockposition, flag);
++    @Override
++    public BlockPosition findNearestMapFeature(World world, String s, BlockPosition blockposition, int i) {
++        return timedGenerator.findNearestMapFeature(world, s, blockposition, i);
 +    }
 +
 +    @Override
-+    public void recreateStructures(Chunk chunk, int i, int j) {
-+        try (Timing ignored = world.timings.syncChunkLoadStructuresTimer.startTiming()) {
-+            timedGenerator.recreateStructures(chunk, i, j);
-+        }
++    public GeneratorSettings getSettings() {
++        return timedGenerator.getSettings();
 +    }
 +
 +    @Override
-+    public boolean a(World world, String s, BlockPosition blockPosition) {
-+        return timedGenerator.a(world, s, blockPosition);
++    public int a(World world, boolean flag, boolean flag1) {
++        return timedGenerator.a(world, flag, flag1);
++    }
++
++    @Override
++    public WorldChunkManager getWorldChunkManager() {
++        return timedGenerator.getWorldChunkManager();
++    }
++
++    @Override
++    public long getSeed() {
++        return timedGenerator.getSeed();
++    }
++
++    @Override
++    public int getSpawnHeight() {
++        return timedGenerator.getSpawnHeight();
++    }
++
++    @Override
++    public int e() {
++        return timedGenerator.e();
++    }
++
++    @Override
++    public World getWorld() {
++        return timedGenerator.getWorld();
++    }
++
++    @Override
++    public Long2ObjectMap<LongSet> getStructureCache(StructureGenerator structuregenerator) {
++        return timedGenerator.getStructureCache(structuregenerator);
++    }
++
++    @Override
++    public Long2ObjectMap<StructureStart> getStructureStartCache(StructureGenerator structuregenerator) {
++        return timedGenerator.getStructureStartCache(structuregenerator);
++    }
++
++    @Nullable
++    @Override
++    public WorldGenFeatureConfiguration getFeatureConfiguration(BiomeBase biomebase, StructureGenerator structuregenerator) {
++        return timedGenerator.getFeatureConfiguration(biomebase, structuregenerator);
++    }
++
++    @Override
++    public boolean canSpawnStructure(BiomeBase biomebase, StructureGenerator structuregenerator) {
++        return timedGenerator.canSpawnStructure(biomebase, structuregenerator);
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
@@ -495,7 +544,7 @@ index 0296d3ef0..badfe86b2 100644
              this.chunkLoader.saveChunk(this.world, ichunkaccess, unloaded); // Spigot
          } catch (IOException ioexception) {
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 42050f06d..e26860516 100644
+index 90d857105..3a0e52d88 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -1,5 +1,6 @@
@@ -505,7 +554,7 @@ index 42050f06d..e26860516 100644
  import com.google.common.collect.Maps;
  import com.mojang.datafixers.DataFixTypes;
  import com.mojang.datafixers.DataFixer;
-@@ -650,7 +651,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -688,7 +689,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      public void loadEntities(NBTTagCompound nbttagcompound, Chunk chunk) {
          NBTTagList nbttaglist = nbttagcompound.getList("Entities", 10);
          World world = chunk.getWorld();
@@ -514,7 +563,7 @@ index 42050f06d..e26860516 100644
  
          for (int i = 0; i < nbttaglist.size(); ++i) {
              NBTTagCompound nbttagcompound1 = nbttaglist.getCompound(i);
-@@ -659,8 +660,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -697,8 +698,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
              chunk.f(true);
          }
  
@@ -523,7 +572,7 @@ index 42050f06d..e26860516 100644
          NBTTagList nbttaglist1 = nbttagcompound.getList("TileEntities", 10);
  
          for (int j = 0; j < nbttaglist1.size(); ++j) {
-@@ -677,8 +676,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -715,8 +714,6 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                  }
              }
          }
@@ -532,7 +581,7 @@ index 42050f06d..e26860516 100644
  
          if (nbttagcompound.hasKeyOfType("TileTicks", 9) && world.I() instanceof TickListServer) {
              ((TickListServer) world.I()).a(nbttagcompound.getList("TileTicks", 10));
-@@ -687,7 +684,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -725,7 +722,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
          if (nbttagcompound.hasKeyOfType("LiquidTicks", 9) && world.H() instanceof TickListServer) {
              ((TickListServer) world.H()).a(nbttagcompound.getList("LiquidTicks", 10));
          }
@@ -989,7 +1038,7 @@ index ac6d8cc6e..d975c2ccf 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 749be86fe..c2eb3a58d 100644
+index 6f21b01a8..359aa3997 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -57,6 +57,7 @@ import org.bukkit.inventory.CraftingInventory;

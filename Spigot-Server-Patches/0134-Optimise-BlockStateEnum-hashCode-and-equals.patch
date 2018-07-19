@@ -1,0 +1,66 @@
+From 8581e708e437ba0aedfd536cef77fcd7cadf7abe Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 19 Aug 2016 01:52:56 +0100
+Subject: [PATCH] Optimise BlockStateEnum hashCode and equals
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
+index 725087de5..5e6cb5d7d 100644
+--- a/src/main/java/net/minecraft/server/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -17,6 +17,11 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+     private final ImmutableSet<T> a;
+     private final Map<String, T> b = Maps.newHashMap();
+ 
++    // Paper start - BlockStateEnum is a singleton, so we can use our own hashCode
++    private static int hashId = 0;
++    private int hashCode;
++    // Paper end
++
+     protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
+         super(s, oclass);
+         this.a = ImmutableSet.copyOf(collection);
+@@ -30,9 +35,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+                 throw new IllegalArgumentException("Multiple values have the same name \'" + s1 + "\'");
+             }
+ 
+-            this.b.put(s1, oenum);
++            this.b.put(s1, (T) oenum); // Paper - decompile fix
+         }
+ 
++        this.hashCode = hashId++; // Paper
+     }
+ 
+     public Collection<T> d() {
+@@ -47,24 +53,14 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+         return ((INamable) t0).getName();
+     }
+ 
++    @Override // Paper start - override equals as BlockStateEnum is a singleton
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (object instanceof BlockStateEnum && super.equals(object)) {
+-            BlockStateEnum blockstateenum = (BlockStateEnum) object;
+-
+-            return this.a.equals(blockstateenum.a) && this.b.equals(blockstateenum.b);
+-        } else {
+-            return false;
+-        }
++       return this == object;
++        // Paper end - override equals as BlockStateEnum is a singleton
+     }
+ 
+     public int c() {
+-        int i = super.c();
+-
+-        i = 31 * i + this.a.hashCode();
+-        i = 31 * i + this.b.hashCode();
+-        return i;
++        return hashCode; // Paper - hashCode method is final, but we can do this here
+     }
+ 
+     public static <T extends Enum<T> & INamable> BlockStateEnum<T> of(String s, Class<T> oclass) {
+-- 
+2.18.0
+

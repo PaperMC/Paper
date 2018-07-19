@@ -1,0 +1,49 @@
+From 1ab4c742c0d8d9b7da4be54e6228aca0471342e9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 20:46:14 -0400
+Subject: [PATCH] Configurable Chunk Inhabited Timer
+
+Vanilla stores how long a chunk has been active on a server, and dynamically scales some
+aspects of vanilla gameplay to this factor.
+
+For people who want all chunks to be treated equally, you can disable the timer.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 1c2209270..17fb883f6 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -221,4 +221,9 @@ public class PaperWorldConfig {
+     private void firePhysicsEventForRedstone() {
+         firePhysicsEventForRedstone = getBoolean("fire-physics-event-for-redstone", firePhysicsEventForRedstone);
+     }
++
++    public boolean useInhabitedTime = true;
++    private void useInhabitedTime() {
++        useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 1c0580f79..744b5bc6d 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -55,7 +55,7 @@ public class Chunk implements IChunkAccess {
+     private long lastSaved;
+     private boolean y;
+     private int z;
+-    private long A;
++    private long A; public long getInhabitedTime() { return A; } // Paper - OBFHELPER
+     private int B;
+     private final ConcurrentLinkedQueue<BlockPosition> C;
+     public boolean d;
+@@ -1231,7 +1231,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public long m() {
+-        return this.A;
++        return world.paperConfig.useInhabitedTime ? getInhabitedTime() : 0; // Paper
+     }
+ 
+     public void b(long i) {
+-- 
+2.18.0
+

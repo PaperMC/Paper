@@ -1,0 +1,105 @@
+From 3b93e8bc7dc2bbdd6056c88375614f626c24ac3b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 18 Jun 2018 01:09:27 -0400
+Subject: [PATCH] PlayerReadyArrowEvent
+
+Called when a player is firing a bow and the server is choosing an arrow to use.
+Plugins can skip selection of certain arrows and control which is used.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
+new file mode 100644
+index 00000000..c6add1b1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
+@@ -0,0 +1,88 @@
++/*
++ * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
++ *
++ *  Permission is hereby granted, free of charge, to any person obtaining
++ *  a copy of this software and associated documentation files (the
++ *  "Software"), to deal in the Software without restriction, including
++ *  without limitation the rights to use, copy, modify, merge, publish,
++ *  distribute, sublicense, and/or sell copies of the Software, and to
++ *  permit persons to whom the Software is furnished to do so, subject to
++ *  the following conditions:
++ *
++ *  The above copyright notice and this permission notice shall be
++ *  included in all copies or substantial portions of the Software.
++ *
++ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++ *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++ *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++ *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++package com.destroystokyo.paper.event.player;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.ItemStack;
++
++/**
++ * Called when a player is firing a bow and the server is choosing an arrow to use.
++ */
++public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
++    private final ItemStack bow;
++    private final ItemStack arrow;
++
++    public PlayerReadyArrowEvent(Player player, ItemStack bow, ItemStack arrow) {
++        super(player);
++        this.bow = bow;
++        this.arrow = arrow;
++    }
++
++    /**
++     * What bow the player is using to fire the arrow
++     */
++    public ItemStack getBow() {
++        return bow;
++    }
++
++    /**
++     * What arrow is being attempted to use
++     */
++    public ItemStack getArrow() {
++        return arrow;
++    }
++
++    private static final HandlerList handlers = new HandlerList();
++
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    private boolean cancelled = false;
++
++    /**
++     * Whether or not use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
++     */
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    /**
++     * Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        cancelled = cancel;
++    }
++}
+-- 
+2.18.0
+
