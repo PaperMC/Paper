@@ -24,14 +24,6 @@ public class ChatTest {
     }
 
     @Test
-    public void testColorConversion() {
-        String test = String.format("%1$sA%1$sa%1$sB%1$sb%1$sC%1$sc%1$sD%1$sd%1$sE%1$se%1$sZ%1$sz%1$s", ChatColor.COLOR_CHAR);
-        IChatBaseComponent name = CraftChatMessage.fromStringOrNull(test);
-        assertEquals(test.replace(String.valueOf(ChatColor.COLOR_CHAR), ""),
-                CraftChatMessage.fromComponent(name).replace(String.valueOf(ChatColor.COLOR_CHAR), ""));
-    }
-
-    @Test
     public void testURLJsonConversion() {
         IChatBaseComponent[] components;
         components = CraftChatMessage.fromString("https://spigotmc.org/test Test Message");
