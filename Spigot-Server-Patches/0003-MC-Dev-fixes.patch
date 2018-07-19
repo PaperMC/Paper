@@ -1,4 +1,4 @@
-From f25c458df3c7d564f49697dbdcf59faea5375903 Mon Sep 17 00:00:00 2001
+From 1b41bf7f810b3bd6c90db0a7c4ee15776bc6f832 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
@@ -56,6 +56,61 @@ index 002da2a19..121a137f3 100644
                              ++this.j;
                          }
  
+diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
+index 65910508f..15c7cc170 100644
+--- a/src/main/java/net/minecraft/server/DefinedStructure.java
++++ b/src/main/java/net/minecraft/server/DefinedStructure.java
+@@ -88,7 +88,7 @@ public class DefinedStructure {
+     }
+ 
+     private void a(World world, BlockPosition blockposition, BlockPosition blockposition1) {
+-        List list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (entity) -> {
++        List list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1),(Predicate<? super Entity>) (entity) -> { // Paper - decompile fix
+             return !(entity instanceof EntityHuman);
+         });
+ 
+@@ -285,21 +285,24 @@ public class DefinedStructure {
+                         voxelshapebitset.a(blockposition3.getX() - i2, blockposition3.getY() - j2, blockposition3.getZ() - l1, true, true);
+                     }
+ 
+-                    voxelshapebitset.a((enumdirection, i, j, k) -> {
+-                        BlockPosition blockposition = new BlockPosition(l + i, i1 + j, j1 + k);
+-                        BlockPosition blockposition1 = blockposition.shift(enumdirection);
+-                        IBlockData iblockdata = generatoraccess.getType(blockposition);
++                    // Paper start - decompile fixes
++                    int finalL = l1;
++                    voxelshapebitset.a((enumdirection, i_, j_, k_) -> {
++                        BlockPosition innerBlockposition = new BlockPosition(i2 + i_, j2 + j_, finalL + k_);
++                        BlockPosition blockposition1 = innerBlockposition.shift(enumdirection);
++                        IBlockData iblockdata = generatoraccess.getType(innerBlockposition);
+                         IBlockData iblockdata1 = generatoraccess.getType(blockposition1);
+-                        IBlockData iblockdata2 = iblockdata.updateState(enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++                        IBlockData iblockdata2 = iblockdata.updateState(enumdirection, iblockdata1, generatoraccess, innerBlockposition, blockposition1);
+ 
+                         if (iblockdata != iblockdata2) {
+-                            generatoraccess.setTypeAndData(blockposition, iblockdata2, k1 & -2 | 16);
++                            generatoraccess.setTypeAndData(innerBlockposition, iblockdata2, i & -2 | 16);
+                         }
+ 
+-                        IBlockData iblockdata3 = iblockdata1.updateState(enumdirection.opposite(), iblockdata2, generatoraccess, blockposition1, blockposition);
++                        IBlockData iblockdata3 = iblockdata1.updateState(enumdirection.opposite(), iblockdata2, generatoraccess, blockposition1, innerBlockposition);
+ 
+                         if (iblockdata1 != iblockdata3) {
+-                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, k1 & -2 | 16);
++                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, i & -2 | 16);
++                            // Paper end - decompile fixes
+                         }
+ 
+                     });
+@@ -734,7 +737,7 @@ public class DefinedStructure {
+         public IBlockData a(int i) {
+             IBlockData iblockdata = (IBlockData) this.b.fromId(i);
+ 
+-            return iblockdata == null ? DefinedStructure.a.a : iblockdata;
++            return iblockdata == null ? a : iblockdata; // Paper - decompile error - Blocks.AIR.getBlockData()
+         }
+ 
+         public Iterator<IBlockData> iterator() {
 -- 
-2.18.0
+2.17.1
 
