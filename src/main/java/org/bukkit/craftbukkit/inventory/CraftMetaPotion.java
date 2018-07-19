@@ -71,6 +71,11 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             for (int i = 0; i < length; i++) {
                 NBTTagCompound effect = list.getCompound(i);
                 PotionEffectType type = PotionEffectType.getById(effect.getByte(ID.NBT));
+                // SPIGOT-4047: Vanilla just disregards these
+                if (type == null) {
+                    continue;
+                }
+
                 int amp = effect.getByte(AMPLIFIER.NBT);
                 int duration = effect.getInt(DURATION.NBT);
                 boolean ambient = effect.getBoolean(AMBIENT.NBT);
