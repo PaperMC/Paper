@@ -1,4 +1,4 @@
-From deba31c66ed0416d8104a2e2c82d7673fd66af11 Mon Sep 17 00:00:00 2001
+From 4b72a52f493d03f141642c45278dd654ef5fdb69 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 23:19:16 -0400
 Subject: [PATCH] Avoid blocking on Network Manager creation
@@ -6,7 +6,7 @@ Subject: [PATCH] Avoid blocking on Network Manager creation
 Per Paper issue 294
 
 diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
-index be8d07f41..ad49673c1 100644
+index be8d07f41..9808561eb 100644
 --- a/src/main/java/net/minecraft/server/ServerConnection.java
 +++ b/src/main/java/net/minecraft/server/ServerConnection.java
 @@ -40,6 +40,15 @@ public class ServerConnection {
@@ -25,15 +25,16 @@ index be8d07f41..ad49673c1 100644
  
      public ServerConnection(MinecraftServer minecraftserver) {
          this.e = minecraftserver;
-@@ -75,6 +84,7 @@ public class ServerConnection {
+@@ -74,7 +83,7 @@ public class ServerConnection {
+                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(ServerConnection.this)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(EnumProtocolDirection.SERVERBOUND)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(EnumProtocolDirection.CLIENTBOUND));
                      NetworkManager networkmanager = new NetworkManager(EnumProtocolDirection.SERVERBOUND);
  
-                     ServerConnection.this.g.add(networkmanager);
+-                    ServerConnection.this.g.add(networkmanager);
 +                    pending.add(networkmanager); // Paper
                      channel.pipeline().addLast("packet_handler", networkmanager);
                      networkmanager.setPacketListener(new HandshakeListener(ServerConnection.this.e, networkmanager));
                  }
-@@ -103,6 +113,7 @@ public class ServerConnection {
+@@ -103,6 +112,7 @@ public class ServerConnection {
  
          synchronized (this.g) {
              // Spigot Start
