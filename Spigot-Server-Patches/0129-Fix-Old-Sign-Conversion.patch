@@ -1,4 +1,4 @@
-From bd9c2d042a9a05c79cda70d8b86cb7108a88fb69 Mon Sep 17 00:00:00 2001
+From 717f1583e8a53256e87359d2956d13e9f0501ce0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 17 Jun 2016 20:50:11 -0400
 Subject: [PATCH] Fix Old Sign Conversion
@@ -9,7 +9,7 @@ Subject: [PATCH] Fix Old Sign Conversion
    This causes Igloos and such to render broken signs. We fix this by ignoring sign conversion for Defined Structures
 
 diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
-index 65910508f..002b74175 100644
+index 65910508f..2109f316d 100644
 --- a/src/main/java/net/minecraft/server/DefinedStructure.java
 +++ b/src/main/java/net/minecraft/server/DefinedStructure.java
 @@ -88,7 +88,7 @@ public class DefinedStructure {
@@ -33,7 +33,7 @@ index 65910508f..002b74175 100644
                                      }
                                  }
  
-@@ -285,21 +287,27 @@ public class DefinedStructure {
+@@ -285,21 +287,24 @@ public class DefinedStructure {
                          voxelshapebitset.a(blockposition3.getX() - i2, blockposition3.getY() - j2, blockposition3.getZ() - l1, true, true);
                      }
  
@@ -42,12 +42,9 @@ index 65910508f..002b74175 100644
 -                        BlockPosition blockposition1 = blockposition.shift(enumdirection);
 -                        IBlockData iblockdata = generatoraccess.getType(blockposition);
 +                    // Paper start - decompile fixes
-+                    int finalL = l;
-+                    int finalI = i1;
-+                    int finalJ = j1;
-+                    int finalK = k1;
++                    int finalL = l1;
 +                    voxelshapebitset.a((enumdirection, i_, j_, k_) -> {
-+                        BlockPosition innerBlockposition = new BlockPosition(finalL + i_, finalI + j_, finalJ + k_);
++                        BlockPosition innerBlockposition = new BlockPosition(i2 + i_, j2 + j_, finalL + k_);
 +                        BlockPosition blockposition1 = innerBlockposition.shift(enumdirection);
 +                        IBlockData iblockdata = generatoraccess.getType(innerBlockposition);
                          IBlockData iblockdata1 = generatoraccess.getType(blockposition1);
@@ -56,7 +53,7 @@ index 65910508f..002b74175 100644
  
                          if (iblockdata != iblockdata2) {
 -                            generatoraccess.setTypeAndData(blockposition, iblockdata2, k1 & -2 | 16);
-+                            generatoraccess.setTypeAndData(innerBlockposition, iblockdata2, finalK & -2 | 16);
++                            generatoraccess.setTypeAndData(innerBlockposition, iblockdata2, i & -2 | 16);
                          }
  
 -                        IBlockData iblockdata3 = iblockdata1.updateState(enumdirection.opposite(), iblockdata2, generatoraccess, blockposition1, blockposition);
@@ -64,12 +61,12 @@ index 65910508f..002b74175 100644
  
                          if (iblockdata1 != iblockdata3) {
 -                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, k1 & -2 | 16);
-+                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, finalK & -2 | 16);
++                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, i & -2 | 16);
 +                            // Paper end - decompile fixes
                          }
  
                      });
-@@ -734,7 +742,7 @@ public class DefinedStructure {
+@@ -734,7 +739,7 @@ public class DefinedStructure {
          public IBlockData a(int i) {
              IBlockData iblockdata = (IBlockData) this.b.fromId(i);
  
@@ -112,5 +109,5 @@ index 939d8790f..335a4d27f 100644
                  if (this.world instanceof WorldServer) {
                      try {
 -- 
-2.18.0
+2.17.1
 
