@@ -403,7 +403,10 @@ public class CraftBlockData implements BlockData {
                     data = Block.REGISTRY.b(block) + data;
                 }
 
-                ArgumentBlock arg = new ArgumentBlock(new StringReader(data), false).a(false);
+                StringReader reader = new StringReader(data);
+                ArgumentBlock arg = new ArgumentBlock(reader, false).a(false);
+                Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data");
+
                 blockData = arg.b();
             } catch (CommandSyntaxException ex) {
                 throw new IllegalArgumentException("Could not parse data: " + data, ex);
