@@ -979,6 +979,9 @@ public interface Server extends PluginMessageRecipient {
      * Creates a new {@link BlockData} instance for the specified Material, with
      * all properties initialized to unspecified defaults, except for those
      * provided in data.
+     * <br>
+     * If <code>material</code> is specified, then the data string must not also
+     * contain the material.
      *
      * @param material the material
      * @param data data string
