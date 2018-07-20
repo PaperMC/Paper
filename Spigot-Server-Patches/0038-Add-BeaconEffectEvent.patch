@@ -1,11 +1,11 @@
-From fbe8dee64d19c1cf190701395ebc83d94de3d92d Mon Sep 17 00:00:00 2001
+From 7cc085846480e5bd02fa7d296150dd91ff2bcaf1 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 23:30:53 -0600
 Subject: [PATCH] Add BeaconEffectEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
-index c0db08f61..32b53bcae 100644
+index 7bd27ad7f9..eafd207467 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
 @@ -16,6 +16,12 @@ import org.bukkit.entity.HumanEntity;
@@ -21,7 +21,7 @@ index c0db08f61..32b53bcae 100644
  public class TileEntityBeacon extends TileEntityContainer implements IWorldInventory, ITickable {
  
      public static final MobEffectList[][] a = new MobEffectList[][] { { MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, { MobEffects.RESISTANCE, MobEffects.JUMP}, { MobEffects.INCREASE_DAMAGE}, { MobEffects.REGENERATION}};
-@@ -130,14 +136,30 @@ public class TileEntityBeacon extends TileEntityContainer implements IWorldInven
+@@ -130,14 +136,31 @@ public class TileEntityBeacon extends TileEntityContainer implements IWorldInven
      }
  
      private void applyEffect(List list, MobEffectList effects, int i, int b0) {
@@ -43,17 +43,18 @@ index c0db08f61..32b53bcae 100644
 +
              while (iterator.hasNext()) {
                  entityhuman = (EntityHuman) iterator.next();
--                entityhuman.addEffect(new MobEffect(effects, i, b0, true, true));
+-                entityhuman.addEffect(new MobEffect(effects, i, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
++
 +                // Paper start - BeaconEffectEvent
 +                BeaconEffectEvent event = new BeaconEffectEvent(block, effect, (Player) entityhuman.getBukkitEntity(), isPrimary);
 +                if (CraftEventFactory.callEvent(event).isCancelled()) continue;
 +                PotionEffect eventEffect = event.getEffect();
-+                entityhuman.getBukkitEntity().addPotionEffect(eventEffect, true);
++                entityhuman.addEffect(new MobEffect(MobEffectList.fromId(eventEffect.getType().getId()), eventEffect.getDuration(), eventEffect.getAmplifier(), true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
 +                // Paper end
              }
          }
      }
-@@ -159,10 +181,10 @@ public class TileEntityBeacon extends TileEntityContainer implements IWorldInven
+@@ -159,10 +182,10 @@ public class TileEntityBeacon extends TileEntityContainer implements IWorldInven
              int i = getLevel();
              List list = getHumansInRange();
  
