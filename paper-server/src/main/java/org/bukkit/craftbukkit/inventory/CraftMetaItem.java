@@ -39,6 +39,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.gson.JsonParseException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -271,11 +272,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
 
             if (display.hasKey(NAME.NBT)) {
-                displayName = IChatBaseComponent.ChatSerializer.a(display.getString(NAME.NBT));
+                try {
+                    displayName = IChatBaseComponent.ChatSerializer.a(display.getString(NAME.NBT));
+                } catch (JsonParseException ex) {
+                    // Ignore (stripped like Vanilla)
+                }
             }
 
             if (display.hasKey(LOCNAME.NBT)) {
-                locName = IChatBaseComponent.ChatSerializer.a(display.getString(LOCNAME.NBT));
+                try {
+                    locName = IChatBaseComponent.ChatSerializer.a(display.getString(LOCNAME.NBT));
+                } catch (JsonParseException ex) {
+                    // Ignore (stripped like Vanilla)
+                }
             }
 
             if (display.hasKey(LORE.NBT)) {
