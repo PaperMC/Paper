@@ -44,6 +44,13 @@ public class BlockDataTest extends AbstractTestingBase {
         CraftBlockData.newData(Material.CAKE, "minecraft:cake[bites=3]");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testMistake() {
+        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.getBlockData().set(BlockCake.BITES, 3));
+
+        CraftBlockData.newData(Material.CAKE, cakeTest.toString());
+    }
+
     @Test
     public void testClone() {
         Cake cakeTest = (Cake) CraftBlockData.fromData(Blocks.CAKE.getBlockData().set(BlockCake.BITES, 3));
