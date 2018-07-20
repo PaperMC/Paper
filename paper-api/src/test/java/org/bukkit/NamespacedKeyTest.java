@@ -30,6 +30,16 @@ public class NamespacedKeyTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void testInvalidNamespaceCasing() {
+        new NamespacedKey("Minecraft", "foo").toString();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidKeyCasing() {
+        new NamespacedKey("minecraft", "Foo").toString();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidKey() {
         new NamespacedKey("minecraft", "foo!").toString();
     }
