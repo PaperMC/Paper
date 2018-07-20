@@ -31,6 +31,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMetaBook;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftDamageSource;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.AreaEffectCloud;
@@ -67,6 +68,7 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
+import org.bukkit.potion.PotionEffect;
 
 public class CraftEventFactory {
     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
@@ -1052,6 +1054,39 @@ public class CraftEventFactory {
 
     public static boolean handleBlockFormEvent(World world, BlockPosition pos, IBlockData block) {
         return handleBlockFormEvent(world, pos, block, 3);
+    }
+
+    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(EntityLiving entity, @Nullable MobEffect oldEffect, @Nullable MobEffect newEffect, EntityPotionEffectEvent.Cause cause) {
+        return callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, true);
+    }
+
+    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(EntityLiving entity, @Nullable MobEffect oldEffect, @Nullable MobEffect newEffect, EntityPotionEffectEvent.Cause cause, EntityPotionEffectEvent.Action action) {
+        return callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, action, true);
+    }
+
+    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(EntityLiving entity, @Nullable MobEffect oldEffect, @Nullable MobEffect newEffect, EntityPotionEffectEvent.Cause cause, boolean willOverride) {
+        EntityPotionEffectEvent.Action action = EntityPotionEffectEvent.Action.CHANGED;
+        if (oldEffect == null) {
+            action = EntityPotionEffectEvent.Action.ADDED;
+        } else if (newEffect == null) {
+            action = EntityPotionEffectEvent.Action.REMOVED;
+        }
+
+        return callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, action, willOverride);
+    }
+
+    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(EntityLiving entity, @Nullable MobEffect oldEffect, @Nullable MobEffect newEffect, EntityPotionEffectEvent.Cause cause, EntityPotionEffectEvent.Action action, boolean willOverride) {
+        PotionEffect bukkitOldEffect = (oldEffect == null) ? null : CraftPotionUtil.toBukkit(oldEffect);
+        PotionEffect bukkitNewEffect = (newEffect == null) ? null : CraftPotionUtil.toBukkit(newEffect);
+
+        if (bukkitOldEffect == null && bukkitNewEffect == null) {
+            throw new IllegalStateException("Old and new potion effect are both null");
+        }
+
+        EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, cause, action, willOverride);
+        Bukkit.getPluginManager().callEvent(event);
+
+        return event;
     }
 
     public static boolean handleBlockFormEvent(World world, BlockPosition pos, IBlockData block, @Nullable Entity entity) {
