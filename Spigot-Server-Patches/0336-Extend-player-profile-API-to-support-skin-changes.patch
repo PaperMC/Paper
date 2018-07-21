@@ -1,55 +1,10 @@
-From e709f6448451449a488b16d4039b25ff467cc956 Mon Sep 17 00:00:00 2001
+From ecf75579dcfbec00461841c87f96091901fe65fb Mon Sep 17 00:00:00 2001
 From: NickAcPT <32451103+NickAcPT@users.noreply.github.com>
 Date: Sat, 21 Jul 2018 01:30:30 +0100
 Subject: [PATCH] Extend player profile API to support skin changes
 
 Added code that refreshes the player's skin by sending packets with a special order, telling the client to respawn the player and re-apply the game profile
 
-diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-index 9ad5853d..dda24052 100644
---- a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-+++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -170,17 +170,21 @@ public class CraftPlayerProfile implements PlayerProfile {
-     }
- 
-     public boolean complete(boolean textures) {
-+        return complete(textures, false);
-+    }
-+
-+    public boolean complete(boolean textures, boolean force) {
-         MinecraftServer server = MinecraftServer.getServer();
- 
-         boolean isOnlineMode = server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode);
-         boolean isCompleteFromCache = this.completeFromCache(true);
--        if (isOnlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
-+        if ((isOnlineMode || force) && (!isCompleteFromCache || textures && !hasTextures())) {
-             GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
-             if (result != null) {
-                 this.profile = result;
-             }
-         }
--        return profile.isComplete() && (!isOnlineMode || !textures || hasTextures());
-+        return profile.isComplete() && (!(isOnlineMode || force) || !textures || hasTextures());
-     }
- 
-     private static void copyProfileProperties(GameProfile source, GameProfile target) {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index dd78a87b..e3f7be28 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -135,6 +135,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-         return this;
-     }
- 
-+    // Paper start - Provide dimension number of world
-+    public int getDimension() {
-+        return dimension;
-+    }
-+    // Paper end
-+
-     // CraftBukkit start
-     @Override
-     public TileEntity getTileEntity(BlockPosition pos) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 210e3bc4..b0335684 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -68,7 +23,7 @@ index 210e3bc4..b0335684 100644
  
      public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6cbf429f..bd743be5 100644
+index 6cbf429f..57f17120 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -55,6 +55,7 @@ import org.bukkit.craftbukkit.CraftStatistic;
@@ -79,14 +34,10 @@ index 6cbf429f..bd743be5 100644
  import org.bukkit.craftbukkit.map.CraftMapView;
  import org.bukkit.craftbukkit.map.RenderData;
  import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
-@@ -1172,14 +1173,102 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-     public void setPlayerProfile(PlayerProfile profile) {
-         EntityPlayer self = getHandle();
-         self.setProfile(CraftPlayerProfile.asAuthlibCopy(profile));
--        List<EntityPlayer> players = server.getServer().getPlayerList().players;
--        for (EntityPlayer player : players) {
--            player.getBukkitEntity().reregisterPlayer(self);
--        }
+@@ -1176,10 +1177,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         for (EntityPlayer player : players) {
+             player.getBukkitEntity().reregisterPlayer(self);
+         }
 +        refreshPlayer();
      }
      public PlayerProfile getPlayerProfile() {
@@ -94,64 +45,31 @@ index 6cbf429f..bd743be5 100644
      }
 +
 +    private void refreshPlayer() {
-+        int dimension = getWorld().getEnvironment().getId();
-+        Packet respawn = new PacketPlayOutRespawn(dimension, ((WorldServer)getHandle().getWorld()).worldData.getDifficulty(), ((WorldServer)getHandle().getWorld()).worldData.getType(), EnumGamemode.getById(getHandle().playerInteractManager.getGameMode().getId()));
-+        Location l = getLocation();
++        EntityPlayer entityplayer = getHandle();
 +
++        Packet respawn = new PacketPlayOutRespawn(entityplayer.dimension, entityplayer.world.getDifficulty(), entityplayer.world.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode());
++        Location l = getLocation();
 +        Packet pos = new PacketPlayOutPosition(l.getX(), l.getY(), l.getZ(), l.getYaw(), l.getPitch(), new HashSet<>(), 0);
-+        Packet mainhand = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.MAINHAND, CraftItemStack.asNMSCopy(getInventory().getItemInMainHand()));
-+        Packet offhand = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.OFFHAND, CraftItemStack.asNMSCopy(getInventory().getItemInOffHand()));
-+        Packet helm = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.HEAD, CraftItemStack.asNMSCopy(getInventory().getHelmet()));
-+        Packet chest = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.CHEST, CraftItemStack.asNMSCopy(getInventory().getChestplate()));
-+        Packet legs = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.LEGS, CraftItemStack.asNMSCopy(getInventory().getLeggings()));
-+        Packet feet = new PacketPlayOutEntityEquipment(getEntityId(), EnumItemSlot.FEET, CraftItemStack.asNMSCopy(getInventory().getBoots()));
 +        Packet slot = new PacketPlayOutHeldItemSlot(getInventory().getHeldItemSlot());
 +
-+        for (Player pOnline : Bukkit.getOnlinePlayers()) {
-+            EntityPlayer handle = ((CraftPlayer) pOnline).getHandle();
-+            PlayerConnection playerCon = handle.playerConnection;
-+            if (pOnline.equals(this)) {
-+                reregisterPlayer(handle);
++        EntityPlayer handle = getHandle();
++        PlayerConnection playerCon = handle.playerConnection;
++        reregisterPlayer(handle);
 +
-+                //Respawn the player then update their position and selected slot
-+                handle.playerConnection.sendPacket(respawn);
-+                handle.updateAbilities();
-+                handle.playerConnection.sendPacket(pos);
-+                handle.playerConnection.sendPacket(slot);
++        //Respawn the player then update their position and selected slot
++        playerCon.sendPacket(respawn);
++        handle.updateAbilities();
++        playerCon.sendPacket(pos);
++        playerCon.sendPacket(slot);
 +
-+                ((CraftPlayer) pOnline).updateScaledHealth();
-+                pOnline.updateInventory();
++        updateScaledHealth();
++        this.updateInventory();
 +
-+                handle.triggerHealthUpdate();
++        handle.triggerHealthUpdate();
 +
-+                if (pOnline.isOp()) {
-+                    pOnline.setOp(false);
-+                    pOnline.setOp(true);
-+                }
-+                continue;
-+            }
-+            if (pOnline.getWorld().equals(getWorld()) && pOnline.canSee(this) && isOnline()) {
-+                PacketPlayOutEntityDestroy removeEntity = new PacketPlayOutEntityDestroy(new int[]{getEntityId()});
-+                PacketPlayOutNamedEntitySpawn addNamed = new PacketPlayOutNamedEntitySpawn(getHandle());
-+
-+                //Remove and reregister the player
-+                handle.playerConnection.sendPacket(removeEntity);
-+                ((CraftPlayer) pOnline).reregisterPlayer(this.getHandle());
-+                handle.playerConnection.sendPacket(addNamed);
-+
-+                //Send hand items
-+                handle.playerConnection.sendPacket(mainhand);
-+                handle.playerConnection.sendPacket(offhand);
-+
-+                //Send armor
-+                handle.playerConnection.sendPacket(helm);
-+                handle.playerConnection.sendPacket(chest);
-+                handle.playerConnection.sendPacket(legs);
-+                handle.playerConnection.sendPacket(feet);
-+            } else {
-+                //Just send player update
-+                ((CraftPlayer) pOnline).reregisterPlayer(this.getHandle());
-+            }
++        if (this.isOp()) {
++            this.setOp(false);
++            this.setOp(true);
 +        }
 +
 +    }
