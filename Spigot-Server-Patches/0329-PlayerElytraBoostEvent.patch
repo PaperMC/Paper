@@ -1,0 +1,32 @@
+From 7f8d954449c10f82e21d59f94d3abdc65f11fd45 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 5 Jul 2018 12:44:26 -0500
+Subject: [PATCH] PlayerElytraBoostEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemFireworks.java b/src/main/java/net/minecraft/server/ItemFireworks.java
+index 44a997215..2aee23020 100644
+--- a/src/main/java/net/minecraft/server/ItemFireworks.java
++++ b/src/main/java/net/minecraft/server/ItemFireworks.java
+@@ -27,9 +27,15 @@ public class ItemFireworks extends Item {
+                 EntityFireworks entityfireworks = new EntityFireworks(world, itemstack, entityhuman);
+ 
+                 entityfireworks.spawningEntity = entityhuman.getUniqueID(); // Paper
+-                world.addEntity(entityfireworks);
+-                if (!entityhuman.abilities.canInstantlyBuild) {
+-                    itemstack.subtract(1);
++                // Paper start
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Firework) entityfireworks.getBukkitEntity());
++                if (event.callEvent() && world.addEntity(entityfireworks)) {
++                    if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                        itemstack.subtract(1);
++                    } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++                } else if (entityhuman instanceof EntityPlayer) {
++                    ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++                    // Paper end
+                 }
+             }
+ 
+-- 
+2.11.0
+
