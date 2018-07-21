@@ -6,17 +6,9 @@ Subject: [PATCH] Extend player profile API to support skin changes
 Added code that refreshes the player's skin by sending packets with a special order, telling the client to respawn the player and re-apply the game profile
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6cbf429f..57f17120 100644
+index 6cbf429f..01335b6b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.CraftStatistic;
- import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.advancement.CraftAdvancement;
- import org.bukkit.craftbukkit.advancement.CraftAdvancementProgress;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
- import org.bukkit.craftbukkit.map.CraftMapView;
- import org.bukkit.craftbukkit.map.RenderData;
- import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          for (EntityPlayer player : players) {
              player.getBukkitEntity().reregisterPlayer(self);
@@ -30,20 +22,17 @@ index 6cbf429f..57f17120 100644
 +    private void refreshPlayer() {
 +        EntityPlayer entityplayer = getHandle();
 +
-+        Packet respawn = new PacketPlayOutRespawn(entityplayer.dimension, entityplayer.world.getDifficulty(), entityplayer.world.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode());
-+        Location l = getLocation();
-+        Packet pos = new PacketPlayOutPosition(l.getX(), l.getY(), l.getZ(), l.getYaw(), l.getPitch(), new HashSet<>(), 0);
-+        Packet slot = new PacketPlayOutHeldItemSlot(getInventory().getHeldItemSlot());
++        Location loc = getLocation();
 +
 +        EntityPlayer handle = getHandle();
-+        PlayerConnection playerCon = handle.playerConnection;
++        PlayerConnection connection = handle.playerConnection;
 +        reregisterPlayer(handle);
 +
 +        //Respawn the player then update their position and selected slot
-+        playerCon.sendPacket(respawn);
++        connection.sendPacket(new PacketPlayOutRespawn(entityplayer.dimension, entityplayer.world.getDifficulty(), entityplayer.world.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
 +        handle.updateAbilities();
-+        playerCon.sendPacket(pos);
-+        playerCon.sendPacket(slot);
++        connection.sendPacket(new PacketPlayOutPosition(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), new HashSet<>(), 0));
++        connection.sendPacket(new PacketPlayOutHeldItemSlot(getInventory().getHeldItemSlot()));
 +
 +        updateScaledHealth();
 +        this.updateInventory();
