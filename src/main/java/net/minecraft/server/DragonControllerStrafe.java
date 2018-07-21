@@ -71,7 +71,9 @@ public class DragonControllerStrafe extends AbstractDragonController {
                         EntityDragonFireball entitydragonfireball = new EntityDragonFireball(this.a.world, this.a, d9, d10, d11);
 
                         entitydragonfireball.setPositionRotation(d6, d7, d8, 0.0F, 0.0F);
+                        if (new com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent((org.bukkit.entity.EnderDragon) a.getBukkitEntity(), (org.bukkit.entity.DragonFireball) entitydragonfireball.getBukkitEntity()).callEvent()) // Paper
                         this.a.world.addEntity(entitydragonfireball);
+                        else entitydragonfireball.die(); // Paper
                         this.c = 0;
                         if (this.d != null) {
                             while (!this.d.c()) {

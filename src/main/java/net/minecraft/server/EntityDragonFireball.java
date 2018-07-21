@@ -46,8 +46,10 @@ public class EntityDragonFireball extends EntityFireball {
                     }
                 }
 
+                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(EntityLiving::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) entityareaeffectcloud.getBukkitEntity()).callEvent()) { // Paper
                 this.world.triggerEffect(2006, this.getChunkCoordinates(), this.isSilent() ? -1 : 1);
                 this.world.addEntity(entityareaeffectcloud);
+                } else entityareaeffectcloud.die(); // Paper
                 this.die();
             }
 
