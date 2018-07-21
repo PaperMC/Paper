@@ -93,7 +93,7 @@
              ChatComponentText chatcomponenttext;
  
              try {
-@@ -135,54 +188,59 @@
+@@ -135,65 +188,80 @@
                  return i;
              } catch (CommandException commandexception) {
                  commandlistenerwrapper.sendFailureMessage(commandexception.a());
@@ -145,17 +145,17 @@
              } catch (Exception exception) {
 -                chatcomponenttext = new ChatComponentText;
 -            }
-+                ChatMessage chatmessage1 = new ChatMessage("command.failed", new Object[0]);
- 
+-
 -            chatcomponenttext.<init>(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 -            ChatComponentText chatcomponenttext1 = chatcomponenttext;
++                ChatMessage chatmessage1 = new ChatMessage("command.failed", new Object[0]);
+ 
+-            if (CommandDispatcher.a.isDebugEnabled()) {
+-                StackTraceElement[] astacktraceelement = exception.getStackTrace();
 +                chatcomponenttext = new ChatComponentText(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 +                if (CommandDispatcher.a.isDebugEnabled()) {
 +                    StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
--            if (CommandDispatcher.a.isDebugEnabled()) {
--                StackTraceElement[] astacktraceelement = exception.getStackTrace();
--
 -                for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
 -                    chatcomponenttext1.a("\n\n").a(astacktraceelement[k].getMethodName()).a("\n ").a(astacktraceelement[k].getFileName()).a(":").a(String.valueOf(astacktraceelement[k].getLineNumber()));
 +                    for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
@@ -180,3 +180,25 @@
          }
  
          return b0;
+     }
+ 
+     public void a(EntityPlayer entityplayer) {
+-        HashMap hashmap = Maps.newHashMap();
++        // CraftBukkit start
++        // Register Vanilla commands into builtRoot as before
++        Map hashmap = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
++        RootCommandNode vanillaRoot = new RootCommandNode();
++
++        RootCommandNode<CommandListenerWrapper> vanilla = entityplayer.server.vanillaCommandDispatcher.a().getRoot();
++        hashmap.put(vanilla, vanillaRoot);
++        this.a(vanilla, vanillaRoot, entityplayer.getCommandListener(), (Map) hashmap);
++
++        // Now build the global commands in a second pass
+         RootCommandNode rootcommandnode = new RootCommandNode();
+ 
+         hashmap.put(this.b.getRoot(), rootcommandnode);
+         this.a(this.b.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) hashmap);
++        // CraftBukkit end
+         entityplayer.playerConnection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
+     }
+ 
