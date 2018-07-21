@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import co.aikar.timings.Timing; // Paper
+import com.destroystokyo.paper.PaperWorldConfig; // Paper
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ComparisonChain; // Paper
@@ -23,14 +24,17 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap; // Paper
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map; // Paper
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.UUID; // Paper
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
@@ -651,12 +655,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                             // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
                             boolean needsRemoval = false;
                             if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
-                                entity.die();
+                                entity.dead = true; // Paper
                                 needsRemoval = true;
                             }
-
-                            if (!(entity instanceof EntityHuman) && (needsRemoval || !this.world.addEntityChunk(entity))) {
-                                // CraftBukkit end
+                            // CraftBukkit end
+                            checkDupeUUID(entity); // Paper
+                            if (!(entity instanceof EntityHuman) && (entity.dead || !this.world.addEntityChunk(entity))) { // Paper
                                 if (list == null) {
                                     list = Lists.newArrayList(new Entity[]{entity});
                                 } else {
@@ -682,6 +686,44 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             mailbox.a(ChunkTaskQueueSorter.a(runnable, i, playerchunk::getTicketLevel));
         });
     }
+
+    // Paper start
+    private void checkDupeUUID(Entity entity) {
+        PaperWorldConfig.DuplicateUUIDMode mode = world.paperConfig.duplicateUUIDMode;
+        if (mode != PaperWorldConfig.DuplicateUUIDMode.WARN
+            && mode != PaperWorldConfig.DuplicateUUIDMode.DELETE
+            && mode != PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN) {
+            return;
+        }
+        Entity other = world.getEntity(entity.uniqueID);
+
+        if (mode == PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.dead
+                && Objects.equals(other.getSaveID(), entity.getSaveID())
+                && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < world.paperConfig.duplicateUUIDDeleteRange
+        ) {
+            if (World.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
+            entity.dead = true;
+            return;
+        }
+        if (other != null && !other.dead) {
+            switch (mode) {
+                case SAFE_REGEN: {
+                    entity.setUUID(UUID.randomUUID());
+                    if (World.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", regenerated UUID for " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
+                    break;
+                }
+                case DELETE: {
+                    if (World.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
+                    entity.dead = true;
+                    break;
+                }
+                default:
+                    if (World.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", doing nothing to " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
+                    break;
+            }
+        }
+    }
+    // Paper end
 
     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a(PlayerChunk playerchunk) {
         ChunkCoordIntPair chunkcoordintpair = playerchunk.i();

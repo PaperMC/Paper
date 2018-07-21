@@ -499,6 +499,7 @@ public class Chunk implements IChunkAccess {
         if (i != this.loc.x || j != this.loc.z) {
             Chunk.LOGGER.warn("Wrong location! ({}, {}) should be ({}, {}), {}", i, j, this.loc.x, this.loc.z, entity);
             entity.dead = true;
+            return; // Paper
         }
 
         int k = MathHelper.floor(entity.locY() / 16.0D);

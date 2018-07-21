@@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import co.aikar.timings.TimingHistory; // Paper
 import co.aikar.timings.Timings; // Paper
+
+import com.destroystokyo.paper.PaperWorldConfig; // Paper
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -992,7 +994,22 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (entity1 == null) {
             return false;
         } else {
+            // Paper start
+            if (entity1.dead) {
+                unregisterEntity(entity1); // remove the existing entity
+                return false;
+            }
+            // Paper end
             WorldServer.LOGGER.warn("Trying to add entity with duplicated UUID {}. Existing {}#{}, new: {}#{}", uuid, EntityTypes.getName(entity1.getEntityType()), entity1.getId(), EntityTypes.getName(entity.getEntityType()), entity.getId()); // CraftBukkit // Paper
+            // Paper start
+            if (DEBUG_ENTITIES && entity.world.paperConfig.duplicateUUIDMode != PaperWorldConfig.DuplicateUUIDMode.NOTHING) {
+                if (entity1.addedToWorldStack != null) {
+                    entity1.addedToWorldStack.printStackTrace();
+                }
+
+                getAddToWorldStackTrace(entity).printStackTrace();
+            }
+            // Paper end
             return true;
         }
     }

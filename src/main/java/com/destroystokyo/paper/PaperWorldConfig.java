@@ -394,4 +394,43 @@ public class PaperWorldConfig {
     private void preventMovingIntoUnloadedChunks() {
         preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
     }
+
+    public enum DuplicateUUIDMode {
+        SAFE_REGEN, DELETE, NOTHING, WARN
+    }
+    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
+    public int duplicateUUIDDeleteRange = 32;
+    private void repairDuplicateUUID() {
+        String desiredMode = getString("duplicate-uuid-resolver", "saferegen").toLowerCase().trim();
+        duplicateUUIDDeleteRange = getInt("duplicate-uuid-saferegen-delete-range", duplicateUUIDDeleteRange);
+        switch (desiredMode.toLowerCase()) {
+            case "regen":
+            case "regenerate":
+            case "saferegen":
+            case "saferegenerate":
+                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
+                log("Duplicate UUID Resolve: Regenerate New UUID if distant (Delete likely duplicates within " + duplicateUUIDDeleteRange + " blocks)");
+                break;
+            case "remove":
+            case "delete":
+                duplicateUUIDMode = DuplicateUUIDMode.DELETE;
+                log("Duplicate UUID Resolve: Delete Entity");
+                break;
+            case "silent":
+            case "nothing":
+                duplicateUUIDMode = DuplicateUUIDMode.NOTHING;
+                logError("Duplicate UUID Resolve: Do Nothing (no logs) - Warning, may lose indication of bad things happening");
+                break;
+            case "log":
+            case "warn":
+                duplicateUUIDMode = DuplicateUUIDMode.WARN;
+                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
+                break;
+            default:
+                duplicateUUIDMode = DuplicateUUIDMode.WARN;
+                logError("Warning: Invalid duplicate-uuid-resolver config " + desiredMode + " - must be one of: regen, delete, nothing, warn");
+                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
+                break;
+        }
+    }
 }
