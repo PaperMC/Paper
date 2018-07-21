@@ -69,6 +69,10 @@ for f in $files; do
 	fi
 done
 
+import ItemEgg
+import ItemExpBottle
+import ItemLingeringPotion
+import ItemSplashPotion
 import NBTList
 import NBTBase
 
