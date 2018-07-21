@@ -1,4 +1,4 @@
-From b061a231214e88cde43e0c3880f779723828b2b4 Mon Sep 17 00:00:00 2001
+From 0318662b299542a2245da28c82d08f5a3455fa69 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
@@ -6,53 +6,45 @@ Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
 Add -Ddebug.entities=true to your JVM flags to gain more information
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f6b755863..108654d63 100644
+index 0e0dc72f0..d725bf13e 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -73,6 +73,7 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
-         }
-         return bukkitEntity;
-     }
-+    Throwable addedToWorldStack; // Paper - entity debug
-     // CraftBukikt end
+@@ -71,6 +71,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     protected CraftEntity bukkitEntity;
  
-     private static final Logger a = LogManager.getLogger();
+     EntityTrackerEntry tracker; // Paper
++    Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+         if (bukkitEntity == null) {
+             bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index b16324e1a..994d4bbb8 100644
+index fcb5f68f8..013f4eef5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
- import java.io.File;
- import java.util.ArrayList;
- import java.util.Collection;
-+import java.util.Date;
- import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
-@@ -53,6 +54,10 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-     private final List<NextTickListEntry> W = Lists.newArrayList();
+@@ -53,6 +53,10 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+     private boolean Q;
  
      // CraftBukkit start
 +    private static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
 +    private static Throwable getAddToWorldStackTrace(Entity entity) {
-+        return new Throwable(entity + " Added to world at " + new Date());
++        return new Throwable(entity + " Added to world at " + new java.util.Date());
 +    }
      public final int dimension;
  
      // Add env and gen to constructor
-@@ -1160,6 +1165,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -980,6 +984,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
      private boolean j(Entity entity) {
          if (entity.dead) {
-             WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.a(entity)); // CraftBukkit // Paper
+             WorldServer.a.warn("Tried to add entity {} but it was marked as removed already: " + entity); // CraftBukkit // Paper
 +            if (DEBUG_ENTITIES) getAddToWorldStackTrace(entity).printStackTrace();
              return false;
          } else {
              UUID uuid = entity.getUniqueID();
-@@ -1171,8 +1177,14 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-                     this.f.remove(entity1);
+@@ -991,8 +996,14 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                     this.g.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
--                        WorldServer.a.error("Keeping entity {} that already exists with UUID {} - " + entity1, EntityTypes.a(entity1), uuid.toString()); // CraftBukkit // Paper
+-                        WorldServer.a.error("Keeping entity {} that already exists with UUID {} - " + entity1, EntityTypes.getName(entity1.P()), uuid.toString()); // CraftBukkit // Paper
 +                        WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
                          WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
 +                        if (DEBUG_ENTITIES) {
@@ -64,7 +56,7 @@ index b16324e1a..994d4bbb8 100644
                          return false;
                      }
  
-@@ -1189,7 +1201,24 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1009,7 +1020,25 @@ public class WorldServer extends World implements IAsyncTaskHandler {
      protected void b(Entity entity) {
          super.b(entity);
          this.entitiesById.a(entity.getId(), entity);
@@ -73,6 +65,7 @@ index b16324e1a..994d4bbb8 100644
 +        if (DEBUG_ENTITIES) {
 +            entity.addedToWorldStack = getAddToWorldStackTrace(entity);
 +        }
++
 +        Entity old = this.entitiesByUUID.put(entity.getUniqueID(), entity);
 +        if (old != null && old.getId() != entity.getId() && old.valid) {
 +            Logger logger = LogManager.getLogger();
@@ -87,7 +80,7 @@ index b16324e1a..994d4bbb8 100644
 +            }
 +        }
 +        // Paper end
-         Entity[] aentity = entity.bb();
+         Entity[] aentity = entity.bi();
  
          if (aentity != null) {
 -- 
