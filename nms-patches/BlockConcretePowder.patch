@@ -11,18 +11,42 @@
  public class BlockConcretePowder extends BlockFalling {
  
      private final IBlockData a;
-@@ -10,8 +15,8 @@
-     }
+@@ -11,7 +16,7 @@
  
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {
--        if (iblockdata1.getMaterial().isLiquid()) {
+         if (iblockdata1.getMaterial().isLiquid()) {
 -            world.setTypeAndData(blockposition, this.a, 3);
-+        if (iblockdata1.getMaterial().isLiquid() && !(world.getType(blockposition).getBlock() instanceof BlockConcretePowder)) { // CraftBukkit - don't double concrete
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.a, 3);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.a, 3); // CraftBukkit
          }
  
      }
-@@ -45,6 +50,20 @@
+@@ -20,7 +25,24 @@
+         World world = blockactioncontext.getWorld();
+         BlockPosition blockposition = blockactioncontext.getClickPosition();
+ 
+-        return !blockactioncontext.getWorld().getType(blockactioncontext.getClickPosition()).getMaterial().isLiquid() && !a((IBlockAccess) world, blockposition) ? super.getPlacedState(blockactioncontext) : this.a;
++        // CraftBukkit start
++        if (!blockactioncontext.getWorld().getType(blockactioncontext.getClickPosition()).getMaterial().isLiquid() && !a((IBlockAccess) world, blockposition)) {
++            return super.getPlacedState(blockactioncontext);
++        }
++
++        // TODO: An event factory call for methods like this
++        CraftBlockState blockState = CraftBlockState.getBlockState(world, blockposition);
++        blockState.setData(this.a);
++
++        BlockFormEvent event = new BlockFormEvent(blockState.getBlock(), blockState);
++        world.getMinecraftServer().server.getPluginManager().callEvent(event);
++
++        if (!event.isCancelled()) {
++            return blockState.getHandle();
++        }
++
++        return super.getPlacedState(blockactioncontext);
++        // CraftBukkit end
+     }
+ 
+     private static boolean a(IBlockAccess iblockaccess, BlockPosition blockposition) {
+@@ -45,6 +67,20 @@
      }
  
      public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
