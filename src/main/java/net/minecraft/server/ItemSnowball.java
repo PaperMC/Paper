@@ -17,14 +17,20 @@ public class ItemSnowball extends Item {
 
             entitysnowball.setItem(itemstack);
             entitysnowball.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
-            if (world.addEntity(entitysnowball)) {
-                if (!entityhuman.abilities.canInstantlyBuild) {
+            // Paper start
+            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitysnowball.getBukkitEntity());
+            if (event.callEvent() && world.addEntity(entitysnowball)) {
+                if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
+                    // Paper end
                     itemstack.subtract(1);
+                } else if (entityhuman instanceof EntityPlayer) {  // Paper
+                    ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();  // Paper
                 }
 
                 world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.ENTITY_SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemSnowball.RANDOM.nextFloat() * 0.4F + 0.8F));
-            } else if (entityhuman instanceof EntityPlayer) {
-                ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+            } else { // Paper
+                if (entityhuman instanceof EntityPlayer) ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // Paper
+                return new InteractionResultWrapper<ItemStack>(EnumInteractionResult.FAIL, itemstack); // Paper
             }
         }
         // CraftBukkit end

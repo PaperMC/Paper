@@ -10,6 +10,7 @@ public class InteractionResultWrapper<T> {
         this.b = t0;
     }
 
+    public EnumInteractionResult getResult() { return this.a(); } // Paper - OBFHELPER
     public EnumInteractionResult a() {
         return this.a;
     }
