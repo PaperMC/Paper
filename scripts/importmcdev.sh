@@ -69,8 +69,14 @@ for f in $files; do
 	fi
 done
 
-import NBTList
-import NBTBase
+# Temporarily add new NMS dev imports here before you run paper patch
+# but after you have paper rb'd your changes, remove the line from this file before committing.
+# we do not need any lines added to this file
+
+# import FileName
+
+
+
 
 set -e
 cd "$workdir/Spigot/Spigot-Server/"
