@@ -355,7 +355,7 @@ public final class CraftServer implements Server {
     }
 
     private void setVanillaCommands() {
-        CommandDispatcher dispatcher = console.getCommandDispatcher();
+        CommandDispatcher dispatcher = console.vanillaCommandDispatcher;
 
         // Build a list of all Vanilla commands and create wrappers
         for (CommandNode<CommandListenerWrapper> cmd : dispatcher.a().getRoot().getChildren()) {
