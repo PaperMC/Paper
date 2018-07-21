@@ -1,4 +1,4 @@
-From 221b6fda013cdc465dcf73d3765655e8c1d7522e Mon Sep 17 00:00:00 2001
+From 71e6ced752630d941c3d5bf62881eb81b72eb156 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -64,10 +64,22 @@ index 0e6c18b32..c182ceffb 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 6c6924937..5163bd11b 100644
+index 6c6924937..2f40f687a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -1013,11 +1013,9 @@ public class Chunk implements IChunkAccess {
+@@ -52,9 +52,9 @@ public class Chunk implements IChunkAccess {
+     private final TickList<Block> t;
+     private final TickList<FluidType> u;
+     private boolean v;
+-    private boolean w;
++    private boolean w; public boolean hasEntities() { return w; } // Paper - OBFHELPER
+     private long lastSaved;
+-    private boolean y;
++    private boolean y; public boolean isModified() { return y; } // Paper - OBFHELPER
+     private int z;
+     private long A; public long getInhabitedTime() { return A; } // Paper - OBFHELPER
+     private int B;
+@@ -1013,11 +1013,11 @@ public class Chunk implements IChunkAccess {
              if (this.w && this.world.getTime() != this.lastSaved || this.y) {
                  return true;
              }
@@ -76,8 +88,10 @@ index 6c6924937..5163bd11b 100644
          }
 -
 -        return this.y;
-+        // This !flag section should say if y(isModified) or w(hasEntities), then check auto save
-+        return ((this.y || this.w) && this.world.getTime() >= this.lastSaved + world.paperConfig.autoSavePeriod); // Paper - Make world configurable and incremental
++        // Paper start - Make world configurable and incremental
++        // This !flag section should say if isModified or hasEntities, then check auto save
++        return ((isModified() || hasEntities()) && this.world.getTime() >= this.lastSaved + world.paperConfig.autoSavePeriod);
++        // Paper end
      }
  
      public boolean isEmpty() {
@@ -102,7 +116,7 @@ index 2e72a294d..1e6ea3084 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 5aafa4e23..f5fae7ba8 100644
+index 08d6f77ae..5122cee42 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -38,6 +38,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -114,18 +128,18 @@ index 5aafa4e23..f5fae7ba8 100644
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 49b2c27c6..bf020293d 100644
+index 0e59fc9eb..603ce9fe2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -147,6 +147,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -143,6 +143,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
+     public ConsoleReader reader;
+     public static int currentTick = 0; // Paper - Further improve tick loop
++    public boolean serverAutoSave = false; // Paper
+     public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-     public File bukkitDataPackFolder;
-+    public boolean serverAutoSave = false; // Paper
-     // CraftBukkit end
-     // Spigot start
-     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
-@@ -868,22 +869,30 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -869,22 +870,30 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              this.n.b().a(agameprofile);
          }
  
@@ -200,7 +214,7 @@ index 6b7d81933..3ee587014 100644
      public WhiteList getWhitelist() {
          return this.whitelist;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index e3d62fc9c..72b3a6d40 100644
+index 6c976e3b1..a08ef197e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -872,8 +872,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
