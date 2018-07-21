@@ -9,12 +9,26 @@
              );
              itemStack.shrink(1);
          }
-@@ -56,7 +56,7 @@
+@@ -56,9 +56,19 @@
          if (user.isFallFlying()) {
              ItemStack itemStack = user.getItemInHand(hand);
              if (world instanceof ServerLevel serverLevel) {
 -                Projectile.spawnProjectile(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack);
-+                Projectile.spawnProjectile(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack, f -> f.spawningEntity = user.getUUID());  // Paper - firework api - assign spawning entity uuid
-                 itemStack.consume(1, user);
-                 user.awardStat(Stats.ITEM_USED.get(this));
+-                itemStack.consume(1, user);
+-                user.awardStat(Stats.ITEM_USED.get(this));
++                // Paper start - PlayerElytraBoostEvent
++                final Projectile.Delayed<FireworkRocketEntity> delayed = Projectile.spawnProjectileDelayed(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack, f -> f.spawningEntity = user.getUUID());  // Paper - firework api - assign spawning entity uuid
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) delayed.projectile().getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand));
++                if (event.callEvent() && delayed.attemptSpawn()) {
++                    user.awardStat(Stats.ITEM_USED.get(this)); // Moved up from below
++                    if (event.shouldConsume() && !user.hasInfiniteMaterials()) {
++                        itemStack.shrink(1); // Moved up from below
++                    } else ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                } else {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                // Moved up consume/stat
++                // Paper end - PlayerElytraBoostEvent
              }
+ 
+             return InteractionResult.SUCCESS;
