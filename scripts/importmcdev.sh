@@ -69,6 +69,8 @@ for f in $files; do
 	fi
 done
 
+import DragonControllerStrafe
+import EntityDragonFireball
 import NBTList
 import NBTBase
 
