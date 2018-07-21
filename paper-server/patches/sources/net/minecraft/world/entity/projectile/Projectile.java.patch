@@ -29,10 +29,26 @@
  
      }
  
-@@ -211,11 +219,34 @@
-         });
+@@ -189,7 +197,12 @@
      }
  
+     public static <T extends Projectile> T spawnProjectileFromRotation(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
+-        return Projectile.spawnProjectile(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
++    // Paper start - PlayerLaunchProjectileEvent
++        return spawnProjectileFromRotationDelayed(creator, world, projectileStack, shooter, roll, power, divergence).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
++        return Projectile.spawnProjectileDelayed(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
++    // Paper end - PlayerLaunchProjectileEvent
+             iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
+         });
+     }
+@@ -209,13 +222,36 @@
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack) {
+         return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
+         });
++    }
++
 +    // Paper start - delayed projectile spawning
 +    public record Delayed<T extends Projectile>(
 +        T projectile,
@@ -50,9 +66,9 @@
 +            this.attemptSpawn();
 +            return projectile();
 +        }
-+    }
+     }
 +    // Paper end - delayed projectile spawning
-+
+ 
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
 +    // Paper start - delayed projectile spawning
 +        return spawnProjectileDelayed(projectile, world, projectileStack, beforeSpawn).spawn();
@@ -67,7 +83,7 @@
      }
  
      public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
-@@ -232,6 +263,17 @@
+@@ -232,6 +268,17 @@
  
      }
  
@@ -85,7 +101,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult movingobjectpositionentity = (EntityHitResult) hitResult;
-@@ -309,6 +351,11 @@
+@@ -309,6 +356,11 @@
      protected void onHitEntity(EntityHitResult entityHitResult) {}
  
      protected void onHitBlock(BlockHitResult blockHitResult) {
