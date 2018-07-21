@@ -36,11 +36,16 @@ public class ItemFireworks extends Item {
                 // Paper start
                 final EntityFireworks entityfireworks = new EntityFireworks(world, itemstack, entityhuman);
                 entityfireworks.spawningEntity = entityhuman.getUniqueID();
-                world.addEntity(entityfireworks);
-                // Paper end
-                if (!entityhuman.abilities.canInstantlyBuild) {
-                    itemstack.subtract(1);
+                // Paper start
+                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Firework) entityfireworks.getBukkitEntity());
+                if (event.callEvent() && world.addEntity(entityfireworks)) {
+                    if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
+                        itemstack.subtract(1);
+                    } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+                } else if (entityhuman instanceof EntityPlayer) {
+                    ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
                 }
+                // Paper end
             }
 
             return InteractionResultWrapper.a(entityhuman.b(enumhand), world.s_());
