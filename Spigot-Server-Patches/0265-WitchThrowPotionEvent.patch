@@ -1,0 +1,31 @@
+From 9cb40d40ad0b4f9ca8d6ec60318d3a5479b47887 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 16 May 2018 20:44:58 -0400
+Subject: [PATCH] WitchThrowPotionEvent
+
+Fired when a witch throws a potion at a player
+
+diff --git a/src/main/java/net/minecraft/server/EntityWitch.java b/src/main/java/net/minecraft/server/EntityWitch.java
+index c77328e76..2d8e307e7 100644
+--- a/src/main/java/net/minecraft/server/EntityWitch.java
++++ b/src/main/java/net/minecraft/server/EntityWitch.java
+@@ -154,7 +154,15 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
+                 potionregistry = Potions.M;
+             }
+ 
+-            EntityPotion entitypotion = new EntityPotion(this.world, this, PotionUtil.a(new ItemStack(Items.SPLASH_POTION), potionregistry));
++            // Paper start
++            ItemStack potion = PotionUtil.a(new ItemStack(Items.SPLASH_POTION), potionregistry);
++            com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
++            if (!event.callEvent()) {
++                return;
++            }
++            potion = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
++            EntityPotion entitypotion = new EntityPotion(this.world, this, potion);
++            // Paper end
+ 
+             entitypotion.pitch -= -20.0F;
+             entitypotion.shoot(d1, d2 + (double) (f1 * 0.2F), d3, 0.75F, 8.0F);
+-- 
+2.18.0
+

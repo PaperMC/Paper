@@ -1,0 +1,38 @@
+From 48823e6b74986eb521e651c82065f4ffcea3673e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Apr 2018 11:21:48 -0400
+Subject: [PATCH] Configurable Allowance of Permanent Chunk Loaders
+
+This disables the behavior that allows players to keep chunks permanently loaded
+by default and allows server operators to enable it if they wish.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ba6d5b7ff..b9f5f4905 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -466,4 +466,9 @@ public class PaperWorldConfig {
+                 break;
+         }
+     }
++    public boolean allowPermaChunkLoaders = false;
++    private void allowPermaChunkLoaders() {
++        allowPermaChunkLoaders = getBoolean("game-mechanics.allow-permanent-chunk-loaders", allowPermaChunkLoaders);
++        log("Allow Perma Chunk Loaders: " + (allowPermaChunkLoaders ? "enabled" : "disabled"));
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 70790386e..7f83ed51d 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -111,7 +111,7 @@ public class ChunkProviderServer implements IChunkProvider {
+         Long2ObjectMap long2objectmap = this.chunks;
+ 
+         synchronized (this.chunks) {
+-            Chunk chunk = this.getLoadedChunkAt(i, j);
++            Chunk chunk = world.paperConfig.allowPermaChunkLoaders ? getLoadedChunkAt(i, j) : getChunkIfLoaded(i, j); // Paper - Configurable perma chunk loaders
+ 
+             return chunk != null ? chunk : this.loadChunkAt(i, j);
+         }
+-- 
+2.18.0
+
