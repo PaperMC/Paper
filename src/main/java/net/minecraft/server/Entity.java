@@ -76,6 +76,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
     private CraftEntity bukkitEntity;
 
+    PlayerChunkMap.EntityTracker tracker; // Paper
+    Throwable addedToWorldStack; // Paper - entity debug
     public CraftEntity getBukkitEntity() {
         if (bukkitEntity == null) {
             bukkitEntity = CraftEntity.getEntity(world.getServer(), this);

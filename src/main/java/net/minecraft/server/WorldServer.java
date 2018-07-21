@@ -84,6 +84,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     public final Convertable.ConversionSession convertable;
     public final UUID uuid;
     boolean hasPhysicsEvent = true; // Paper
+    private static Throwable getAddToWorldStackTrace(Entity entity) {
+        return new Throwable(entity + " Added to world at " + new java.util.Date());
+    }
 
     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
         return this.chunkProvider.getChunkAt(x, z, false);
@@ -922,8 +925,28 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     // CraftBukkit start
     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
-        if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+        // Paper start
+        if (entity.valid) {
+            MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
+
+            if (DEBUG_ENTITIES) {
+                Throwable thr = entity.addedToWorldStack;
+                if (thr == null) {
+                    MinecraftServer.LOGGER.error("Double add entity has no add stacktrace");
+                } else {
+                    MinecraftServer.LOGGER.error("Double add stacktrace: ", thr);
+                }
+            }
+            return true;
+        }
+        // Paper end
         if (entity.dead) {
+            // Paper start
+            if (DEBUG_ENTITIES) {
+                new Throwable("Tried to add entity " + entity + " but it was marked as removed already").printStackTrace(); // CraftBukkit
+                getAddToWorldStackTrace(entity).printStackTrace();
+            }
+            // Paper end
             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getName(entity.getEntityType())); // CraftBukkit
             return false;
         } else if (this.isUUIDTaken(entity)) {
@@ -1120,7 +1143,24 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                 }
             }
 
-            this.entitiesByUUID.put(entity.getUniqueID(), entity);
+            if (DEBUG_ENTITIES) {
+                entity.addedToWorldStack = getAddToWorldStackTrace(entity);
+            }
+
+            Entity old = this.entitiesByUUID.put(entity.getUniqueID(), entity);
+            if (old != null && old.getId() != entity.getId() && old.valid) {
+                Logger logger = LogManager.getLogger();
+                logger.error("Overwrote an existing entity " + old + " with " + entity);
+                if (DEBUG_ENTITIES) {
+                    if (old.addedToWorldStack != null) {
+                        old.addedToWorldStack.printStackTrace();
+                    } else {
+                        logger.error("Oddly, the old entity was not added to the world in the normal way. Plugins?");
+                    }
+                    entity.addedToWorldStack.printStackTrace();
+                }
+            }
+
             this.getChunkProvider().addEntity(entity);
             // CraftBukkit start - SPIGOT-5278
             if (entity instanceof EntityDrowned) {

@@ -68,6 +68,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public boolean pvpMode;
     public boolean keepSpawnInMemory = true;
     public org.bukkit.generator.ChunkGenerator generator;
+    public static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
 
     public boolean captureBlockStates = false;
     public boolean captureTreeGeneration = false;
