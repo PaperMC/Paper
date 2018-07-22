@@ -63,7 +63,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
 
         String baseStr = SerializableMeta.getString(map, BASE.BUKKIT, true);
         if (baseStr != null) {
-            base = DyeColor.valueOf(baseStr);
+            base = DyeColor.legacyValueOf(baseStr);
         }
 
         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, PATTERNS.BUKKIT, true);

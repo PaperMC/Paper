@@ -159,7 +159,7 @@
 +            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.hasBlock(nmsBlock.getBlockData())) {
 +                // Copied from block.a(World world, EntityHuman entityhuman, BlockPosition blockposition, IBlockData iblockdata, @Nullable TileEntity tileentity, ItemStack itemstack)
 +                // PAIL: checkme each update
-+                if (!(nmsBlock.k() && EnchantmentManager.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) > 0)) {
++                if (!(nmsBlock.X_() && EnchantmentManager.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) > 0)) {
 +                    int bonusLevel = EnchantmentManager.getEnchantmentLevel(Enchantments.LOOT_BONUS_BLOCKS, itemstack);
 +
 +                    event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.world, blockposition, bonusLevel));
@@ -261,7 +261,7 @@
 +    public boolean firedInteract = false;
      public EnumInteractionResult a(EntityHuman entityhuman, World world, ItemStack itemstack, EnumHand enumhand, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
          IBlockData iblockdata = world.getType(blockposition);
-+        EnumInteractionResult enuminteractionresult = EnumInteractionResult.FAIL;
++        EnumInteractionResult enuminteractionresult = EnumInteractionResult.PASS;
 +        if (iblockdata.isAir()) return enuminteractionresult;
 +        boolean cancelledBlock = false;
  
@@ -293,22 +293,18 @@
  
              if (tileentity instanceof ITileInventory) {
                  Block block = iblockdata.getBlock();
-@@ -304,26 +486,26 @@
-         } else {
-             boolean flag = entityhuman.getItemInMainHand().isEmpty();
+@@ -305,24 +487,26 @@
+             boolean flag = !entityhuman.getItemInMainHand().isEmpty() || !entityhuman.getItemInOffHand().isEmpty();
+             boolean flag1 = entityhuman.isSneaking() && flag;
  
--            if ((!entityhuman.isSneaking() || flag && entityhuman.getItemInOffHand().isEmpty()) && iblockdata.interact(world, blockposition, entityhuman, enumhand, enumdirection, f, f1, f2)) {
+-            if (!flag1 && iblockdata.interact(world, blockposition, entityhuman, enumhand, enumdirection, f, f1, f2)) {
 -                return EnumInteractionResult.SUCCESS;
--            } else if (flag) {
--                return EnumInteractionResult.PASS;
--            } else if (entityhuman.getCooldownTracker().a(itemstack.getItem())) {
--                return EnumInteractionResult.PASS;
--            } else {
-+            if ((!entityhuman.isSneaking() || flag && entityhuman.getItemInOffHand().isEmpty())) {
+-            } else if (!itemstack.isEmpty() && !entityhuman.getCooldownTracker().a(itemstack.getItem())) {
++            if (!flag1) {
 +                enuminteractionresult = iblockdata.interact(world, blockposition, entityhuman, enumhand, enumdirection, f, f1, f2) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.FAIL;
 +            }
 +
-+            if (!itemstack.isEmpty() && !flag && enuminteractionresult != EnumInteractionResult.SUCCESS && !interactResult) { // add !interactResult SPIGOT-764 // MC-133478 - add isEmpty
++            if (!itemstack.isEmpty() && enuminteractionresult != EnumInteractionResult.SUCCESS && !interactResult) { // add !interactResult SPIGOT-764
                  ItemActionContext itemactioncontext = new ItemActionContext(entityhuman, entityhuman.b(enumhand), blockposition, enumdirection, f, f1, f2);
  
                  if (this.isCreative()) {
@@ -322,6 +318,8 @@
 -                    return itemstack.placeItem(itemactioncontext);
 +                    return itemstack.placeItem(itemactioncontext, enumhand);
                  }
+-            } else {
+-                return EnumInteractionResult.PASS;
              }
          }
 +        return enuminteractionresult;

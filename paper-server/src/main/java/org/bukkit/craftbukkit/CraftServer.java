@@ -882,25 +882,7 @@ public final class CraftServer implements Server {
             generator = getGenerator(name);
         }
 
-        Convertable converter = new WorldLoaderServer(getWorldContainer().toPath(), getWorldContainer().toPath().resolveSibling("../backups"), getHandle().getServer().dataConverterManager);
-        if (converter.isConvertable(name)) {
-            getLogger().info("Converting world '" + name + "'");
-            converter.convert(name, new IProgressUpdate() {
-                private long b = System.currentTimeMillis();
-
-                public void a(IChatBaseComponent ichatbasecomponent) {}
-
-                public void a(int i) {
-                    if (System.currentTimeMillis() - this.b >= 1000L) {
-                        this.b = System.currentTimeMillis();
-                        MinecraftServer.LOGGER.info("Converting... {}%", Integer.valueOf(i));
-                    }
-
-                }
-
-                public void c(IChatBaseComponent ichatbasecomponent) {}
-            });
-        }
+        console.convertWorld(name);
 
         int dimension = CraftWorld.CUSTOM_DIMENSION_OFFSET + console.worlds.size();
         boolean used = false;

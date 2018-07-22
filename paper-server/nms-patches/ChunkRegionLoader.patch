@@ -9,20 +9,25 @@
  
      public ChunkRegionLoader(File file, DataFixer datafixer) {
          this.c = file;
-@@ -48,15 +48,54 @@
-         return nbttagcompound != null ? nbttagcompound : this.b(generatoraccess, i, j);
-     }
+@@ -45,20 +45,56 @@
+     private synchronized NBTTagCompound a(GeneratorAccess generatoraccess, int i, int j) throws IOException {
+         NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(new ChunkCoordIntPair(i, j));
  
+-        return nbttagcompound != null ? nbttagcompound : this.a(generatoraccess.o().getDimensionManager(), generatoraccess.s_(), i, j);
++        return nbttagcompound != null ? nbttagcompound : this.a(generatoraccess.o().getDimensionManager(), generatoraccess.s_(), i, j, generatoraccess); // CraftBukkit
++    }
++
 +    // CraftBukkit start
 +    private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
-+        com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
-+
-+        if (cps.isLoaded(x, z)) {
-+            return true;
++        if (cps != null) {
++            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
++            if (cps.isLoaded(x, z)) {
++                return true;
++            }
 +        }
 +
 +        if (RegionFileCache.chunkExists(this.c, x, z)) {
-+            NBTTagCompound nbt = RegionFileCache.d(this.c, x, z);
++            NBTTagCompound nbt = RegionFileCache.read(this.c, x, z);
 +            if (nbt != null) {
 +                NBTTagCompound level = nbt.getCompound("Level");
 +                if (level.getBoolean("TerrainPopulated")) {
@@ -37,27 +42,28 @@
 +        }
 +
 +        return false;
-+    }
-+    // CraftBukkit end
-+
+     }
+ 
      @Nullable
-     private NBTTagCompound b(GeneratorAccess generatoraccess, int i, int j) throws IOException {
--        DataInputStream datainputstream = RegionFileCache.d(this.c, i, j);
-+        // CraftBukkit start
-+        NBTTagCompound nbttagcompound = RegionFileCache.d(this.c, i, j);
+-    private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j) throws IOException {
+-        DataInputStream datainputstream = RegionFileCache.read(this.c, i, j);
++    private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
++        NBTTagCompound nbttagcompound = RegionFileCache.read(this.c, i, j);
  
 -        if (datainputstream == null) {
 +        if (nbttagcompound == null) {
              return null;
          } else {
 -            NBTTagCompound nbttagcompound = NBTCompressedStreamTools.a(datainputstream);
+-
+-            datainputstream.close();
 +            // CraftBukkit end
              int k = nbttagcompound.hasKeyOfType("DataVersion", 99) ? nbttagcompound.getInt("DataVersion") : -1;
 +            // CraftBukkit start
 +            if (k < 1466) {
 +                NBTTagCompound level = nbttagcompound.getCompound("Level");
 +                if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-+                    ChunkProviderServer cps = ((WorldServer) generatoraccess).getChunkProviderServer();
++                    ChunkProviderServer cps = (generatoraccess == null) ? null : ((WorldServer) generatoraccess).getChunkProviderServer();
 +                    if (check(cps, i - 1, j) && check(cps, i - 1, j - 1) && check(cps, i, j - 1)) {
 +                        level.setBoolean("LightPopulated", true);
 +                    }
@@ -67,7 +73,7 @@
  
              if (k < 1493) {
                  nbttagcompound = GameProfileSerializer.a(this.d, DataFixTypes.CHUNK, nbttagcompound, k, 1493);
-@@ -78,13 +117,29 @@
+@@ -81,13 +117,29 @@
          }
      }
  
@@ -97,7 +103,7 @@
              Chunk chunk = this.a(generatoraccess, i, j, nbttagcompound);
  
              if (chunk != null) {
-@@ -93,6 +148,9 @@
+@@ -96,6 +148,9 @@
              }
  
              return chunk;
@@ -107,7 +113,7 @@
          }
      }
  
-@@ -121,7 +179,7 @@
+@@ -124,7 +179,7 @@
      }
  
      @Nullable
@@ -116,7 +122,7 @@
          if (nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8)) {
              ChunkStatus.Type chunkstatus_type = this.a(nbttagcompound);
  
-@@ -140,10 +198,28 @@
+@@ -143,10 +198,28 @@
                          ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(i), Integer.valueOf(j), Integer.valueOf(chunk.locX), Integer.valueOf(chunk.locZ));
                          nbttagcompound1.setInt("xPos", i);
                          nbttagcompound1.setInt("zPos", j);
@@ -146,7 +152,7 @@
                  }
              }
          } else {
-@@ -158,7 +234,7 @@
+@@ -161,7 +234,7 @@
              ChunkStatus.Type chunkstatus_type = this.a(nbttagcompound);
  
              if (chunkstatus_type == ChunkStatus.Type.LEVELCHUNK) {
@@ -155,7 +161,7 @@
              } else {
                  NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level");
  
-@@ -204,19 +280,30 @@
+@@ -209,19 +282,30 @@
      }
  
      public synchronized boolean a() {
@@ -190,7 +196,7 @@
  
                  if (nbttagcompound != null) {
                      try {
-@@ -228,7 +315,7 @@
+@@ -233,7 +317,7 @@
  
                  flag = true;
              } finally {
@@ -199,13 +205,13 @@
              }
  
              return flag;
-@@ -248,10 +335,14 @@
+@@ -253,10 +337,14 @@
      }
  
      private void b(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
--        DataOutputStream dataoutputstream = RegionFileCache.e(this.c, chunkcoordintpair.x, chunkcoordintpair.z);
+-        DataOutputStream dataoutputstream = RegionFileCache.write(this.c, chunkcoordintpair.x, chunkcoordintpair.z);
 +        // CraftBukkit start
-+        RegionFileCache.e(this.c, chunkcoordintpair.x, chunkcoordintpair.z, nbttagcompound);
++        RegionFileCache.write(this.c, chunkcoordintpair.x, chunkcoordintpair.z, nbttagcompound);
  
 +        /*
          NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
@@ -215,7 +221,7 @@
          if (this.e != null) {
              this.e.a(chunkcoordintpair.a());
          }
-@@ -264,15 +355,16 @@
+@@ -269,15 +357,16 @@
  
      public void c() {
          try {
@@ -235,7 +241,7 @@
          }
  
      }
-@@ -301,7 +393,7 @@
+@@ -306,7 +395,7 @@
  
          if (abiomebase != null) {
              for (int k = 0; k < abiomebase.length; ++k) {
@@ -244,7 +250,7 @@
              }
          }
  
-@@ -383,7 +475,7 @@
+@@ -388,7 +477,7 @@
          int[] aint = new int[abiomebase.length];
  
          for (int i = 0; i < abiomebase.length; ++i) {
@@ -253,7 +259,7 @@
          }
  
          nbttagcompound.setIntArray("Biomes", aint);
-@@ -485,7 +577,7 @@
+@@ -490,7 +579,7 @@
          }
  
          ChunkConverter chunkconverter = nbttagcompound.hasKeyOfType("UpgradeData", 10) ? new ChunkConverter(nbttagcompound.getCompound("UpgradeData")) : ChunkConverter.a;
@@ -262,7 +268,7 @@
              return block.getBlockData().isAir();
          };
          RegistryBlocks registryblocks = Block.REGISTRY;
-@@ -497,7 +589,7 @@
+@@ -502,7 +591,7 @@
          Block.REGISTRY.getClass();
          ProtoChunkTickList protochunkticklist = new ProtoChunkTickList(predicate, function, registryblocks1::get, new ChunkCoordIntPair(i, j));
  
@@ -271,7 +277,7 @@
              return fluidtype == FluidTypes.a;
          };
          registryblocks = FluidType.c;
-@@ -505,7 +597,7 @@
+@@ -510,7 +599,7 @@
          function = registryblocks::b;
          registryblocks1 = FluidType.c;
          FluidType.c.getClass();
@@ -280,7 +286,7 @@
          long i1 = nbttagcompound.getLong("InhabitedTime");
          Chunk chunk = new Chunk(generatoraccess.getMinecraftWorld(), i, j, abiomebase, chunkconverter, protochunkticklist, protochunkticklist1, i1);
  
-@@ -852,17 +944,29 @@
+@@ -853,17 +942,29 @@
      }
  
      @Nullable
@@ -312,7 +318,7 @@
          });
      }
  
-@@ -876,8 +980,14 @@
+@@ -877,8 +978,14 @@
          }
      }
  
@@ -328,3 +334,12 @@
              Iterator iterator = entity.bP().iterator();
  
              while (iterator.hasNext()) {
+@@ -894,7 +1001,7 @@
+         boolean flag = false;
+ 
+         try {
+-            this.a(dimensionmanager, persistentcollection, chunkcoordintpair.x, chunkcoordintpair.z);
++            this.a(dimensionmanager, persistentcollection, chunkcoordintpair.x, chunkcoordintpair.z, null); // CraftBukkit
+ 
+             while (!this.b.isEmpty()) {
+                 this.a();

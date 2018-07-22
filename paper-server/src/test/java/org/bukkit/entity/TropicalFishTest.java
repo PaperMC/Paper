@@ -31,7 +31,7 @@ public class TropicalFishTest {
         testVariant(117506305, DyeColor.ORANGE, DyeColor.GRAY, Pattern.STRIPEY);
         testVariant(117899265, DyeColor.GRAY, DyeColor.GRAY, Pattern.FLOPPER);
         testVariant(118161664, DyeColor.BLUE, DyeColor.GRAY, Pattern.SUNSTREAK);
-        testVariant(134217984, DyeColor.WHITE, DyeColor.SILVER, Pattern.SUNSTREAK);
+        testVariant(134217984, DyeColor.WHITE, DyeColor.LIGHT_GRAY, Pattern.SUNSTREAK);
         testVariant(234882305, DyeColor.WHITE, DyeColor.RED, Pattern.CLAYFISH);
         testVariant(235340288, DyeColor.GRAY, DyeColor.RED, Pattern.SNOOPER);
     }

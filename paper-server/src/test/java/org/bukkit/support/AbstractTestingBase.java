@@ -43,6 +43,6 @@ public abstract class AbstractTestingBase {
             }
         }
         INVALIDATED_MATERIALS = builder.build();
-        Assert.assertTrue("Expected 533 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", INVALIDATED_MATERIALS.size() == 533);
+        Assert.assertTrue("Expected 543 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", INVALIDATED_MATERIALS.size() == 543);
     }
 }

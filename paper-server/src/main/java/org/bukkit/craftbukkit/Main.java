@@ -111,6 +111,8 @@ public class Main {
                         .defaultsTo(new File("commands.yml"))
                         .describedAs("Yml file");
 
+                acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
+
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 
                 acceptsAll(asList("noconsole"), "Disables the console");

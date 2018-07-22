@@ -36,7 +36,7 @@ public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Be
             case LIGHT_BLUE_BED:
                 return DyeColor.LIGHT_BLUE;
             case LIGHT_GRAY_BED:
-                return DyeColor.SILVER;
+                return DyeColor.LIGHT_GRAY;
             case LIME_BED:
                 return DyeColor.LIME;
             case MAGENTA_BED:

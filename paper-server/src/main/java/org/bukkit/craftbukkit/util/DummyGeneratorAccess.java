@@ -88,11 +88,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public void a(String string, PersistentBase pb) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public IChunkProvider getChunkProvider() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

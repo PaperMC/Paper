@@ -171,6 +171,16 @@ public class Commodore
                             }
                         }
 
+                        if ( owner.equals( "org/bukkit/DyeColor" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "SILVER":
+                                    super.visitFieldInsn( opcode, owner, "LIGHT_GRAY", desc );
+                                    return;
+                            }
+                        }
+
                         if ( owner.equals( "org/bukkit/Particle" ) )
                         {
                             switch ( name )
@@ -227,6 +237,15 @@ public class Commodore
 
                             super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftEvil", name, Type.getMethodDescriptor( retType, newArgs ), false );
                             return;
+                        }
+
+                        if ( owner.equals( "org/bukkit/DyeColor" ) )
+                        {
+                            if ( name.equals( "valueOf" ) && desc.equals( "(Ljava/lang/String;)Lorg/bukkit/DyeColor;" ) )
+                            {
+                                super.visitMethodInsn( opcode, owner, "legacyValueOf", desc, itf );
+                                return;
+                            }
                         }
 
                         if ( owner.equals( "org/bukkit/Material" ) )
