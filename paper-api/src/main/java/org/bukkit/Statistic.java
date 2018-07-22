@@ -16,6 +16,9 @@ public enum Statistic {
     DROP_COUNT,
     DROP(Type.ITEM),
     PICKUP(Type.ITEM),
+    /**
+     * Name is misleading, actually records ticks played.
+     */
     PLAY_ONE_MINUTE,
     WALK_ONE_CM,
     WALK_ON_WATER_ONE_CM,
