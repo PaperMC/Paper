@@ -16,6 +16,8 @@ import org.bukkit.scoreboard.Team;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import net.minecraft.server.IScoreboardCriteria;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     final Scoreboard board;
@@ -35,11 +37,11 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Validate.notNull(criteria, "Criteria cannot be null");
         Validate.notNull(displayName, "Display name cannot be null");
         Validate.isTrue(name.length() <= 16, "The name '" + name + "' is longer than the limit of 16 characters");
-        Validate.isTrue(displayName.length() <= 32, "The display name '" + displayName + "' is longer than the limit of 32 characters");
+        Validate.isTrue(displayName.length() <= 128, "The display name '" + displayName + "' is longer than the limit of 128 characters");
         Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
 
         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, displayName);
+        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), IScoreboardCriteria.EnumScoreboardHealthDisplay.INTEGER);
         return new CraftObjective(this, objective);
     }
 

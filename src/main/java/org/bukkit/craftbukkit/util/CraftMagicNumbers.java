@@ -138,7 +138,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftBlockData.fromData(getBlock(material, data));
     }
 
-    public static final int DATA_VERSION = 1513;
+    public static final int DATA_VERSION = 1519;
 
     @Override
     public int getDataVersion() {

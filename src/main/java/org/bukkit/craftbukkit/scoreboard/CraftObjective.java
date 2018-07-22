@@ -6,6 +6,7 @@ import net.minecraft.server.ScoreboardServer;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
@@ -33,16 +34,15 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public String getDisplayName() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return objective.getDisplayName();
+        return CraftChatMessage.fromComponent(objective.getDisplayName());
     }
 
     public void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException {
         Validate.notNull(displayName, "Display name cannot be null");
-        Validate.isTrue(displayName.length() <= 32, "Display name '" + displayName + "' is longer than the limit of 32 characters");
+        Validate.isTrue(displayName.length() <= 128, "Display name '" + displayName + "' is longer than the limit of 128 characters");
         CraftScoreboard scoreboard = checkState();
 
-        objective.displayName = displayName;
-        ((ScoreboardServer) scoreboard.board).handleObjectiveChanged(objective);
+        objective.setDisplayName(CraftChatMessage.fromStringOrNull(displayName));
     }
 
     public String getCriteria() throws IllegalStateException {
