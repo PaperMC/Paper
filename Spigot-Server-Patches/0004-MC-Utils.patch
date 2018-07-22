@@ -1,4 +1,4 @@
-From cfbaba5f9368ad26dde9c81f8a41a73743a39239 Mon Sep 17 00:00:00 2001
+From 767daac10e6f8de9fccba88decfb0327905f9c9b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -180,10 +180,10 @@ index a540167d6..add618866 100644
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 000000000..edaa7713d
+index 000000000..70cdc3f10
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,266 @@
+@@ -0,0 +1,292 @@
 +package net.minecraft.server;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -210,6 +210,32 @@ index 000000000..edaa7713d
 +
 +    public static boolean isMainThread() {
 +        return MinecraftServer.getServer().isMainThread();
++    }
++
++    private static class DelayedRunnable implements Runnable {
++
++        private final int ticks;
++        private final Runnable run;
++
++        private DelayedRunnable(int ticks, Runnable run) {
++            this.ticks = ticks;
++            this.run = run;
++        }
++
++        @Override
++        public void run() {
++            if (ticks <= 0) {
++                run.run();
++            } else {
++                scheduleTask(ticks-1, run);
++            }
++        }
++    }
++
++    public static void scheduleTask(int ticks, Runnable runnable) {
++        // We use post to main instead of process queue as we don't want to process these mid tick if
++        // Someone uses processQueueWhileWaiting
++        MinecraftServer.getServer().postToMainThread(new DelayedRunnable(ticks, runnable));
 +    }
 +
 +    public static void processQueue() {
