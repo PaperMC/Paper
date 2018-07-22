@@ -1,4 +1,4 @@
-From af3fcc467f9180b820aaa4e89b3695f7d7d420cd Mon Sep 17 00:00:00 2001
+From 9192bd2b48900aca881a1ac43bc94dfea1585a2f Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Fri, 9 Jun 2017 19:03:43 +0200
 Subject: [PATCH] Use TerminalConsoleAppender for console improvements
@@ -19,10 +19,10 @@ Other changes:
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 17bc80776..47cb2c036 100644
+index 09b4ddf19..47e307a24 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -40,12 +40,6 @@
+@@ -39,12 +39,6 @@
              <version>${minecraft.version}-SNAPSHOT</version>
              <scope>compile</scope>
          </dependency>
@@ -35,7 +35,7 @@ index 17bc80776..47cb2c036 100644
          <dependency>
              <groupId>org.ow2.asm</groupId>
              <artifactId>asm</artifactId>
-@@ -70,6 +64,32 @@
+@@ -69,6 +63,32 @@
              <version>3.0.3</version>
              <scope>compile</scope>
          </dependency>
@@ -68,7 +68,7 @@ index 17bc80776..47cb2c036 100644
          <!-- testing -->
          <dependency>
              <groupId>junit</groupId>
-@@ -203,10 +223,18 @@
+@@ -202,10 +222,18 @@
                                  <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                      <resource>META-INF/services/java.sql.Driver</resource>
                                  </transformer>
@@ -157,7 +157,7 @@ index 000000000..685deaa0e
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index a3d58b5ce..681194e94 100644
+index bf1fffcfe..af430b73f 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -79,6 +79,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -199,7 +199,7 @@ index a3d58b5ce..681194e94 100644
          System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
          System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5d13f053f..c95f12351 100644
+index eb8c7aaad..88900121d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -57,7 +57,6 @@ import org.apache.commons.lang3.Validate;
@@ -210,7 +210,7 @@ index 5d13f053f..c95f12351 100644
  import joptsimple.OptionSet;
  import org.bukkit.Bukkit;
  import org.bukkit.craftbukkit.CraftServer;
-@@ -142,7 +141,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -143,7 +142,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
@@ -219,7 +219,7 @@ index 5d13f053f..c95f12351 100644
      public static int currentTick = 0; // Paper - Further improve tick loop
      public boolean serverAutoSave = false; // Paper
      public final Thread primaryThread;
-@@ -184,7 +183,9 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -185,7 +184,9 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          this.ac.a((IResourcePackListener) this.al);
          // CraftBukkit start
          this.options = options;
@@ -229,7 +229,7 @@ index 5d13f053f..c95f12351 100644
          if (System.console() == null && System.getProperty("jline.terminal") == null) {
              System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
              Main.useJline = false;
-@@ -205,6 +206,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -206,6 +207,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  LOGGER.warn((String) null, ex);
              }
          }
@@ -238,7 +238,7 @@ index 5d13f053f..c95f12351 100644
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
  
          this.serverThread = primaryThread = new Thread(this, "Server thread"); // Moved from main
-@@ -805,7 +808,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -844,7 +847,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              } finally {
                  // CraftBukkit start - Restore terminal to original settings
                  try {
@@ -247,7 +247,7 @@ index 5d13f053f..c95f12351 100644
                  } catch (Exception ignored) {
                  }
                  // CraftBukkit end
-@@ -1286,7 +1289,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1340,7 +1343,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
@@ -257,7 +257,7 @@ index 5d13f053f..c95f12351 100644
  
      public KeyPair G() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 4c9ff8c29..9e403d625 100644
+index 0b0d99652..4cbe14801 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -78,8 +78,7 @@ public abstract class PlayerList {
@@ -271,7 +271,7 @@ index 4c9ff8c29..9e403d625 100644
  
          this.k = new GameProfileBanList(PlayerList.a);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8719fe35e..f6dfe2e2b 100644
+index ff9346023..21d9f381c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -137,8 +137,8 @@ import java.nio.ByteBuffer;
@@ -284,7 +284,7 @@ index 8719fe35e..f6dfe2e2b 100644
  import org.bukkit.NamespacedKey;
  import org.bukkit.block.data.BlockData;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
-@@ -1141,9 +1141,13 @@ public final class CraftServer implements Server {
+@@ -1123,9 +1123,13 @@ public final class CraftServer implements Server {
          return logger;
      }
  
@@ -299,7 +299,7 @@ index 8719fe35e..f6dfe2e2b 100644
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index aad208f47..ac38028d7 100644
+index c552c624e..3245fded9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -14,7 +14,7 @@ import java.util.logging.Logger;
@@ -311,7 +311,7 @@ index aad208f47..ac38028d7 100644
  
  public class Main {
      public static boolean useJline = true;
-@@ -176,6 +176,8 @@ public class Main {
+@@ -178,6 +178,8 @@ public class Main {
              }
  
              try {
@@ -320,7 +320,7 @@ index aad208f47..ac38028d7 100644
                  // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                  String jline_UnsupportedTerminal = new String(new char[] {'j','l','i','n','e','.','U','n','s','u','p','p','o','r','t','e','d','T','e','r','m','i','n','a','l'});
                  String jline_terminal = new String(new char[] {'j','l','i','n','e','.','t','e','r','m','i','n','a','l'});
-@@ -193,10 +195,18 @@ public class Main {
+@@ -195,10 +197,18 @@ public class Main {
                      // This ensures the terminal literal will always match the jline implementation
                      System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                  }
