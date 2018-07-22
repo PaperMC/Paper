@@ -1,4 +1,4 @@
-From 68857c2aac1bd54c01818909cbcd0ca010e2affa Mon Sep 17 00:00:00 2001
+From 34e03f427dce5395f45f2fbfa8400f4c40b73194 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -18,7 +18,7 @@ index c3e990bdf..e2a7b4be2 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 002da2a19..70a7edf57 100644
+index 121a137f3..35ec4981c 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
@@ -181,10 +181,10 @@ index a540167d6..add618866 100644
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 000000000..a4b0901cf
+index 000000000..edaa7713d
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,266 @@
 +package net.minecraft.server;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -193,9 +193,13 @@ index 000000000..a4b0901cf
 +import org.spigotmc.AsyncCatcher;
 +
 +import javax.annotation.Nullable;
++import java.util.Queue;
++import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.Executors;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.TimeoutException;
 +import java.util.function.Supplier;
 +import java.util.regex.Pattern;
 +
@@ -205,6 +209,65 @@ index 000000000..a4b0901cf
 +    private MCUtil() {}
 +
 +
++    public static boolean isMainThread() {
++        return MinecraftServer.getServer().isMainThread();
++    }
++
++    public static void processQueue() {
++        Runnable runnable;
++        Queue<Runnable> processQueue = getProcessQueue();
++        while ((runnable = processQueue.poll()) != null) {
++            try {
++                runnable.run();
++            } catch (Exception e) {
++                MinecraftServer.LOGGER.error("Error executing task", e);
++            }
++        }
++    }
++    public static <T> T processQueueWhileWaiting(CompletableFuture <T> future) {
++        try {
++            if (isMainThread()) {
++                while (!future.isDone()) {
++                    try {
++                        return future.get(1, TimeUnit.MILLISECONDS);
++                    } catch (TimeoutException ignored) {
++                        processQueue();
++                    }
++                }
++            }
++            return future.get();
++        } catch (Exception e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    public static void ensureMain(Runnable run) {
++        ensureMain(null, run);
++    }
++    /**
++     * Ensures the target code is running on the main thread
++     * @param reason
++     * @param run
++     * @return
++     */
++    public static void ensureMain(String reason, Runnable run) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++            if (reason != null) {
++                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
++            }
++            getProcessQueue().add(run);
++            return;
++        }
++        run.run();
++    }
++
++    private static Queue<Runnable> getProcessQueue() {
++        return MinecraftServer.getServer().processQueue;
++    }
++
++    public static <T> T ensureMain(Supplier<T> run) {
++        return ensureMain(null, run);
++    }
 +    /**
 +     * Ensures the target code is running on the main thread
 +     * @param reason
@@ -214,14 +277,16 @@ index 000000000..a4b0901cf
 +     */
 +    public static <T> T ensureMain(String reason, Supplier<T> run) {
 +        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
-+            new IllegalStateException( "Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++            if (reason != null) {
++                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++            }
 +            Waitable<T> wait = new Waitable<T>() {
 +                @Override
 +                protected T evaluate() {
 +                    return run.get();
 +                }
 +            };
-+            MinecraftServer.getServer().processQueue.add(wait);
++            getProcessQueue().add(wait);
 +            try {
 +                return wait.get();
 +            } catch (InterruptedException | ExecutionException e) {
