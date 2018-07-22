@@ -38,7 +38,7 @@ public interface Scoreboard {
      *     characters.
      * @throws IllegalArgumentException if criteria is null
      * @throws IllegalArgumentException if displayName is null
-     * @throws IllegalArgumentException if displayName is longer than 32
+     * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
      * @throws IllegalArgumentException if an objective by that name already
      *     exists

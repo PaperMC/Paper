@@ -19,6 +19,7 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.Snowable;
 import org.bukkit.block.data.Rail;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.BrewingStand;
 import org.bukkit.block.data.type.BubbleColumn;
@@ -27,6 +28,7 @@ import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Cocoa;
 import org.bukkit.block.data.type.CommandBlock;
 import org.bukkit.block.data.type.Comparator;
+import org.bukkit.block.data.type.CoralWallFan;
 import org.bukkit.block.data.type.DaylightDetector;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.block.data.type.Door;
@@ -84,7 +86,7 @@ public enum Material implements Keyed {
     ACACIA_SLAB(23730, Slab.class),
     ACACIA_STAIRS(17453, Stairs.class),
     ACACIA_TRAPDOOR(18343, TrapDoor.class),
-    ACACIA_WOOD(21861, Orientable.class),
+    ACACIA_WOOD(9541, Orientable.class),
     ACTIVATOR_RAIL(5834, RedstoneRail.class),
     AIR(9648, 0),
     ALLIUM(6871),
@@ -119,7 +121,7 @@ public enum Material implements Keyed {
     BIRCH_SLAB(13807, Slab.class),
     BIRCH_STAIRS(7657, Stairs.class),
     BIRCH_TRAPDOOR(32585, TrapDoor.class),
-    BIRCH_WOOD(7924, Orientable.class),
+    BIRCH_WOOD(20913, Orientable.class),
     BLACK_BANNER(9365, 16, Rotatable.class),
     BLACK_BED(20490, 1, Bed.class),
     BLACK_CARPET(6056),
@@ -158,7 +160,8 @@ public enum Material implements Keyed {
     BOWL(32661),
     BRAIN_CORAL(31316),
     BRAIN_CORAL_BLOCK(30618),
-    BRAIN_CORAL_FAN(13849, Directional.class),
+    BRAIN_CORAL_FAN(13849, Waterlogged.class),
+    BRAIN_CORAL_WALL_FAN(22685, CoralWallFan.class),
     BREAD(32049),
     BREWING_STAND(14539, BrewingStand.class),
     BRICK(6820),
@@ -182,7 +185,8 @@ public enum Material implements Keyed {
     BUBBLE_COLUMN(13758, BubbleColumn.class),
     BUBBLE_CORAL(12464),
     BUBBLE_CORAL_BLOCK(15437),
-    BUBBLE_CORAL_FAN(10795, Directional.class),
+    BUBBLE_CORAL_FAN(10795, Waterlogged.class),
+    BUBBLE_CORAL_WALL_FAN(20382, CoralWallFan.class),
     BUCKET(15215, 16),
     CACTUS(12191, Ageable.class),
     CACTUS_GREEN(17296),
@@ -279,17 +283,27 @@ public enum Material implements Keyed {
     DARK_OAK_SLAB(28852, Slab.class),
     DARK_OAK_STAIRS(22921, Stairs.class),
     DARK_OAK_TRAPDOOR(10355, TrapDoor.class),
-    DARK_OAK_WOOD(7871, Orientable.class),
+    DARK_OAK_WOOD(16995, Orientable.class),
     DARK_PRISMARINE(19940),
     DARK_PRISMARINE_SLAB(7577, Slab.class),
     DARK_PRISMARINE_STAIRS(26511, Stairs.class),
     DAYLIGHT_DETECTOR(8864, DaylightDetector.class),
     DEAD_BRAIN_CORAL_BLOCK(12979),
+    DEAD_BRAIN_CORAL_FAN(26150, Waterlogged.class),
+    DEAD_BRAIN_CORAL_WALL_FAN(23718, CoralWallFan.class),
     DEAD_BUBBLE_CORAL_BLOCK(28220),
+    DEAD_BUBBLE_CORAL_FAN(17322, Waterlogged.class),
+    DEAD_BUBBLE_CORAL_WALL_FAN(18453, CoralWallFan.class),
     DEAD_BUSH(22888),
     DEAD_FIRE_CORAL_BLOCK(5307),
+    DEAD_FIRE_CORAL_FAN(27073, Waterlogged.class),
+    DEAD_FIRE_CORAL_WALL_FAN(23375, CoralWallFan.class),
     DEAD_HORN_CORAL_BLOCK(15103),
+    DEAD_HORN_CORAL_FAN(11387, Waterlogged.class),
+    DEAD_HORN_CORAL_WALL_FAN(27550, CoralWallFan.class),
     DEAD_TUBE_CORAL_BLOCK(28350),
+    DEAD_TUBE_CORAL_FAN(17628, Waterlogged.class),
+    DEAD_TUBE_CORAL_WALL_FAN(5128, CoralWallFan.class),
     DEBUG_STICK(24562, 1),
     DETECTOR_RAIL(13475, RedstoneRail.class),
     DIAMOND(20865),
@@ -339,7 +353,7 @@ public enum Material implements Keyed {
     END_ROD(24832, Directional.class),
     END_STONE(29686),
     END_STONE_BRICKS(20314),
-    EVOKER_SPAWN_EGG(19365),
+    EVOKER_SPAWN_EGG(21271),
     EXPERIENCE_BOTTLE(12858),
     FARMLAND(31166, Farmland.class),
     FEATHER(30548),
@@ -352,7 +366,8 @@ public enum Material implements Keyed {
     FIRE_CHARGE(4842),
     FIRE_CORAL(29151),
     FIRE_CORAL_BLOCK(12119),
-    FIRE_CORAL_FAN(11112, Directional.class),
+    FIRE_CORAL_FAN(11112, Waterlogged.class),
+    FIRE_CORAL_WALL_FAN(20100, CoralWallFan.class),
     FISHING_ROD(4167, 1, 64),
     FLINT(23596),
     FLINT_AND_STEEL(28620, 1, 64),
@@ -423,7 +438,8 @@ public enum Material implements Keyed {
     HOPPER_MINECART(19024, 1),
     HORN_CORAL(19511),
     HORN_CORAL_BLOCK(19958),
-    HORN_CORAL_FAN(13610, Directional.class),
+    HORN_CORAL_FAN(13610, Waterlogged.class),
+    HORN_CORAL_WALL_FAN(28883, CoralWallFan.class),
     HORSE_SPAWN_EGG(25981),
     HUSK_SPAWN_EGG(20178),
     ICE(30428),
@@ -467,7 +483,7 @@ public enum Material implements Keyed {
     JUNGLE_SLAB(19117, Slab.class),
     JUNGLE_STAIRS(20636, Stairs.class),
     JUNGLE_TRAPDOOR(8626, TrapDoor.class),
-    JUNGLE_WOOD(30228, Orientable.class),
+    JUNGLE_WOOD(10341, Orientable.class),
     KELP(21916, Ageable.class),
     KELP_PLANT(29697),
     KNOWLEDGE_BOOK(12646, 1),
@@ -582,7 +598,7 @@ public enum Material implements Keyed {
     NETHER_BRICK_FENCE(5286, Fence.class),
     NETHER_BRICK_SLAB(26586, Slab.class),
     NETHER_BRICK_STAIRS(12085, Stairs.class),
-    NETHER_PORTAL(19085, Orientable.class),
+    NETHER_PORTAL(19469, Orientable.class),
     NETHER_QUARTZ_ORE(4807),
     NETHER_STAR(12469),
     NETHER_WART(29227, Ageable.class),
@@ -601,7 +617,7 @@ public enum Material implements Keyed {
     OAK_SLAB(12002, Slab.class),
     OAK_STAIRS(5449, Stairs.class),
     OAK_TRAPDOOR(16927, TrapDoor.class),
-    OAK_WOOD(23286, Orientable.class),
+    OAK_WOOD(7378, Orientable.class),
     OBSERVER(10726, Observer.class),
     OBSIDIAN(32723),
     OCELOT_SPAWN_EGG(30080),
@@ -653,7 +669,7 @@ public enum Material implements Keyed {
     POLISHED_ANDESITE(8335),
     POLISHED_DIORITE(31615),
     POLISHED_GRANITE(5477),
-    POPPED_CHORUS_FRUIT(16880),
+    POPPED_CHORUS_FRUIT(27844),
     POPPY(12851),
     PORKCHOP(30896),
     POTATO(21088),
@@ -791,7 +807,7 @@ public enum Material implements Keyed {
     SNOWBALL(19487, 16),
     SNOW_BLOCK(19913),
     SOUL_SAND(16841),
-    SPAWNER(25500),
+    SPAWNER(7018),
     SPECTRAL_ARROW(4568),
     SPIDER_EYE(9318),
     SPIDER_SPAWN_EGG(14984),
@@ -810,7 +826,7 @@ public enum Material implements Keyed {
     SPRUCE_SLAB(4348, Slab.class),
     SPRUCE_STAIRS(11192, Stairs.class),
     SPRUCE_TRAPDOOR(10289, TrapDoor.class),
-    SPRUCE_WOOD(22538, Orientable.class),
+    SPRUCE_WOOD(32328, Orientable.class),
     SQUID_SPAWN_EGG(10682),
     STICK(9773),
     STICKY_PISTON(18127, Piston.class),
@@ -829,17 +845,17 @@ public enum Material implements Keyed {
     STRAY_SPAWN_EGG(30153),
     STRING(12806),
     STRIPPED_ACACIA_LOG(18167, Orientable.class),
-    STRIPPED_ACACIA_WOOD(17579, Orientable.class),
+    STRIPPED_ACACIA_WOOD(27193, Orientable.class),
     STRIPPED_BIRCH_LOG(8838, Orientable.class),
-    STRIPPED_BIRCH_WOOD(30740, Orientable.class),
+    STRIPPED_BIRCH_WOOD(22350, Orientable.class),
     STRIPPED_DARK_OAK_LOG(6492, Orientable.class),
-    STRIPPED_DARK_OAK_WOOD(6606, Orientable.class),
+    STRIPPED_DARK_OAK_WOOD(16000, Orientable.class),
     STRIPPED_JUNGLE_LOG(15476, Orientable.class),
-    STRIPPED_JUNGLE_WOOD(5072, Orientable.class),
+    STRIPPED_JUNGLE_WOOD(30315, Orientable.class),
     STRIPPED_OAK_LOG(20523, Orientable.class),
-    STRIPPED_OAK_WOOD(4514, Orientable.class),
+    STRIPPED_OAK_WOOD(31455, Orientable.class),
     STRIPPED_SPRUCE_LOG(6140, Orientable.class),
-    STRIPPED_SPRUCE_WOOD(15634, Orientable.class),
+    STRIPPED_SPRUCE_WOOD(6467, Orientable.class),
     STRUCTURE_BLOCK(26831, StructureBlock.class),
     STRUCTURE_VOID(30806),
     SUGAR(30638),
@@ -857,18 +873,19 @@ public enum Material implements Keyed {
     TRIDENT(7534, 1, 250),
     TRIPWIRE(8810, Tripwire.class),
     TRIPWIRE_HOOK(8130, TripwireHook.class),
-    TROPICAL_FISH(12795),
-    TROPICAL_FISH_BUCKET(30390, 1),
+    TROPICAL_FISH(24879),
+    TROPICAL_FISH_BUCKET(29995, 1),
     TROPICAL_FISH_SPAWN_EGG(19713),
     TUBE_CORAL(23048),
     TUBE_CORAL_BLOCK(23723),
-    TUBE_CORAL_FAN(19929, Directional.class),
+    TUBE_CORAL_FAN(19929, Waterlogged.class),
+    TUBE_CORAL_WALL_FAN(25282, CoralWallFan.class),
     TURTLE_EGG(32101, TurtleEgg.class),
     TURTLE_HELMET(30120, 1, 275),
     TURTLE_SPAWN_EGG(17324),
     VEX_SPAWN_EGG(27751),
     VILLAGER_SPAWN_EGG(30348),
-    VINDICATOR_SPAWN_EGG(21672),
+    VINDICATOR_SPAWN_EGG(25324),
     VINE(14564, MultipleFacing.class),
     VOID_AIR(13668),
     WALL_SIGN(10644, WallSign.class),
@@ -2031,7 +2048,6 @@ public enum Material implements Keyed {
     public boolean isBlock() {
         switch (this) {
             //<editor-fold defaultstate="collapsed" desc="isBlock">
-            case ACACIA_WOOD:
             case ACACIA_BUTTON:
             case ACACIA_DOOR:
             case ACACIA_FENCE:
@@ -2044,6 +2060,7 @@ public enum Material implements Keyed {
             case ACACIA_SLAB:
             case ACACIA_STAIRS:
             case ACACIA_TRAPDOOR:
+            case ACACIA_WOOD:
             case ACTIVATOR_RAIL:
             case AIR:
             case ALLIUM:
@@ -2056,7 +2073,6 @@ public enum Material implements Keyed {
             case BEACON:
             case BEDROCK:
             case BEETROOTS:
-            case BIRCH_WOOD:
             case BIRCH_BUTTON:
             case BIRCH_DOOR:
             case BIRCH_FENCE:
@@ -2069,6 +2085,7 @@ public enum Material implements Keyed {
             case BIRCH_SLAB:
             case BIRCH_STAIRS:
             case BIRCH_TRAPDOOR:
+            case BIRCH_WOOD:
             case BLACK_BANNER:
             case BLACK_BED:
             case BLACK_CARPET:
@@ -2100,6 +2117,7 @@ public enum Material implements Keyed {
             case BRAIN_CORAL:
             case BRAIN_CORAL_BLOCK:
             case BRAIN_CORAL_FAN:
+            case BRAIN_CORAL_WALL_FAN:
             case BREWING_STAND:
             case BRICKS:
             case BRICK_SLAB:
@@ -2122,6 +2140,7 @@ public enum Material implements Keyed {
             case BUBBLE_CORAL:
             case BUBBLE_CORAL_BLOCK:
             case BUBBLE_CORAL_FAN:
+            case BUBBLE_CORAL_WALL_FAN:
             case CACTUS:
             case CAKE:
             case CARROTS:
@@ -2170,7 +2189,6 @@ public enum Material implements Keyed {
             case CYAN_WOOL:
             case DAMAGED_ANVIL:
             case DANDELION:
-            case DARK_OAK_WOOD:
             case DARK_OAK_BUTTON:
             case DARK_OAK_DOOR:
             case DARK_OAK_FENCE:
@@ -2183,16 +2201,27 @@ public enum Material implements Keyed {
             case DARK_OAK_SLAB:
             case DARK_OAK_STAIRS:
             case DARK_OAK_TRAPDOOR:
+            case DARK_OAK_WOOD:
             case DARK_PRISMARINE:
             case DARK_PRISMARINE_SLAB:
             case DARK_PRISMARINE_STAIRS:
             case DAYLIGHT_DETECTOR:
             case DEAD_BRAIN_CORAL_BLOCK:
+            case DEAD_BRAIN_CORAL_FAN:
+            case DEAD_BRAIN_CORAL_WALL_FAN:
             case DEAD_BUBBLE_CORAL_BLOCK:
+            case DEAD_BUBBLE_CORAL_FAN:
+            case DEAD_BUBBLE_CORAL_WALL_FAN:
             case DEAD_BUSH:
             case DEAD_FIRE_CORAL_BLOCK:
+            case DEAD_FIRE_CORAL_FAN:
+            case DEAD_FIRE_CORAL_WALL_FAN:
             case DEAD_HORN_CORAL_BLOCK:
+            case DEAD_HORN_CORAL_FAN:
+            case DEAD_HORN_CORAL_WALL_FAN:
             case DEAD_TUBE_CORAL_BLOCK:
+            case DEAD_TUBE_CORAL_FAN:
+            case DEAD_TUBE_CORAL_WALL_FAN:
             case DETECTOR_RAIL:
             case DIAMOND_BLOCK:
             case DIAMOND_ORE:
@@ -2220,6 +2249,7 @@ public enum Material implements Keyed {
             case FIRE_CORAL:
             case FIRE_CORAL_BLOCK:
             case FIRE_CORAL_FAN:
+            case FIRE_CORAL_WALL_FAN:
             case FLOWER_POT:
             case FROSTED_ICE:
             case FURNACE:
@@ -2263,6 +2293,7 @@ public enum Material implements Keyed {
             case HORN_CORAL:
             case HORN_CORAL_BLOCK:
             case HORN_CORAL_FAN:
+            case HORN_CORAL_WALL_FAN:
             case ICE:
             case INFESTED_CHISELED_STONE_BRICKS:
             case INFESTED_COBBLESTONE:
@@ -2277,7 +2308,6 @@ public enum Material implements Keyed {
             case IRON_TRAPDOOR:
             case JACK_O_LANTERN:
             case JUKEBOX:
-            case JUNGLE_WOOD:
             case JUNGLE_BUTTON:
             case JUNGLE_DOOR:
             case JUNGLE_FENCE:
@@ -2290,6 +2320,7 @@ public enum Material implements Keyed {
             case JUNGLE_SLAB:
             case JUNGLE_STAIRS:
             case JUNGLE_TRAPDOOR:
+            case JUNGLE_WOOD:
             case KELP:
             case KELP_PLANT:
             case LADDER:
@@ -2352,7 +2383,6 @@ public enum Material implements Keyed {
             case MAGMA_BLOCK:
             case MELON:
             case MELON_STEM:
-            case SPAWNER:
             case MOSSY_COBBLESTONE:
             case MOSSY_COBBLESTONE_WALL:
             case MOSSY_STONE_BRICKS:
@@ -2364,11 +2394,11 @@ public enum Material implements Keyed {
             case NETHER_BRICK_FENCE:
             case NETHER_BRICK_SLAB:
             case NETHER_BRICK_STAIRS:
+            case NETHER_PORTAL:
             case NETHER_QUARTZ_ORE:
             case NETHER_WART:
             case NETHER_WART_BLOCK:
             case NOTE_BLOCK:
-            case OAK_WOOD:
             case OAK_BUTTON:
             case OAK_DOOR:
             case OAK_FENCE:
@@ -2381,6 +2411,7 @@ public enum Material implements Keyed {
             case OAK_SLAB:
             case OAK_STAIRS:
             case OAK_TRAPDOOR:
+            case OAK_WOOD:
             case OBSERVER:
             case OBSIDIAN:
             case ORANGE_BANNER:
@@ -2422,7 +2453,6 @@ public enum Material implements Keyed {
             case POLISHED_DIORITE:
             case POLISHED_GRANITE:
             case POPPY:
-            case NETHER_PORTAL:
             case POTATOES:
             case POTTED_ACACIA_SAPLING:
             case POTTED_ALLIUM:
@@ -2523,8 +2553,8 @@ public enum Material implements Keyed {
             case SNOW:
             case SNOW_BLOCK:
             case SOUL_SAND:
+            case SPAWNER:
             case SPONGE:
-            case SPRUCE_WOOD:
             case SPRUCE_BUTTON:
             case SPRUCE_DOOR:
             case SPRUCE_FENCE:
@@ -2537,6 +2567,7 @@ public enum Material implements Keyed {
             case SPRUCE_SLAB:
             case SPRUCE_STAIRS:
             case SPRUCE_TRAPDOOR:
+            case SPRUCE_WOOD:
             case STICKY_PISTON:
             case STONE:
             case STONE_BRICKS:
@@ -2545,18 +2576,18 @@ public enum Material implements Keyed {
             case STONE_BUTTON:
             case STONE_PRESSURE_PLATE:
             case STONE_SLAB:
-            case STRIPPED_ACACIA_WOOD:
             case STRIPPED_ACACIA_LOG:
-            case STRIPPED_BIRCH_WOOD:
+            case STRIPPED_ACACIA_WOOD:
             case STRIPPED_BIRCH_LOG:
-            case STRIPPED_DARK_OAK_WOOD:
+            case STRIPPED_BIRCH_WOOD:
             case STRIPPED_DARK_OAK_LOG:
-            case STRIPPED_JUNGLE_WOOD:
+            case STRIPPED_DARK_OAK_WOOD:
             case STRIPPED_JUNGLE_LOG:
-            case STRIPPED_OAK_WOOD:
+            case STRIPPED_JUNGLE_WOOD:
             case STRIPPED_OAK_LOG:
-            case STRIPPED_SPRUCE_WOOD:
+            case STRIPPED_OAK_WOOD:
             case STRIPPED_SPRUCE_LOG:
+            case STRIPPED_SPRUCE_WOOD:
             case STRUCTURE_BLOCK:
             case STRUCTURE_VOID:
             case SUGAR_CANE:
@@ -2572,6 +2603,7 @@ public enum Material implements Keyed {
             case TUBE_CORAL:
             case TUBE_CORAL_BLOCK:
             case TUBE_CORAL_FAN:
+            case TUBE_CORAL_WALL_FAN:
             case TURTLE_EGG:
             case VINE:
             case VOID_AIR:
@@ -2933,10 +2965,20 @@ public enum Material implements Keyed {
             case DARK_PRISMARINE_STAIRS:
             case DAYLIGHT_DETECTOR:
             case DEAD_BRAIN_CORAL_BLOCK:
+            case DEAD_BRAIN_CORAL_FAN:
+            case DEAD_BRAIN_CORAL_WALL_FAN:
             case DEAD_BUBBLE_CORAL_BLOCK:
+            case DEAD_BUBBLE_CORAL_FAN:
+            case DEAD_BUBBLE_CORAL_WALL_FAN:
             case DEAD_FIRE_CORAL_BLOCK:
+            case DEAD_FIRE_CORAL_FAN:
+            case DEAD_FIRE_CORAL_WALL_FAN:
             case DEAD_HORN_CORAL_BLOCK:
+            case DEAD_HORN_CORAL_FAN:
+            case DEAD_HORN_CORAL_WALL_FAN:
             case DEAD_TUBE_CORAL_BLOCK:
+            case DEAD_TUBE_CORAL_FAN:
+            case DEAD_TUBE_CORAL_WALL_FAN:
             case DIAMOND_BLOCK:
             case DIAMOND_ORE:
             case DIORITE:
@@ -4712,20 +4754,29 @@ public enum Material implements Keyed {
             case BEETROOTS:
             case BLACK_WALL_BANNER:
             case BLUE_WALL_BANNER:
+            case BRAIN_CORAL_WALL_FAN:
             case BROWN_WALL_BANNER:
             case BUBBLE_COLUMN:
+            case BUBBLE_CORAL_WALL_FAN:
             case CARROTS:
             case CAVE_AIR:
             case COCOA:
             case CREEPER_WALL_HEAD:
             case CYAN_WALL_BANNER:
+            case DEAD_BRAIN_CORAL_WALL_FAN:
+            case DEAD_BUBBLE_CORAL_WALL_FAN:
+            case DEAD_FIRE_CORAL_WALL_FAN:
+            case DEAD_HORN_CORAL_WALL_FAN:
+            case DEAD_TUBE_CORAL_WALL_FAN:
             case DRAGON_WALL_HEAD:
             case END_GATEWAY:
             case END_PORTAL:
             case FIRE:
+            case FIRE_CORAL_WALL_FAN:
             case FROSTED_ICE:
             case GRAY_WALL_BANNER:
             case GREEN_WALL_BANNER:
+            case HORN_CORAL_WALL_FAN:
             case KELP_PLANT:
             case LAVA:
             case LIGHT_BLUE_WALL_BANNER:
@@ -4769,6 +4820,7 @@ public enum Material implements Keyed {
             case SKELETON_WALL_SKULL:
             case TALL_SEAGRASS:
             case TRIPWIRE:
+            case TUBE_CORAL_WALL_FAN:
             case VOID_AIR:
             case WALL_SIGN:
             case WALL_TORCH:

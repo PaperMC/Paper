@@ -42,9 +42,9 @@ public enum DyeColor {
      */
     GRAY(0x7, 0x8, Color.fromRGB(0x474F52), Color.fromRGB(0x434343)),
     /**
-     * Represents silver dye.
+     * Represents light gray dye.
      */
-    SILVER(0x8, 0x7, Color.fromRGB(0x9D9D97), Color.fromRGB(0xABABAB)),
+    LIGHT_GRAY(0x8, 0x7, Color.fromRGB(0x9D9D97), Color.fromRGB(0xABABAB)),
     /**
      * Represents cyan dye.
      */
@@ -188,6 +188,18 @@ public enum DyeColor {
      */
     public static DyeColor getByFireworkColor(final Color color) {
         return BY_FIREWORK.get(color);
+    }
+
+    /**
+     * Gets the DyeColor for the given name, possibly doing legacy transformations.
+     *
+     * @param name dye name
+     * @return dye color
+     * @deprecated legacy use only
+     */
+    @Deprecated
+    public static DyeColor legacyValueOf(String name) {
+        return "SILVER".equals(name) ? DyeColor.LIGHT_GRAY : DyeColor.valueOf(name);
     }
 
     static {

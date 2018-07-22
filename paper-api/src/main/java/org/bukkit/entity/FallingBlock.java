@@ -22,7 +22,6 @@ public interface FallingBlock extends Entity {
      *
      * @return data of the block
      */
-    @Deprecated
     BlockData getBlockData();
 
     /**

@@ -25,6 +25,9 @@ public interface Chest extends Directional, Waterlogged {
 
     /**
      * Type of this chest block.
+     * <br>
+     * NB: Left and right are relative to the chest itself, i.e opposite to what
+     * a player placing the appropriate block would see.
      */
     public enum Type {
         /**

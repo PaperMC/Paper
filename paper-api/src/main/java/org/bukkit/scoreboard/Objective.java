@@ -31,7 +31,7 @@ public interface Objective {
      * @param displayName Display name to set
      * @throws IllegalStateException if this objective has been unregistered
      * @throws IllegalArgumentException if displayName is null
-     * @throws IllegalArgumentException if displayName is longer than 32
+     * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
      */
     void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException;

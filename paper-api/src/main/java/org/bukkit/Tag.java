@@ -60,6 +60,10 @@ public interface Tag<T extends Keyed> {
      */
     Tag<Material> WOODEN_PRESSURE_PLATES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_pressure_plates"), Material.class);
     /**
+     * Vanilla block tag representing all wooden trapdoors.
+     */
+    Tag<Material> WOODEN_TRAPDOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_trapdoors"), Material.class);
+    /**
      * Vanilla block tag representing all doors (inherits from
      * {@link #WOODEN_DOORS}.
      */
@@ -117,19 +121,11 @@ public interface Tag<T extends Keyed> {
      */
     Tag<Material> ANVIL = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("anvil"), Material.class);
     /**
-     * Vanilla block tag representing all damaged and undamaged anvils.
+     * Vanilla block tag representing all Minecart rails.
      */
     Tag<Material> RAILS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("rails"), Material.class);
     /**
-     * Vanilla block tag representing all live coral.
-     */
-    Tag<Material> LIVE_CORAL_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("live_coral_blocks"), Material.class);
-    /**
-     * Vanilla block tag representing all dead coral.
-     */
-    Tag<Material> DEAD_CORAL_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dead_coral_blocks"), Material.class);
-    /**
-     * Vanilla block tag representing all coral.
+     * Vanilla block tag representing all coral blocks.
      */
     Tag<Material> CORAL_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("coral_blocks"), Material.class);
     /**
@@ -137,13 +133,18 @@ public interface Tag<T extends Keyed> {
      */
     Tag<Material> CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("corals"), Material.class);
     /**
-     * Vanilla block tag representing all coral fans.
+     * Vanilla block tag representing all wall corals.
      */
-    Tag<Material> CORAL_FANS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("coral_fans"), Material.class);
+    Tag<Material> WALL_CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wall_corals"), Material.class);
     /**
      * Vanilla block tag representing all leaves fans.
      */
     Tag<Material> LEAVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("leaves"), Material.class);
+    /**
+     * Vanilla block tag representing all trapdoors (inherits from
+     * {@link #WOODEN_TRAPDOORS}.
+     */
+    Tag<Material> TRAPDOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("trapdoors"), Material.class);
     /**
      * Vanilla block tag representing all empty and filled flower pots.
      */
@@ -156,6 +157,14 @@ public interface Tag<T extends Keyed> {
      * Vanilla block tag denoting ice blocks.
      */
     Tag<Material> ICE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ice"), Material.class);
+    /**
+     * Vanilla block tag denoting all valid mob spawn positions.
+     */
+    Tag<Material> VALID_SPAWN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("valid_spawn"), Material.class);
+    /**
+     * Vanilla block tag denoting impermeable blocks which do not drip fluids.
+     */
+    Tag<Material> IMPERMEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("impermeable"), Material.class);
     /**
      * Key for the built in item registry.
      */
