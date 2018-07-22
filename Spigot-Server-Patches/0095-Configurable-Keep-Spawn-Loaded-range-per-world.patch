@@ -1,4 +1,4 @@
-From dfd965ef359e7bf7dfc9ed33736374439c753e83 Mon Sep 17 00:00:00 2001
+From 47ce849db0e23612ca6013dafefca6cfa5129b3d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 13 Sep 2014 23:14:43 -0400
 Subject: [PATCH] Configurable Keep Spawn Loaded range per world
@@ -21,10 +21,10 @@ index eb09be512..6ac58e5ec 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 96d31f874..664007c29 100644
+index 96d31f874..7fb0a58f9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -485,8 +485,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -485,13 +485,21 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              ArrayList arraylist = Lists.newArrayList();
              Set set = Sets.newConcurrentHashSet();
  
@@ -37,6 +37,30 @@ index 96d31f874..664007c29 100644
 +                    // Paper end
                      arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
                  }
++            } // Paper
++            if (true) { // Paper
++                int expected = arraylist.size(); // Paper
++
+ 
+                 CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
+                     set.add(chunk.getPos());
++                    if (set.size() < expected && set.size() % 25 == 0) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+                 });
+ 
+                 while (!completablefuture.isDone()) {
+@@ -506,11 +514,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+                         throw new RuntimeException(executionexception.getCause());
+                     } catch (TimeoutException timeoutexception) {
+-                        this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / 625);
++                        this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+                     }
+                 }
+ 
+-                this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / 625);
++                this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+             }
+         }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 6ec1ee26d..a4c8e62e2 100644
