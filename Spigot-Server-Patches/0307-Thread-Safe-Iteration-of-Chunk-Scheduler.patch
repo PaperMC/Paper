@@ -1,0 +1,47 @@
+From bdd76dbf6c7b71856f5edb1ea7cf572b76706cad Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 23 Jul 2018 19:13:06 -0400
+Subject: [PATCH] Thread Safe Iteration of Chunk Scheduler
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+index 7b3068753..45f9ad372 100644
+--- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
++++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+@@ -1,8 +1,10 @@
+ package net.minecraft.server;
+ 
++import com.google.common.collect.Lists;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
+ import java.io.IOException;
++import java.util.ArrayList;
+ import java.util.EnumMap;
+ import java.util.Map;
+ import java.util.function.Consumer;
+@@ -79,7 +81,13 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+     }
+ 
+     public void a() {
+-        this.g.values().forEach((scheduler_a) -> {
++        // Paper start
++        ArrayList<Scheduler.a> list;
++        synchronized (this.g) {
++            list = Lists.newArrayList(this.g.values());
++        }
++        list.forEach((scheduler_a) -> {
++            // Paper end
+             ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
+ 
+             if (protochunk.h() && protochunk.i().d() == ChunkStatus.Type.PROTOCHUNK) {
+@@ -87,6 +95,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+                     protochunk.setLastSaved(this.c.getTime());
+                     this.e.saveChunk(this.c, protochunk);
+                     protochunk.a(false);
++
+                 } catch (IOException ioexception) {
+                     ChunkTaskScheduler.b.error("Couldn\'t save chunk", ioexception);
+                 } catch (ExceptionWorldConflict exceptionworldconflict) {
+-- 
+2.18.0
+
