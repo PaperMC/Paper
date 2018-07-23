@@ -14,12 +14,14 @@ public class RegistryID<K> implements Registry<K> {
     private K[] d;
     private int e;
     private int f;
+    private java.util.BitSet usedIds; // Paper
 
     public RegistryID(int i) {
         i = (int) ((float) i / 0.8F);
         this.b = (K[]) (new Object[i]); // Paper - decompile fix
         this.c = new int[i];
         this.d = (K[]) (new Object[i]); // Paper - decompile fix
+        this.usedIds = new java.util.BitSet(); // Paper
     }
 
     // Paper start - decompile fix
@@ -51,9 +53,14 @@ public class RegistryID<K> implements Registry<K> {
     }
 
     private int c() {
+        // Paper start
+        /*
         while (this.e < this.d.length && this.d[this.e] != null) {
             ++this.e;
         }
+        */
+        this.e = this.usedIds.nextClearBit(0);
+        // Paper end
 
         return this.e;
     }
@@ -67,6 +74,7 @@ public class RegistryID<K> implements Registry<K> {
         this.d = (K[]) (new Object[i]); // Paper - decompile fix
         this.e = 0;
         this.f = 0;
+        this.usedIds.clear(); // Paper
 
         for (int j = 0; j < ak.length; ++j) {
             if (ak[j] != null) {
@@ -92,6 +100,7 @@ public class RegistryID<K> implements Registry<K> {
         this.b[k] = k0;
         this.c[k] = i;
         this.d[i] = k0;
+        this.usedIds.set(i); // Paper
         ++this.f;
         if (i == this.e) {
             ++this.e;
@@ -156,6 +165,7 @@ public class RegistryID<K> implements Registry<K> {
         Arrays.fill(this.d, (Object) null);
         this.e = 0;
         this.f = 0;
+        this.usedIds.clear(); // Paper
     }
 
     public int b() {
