@@ -147,6 +147,10 @@ public class CraftLegacy {
     }
 
     public static Material fromLegacy(Material material) {
+        if (material == null || !material.isLegacy()) {
+            return material;
+        }
+
         return fromLegacy(new MaterialData(material));
     }
 

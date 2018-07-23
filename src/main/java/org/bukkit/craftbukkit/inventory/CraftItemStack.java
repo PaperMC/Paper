@@ -22,6 +22,7 @@ import org.bukkit.material.MaterialData;
 
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 @DelegateDeserialization(ItemStack.class)
@@ -545,7 +546,8 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null || that.handle == null) {
             return false;
         }
-        if (!(that.getType() == getType() && getDurability() == that.getDurability())) {
+        Material comparisonType = CraftLegacy.fromLegacy(that.getType()); // This may be called from legacy item stacks, try to get the right material
+        if (!(comparisonType == getType() && getDurability() == that.getDurability())) {
             return false;
         }
         return hasItemMeta() ? that.hasItemMeta() && handle.getTag().equals(that.handle.getTag()) : !that.hasItemMeta();
