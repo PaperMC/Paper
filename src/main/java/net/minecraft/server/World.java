@@ -801,6 +801,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             // Paper end
         }
     }
+    // Paper start - Prevent armor stands from doing entity lookups
+    @Override
+    public boolean getCubes(@Nullable Entity entity, AxisAlignedBB axisAlignedBB) {
+        if (entity instanceof EntityArmorStand && !entity.world.paperConfig.armorStandEntityLookups) return false;
+        return GeneratorAccess.super.getCubes(entity, axisAlignedBB);
+    }
+    // Paper end
 
     public Explosion explode(@Nullable Entity entity, double d0, double d1, double d2, float f, Explosion.Effect explosion_effect) {
         return this.createExplosion(entity, (DamageSource) null, (ExplosionDamageCalculator) null, d0, d1, d2, f, false, explosion_effect);

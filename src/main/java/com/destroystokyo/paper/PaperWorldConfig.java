@@ -372,4 +372,9 @@ public class PaperWorldConfig {
     private void scanForLegacyEnderDragon() {
         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
     }
+
+    public boolean armorStandEntityLookups = true;
+    private void armorStandEntityLookups() {
+        armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
+    }
 }
