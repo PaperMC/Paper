@@ -43,12 +43,10 @@
              iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
          });
      }
-@@ -209,13 +222,36 @@
-     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack) {
-         return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
+@@ -211,11 +224,34 @@
          });
-+    }
-+
+     }
+ 
 +    // Paper start - delayed projectile spawning
 +    public record Delayed<T extends Projectile>(
 +        T projectile,
@@ -66,9 +64,9 @@
 +            this.attemptSpawn();
 +            return projectile();
 +        }
-     }
++    }
 +    // Paper end - delayed projectile spawning
- 
++
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
 +    // Paper start - delayed projectile spawning
 +        return spawnProjectileDelayed(projectile, world, projectileStack, beforeSpawn).spawn();
@@ -113,3 +111,19 @@
          BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
  
          iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);
+@@ -320,6 +372,15 @@
+         } else {
+             Entity entity1 = this.getOwner();
+ 
++            // Paper start - Cancel hit for vanished players
++            if (entity1 instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer) {
++                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) entity1.getBukkitEntity();
++                if (!shooter.canSee(collided)) {
++                    return false;
++                }
++            }
++            // Paper end - Cancel hit for vanished players
+             return entity1 == null || this.leftOwner || !entity1.isPassengerOfSameVehicle(entity);
+         }
+     }

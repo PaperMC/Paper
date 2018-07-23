@@ -150,7 +150,7 @@
                  }
              };
          } else {
-@@ -145,11 +219,49 @@
+@@ -145,13 +219,90 @@
          }
  
          this.thread = Thread.currentThread();
@@ -204,8 +204,49 @@
 +        this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
      }
  
++    // Paper start - Cancel hit for vanished players
++    // ret true if no collision
++    public final boolean checkEntityCollision(BlockState data, Entity source, net.minecraft.world.phys.shapes.CollisionContext voxelshapedcollision,
++                                              BlockPos position, boolean checkCanSee) {
++        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
++        net.minecraft.world.phys.shapes.VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
++        if (voxelshape.isEmpty()) {
++            return true;
++        }
++
++        voxelshape = voxelshape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
++        if (voxelshape.isEmpty()) {
++            return true;
++        }
++
++        List<Entity> entities = this.getEntities(null, voxelshape.bounds());
++        for (int i = 0, len = entities.size(); i < len; ++i) {
++            Entity entity = entities.get(i);
++
++            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
++                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
++                continue;
++            }
++
++            // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
++            // elide the last check since vanilla calls with entity = null
++            // only we care about the source for the canSee check
++            if (entity.isRemoved() || !entity.blocksBuilding) {
++                continue;
++            }
++
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(voxelshape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++                return false;
++            }
++        }
++
++        return true;
++    }
++    // Paper end - Cancel hit for vanished players
      @Override
-@@ -163,6 +275,13 @@
+     public boolean isClientSide() {
+         return this.isClientSide;
+@@ -163,6 +314,13 @@
          return null;
      }
  
@@ -219,7 +260,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +298,73 @@
+@@ -179,18 +337,73 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -237,7 +278,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-     @Override
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -269,7 +310,7 @@
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
-+    @Override
+     @Override
 +    public final boolean hasChunkAt(BlockPos pos) {
 +        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
 +    }
@@ -296,7 +337,7 @@
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +381,18 @@
+@@ -207,6 +420,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -315,7 +356,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,44 +400,124 @@
+@@ -214,45 +439,125 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -400,10 +441,10 @@
 +                // CraftBukkit end
 +
                  return true;
-+            }
-+        }
-+    }
-+
+             }
+         }
+     }
+ 
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
 +    public void notifyAndUpdatePhysics(BlockPos blockposition, LevelChunk chunk, BlockState oldBlock, BlockState newBlock, BlockState actualBlock, int i, int j) {
 +        BlockState iblockdata = newBlock;
@@ -423,7 +464,7 @@
 +                if (!this.isClientSide && iblockdata.hasAnalogOutputSignal()) {
 +                    this.updateNeighbourForOutputSignal(blockposition, newBlock.getBlock());
 +                }
-             }
++            }
 +
 +            if ((i & 16) == 0 && j > 0) {
 +                int k = i & -34;
@@ -449,13 +490,14 @@
 +                this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
 +            }
 +            // CraftBukkit end
-         }
-     }
++        }
++    }
 +    // CraftBukkit end
- 
++
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
-@@ -340,10 +606,18 @@
+     @Override
+@@ -340,10 +645,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -475,7 +517,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,34 +720,53 @@
+@@ -446,34 +759,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -527,18 +569,18 @@
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
          }
-     }
++    }
 +    // Paper start - Option to prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
 +        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
 +        return LevelAccessor.super.noCollision(entity, box);
-+    }
+     }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +803,29 @@
+@@ -510,13 +842,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -569,7 +611,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +952,7 @@
+@@ -643,7 +991,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -578,7 +620,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1221,7 @@
+@@ -912,7 +1260,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
