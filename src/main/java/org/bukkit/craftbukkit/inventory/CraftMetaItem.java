@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.NBTCompressedStreamTools;
 import org.apache.commons.codec.binary.Base64;
 
@@ -565,7 +566,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     }
 
     public final void setDisplayName(String name) {
-        this.displayName = CraftChatMessage.fromStringOrNull(name);
+        this.displayName = new ChatComponentText(name);
     }
 
     public boolean hasDisplayName() {
@@ -579,7 +580,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     @Override
     public void setLocalizedName(String name) {
-        this.locName = CraftChatMessage.fromStringOrNull(name);
+        this.locName = new ChatComponentText(name);
     }
 
     @Override
