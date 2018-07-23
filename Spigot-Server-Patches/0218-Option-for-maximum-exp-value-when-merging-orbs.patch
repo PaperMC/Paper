@@ -1,0 +1,60 @@
+From ba753e79cce891252f5a7acc373fe4bd63a7d969 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 10 Nov 2017 23:03:12 -0500
+Subject: [PATCH] Option for maximum exp value when merging orbs
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c80d84b9b2..605e84173d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -361,4 +361,10 @@ public class PaperWorldConfig {
+         disableCreeperLingeringEffect = getBoolean("disable-creeper-lingering-effect", false);
+         log("Creeper lingering effect: " + disableCreeperLingeringEffect);
+     }
++
++    public int expMergeMaxValue;
++    private void expMergeMaxValue() {
++        expMergeMaxValue = getInt("experience-merge-max-value", -1);
++        log("Experience Merge Max Value: " + expMergeMaxValue);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 2904a845b1..142b6cc033 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -994,16 +994,30 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             EntityExperienceOrb xp = (EntityExperienceOrb) entity;
+             double radius = spigotConfig.expMerge;
+             if (radius > 0) {
++                // Paper start - Maximum exp value when merging - Whole section has been tweaked, see comments for specifics
++                final int maxValue = paperConfig.expMergeMaxValue;
++                final boolean mergeUnconditionally = maxValue <= 0;
++                if (mergeUnconditionally || xp.value < maxValue) { // Paper - Skip iteration if unnecessary
++
+                 List<Entity> entities = this.getEntities(entity, entity.getBoundingBox().grow(radius, radius, radius));
+                 for (Entity e : entities) {
+                     if (e instanceof EntityExperienceOrb) {
+                         EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
+-                        if (!loopItem.dead) {
++                        if (!loopItem.dead && !(maxValue > 0 && loopItem.value >= maxValue)) { // Paper
+                             xp.value += loopItem.value;
++                            // Paper start
++                            if (!mergeUnconditionally && xp.value > maxValue) {
++                                loopItem.value = xp.value - maxValue;
++                                xp.value = maxValue;
++                                break;
++                            }
++                            // Paper end
+                             loopItem.die();
+                         }
+                     }
+                 }
++
++                } // Paper end - End iteration skip check - All tweaking ends here
+             }
+         } // Spigot end
+ 
+-- 
+2.18.0
+
