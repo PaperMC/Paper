@@ -42,7 +42,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         Validate.isTrue(displayName.length() <= 128, "Display name '" + displayName + "' is longer than the limit of 128 characters");
         CraftScoreboard scoreboard = checkState();
 
-        objective.setDisplayName(CraftChatMessage.fromStringOrNull(displayName));
+        objective.setDisplayName(CraftChatMessage.fromString(displayName)[0]); // SPIGOT-4112: not nullable
     }
 
     public String getCriteria() throws IllegalStateException {

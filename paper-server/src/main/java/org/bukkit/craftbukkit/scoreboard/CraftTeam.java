@@ -41,7 +41,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.isTrue(displayName.length() <= 128, "Display name '" + displayName + "' is longer than the limit of 128 characters");
         CraftScoreboard scoreboard = checkState();
 
-        team.setDisplayName(CraftChatMessage.fromStringOrNull(displayName));
+        team.setDisplayName(CraftChatMessage.fromString(displayName)[0]); // SPIGOT-4112: not nullable
     }
 
     public String getPrefix() throws IllegalStateException {
