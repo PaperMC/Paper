@@ -39,7 +39,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     public static final GeneratorAccess INSTANCE = new DummyGeneratorAccess();
 
-    private DummyGeneratorAccess() {
+    protected DummyGeneratorAccess() {
     }
 
     @Override
