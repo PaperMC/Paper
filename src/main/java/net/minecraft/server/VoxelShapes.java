@@ -35,6 +35,7 @@ public final class VoxelShapes {
         return a(new AxisAlignedBB(d0, d1, d2, d3, d4, d5));
     }
 
+    public static final VoxelShape of(AxisAlignedBB axisAlignedbb) { return VoxelShapes.a(axisAlignedbb); } // Paper - OBFHELPER
     public static VoxelShape a(AxisAlignedBB axisalignedbb) {
         int i = a(axisalignedbb.minX, axisalignedbb.maxX);
         int j = a(axisalignedbb.minY, axisalignedbb.maxY);
@@ -129,6 +130,7 @@ public final class VoxelShapes {
         }
     }
 
+    public static final boolean applyOperation(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) { return VoxelShapes.c(voxelshape, voxelshape1, operatorboolean); } // Paper - OBFHELPER
     public static boolean c(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) {
         if (operatorboolean.apply(false, false)) {
             throw (IllegalArgumentException) SystemUtils.c((Throwable) (new IllegalArgumentException()));

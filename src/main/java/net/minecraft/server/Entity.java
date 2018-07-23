@@ -98,7 +98,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     private static double e = 1.0D;
     private final EntityTypes<?> f;
     private int id;
-    public boolean i;
+    public boolean i; public final boolean blocksEntitySpawning() { return this.i; } // Paper - OBFHELPER
     public final List<Entity> passengers;
     protected int j;
     @Nullable

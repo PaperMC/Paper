@@ -129,8 +129,14 @@ public abstract class IProjectile extends Entity {
     protected boolean a(Entity entity) {
         if (!entity.isSpectator() && entity.isAlive() && entity.isInteractable()) {
             Entity entity1 = this.getShooter();
-
+            // Paper start - Cancel hit for vanished players
+            if (entity1 instanceof EntityPlayer && entity instanceof EntityPlayer) {
+                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
+                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) entity1.getBukkitEntity();
+                if (!shooter.canSee(collided)) return false;
+            }
             return entity1 == null || this.d || !entity1.isSameVehicle(entity);
+            // Paper end
         } else {
             return false;
         }

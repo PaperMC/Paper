@@ -178,6 +178,46 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
     }
 
+    // Paper start
+    // ret true if no collision
+    public final boolean checkEntityCollision(IBlockData data, Entity source, VoxelShapeCollision voxelshapedcollision,
+                                              BlockPosition position, boolean checkCanSee) {
+        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
+        VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
+        if (voxelshape.isEmpty()) {
+            return true;
+        }
+
+        voxelshape = voxelshape.offset((double) position.getX(), (double) position.getY(), (double) position.getZ());
+        if (voxelshape.isEmpty()) {
+            return true;
+        }
+
+        List<Entity> entities = this.getEntities(null, voxelshape.getBoundingBox());
+        for (int i = 0, len = entities.size(); i < len; ++i) {
+            Entity entity = entities.get(i);
+
+            if (checkCanSee && source instanceof EntityPlayer && entity instanceof EntityPlayer
+                && !((EntityPlayer) source).getBukkitEntity().canSee(((EntityPlayer) entity).getBukkitEntity())) {
+                continue;
+            }
+
+            // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
+            // elide the last check since vanilla calls with entity = null
+            // only we care about the source for the canSee check
+            if (entity.dead || !entity.blocksEntitySpawning()) {
+                continue;
+            }
+
+            if (VoxelShapes.applyOperation(voxelshape, VoxelShapes.of(entity.getBoundingBox()), OperatorBoolean.AND)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    // Paper end
+
     @Override
     public boolean s_() {
         return this.isClientSide;

@@ -453,6 +453,7 @@ public abstract class BlockBase {
             return this.a != null ? this.a.b : this.b(iblockaccess, blockposition, VoxelShapeCollision.a());
         }
 
+        public final VoxelShape getCollisionShape(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) { return this.b(iblockaccess, blockposition, voxelshapecollision); } // Paper - OBFHELPER
         public VoxelShape b(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
             return this.getBlock().c(this.p(), iblockaccess, blockposition, voxelshapecollision);
         }
