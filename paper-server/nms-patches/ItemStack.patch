@@ -83,7 +83,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -106,12 +144,124 @@
+@@ -106,12 +144,134 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().E(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -188,9 +188,19 @@
 +                    }
 +
 +                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
-+                        TileEntity te = world.getTileEntity(blockposition);
-+                        if (te instanceof TileEntitySkull) {
-+                            BlockWitherSkull.a(world, blockposition, (TileEntitySkull) te);
++                        BlockPosition bp = blockposition;
++                        if (!world.getType(blockposition).getMaterial().isReplaceable()) {
++                            if (!world.getType(blockposition).getMaterial().isBuildable()) {
++                                bp = null;
++                            } else {
++                                bp = bp.shift(itemactioncontext.getClickedFace());
++                            }
++                        }
++                        if (bp != null) {
++                            TileEntity te = world.getTileEntity(bp);
++                            if (te instanceof TileEntitySkull) {
++                                BlockWitherSkull.a(world, bp, (TileEntitySkull) te);
++                            }
 +                        }
 +                    }
 +
@@ -209,7 +219,7 @@
  
              return enuminteractionresult;
          }
-@@ -135,7 +285,7 @@
+@@ -135,7 +295,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -218,7 +228,7 @@
          }
  
          return nbttagcompound;
-@@ -213,6 +363,11 @@
+@@ -213,6 +373,11 @@
                  if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.c(this);
                      Item item = this.getItem();
@@ -230,7 +240,7 @@
  
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
-@@ -480,6 +635,14 @@
+@@ -480,6 +645,14 @@
      }
  
      public void setRepairCost(int i) {
@@ -245,7 +255,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -522,6 +685,13 @@
+@@ -522,6 +695,13 @@
          nbttaglist.add((NBTBase) nbttagcompound);
      }
  
