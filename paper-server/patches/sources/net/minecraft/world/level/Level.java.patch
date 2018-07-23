@@ -237,7 +237,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-+    @Override
+     @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -290,7 +290,7 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-     @Override
++    @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
@@ -475,7 +475,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,32 +720,44 @@
+@@ -446,34 +720,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -528,16 +528,25 @@
 +            // Paper end - Prevent block entity and entity crashes
          }
      }
++    // Paper start - Option to prevent armor stands from doing entity lookups
++    @Override
++    public boolean noCollision(@Nullable Entity entity, AABB box) {
++        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
++        return LevelAccessor.super.noCollision(entity, box);
++    }
++    // Paper end - Option to prevent armor stands from doing entity lookups
  
-@@ -510,13 +796,29 @@
+     public boolean shouldTickDeath(Entity entity) {
+         return true;
+@@ -510,13 +803,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 -        return this.isOutsideBuildHeight(pos) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE));
 +        // CraftBukkit start
 +        return this.getBlockEntity(pos, true);
-+    }
-+
+     }
+ 
 +    @Nullable
 +    public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
 +        if (this.capturedTileEntities.containsKey(blockposition)) {
@@ -545,8 +554,8 @@
 +        }
 +        // CraftBukkit end
 +        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
-     }
- 
++    }
++
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockposition = blockEntity.getBlockPos();
  
@@ -560,7 +569,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +945,7 @@
+@@ -643,7 +952,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -569,7 +578,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1214,7 @@
+@@ -912,7 +1221,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
