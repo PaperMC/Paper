@@ -58,13 +58,33 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     }
 
     @Override
-    void deserializeInternal(NBTTagCompound tag) {
-        super.deserializeInternal(tag);
+    void deserializeInternal(NBTTagCompound tag, Object context) {
+        super.deserializeInternal(tag, context);
 
         if (tag.hasKey(ENTITY_TAG.NBT)) {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
-            entityTag = (NBTTagCompound) MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ENTITY, new Dynamic(DynamicOpsNBT.a, entityTag), -1, CraftMagicNumbers.DATA_VERSION).getValue();
 
+            if (context instanceof Map) {
+                Map<String, Object> map = (Map<String, Object>) context;
+
+                // Duplicated from constructor
+                String entityType = SerializableMeta.getString(map, ENTITY_ID.BUKKIT, true);
+                if (entityType != null) {
+                    this.spawnedType = EntityType.fromName(entityType);
+                }
+            }
+
+            if (this.spawnedType != null) {
+                // We have a valid spawn type, just remove the ID now
+                entityTag.remove(ENTITY_ID.NBT);
+            }
+
+            // Tag still has some other data, lets try our luck with a conversion
+            if (!entityTag.isEmpty()) {
+                entityTag = (NBTTagCompound) MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ENTITY, new Dynamic(DynamicOpsNBT.a, entityTag), -1, CraftMagicNumbers.DATA_VERSION).getValue();
+            }
+
+            // See if we can read a converted ID tag
             if (entityTag.hasKey(ENTITY_ID.NBT)) {
                 this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getKey());
             }
@@ -73,7 +93,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
     @Override
     void serializeInternal(Map<String, NBTBase> internalTags) {
-        if (entityTag != null) {
+        if (entityTag != null && !entityTag.isEmpty()) {
             internalTags.put(ENTITY_TAG.NBT, entityTag);
         }
     }

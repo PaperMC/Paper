@@ -264,7 +264,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
         this.internalTag = meta.internalTag;
         if (this.internalTag != null) {
-            deserializeInternal(internalTag);
+            deserializeInternal(internalTag, meta);
         }
     }
 
@@ -434,7 +434,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
             try {
                 internalTag = NBTCompressedStreamTools.a(buf);
-                deserializeInternal(internalTag);
+                deserializeInternal(internalTag, map);
                 Set<String> keys = internalTag.getKeys();
                 for (String key : keys) {
                     if (!getHandledTags().contains(key)) {
@@ -447,7 +447,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
     }
 
-    void deserializeInternal(NBTTagCompound tag) {
+    void deserializeInternal(NBTTagCompound tag, Object context) {
     }
 
     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
