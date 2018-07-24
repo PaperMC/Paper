@@ -1,4 +1,4 @@
-From 4557d91dd4ca4ccd0d1ddbb66fdde9161dc25f47 Mon Sep 17 00:00:00 2001
+From 41b4ebc08ef0a4929b0564d18d68cc105280bf85 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 18 Mar 2018 12:29:48 -0400
 Subject: [PATCH] Player.setPlayerProfile API
@@ -6,7 +6,7 @@ Subject: [PATCH] Player.setPlayerProfile API
 This can be useful for changing name or skins after a player has logged in.
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index d04f9b380e..5015bd0710 100644
+index d04f9b380..5015bd071 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -67,7 +67,7 @@ public abstract class EntityHuman extends EntityLiving {
@@ -19,7 +19,7 @@ index d04f9b380e..5015bd0710 100644
      private final ItemCooldown ce;
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index a721eb30e9..258bdfe66a 100644
+index a721eb30e..258bdfe66 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -38,7 +38,7 @@ public class LoginListener implements PacketLoginInListener, ITickable {
@@ -48,7 +48,7 @@ index a721eb30e9..258bdfe66a 100644
                              uniqueId = i.getId();
                              // Paper end
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9f69000cb2..3c85d6323b 100644
+index 9f69000cb..8313c5192 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,6 +1,8 @@
@@ -91,7 +91,7 @@ index 9f69000cb2..3c85d6323b 100644
  
          getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
  
-@@ -1191,6 +1204,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1191,6 +1204,46 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              entry.updatePlayer(getHandle());
          }
      }
@@ -109,9 +109,30 @@ index 9f69000cb2..3c85d6323b 100644
 +        for (EntityPlayer player : players) {
 +            player.getBukkitEntity().reregisterPlayer(self);
 +        }
++        refreshPlayer();
 +    }
 +    public PlayerProfile getPlayerProfile() {
 +        return new CraftPlayerProfile(this).clone();
++    }
++
++    private void refreshPlayer() {
++        EntityPlayer handle = getHandle();
++
++        Location loc = getLocation();
++
++        PlayerConnection connection = handle.playerConnection;
++        reregisterPlayer(handle);
++
++        //Respawn the player then update their position and selected slot
++        connection.sendPacket(new net.minecraft.server.PacketPlayOutRespawn(handle.dimension, handle.world.getDifficulty(), handle.world.getWorldData().getType(), handle.playerInteractManager.getGameMode()));
++        handle.updateAbilities();
++        connection.sendPacket(new net.minecraft.server.PacketPlayOutPosition(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), new HashSet<>(), 0));
++        net.minecraft.server.MinecraftServer.getServer().getPlayerList().updateClient(handle);
++
++        if (this.isOp()) {
++            this.setOp(false);
++            this.setOp(true);
++        }
 +    }
 +    // Paper end
  
