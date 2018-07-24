@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.BlockPosition;
+import net.minecraft.server.EntityHanging;
 import net.minecraft.server.EntityItemFrame;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.ItemStack;
@@ -12,6 +13,7 @@ import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -21,8 +23,15 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         super(server, entity);
     }
 
+    @Override
     public boolean setFacingDirection(BlockFace face, boolean force) {
-        if (!super.setFacingDirection(face, force)) {
+        EntityHanging hanging = getHandle();
+        EnumDirection oldDir = hanging.direction;
+        EnumDirection newDir = CraftBlock.blockFaceToNotch(face);
+
+        getHandle().setDirection(newDir);
+        if (!force && !hanging.survives()) {
+            hanging.setDirection(oldDir);
             return false;
         }
 

@@ -1,11 +1,10 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityHanging;
 import net.minecraft.server.EnumDirection;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hanging;
 
@@ -51,17 +50,7 @@ public class CraftHanging extends CraftEntity implements Hanging {
     public BlockFace getFacing() {
         EnumDirection direction = this.getHandle().direction;
         if (direction == null) return BlockFace.SELF;
-        switch (direction) {
-            case SOUTH:
-            default:
-                return BlockFace.SOUTH;
-            case WEST:
-                return BlockFace.WEST;
-            case NORTH:
-                return BlockFace.NORTH;
-            case EAST:
-                return BlockFace.EAST;
-        }
+        return CraftBlock.notchToBlockFace(direction);
     }
 
     @Override
