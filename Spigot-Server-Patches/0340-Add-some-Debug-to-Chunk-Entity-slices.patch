@@ -1,0 +1,77 @@
+From 80a062ecc95b8346f6a9161e375e41d5f5df3882 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 23 Jul 2018 22:44:23 -0400
+Subject: [PATCH] Add some Debug to Chunk Entity slices
+
+If we detect unexpected state, log and try to recover
+
+This should hopefully avoid duplicate entities ever being created
+if the entity was to end up in 2 different chunk slices
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 6de053781..be0b411e5 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -681,8 +681,33 @@ public class Chunk {
+         entity.ab = this.locX;
+         entity.ac = k;
+         entity.ad = this.locZ;
+-        this.entitySlices[k].add(entity);
++
+         // Paper start
++        List<Entity> entitySlice = this.entitySlices[k];
++        boolean inThis = entitySlice.contains(entity);
++        if (entity.entitySlice != null || inThis) {
++            if (entity.entitySlice == entitySlice || inThis) {
++                LogManager.getLogger().warn(entity + " was already in this chunk section! Report this to https://github.com/PaperMC/Paper/issues/1223");
++                new Throwable().printStackTrace();
++                return;
++            } else {
++                LogManager.getLogger().warn(entity + " is still in another ChunkSection! Report this to https://github.com/PaperMC/Paper/issues/1223");
++
++                Chunk chunk = entity.getCurrentChunk();
++                if (chunk != null) {
++                    if (chunk != this) {
++                        LogManager.getLogger().warn(entity + " was in another chunk at that! " + chunk.locX + "," + chunk.locZ);
++                    }
++                    chunk.removeEntity(entity);
++                } else {
++                    removeEntity(entity);
++                }
++                new Throwable().printStackTrace();
++            }
++        }
++        entity.entitySlice = entitySlice;
++        entitySlice.add(entity);
++
+         this.markDirty();
+         entity.setCurrentChunk(this);
+         entityCounts.increment(entity.entityKeyString);
+@@ -726,6 +751,12 @@ public class Chunk {
+ 
+         // Paper start
+         if (!this.entitySlices[i].remove(entity)) { return; }
++        if (entitySlices[i] == entity.entitySlice) {
++            entity.entitySlice = null;
++        } else {
++            LogManager.getLogger().warn(entity + " was removed from a entitySlice we did not expect. Report this to https://github.com/PaperMC/Paper/issues/1223");
++            new Throwable().printStackTrace();
++        }
+         this.markDirty();
+         entity.setCurrentChunk(null);
+         entityCounts.decrement(entity.entityKeyString);
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 7188d0c99..b3120d7cc 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -59,6 +59,7 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+             }
+         }
+     };
++    Object entitySlice = null;
+     // Paper end
+     static boolean isLevelAtLeast(NBTTagCompound tag, int level) {
+         return tag.hasKey("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+-- 
+2.18.0
+
