@@ -160,7 +160,7 @@ public abstract class PotionEffectType {
     /**
      * Squee'ek uh'k kk'kkkk squeek eee'eek.
      */
-    public static final PotionEffectType DOLPHINS_GRACE = new PotionEffectTypeWrapper(29);
+    public static final PotionEffectType DOLPHINS_GRACE = new PotionEffectTypeWrapper(30);
 
     private final int id;
 
