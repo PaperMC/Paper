@@ -293,6 +293,20 @@ public enum EntityType {
                 ID_MAP.put(type.typeId, type);
             }
         }
+
+        // Add legacy names
+        NAME_MAP.put("xp_orb", EXPERIENCE_ORB);
+        NAME_MAP.put("eye_of_ender_signal", ENDER_SIGNAL);
+        NAME_MAP.put("xp_bottle", THROWN_EXP_BOTTLE);
+        NAME_MAP.put("fireworks_rocket", FIREWORK);
+        NAME_MAP.put("evocation_fangs", EVOKER_FANGS);
+        NAME_MAP.put("evocation_illager", EVOKER);
+        NAME_MAP.put("vindication_illager", VINDICATOR);
+        NAME_MAP.put("illusion_illager", ILLUSIONER);
+        NAME_MAP.put("commandblock_minecart", MINECART_COMMAND);
+        NAME_MAP.put("snowman", SNOWMAN);
+        NAME_MAP.put("villager_golem", IRON_GOLEM);
+        NAME_MAP.put("ender_crystal", ENDER_CRYSTAL);
     }
 
     private EntityType(String name, Class<? extends Entity> clazz, int typeId) {
