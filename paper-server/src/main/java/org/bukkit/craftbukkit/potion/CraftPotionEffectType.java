@@ -83,6 +83,8 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "SLOW_FALLING";
         case 29:
             return "CONDUIT_POWER";
+        case 30:
+            return "DOLPHINS_GRACE";
         default:
             return "UNKNOWN_EFFECT_TYPE_" + getId();
         }
