@@ -71,6 +71,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             }
         }
     };
+    List<Entity> entitySlice = null;
     // Paper end
 
     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
