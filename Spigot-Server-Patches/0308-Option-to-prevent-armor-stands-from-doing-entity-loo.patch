@@ -1,0 +1,52 @@
+From 6e268e2762db21feffbcde6e6d4b2e5e2d8e8668 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index a8470e6e7..f33cd90d2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -350,6 +350,11 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean armorStandEntityLookups = true;
++    private void armorStandEntityLookups() {
++        armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
++    }
++
+     public int maxCollisionsPerEntity;
+     private void maxEntityCollision() {
+         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 127dcedc9..72e22c09b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -11,6 +11,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+ import java.util.UUID;
++
+ import java.util.function.Function;
+ import java.util.function.Predicate;
+ import java.util.function.Supplier;
+@@ -1562,6 +1563,14 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         }
+     }
+ 
++    // Paper start - Prevent armor stands from doing entity lookups
++    @Override
++    public boolean getCubes(@Nullable Entity entity, AxisAlignedBB axisAlignedBB) {
++        if (entity instanceof EntityArmorStand && !entity.world.paperConfig.armorStandEntityLookups) return false;
++        return GeneratorAccess.super.getCubes(entity, axisAlignedBB);
++    }
++    // Paper end
++
+     public boolean a(AxisAlignedBB axisalignedbb) {
+         int i = MathHelper.floor(axisalignedbb.a);
+         int j = MathHelper.f(axisalignedbb.d);
+-- 
+2.18.0
+
