@@ -1,4 +1,4 @@
-From f66fc891df81485d65a13598e72d1fc97298470c Mon Sep 17 00:00:00 2001
+From 4af3e524620c76a07efafb4d4053e55cd4190fa4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 18 Mar 2018 12:29:48 -0400
 Subject: [PATCH] Player.setPlayerProfile API
@@ -48,7 +48,7 @@ index 2842956bf..8aeded425 100644
                              uniqueId = i.getId();
                              // Paper end
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 77c50ba14..598b210ce 100644
+index 77c50ba14..8b20509bc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,6 +1,8 @@
@@ -91,7 +91,7 @@ index 77c50ba14..598b210ce 100644
  
          getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
  
-@@ -1148,6 +1161,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1148,6 +1161,46 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              entry.updatePlayer(getHandle());
          }
      }
@@ -109,9 +109,30 @@ index 77c50ba14..598b210ce 100644
 +        for (EntityPlayer player : players) {
 +            player.getBukkitEntity().reregisterPlayer(self);
 +        }
++        refreshPlayer();
 +    }
 +    public PlayerProfile getPlayerProfile() {
 +        return new CraftPlayerProfile(this).clone();
++    }
++
++    private void refreshPlayer() {
++        EntityPlayer handle = getHandle();
++
++        Location loc = getLocation();
++
++        PlayerConnection connection = handle.playerConnection;
++        reregisterPlayer(handle);
++
++        //Respawn the player then update their position and selected slot
++        connection.sendPacket(new PacketPlayOutRespawn(handle.dimension, handle.world.getDifficulty(), handle.world.getWorldData().getType(), handle.playerInteractManager.getGameMode()));
++        handle.updateAbilities();
++        connection.sendPacket(new PacketPlayOutPosition(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), new HashSet<>(), 0));
++        MinecraftServer.getServer().getPlayerList().updateClient(handle);
++
++        if (this.isOp()) {
++            this.setOp(false);
++            this.setOp(true);
++        }
 +    }
 +    // Paper end
  
