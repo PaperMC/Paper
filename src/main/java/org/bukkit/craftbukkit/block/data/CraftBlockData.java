@@ -138,7 +138,7 @@ public class CraftBlockData implements BlockData {
     @SuppressWarnings("unchecked")
     private static <N extends Enum<N> & INamable> N toNMS(Enum<?> bukkit, Class<N> nms) {
         Enum<?> converted;
-        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms.getClass());
+        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms);
 
         if (nmsToBukkit != null) {
             converted = nmsToBukkit.inverse().get(bukkit);
@@ -157,7 +157,7 @@ public class CraftBlockData implements BlockData {
 
         if (nmsToBukkit == null) {
             nmsToBukkit = HashBiMap.create();
-            classMappings.put(nms.getClass(), nmsToBukkit);
+            classMappings.put(nms, nmsToBukkit);
         }
 
         nmsToBukkit.put(converted, bukkit);
