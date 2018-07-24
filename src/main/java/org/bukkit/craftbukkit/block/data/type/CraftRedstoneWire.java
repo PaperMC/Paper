@@ -31,12 +31,16 @@ public abstract class CraftRedstoneWire extends CraftBlockData implements Redsto
         switch (face) {
             case NORTH:
                 set(NORTH, connection);
+                break;
             case EAST:
                 set(EAST, connection);
+                break;
             case SOUTH:
                 set(SOUTH, connection);
+                break;
             case WEST:
                 set(WEST, connection);
+                break;
             default:
                 throw new IllegalArgumentException("Cannot have face " + face);
         }
