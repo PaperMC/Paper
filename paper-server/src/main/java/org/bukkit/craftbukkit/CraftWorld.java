@@ -218,17 +218,13 @@ public class CraftWorld implements World {
 
         net.minecraft.server.Chunk chunk = null;
 
-        chunk = Futures.getUnchecked(world.getChunkProviderServer().generateChunk(x, z));
+        chunk = Futures.getUnchecked(world.getChunkProviderServer().generateChunk(x, z, true));
         PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
         if (playerChunk != null) {
             playerChunk.chunk = chunk;
         }
 
         if (chunk != null) {
-            world.getChunkProviderServer().chunks.put(chunkKey, chunk);
-
-            chunk.addEntities();
-
             refreshChunk(x, z);
         }
 
