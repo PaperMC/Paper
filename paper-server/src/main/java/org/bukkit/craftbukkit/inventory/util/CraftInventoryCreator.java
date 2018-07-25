@@ -1,0 +1,59 @@
+package org.bukkit.craftbukkit.inventory.util;
+
+import java.util.HashMap;
+import java.util.Map;
+import net.minecraft.server.TileEntityDispenser;
+import net.minecraft.server.TileEntityDropper;
+import net.minecraft.server.TileEntityHopper;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+
+public final class CraftInventoryCreator {
+
+    public static final CraftInventoryCreator INSTANCE = new CraftInventoryCreator();
+    //
+    private final CraftCustomInventoryConverter DEFAULT_CONVERTER = new CraftCustomInventoryConverter();
+    private final Map<InventoryType, InventoryConverter> converterMap = new HashMap<>();
+
+    private CraftInventoryCreator() {
+        converterMap.put(InventoryType.CHEST, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.DISPENSER, new CraftTileInventoryConverter(new TileEntityDispenser()));
+        converterMap.put(InventoryType.DROPPER, new CraftTileInventoryConverter(new TileEntityDropper()));
+        // furnace needs a world
+        converterMap.put(InventoryType.FURNACE, new CraftTileInventoryConverter.Furnace());
+        converterMap.put(InventoryType.WORKBENCH, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.ENCHANTING, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.BREWING, new CraftTileInventoryConverter.BrewingStand());
+        converterMap.put(InventoryType.PLAYER, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.MERCHANT, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.ENDER_CHEST, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.ANVIL, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.BEACON, new CraftTileInventoryConverter.Beacon());
+        converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter(new TileEntityHopper()));
+        converterMap.put(InventoryType.SHULKER_BOX, DEFAULT_CONVERTER);
+    }
+
+    public Inventory createInventory(InventoryHolder holder, InventoryType type) {
+        return converterMap.get(type).createInventory(holder, type);
+    }
+
+    public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
+        return converterMap.get(type).createInventory(holder, type, title);
+    }
+
+    public Inventory createInventory(InventoryHolder holder, int size) {
+        return DEFAULT_CONVERTER.createInventory(holder, size);
+    }
+
+    public Inventory createInventory(InventoryHolder holder, int size, String title) {
+        return DEFAULT_CONVERTER.createInventory(holder, size, title);
+    }
+
+    public interface InventoryConverter {
+
+        Inventory createInventory(InventoryHolder holder, InventoryType type);
+
+        Inventory createInventory(InventoryHolder holder, InventoryType type, String title);
+    }
+}
