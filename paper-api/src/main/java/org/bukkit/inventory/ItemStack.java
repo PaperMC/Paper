@@ -488,6 +488,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
             }
         }
 
+        if (version < 0) {
+            // Set damage again incase meta overwrote it
+            if (args.containsKey("damage")) {
+                result.setDurability(damage);
+            }
+        }
+
         return result;
     }
 
