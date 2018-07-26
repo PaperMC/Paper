@@ -387,6 +387,7 @@ public class EntityArmorStand extends EntityLiving {
         return enumitemslot;
     }
 
+    public final boolean isSlotDisabled(EnumItemSlot slot) { return this.d(slot); } // Paper - OBFHELPER
     private boolean d(EnumItemSlot enumitemslot) {
         return (this.disabledSlots & 1 << enumitemslot.getSlotFlag()) != 0 || enumitemslot.a() == EnumItemSlot.Function.HAND && !this.hasArms();
     }

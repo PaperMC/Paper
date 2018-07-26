@@ -238,5 +238,78 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     public void setCanMove(boolean move) {
         getHandle().canMove = move;
     }
+
+    @Override
+    public ItemStack getItem(org.bukkit.inventory.EquipmentSlot slot) {
+        com.google.common.base.Preconditions.checkNotNull(slot, "slot");
+        return getHandle().getEquipment(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot)).asBukkitMirror();
+    }
+
+    @Override
+    public void setItem(org.bukkit.inventory.EquipmentSlot slot, ItemStack item) {
+        com.google.common.base.Preconditions.checkNotNull(slot, "slot");
+        switch (slot) {
+            case HAND:
+                getEquipment().setItemInMainHand(item);
+                return;
+            case OFF_HAND:
+                getEquipment().setItemInOffHand(item);
+                return;
+            case FEET:
+                setBoots(item);
+                return;
+            case LEGS:
+                setLeggings(item);
+                return;
+            case CHEST:
+                setChestplate(item);
+                return;
+            case HEAD:
+                setHelmet(item);
+                return;
+        }
+        throw new UnsupportedOperationException(slot.name());
+    }
+
+    @Override
+    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getDisabledSlots() {
+        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = new java.util.HashSet<>();
+        for (org.bukkit.inventory.EquipmentSlot slot : org.bukkit.inventory.EquipmentSlot.values()) {
+            if (this.isSlotDisabled(slot)) {
+                disabled.add(slot);
+            }
+        }
+        return disabled;
+    }
+
+    @Override
+    public void setDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
+        int disabled = 0;
+        for (org.bukkit.inventory.EquipmentSlot slot : slots) {
+            if (slot == org.bukkit.inventory.EquipmentSlot.OFF_HAND) continue;
+            net.minecraft.server.EnumItemSlot nmsSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot);
+            disabled += (1 << nmsSlot.getSlotFlag()) + (1 << (nmsSlot.getSlotFlag() + 8)) + (1 << (nmsSlot.getSlotFlag() + 16));
+        }
+        getHandle().disabledSlots = disabled;
+    }
+
+    @Override
+    public void addDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
+        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = getDisabledSlots();
+        java.util.Collections.addAll(disabled, slots);
+        setDisabledSlots(disabled.toArray(new org.bukkit.inventory.EquipmentSlot[0]));
+    }
+
+    @Override
+    public void removeDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
+        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = getDisabledSlots();
+        for (final org.bukkit.inventory.EquipmentSlot slot : slots) disabled.remove(slot);
+        setDisabledSlots(disabled.toArray(new org.bukkit.inventory.EquipmentSlot[0]));
+    }
+
+    @Override
+    public boolean isSlotDisabled(org.bukkit.inventory.EquipmentSlot slot) {
+        return getHandle().isSlotDisabled(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
+    }
     // Paper end
 }
