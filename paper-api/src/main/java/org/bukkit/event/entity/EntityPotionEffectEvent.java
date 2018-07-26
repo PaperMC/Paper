@@ -10,10 +10,7 @@ import org.bukkit.potion.PotionEffectType;
  * Called when a potion effect is modified on an entity.
  * <p>
  * If the event is cancelled, no change will be made on the entity.
- *
- * @deprecated draft API
  */
-@Deprecated
 public class EntityPotionEffectEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
