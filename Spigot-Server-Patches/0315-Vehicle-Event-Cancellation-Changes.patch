@@ -1,0 +1,39 @@
+From c39c439f6c3d365e43d812d3cfe4ce7d42b35b2b Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Fri, 22 Apr 2016 18:20:05 -0500
+Subject: [PATCH] Vehicle Event Cancellation Changes
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 85358902ff..98d67d9a17 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -96,7 +96,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public boolean j; public boolean blocksEntitySpawning() { return j; } // Paper - OBFHELPER
+     public final List<Entity> passengers;
+     protected int k;
+-    private Entity ax;
++    private Entity ax;public void setVehicle(Entity entity) { this.ax = entity; } // Paper - OBFHELPER
+     public boolean attachedToPlayer;
+     public World world;
+     public double lastX;
+@@ -2141,6 +2141,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
+         } else {
+             // CraftBukkit start
++            entity.setVehicle(this); // Paper - Set the vehicle back for the event
+             CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
+             Entity orig = craft == null ? null : craft.getHandle();
+             if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
+@@ -2163,6 +2164,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 return;
+             }
+             // Spigot end
++
++            entity.setVehicle(null); // Paper - fix EntityDismountEvent cancellable
+             this.passengers.remove(entity);
+             entity.k = 60;
+         }
+-- 
+2.18.0
+
