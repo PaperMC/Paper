@@ -301,6 +301,7 @@ public class ChunkRegionLoader {
         nbttagcompound1.set("TileEntities", nbttaglist1);
         NBTTagList nbttaglist2 = new NBTTagList();
 
+        java.util.List<Entity> toUpdate = new java.util.ArrayList<>(); // Paper
         if (ichunkaccess.getChunkStatus().getType() == ChunkStatus.Type.LEVELCHUNK) {
             Chunk chunk = (Chunk) ichunkaccess;
 
@@ -312,13 +313,28 @@ public class ChunkRegionLoader {
                 while (iterator1.hasNext()) {
                     Entity entity = (Entity) iterator1.next();
                     NBTTagCompound nbttagcompound4 = new NBTTagCompound();
-
+                    // Paper start
+                    if ((int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
+                        toUpdate.add(entity);
+                        continue;
+                    }
+                    if (entity.dead || hasPlayerPassenger(entity)) {
+                        continue;
+                    }
+                    // Paper end
                     if (entity.d(nbttagcompound4)) {
                         chunk.d(true);
                         nbttaglist2.add(nbttagcompound4);
                     }
                 }
             }
+
+            // Paper start - move entities to the correct chunk
+            for (Entity entity : toUpdate) {
+                worldserver.chunkCheck(entity);
+            }
+            // Paper end
+
         } else {
             ProtoChunk protochunk = (ProtoChunk) ichunkaccess;
 
@@ -377,6 +393,19 @@ public class ChunkRegionLoader {
         nbttagcompound1.set("Structures", a(chunkcoordintpair, ichunkaccess.h(), ichunkaccess.v()));
         return nbttagcompound;
     }
+    // Paper start - this is saved with the player
+    private static boolean hasPlayerPassenger(Entity entity) {
+        for (Entity passenger : entity.passengers) {
+            if (passenger instanceof EntityPlayer) {
+                return true;
+            }
+            if (hasPlayerPassenger(passenger)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // Paper end
 
     public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
         if (nbttagcompound != null) {
