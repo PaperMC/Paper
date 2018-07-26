@@ -171,6 +171,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         SHOULDER_ENTITY,
         /**
+         * When a creature is spawned by another entity drowning
+         */
+        DROWNED,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
