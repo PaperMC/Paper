@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ItemStack.java
 +++ b/net/minecraft/server/ItemStack.java
-@@ -16,6 +16,20 @@
+@@ -16,6 +16,22 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,16 +12,18 @@
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
 +import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.entity.Player;
++import org.bukkit.event.block.BlockFertilizeEvent;
 +import org.bukkit.event.world.StructureGrowEvent;
 +// CraftBukkit end
 +
  public final class ItemStack {
  
      private static final Logger c = LogManager.getLogger();
-@@ -50,25 +64,49 @@
+@@ -50,25 +66,49 @@
          this.E();
      }
  
@@ -74,7 +76,7 @@
          this.E();
      }
  
-@@ -98,7 +136,7 @@
+@@ -98,7 +138,7 @@
          return this.h ? Items.AIR : this.item;
      }
  
@@ -83,7 +85,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -106,12 +144,134 @@
+@@ -106,12 +146,136 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().E(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -95,10 +97,7 @@
 +                world.captureBlockStates = true;
 +                // special case bonemeal
 +                if (this.getItem() == Items.BONE_MEAL) {
-+                    Block block = world.getType(blockposition).getBlock();
-+                    if (block instanceof BlockSapling || block instanceof BlockMushroom) {
-+                        world.captureTreeGeneration = true;
-+                    }
++                    world.captureTreeGeneration = true;
 +                }
 +            }
              Item item = this.getItem();
@@ -113,13 +112,18 @@
 +                BlockSapling.treeType = null;
 +                List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
 +                world.capturedBlockStates.clear();
-+                StructureGrowEvent event = null;
++                StructureGrowEvent structureEvent = null;
 +                if (treeType != null) {
 +                    boolean isBonemeal = getItem() == Items.BONE_MEAL;
-+                    event = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), blocks);
-+                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                    structureEvent = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), blocks);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
 +                }
-+                if (event == null || !event.isCancelled()) {
++
++                BlockFertilizeEvent fertilizeEvent = new BlockFertilizeEvent(CraftBlock.at(world, blockposition), (Player) entityhuman.getBukkitEntity(), blocks);
++                fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
++                org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
++
++                if (!fertilizeEvent.isCancelled()) {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
 +                    if (this.getCount() == oldCount) {
 +                        this.setCount(newCount);
@@ -219,7 +223,7 @@
  
              return enuminteractionresult;
          }
-@@ -135,7 +295,7 @@
+@@ -135,7 +299,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -228,7 +232,7 @@
          }
  
          return nbttagcompound;
-@@ -213,6 +373,11 @@
+@@ -213,6 +377,11 @@
                  if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.c(this);
                      Item item = this.getItem();
@@ -240,7 +244,7 @@
  
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
-@@ -480,6 +645,14 @@
+@@ -480,6 +649,14 @@
      }
  
      public void setRepairCost(int i) {
@@ -255,7 +259,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -522,6 +695,13 @@
+@@ -522,6 +699,13 @@
          nbttaglist.add((NBTBase) nbttagcompound);
      }
  
