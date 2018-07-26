@@ -1,31 +1,12 @@
-From 46caf77f4a0b159f721e681f44228a02b3cfeee2 Mon Sep 17 00:00:00 2001
+From fd5af731abdbb7f69e1faa16cd763c44018f643c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
 
 Add -Ddebug.entities=true to your JVM flags to gain more information
 
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index bcce5e8b7..f5b9aa561 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -351,6 +351,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-             while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
-+                // Paper start
-+                if (entity.getChunkX() != chunk.locX || entity.getChunkZ() != chunk.locZ) {
-+                    LogManager.getLogger().error(entity + " is not actually in this chunk! Report this to https://github.com/PaperMC/Paper/issues/1223", new Throwable());
-+                }
-+                if ((int)Math.floor(entity.locX) >> 4 != chunk.locX || (int)Math.floor(entity.locZ) >> 4 != chunk.locZ) {
-+                    LogManager.getLogger().error(entity + " will be leaving this chunk but saved to it. Report this to https://github.com/PaperMC/Paper/issues/1223", new Throwable());
-+                }
-+                // Paper end
- 
-                 nbttagcompound1 = new NBTTagCompound();
-                 if (entity.d(nbttagcompound1)) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 99dac412f..0d3af8cb7 100644
+index 99dac412f0..0d3af8cb77 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -73,6 +73,7 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
@@ -37,7 +18,7 @@ index 99dac412f..0d3af8cb7 100644
  
      private static final Logger a = LogManager.getLogger();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index b16324e1a..994d4bbb8 100644
+index b16324e1a2..994d4bbb84 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;

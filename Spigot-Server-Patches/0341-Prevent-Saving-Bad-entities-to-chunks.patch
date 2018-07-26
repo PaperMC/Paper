@@ -1,0 +1,105 @@
+From 192eaaeea08d9440107cf701c7d769341386855f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 26 Jul 2018 00:11:12 -0400
+Subject: [PATCH] Prevent Saving Bad entities to chunks
+
+See https://github.com/PaperMC/Paper/issues/1223
+
+Minecraft is saving invalid entities to the chunk files.
+
+Avoid saving bad data, and also make improvements to handle
+loading these chunks. Any invalid entity will be instant killed,
+so lets avoid adding it to the world...
+
+This lets us be safer about the dupe UUID resolver too, as now
+we can ignore instant killed entities and avoid risk of duplicating
+an invalid entity.
+
+This should reduce log occurrences of dupe uuid messages.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index be0b411e5c..e5a5217429 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -897,11 +897,12 @@ public class Chunk {
+                 Map<UUID, Entity> thisChunk = new HashMap<>();
+                 for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
+                     Entity entity = iterator.next();
++                    if (entity.dead) continue;
+                     Entity other = ((WorldServer) world).entitiesByUUID.get(entity.uniqueID);
+                     if (other == null) {
+                         other = thisChunk.get(entity.uniqueID);
+                     }
+-                    if (other != null) {
++                    if (other != null && !other.dead) {
+                         switch (mode) {
+                             case REGEN: {
+                                 entity.setUUID(UUID.randomUUID());
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index bcce5e8b7e..bad287fca4 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -346,11 +346,22 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+         Iterator iterator;
+ 
++        List<Entity> toUpdate = new java.util.ArrayList<>(); // Paper
+         for (i = 0; i < chunk.getEntitySlices().length; ++i) {
+             iterator = chunk.getEntitySlices()[i].iterator();
+ 
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
++                // Paper start
++                if ((int)Math.floor(entity.locX) >> 4 != chunk.locX || (int)Math.floor(entity.locZ) >> 4 != chunk.locZ) {
++                    LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
++                    toUpdate.add(entity);
++                    continue;
++                }
++                if (entity.dead) {
++                    continue;
++                }
++                // Paper end
+ 
+                 nbttagcompound1 = new NBTTagCompound();
+                 if (entity.d(nbttagcompound1)) {
+@@ -359,6 +370,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                 }
+             }
+         }
++        // Paper start - move entities to the correct chunk
++        for (Entity entity : toUpdate) {
++            world.entityJoinedWorld(entity, false);
++        }
++        // Paper end
+ 
+         nbttagcompound.set("Entities", nbttaglist1);
+         NBTTagList nbttaglist2 = new NBTTagList();
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 52adee8806..c2b92ad3a5 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1202,7 +1202,7 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             this.getChunkAt(i, j).a(entity);
+-            this.entityList.add(entity);
++            if (!entity.dead) this.entityList.add(entity); // Paper - don't add dead entities, chunk registration may of killed it
+             this.b(entity);
+             return true;
+         }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 1244baf45a..1763d9f94d 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1173,7 +1173,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+             if (this.entitiesByUUID.containsKey(uuid)) {
+                 Entity entity1 = (Entity) this.entitiesByUUID.get(uuid);
+ 
+-                if (this.f.contains(entity1)) {
++                if (this.f.contains(entity1) || entity1.dead) { // Paper - overwrite the current dead one
+                     this.f.remove(entity1);
+                 } else {
+                     if (!(entity instanceof EntityHuman)) {
+-- 
+2.18.0
+
