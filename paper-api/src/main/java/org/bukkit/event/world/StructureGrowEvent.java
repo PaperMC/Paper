@@ -69,9 +69,9 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Gets an ArrayList of all blocks associated with the structure.
+     * Gets a list of all blocks associated with the structure.
      *
-     * @return ArrayList of all blocks associated with the structure.
+     * @return list of all blocks associated with the structure.
      */
     public List<BlockState> getBlocks() {
         return blocks;
