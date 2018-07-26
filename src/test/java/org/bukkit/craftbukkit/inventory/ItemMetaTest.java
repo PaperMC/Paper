@@ -2,10 +2,9 @@ package org.bukkit.craftbukkit.inventory;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+
+import java.util.*;
+
 import com.destroystokyo.paper.inventory.meta.ArmorStandMeta; // Paper
 import net.minecraft.server.Block;
 import net.minecraft.server.IRegistry;
@@ -96,6 +95,34 @@ public class ItemMetaTest extends AbstractTestingBase {
         assertThat(itemMeta.hasConflictingEnchant(Enchantment.LOOT_BONUS_BLOCKS), is(true));
         assertThat(itemMeta.hasConflictingEnchant(null), is(false));
     }
+
+    // Paper start
+    private void testItemMeta(ItemStack stack) {
+        assertThat("Should not have ItemMeta", stack.hasItemMeta(), is(false));
+
+        stack.setDurability((short) 0);
+        assertThat("ItemStack with zero durability should not have ItemMeta", stack.hasItemMeta(), is(false));
+
+        stack.setDurability((short) 2);
+        assertThat("ItemStack with non-zero durability should have ItemMeta", stack.hasItemMeta(), is(true));
+
+        stack.setLore(Collections.singletonList("Lore"));
+        assertThat("ItemStack with lore and durability should have ItemMeta", stack.hasItemMeta(), is(true));
+
+        stack.setDurability((short) 0);
+        assertThat("ItemStack with lore should have ItemMeta", stack.hasItemMeta(), is(true));
+
+        stack.setLore(null);
+    }
+
+    @Test
+    public void testHasItemMeta() {
+        ItemStack itemStack = new ItemStack(Material.SHEARS);
+
+        testItemMeta(itemStack);
+        testItemMeta(CraftItemStack.asCraftCopy(itemStack));
+    }
+    // Paper end
 
     @Test
     public void testConflictingStoredEnchantment() {

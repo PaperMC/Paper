@@ -570,7 +570,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public boolean hasItemMeta() {
-        return hasItemMeta(handle) && !CraftItemFactory.instance().equals(getItemMeta(), null);
+        return hasItemMeta(handle) && (handle.getDamage() != 0 || (handle.getTag() != null && handle.getTag().map.size() >= (handle.getTag().hasKey(CraftMetaItem.DAMAGE.NBT) ? 2 : 1))); // Paper - keep 1.12 CraftBukkit behavior without calling getItemMeta
     }
 
     static boolean hasItemMeta(net.minecraft.server.ItemStack item) {
