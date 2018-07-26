@@ -1,4 +1,4 @@
-From 960d92e62001a815ee391c27085ed77ac367020f Mon Sep 17 00:00:00 2001
+From f3b8cae8d19b09d483ade52dd74ee6130ef912e1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 17 Jun 2017 16:30:44 -0400
 Subject: [PATCH] Profile Lookup Events
@@ -6,34 +6,15 @@ Subject: [PATCH] Profile Lookup Events
 Adds a Pre Lookup Event and a Post Lookup Event so that plugins may prefill in profile data, and cache the responses from
 profiles that had to be looked up.
 
-diff --git a/pom.xml b/pom.xml
-index a58d4424..bfe580f1 100644
---- a/pom.xml
-+++ b/pom.xml
-@@ -61,6 +61,13 @@
-             <!-- Trove Provided by CraftBukkit -->
-             <scope>provided</scope>
-         </dependency>
-+        <!-- Paper - Add Authlib for Profile API -->
-+        <dependency>
-+            <groupId>com.mojang</groupId>
-+            <artifactId>authlib</artifactId>
-+            <version>1.5.25</version> <!-- keep in sync with major MC versions -->
-+            <scope>compile</scope> <!-- expose to Plugins -->
-+        </dependency>
-         <dependency>
-             <groupId>co.aikar</groupId>
-             <artifactId>fastutil-lite</artifactId>
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
 new file mode 100644
-index 00000000..3b6995a7
+index 00000000..160c98fe
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/LookupProfileEvent.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,44 @@
 +package com.destroystokyo.paper.event.profile;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.mojang.authlib.GameProfile;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
@@ -60,16 +41,6 @@ index 00000000..3b6995a7
 +
 +    /**
 +     * @return The profile that was recently looked up. This profile can be mutated
-+     * @deprecated will be removed with 1.13, use {@link #getPlayerProfile()}
-+     */
-+    @Deprecated
-+    @Nonnull
-+    public GameProfile getProfile() {
-+        return profile.getGameProfile();
-+    }
-+
-+    /**
-+     * @return The profile that was recently looked up. This profile can be mutated
 +     */
 +    @Nonnull
 +    public PlayerProfile getPlayerProfile() {
@@ -87,17 +58,15 @@ index 00000000..3b6995a7
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
 new file mode 100644
-index 00000000..aa0666d5
+index 00000000..e5a5986a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/PreLookupProfileEvent.java
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,105 @@
 +package com.destroystokyo.paper.event.profile;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
 +import com.destroystokyo.paper.profile.ProfileProperty;
 +import com.google.common.collect.ArrayListMultimap;
-+import com.google.common.collect.Multimap;
-+import com.mojang.authlib.properties.Property;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
@@ -162,48 +131,6 @@ index 00000000..aa0666d5
 +    }
 +
 +    /**
-+     * Get the properties for this profile
-+     *
-+     * @return the property map to attach to the new {@link PlayerProfile}
-+     * @deprecated will be removed with 1.13  Use {@link #getProfileProperties()}
-+     */
-+    @Deprecated
-+    @Nonnull
-+    public Multimap<String, Property> getProperties() {
-+        Multimap<String, Property> props = ArrayListMultimap.create();
-+
-+        for (ProfileProperty property : properties) {
-+            props.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
-+        }
-+        return props;
-+    }
-+
-+    /**
-+     * Completely replaces all Properties with the new provided properties
-+     * @param properties the properties to set on the new profile
-+     * @deprecated will be removed with 1.13 Use {@link #setProfileProperties(Set)}
-+     */
-+    @Deprecated
-+    public void setProperties(Multimap<String, Property> properties) {
-+        this.properties = new HashSet<>();
-+        properties.values().forEach(property -> {
-+            this.properties.add(new ProfileProperty(property.getName(), property.getValue(), property.getSignature()));
-+        });
-+    }
-+
-+    /**
-+     * Adds additional properties, without removing the original properties
-+     * @param properties the properties to add to the existing properties
-+     * @deprecated will be removed with 1.13 use {@link #addProfileProperties(Set)}
-+     */
-+    @Deprecated
-+    public void addProperties(Multimap<String, Property> properties) {
-+        properties.values().forEach(property -> {
-+            this.properties.add(new ProfileProperty(property.getName(), property.getValue(), property.getSignature()));
-+        });
-+    }
-+
-+    /**
 +     * @return The currently pending prepopulated properties.
 +     * Any property in this Set will be automatically prefilled on this Profile
 +     */
@@ -240,6 +167,29 @@ index 00000000..aa0666d5
 +    }
 +
 +}
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java
+index e060c38a..1a69e5f7 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java
++++ b/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java
+@@ -1,7 +1,5 @@
+ package com.destroystokyo.paper.profile;
+ 
+-import com.mojang.authlib.GameProfile;
+-
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ import java.util.Collection;
+@@ -140,10 +138,4 @@ public interface PlayerProfile {
+     default boolean hasTextures() {
+         return hasProperty("textures");
+     }
+-
+-    /**
+-     * @deprecated Will be removed in 1.13
+-     */
+-    @Deprecated
+-    GameProfile getGameProfile();
+ }
 -- 
 2.18.0
 
