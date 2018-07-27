@@ -1,4 +1,4 @@
-From 241415266671ef0d001deac110827cb2cd1e46bb Mon Sep 17 00:00:00 2001
+From f4d51258d98a1bb3dbcb677a296fb9d132b6c159 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,7 +8,7 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index cd4fbee0c..7837f1024 100644
+index cd4fbee0ca..7837f1024c 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -33,7 +33,7 @@ public class Chunk implements IChunkAccess {
@@ -86,14 +86,13 @@ index cd4fbee0c..7837f1024 100644
  
      public boolean c(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e65558f7a..36cc0c18d 100644
+index 628fda8e7c..17bcef97e0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1786,6 +1786,40 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1782,6 +1782,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      // Paper start
-+
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +
 +    public void setCurrentChunk(Chunk chunk) {
@@ -127,21 +126,21 @@ index e65558f7a..36cc0c18d 100644
 +        return getCurrentChunkAt((int)Math.floor(locX) >> 4, (int)Math.floor(locZ) >> 4);
 +    }
 +
-     public final MinecraftKey entityKey;
-     public final String entityKeyString;
+     private MinecraftKey entityKey;
+     private String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 257dd1da9..cffbcb8f7 100644
+index 5ca7fef518..9361667c3b 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -38,6 +38,15 @@ public abstract class TileEntity implements KeyedObject {
-     public String getMinecraftKeyString() {
+@@ -41,6 +41,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
+         getMinecraftKey(); // Try to load if it doesn't exists.
          return tileEntityKeyString;
      }
 +
 +    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +    public Chunk getCurrentChunk() {
-+        final Chunk chunk = currentChunk != null ? currentChunk.get() : world.getChunkIfLoaded(position.getX() >> 4, position.getZ() >> 4);
++        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
 +        return chunk != null && chunk.isLoaded() ? chunk : null;
 +    }
 +    public void setCurrentChunk(Chunk chunk) {
@@ -151,7 +150,7 @@ index 257dd1da9..cffbcb8f7 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 72164e11a..f09251eec 100644
+index 72164e11af..f09251eec8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -9,6 +9,7 @@ import java.util.UUID;

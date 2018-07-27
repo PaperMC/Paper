@@ -1,4 +1,4 @@
-From 98687afc6aeac6f87995e5b56eef3a7d35398cd8 Mon Sep 17 00:00:00 2001
+From ebfddc6099547fa117ae7b4b508dd64f51d3c1cd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 01:40:13 -0400
 Subject: [PATCH] Add MinecraftKey Information to Objects
@@ -19,7 +19,7 @@ index e8f7b7292d..7ff8e70b24 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 29c7043c86..1a7d78a5c3 100644
+index 29c7043c86..628fda8e7c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -45,7 +45,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
@@ -40,32 +40,26 @@ index 29c7043c86..1a7d78a5c3 100644
      private int id;
      public boolean j;
      public final List<Entity> passengers;
-@@ -197,6 +197,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
-         } else {
-             this.defaultActivationState = false;
-         }
-+        // Paper start
-+        this.entityKey = EntityTypes.getName(entitytypes);
-+        this.entityKeyString = this.entityKey != null ? this.entityKey.toString() : null;
-+        // Paper end
-         // Spigot end
- 
-         this.datawatcher = new DataWatcher(this);
-@@ -1781,12 +1785,24 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1781,12 +1781,29 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
          return true;
      }
  
 +    // Paper start
-+    public final MinecraftKey entityKey;
-+    public final String entityKeyString;
++    private MinecraftKey entityKey;
++    private String entityKeyString;
 +
 +    @Override
 +    public MinecraftKey getMinecraftKey() {
++        if (entityKey == null) {
++            this.entityKey = EntityTypes.getName(this.getEntityType());
++            this.entityKeyString = this.entityKey != null ? this.entityKey.toString() : null;
++        }
 +        return entityKey;
 +    }
 +
 +    @Override
 +    public String getMinecraftKeyString() {
++        getMinecraftKey(); // Try to load if it doesn't exists. see: https://github.com/PaperMC/Paper/issues/1280
 +        return entityKeyString;
 +    }
      @Nullable
@@ -75,7 +69,7 @@ index 29c7043c86..1a7d78a5c3 100644
 -
 -        return entitytypes.a() && minecraftkey != null ? minecraftkey.toString() : null;
 +        EntityTypes type = this.getEntityType();
-+        return type != null && type.isPersistable() ? entityKeyString : null;
++        return type != null && type.isPersistable() ? getMinecraftKeyString() : null;
 +        // Paper end
      }
  
@@ -94,20 +88,21 @@ index 9a513b4e3a..fa268f3543 100644
      }
 diff --git a/src/main/java/net/minecraft/server/KeyedObject.java b/src/main/java/net/minecraft/server/KeyedObject.java
 new file mode 100644
-index 0000000000..61c2b993c9
+index 0000000000..743142d030
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/KeyedObject.java
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,9 @@
 +package net.minecraft.server;
 +
 +public interface KeyedObject {
 +    MinecraftKey getMinecraftKey();
 +    default String getMinecraftKeyString() {
-+        return getMinecraftKey().toString();
++        MinecraftKey key = getMinecraftKey();
++        return key != null ? key.toString() : null;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 8a0453245d..257dd1da9c 100644
+index 8a0453245d..5ca7fef518 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -7,11 +7,11 @@ import org.apache.logging.log4j.Logger;
@@ -115,7 +110,7 @@ index 8a0453245d..257dd1da9c 100644
  import org.bukkit.inventory.InventoryHolder; // CraftBukkit
  
 -public abstract class TileEntity {
-+public abstract class TileEntity implements KeyedObject {
++public abstract class TileEntity implements KeyedObject { // Paper
  
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
      private static final Logger a = LogManager.getLogger();
@@ -124,25 +119,26 @@ index 8a0453245d..257dd1da9c 100644
      protected World world;
      protected BlockPosition position;
      protected boolean d;
-@@ -21,8 +21,25 @@ public abstract class TileEntity {
-     public TileEntity(TileEntityTypes<?> tileentitytypes) {
-         this.position = BlockPosition.ZERO;
+@@ -23,6 +23,26 @@ public abstract class TileEntity {
          this.e = tileentitytypes;
-+        // Paper start
-+        this.tileEntityKey = TileEntityTypes.a(tileentitytypes);
-+        this.tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
      }
  
-+    public final MinecraftKey tileEntityKey;
-+    public final String tileEntityKeyString;
++    // Paper start
++    private String tileEntityKeyString = null;
++    private MinecraftKey tileEntityKey = null;
 +
 +    @Override
 +    public MinecraftKey getMinecraftKey() {
++        if (tileEntityKey == null) {
++            tileEntityKey = TileEntityTypes.a(this.getTileEntityType());
++            tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
++        }
 +        return tileEntityKey;
 +    }
 +
 +    @Override
 +    public String getMinecraftKeyString() {
++        getMinecraftKey(); // Try to load if it doesn't exists.
 +        return tileEntityKeyString;
 +    }
 +    // Paper end
