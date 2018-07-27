@@ -322,7 +322,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
                 launch = new EntitySpectralArrow(world, getHandle());
             } else if (Trident.class.isAssignableFrom(projectile)) {
-                launch = new EntityThrownTrident(world, getHandle(), net.minecraft.server.ItemStack.a);
+                launch = new EntityThrownTrident(world, getHandle(), new net.minecraft.server.ItemStack(net.minecraft.server.Items.TRIDENT));
             } else {
                 launch = new EntityTippedArrow(world, getHandle());
             }
