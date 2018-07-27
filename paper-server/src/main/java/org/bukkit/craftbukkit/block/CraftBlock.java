@@ -489,7 +489,7 @@ public class CraftBlock implements Block {
     }
 
     public boolean isEmpty() {
-        return getType() == Material.AIR;
+        return getNMS().isAir();
     }
 
     public boolean isLiquid() {

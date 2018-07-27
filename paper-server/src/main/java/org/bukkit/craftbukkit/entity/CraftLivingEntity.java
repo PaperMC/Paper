@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -134,6 +135,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     private List<Block> getLineOfSight(Set<Material> transparent, int maxDistance, int maxLength) {
+        if (transparent == null) {
+            transparent = Sets.newHashSet(Material.AIR, Material.CAVE_AIR, Material.VOID_AIR);
+        }
         if (maxDistance > 120) {
             maxDistance = 120;
         }
@@ -146,14 +150,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 blocks.remove(0);
             }
             Material material = block.getType();
-            if (transparent == null) {
-                if (!material.equals(Material.AIR)) {
-                    break;
-                }
-            } else {
-                if (!transparent.contains(material)) {
-                    break;
-                }
+            if (!transparent.contains(material)) {
+                break;
             }
         }
         return blocks;
