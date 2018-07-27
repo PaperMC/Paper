@@ -1,4 +1,4 @@
-From 20c6d16a7db36e57bde2a9bac4e5bb99d606239a Mon Sep 17 00:00:00 2001
+From 7feae31914ee5d50576995af8fbe35a44b1f0de3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:13:59 -0400
 Subject: [PATCH] Store counts for each Entity/Block Entity Type
@@ -6,7 +6,7 @@ Subject: [PATCH] Store counts for each Entity/Block Entity Type
 Opens door for future patches to optimize performance
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ea167a17b..77fdb3c4a 100644
+index ea167a17bb..efcece7857 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -34,15 +34,19 @@ public class Chunk {
@@ -21,11 +21,11 @@ index ea167a17b..77fdb3c4a 100644
              TileEntity replaced = super.put(key, value);
              if (replaced != null) {
                  replaced.setCurrentChunk(null);
-+                tileEntityCounts.decrement(replaced.tileEntityKeyString);
++                tileEntityCounts.decrement(replaced.getMinecraftKeyString());
              }
              if (value != null) {
                  value.setCurrentChunk(Chunk.this);
-+                tileEntityCounts.increment(value.tileEntityKeyString);
++                tileEntityCounts.increment(value.getMinecraftKeyString());
              }
              return replaced;
          }
@@ -33,7 +33,7 @@ index ea167a17b..77fdb3c4a 100644
              TileEntity removed = super.remove(key);
              if (removed != null) {
                  removed.setCurrentChunk(null);
-+                tileEntityCounts.decrement(removed.tileEntityKeyString);
++                tileEntityCounts.decrement(removed.getMinecraftKeyString());
              }
              return removed;
          }
@@ -41,7 +41,7 @@ index ea167a17b..77fdb3c4a 100644
          this.entitySlices[k].add(entity);
          // Paper start
          entity.setCurrentChunk(this);
-+        entityCounts.increment(entity.entityKeyString);
++        entityCounts.increment(entity.getMinecraftKeyString());
          // Paper end
          // Spigot start - increment creature type count
          // Keep this synced up with World.a(Class)
@@ -49,7 +49,7 @@ index ea167a17b..77fdb3c4a 100644
          this.entitySlices[i].remove(entity);
          // Paper start
          entity.setCurrentChunk(null);
-+        entityCounts.decrement(entity.entityKeyString);
++        entityCounts.decrement(entity.getMinecraftKeyString());
          // Paper end
          // Spigot start - decrement creature type count
          // Keep this synced up with World.a(Class)
