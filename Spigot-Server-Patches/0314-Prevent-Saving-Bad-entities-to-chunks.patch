@@ -1,4 +1,4 @@
-From a03528da903b6a8261c06c40ad9fde7267b3434e Mon Sep 17 00:00:00 2001
+From 95116432cfa374f39797e4e998f50223478d15c5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 26 Jul 2018 00:11:12 -0400
 Subject: [PATCH] Prevent Saving Bad entities to chunks
@@ -17,24 +17,6 @@ an invalid entity.
 
 This should reduce log occurrences of dupe uuid messages.
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 56a74c6062..fd1e53febb 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -911,11 +911,12 @@ public class Chunk implements IChunkAccess {
-                 Map<UUID, Entity> thisChunk = new HashMap<>();
-                 for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
-                     Entity entity = iterator.next();
-+                    if (entity.dead) continue;
-                     Entity other = ((WorldServer) world).entitiesByUUID.get(entity.uniqueID);
-                     if (other == null) {
-                         other = thisChunk.get(entity.uniqueID);
-                     }
--                    if (other != null) {
-+                    if (other != null && !other.dead) {
-                         switch (mode) {
-                             case REGEN: {
-                                 entity.setUUID(UUID.randomUUID());
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index a97e024ec4..bd52bf6561 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -75,7 +57,7 @@ index a97e024ec4..bd52bf6561 100644
          nbttagcompound.set("Entities", nbttaglist1);
          NBTTagList nbttaglist2 = new NBTTagList();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 6d80e55c19..27398806d3 100644
+index a66770e241..1f58042125 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1053,7 +1053,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
