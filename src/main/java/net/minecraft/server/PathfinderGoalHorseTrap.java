@@ -16,6 +16,7 @@ public class PathfinderGoalHorseTrap extends PathfinderGoal {
     @Override
     public void e() {
         WorldServer worldserver = (WorldServer) this.a.world;
+        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.a.getBukkitEntity()).callEvent()) return; // Paper
         DifficultyDamageScaler difficultydamagescaler = worldserver.getDamageScaler(this.a.getChunkCoordinates());
 
         this.a.t(false);
