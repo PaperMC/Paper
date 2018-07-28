@@ -818,6 +818,7 @@ public class Chunk implements IChunkAccess {
 
             for (int i1 = 0; i1 < l; ++i1) {
                 Entity entity1 = (Entity) list1.get(i1);
+                if (entity1.shouldBeRemoved) continue; // Paper
 
                 if (entity1.getBoundingBox().c(axisalignedbb) && entity1 != entity) {
                     if (predicate == null || predicate.test(entity1)) {
@@ -854,6 +855,7 @@ public class Chunk implements IChunkAccess {
 
             while (iterator.hasNext()) {
                 T entity = (T) iterator.next(); // CraftBukkit - decompile error
+                if (entity.shouldBeRemoved) continue; // Paper
 
                 if ((entitytypes == null || entity.getEntityType() == entitytypes) && entity.getBoundingBox().c(axisalignedbb) && predicate.test(entity)) {
                     list.add(entity);
@@ -875,6 +877,7 @@ public class Chunk implements IChunkAccess {
 
             while (iterator.hasNext()) {
                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
+                if (t0.shouldBeRemoved) continue; // Paper
 
                 if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
                     list.add(t0);

@@ -179,6 +179,7 @@ public class PaperCommand extends Command {
                 Collection<Entity> entities = world.entitiesById.values();
                 entities.forEach(e -> {
                     MinecraftKey key = e.getMinecraftKey();
+                    if (e.shouldBeRemoved) return; // Paper
 
                     MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                     ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.chunkX, e.chunkZ);

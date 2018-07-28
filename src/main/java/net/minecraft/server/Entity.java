@@ -190,6 +190,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     protected int numCollisions = 0; // Paper
     public void inactiveTick() { }
     // Spigot end
+    public boolean shouldBeRemoved; // Paper
 
     public float getBukkitYaw() {
         return this.yaw;
