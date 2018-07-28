@@ -44,4 +44,16 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
     public void setTrapTime(int trapTime) {
         this.getHandle().trapTime = trapTime;
     }
+
+    // Paper start - replaced by above methods
+    @Override
+    public boolean isTrap() {
+        return getHandle().isTrap();
+    }
+
+    @Override
+    public void setTrap(boolean trap) {
+        getHandle().setTrap(trap);
+    }
+    // Paper end
 }
