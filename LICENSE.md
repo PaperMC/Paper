@@ -34,4 +34,6 @@ Brokkonaut <hannos17@gmx.de>
 vemacs <d@nkmem.es>
 stonar96 <minecraft.stonar96@gmail.com>
 Hugo Manrique <hugmanrique@gmail.com>
+Andrew Steinborn <git@steinborn.me>
+willies952002 <admin@domnian.com>
 ```

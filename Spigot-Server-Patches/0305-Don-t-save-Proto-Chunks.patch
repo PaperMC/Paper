@@ -1,0 +1,37 @@
+From 29f7275b4762c83996dee6cd72fa71af7adc0f81 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 22 Jul 2018 21:21:41 -0400
+Subject: [PATCH] Don't save Proto Chunks
+
+These chunks are unfinished, and waste cpu time saving these unfinished chunks.
+the loadChunk method refuses to acknoledge they exists, and will restart
+a new chunk generation process to begin with, so saving them serves no benefit.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 5fd0c0cf50..43348a627f 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -282,6 +282,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     public synchronized void saveChunk(World world, IChunkAccess ichunkaccess, boolean unloaded) throws IOException, ExceptionWorldConflict {
++        if (ichunkaccess.i().d() == ChunkStatus.Type.PROTOCHUNK) { return; } // Paper - don't save proto chunks
+         // Spigot end
+         world.checkSession();
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+index 501565dd5d..7b30687530 100644
+--- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
++++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+@@ -23,7 +23,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+         protected boolean a(Scheduler.a scheduler_a) {
+             ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
+ 
+-            return !protochunk.ab_() && !protochunk.h();
++            return !protochunk.ab_() /*&& !protochunk.h()*/; // Paper
+         }
+     });
+ 
+-- 
+2.18.0
+
