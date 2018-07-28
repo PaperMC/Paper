@@ -174,7 +174,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.a(blockposition, blockposition);
-@@ -182,12 +309,52 @@
+@@ -182,12 +309,63 @@
                          iblockdata.b(this, blockposition, j);
                      }
                  }
@@ -216,7 +216,18 @@
 +            if ((i & 16) == 0) {
 +                int j = i & -2;
 +
-+                iblockdata1.b(this, blockposition, j);
++                // CraftBukkit start
++                iblockdata1.b(this, blockposition, j); // Don't call an event for the old block to limit event spam
++                CraftWorld world = ((WorldServer) this).getWorld();
++                if (world != null) {
++                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
++                    this.getServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                }
++                // CraftBukkit end
 +                iblockdata.a((GeneratorAccess) this, blockposition, j);
 +                iblockdata.b(this, blockposition, j);
 +            }
@@ -227,7 +238,7 @@
      public boolean setAir(BlockPosition blockposition) {
          Fluid fluid = this.b(blockposition);
  
-@@ -224,6 +391,11 @@
+@@ -224,6 +402,11 @@
  
      public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
@@ -239,7 +250,7 @@
              this.applyPhysics(blockposition, block);
          }
  
-@@ -299,6 +471,17 @@
+@@ -299,6 +482,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -257,7 +268,7 @@
                  iblockdata.doPhysics(this, blockposition, block, blockposition1);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -307,7 +490,7 @@
+@@ -307,7 +501,7 @@
                  crashreportsystemdetails.a("Source block type", () -> {
                      try {
                          return String.format("ID #%s (%s // %s)", new Object[] { Block.REGISTRY.b(block), block.m(), block.getClass().getCanonicalName()});
@@ -266,7 +277,7 @@
                          return "ID #" + Block.REGISTRY.b(block);
                      }
                  });
-@@ -393,6 +576,17 @@
+@@ -393,6 +587,17 @@
      }
  
      public IBlockData getType(BlockPosition blockposition) {
@@ -284,7 +295,7 @@
          if (k(blockposition)) {
              return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -639,6 +833,42 @@
+@@ -639,6 +844,42 @@
      }
  
      public boolean addEntity(Entity entity) {
@@ -327,7 +338,7 @@
          int i = MathHelper.floor(entity.locX / 16.0D);
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
-@@ -669,6 +899,7 @@
+@@ -669,6 +910,7 @@
              ((IWorldAccess) this.v.get(i)).a(entity);
          }
  
@@ -335,7 +346,7 @@
      }
  
      protected void c(Entity entity) {
-@@ -676,6 +907,7 @@
+@@ -676,6 +918,7 @@
              ((IWorldAccess) this.v.get(i)).b(entity);
          }
  
@@ -343,7 +354,7 @@
      }
  
      public void kill(Entity entity) {
-@@ -711,7 +943,15 @@
+@@ -711,7 +954,15 @@
              this.getChunkAt(i, j).b(entity);
          }
  
@@ -360,7 +371,7 @@
          this.c(entity);
      }
  
-@@ -746,6 +986,11 @@
+@@ -746,6 +997,11 @@
  
          for (i = 0; i < this.k.size(); ++i) {
              entity = (Entity) this.k.get(i);
@@ -372,7 +383,7 @@
  
              try {
                  ++entity.ticksLived;
-@@ -794,8 +1039,10 @@
+@@ -794,8 +1050,10 @@
          CrashReportSystemDetails crashreportsystemdetails1;
          CrashReport crashreport1;
  
@@ -385,7 +396,7 @@
              Entity entity1 = entity.getVehicle();
  
              if (entity1 != null) {
-@@ -828,7 +1075,7 @@
+@@ -828,7 +1086,7 @@
                      this.getChunkAt(j, l).b(entity);
                  }
  
@@ -394,7 +405,7 @@
                  this.c(entity);
              }
  
-@@ -883,9 +1130,11 @@
+@@ -883,9 +1141,11 @@
                  TileEntity tileentity1 = (TileEntity) this.c.get(i1);
  
                  if (!tileentity1.x()) {
@@ -406,7 +417,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
-@@ -893,6 +1142,12 @@
+@@ -893,6 +1153,12 @@
  
                          chunk.a(tileentity1.getPosition(), tileentity1);
                          this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
@@ -419,7 +430,7 @@
                      }
                  }
              }
-@@ -946,15 +1201,13 @@
+@@ -946,15 +1212,13 @@
          int i;
          int j;
  
@@ -441,7 +452,7 @@
  
          entity.N = entity.locX;
          entity.O = entity.locY;
-@@ -970,6 +1223,7 @@
+@@ -970,6 +1234,7 @@
                      return ((MinecraftKey) EntityTypes.REGISTRY.b(entity.P())).toString();
                  });
                  entity.tick();
@@ -449,7 +460,7 @@
                  this.methodProfiler.e();
              }
          }
-@@ -1300,11 +1554,18 @@
+@@ -1300,11 +1565,18 @@
          }
      }
  
@@ -468,7 +479,7 @@
              TileEntity tileentity = null;
  
              if (this.J) {
-@@ -1339,6 +1600,14 @@
+@@ -1339,6 +1611,14 @@
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
          if (!k(blockposition)) {
              if (tileentity != null && !tileentity.x()) {
@@ -483,7 +494,7 @@
                  if (this.J) {
                      tileentity.setPosition(blockposition);
                      Iterator iterator = this.c.iterator();
-@@ -1498,6 +1767,14 @@
+@@ -1498,6 +1778,14 @@
                  }
  
                  this.p = MathHelper.a(this.p, 0.0F, 1.0F);
@@ -498,7 +509,7 @@
              }
          }
      }
-@@ -1583,7 +1860,10 @@
+@@ -1583,7 +1871,10 @@
      }
  
      public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
@@ -510,7 +521,7 @@
              return false;
          } else {
              int i = 0;
-@@ -1754,7 +2034,7 @@
+@@ -1754,7 +2045,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
@@ -519,7 +530,7 @@
                  arraylist.add(entity);
              }
          }
-@@ -1769,7 +2049,7 @@
+@@ -1769,7 +2060,7 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
@@ -528,7 +539,7 @@
                  arraylist.add(entity);
              }
          }
-@@ -1818,7 +2098,7 @@
+@@ -1818,7 +2109,7 @@
              }
          }
  
@@ -537,7 +548,7 @@
      }
  
      @Nullable
-@@ -1839,8 +2119,17 @@
+@@ -1839,8 +2130,17 @@
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -556,7 +567,7 @@
                  ++i;
              }
          }
-@@ -1849,12 +2138,18 @@
+@@ -1849,12 +2149,18 @@
      }
  
      public void a(Collection<Entity> collection) {
@@ -576,7 +587,7 @@
              this.b(entity);
          }
  
-@@ -1958,6 +2253,11 @@
+@@ -1958,6 +2264,11 @@
  
          for (int i = 0; i < this.players.size(); ++i) {
              EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
@@ -588,7 +599,7 @@
  
              if (predicate.test(entityhuman1)) {
                  double d5 = entityhuman1.d(d0, d1, d2);
-@@ -2126,6 +2426,16 @@
+@@ -2126,6 +2437,16 @@
  
      public void everyoneSleeping() {}
  
@@ -605,7 +616,7 @@
      public float g(float f) {
          return (this.q + (this.r - this.q) * f) * this.i(f);
      }
-@@ -2300,7 +2610,7 @@
+@@ -2300,7 +2621,7 @@
          int l = j * 16 + 8 - blockposition.getZ();
          boolean flag = true;
  
