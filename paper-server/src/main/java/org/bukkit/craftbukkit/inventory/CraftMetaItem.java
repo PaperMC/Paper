@@ -566,7 +566,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     }
 
     public final void setDisplayName(String name) {
-        this.displayName = (name == null) ? null : new ChatComponentText(name);
+        this.displayName = CraftChatMessage.wrapOrNull(name);
     }
 
     public boolean hasDisplayName() {
@@ -580,7 +580,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     @Override
     public void setLocalizedName(String name) {
-        this.locName = (name == null) ? null : new ChatComponentText(name);
+        this.locName = CraftChatMessage.wrapOrNull(name);
     }
 
     @Override

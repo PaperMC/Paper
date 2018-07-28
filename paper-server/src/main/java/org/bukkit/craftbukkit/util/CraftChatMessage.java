@@ -138,6 +138,10 @@ public final class CraftChatMessage {
         }
     }
 
+    public static IChatBaseComponent wrapOrNull(String message) {
+        return (message == null || message.isEmpty()) ? null : new ChatComponentText(message);
+    }
+
     public static IChatBaseComponent fromStringOrNull(String message) {
         return (message == null || message.isEmpty()) ? null : fromString(message)[0];
     }
