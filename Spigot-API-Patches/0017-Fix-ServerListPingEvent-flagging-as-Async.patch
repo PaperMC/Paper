@@ -1,0 +1,54 @@
+From cb1afe86f6ab48949d4e19d3549a4669b1ceae28 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Feb 2016 20:26:39 -0600
+Subject: [PATCH] Fix ServerListPingEvent flagging as Async
+
+This event can sometimes fire Async, set the proper boolean
+
+diff --git a/src/main/java/org/bukkit/event/server/ServerEvent.java b/src/main/java/org/bukkit/event/server/ServerEvent.java
+index eb00d6af..70416c81 100644
+--- a/src/main/java/org/bukkit/event/server/ServerEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerEvent.java
+@@ -1,9 +1,19 @@
+ package org.bukkit.event.server;
+ 
++import org.bukkit.Bukkit;
+ import org.bukkit.event.Event;
+ 
+ /**
+  * Miscellaneous server events
+  */
+ public abstract class ServerEvent extends Event {
++    // Paper start
++    public ServerEvent(boolean isAsync) {
++        super(isAsync);
++    }
++
++    public ServerEvent() {
++        super(!Bukkit.isPrimaryThread());
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+index 343f238f..3c38d857 100644
+--- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+@@ -21,6 +21,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+     private int maxPlayers;
+ 
+     public ServerListPingEvent(final InetAddress address, final String motd, final int numPlayers, final int maxPlayers) {
++        super(); // Paper - Is this event being fired async?
+         Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         this.address = address;
+         this.motd = motd;
+@@ -38,6 +39,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param maxPlayers the max number of players
+      */
+     protected ServerListPingEvent(final InetAddress address, final String motd, final int maxPlayers) {
++        super(); // Paper - Is this event being fired async?
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.address = address;
+         this.motd = motd;
+-- 
+2.18.0
+

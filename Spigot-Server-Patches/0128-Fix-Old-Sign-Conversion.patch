@@ -1,0 +1,62 @@
+From 0a7286e77c225d7801d81c1e635f632c6a125693 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 17 Jun 2016 20:50:11 -0400
+Subject: [PATCH] Fix Old Sign Conversion
+
+1) Sign loading code was trying to parse the JSON before the check for oldSign.
+   That code could then skip the old sign converting code if it triggers a JSON parse exception.
+2) New Mojang Schematic system has Tile Entities in the new converted format, but missing the Bukkit.isConverted flag
+   This causes Igloos and such to render broken signs. We fix this by ignoring sign conversion for Defined Structures
+
+diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
+index 785a1a2184..528db8704e 100644
+--- a/src/main/java/net/minecraft/server/DefinedStructure.java
++++ b/src/main/java/net/minecraft/server/DefinedStructure.java
+@@ -218,9 +218,11 @@ public class DefinedStructure {
+                                         definedstructure_blockinfo1.c.setInt("x", blockposition1.getX());
+                                         definedstructure_blockinfo1.c.setInt("y", blockposition1.getY());
+                                         definedstructure_blockinfo1.c.setInt("z", blockposition1.getZ());
++                                        tileentity.isLoadingStructure = true; // Paper
+                                         tileentity.load(definedstructure_blockinfo1.c);
+                                         tileentity.a(definedstructureinfo.b());
+                                         tileentity.a(definedstructureinfo.c());
++                                        tileentity.isLoadingStructure = false; // Paper
+                                     }
+                                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index d8d519143e..6021a3401f 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -11,6 +11,7 @@ import org.bukkit.inventory.InventoryHolder; // CraftBukkit
+ public abstract class TileEntity implements KeyedObject { // Paper
+ 
+     public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
++    boolean isLoadingStructure = false; // Paper
+     private static final Logger a = LogManager.getLogger();
+     private final TileEntityTypes<?> e; public TileEntityTypes getTileEntityType() { return e; } // Paper - OBFHELPER
+     protected World world;
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index c5164ca3f4..2591c2f0b2 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -49,13 +49,14 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+             }
+ 
+             try {
+-                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
++                //IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s); // Paper - move down - the old format might throw a json error
+ 
+-                if (oldSign) {
++                if (oldSign && !isLoadingStructure) { // Paper - saved structures will be in the new format, but will not have isConverted
+                     lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
+                     continue;
+                 }
+                 // CraftBukkit end
++                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s); // Paper - after old sign
+ 
+                 if (this.world instanceof WorldServer) {
+                     try {
+-- 
+2.18.0
+

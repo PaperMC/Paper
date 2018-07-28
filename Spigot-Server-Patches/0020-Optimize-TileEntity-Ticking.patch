@@ -1,11 +1,11 @@
-From b7e91c371fc4c629af5440e38cd70bfd2a59b293 Mon Sep 17 00:00:00 2001
-From: Zach Brown <zach.brown@destroystokyo.com>
-Date: Tue, 1 Mar 2016 22:01:19 -0600
+From 13443f9b6f42a4de1fa7b993ef0a6b9bb3be23e2 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index de06bd59a..9b54cbfdc 100644
+index a534c441a..591524f1e 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
@@ -30,18 +30,19 @@ index de06bd59a..9b54cbfdc 100644
 +        int i = this.position.getX();
 +        int j = this.position.getY();
 +        int k = this.position.getZ();
-+        if (!this.world.isClientSide && this.f != 0 /*&& (this.k + i + j + k) % 200 == 0*/) { // Paper - comment out tick rate limiter
++        if (false && !this.world.isClientSide && this.f != 0 && (this.k + i + j + k) % 200 == 0) { // Paper - disable block
 +            // Paper end
              this.f = 0;
              f = 5.0F;
              List list = this.world.a(EntityHuman.class, new AxisAlignedBB((double) ((float) i - 5.0F), (double) ((float) j - 5.0F), (double) ((float) k - 5.0F), (double) ((float) (i + 1) + 5.0F), (double) ((float) (j + 1) + 5.0F), (double) ((float) (k + 1) + 5.0F)));
-@@ -134,11 +140,14 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+@@ -134,13 +140,17 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
              }
          }
  
 -        this.e = this.a;
 -        f = 0.1F;
-         if (this.f > 0 && this.a == 0.0F) {
+-        if (this.f > 0 && this.a == 0.0F) {
++        if (this.f == 1 && this.a == 0.0F) { // check == 1 instead of > 0, first open
              this.a(SoundEffects.BLOCK_CHEST_OPEN);
          }
 +        // Paper start
@@ -50,9 +51,30 @@ index de06bd59a..9b54cbfdc 100644
 +        this.e = this.a;
 +        // Paper end
  
-         if (this.f == 0 && this.a > 0.0F || this.f > 0 && this.a < 1.0F) {
+-        if (this.f == 0 && this.a > 0.0F || this.f > 0 && this.a < 1.0F) {
++        if (this.f == 0/* && this.a > 0.0F || this.f > 0 && this.a < 1.0F*/) { // Paper disable all but player count check
++            /* // Paper disable animation stuff
              float f1 = this.a;
-@@ -203,6 +212,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+ 
+             if (this.f > 0) {
+@@ -155,9 +165,14 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+ 
+             float f2 = 0.5F;
+ 
++
+             if (this.a < 0.5F && f1 >= 0.5F) {
+-                this.a(SoundEffects.BLOCK_CHEST_CLOSE);
+-            }
++            */
++                // add some delay
++                MCUtil.scheduleTask(10, () -> {
++                    if (this.f == 0) this.a(SoundEffects.BLOCK_CHEST_CLOSE);
++                });
++            // } // Paper end
+ 
+             if (this.a < 0.0F) {
+                 this.a = 0.0F;
+@@ -203,6 +218,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
  
              ++this.f;
              if (this.world == null) return; // CraftBukkit
@@ -60,7 +82,7 @@ index de06bd59a..9b54cbfdc 100644
  
              // CraftBukkit start - Call redstone event
              if (this.getBlock() == Blocks.TRAPPED_CHEST) {
-@@ -224,6 +234,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+@@ -224,6 +240,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
              --this.f;
  
              // CraftBukkit start - Call redstone event
@@ -69,7 +91,7 @@ index de06bd59a..9b54cbfdc 100644
                  int newPower = Math.max(0, Math.min(15, this.f));
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index f275fd1c3..7d7628b04 100644
+index 61edd7cc6..9407a8c97 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -1,6 +1,6 @@

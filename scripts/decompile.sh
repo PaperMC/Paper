@@ -6,9 +6,9 @@ PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
 decompiledir="$workdir/Minecraft/$minecraftversion"
 classdir="$decompiledir/classes"
-
 echo "Extracting NMS classes..."
 if [ ! -d "$classdir" ]; then
     mkdir -p "$classdir"
@@ -30,4 +30,13 @@ if [ ! -d "$decompiledir/net/minecraft/server" ]; then
         exit 1
     fi
 fi
+
+# set a symlink to current
+currentlink="$workdir/Minecraft/current"
+if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "$windows" == "false" ]; then
+	echo "Pointing $currentlink to $minecraftversion"
+	rm -rf "$currentlink"
+	ln -sfn "$minecraftversion" "$currentlink"
+fi
+
 )

@@ -1,4 +1,4 @@
-From 8ee7700cdaccb5163a9398141a29fc19c30e0eea Mon Sep 17 00:00:00 2001
+From fc10d576b3d09d06db5582b291dd01567dce5ed6 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 11 Feb 2018 10:43:46 +0000
 Subject: [PATCH] Extend Player Interact cancellation
@@ -13,7 +13,7 @@ Update adjacent blocks of doors, double plants, pistons and beds
 when cancelling interaction.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index e34198e40..620efb1ac 100644
+index 55e45f84ca..e83b4fb4b0 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -110,6 +110,7 @@ public class PlayerInteractManager {
@@ -24,7 +24,7 @@ index e34198e40..620efb1ac 100644
              // Update any tile entity data for this block
              TileEntity tileentity = this.world.getTileEntity(blockposition);
              if (tileentity != null) {
-@@ -249,6 +250,34 @@ public class PlayerInteractManager {
+@@ -249,6 +250,33 @@ public class PlayerInteractManager {
          return flag;
      }
  
@@ -42,15 +42,14 @@ index e34198e40..620efb1ac 100644
 +            BlockPosition piston = position.shift(data.get(BlockPistonExtension.FACING).opposite());
 +            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, piston));
 +        } else if (block instanceof BlockBed) {
-+            if (data.get(BlockBed.PART) == BlockPropertyBedPart.FOOT) {
-+                // Restore head of bed
-+                BlockPosition head = position.shift(data.get(BlockBed.FACING));
-+                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, head));
++            // Restore other half of bed
++            boolean foot = data.get(BlockBed.PART) == BlockPropertyBedPart.FOOT;
++            BlockPosition otherBlock = position.shift(foot ? data.get(BlockBed.FACING) : data.get(BlockBed.FACING).opposite());
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, otherBlock));
 +
-+                TileEntity tileentity = this.world.getTileEntity(head);
-+                if (tileentity != null) {
-+                    this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
-+                }
++            TileEntity tileentity = this.world.getTileEntity(otherBlock);
++            if (tileentity != null) {
++                this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
 +            }
 +        }
 +    }
@@ -59,7 +58,7 @@ index e34198e40..620efb1ac 100644
      public boolean breakBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.world.getType(blockposition);
          // CraftBukkit start - fire BlockBreakEvent
-@@ -297,11 +326,7 @@ public class PlayerInteractManager {
+@@ -297,11 +325,7 @@ public class PlayerInteractManager {
                  }
                  // Let the client know the block still exists
                  ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
@@ -72,7 +71,7 @@ index e34198e40..620efb1ac 100644
                  // Update any tile entity data for this block
                  TileEntity tileentity = this.world.getTileEntity(blockposition);
                  if (tileentity != null) {
-@@ -459,7 +484,25 @@ public class PlayerInteractManager {
+@@ -459,7 +483,25 @@ public class PlayerInteractManager {
                  ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
              } else if (iblockdata.getBlock() instanceof BlockCake) {
                  ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
