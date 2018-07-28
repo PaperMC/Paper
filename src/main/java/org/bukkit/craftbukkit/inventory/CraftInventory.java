@@ -26,6 +26,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftLegacy;
 
 public class CraftInventory implements Inventory {
     protected final IInventory inventory;
@@ -99,6 +100,7 @@ public class CraftInventory implements Inventory {
 
     public boolean contains(Material material) {
         Validate.notNull(material, "Material cannot be null");
+        material = CraftLegacy.fromLegacy(material);
         for (ItemStack item : getStorageContents()) {
             if (item != null && item.getType() == material) {
                 return true;
@@ -121,6 +123,7 @@ public class CraftInventory implements Inventory {
 
     public boolean contains(Material material, int amount) {
         Validate.notNull(material, "Material cannot be null");
+        material = CraftLegacy.fromLegacy(material);
         if (amount <= 0) {
             return true;
         }
@@ -166,6 +169,7 @@ public class CraftInventory implements Inventory {
 
     public HashMap<Integer, ItemStack> all(Material material) {
         Validate.notNull(material, "Material cannot be null");
+        material = CraftLegacy.fromLegacy(material);
         HashMap<Integer, ItemStack> slots = new HashMap<Integer, ItemStack>();
 
         ItemStack[] inventory = getStorageContents();
@@ -193,7 +197,8 @@ public class CraftInventory implements Inventory {
 
     public int first(Material material) {
         Validate.notNull(material, "Material cannot be null");
-       ItemStack[] inventory = getStorageContents();
+        material = CraftLegacy.fromLegacy(material);
+        ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
             if (item != null && item.getType()== material) {
@@ -234,6 +239,7 @@ public class CraftInventory implements Inventory {
 
     public int firstPartial(Material material) {
         Validate.notNull(material, "Material cannot be null");
+        material = CraftLegacy.fromLegacy(material);
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
@@ -373,6 +379,7 @@ public class CraftInventory implements Inventory {
 
     public void remove(Material material) {
         Validate.notNull(material, "Material cannot be null");
+        material = CraftLegacy.fromLegacy(material);
         ItemStack[] items = getStorageContents();
         for (int i = 0; i < items.length; i++) {
             if (items[i] != null && items[i].getType()== material) {
