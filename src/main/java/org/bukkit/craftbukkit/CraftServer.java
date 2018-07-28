@@ -1749,15 +1749,17 @@ public final class CraftServer implements Server {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Keyed> org.bukkit.Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz) {
+        MinecraftKey key = CraftNamespacedKey.toMinecraft(tag);
+
         switch (registry) {
             case org.bukkit.Tag.REGISTRY_BLOCKS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
 
-                return (org.bukkit.Tag<T>) new CraftBlockTag(console.getTagRegistry().a().b(CraftNamespacedKey.toMinecraft(tag)));
+                return (org.bukkit.Tag<T>) new CraftBlockTag(console.getTagRegistry().a(), key);
             case org.bukkit.Tag.REGISTRY_ITEMS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
 
-                return (org.bukkit.Tag<T>) new CraftItemTag(console.getTagRegistry().b().b(CraftNamespacedKey.toMinecraft(tag)));
+                return (org.bukkit.Tag<T>) new CraftItemTag(console.getTagRegistry().b(), key);
             default:
                 throw new IllegalArgumentException();
         }

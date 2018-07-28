@@ -4,25 +4,24 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.server.Block;
+import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.TagsServer;
 import org.bukkit.Material;
-import org.bukkit.Tag;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
-public class CraftBlockTag implements Tag<Material> {
+public class CraftBlockTag extends CraftTag<Block, Material> {
 
-    private final net.minecraft.server.Tag<Block> handle;
-
-    public CraftBlockTag(net.minecraft.server.Tag<Block> handle) {
-        this.handle = handle;
+    public CraftBlockTag(TagsServer<Block> registry, MinecraftKey tag) {
+        super(registry, tag);
     }
 
     @Override
     public boolean isTagged(Material item) {
-        return handle.isTagged(CraftMagicNumbers.getBlock(item));
+        return getHandle().isTagged(CraftMagicNumbers.getBlock(item));
     }
 
     @Override
     public Set<Material> getValues() {
-        return Collections.unmodifiableSet(handle.a().stream().map((block) -> CraftMagicNumbers.getMaterial(block)).collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getHandle().a().stream().map((block) -> CraftMagicNumbers.getMaterial(block)).collect(Collectors.toSet()));
     }
 }
