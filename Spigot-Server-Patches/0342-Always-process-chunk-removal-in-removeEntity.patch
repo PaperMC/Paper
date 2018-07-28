@@ -1,0 +1,33 @@
+From 529731e4258b21416a555ed6c2d0200b8449f1d7 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 28 Jul 2018 12:09:20 -0400
+Subject: [PATCH] Always process chunk removal in removeEntity
+
+Spigot might skip chunk registration changes in removeEntity
+which can keep them in the chunk when they shouldnt be if done
+during entity ticking.
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d2d2ab794..df98a4f44 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1272,7 +1272,7 @@ public abstract class World implements IBlockAccess {
+             this.everyoneSleeping();
+         }
+ 
+-        if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking
++        // if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - move down
+         int i = entity.ab;
+         int j = entity.ad;
+ 
+@@ -1280,6 +1280,7 @@ public abstract class World implements IBlockAccess {
+             this.getChunkAt(i, j).b(entity);
+         }
+ 
++        if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
+         // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
+         int index = this.entityList.indexOf(entity);
+         if (index != -1) {
+-- 
+2.18.0
+
