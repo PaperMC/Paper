@@ -21,11 +21,7 @@ public final class MapCursor {
      */
     @Deprecated
     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible) {
-        this.x = x;
-        this.y = y;
-        setDirection(direction);
-        setRawType(type);
-        this.visible = visible;
+        this(x, y, direction, type, visible, null);
     }
 
     /**
@@ -38,11 +34,47 @@ public final class MapCursor {
      * @param visible Whether the cursor is visible by default.
      */
     public MapCursor(byte x, byte y, byte direction, Type type, boolean visible) {
+        this(x, y, direction, type, visible, null);
+    }
+
+    /**
+     * Initialize the map cursor.
+     *
+     * @param x The x coordinate, from -128 to 127.
+     * @param y The y coordinate, from -128 to 127.
+     * @param direction The facing of the cursor, from 0 to 15.
+     * @param type The type (color/style) of the map cursor.
+     * @param visible Whether the cursor is visible by default.
+     * @param caption cursor caption
+     * @deprecated Magic value
+     */
+    @Deprecated
+    public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, String caption) {
+        this.x = x;
+        this.y = y;
+        setDirection(direction);
+        setRawType(type);
+        this.visible = visible;
+        this.caption = caption;
+    }
+
+    /**
+     * Initialize the map cursor.
+     *
+     * @param x The x coordinate, from -128 to 127.
+     * @param y The y coordinate, from -128 to 127.
+     * @param direction The facing of the cursor, from 0 to 15.
+     * @param type The type (color/style) of the map cursor.
+     * @param visible Whether the cursor is visible by default.
+     * @param caption cursor caption
+     */
+    public MapCursor(byte x, byte y, byte direction, Type type, boolean visible, String caption) {
         this.x = x;
         this.y = y;
         setDirection(direction);
         setType(type);
         this.visible = visible;
+        this.caption = caption;
     }
 
     /**
