@@ -65,6 +65,15 @@ public class BlockCanBuildEvent extends BlockEvent {
         return blockData.getMaterial();
     }
 
+    /**
+     * Gets the BlockData that we are trying to place.
+     *
+     * @return The BlockData that we are trying to place
+     */
+    public BlockData getBlockData() {
+        return blockData;
+    }
+
     @Override
     public HandlerList getHandlers() {
         return handlers;
