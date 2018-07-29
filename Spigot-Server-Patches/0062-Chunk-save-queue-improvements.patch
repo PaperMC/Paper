@@ -1,4 +1,4 @@
-From ac2e096b98ab349ce20eb01bb7543fa3aaf4f4ee Mon Sep 17 00:00:00 2001
+From c8b51eeedd60beed4dc70db20bba967b5f60e48e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -26,10 +26,10 @@ Then finally, Sleeping will by default be removed, but due to known issues with 
 But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 36689db74..3898ad8fa 100644
+index d48ef7e85..280cfd553 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -204,4 +204,10 @@ public class PaperConfig {
+@@ -208,4 +208,10 @@ public class PaperConfig {
      private static void chunkLoadThreads() {
          minChunkLoadThreads = Math.min(6, getInt("settings.min-chunk-load-threads", 2)); // Keep people from doing stupid things with max of 6
      }
@@ -41,7 +41,7 @@ index 36689db74..3898ad8fa 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 3a0e52d88..8701777cc 100644
+index 5001fd11d..b247d5f07 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -25,6 +25,7 @@ import java.util.function.Consumer;
@@ -75,22 +75,7 @@ index 3a0e52d88..8701777cc 100644
      private final File c;
      private final DataFixer d;
      private PersistentStructureLegacy e;
-@@ -285,7 +299,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                     }
-                 };
-             } else {
--                if (this.b.containsKey(chunkcoordintpair) && this.a(this.b.get(chunkcoordintpair).get()) == ChunkStatus.Type.LEVELCHUNK || this.a(this.b(world, chunkcoordintpair.x, chunkcoordintpair.z)) == ChunkStatus.Type.LEVELCHUNK) {
-+                // Paper start
-+                Supplier<NBTTagCompound> existingSave;
-+                synchronized (this) {
-+                    existingSave = this.b.get(chunkcoordintpair);
-+                }
-+                if (existingSave != null && this.a(existingSave.get()) == ChunkStatus.Type.LEVELCHUNK || this.a(this.b(world, chunkcoordintpair.x, chunkcoordintpair.z)) == ChunkStatus.Type.LEVELCHUNK) { // Paper - extract existingSave to synchronized lookup
-+                    // Paper end
-                     return;
-                 }
- 
-@@ -296,8 +316,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -298,8 +312,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                      }
                  };
              }
@@ -101,7 +86,7 @@ index 3a0e52d88..8701777cc 100644
              // Spigot end
          } catch (Exception exception) {
              ChunkRegionLoader.a.error("Failed to save chunk", exception);
-@@ -306,18 +326,22 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -308,18 +322,22 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
@@ -128,7 +113,7 @@ index 3a0e52d88..8701777cc 100644
              if (logCompletion) {
                  // CraftBukkit end
                  ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.c.getName());
-@@ -325,17 +349,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -327,17 +345,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
              return false;
          } else {
@@ -148,7 +133,7 @@ index 3a0e52d88..8701777cc 100644
  
                  if (nbttagcompound != null) {
                      try {
-@@ -347,7 +367,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -349,7 +363,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
                  flag = true;
              } finally {
