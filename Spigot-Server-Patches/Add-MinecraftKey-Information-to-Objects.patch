@@ -6,7 +6,7 @@ Subject: [PATCH] Add MinecraftKey Information to Objects
 Stores the reference to the objects respective MinecraftKey
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index a0ebc1eaa..e4c771a39 100644
+index e8f7b7292d..7ff8e70b24 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
@@ -18,15 +18,8 @@ index a0ebc1eaa..e4c771a39 100644
  
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
-@@ -0,0 +0,0 @@ public class PaperCommand extends Command {
- 
-         Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
-     }
--    
-+
- }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 515c9d875..53fc37088 100644
+index 29c7043c86..628fda8e7c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.entity.EntityPortalEvent;
@@ -48,31 +41,25 @@ index 515c9d875..53fc37088 100644
      public boolean j;
      public final List<Entity> passengers;
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
-         } else {
-             this.defaultActivationState = false;
-         }
-+        // Paper start
-+        this.entityKey = EntityTypes.getName(entitytypes);
-+        this.entityKeyString = this.entityKey != null ? this.entityKey.toString() : null;
-+        // Paper end
-         // Spigot end
- 
-         this.datawatcher = new DataWatcher(this);
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
          return true;
      }
  
 +    // Paper start
-+    public final MinecraftKey entityKey;
-+    public final String entityKeyString;
++    private MinecraftKey entityKey;
++    private String entityKeyString;
 +
 +    @Override
 +    public MinecraftKey getMinecraftKey() {
++        if (entityKey == null) {
++            this.entityKey = EntityTypes.getName(this.getEntityType());
++            this.entityKeyString = this.entityKey != null ? this.entityKey.toString() : null;
++        }
 +        return entityKey;
 +    }
 +
 +    @Override
 +    public String getMinecraftKeyString() {
++        getMinecraftKey(); // Try to load if it doesn't exists. see: https://github.com/PaperMC/Paper/issues/1280
 +        return entityKeyString;
 +    }
      @Nullable
@@ -82,13 +69,13 @@ index 515c9d875..53fc37088 100644
 -
 -        return entitytypes.a() && minecraftkey != null ? minecraftkey.toString() : null;
 +        EntityTypes type = this.getEntityType();
-+        return type != null && type.isPersistable() ? entityKeyString : null;
++        return type != null && type.isPersistable() ? getMinecraftKeyString() : null;
 +        // Paper end
      }
  
      protected abstract void a(NBTTagCompound nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 557a3f97f..97cfd6695 100644
+index 9a513b4e3a..fa268f3543 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
@@ -101,7 +88,7 @@ index 557a3f97f..97cfd6695 100644
      }
 diff --git a/src/main/java/net/minecraft/server/KeyedObject.java b/src/main/java/net/minecraft/server/KeyedObject.java
 new file mode 100644
-index 000000000..61c2b993c
+index 0000000000..743142d030
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/KeyedObject.java
 @@ -0,0 +0,0 @@
@@ -110,11 +97,12 @@ index 000000000..61c2b993c
 +public interface KeyedObject {
 +    MinecraftKey getMinecraftKey();
 +    default String getMinecraftKeyString() {
-+        return getMinecraftKey().toString();
++        MinecraftKey key = getMinecraftKey();
++        return key != null ? key.toString() : null;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 093e7eb7f..b09325097 100644
+index 8a0453245d..5ca7fef518 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
@@ -122,7 +110,7 @@ index 093e7eb7f..b09325097 100644
  import org.bukkit.inventory.InventoryHolder; // CraftBukkit
  
 -public abstract class TileEntity {
-+public abstract class TileEntity implements KeyedObject {
++public abstract class TileEntity implements KeyedObject { // Paper
  
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
      private static final Logger a = LogManager.getLogger();
@@ -132,24 +120,25 @@ index 093e7eb7f..b09325097 100644
      protected BlockPosition position;
      protected boolean d;
 @@ -0,0 +0,0 @@ public abstract class TileEntity {
-     public TileEntity(TileEntityTypes<?> tileentitytypes) {
-         this.position = BlockPosition.ZERO;
          this.e = tileentitytypes;
-+        // Paper start
-+        this.tileEntityKey = TileEntityTypes.a(tileentitytypes);
-+        this.tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
      }
  
-+    public final MinecraftKey tileEntityKey;
-+    public final String tileEntityKeyString;
++    // Paper start
++    private String tileEntityKeyString = null;
++    private MinecraftKey tileEntityKey = null;
 +
 +    @Override
 +    public MinecraftKey getMinecraftKey() {
++        if (tileEntityKey == null) {
++            tileEntityKey = TileEntityTypes.a(this.getTileEntityType());
++            tileEntityKeyString = tileEntityKey != null ? tileEntityKey.toString() : null;
++        }
 +        return tileEntityKey;
 +    }
 +
 +    @Override
 +    public String getMinecraftKeyString() {
++        getMinecraftKey(); // Try to load if it doesn't exists.
 +        return tileEntityKeyString;
 +    }
 +    // Paper end
