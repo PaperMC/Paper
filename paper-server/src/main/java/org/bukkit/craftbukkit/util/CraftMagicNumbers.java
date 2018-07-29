@@ -210,11 +210,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] processClass(PluginDescriptionFile pdf, byte[] clazz) {
+    public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
         try {
             clazz = Commodore.convert(clazz, !isLegacy(pdf));
         } catch (Exception ex) {
-            Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName(), ex);
+            Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
         }
 
         return clazz;
