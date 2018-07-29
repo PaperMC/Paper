@@ -1,4 +1,4 @@
-From a57ea7eda73f5bdf5359d585762275d4f7282b54 Mon Sep 17 00:00:00 2001
+From 13a7093e1a97f051dff1b9f20e415d15a18f0fcf Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -10,7 +10,7 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7a7d656926..b37fa3829b 100644
+index 8e6d32bd8..3ac115ff6 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -721,6 +721,7 @@ public class Chunk implements IChunkAccess {
@@ -22,10 +22,10 @@ index 7a7d656926..b37fa3829b 100644
          this.a(entity, entity.af);
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 00eb342f8c..127dcedc97 100644
+index a961705fb..8dc6ca207 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1208,12 +1208,15 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -1219,12 +1219,15 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          int j;
          // Paper start - Set based removal lists
          for (Entity e : this.g) {
@@ -42,7 +42,7 @@ index 00eb342f8c..127dcedc97 100644
          }
  
          for (Entity e : this.g) {
-@@ -1274,12 +1277,17 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -1285,12 +1288,17 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
              this.methodProfiler.e();
              this.methodProfiler.a("remove");
              if (entity.dead) {
@@ -61,7 +61,7 @@ index 00eb342f8c..127dcedc97 100644
  
                  guardEntityList = false; // Spigot
                  this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
-@@ -1324,7 +1332,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -1335,7 +1343,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                  BlockPosition blockposition = tileentity.getPosition();
  
                  // Paper start - Skip ticking in chunks scheduled for unload
@@ -70,7 +70,7 @@ index 00eb342f8c..127dcedc97 100644
                  boolean shouldTick = chunk != null;
                  if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
                      shouldTick = shouldTick && !chunk.isUnloading() && chunk.scheduledForUnload == null;
-@@ -1360,8 +1368,11 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -1371,8 +1379,11 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
                  tilesThisCycle--;
                  this.tileEntityListTick.remove(tileTickPosition--);
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
