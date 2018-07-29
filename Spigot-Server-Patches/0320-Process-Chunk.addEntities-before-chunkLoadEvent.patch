@@ -1,0 +1,57 @@
+From 3413007c69032fcef8ac762e61f743b5c742df67 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 29 Jul 2018 16:56:48 -0400
+Subject: [PATCH] Process Chunk.addEntities before chunkLoadEvent
+
+1.13 undesirably changed behavior here that chunk load event fired
+before the entities were added to the world.
+
+This means any plugin that spawns entities in chunk load event
+causes the entities to be registered to the chunk, and then
+added to the world twice.
+
+Moves Entity Add to World to be done anytime a chunk is
+registered to the Chunk Map, and ignore other calls.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 4e32ae7db..f0098e910 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -897,7 +897,8 @@ public class Chunk implements IChunkAccess {
+ 
+     }
+ 
+-    public void addEntities() {
++    public void addEntities() { } // Paper - do nothing if anything calls this, we call it properly during ChunkMap.put
++    public void addEntitiesToWorld() { // Paper - rename to ensure noone else calls it
+         this.j = true;
+         this.world.b(this.tileEntities.values());
+         List[] aentityslice = this.entitySlices; // Spigot
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index 5757aa80f..c6cedba96 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -31,6 +31,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                 }
+             }
+         }
++        chunk.addEntitiesToWorld(); // Paper - call before ChunkLoadEvent to maintain pre 1.13 order, otherwise CLE can manipulate the chunks entities
+ 
+         org.bukkit.Server server = chunk.world.getServer();
+         if (server != null) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index ece187129..4fc3c2c35 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -2464,7 +2464,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+ 
+-            if (entity == null) {
++            if (entity == null || entity.valid) { // Paper - if already added, skip (shouldn't happen, but safety)
+                 continue;
+             }
+             this.entityList.add(entity);
+-- 
+2.18.0
+
