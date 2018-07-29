@@ -31,7 +31,7 @@ public interface UnsafeValues {
 
     void checkSupported(PluginDescriptionFile pdf);
 
-    byte[] processClass(PluginDescriptionFile pdf, byte[] clazz);
+    byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz);
 
     /**
      * Load an advancement represented by the specified string into the server.
