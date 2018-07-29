@@ -288,4 +288,18 @@ public class PaperConfig {
             Bukkit.getLogger().log(Level.INFO, "Using Aikar's Alternative Luck Formula to apply Luck attribute to all loot pool calculations. See https://luckformula.emc.gs");
         }
     }
+
+    public static int tabSpamIncrement = 1;
+    public static int tabSpamLimit = 500;
+    private static void tabSpamLimiters() {
+        tabSpamIncrement = getInt("settings.spam-limiter.tab-spam-increment", tabSpamIncrement);
+        // Older versions used a smaller limit, which is too low for 1.13, we'll bump this up if default
+        if (version < 14) {
+            if (tabSpamIncrement == 10) {
+                set("settings.spam-limiter.tab-spam-increment", 2);
+                tabSpamIncrement = 2;
+            }
+        }
+        tabSpamLimit = getInt("settings.spam-limiter.tab-spam-limit", tabSpamLimit);
+    }
 }
