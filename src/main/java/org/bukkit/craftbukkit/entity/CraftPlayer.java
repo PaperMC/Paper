@@ -31,6 +31,7 @@ import net.minecraft.server.AttributeMapServer;
 import net.minecraft.server.AttributeModifiable;
 import net.minecraft.server.AttributeRanged;
 import net.minecraft.server.BlockPosition;
+import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.Container;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
@@ -52,6 +53,7 @@ import net.minecraft.server.PacketPlayOutCustomSoundEffect;
 import net.minecraft.server.PacketPlayOutMap;
 import net.minecraft.server.PacketPlayOutNamedSoundEffect;
 import net.minecraft.server.PacketPlayOutPlayerInfo;
+import net.minecraft.server.PacketPlayOutPlayerListHeaderFooter;
 import net.minecraft.server.PacketPlayOutSpawnPosition;
 import net.minecraft.server.PacketPlayOutStopSound;
 import net.minecraft.server.PacketPlayOutTitle;
@@ -226,6 +228,47 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 player.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME, getHandle()));
             }
         }
+    }
+
+    private IChatBaseComponent playerListHeader;
+    private IChatBaseComponent playerListFooter;
+
+    @Override
+    public String getPlayerListHeader() {
+        return (playerListHeader == null) ? null : CraftChatMessage.fromComponent(playerListHeader);
+    }
+
+    @Override
+    public String getPlayerListFooter() {
+        return (playerListFooter == null) ? null : CraftChatMessage.fromComponent(playerListFooter);
+    }
+
+    @Override
+    public void setPlayerListHeader(String header) {
+        this.playerListHeader = CraftChatMessage.fromStringOrNull(header);
+        updatePlayerListHeaderFooter();
+    }
+
+    @Override
+    public void setPlayerListFooter(String footer) {
+        this.playerListFooter = CraftChatMessage.fromStringOrNull(footer);
+        updatePlayerListHeaderFooter();
+    }
+
+    @Override
+    public void setPlayerListHeaderFooter(String header, String footer) {
+        this.playerListHeader = CraftChatMessage.fromStringOrNull(header);
+        this.playerListFooter = CraftChatMessage.fromStringOrNull(footer);
+        updatePlayerListHeaderFooter();
+    }
+
+    private void updatePlayerListHeaderFooter() {
+        if (getHandle().playerConnection == null) return;
+
+        PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
+        packet.a = (this.playerListHeader == null) ? new ChatComponentText("") : this.playerListHeader;
+        packet.b = (this.playerListFooter == null) ? new ChatComponentText("") : this.playerListFooter;
+        getHandle().playerConnection.sendPacket(packet);
     }
 
     @Override
