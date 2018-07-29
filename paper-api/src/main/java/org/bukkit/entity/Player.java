@@ -85,6 +85,53 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setPlayerListName(String name);
 
     /**
+     * Gets the currently displayed player list header for this player.
+     *
+     * @return player list header or null
+     * @deprecated draft API
+     */
+    @Deprecated
+    public String getPlayerListHeader();
+
+    /**
+     * Gets the currently displayed player list footer for this player.
+     *
+     * @return player list header or null
+     * @deprecated draft API
+     */
+    @Deprecated
+    public String getPlayerListFooter();
+
+    /**
+     * Sets the currently displayed player list header for this player.
+     *
+     * @param header player list header, null for empty
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void setPlayerListHeader(String header);
+
+    /**
+     * Sets the currently displayed player list footer for this player.
+     *
+     * @param footer player list footer, null for empty
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void setPlayerListFooter(String footer);
+
+    /**
+     * Sets the currently displayed player list header and footer for this
+     * player.
+     *
+     * @param header player list header, null for empty
+     * @param footer player list footer, null for empty
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void setPlayerListHeaderFooter(String header, String footer);
+
+    /**
      * Set the target of the player's compass.
      *
      * @param loc Location to point to
