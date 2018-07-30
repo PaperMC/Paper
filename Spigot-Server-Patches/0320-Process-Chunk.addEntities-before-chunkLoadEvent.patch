@@ -1,4 +1,4 @@
-From 3413007c69032fcef8ac762e61f743b5c742df67 Mon Sep 17 00:00:00 2001
+From a4b33c025c22c73b86648dde212ee91c5942a9b6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 29 Jul 2018 16:56:48 -0400
 Subject: [PATCH] Process Chunk.addEntities before chunkLoadEvent
@@ -14,7 +14,7 @@ Moves Entity Add to World to be done anytime a chunk is
 registered to the Chunk Map, and ignore other calls.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4e32ae7db..f0098e910 100644
+index 4e32ae7db6..f0098e910a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -897,7 +897,8 @@ public class Chunk implements IChunkAccess {
@@ -28,7 +28,7 @@ index 4e32ae7db..f0098e910 100644
          this.world.b(this.tileEntities.values());
          List[] aentityslice = this.entitySlices; // Spigot
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 5757aa80f..c6cedba96 100644
+index 5757aa80f3..c6cedba96e 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -31,6 +31,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -39,8 +39,22 @@ index 5757aa80f..c6cedba96 100644
  
          org.bukkit.Server server = chunk.world.getServer();
          if (server != null) {
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index bd52bf6561..e27e952a1b 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -154,8 +154,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         if (data != null) {
+             Chunk chunk = (Chunk) data[0];
+             NBTTagCompound nbttagcompound = (NBTTagCompound) data[1];
+-            consumer.accept(chunk);
+             this.loadEntities(nbttagcompound.getCompound("Level"), chunk);
++            consumer.accept(chunk); // Paper - call AFTER entities are loaded
+             return chunk;
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index ece187129..4fc3c2c35 100644
+index ece1871294..4fc3c2c354 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -2464,7 +2464,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
