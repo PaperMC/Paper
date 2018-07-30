@@ -27,27 +27,28 @@ gitcmd="git -c commit.gpgsign=false"
 
 source "$basedir/scripts/functions.sh"
 
+failed=0
 case "$1" in
     "rb" | "rbp" | "rebuild")
     (
         set -e
         cd "$basedir"
-        scripts/rebuildPatches.sh "$basedir"
-    )
+        scripts/rebuildPatches.sh "$basedir" || exit 1
+    ) || failed=1
     ;;
     "p" | "patch")
     (
         set -e
         cd "$basedir"
-        scripts/build.sh "$basedir"
-    )
+        scripts/build.sh "$basedir" || exit 1
+    ) || failed=1
     ;;
     "j" | "jar")
     (
         set -e
         cd "$basedir"
-        scripts/build.sh "$basedir" "--jar"
-    )
+        scripts/build.sh "$basedir" "--jar" || exit 1
+    ) || failed=1
     ;;
     "make")
     (
@@ -191,3 +192,10 @@ unset -f color
 unset -f colorend
 unset -f paperstash
 unset -f paperunstash
+if [ "$failed" == "1" ]; then
+	unset failed
+	false
+else
+	unset failed
+	true
+fi

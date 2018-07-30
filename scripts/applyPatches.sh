@@ -95,4 +95,4 @@ cd "$basedir"
     echo "Failed to apply Paper Patches"
     exit 1
 ) || exit 1
-)
+) || exit 1
