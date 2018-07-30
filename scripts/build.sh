@@ -12,4 +12,4 @@ gitcmd="git -c commit.gpgsign=false"
 if [ "$2" == "--jar" ]; then
     mvn clean install && ./scripts/paperclip.sh "$basedir"
 fi
-)
+) || exit 1

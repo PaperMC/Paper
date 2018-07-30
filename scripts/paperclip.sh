@@ -19,4 +19,4 @@ echo ""
 echo ""
 echo "Build success!"
 echo "Copied final jar to $(cd "$basedir" && pwd -P)/paperclip.jar"
-)
+) || exit 1
