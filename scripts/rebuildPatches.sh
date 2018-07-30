@@ -61,4 +61,4 @@ function savePatches {
 
 savePatches "$workdir/Spigot/Spigot-API" "Paper-API"
 savePatches "$workdir/Spigot/Spigot-Server" "Paper-Server"
-)
+) || exit 1
