@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import org.apache.commons.lang.Validate;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EntityHuman;
@@ -23,12 +24,13 @@ public class CraftMerchantCustom extends CraftMerchant {
 
     private static class MinecraftMerchant implements IMerchant {
 
-        private final String title;
+        private final IChatBaseComponent title;
         private final MerchantRecipeList trades = new MerchantRecipeList();
         private EntityHuman tradingPlayer;
 
         public MinecraftMerchant(String title) {
-            this.title = title;
+            Validate.notNull(title, "Title cannot be null");
+            this.title = new ChatComponentText(title);
         }
 
         @Override
@@ -58,7 +60,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         @Override
         public IChatBaseComponent getScoreboardDisplayName() {
-            return new ChatComponentText(title);
+            return title;
         }
 
         @Override
