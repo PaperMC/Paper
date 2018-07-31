@@ -1,4 +1,4 @@
-From 3e0a26eb873fcf1fa259f775320ae0a6a6346ec0 Mon Sep 17 00:00:00 2001
+From 9b87108547b8a12487adcc4aea181f103a24cf53 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Jul 2018 12:18:27 -0400
 Subject: [PATCH] Ignore Dead Entities in entityList iteration
@@ -23,7 +23,7 @@ index ecd1c65a9..1898ab897 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 89f9bd347..d163acd8f 100644
+index 1e64d5fcd..45e149f4a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -124,6 +124,7 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
@@ -35,10 +35,18 @@ index 89f9bd347..d163acd8f 100644
      public float length;
      public float I;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index df98a4f44..8f82fbf67 100644
+index 0dca11b2c..dadd4b839 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1279,6 +1279,7 @@ public abstract class World implements IBlockAccess {
+@@ -1214,6 +1214,7 @@ public abstract class World implements IBlockAccess {
+         }
+ 
+         entity.valid = true; // CraftBukkit
++        entity.shouldBeRemoved = false;
+         new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
+     }
+ 
+@@ -1279,6 +1280,7 @@ public abstract class World implements IBlockAccess {
          if (entity.aa && this.isChunkLoaded(i, j, true)) {
              this.getChunkAt(i, j).b(entity);
          }
@@ -46,7 +54,7 @@ index df98a4f44..8f82fbf67 100644
  
          if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
          // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
-@@ -2633,6 +2634,7 @@ public abstract class World implements IBlockAccess {
+@@ -2633,6 +2635,7 @@ public abstract class World implements IBlockAccess {
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -54,7 +62,7 @@ index df98a4f44..8f82fbf67 100644
  
              if (oclass.isAssignableFrom(entity.getClass()) && predicate.apply((T) entity)) {
                  arraylist.add(entity);
-@@ -2719,6 +2721,7 @@ public abstract class World implements IBlockAccess {
+@@ -2719,6 +2722,7 @@ public abstract class World implements IBlockAccess {
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -99,5 +107,5 @@ index 210e3bc4e..e6ecd1796 100644
  
                  if (bukkitEntity == null) {
 -- 
-2.18.0
+2.17.1
 
