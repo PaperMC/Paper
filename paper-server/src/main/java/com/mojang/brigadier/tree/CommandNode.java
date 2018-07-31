@@ -34,6 +34,13 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
     private final RedirectModifier<S> modifier;
     private final boolean forks;
     private Command<S> command;
+    // CraftBukkit start
+    public void removeCommand(String name) {
+        children.remove(name);
+        literals.remove(name);
+        arguments.remove(name);
+    }
+    // CraftBukkit end
 
     protected CommandNode(final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
         this.command = command;
