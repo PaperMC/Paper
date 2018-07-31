@@ -133,6 +133,15 @@ public interface AreaEffectCloud extends Entity {
     void setParticle(Particle particle);
 
     /**
+     * Sets the particle which this cloud will be composed of
+     *
+     * @param particle the new particle type
+     * @param data the data to use for the particle or null,
+     *             the type of this depends on {@link Particle#getDataType()}
+     */
+    <T> void setParticle(Particle particle, T data);
+
+    /**
      * Sets the underlying potion data
      *
      * @param data PotionData to set the base potion state to
