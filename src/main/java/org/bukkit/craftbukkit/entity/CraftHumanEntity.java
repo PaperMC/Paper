@@ -270,6 +270,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 break;
             case CREATIVE:
             case CRAFTING:
+            case MERCHANT:
                 throw new IllegalArgumentException("Can't open a " + type + " inventory!");
         }
         if (getHandle().activeContainer == formerContainer) {
