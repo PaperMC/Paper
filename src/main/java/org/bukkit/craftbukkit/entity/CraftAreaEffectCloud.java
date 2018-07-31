@@ -120,7 +120,12 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void setParticle(Particle particle) {
-        getHandle().setParticle(CraftParticle.toNMS(particle));
+        setParticle(particle, null);
+    }
+
+    @Override
+    public <T> void setParticle(Particle particle, T data) {
+        getHandle().setParticle(CraftParticle.toNMS(particle, data));
     }
 
     @Override
