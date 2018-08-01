@@ -342,6 +342,15 @@ public interface LivingEntity extends Attributable, Entity, Damageable, Projecti
     public void setSwimming(boolean swimming);
 
     /**
+     * Checks to see if an entity is currently using the Riptide enchantment.
+     *
+     * @return True if this entity is currently riptiding.
+     * @deprecated draft API
+     */
+    @Deprecated
+    public boolean isRiptiding();
+
+    /**
      * Sets whether an entity will have AI.
      *
      * @param ai whether the mob will have AI or not.
