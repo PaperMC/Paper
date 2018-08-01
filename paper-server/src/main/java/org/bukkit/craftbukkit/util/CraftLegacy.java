@@ -42,12 +42,12 @@ public class CraftLegacy {
 
     private static final Map<Byte, Material> SPAWN_EGGS = new HashMap<>();
     private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable"));
-    private static final Map<MaterialData, Item> materialToItem = new HashMap<>();
-    private static final Map<Item, MaterialData> itemToMaterial = new HashMap<>();
-    private static final Map<MaterialData, IBlockData> materialToData = new HashMap<>();
-    private static final Map<IBlockData, MaterialData> dataToMaterial = new HashMap<>();
-    private static final Map<MaterialData, Block> materialToBlock = new HashMap<>();
-    private static final Map<Block, MaterialData> blockToMaterial = new HashMap<>();
+    private static final Map<MaterialData, Item> materialToItem = new HashMap<>(16384);
+    private static final Map<Item, MaterialData> itemToMaterial = new HashMap<>(1024);
+    private static final Map<MaterialData, IBlockData> materialToData = new HashMap<>(4096);
+    private static final Map<IBlockData, MaterialData> dataToMaterial = new HashMap<>(4096);
+    private static final Map<MaterialData, Block> materialToBlock = new HashMap<>(4096);
+    private static final Map<Block, MaterialData> blockToMaterial = new HashMap<>(1024);
 
     public static Material toLegacy(Material material) {
         if (material == null || material.isLegacy()) {
@@ -399,5 +399,9 @@ public class CraftLegacy {
                 itemToMaterial.put(newMaterial, matData);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        System.err.println("");
     }
 }
