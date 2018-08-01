@@ -94,7 +94,10 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         /**
          * When the target attacks a fellow pig zombie, so the whole group
          * will target him with this reason.
+         *
+         * @deprecated obsoleted by {@link #TARGET_ATTACKED_NEARBY_ENTITY}
          */
+        @Deprecated
         PIG_ZOMBIE_TARGET,
         /**
          * When the target is forgotten for whatever reason.
