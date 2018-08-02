@@ -1530,15 +1530,17 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         this.getMinecraftServer().getPlayerList().sendAll(new PacketPlayOutSpawnPosition(blockposition, f));
     }
 
-    public BlockPosition getSpawn() {
-        BlockPosition blockposition = new BlockPosition(this.worldData.a(), this.worldData.b(), this.worldData.c());
-
-        if (!this.getWorldBorder().a(blockposition)) {
-            blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
-        }
-
-        return blockposition;
-    }
+    // Paper - moved up to World
+    //public BlockPosition getSpawn() {
+    //    BlockPosition blockposition = new BlockPosition(this.worldData.a(), this.worldData.b(), this.worldData.c());
+    //
+    //    if (!this.getWorldBorder().a(blockposition)) {
+    //        blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
+    //    }
+    //
+    //    return blockposition;
+    //}
+    // Paper end
 
     public float v() {
         return this.worldData.d();

@@ -58,7 +58,7 @@ public class EntityCow extends EntityAnimal {
 
         if (itemstack.getItem() == Items.BUCKET && !this.isBaby()) {
             // CraftBukkit start - Got milk?
-            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) entityhuman.world, entityhuman, this.getChunkCoordinates(), this.getChunkCoordinates(), null, itemstack, Items.MILK_BUCKET);
+            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) entityhuman.world, entityhuman, this.getChunkCoordinates(), this.getChunkCoordinates(), null, itemstack, Items.MILK_BUCKET, enumhand); // Paper - add enumHand
 
             if (event.isCancelled()) {
                 return EnumInteractionResult.PASS;

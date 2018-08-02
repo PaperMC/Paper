@@ -234,7 +234,7 @@ public class CraftEventFactory {
     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
 
     // helper methods
-    private static boolean canBuild(WorldServer world, Player player, int x, int z) {
+    private static boolean canBuild(World world, Player player, int x, int z) {
         int spawnSize = Bukkit.getServer().getSpawnRadius();
 
         if (world.getDimensionKey() != World.OVERWORLD) return true;
@@ -413,6 +413,20 @@ public class CraftEventFactory {
     }
 
     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
+        // Paper start - add enumHand
+        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, item, null);
+    }
+
+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, EnumHand enumHand) {
+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
+    }
+
+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
+        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
+    }
+
+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item, EnumHand enumHand) {
+        // Paper end
         Player player = (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
@@ -425,10 +439,10 @@ public class CraftEventFactory {
 
         PlayerEvent event;
         if (isFilling) {
-            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         } else {
-            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         }
 

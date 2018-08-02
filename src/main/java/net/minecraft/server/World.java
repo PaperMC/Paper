@@ -218,6 +218,17 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     }
     // Paper end
 
+    // Paper start - moved up from WorldServer
+    public BlockPosition getSpawn() {
+        BlockPosition blockposition = new BlockPosition(this.worldData.a(), this.worldData.b(), this.worldData.c());
+
+        if (!this.getWorldBorder().a(blockposition)) {
+            blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
+        }
+
+        return blockposition;
+    }
+    // Paper end
     @Override
     public boolean s_() {
         return this.isClientSide;

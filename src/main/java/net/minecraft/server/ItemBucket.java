@@ -41,7 +41,7 @@ public class ItemBucket extends Item {
                     if (iblockdata.getBlock() instanceof IFluidSource) {
                         // CraftBukkit start
                         FluidType dummyFluid = ((IFluidSource) iblockdata.getBlock()).removeFluid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.a());
+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.a(), enumhand); // Paper - add enumhand
 
                         if (event.isCancelled()) {
                             ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
@@ -69,7 +69,7 @@ public class ItemBucket extends Item {
                     iblockdata = world.getType(blockposition);
                     BlockPosition blockposition2 = iblockdata.getBlock() instanceof IFluidContainer && this.fluidType == FluidTypes.WATER ? blockposition : blockposition1;
 
-                    if (this.a(entityhuman, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack)) { // CraftBukkit
+                    if (this.a(entityhuman, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack, enumhand)) { // CraftBukkit // Paper - add enumhand
                         this.a(world, itemstack, blockposition2);
                         if (entityhuman instanceof EntityPlayer) {
                             CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition2, itemstack);
@@ -94,10 +94,12 @@ public class ItemBucket extends Item {
     public void a(World world, ItemStack itemstack, BlockPosition blockposition) {}
 
     public boolean a(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock) {
-        return a(entityhuman, world, blockposition, movingobjectpositionblock, null, null, null);
+        // Paper start - add enumHand
+        return a(entityhuman, world, blockposition, movingobjectpositionblock, null, null, null, null);
     }
 
-    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack) {
+    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack, EnumHand enumhand) {
+        // Paper end
         // CraftBukkit end
         if (!(this.fluidType instanceof FluidTypeFlowing)) {
             return false;
@@ -110,7 +112,7 @@ public class ItemBucket extends Item {
 
             // CraftBukkit start
             if (flag1 && entityhuman != null) {
-                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((WorldServer) world, entityhuman, blockposition, clicked, enumdirection, itemstack);
+                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((WorldServer) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand); // Paper - add enumhand
                 if (event.isCancelled()) {
                     ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                     ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
@@ -119,7 +121,7 @@ public class ItemBucket extends Item {
             }
             // CraftBukkit end
             if (!flag1) {
-                return movingobjectpositionblock != null && this.a(entityhuman, world, movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null, enumdirection, clicked, itemstack); // CraftBukkit
+                return movingobjectpositionblock != null && this.a(entityhuman, world, movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit // Paper - add enumhand
             } else if (world.getDimensionManager().isNether() && this.fluidType.a((Tag) TagsFluid.WATER)) {
                 int i = blockposition.getX();
                 int j = blockposition.getY();
