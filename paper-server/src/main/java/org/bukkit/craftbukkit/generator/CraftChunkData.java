@@ -37,7 +37,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public void setBlock(int x, int y, int z, Material material) {
-        setBlock(x, y, z, CraftMagicNumbers.getBlock(material, (byte) 0));
+        setBlock(x, y, z, material.createBlockData());
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, Material material) {
-        setRegion(xMin, yMin, zMin, xMax, yMax, zMax, CraftMagicNumbers.getBlock(material, (byte) 0));
+        setRegion(xMin, yMin, zMin, xMax, yMax, zMax, material.createBlockData());
     }
 
     @Override
