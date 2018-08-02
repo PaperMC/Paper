@@ -417,6 +417,8 @@ public class CraftBlockData implements BlockData {
     }
 
     public static CraftBlockData newData(Material material, String data) {
+        Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
+
         IBlockData blockData;
         Block block = CraftMagicNumbers.getBlock(material);
 

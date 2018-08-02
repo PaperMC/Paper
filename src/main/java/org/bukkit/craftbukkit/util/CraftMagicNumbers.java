@@ -84,6 +84,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         for (Material material : Material.values()) {
             MinecraftKey key = key(material);
+            // TODO: only register if block/item?
             MATERIAL_ITEM.put(material, Item.REGISTRY.get(key));
             MATERIAL_BLOCK.put(material, Block.REGISTRY.get(key));
         }
