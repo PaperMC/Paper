@@ -1,7 +1,6 @@
 package org.bukkit.event.block;
 
 import java.util.List;
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
@@ -13,11 +12,7 @@ import org.bukkit.event.world.StructureGrowEvent;
  * Called with the block changes resulting from a player fertilizing a given
  * block with bonemeal. Will be called after the applicable
  * {@link StructureGrowEvent}.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class BlockFertilizeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
