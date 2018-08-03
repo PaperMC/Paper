@@ -53,7 +53,7 @@
          if (this.isCreative()) {
              if (!this.world.douseFire((EntityHuman) null, blockposition, enumdirection)) {
                  this.breakBlock(blockposition);
-@@ -122,15 +144,49 @@
+@@ -122,16 +144,50 @@
                  }
              }
  
@@ -96,15 +96,16 @@
 +                // Let the client know the block still exists
 +                ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                return;
-+            }
-+
+             }
+ 
 +            if (blockEvent.getInstaBreak()) {
 +                f = 2.0f;
-             }
++            }
 +            // CraftBukkit end
- 
++
              if (!iblockdata.isAir() && f >= 1.0F) {
                  this.breakBlock(blockposition);
+             } else {
 @@ -149,6 +205,7 @@
  
      public void a(BlockPosition blockposition) {
@@ -124,7 +125,7 @@
          }
  
      }
-@@ -190,13 +251,88 @@
+@@ -190,13 +251,89 @@
  
      public boolean breakBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.world.getType(blockposition);
@@ -165,21 +166,22 @@
 +                    event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.world, blockposition, bonusLevel));
 +                }
 +            }
++
++            this.world.getServer().getPluginManager().callEvent(event);
  
 -        if (!this.player.getItemInMainHand().getItem().a(iblockdata, this.world, blockposition, (EntityHuman) this.player)) {
-+            this.world.getServer().getPluginManager().callEvent(event);
-+
 +            if (event.isCancelled()) {
 +                if (isSwordNoBreak) {
 +                    return false;
 +                }
 +                // Let the client know the block still exists
 +                ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+                // Send other half of the door
-+                if (nmsBlock instanceof BlockDoor) {
-+                    boolean bottom = nmsData.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
++
++                // Brute force all possible updates
++                for (EnumDirection dir : EnumDirection.values()) {
++                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
 +                }
++
 +                // Update any tile entity data for this block
 +                TileEntity tileentity = this.world.getTileEntity(blockposition);
 +                if (tileentity != null) {
@@ -214,7 +216,7 @@
              if ((block instanceof BlockCommand || block instanceof BlockStructure) && !this.player.isCreativeAndOp()) {
                  this.world.notify(blockposition, iblockdata, iblockdata, 3);
                  return false;
-@@ -221,19 +357,36 @@
+@@ -221,19 +358,36 @@
                      }
                  }
  
@@ -252,7 +254,7 @@
  
                  return flag;
              }
-@@ -277,11 +430,40 @@
+@@ -277,11 +431,40 @@
          }
      }
  
@@ -293,7 +295,7 @@
  
              if (tileentity instanceof ITileInventory) {
                  Block block = iblockdata.getBlock();
-@@ -305,24 +487,26 @@
+@@ -305,24 +488,26 @@
              boolean flag = !entityhuman.getItemInMainHand().isEmpty() || !entityhuman.getItemInOffHand().isEmpty();
              boolean flag1 = entityhuman.isSneaking() && flag;
  

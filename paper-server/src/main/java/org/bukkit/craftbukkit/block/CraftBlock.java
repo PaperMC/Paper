@@ -49,6 +49,10 @@ public class CraftBlock implements Block {
         return world.getType(position);
     }
 
+    public BlockPosition getPosition() {
+        return position;
+    }
+
     public World getWorld() {
         return world.getMinecraftWorld().getWorld();
     }
