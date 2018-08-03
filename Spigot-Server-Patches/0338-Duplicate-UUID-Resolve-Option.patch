@@ -1,4 +1,4 @@
-From 81b0946c56f4368fb81c2ee241cd3c244e34b689 Mon Sep 17 00:00:00 2001
+From af75c184b955299758aaf93c63af5910425309ae Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -33,10 +33,10 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 14c8edeffc..46ec852b6c 100644
+index 14c8edeffc..b373bba864 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -541,4 +541,44 @@ public class PaperWorldConfig {
+@@ -541,4 +541,45 @@ public class PaperWorldConfig {
              log("Bed Search Radius: " + bedSearchRadius);
          }
      }
@@ -52,6 +52,7 @@ index 14c8edeffc..46ec852b6c 100644
 +            case "saferegenerate":
 +                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
 +                log("Duplicate UUID Resolve: Safer Regenerate New UUID (Delete likely duplicates)");
++                break;
 +            case "regen":
 +            case "regenerate":
 +                duplicateUUIDMode = DuplicateUUIDMode.REGEN;
@@ -82,7 +83,7 @@ index 14c8edeffc..46ec852b6c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4757081090..4018410485 100644
+index 4757081090..8cd2ed85bc 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,10 @@
@@ -118,7 +119,7 @@ index 4757081090..4018410485 100644
              List entityslice = aentityslice[j]; // Spigot
 +            // Paper start
 +            DuplicateUUIDMode mode = world.paperConfig.duplicateUUIDMode;
-+            if (mode == DuplicateUUIDMode.WARN | mode == DuplicateUUIDMode.DELETE || mode == DuplicateUUIDMode.REGEN) {
++            if (mode == DuplicateUUIDMode.WARN | mode == DuplicateUUIDMode.DELETE || mode == DuplicateUUIDMode.REGEN || mode == DuplicateUUIDMode.SAFE_REGEN) {
 +                Map<UUID, Entity> thisChunk = new HashMap<>();
 +                for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
 +                    Entity entity = iterator.next();
@@ -176,7 +177,7 @@ index 7b856cad91..eb8904a728 100644
          this.uniqueID = uuid;
          this.ar = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d5cd289c21..57217bec2b 100644
+index a01488e985..3012768cb9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -70,7 +70,7 @@ public abstract class World implements IBlockAccess {
