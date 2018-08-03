@@ -2,9 +2,6 @@ package org.bukkit.craftbukkit.inventory.util;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.server.TileEntityDispenser;
-import net.minecraft.server.TileEntityDropper;
-import net.minecraft.server.TileEntityHopper;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -18,9 +15,8 @@ public final class CraftInventoryCreator {
 
     private CraftInventoryCreator() {
         converterMap.put(InventoryType.CHEST, DEFAULT_CONVERTER);
-        converterMap.put(InventoryType.DISPENSER, new CraftTileInventoryConverter(new TileEntityDispenser()));
-        converterMap.put(InventoryType.DROPPER, new CraftTileInventoryConverter(new TileEntityDropper()));
-        // furnace needs a world
+        converterMap.put(InventoryType.DISPENSER, new CraftTileInventoryConverter.Dispenser());
+        converterMap.put(InventoryType.DROPPER, new CraftTileInventoryConverter.Dropper());
         converterMap.put(InventoryType.FURNACE, new CraftTileInventoryConverter.Furnace());
         converterMap.put(InventoryType.WORKBENCH, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ENCHANTING, DEFAULT_CONVERTER);
@@ -30,7 +26,7 @@ public final class CraftInventoryCreator {
         converterMap.put(InventoryType.ENDER_CHEST, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ANVIL, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.BEACON, new CraftTileInventoryConverter.Beacon());
-        converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter(new TileEntityHopper()));
+        converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter.Hopper());
         converterMap.put(InventoryType.SHULKER_BOX, DEFAULT_CONVERTER);
     }
 
