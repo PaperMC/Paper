@@ -1,4 +1,4 @@
-From 389db970dedee85efee0802e63c40bd36ca9d40b Mon Sep 17 00:00:00 2001
+From 0df97ae8dc5deef81b75512e44b935f2e01404b7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -33,21 +33,25 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7bd7aa0d9..5d9bed3f1 100644
+index 7bd7aa0d94..50d3483eb0 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -430,4 +430,40 @@ public class PaperWorldConfig {
+@@ -430,4 +430,44 @@ public class PaperWorldConfig {
              log("Bed Search Radius: " + bedSearchRadius);
          }
      }
 +
 +    public enum DuplicateUUIDMode {
-+        REGEN, DELETE, NOTHING, WARN
++        SAFE_REGEN, REGEN, DELETE, NOTHING, WARN
 +    }
-+    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.REGEN;
++    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
 +    private void repairDuplicateUUID() {
-+        String desiredMode = getString("duplicate-uuid-resolver", "regenerate").toLowerCase().trim();
++        String desiredMode = getString("duplicate-uuid-resolver", "saferegen").toLowerCase().trim();
 +        switch (desiredMode.toLowerCase()) {
++            case "saferegen":
++            case "saferegenerate":
++                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
++                log("Duplicate UUID Resolve: Safer Regenerate New UUID (Delete likely duplicates)");
 +            case "regen":
 +            case "regenerate":
 +                duplicateUUIDMode = DuplicateUUIDMode.REGEN;
@@ -78,7 +82,7 @@ index 7bd7aa0d9..5d9bed3f1 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 1997cbdc6..114a13b62 100644
+index 1997cbdc65..2838f4e822 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,10 @@
@@ -108,7 +112,7 @@ index 1997cbdc6..114a13b62 100644
          }
  
          int k = MathHelper.floor(entity.locY / 16.0D);
-@@ -865,6 +872,39 @@ public class Chunk implements IChunkAccess {
+@@ -865,6 +872,50 @@ public class Chunk implements IChunkAccess {
  
          for (int j = 0; j < i; ++j) {
              List entityslice = aentityslice[j]; // Spigot
@@ -123,8 +127,19 @@ index 1997cbdc6..114a13b62 100644
 +                    if (other == null || other.dead || world.getEntityUnloadQueue().contains(other)) {
 +                        other = thisChunk.get(entity.uniqueID);
 +                    }
++
++                    if (mode == DuplicateUUIDMode.SAFE_REGEN && other != null && !other.dead &&
++                        !world.getEntityUnloadQueue().contains(other)
++                        && java.util.Objects.equals(other.getSaveID(), entity.getSaveID())
++                        && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < 24
++                    ) {
++                        logger.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                        entity.die();
++                        continue;
++                    }
 +                    if (other != null && !other.dead) {
 +                        switch (mode) {
++                            case SAFE_REGEN:
 +                            case REGEN: {
 +                                entity.setUUID(UUID.randomUUID());
 +                                logger.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", regenerated UUID for " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
@@ -149,7 +164,7 @@ index 1997cbdc6..114a13b62 100644
              this.world.a((Collection) entityslice);
          }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index ff22feee4..9ab635058 100644
+index ff22feee4d..9ab6350587 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2724,6 +2724,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -161,7 +176,7 @@ index ff22feee4..9ab635058 100644
          this.uniqueID = uuid;
          this.au = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 1295078cd..25362ff8e 100644
+index 29678af2de..0de1847639 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -72,7 +72,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
@@ -174,7 +189,7 @@ index 1295078cd..25362ff8e 100644
      public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 747d99dbe..7a9f28421 100644
+index 747d99dbe6..7a9f28421b 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -40,7 +40,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -220,5 +235,5 @@ index 747d99dbe..7a9f28421 100644
              logger.error("Overwrote an existing entity " + old + " with " + entity);
              if (DEBUG_ENTITIES) {
 -- 
-2.17.1
+2.18.0
 
