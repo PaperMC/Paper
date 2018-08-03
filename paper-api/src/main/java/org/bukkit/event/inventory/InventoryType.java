@@ -70,7 +70,7 @@ public enum InventoryType {
     /**
      * The merchant inventory, with 2 TRADE-IN slots, and 1 RESULT slot.
      */
-    MERCHANT(3,"Villager"),
+    MERCHANT(3,"Villager", false),
     /**
      * The ender chest inventory, with 27 slots.
      */
