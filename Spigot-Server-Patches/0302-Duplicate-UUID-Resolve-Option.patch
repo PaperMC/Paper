@@ -1,4 +1,4 @@
-From d54ed04c17db7c5aab315cb20b533fcb5e219a36 Mon Sep 17 00:00:00 2001
+From b33ba2c65078dfc4d47efb00482d1ac0907d282a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -33,10 +33,10 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7bd7aa0d94..809441fc63 100644
+index 7bd7aa0d94..37315233e1 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -430,4 +430,45 @@ public class PaperWorldConfig {
+@@ -430,4 +430,47 @@ public class PaperWorldConfig {
              log("Bed Search Radius: " + bedSearchRadius);
          }
      }
@@ -45,13 +45,15 @@ index 7bd7aa0d94..809441fc63 100644
 +        SAFE_REGEN, REGEN, DELETE, NOTHING, WARN
 +    }
 +    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
++    public int duplicateUUIDDeleteRange = 32;
 +    private void repairDuplicateUUID() {
 +        String desiredMode = getString("duplicate-uuid-resolver", "saferegen").toLowerCase().trim();
++        duplicateUUIDDeleteRange = getInt("duplicate-uuid-saferegen-delete-range", duplicateUUIDDeleteRange);
 +        switch (desiredMode.toLowerCase()) {
 +            case "saferegen":
 +            case "saferegenerate":
 +                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
-+                log("Duplicate UUID Resolve: Safer Regenerate New UUID (Delete likely duplicates)");
++                log("Duplicate UUID Resolve: Safer Regenerate New UUID (Delete likely duplicates within " + duplicateUUIDDeleteRange + " blocks)");
 +                break;
 +            case "regen":
 +            case "regenerate":
@@ -83,7 +85,7 @@ index 7bd7aa0d94..809441fc63 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 1997cbdc65..a593a798c9 100644
+index 1997cbdc65..724c1f5720 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,10 @@
@@ -123,7 +125,7 @@ index 1997cbdc65..a593a798c9 100644
 +                Map<UUID, Entity> thisChunk = new HashMap<>();
 +                for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
 +                    Entity entity = iterator.next();
-+                    if (entity.dead) continue;
++                    if (entity.dead || entity.valid) continue;
 +                    Entity other = ((WorldServer) world).entitiesByUUID.get(entity.uniqueID);
 +                    if (other == null || other.dead || world.getEntityUnloadQueue().contains(other)) {
 +                        other = thisChunk.get(entity.uniqueID);
@@ -132,7 +134,7 @@ index 1997cbdc65..a593a798c9 100644
 +                    if (mode == DuplicateUUIDMode.SAFE_REGEN && other != null && !other.dead &&
 +                        !world.getEntityUnloadQueue().contains(other)
 +                        && java.util.Objects.equals(other.getSaveID(), entity.getSaveID())
-+                        && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < 24
++                        && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < world.paperConfig.duplicateUUIDDeleteRange
 +                    ) {
 +                        logger.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                        entity.die();
@@ -177,7 +179,7 @@ index ff22feee4d..9ab6350587 100644
          this.uniqueID = uuid;
          this.au = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 29678af2de..0de1847639 100644
+index a8b317cee3..d5ec209feb 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -72,7 +72,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
