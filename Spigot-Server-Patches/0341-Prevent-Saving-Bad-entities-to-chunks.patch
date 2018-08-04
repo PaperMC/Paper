@@ -1,4 +1,4 @@
-From 186657866775b48d9c845b8066339b463c4f88ad Mon Sep 17 00:00:00 2001
+From 354cae3bd5b0d32cf8c1f8cebdff763013606fd5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 26 Jul 2018 00:11:12 -0400
 Subject: [PATCH] Prevent Saving Bad entities to chunks
@@ -56,32 +56,6 @@ index bcce5e8b7e..bad287fca4 100644
  
          nbttagcompound.set("Entities", nbttaglist1);
          NBTTagList nbttaglist2 = new NBTTagList();
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c53e77b821..2a4405638e 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -1204,7 +1204,7 @@ public abstract class World implements IBlockAccess {
-             }
- 
-             this.getChunkAt(i, j).a(entity);
--            this.entityList.add(entity);
-+            if (!entity.dead) this.entityList.add(entity); // Paper - don't add dead entities, chunk registration may of killed it
-             this.b(entity);
-             return true;
-         }
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1244baf45a..1763d9f94d 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1173,7 +1173,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
-             if (this.entitiesByUUID.containsKey(uuid)) {
-                 Entity entity1 = (Entity) this.entitiesByUUID.get(uuid);
- 
--                if (this.f.contains(entity1)) {
-+                if (this.f.contains(entity1) || entity1.dead) { // Paper - overwrite the current dead one
-                     this.f.remove(entity1);
-                 } else {
-                     if (!(entity instanceof EntityHuman)) {
 -- 
 2.18.0
 
