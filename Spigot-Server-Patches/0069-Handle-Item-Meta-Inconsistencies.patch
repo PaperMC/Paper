@@ -1,4 +1,4 @@
-From b89cf5dd57e6e06e406830e4438f1e164c83d8a3 Mon Sep 17 00:00:00 2001
+From 0e6cf5edaab921a3d54b27009c13a0a304e4db41 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 28 May 2015 23:00:19 -0400
 Subject: [PATCH] Handle Item Meta Inconsistencies
@@ -78,7 +78,7 @@ index 0c54eaa529..c7ef9c6890 100644
  
      public boolean hasEnchantments() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index f4672b9a48..e2699564af 100644
+index f4672b9a48..8c0409797e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -4,6 +4,7 @@ import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS;
@@ -123,7 +123,7 @@ index f4672b9a48..e2699564af 100644
      }
  
      static boolean makeTag(net.minecraft.server.ItemStack item) {
-@@ -224,66 +208,35 @@ public final class CraftItemStack extends ItemStack {
+@@ -224,66 +208,32 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean containsEnchantment(Enchantment ench) {
@@ -148,7 +148,13 @@ index f4672b9a48..e2699564af 100644
 -        NBTTagList list = getEnchantmentList(handle), listCopy;
 -        if (list == null) {
 -            return 0;
--        }
++        // Paper start - replace entire method
++        final ItemMeta itemMeta = getItemMeta();
++        int level = itemMeta.getEnchantLevel(ench);
++        if (level > 0) {
++            itemMeta.removeEnchant(ench);
++            setItemMeta(itemMeta);
+         }
 -        int index = Integer.MIN_VALUE;
 -        int level = Integer.MIN_VALUE;
 -        int size = list.size();
@@ -170,17 +176,9 @@ index f4672b9a48..e2699564af 100644
 -            handle.getTag().remove(ENCHANTMENTS.NBT);
 -            if (handle.getTag().isEmpty()) {
 -                handle.setTag(null);
-+        // Paper start - replace entire method, maintain backwards compat of returning previous level.
-+        final ItemMeta itemMeta = getItemMeta();
-+        final Iterator<Enchantment> iterator = itemMeta.getEnchants().keySet().iterator();
-+        for (int i = 0; iterator.hasNext(); i++) {
-+            if (iterator.next().equals(ench)) {
-+                itemMeta.removeEnchant(ench);
-+                setItemMeta(itemMeta);
-+                return i;
-             }
+-            }
 -            return level;
-         }
+-        }
 -
 -        // This is workaround for not having an index removal
 -        listCopy = new NBTTagList();
@@ -191,9 +189,8 @@ index f4672b9a48..e2699564af 100644
 -        }
 -        handle.getTag().set(ENCHANTMENTS.NBT, listCopy);
 -
--        return level;
+         return level;
 +        // Paper end
-+        return 0;
      }
  
      @Override
