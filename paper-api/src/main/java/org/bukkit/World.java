@@ -182,6 +182,37 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @NotNull
     public Chunk getChunkAt(@NotNull Block block);
 
+    // Paper start - chunk long key API
+    /**
+     * Gets the chunk at the specified chunk key, which is the X and Z packed into a long.
+     * <p>
+     * See {@link Chunk#getChunkKey()} for easy access to the key, or you may calculate it as:
+     * long chunkKey = (long) chunkX &amp; 0xffffffffL | ((long) chunkZ &amp; 0xffffffffL) &gt;&gt; 32;
+     *
+     * @param chunkKey The Chunk Key to look up the chunk by
+     * @return The chunk at the specified key
+     */
+    @NotNull
+    default Chunk getChunkAt(long chunkKey) {
+        return getChunkAt(chunkKey, true);
+    }
+
+    /**
+     * Gets the chunk at the specified chunk key, which is the X and Z packed into a long.
+     * <p>
+     * See {@link Chunk#getChunkKey()} for easy access to the key, or you may calculate it as:
+     * long chunkKey = (long) chunkX &amp; 0xffffffffL | ((long) chunkZ &amp; 0xffffffffL) &gt;&gt; 32;
+     *
+     * @param chunkKey The Chunk Key to look up the chunk by
+     * @param generate Whether the chunk should be fully generated or not
+     * @return The chunk at the specified key
+     */
+    @NotNull
+    default Chunk getChunkAt(long chunkKey, boolean generate) {
+        return getChunkAt((int) chunkKey, (int) (chunkKey >> 32), generate);
+    }
+    // Paper end - chunk long key API
+
     /**
      * Checks if the specified {@link Chunk} is loaded
      *
