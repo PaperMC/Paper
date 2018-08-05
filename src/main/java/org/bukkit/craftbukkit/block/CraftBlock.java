@@ -45,7 +45,7 @@ public class CraftBlock implements Block {
         return getNMS().getBlock();
     }
 
-    protected net.minecraft.server.IBlockData getNMS() {
+    public net.minecraft.server.IBlockData getNMS() {
         return world.getType(position);
     }
 

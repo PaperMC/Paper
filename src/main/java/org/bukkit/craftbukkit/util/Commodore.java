@@ -228,7 +228,8 @@ public class Commodore
 
                         if ( EVIL.contains( owner + " " + desc + " " + name )
                                 || ( owner.startsWith( "org/bukkit/block/" ) && ( desc + " " + name ).equals( "()I getTypeId" ) )
-                                || ( owner.startsWith( "org/bukkit/block/" ) && ( desc + " " + name ).equals( "(I)Z setTypeId" ) ) )
+                                || ( owner.startsWith( "org/bukkit/block/" ) && ( desc + " " + name ).equals( "(I)Z setTypeId" ) )
+                                || ( owner.startsWith( "org/bukkit/block/" ) && ( desc + " " + name ).equals( "()Lorg/bukkit/Material; getType" ) ) )
                         {
                             Type[] args = Type.getArgumentTypes( desc );
                             Type[] newArgs = new Type[ args.length + 1 ];
