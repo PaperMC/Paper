@@ -1,0 +1,39 @@
+From 7a7dd5a48e5b9da6221ea84661d82e459d8510b0 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Mon, 26 Mar 2018 18:30:53 +0300
+Subject: [PATCH] Make player data saving configurable
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 45863c017c..9bfbaf61e5 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -286,4 +286,13 @@ public class PaperConfig {
+     private static void authenticationServersDownKickMessage() {
+         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
+     }
++
++    public static boolean savePlayerData = true;
++    private static void savePlayerData() {
++        savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
++        if(!savePlayerData) {
++            Bukkit.getLogger().log(Level.WARNING, "Player Data Saving is currently disabled. Any changes to your players data, " +
++                    "such as inventories, experience points, advancements and the like will not be saved when they log out.");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+index a562e1e46c..cbfdb3cf79 100644
+--- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
++++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+@@ -144,6 +144,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     }
+ 
+     public void save(EntityHuman entityhuman) {
++        if(!com.destroystokyo.paper.PaperConfig.savePlayerData) return; // Paper - Make player data saving configurable
+         try {
+             NBTTagCompound nbttagcompound = entityhuman.save(new NBTTagCompound());
+             File file = new File(this.playerDir, entityhuman.bu() + ".dat.tmp");
+-- 
+2.18.0
+
