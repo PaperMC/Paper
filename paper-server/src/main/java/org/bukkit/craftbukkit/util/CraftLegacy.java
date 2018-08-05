@@ -134,6 +134,14 @@ public class CraftLegacy {
     }
 
     public static byte toLegacyData(IBlockData blockData) {
+        return toLegacy(blockData).getData();
+    }
+
+    public static Material toLegacyMaterial(IBlockData blockData) {
+        return toLegacy(blockData).getItemType();
+    }
+
+    public static MaterialData toLegacy(IBlockData blockData) {
         MaterialData mappedData;
 
         // Try exact match first
@@ -143,7 +151,7 @@ public class CraftLegacy {
             mappedData = blockToMaterial.get(blockData.getBlock());
         }
 
-        return (mappedData == null) ? 0 : mappedData.getData();
+        return (mappedData == null) ? new MaterialData(Material.LEGACY_AIR) : mappedData;
     }
 
     public static Material fromLegacy(Material material) {

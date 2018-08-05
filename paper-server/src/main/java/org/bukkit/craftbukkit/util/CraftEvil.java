@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -32,6 +33,14 @@ public class CraftEvil {
 
     public static int getBlockTypeIdAt(World world, Location location) {
         return getId(world.getBlockAt(location).getType());
+    }
+
+    public static Material getType(Block block) {
+        return CraftLegacy.toLegacyMaterial(((CraftBlock) block).getNMS());
+    }
+
+    public static Material getType(BlockState block) {
+        return CraftLegacy.toLegacyMaterial(((CraftBlockState) block).getHandle());
     }
 
     public static int getTypeId(Block block) {
