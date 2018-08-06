@@ -1,9 +1,13 @@
 package org.bukkit;
 
 import net.minecraft.server.BlockCake;
+import net.minecraft.server.BlockChest;
 import net.minecraft.server.Blocks;
+import net.minecraft.server.EnumDirection;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Cake;
+import org.bukkit.block.data.type.Chest;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.AbstractTestingBase;
 import static org.hamcrest.Matchers.*;
@@ -71,5 +75,81 @@ public class BlockDataTest extends AbstractTestingBase {
 
         clone.setBites(1);
         Assert.assertThat("Clone is not actually clone", clone, is(not(cakeTest)));
+    }
+
+    @Test
+    public void testMerge() {
+        Chest trueTarget = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]");
+        Chest falseTarget = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=false]");
+        Chest waterlogged = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]");
+
+        BlockData candidate;
+
+        Assert.assertFalse("Target and match are not yet equal", trueTarget.equals(waterlogged));
+        candidate = trueTarget.merge(waterlogged);
+        Assert.assertTrue("Target and candidate are now equal", trueTarget.equals(candidate));
+
+        Assert.assertFalse("Target and match are not yet equal", falseTarget.equals(waterlogged));
+        candidate = falseTarget.merge(waterlogged);
+        Assert.assertFalse("Target and candidate are still not equal", falseTarget.equals(candidate));
+    }
+
+    @Test
+    public void testMergeAny() {
+        Chest trueTarget = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]");
+        Chest falseTarget = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=false]");
+        Chest any = (Chest) CraftBlockData.newData(null, "minecraft:chest");
+
+        BlockData candidate;
+
+        Assert.assertFalse("Target and match are not yet equal", trueTarget.equals(any));
+        candidate = trueTarget.merge(any);
+        Assert.assertTrue("Target and candidate are now equal", trueTarget.equals(candidate));
+
+        Assert.assertFalse("Target and match are not yet equal", falseTarget.equals(any));
+        candidate = falseTarget.merge(any);
+        Assert.assertTrue("Target and candidate are now equal", falseTarget.equals(candidate));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotMerge1() {
+        Chest one = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]");
+        Chest two = (Chest) CraftBlockData.fromData(Blocks.CHEST.getBlockData());
+
+        one.merge(two);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotMerge2() {
+        Chest one = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]");
+        Chest two = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]");
+
+        one.merge(two);
+
+        two.setFacing(BlockFace.NORTH);
+        one.merge(two);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCannotMerge3() {
+        Chest one = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]");
+        Chest two = (Chest) CraftBlockData.newData(null, "minecraft:trapped_chest[waterlogged=true]");
+
+        one.merge(two);
+    }
+
+    @Test
+    public void testMatch() {
+        Assert.assertTrue(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+        Assert.assertFalse(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=false]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+        Assert.assertTrue(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]").matches(CraftBlockData.newData(null, "minecraft:chest")));
+        Assert.assertFalse(CraftBlockData.newData(null, "minecraft:trapped_chest[facing=east,waterlogged=false]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+        Assert.assertTrue(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true,facing=east]")));
+
+        Chest one = (Chest) CraftBlockData.fromData(Blocks.CHEST.getBlockData().set(BlockChest.FACING, EnumDirection.EAST));
+        Chest two = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=false]");
+
+        Assert.assertTrue(one.matches(two));
+        Assert.assertFalse(two.matches(one));
     }
 }
