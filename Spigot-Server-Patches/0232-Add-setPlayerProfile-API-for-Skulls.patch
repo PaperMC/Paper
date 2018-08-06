@@ -1,13 +1,54 @@
-From df8ebfaa4210ab08be4e6555bd8ebd08353a8a39 Mon Sep 17 00:00:00 2001
+From 72c9d4a3673cc9e9bff91d550b9fd598b38df04f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 19 Jan 2018 00:36:25 -0500
-Subject: [PATCH] Add SkullMeta.setPlayerProfile API
+Subject: [PATCH] Add setPlayerProfile API for Skulls
 
 This allows you to create already filled textures on Skulls to avoid texture lookups
 which commonly cause rate limit issues with Mojang API
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
+index f113da713..fdfe101ae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.google.common.base.Preconditions;
+ import com.mojang.authlib.GameProfile;
+ import net.minecraft.server.MinecraftServer;
+@@ -13,6 +15,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.block.Skull;
+ import org.bukkit.block.data.Rotatable;
++import javax.annotation.Nullable;
+ 
+ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
+ 
+@@ -99,6 +102,20 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
+         this.profile = new GameProfile(player.getUniqueId(), player.getName());
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerProfile(PlayerProfile profile) {
++        Preconditions.checkNotNull(profile, "profile");
++        this.profile = CraftPlayerProfile.asAuthlibCopy(profile);
++    }
++
++    @Nullable
++    @Override
++    public PlayerProfile getPlayerProfile() {
++        return profile != null ? CraftPlayerProfile.asBukkitCopy(profile) : null;
++    }
++    // Paper end
++
+     @Override
+     public BlockFace getRotation() {
+         return ((Rotatable) getBlockData()).getRotation();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 7984c68cb0..14d8dd65ac 100644
+index 7984c68cb..14d8dd65a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 @@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.inventory;
@@ -49,5 +90,5 @@ index 7984c68cb0..14d8dd65ac 100644
      public OfflinePlayer getOwningPlayer() {
          if (hasOwner()) {
 -- 
-2.18.0
+2.16.1.windows.1
 
