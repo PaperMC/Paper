@@ -27,6 +27,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 public class CraftBlockData implements BlockData {
 
     private IBlockData state;
+    private Set<IBlockState<?>> parsedStates;
 
     protected CraftBlockData() {
         throw new AssertionError("Template Constructor");
@@ -86,7 +87,49 @@ public class CraftBlockData implements BlockData {
      * @param <N> the NMS type
      */
     protected <B extends Enum<B>, N extends Enum<N> & INamable> void set(BlockStateEnum<N> nms, Enum<B> bukkit) {
+        this.parsedStates = null;
         this.state = this.state.set(nms, toNMS(bukkit, nms.b()));
+    }
+
+    @Override
+    public BlockData merge(BlockData data) {
+        CraftBlockData craft = (CraftBlockData) data;
+        Preconditions.checkArgument(craft.parsedStates != null, "Data not created via string parsing");
+        Preconditions.checkArgument(this.state.getBlock() == craft.state.getBlock(), "States have different types (got %s, expected %s)", data, this);
+
+        CraftBlockData clone = (CraftBlockData) this.clone();
+        clone.parsedStates = null;
+
+        for (IBlockState parsed : craft.parsedStates) {
+            clone.state = clone.state.set(parsed, craft.state.get(parsed));
+        }
+
+        return clone;
+    }
+
+    @Override
+    public boolean matches(BlockData data) {
+        if (data == null) {
+            return false;
+        }
+        if (!(data instanceof CraftBlockData)) {
+            return false;
+        }
+
+        CraftBlockData craft = (CraftBlockData) data;
+        if (this.state.getBlock() != craft.state.getBlock()) {
+            return false;
+        }
+
+        // Fastpath an exact match
+        boolean exactMatch = this.equals(data);
+
+        // If that failed, do a merge and check
+        if (!exactMatch && craft.parsedStates != null) {
+            return this.merge(data).equals(this);
+        }
+
+        return exactMatch;
     }
 
     private static final Map<Class, BiMap<Enum<?>, Enum<?>>> classMappings = new HashMap<>();
@@ -187,6 +230,7 @@ public class CraftBlockData implements BlockData {
      */
     public <T extends Comparable<T>, V extends T> void set(IBlockState<T> ibs, V v) {
         // Straight integer or boolean setter
+        this.parsedStates = null;
         this.state = this.state.set(ibs, v);
     }
 
@@ -421,6 +465,7 @@ public class CraftBlockData implements BlockData {
 
         IBlockData blockData;
         Block block = CraftMagicNumbers.getBlock(material);
+        Set<IBlockState<?>> parsed = null;
 
         // Data provided, use it
         if (data != null) {
@@ -435,6 +480,7 @@ public class CraftBlockData implements BlockData {
                 Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data");
 
                 blockData = arg.b();
+                parsed = arg.a().keySet();
             } catch (CommandSyntaxException ex) {
                 throw new IllegalArgumentException("Could not parse data: " + data, ex);
             }
@@ -442,7 +488,9 @@ public class CraftBlockData implements BlockData {
             blockData = block.getBlockData();
         }
 
-        return fromData(blockData);
+        CraftBlockData craft = fromData(blockData);
+        craft.parsedStates = parsed;
+        return craft;
     }
 
     public static CraftBlockData fromData(IBlockData data) {
