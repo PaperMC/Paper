@@ -546,7 +546,7 @@ public abstract class PlayerList {
         } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted");
             //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
-        } else if (getIPBans().isBanned(socketaddress) && !getIPBans().get(socketaddress).hasExpired()) {
+        } else if (getIPBans().isBanned(socketaddress) && getIPBans().get(socketaddress) != null && !getIPBans().get(socketaddress).hasExpired()) { // Paper - fix NPE with temp ip bans
             IpBanEntry ipbanentry = this.l.get(socketaddress);
 
             chatmessage = new ChatMessage("multiplayer.disconnect.banned_ip.reason", new Object[]{ipbanentry.getReason()});

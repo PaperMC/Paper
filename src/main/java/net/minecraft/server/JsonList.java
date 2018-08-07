@@ -12,6 +12,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType; // Paper
+import java.lang.reflect.Type; // Paper
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
@@ -26,7 +28,22 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
     protected static final Logger LOGGER = LogManager.getLogger();
     private static final Gson b = (new GsonBuilder()).setPrettyPrinting().create();
     private final File c;
-    private final Map<String, V> d = Maps.newHashMap();
+    // Paper - replace HashMap is ConcurrentHashMap
+    private final Map<String, V> d = Maps.newConcurrentMap(); private final Map<String, V> getBackingMap() { return this.d; } // Paper - OBFHELPER
+    private boolean e = true;
+    private static final ParameterizedType f = new ParameterizedType() {
+        public Type[] getActualTypeArguments() {
+            return new Type[]{JsonListEntry.class};
+        }
+
+        public Type getRawType() {
+            return List.class;
+        }
+
+        public Type getOwnerType() {
+            return null;
+        }
+    };
 
     public JsonList(File file) {
         this.c = file;
@@ -49,8 +66,13 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
 
     @Nullable
     public V get(K k0) {
-        this.g();
-        return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
+        // Paper start
+        // this.g();
+        // return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
+        return (V) this.getBackingMap().computeIfPresent(this.getMappingKey(k0), (k, v) -> {
+            return v.hasExpired() ? null : v;
+        });
+        // Paper end
     }
 
     public void remove(K k0) {
@@ -79,9 +101,11 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
     // CraftBukkit end
 
     public boolean isEmpty() {
-        return this.d.size() < 1;
+        // return this.d.size() < 1; // Paper
+        return this.getBackingMap().isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
     }
 
+    protected final String getMappingKey(K k0) { return a(k0); } // Paper - OBFHELPER
     protected String a(K k0) {
         return k0.toString();
     }
@@ -90,8 +114,9 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
         return this.d.containsKey(this.a(k0));
     }
 
+    private void removeStaleEntries() { g(); } // Paper - OBFHELPER
     private void g() {
-        List<K> list = Lists.newArrayList();
+        /*List<K> list = Lists.newArrayList();
         Iterator iterator = this.d.values().iterator();
 
         while (iterator.hasNext()) {
@@ -108,8 +133,10 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
             K k0 = (K) iterator.next(); // CraftBukkit - decompile error
 
             this.d.remove(this.a(k0));
-        }
+        }*/
 
+        this.getBackingMap().values().removeIf(JsonListEntry::hasExpired);
+        // Paper end
     }
 
     protected abstract JsonListEntry<K> a(JsonObject jsonobject);
@@ -119,6 +146,7 @@ public abstract class JsonList<K, V extends JsonListEntry<K>> {
     }
 
     public void save() throws IOException {
+        this.removeStaleEntries(); // Paper - remove expired values before saving
         JsonArray jsonarray = new JsonArray();
 
         this.d.values().stream().map((jsonlistentry) -> {
