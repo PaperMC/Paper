@@ -1,0 +1,118 @@
+From 09180265677dc3536b84e281a36d040efdcbdaf7 Mon Sep 17 00:00:00 2001
+From: egg82 <phantom_zero@ymail.com>
+Date: Tue, 7 Aug 2018 01:24:23 -0600
+Subject: [PATCH] Use ConcurrentHashMap in JsonList
+
+This is specifically aimed at fixing #471
+
+Using a ConcurrentHashMap because thread safety
+The performance benefit of Map over ConcurrentMap is negligabe at best in this scenaio, as most operations will be get and not add or remove
+Even without considering the use-case the benefits are still negligable
+
+Original ideas for the system included an expiration policy and/or handler
+The simpler solution was to use a computeIfPresent in the get method
+This will simultaneously have an O(1) lookup time and automatically expire any values
+Since the get method (nor other similar methods) don't seem to have a critical need to flush the map to disk at any of these points further processing is simply wasteful
+Meaning the original function expired values unrelated to the current value without actually having any explicit need to
+
+The h method was left for NMS/reflection so plugins/the server doesn't break
+However it was heavily modified to be much more efficient in its processing
+
+The e method now returns ConcurrentMap instead of Map.
+While I'm generally not for editing a function header this change shouldn't break anything because automatic casting exists
+This will allow anything using it to have the ability to use a more thread-safe map which can increase efficiency in future patches
+
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 0859c7eb..3f80091b 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.collect.Lists;
++// import com.google.common.collect.Lists; // Paper
+ import com.google.common.collect.Maps;
+ import com.google.common.io.Files;
+ import com.google.gson.Gson;
+@@ -21,11 +21,13 @@ import java.io.Reader;
+ import java.lang.reflect.ParameterizedType;
+ import java.lang.reflect.Type;
+ import java.nio.charset.StandardCharsets;
+-import java.util.ArrayList;
++// import java.util.ArrayList; // Paper
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.List;
+-import java.util.Map;
++// import java.util.Map; // Paper
++import java.util.concurrent.ConcurrentMap;
++
+ import org.apache.commons.io.IOUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -35,7 +37,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     protected static final Logger a = LogManager.getLogger();
+     protected final Gson b;
+     private final File c;
+-    private final Map<String, V> d = Maps.newHashMap();
++    // Paper start
++    // private final Map<String, V> d = Maps.newHashMap();
++    private final ConcurrentMap<String, V> d = Maps.newConcurrentMap();
++    // Paper end
+     private boolean e = true;
+     private static final ParameterizedType f = new ParameterizedType() {
+         public Type[] getActualTypeArguments() {
+@@ -83,8 +88,13 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     }
+ 
+     public V get(K k0) {
+-        this.h();
+-        return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
++        // Paper start
++        // this.h();
++        // return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
++        return (V) this.d.computeIfPresent(this.a(k0), (k, v) -> {
++            return v.hasExpired() ? null : v;
++        });
++        // Paper end
+     }
+ 
+     public void remove(K k0) {
+@@ -121,7 +131,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     }
+ 
+     private void h() {
+-        ArrayList arraylist = Lists.newArrayList();
++        // Paper start
++        /*ArrayList arraylist = Lists.newArrayList();
+         Iterator iterator = this.d.values().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -138,15 +149,22 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+             Object object = iterator.next();
+ 
+             this.d.remove(object);
++        }*/
++        
++        for (Iterator<V> i = this.d.values().iterator(); i.hasNext();) {
++            if (i.next().hasExpired()) {
++                i.remove();
++            }
+         }
+-
++        // Paper end
+     }
+ 
+     protected JsonListEntry<K> a(JsonObject jsonobject) {
+         return new JsonListEntry((Object) null, jsonobject);
+     }
+ 
+-    protected Map<String, V> e() {
++    //protected Map<String, V> e() { // Paper
++    protected ConcurrentMap<String, V> e() { // Paper
+         return this.d;
+     }
+ 
+-- 
+2.18.0.windows.1
+
