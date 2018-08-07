@@ -3526,6 +3526,7 @@ public enum Material implements Keyed {
             case BROWN_CARPET:
             case BROWN_MUSHROOM:
             case CARROTS:
+            case CAVE_AIR:
             case CHORUS_FLOWER:
             case CHORUS_PLANT:
             case COCOA:
@@ -3622,6 +3623,7 @@ public enum Material implements Keyed {
             case TRIPWIRE:
             case TRIPWIRE_HOOK:
             case VINE:
+            case VOID_AIR:
             case WALL_TORCH:
             case WHEAT:
             case WHITE_CARPET:
