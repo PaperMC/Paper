@@ -76,10 +76,27 @@ public class BlockFluids extends Block implements IFluidSource {
     @Override
     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
         if (this.a(world, blockposition, iblockdata)) {
-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.b.a((IWorldReader) world));
+            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
         }
 
     }
+
+    // Paper start - Get flow speed. Throttle if its water and flowing adjacent to lava
+    public int getFlowSpeed(World world, BlockPosition blockposition) {
+        if (this.material == Material.WATER) {
+            if (
+                world.getMaterialIfLoaded(blockposition.north(1)) == Material.LAVA ||
+                world.getMaterialIfLoaded(blockposition.south(1)) == Material.LAVA ||
+                world.getMaterialIfLoaded(blockposition.west(1)) == Material.LAVA ||
+                world.getMaterialIfLoaded(blockposition.east(1)) == Material.LAVA
+            ) {
+                return world.paperConfig.waterOverLavaFlowSpeed;
+            }
+        }
+        return this.b.a(world);
+    }
+    // Paper end
+
 
     @Override
     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
@@ -93,7 +110,7 @@ public class BlockFluids extends Block implements IFluidSource {
     @Override
     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
         if (this.a(world, blockposition, iblockdata)) {
-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.b.a((IWorldReader) world));
+            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
         }
 
     }
