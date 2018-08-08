@@ -215,4 +215,18 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertFalse(material.isInteractable());
         }
     }
+
+    @Test
+    public void testBlockHardness() {
+        if (material.isBlock()) {
+            assertThat(material.getHardness(), is(CraftMagicNumbers.getBlock(material).strength));
+        }
+    }
+
+    @Test
+    public void testBlastResistance() {
+        if (material.isBlock()) {
+            assertThat(material.getBlastResistance(), is(CraftMagicNumbers.getBlock(material).k())); // PAIL getDurability
+        }
+    }
 }
