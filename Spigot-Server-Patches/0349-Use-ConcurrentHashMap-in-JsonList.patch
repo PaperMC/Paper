@@ -1,4 +1,4 @@
-From 976042d34b38764c367ec887c03b76fa75ebf766 Mon Sep 17 00:00:00 2001
+From c5ad0647ed56042d20716ee08bf7e4593cc15f0d Mon Sep 17 00:00:00 2001
 From: egg82 <phantom_zero@ymail.com>
 Date: Tue, 7 Aug 2018 01:24:23 -0600
 Subject: [PATCH] Use ConcurrentHashMap in JsonList
@@ -15,8 +15,9 @@ This will simultaneously have an O(1) lookup time and automatically expire any v
 Since the get method (nor other similar methods) don't seem to have a critical need to flush the map to disk at any of these points further processing is simply wasteful
 Meaning the original function expired values unrelated to the current value without actually having any explicit need to
 
-The h method was left for NMS/reflection so plugins/the server doesn't break
-However it was heavily modified to be much more efficient in its processing
+The h method was heavily modified to be much more efficient in its processing
+Also instead of being called on every get, it's now called just before a save
+This will eliminate stale values being flushed to disk
 
 Modified isEmpty to use the isEmpty() method instead of the slightly confusing size() < 1
 The point of this is readability, but does have a side-benefit of a small microptimization
@@ -24,7 +25,7 @@ The point of this is readability, but does have a side-benefit of a small microp
 Finally, added a couple obfhelpers for the modified code
 
 diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
-index 0859c7eb..e92b4c7b 100644
+index 0859c7eb2..ad0ac4247 100644
 --- a/src/main/java/net/minecraft/server/JsonList.java
 +++ b/src/main/java/net/minecraft/server/JsonList.java
 @@ -1,6 +1,5 @@
@@ -53,8 +54,8 @@ index 0859c7eb..e92b4c7b 100644
      protected final Gson b;
      private final File c;
 -    private final Map<String, V> d = Maps.newHashMap();
-+    private final ConcurrentMap<String, V> d = Maps.newConcurrentMap(); // Paper - replace HashMap is ConcurrentHashMap
-+    private final ConcurrentMap<String, V> getBackingMap() { return this.d; } // Paper - OBFHELPER
++    // Paper - replace HashMap is ConcurrentHashMap
++    private final ConcurrentMap<String, V> d = Maps.newConcurrentMap(); private final ConcurrentMap<String, V> getBackingMap() { return this.d; } // Paper - OBFHELPER
      private boolean e = true;
      private static final ParameterizedType f = new ParameterizedType() {
          public Type[] getActualTypeArguments() {
@@ -74,7 +75,7 @@ index 0859c7eb..e92b4c7b 100644
      }
  
      public void remove(K k0) {
-@@ -109,19 +115,22 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -109,9 +115,11 @@ public class JsonList<K, V extends JsonListEntry<K>> {
      // CraftBukkit end
  
      public boolean isEmpty() {
@@ -83,15 +84,15 @@ index 0859c7eb..e92b4c7b 100644
 +        return this.getBackingMap().isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
      }
  
++    protected final String getMappingKey(K k0) { return a(k0); } // Paper - OBFHELPER
      protected String a(K k0) {
          return k0.toString();
      }
-+    protected final String getMappingKey(K k0) { return k0.toString(); } // Paper - OBFHELPER
- 
-     protected boolean d(K k0) {
+@@ -120,8 +128,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
          return this.d.containsKey(this.a(k0));
      }
  
++    private void removeStaleEntries() { h(); } // Paper - OBFHELPER
      private void h() {
 -        ArrayList arraylist = Lists.newArrayList();
 +        // Paper start
@@ -99,22 +100,30 @@ index 0859c7eb..e92b4c7b 100644
          Iterator iterator = this.d.values().iterator();
  
          while (iterator.hasNext()) {
-@@ -138,8 +147,14 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -138,8 +148,12 @@ public class JsonList<K, V extends JsonListEntry<K>> {
              Object object = iterator.next();
  
              this.d.remove(object);
+-        }
+-
 +        }*/
 +        
-+        for (Iterator<V> i = this.getBackingMap().values().iterator(); i.hasNext();) {
-+            if (i.next().hasExpired()) {
-+                i.remove();
-+            }
-         }
--
++        this.getBackingMap().values().removeIf((v) -> {
++            return v.hasExpired();
++        });
 +        // Paper end
      }
  
      protected JsonListEntry<K> a(JsonObject jsonobject) {
+@@ -151,6 +165,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+     }
+ 
+     public void save() throws IOException {
++        this.removeStaleEntries(); // Paper - remove expired values before saving
++        
+         Collection collection = this.d.values();
+         String s = this.b.toJson(collection);
+         BufferedWriter bufferedwriter = null;
 -- 
 2.18.0.windows.1
 
