@@ -225,7 +225,7 @@ public class SpigotConfig
         restartScript = getString( "settings.restart-script", restartScript );
         restartMessage = transform( getString( "messages.restart", "Server is restarting" ) );
         commands.put( "restart", new RestartCommand( "restart" ) );
-        WatchdogThread.doStart( timeoutTime, restartOnCrash );
+        //WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to PaperConfig
     }
 
     public static boolean bungee;
