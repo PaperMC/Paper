@@ -1,11 +1,11 @@
-From f558fa3f624e9833d885d35e6190abecf218c139 Mon Sep 17 00:00:00 2001
+From 934681ac9871706adcb040ffdb244c664fef2af1 Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Wed, 8 Aug 2018 15:30:52 -0400
 Subject: [PATCH] Add 5 second short dumps to watchdog
 
 
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 57a4748a..c88bef9f 100644
+index 57a4748a..75a73151 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -13,8 +13,10 @@ public class WatchdogThread extends Thread
@@ -33,7 +33,7 @@ index 57a4748a..c88bef9f 100644
              //
 -            if ( lastTick != 0 && System.currentTimeMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            long currentTime = System.currentTimeMillis(); // Paper - do we REALLY need to call this method multiple times?
-+            if ( lastTick != 0 && currentTime > lastTick + shortTimeout && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable and short timeout
++            if ( lastTick != 0 && currentTime > lastTick + shortTimeout && !Boolean.getBoolean("disable.watchdog") ) // Paper - Add property to disable and short timeout
              {
 +                // Paper start
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
@@ -48,7 +48,7 @@ index 57a4748a..c88bef9f 100644
                  log.log( Level.SEVERE, "The server has stopped responding!" );
                  log.log( Level.SEVERE, "Please report this to https://github.com/PaperMC/Paper/issues" );
                  log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
-@@ -79,11 +92,16 @@ public class WatchdogThread extends Thread
+@@ -79,11 +92,18 @@ public class WatchdogThread extends Thread
                      }
                  }
                  // Paper end
@@ -61,15 +61,17 @@ index 57a4748a..c88bef9f 100644
                  dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().primaryThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );
                  //
-+                if(isLongTimeout) { // Paper - Only print full dump on long timeouts
++                // Paper start - Only print full dump on long timeouts
++                if( isLongTimeout )
++                {
                  log.log( Level.SEVERE, "Entire Thread Dump:" );
                  ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads( true, true );
                  for ( ThreadInfo thread : threads )
-@@ -97,11 +115,12 @@ public class WatchdogThread extends Thread
+@@ -97,11 +117,12 @@ public class WatchdogThread extends Thread
                      RestartCommand.restart();
                  }
                  break;
-+                } // Paper
++                } // Paper end
              }
  
              try
