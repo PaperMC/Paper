@@ -1,0 +1,148 @@
+From 81259e2cb7b30df39c3d1b23d66ec2c1bdde2a5d Mon Sep 17 00:00:00 2001
+From: Colin Godsey <crgodsey@gmail.com>
+Date: Wed, 8 Aug 2018 16:10:06 -0600
+Subject: [PATCH] Add entity count cache
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 004c3ec4..09c2bc32 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -50,10 +50,41 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     // Spigot start - guard entity list from removals
+     public final List<Entity> entityList = new java.util.ArrayList<Entity>()
+     {
++        // Paper start - entity count cache
++        @Override
++        public boolean addAll(Collection<? extends Entity> c) {
++            for(Entity e : c) {
++                updateEntityCount(e, true);
++            }
++
++            return super.addAll(c);
++        }
++
++        @Override
++        public boolean removeAll(Collection<?> c) {
++            for(Object e : c) {
++                if(e instanceof Entity) {
++                    updateEntityCount((Entity)e, false);
++                }
++            }
++
++            return super.removeAll(c);
++        }
++
++        @Override
++        public boolean add(Entity e) {
++            updateEntityCount(e, true);
++
++            return super.add(e);
++        }
++
++        // Paper end
++
+         @Override
+         public Entity remove(int index)
+         {
+             guard();
++            updateEntityCount(get(index), false); // Paper
+             return super.remove( index );
+         }
+ 
+@@ -61,6 +92,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         public boolean remove(Object o)
+         {
+             guard();
++            if(o instanceof Entity) updateEntityCount((Entity)o, false); // Paper
+             return super.remove( o );
+         }
+ 
+@@ -82,6 +114,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     public final Map<String, EntityHuman> playersByName = Maps.newHashMap(); // Paper - World EntityHuman Lookup Optimizations
+     public final List<Entity> k = Lists.newArrayList();
+     protected final IntHashMap<Entity> entitiesById = new IntHashMap();
++    private Map<Class<?>, Integer> countCache = new HashMap(); // Paper
+     private final long G = 16777215L;
+     private int H; public int getSkylightSubtracted() { return this.H; } public void setSkylightSubtracted(int value) { this.H = value;} // Paper - OBFHELPER
+     protected int m = (new Random()).nextInt();
+@@ -2439,19 +2472,16 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+ 
+     }
+ 
+-    public int a(Class<?> oclass) {
++    // Paper start - entity count cache
++    private int countEntityType(Class<?> oclass) {
+         int i = 0;
+         Iterator iterator = this.entityList.iterator();
+ 
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+-            if (entity.shouldBeRemoved) continue; // Paper
+             // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
+-            if (entity instanceof EntityInsentient) {
+-                EntityInsentient entityinsentient = (EntityInsentient) entity;
+-                if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
+-                    continue;
+-                }
++            if (shouldIgnoreForCount(entity)) {
++                continue;
+             }
+ 
+             if (oclass.isAssignableFrom(entity.getClass())) {
+@@ -2464,6 +2494,52 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         return i;
+     }
+ 
++    public int getEntityCount(Class<?> oclass) { return a(oclass); } // Paper - OBFHELPER
++    public int a(Class<?> oclass) {
++        if(countCache.containsKey(oclass)) {
++            return countCache.get(oclass);
++        } else {
++            int count = countEntityType(oclass);
++
++            countCache.put(oclass, count);
++
++            return count;
++        }
++    }
++
++    public boolean shouldIgnoreForCount(Entity entity) {
++        if (entity instanceof EntityInsentient) {
++            EntityInsentient entityinsentient = (EntityInsentient) entity;
++            return entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent();
++        }
++
++        return false;
++    }
++
++    protected void updateEntityCount(Entity entity, boolean incr) {
++        if(entity == null) return;
++        if(shouldIgnoreForCount(entity)) return;
++
++        countCache.replaceAll((clazz, count) -> {
++            if(clazz.isAssignableFrom(entity.getClass())) {
++                int newCount = count;
++
++                if(incr) newCount++;
++                else newCount--;
++
++                if(newCount < 0) {
++                    e.warn("Entity count cache has gone negative");
++                    newCount = 0;
++                }
++
++                return newCount;
++            } else {
++                return count;
++            }
++        });
++    }
++    // Paper end
++
+     public void addChunkEntities(Collection<Entity> collection) { a(collection); } // Paper - OBFHELPER
+     public void a(Collection<Entity> collection) {
+         org.spigotmc.AsyncCatcher.catchOp( "entity world add"); // Spigot
+-- 
+2.15.2 (Apple Git-101.1)
+
