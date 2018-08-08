@@ -1,0 +1,215 @@
+From 3ec6476aeadd6d74b334f0d5e7b1ee14bdc0d3c7 Mon Sep 17 00:00:00 2001
+From: egg82 <phantom_zero@ymail.com>
+Date: Tue, 7 Aug 2018 17:55:35 -0600
+Subject: [PATCH] Optimize World search/radius functions
+
+Specifically fixes #1289
+
+Affected functions:
+World.a(double d0, double d1, double d2, double d3, Predicate<Entity> predicate)
+World.isPlayerNearby(double d1, double d2, double d3, double searchRadius)
+World.a(double d0, double d1, double d2, double d3, double d4, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate)
+
+Renamed variables in functions and headers, and completely replaced said functions
+The rename shouldn't affect anything but readability
+
+The new code utilizes CraftWorld.getNearbyEntities for later optimization in a future patch
+It shouldn't affect previous behavior and in fact makes attempts at heading off edge-cases early
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 004c3ec4..1307e503 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -24,6 +24,7 @@ import com.google.common.collect.Maps;
+ import java.util.HashMap; // Paper
+ import java.util.Map;
+ import org.bukkit.Bukkit;
++import org.bukkit.Location; // Paper
+ import org.bukkit.block.BlockState;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
+@@ -2575,7 +2576,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         return i;
+     }
+ 
+-    @Nullable
++    // Paper start
++    /*@Nullable
+     public EntityHuman a(double d0, double d1, double d2, double d3, Predicate<Entity> predicate) {
+         double d4 = -1.0D;
+         EntityHuman entityhuman = null;
+@@ -2599,9 +2601,47 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         }
+ 
+         return entityhuman;
++    }*/
++    @Nullable
++    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadius, Predicate<Entity> predicate) {
++        if (searchRadius < 0.0d) {
++            // Keeping with previous behavior
++            return !players.isEmpty() ? this.players.get(this.players.size() - 1) : null;
++        }
++        
++        Collection<org.bukkit.entity.Entity> foundEntities = world.getNearbyEntities(new Location(world,  centerX,  centerY,  centerZ), searchRadius * 2.0d, searchRadius * 2.0d, searchRadius * 2.0d);
++        if (foundEntities.isEmpty()) {
++            return null;
++        }
++        
++        Entity retVal = null;
++        double minDistance = Double.MAX_VALUE;
++        double radiusSquared = searchRadius * searchRadius;
++        
++        for (org.bukkit.entity.Entity bukkitEntity : foundEntities) {
++            Entity entity = this.entitiesById.get(bukkitEntity.getEntityId());
++            if (entity == null || entity.dead || !(entity instanceof EntityHuman)) {
++                continue;
++            }
++            if (!predicate.test(entity)) {
++                continue;
++            }
++            
++            double distance = entity.d(centerX, centerY, centerZ);
++            if (distance >= radiusSquared) { // getNearbyEntities is a cube. We want a sphere, so double-check distance
++                continue;
++            }
++            
++            minDistance = Math.min(minDistance, distance);
++            if (distance == minDistance) {
++                retVal = entity;
++            }
++        }
++        
++        return (EntityHuman) retVal;
+     }
+ 
+-    public boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
++    /*public boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+ 
+@@ -2614,8 +2654,38 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             }
+         }
+ 
++        return false;
++    }*/
++    public boolean isPlayerNearby(double centerX, double centerY, double centerZ, double searchRadius) {
++        if (searchRadius < 0.0d) {
++            // Keeping with previous behavior
++            return !this.players.isEmpty();
++        }
++        
++        Collection<org.bukkit.entity.Entity> foundEntities = world.getNearbyEntities(new Location(world,  centerX,  centerY,  centerZ), searchRadius * 2.0d, searchRadius * 2.0d, searchRadius * 2.0d);
++        if (foundEntities.isEmpty()) {
++            return false;
++        }
++        
++        double radiusSquared = searchRadius * searchRadius;
++        
++        for (org.bukkit.entity.Entity bukkitEntity : foundEntities) {
++            Entity entity = this.entitiesById.get(bukkitEntity.getEntityId());
++            if (entity == null || !(entity instanceof EntityHuman)) {
++                continue;
++            }
++            
++            if (IEntitySelector.e.test(entity) && ((EntityHuman) entity).affectsSpawning) {
++                double distance = entity.d(centerX, centerY, centerZ);
++                if (distance < radiusSquared) { // getNearbyEntities is a cube. We want a sphere, so double-check distance
++                    return true;
++                }
++            }
++        }
++        
+         return false;
+     }
++    // Paper end
+ 
+     @Nullable
+     public EntityHuman a(Entity entity, double d0, double d1) {
+@@ -2627,7 +2697,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         return this.a((double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), d0, d1, (Function) null, (Predicate) null);
+     }
+ 
+-    @Nullable
++    // Paper start
++    /*@Nullable
+     public EntityHuman a(double d0, double d1, double d2, double d3, double d4, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate) {
+         double d5 = -1.0D;
+         EntityHuman entityhuman = null;
+@@ -2665,7 +2736,73 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+         }
+ 
+         return entityhuman;
++    }*/
++    
++    /*
++     * We figured out what this function does!
++     * It determines what player a mob should target
++     */
++    @Nullable
++    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadiusXZ, double searchRadiusY, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate) {
++        if (searchRadiusXZ < 0.0d && searchRadiusY < 0.0d) {
++            // Keeping with previous behavior
++            return !players.isEmpty() ? this.players.get(this.players.size() - 1) : null;
++        }
++        
++        Collection<org.bukkit.entity.Entity> foundEntities = world.getNearbyEntities(new Location(world,  centerX,  centerY,  centerZ), searchRadiusXZ * 2.0d, searchRadiusY * 2.0d, searchRadiusXZ * 2.0d);
++        if (foundEntities.isEmpty()) {
++            return null;
++        }
++        
++        EntityHuman retVal = null;
++        double minDistance = Double.MAX_VALUE;
++        
++        double ySquared = searchRadiusY * searchRadiusY;
++        
++        for (org.bukkit.entity.Entity bukkitEntity : foundEntities) {
++            Entity entity = this.entitiesById.get(bukkitEntity.getEntityId());
++            if (entity == null || !entity.isAlive() || !(entity instanceof EntityHuman) || !IEntitySelector.e.test(entity)) {
++                continue;
++            }
++            
++            EntityHuman human = (EntityHuman) entity;
++            
++            if (human.abilities.isInvulnerable || (predicate != null && !predicate.test(human))) {
++                continue;
++            }
++            
++            double distanceXZ = human.d(centerX, human.locY, centerZ);
++            double visibilitySearchRadiusXZ = searchRadiusXZ;
++
++            if (human.isSneaking()) {
++                visibilitySearchRadiusXZ = searchRadiusXZ * 0.800000011920929d;
++            }
++            
++            if (human.isInvisible()) {
++                double armorRatio = human.dk();
++
++                if (armorRatio < 0.1d) {
++                    armorRatio = 0.1d;
++                }
++
++                visibilitySearchRadiusXZ *= 0.7d * armorRatio;
++            }
++            
++            if (function != null) {
++                visibilitySearchRadiusXZ *= ((Double) MoreObjects.firstNonNull(function.apply(human), Double.valueOf(1.0d))).doubleValue();
++            }
++            
++            if ((searchRadiusY < 0.0d || Math.abs(human.locY - centerY) < ySquared) && (searchRadiusXZ < 0.0d || distanceXZ < visibilitySearchRadiusXZ * visibilitySearchRadiusXZ)) { // getNearbyEntities is a cube. We want a sphere, so double-check distance
++                minDistance = Math.min(minDistance, distanceXZ);
++                if (distanceXZ == minDistance) {
++                    retVal = human;
++                }
++            }
++        }
++        
++        return retVal;
+     }
++    // Paper end
+ 
+     @Nullable
+     public EntityHuman a(String s) {
+-- 
+2.18.0.windows.1
+
