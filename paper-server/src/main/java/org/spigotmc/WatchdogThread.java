@@ -14,6 +14,10 @@ public class WatchdogThread extends Thread
     private static WatchdogThread instance;
     private long timeoutTime;
     private boolean restart;
+    private final long earlyWarningEvery; // Paper - Timeout time for just printing a dump but not restarting
+    private final long earlyWarningDelay; // Paper
+    public static volatile boolean hasStarted; // Paper
+    private long lastEarlyWarning; // Paper - Keep track of short dump times to avoid spamming console with short dumps
     private volatile long lastTick;
     private volatile boolean stopping;
 
@@ -22,6 +26,8 @@ public class WatchdogThread extends Thread
         super( "Paper Watchdog Thread" );
         this.timeoutTime = timeoutTime;
         this.restart = restart;
+        earlyWarningEvery = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningEvery, timeoutTime); // Paper
+        earlyWarningDelay = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningDelay, timeoutTime); // Paper
     }
 
     private static long monotonicMillis()
@@ -61,9 +67,18 @@ public class WatchdogThread extends Thread
         while ( !this.stopping )
         {
             //
-            if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.monotonicMillis() > this.lastTick + this.timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
+            // Paper start
+            Logger log = Bukkit.getServer().getLogger();
+            long currentTime = WatchdogThread.monotonicMillis();
+            if ( this.lastTick != 0 && this.timeoutTime > 0 && currentTime > this.lastTick + this.earlyWarningEvery && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
             {
-                Logger log = Bukkit.getServer().getLogger();
+                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
+                // Don't spam early warning dumps
+                if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
+                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+                lastEarlyWarning = currentTime;
+                if (isLongTimeout) {
+                // Paper end
                 log.log( Level.SEVERE, "------------------------------" );
                 log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
@@ -92,29 +107,45 @@ public class WatchdogThread extends Thread
                     }
                 }
                 // Paper end
+                } else
+                {
+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---");
+                    log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
+                }
+                // Paper end - Different message for short timeout
                 log.log( Level.SEVERE, "------------------------------" );
                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
                 log.log( Level.SEVERE, "------------------------------" );
                 //
+                // Paper start - Only print full dump on long timeouts
+                if ( isLongTimeout )
+                {
                 log.log( Level.SEVERE, "Entire Thread Dump:" );
                 ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads( true, true );
                 for ( ThreadInfo thread : threads )
                 {
                     WatchdogThread.dumpThread( thread, log );
                 }
+                } else {
+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---");
+                }
+
                 log.log( Level.SEVERE, "------------------------------" );
 
+                if ( isLongTimeout )
+                {
                 if ( this.restart && !MinecraftServer.getServer().hasStopped() )
                 {
                     RestartCommand.restart();
                 }
                 break;
+                } // Paper end
             }
 
             try
             {
-                sleep( 10000 );
+                sleep( 1000 ); // Paper - Reduce check time to every second instead of every ten seconds, more consistent and allows for short timeout
             } catch ( InterruptedException ex )
             {
                 this.interrupt();
