@@ -1,0 +1,65 @@
+From 35c565d267a562633607766e1264ac0cd4c01d87 Mon Sep 17 00:00:00 2001
+From: Colin Godsey <crgodsey@gmail.com>
+Date: Wed, 8 Aug 2018 16:33:21 -0600
+Subject: [PATCH] Configurable speed for water flowing over lava
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 61c8b58b..ab3f59ad 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -436,6 +436,12 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public int waterOverLavaFlowSpeed;
++    private void waterOverLavaFlowSpeed() {
++        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
++        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
++    }
++
+     public enum DuplicateUUIDMode {
+         SAFE_REGEN, REGEN, DELETE, NOTHING, WARN
+     }
+diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
+index 6ecc1f84..637f6580 100644
+--- a/src/main/java/net/minecraft/server/BlockFluids.java
++++ b/src/main/java/net/minecraft/server/BlockFluids.java
+@@ -67,10 +67,24 @@ public class BlockFluids extends Block implements IFluidSource {
+ 
+     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1) {
+         if (this.a(world, blockposition, iblockdata)) {
+-            world.H().a(blockposition, iblockdata.s().c(), this.a((IWorldReader) world));
++            world.H().a(blockposition, iblockdata.s().c(), this.getFlowSpeed(world, blockposition)); // Paper
+         }
+ 
+     }
++    
++    /**
++    * Paper - Get flow speed. Throttle if its water and flowing adjacent to lava
++    */
++    public int getFlowSpeed(World world, BlockPosition blockposition) {
++        if (this.material == Material.WATER && (
++                world.getType(blockposition.north(1)).getBlock().material == Material.LAVA ||
++                world.getType(blockposition.south(1)).getBlock().material == Material.LAVA ||
++                world.getType(blockposition.west(1)).getBlock().material == Material.LAVA ||
++                world.getType(blockposition.east(1)).getBlock().material == Material.LAVA)) {
++            return world.paperConfig.waterOverLavaFlowSpeed;
++        }
++        return this.a(world);
++    }
+ 
+     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+         if (iblockdata.s().d() || iblockdata1.s().d()) {
+@@ -82,7 +96,7 @@ public class BlockFluids extends Block implements IFluidSource {
+ 
+     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1) {
+         if (this.a(world, blockposition, iblockdata)) {
+-            world.H().a(blockposition, iblockdata.s().c(), this.a((IWorldReader) world));
++            world.H().a(blockposition, iblockdata.s().c(), this.getFlowSpeed(world, blockposition)); // Paper
+         }
+ 
+     }
+-- 
+2.15.2 (Apple Git-101.1)
+
