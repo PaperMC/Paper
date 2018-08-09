@@ -1,7 +1,6 @@
 package org.bukkit.event.player;
 
 import java.util.Collection;
-import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
@@ -13,11 +12,7 @@ import org.bukkit.event.HandlerList;
  * are not required to securely remove all traces of the command. If secure
  * removal of commands is required, then the command should be assigned a
  * permission which is not granted to the player.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class PlayerCommandSendEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();

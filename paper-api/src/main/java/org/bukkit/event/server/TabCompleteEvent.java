@@ -6,10 +6,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 
 /**
  * Called when a {@link CommandSender} of any description (ie: player or
  * console) attempts to tab complete.
+ * <br>
+ * Note that due to client changes, if the sender is a Player, this event will
+ * only begin to fire once command arguments are specified, not commands
+ * themselves. Plugins wishing to remove commands from tab completion are
+ * advised to ensure the client does not have permission for the relevant
+ * commands, or use {@link PlayerCommandSendEvent}.
  */
 public class TabCompleteEvent extends Event implements Cancellable {
 

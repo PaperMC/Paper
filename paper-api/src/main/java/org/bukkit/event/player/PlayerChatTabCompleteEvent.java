@@ -3,12 +3,17 @@ package org.bukkit.event.player;
 import java.util.Collection;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
 /**
  * Called when a player attempts to tab-complete a chat message.
+ *
+ * @deprecated This event is no longer fired due to client changes
  */
+@Deprecated
+@Warning(reason = "This event is no longer fired due to client changes")
 public class PlayerChatTabCompleteEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final String message;
