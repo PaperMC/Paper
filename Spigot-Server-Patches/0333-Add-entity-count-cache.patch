@@ -1,28 +1,43 @@
-From 5b101db469123c2f92ff82fc04a8b77274296bcf Mon Sep 17 00:00:00 2001
+From 4f16c3445f22654d43ca5b2006f45fac0e17203b Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Add entity count cache
 
 
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d6b56d685..3d973deb7 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1034,6 +1034,14 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-                 }
-                 // CraftBukkit end */
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 7b64ec27c..55606756e 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -42,6 +42,7 @@ public abstract class EntityInsentient extends EntityLiving {
+     public float[] dropChanceArmor;
+     // public boolean canPickUpLoot; // CraftBukkit - moved up to EntityLiving
+     public boolean persistent;
++    public boolean countsAgainstSpawnLimit = true; // Paper
+     private final Map<PathType, Float> bH;
+     private MinecraftKey bI;
+     private long bJ;
+diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
+index 79e52f7ba..288f59ed3 100644
+--- a/src/main/java/net/minecraft/server/EnumCreatureType.java
++++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
+@@ -16,10 +16,17 @@ public enum EnumCreatureType {
+         this.h = flag1;
+     }
  
-+                /*
-+                 * Paper - clear count cache every once in a while.
-+                 * Cache can never be entirely trusted because
-+                 * an entity may become persistent or not
-+                 * during its lifetime.
-+                 */
-+                if (this.ticks % 600 == 0) worldserver.clearEntityCountCache();
++    public Class<? extends IAnimal> innerClass() { return this.a(); } // Paper - OBFHELPER
+     public Class<? extends IAnimal> a() {
+         return this.e;
+     }
+ 
++    // Paper start
++    public boolean matches(Entity entity) {
++        return innerClass().isAssignableFrom(entity.getClass());
++    }
++    // Paper end
 +
-                 this.methodProfiler.a("tick");
- 
-                 CrashReport crashreport;
+     public int b() {
+         return this.f;
+     }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
 index f525fd1b4..494759a1c 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
@@ -37,58 +52,18 @@ index f525fd1b4..494759a1c 100644
  
                      if (k <= l1) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 004c3ec47..baf73a411 100644
+index 004c3ec47..dc301c6f4 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1,28 +1,20 @@
- 	package net.minecraft.server;
- 
--import co.aikar.timings.Timings;
- import com.destroystokyo.paper.event.server.ServerExceptionEvent;
- import com.destroystokyo.paper.exception.ServerInternalException;
- import com.google.common.base.MoreObjects;
- import com.google.common.collect.Lists;
--import java.util.ArrayList;
--import java.util.Collection;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Random;
--import java.util.UUID;
-+
-+import java.util.*;
+@@ -11,6 +11,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+ import java.util.UUID;
++import java.util.EnumMap; // Paper
  
  import java.util.function.Function;
  import java.util.function.Predicate;
--import java.util.function.Supplier;
- import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- 
- // CraftBukkit start
- import com.google.common.collect.Maps;
--import java.util.HashMap; // Paper
--import java.util.Map;
- import org.bukkit.Bukkit;
- import org.bukkit.block.BlockState;
- import org.bukkit.craftbukkit.CraftServer;
-@@ -30,16 +22,11 @@ import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.block.CraftBlockState;
- import org.bukkit.craftbukkit.block.data.CraftBlockData;
- import org.bukkit.craftbukkit.event.CraftEventFactory;
--import org.bukkit.craftbukkit.util.CraftMagicNumbers;
--import org.bukkit.craftbukkit.util.LongHashSet; // Paper
--import org.bukkit.entity.Player;
--import org.bukkit.event.block.BlockCanBuildEvent;
- import org.bukkit.event.block.BlockPhysicsEvent;
- import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
- import org.bukkit.generator.ChunkGenerator;
- // CraftBukkit end
- // Paper start
--import java.util.Set;
- import com.google.common.collect.Sets;
- // Paper end
- public abstract class World implements GeneratorAccess, IIBlockAccess, AutoCloseable {
-@@ -50,10 +37,41 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -50,10 +51,41 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
      // Spigot start - guard entity list from removals
      public final List<Entity> entityList = new java.util.ArrayList<Entity>()
      {
@@ -130,7 +105,7 @@ index 004c3ec47..baf73a411 100644
              return super.remove( index );
          }
  
-@@ -61,6 +79,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -61,6 +93,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          public boolean remove(Object o)
          {
              guard();
@@ -138,59 +113,33 @@ index 004c3ec47..baf73a411 100644
              return super.remove( o );
          }
  
-@@ -82,6 +101,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
-     public final Map<String, EntityHuman> playersByName = Maps.newHashMap(); // Paper - World EntityHuman Lookup Optimizations
-     public final List<Entity> k = Lists.newArrayList();
-     protected final IntHashMap<Entity> entitiesById = new IntHashMap();
-+    private Map<EnumCreatureType, Integer> countCache = new EnumMap(EnumCreatureType.class); // Paper - entity count cache
-     private final long G = 16777215L;
-     private int H; public int getSkylightSubtracted() { return this.H; } public void setSkylightSubtracted(int value) { this.H = value;} // Paper - OBFHELPER
-     protected int m = (new Random()).nextInt();
-@@ -2439,6 +2459,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
- 
-     }
- 
-+    public int getEntityCount(Class<?> oclass) { return a(oclass); } // Paper - OBFHELPER
-     public int a(Class<?> oclass) {
-         int i = 0;
-         Iterator iterator = this.entityList.iterator();
-@@ -2464,6 +2485,61 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -2464,6 +2497,53 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          return i;
      }
  
 +    // Paper start - entity count cache
-+    public int getCreatureCount(EnumCreatureType typ) {
-+        Integer count = countCache.get(typ);
++    private Map<EnumCreatureType, Integer> countCache = new EnumMap(EnumCreatureType.class);
 +
-+        if (count == null) {
-+            count = getEntityCount(typ.a());
++    public int getCreatureCount(EnumCreatureType type) {
++        Integer count = countCache.get(type);
 +
-+            countCache.put(typ, count);
-+        }
-+
-+        return count;
++        return count == null ? 0 : count;
 +    }
 +
-+    void clearEntityCountCache() {
-+        countCache.clear();
-+    }
++    protected void updateEntityCount(EnumCreatureType type, boolean incr) {
++        Integer countObject = countCache.get(type);
 +
-+    protected void updateEntityCount(EnumCreatureType typ, boolean incr) {
-+        Integer countObject = countCache.get(typ);
-+
-+        if (countObject == null) return;
-+
-+        int count = countObject;
++        int count = countObject == null ? 0 : countObject;
 +
 +        if (incr) count++;
 +        else count--;
 +
 +        if (count < 0) {
-+            e.warn("Entity count cache has gone negative");
++            e.warn("Paper - Entity count cache has gone negative");
 +            count = 0;
 +        }
 +
-+        countCache.put(typ, count);
++        countCache.put(type, count);
 +    }
 +
 +    protected void updateEntityCount(Entity entity, boolean incr) {
@@ -198,16 +147,18 @@ index 004c3ec47..baf73a411 100644
 +
 +        if (entity instanceof EntityInsentient) {
 +            EntityInsentient entityinsentient = (EntityInsentient) entity;
-+            if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
++            if (incr && entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
++                entityinsentient.countsAgainstSpawnLimit = false;
++
++                return;
++            } else if (!incr && !entityinsentient.countsAgainstSpawnLimit) {
 +                return;
 +            }
 +        }
 +
-+        Class<?> clazz = entity.getClass();
-+
-+        for (EnumCreatureType typ : EnumCreatureType.values()) {
-+            if (typ.a().isAssignableFrom(clazz)) {
-+                updateEntityCount(typ, incr);
++        for (EnumCreatureType type : EnumCreatureType.values()) {
++            if (type.matches(entity)) {
++                updateEntityCount(type, incr);
 +            }
 +        }
 +    }
