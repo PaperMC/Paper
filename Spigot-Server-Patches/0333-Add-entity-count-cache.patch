@@ -1,11 +1,11 @@
-From 81259e2cb7b30df39c3d1b23d66ec2c1bdde2a5d Mon Sep 17 00:00:00 2001
+From 3ac10ee43109b578232e3d127511e761ddc87a1a Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
-Date: Wed, 8 Aug 2018 16:10:06 -0600
+Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Add entity count cache
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 004c3ec4..09c2bc32 100644
+index 004c3ec47..c392595c0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -50,10 +50,41 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
@@ -15,7 +15,7 @@ index 004c3ec4..09c2bc32 100644
 +        // Paper start - entity count cache
 +        @Override
 +        public boolean addAll(Collection<? extends Entity> c) {
-+            for(Entity e : c) {
++            for (Entity e : c) {
 +                updateEntityCount(e, true);
 +            }
 +
@@ -24,8 +24,8 @@ index 004c3ec4..09c2bc32 100644
 +
 +        @Override
 +        public boolean removeAll(Collection<?> c) {
-+            for(Object e : c) {
-+                if(e instanceof Entity) {
++            for (Object e : c) {
++                if (e instanceof Entity) {
 +                    updateEntityCount((Entity)e, false);
 +                }
 +            }
@@ -54,7 +54,7 @@ index 004c3ec4..09c2bc32 100644
          public boolean remove(Object o)
          {
              guard();
-+            if(o instanceof Entity) updateEntityCount((Entity)o, false); // Paper
++            if (o instanceof Entity) updateEntityCount((Entity)o, false); // Paper
              return super.remove( o );
          }
  
@@ -66,48 +66,49 @@ index 004c3ec4..09c2bc32 100644
      private final long G = 16777215L;
      private int H; public int getSkylightSubtracted() { return this.H; } public void setSkylightSubtracted(int value) { this.H = value;} // Paper - OBFHELPER
      protected int m = (new Random()).nextInt();
-@@ -2439,19 +2472,16 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
- 
+@@ -2440,6 +2473,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
      }
  
--    public int a(Class<?> oclass) {
-+    // Paper start - entity count cache
-+    private int countEntityType(Class<?> oclass) {
+     public int a(Class<?> oclass) {
++        if (true) return getEntityCount(oclass); //Paper - short circuit to cached method
++
          int i = 0;
          Iterator iterator = this.entityList.iterator();
  
-         while (iterator.hasNext()) {
-             Entity entity = (Entity) iterator.next();
--            if (entity.shouldBeRemoved) continue; // Paper
-             // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
--            if (entity instanceof EntityInsentient) {
--                EntityInsentient entityinsentient = (EntityInsentient) entity;
--                if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
--                    continue;
--                }
-+            if (shouldIgnoreForCount(entity)) {
-+                continue;
-             }
- 
-             if (oclass.isAssignableFrom(entity.getClass())) {
-@@ -2464,6 +2494,52 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -2464,6 +2499,71 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          return i;
      }
  
-+    public int getEntityCount(Class<?> oclass) { return a(oclass); } // Paper - OBFHELPER
-+    public int a(Class<?> oclass) {
-+        if(countCache.containsKey(oclass)) {
-+            return countCache.get(oclass);
-+        } else {
-+            int count = countEntityType(oclass);
++    // Paper start - entity count cache
++    private int countEntityType(Class<?> oclass) {
++        int i = 0;
++        Iterator iterator = this.entityList.iterator();
 +
-+            countCache.put(oclass, count);
++        while (iterator.hasNext()) {
++            Entity entity = (Entity) iterator.next();
 +
-+            return count;
++            if (shouldIgnoreForCount(entity)) continue;
++            if (oclass.isAssignableFrom(entity.getClass())) i++;
 +        }
++
++        return i;
++    }
++
++    public int getEntityCount(Class<?> oclass) {
++        Integer count = countCache.get(oclass);
++
++        if (count != null) return count;
++
++        count = countEntityType(oclass);
++
++        countCache.put(oclass, count);
++
++        return count;
 +    }
 +
 +    public boolean shouldIgnoreForCount(Entity entity) {
++        if (entity == null) return true;
++
 +        if (entity instanceof EntityInsentient) {
 +            EntityInsentient entityinsentient = (EntityInsentient) entity;
 +            return entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent();
@@ -116,27 +117,30 @@ index 004c3ec4..09c2bc32 100644
 +        return false;
 +    }
 +
++    protected void updateEntityCount(Class<?> clazz, boolean incr) {
++        Integer countObject = countCache.get(clazz);
++
++        if (countObject == null) return;
++
++        int count = countObject;
++
++        if (incr) count++;
++        else count--;
++
++        if(count < 0) {
++            e.warn("Entity count cache has gone negative");
++            count = 0;
++        }
++
++        countCache.put(clazz, count);
++    }
++
 +    protected void updateEntityCount(Entity entity, boolean incr) {
-+        if(entity == null) return;
-+        if(shouldIgnoreForCount(entity)) return;
++        if (shouldIgnoreForCount(entity)) return;
 +
-+        countCache.replaceAll((clazz, count) -> {
-+            if(clazz.isAssignableFrom(entity.getClass())) {
-+                int newCount = count;
-+
-+                if(incr) newCount++;
-+                else newCount--;
-+
-+                if(newCount < 0) {
-+                    e.warn("Entity count cache has gone negative");
-+                    newCount = 0;
-+                }
-+
-+                return newCount;
-+            } else {
-+                return count;
-+            }
-+        });
++        for (Class<?> clazz = entity.getClass() ; !clazz.equals(Object.class) ; clazz = clazz.getSuperclass()) {
++            updateEntityCount(clazz, incr);
++        }
 +    }
 +    // Paper end
 +
