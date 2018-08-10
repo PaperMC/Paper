@@ -1,4 +1,4 @@
-From a3ff7e5e2422aaaee4d68c90397201107ef605f6 Mon Sep 17 00:00:00 2001
+From d5626a994903ac7997f1fd6e1efa7ede3d180588 Mon Sep 17 00:00:00 2001
 From: egg82 <phantom_zero@ymail.com>
 Date: Tue, 7 Aug 2018 01:24:23 -0600
 Subject: [PATCH] Use ConcurrentHashMap in JsonList
@@ -25,29 +25,28 @@ The point of this is readability, but does have a side-benefit of a small microp
 Finally, added a couple obfhelpers for the modified code
 
 diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
-index 0859c7eb2..05b3a1910 100644
+index 0859c7eb2..93111cc24 100644
 --- a/src/main/java/net/minecraft/server/JsonList.java
 +++ b/src/main/java/net/minecraft/server/JsonList.java
-@@ -26,6 +26,8 @@ import java.util.Collection;
+@@ -26,6 +26,7 @@ import java.util.Collection;
  import java.util.Iterator;
  import java.util.List;
  import java.util.Map;
-+import java.util.concurrent.ConcurrentMap;
 +
  import org.apache.commons.io.IOUtils;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -35,7 +37,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -35,7 +36,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
      protected static final Logger a = LogManager.getLogger();
      protected final Gson b;
      private final File c;
 -    private final Map<String, V> d = Maps.newHashMap();
 +    // Paper - replace HashMap is ConcurrentHashMap
-+    private final ConcurrentMap<String, V> d = Maps.newConcurrentMap(); private final ConcurrentMap<String, V> getBackingMap() { return this.d; } // Paper - OBFHELPER
++    private final Map<String, V> d = Maps.newConcurrentMap(); private final Map<String, V> getBackingMap() { return this.d; } // Paper - OBFHELPER
      private boolean e = true;
      private static final ParameterizedType f = new ParameterizedType() {
          public Type[] getActualTypeArguments() {
-@@ -83,8 +86,13 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -83,8 +85,13 @@ public class JsonList<K, V extends JsonListEntry<K>> {
      }
  
      public V get(K k0) {
@@ -63,7 +62,7 @@ index 0859c7eb2..05b3a1910 100644
      }
  
      public void remove(K k0) {
-@@ -109,9 +117,11 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -109,9 +116,11 @@ public class JsonList<K, V extends JsonListEntry<K>> {
      // CraftBukkit end
  
      public boolean isEmpty() {
@@ -76,7 +75,7 @@ index 0859c7eb2..05b3a1910 100644
      protected String a(K k0) {
          return k0.toString();
      }
-@@ -120,8 +130,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -120,8 +129,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
          return this.d.containsKey(this.a(k0));
      }
  
@@ -88,7 +87,7 @@ index 0859c7eb2..05b3a1910 100644
          Iterator iterator = this.d.values().iterator();
  
          while (iterator.hasNext()) {
-@@ -138,8 +150,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -138,8 +149,10 @@ public class JsonList<K, V extends JsonListEntry<K>> {
              Object object = iterator.next();
  
              this.d.remove(object);
@@ -101,7 +100,7 @@ index 0859c7eb2..05b3a1910 100644
      }
  
      protected JsonListEntry<K> a(JsonObject jsonobject) {
-@@ -151,6 +165,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+@@ -151,6 +164,8 @@ public class JsonList<K, V extends JsonListEntry<K>> {
      }
  
      public void save() throws IOException {
