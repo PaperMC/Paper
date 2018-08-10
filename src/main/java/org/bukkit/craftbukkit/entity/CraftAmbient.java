@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.EntityType;
 
-public class CraftAmbient extends CraftLivingEntity implements Ambient {
+public class CraftAmbient extends CraftMob implements Ambient {
     public CraftAmbient(CraftServer server, EntityAmbient entity) {
         super(server, entity);
     }
