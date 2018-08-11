@@ -1618,4 +1618,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public String getLocale() {
         return getHandle().locale;
     }
+
+    @Override
+    public void updateCommands() {
+        if (getHandle().playerConnection == null) return;
+
+        getHandle().server.getCommandDispatcher().a(getHandle());
+    }
 }
