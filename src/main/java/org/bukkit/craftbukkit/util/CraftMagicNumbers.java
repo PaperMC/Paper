@@ -135,6 +135,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
+    public Material fromLegacy(MaterialData material, boolean itemPriority) {
+        return CraftLegacy.fromLegacy(material, itemPriority);
+    }
+
+    @Override
     public BlockData fromLegacy(Material material, byte data) {
         return CraftBlockData.fromData(getBlock(material, data));
     }

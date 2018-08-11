@@ -163,6 +163,10 @@ public class CraftLegacy {
     }
 
     public static Material fromLegacy(MaterialData materialData) {
+        return fromLegacy(materialData, false);
+    }
+
+    public static Material fromLegacy(MaterialData materialData, boolean itemPriority) {
         Material material = materialData.getItemType();
         if (material == null || !material.isLegacy()) {
             return material;
@@ -170,7 +174,15 @@ public class CraftLegacy {
 
         Material mappedData = null;
 
-        if (material.isBlock()) {
+        // Try item first
+        if (itemPriority) {
+            Item item = materialToItem.get(materialData);
+            if (item != null) {
+                mappedData = CraftMagicNumbers.getMaterial(item);
+            }
+        }
+
+        if (mappedData == null && material.isBlock()) {
             // Try exact match first
             IBlockData iblock = materialToData.get(materialData);
             if (iblock != null) {
@@ -187,7 +199,7 @@ public class CraftLegacy {
         }
 
         // Fallback to matching item
-        if (mappedData == null) {
+        if (!itemPriority && mappedData == null) {
             Item item = materialToItem.get(materialData);
             if (item != null) {
                 mappedData = CraftMagicNumbers.getMaterial(item);
