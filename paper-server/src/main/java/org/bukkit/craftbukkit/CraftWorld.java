@@ -22,6 +22,7 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -41,7 +42,6 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.CommandMinecart;
@@ -1465,7 +1465,46 @@ public class CraftWorld implements World {
     }
 
     public boolean isGameRule(String rule) {
+        Validate.isTrue(rule != null && !rule.isEmpty(), "Rule cannot be null nor empty");
         return GameRules.getGameRules().containsKey(rule);
+    }
+
+    @Override
+    public <T> T getGameRuleValue(GameRule<T> rule) {
+        Validate.notNull(rule, "GameRule cannot be null");
+        return convert(rule, getHandle().getGameRules().get(rule.getName()));
+    }
+
+    @Override
+    public <T> T getGameRuleDefault(GameRule<T> rule) {
+        Validate.notNull(rule, "GameRule cannot be null");
+        return convert(rule, GameRules.getGameRules().get(rule.getName()).a());
+    }
+
+    @Override
+    public <T> boolean setGameRule(GameRule<T> rule, T newValue) {
+        Validate.notNull(rule, "GameRule cannot be null");
+        Validate.notNull(newValue, "GameRule value cannot be null");
+
+        if (!isGameRule(rule.getName())) return false;
+
+        getHandle().getGameRules().set(rule.getName(), newValue.toString(), getHandle().getMinecraftServer());
+        return true;
+    }
+
+    private <T> T convert(GameRule<T> rule, GameRules.GameRuleValue value) {
+        if (value == null) {
+            return null;
+        }
+
+        switch (value.e()) {
+            case BOOLEAN_VALUE:
+                return rule.getType().cast(value.b());
+            case NUMERICAL_VALUE:
+                return rule.getType().cast(value.c());
+            default:
+                throw new IllegalArgumentException("Invalid GameRule type (" + value.e() + ") for GameRule " + rule.getName());
+        }
     }
 
     @Override
