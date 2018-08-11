@@ -451,7 +451,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
             type = Material.getMaterial(Material.LEGACY_PREFIX + (String) args.get("type"));
 
             byte dataVal = (type.getMaxDurability() == 0) ? (byte) damage : 0; // Actually durable items get a 0 passed into conversion
-            type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, dataVal));
+            type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, dataVal), true);
 
             // We've converted now so the data val isn't a thing and can be reset
             if (dataVal != 0) {

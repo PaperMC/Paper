@@ -23,6 +23,8 @@ public interface UnsafeValues {
 
     Material fromLegacy(MaterialData material);
 
+    Material fromLegacy(MaterialData material, boolean itemPriority);
+
     BlockData fromLegacy(Material material, byte data);
 
     int getDataVersion();
