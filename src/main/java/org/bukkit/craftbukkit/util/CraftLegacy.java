@@ -109,6 +109,13 @@ public class CraftLegacy {
 
         MaterialData materialData = new MaterialData(material, (byte) data);
 
+        // First try matching item
+        Item convertedItem = materialToItem.get(materialData);
+        if (convertedItem != null) {
+            return convertedItem;
+        }
+
+        // Fallback to matching block
         if (material.isBlock()) {
             // Try exact match first
             IBlockData converted = materialToData.get(materialData);
@@ -121,12 +128,6 @@ public class CraftLegacy {
             if (convertedBlock != null) {
                 return convertedBlock.getItem();
             }
-        }
-
-        // Fallback to matching item
-        Item convertedItem = materialToItem.get(materialData);
-        if (convertedItem != null) {
-            return convertedItem;
         }
 
         // Return existing item
