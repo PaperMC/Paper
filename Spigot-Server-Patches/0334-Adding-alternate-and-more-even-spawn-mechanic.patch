@@ -1,0 +1,532 @@
+From bf728ecd910318dbd558a3b629c1c4b04507194a Mon Sep 17 00:00:00 2001
+From: Colin Godsey <crgodsey@gmail.com>
+Date: Fri, 10 Aug 2018 19:01:16 -0600
+Subject: [PATCH] Adding alternate and more even spawn mechanic
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 61c8b58b1..3f21de752 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -355,6 +355,11 @@ public class PaperWorldConfig {
+         armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
+     }
+ 
++    public boolean useImprovedSpawning = true;
++    private void useImprovedSpawning() {
++        useImprovedSpawning = getBoolean("use-improved-spawning", false);
++    }
++
+     public int maxCollisionsPerEntity;
+     private void maxEntityCollision() {
+         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index 1a468e1bb..d2f37a1f5 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -125,7 +125,7 @@ public abstract class BiomeBase {
+     private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> ba = Maps.newHashMap();
+ 
+     public static int a(BiomeBase biomebase) {
+-        return BiomeBase.REGISTRY_ID.a((Object) biomebase);
++        return BiomeBase.REGISTRY_ID.a(biomebase);
+     }
+ 
+     @Nullable
+@@ -291,13 +291,13 @@ public abstract class BiomeBase {
+     }
+ 
+     public <C extends WorldGenFeatureConfiguration> void a(WorldGenStage.Features worldgenstage_features, WorldGenCarverWrapper<C> worldgencarverwrapper) {
+-        ((List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features) -> {
++        ((List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features2) -> {
+             return Lists.newArrayList();
+         })).add(worldgencarverwrapper);
+     }
+ 
+     public List<WorldGenCarverWrapper<?>> a(WorldGenStage.Features worldgenstage_features) {
+-        return (List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features) -> {
++        return (List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features2) -> {
+             return Lists.newArrayList();
+         });
+     }
+@@ -572,7 +572,9 @@ public abstract class BiomeBase {
+     public static class BiomeMeta extends WeightedRandom.WeightedRandomChoice {
+ 
+         public EntityTypes<? extends EntityInsentient> b;
++        public int getMinPackSize() { return c; } // Paper - OBFHELPER
+         public int c;
++        public int getMaxPackSize() { return d; } // Paper - OBFHELPER
+         public int d;
+ 
+         public BiomeMeta(EntityTypes<? extends EntityInsentient> entitytypes, int i, int j, int k) {
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index db8fbc006..fbdf9dfd6 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -2,6 +2,8 @@ package net.minecraft.server;
+ 
+ // Paper start
+ import com.destroystokyo.paper.PaperWorldConfig.DuplicateUUIDMode;
++import java.util.Map;
++import java.util.EnumMap;
+ import java.util.HashMap;
+ import java.util.UUID;
+ // Paper end
+@@ -106,6 +108,7 @@ public class Chunk implements IChunkAccess {
+     // Keep this synced with entitySlices.add() and entitySlices.remove()
+     private final int[] itemCounts = new int[16];
+     private final int[] inventoryEntityCounts = new int[16];
++    private final int[] creatureCounts = new int[EnumCreatureType.values().length];
+     // Paper end
+     public boolean areNeighborsLoaded(final int radius) {
+         switch (radius) {
+@@ -744,6 +747,10 @@ public class Chunk implements IChunkAccess {
+             itemCounts[k]++;
+         } else if (entity instanceof IInventory) {
+             inventoryEntityCounts[k]++;
++        } else if (entity instanceof IAnimal) {
++            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
++            if(type != null)
++                creatureCounts[type.ordinal()]++;
+         }
+         entity.setCurrentChunk(this);
+         entityCounts.increment(entity.getMinecraftKeyString());
+@@ -782,6 +789,16 @@ public class Chunk implements IChunkAccess {
+             itemCounts[i]--;
+         } else if (entity instanceof IInventory) {
+             inventoryEntityCounts[i]--;
++        } else if (entity instanceof IAnimal) {
++            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
++            if(type != null) {
++                int ord = type.ordinal();
++
++                creatureCounts[ord]--;
++
++                if(creatureCounts[ord] < 0)
++                    creatureCounts[ord] = 0;
++            }
+         }
+         entity.setCurrentChunk(null);
+         entityCounts.decrement(entity.getMinecraftKeyString());
+@@ -1470,6 +1487,10 @@ public class Chunk implements IChunkAccess {
+             runnable.run();
+         }
+     }
++
++    int getCreatureCount(EnumCreatureType type) {
++        return creatureCounts[type.ordinal()];
++    }
+     // Paper end
+ 
+     public static enum EnumTileEntityState {
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 7b64ec27c..640831b54 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -736,6 +736,7 @@ public abstract class EntityInsentient extends EntityLiving {
+         return f + f3;
+     }
+ 
++    public final boolean canSpawnHere() { return M(); } // Paper - OBFHELPER
+     public final boolean M() {
+         return this.a((GeneratorAccess) this.world);
+     }
+@@ -750,10 +751,12 @@ public abstract class EntityInsentient extends EntityLiving {
+         return this.a((IWorldReader) this.world);
+     }
+ 
++    public boolean isNotColliding(IWorldReader iworldreader) { return a(iworldreader); } // Paper - OBFHELPER
+     public boolean a(IWorldReader iworldreader) {
+         return !iworldreader.containsLiquid(this.getBoundingBox()) && iworldreader.getCubes(this, this.getBoundingBox()) && iworldreader.b(this, this.getBoundingBox());
+     }
+ 
++    public int maxPackSize() { return dh(); } // Paper - OBFHELPER
+     public int dh() {
+         return 4;
+     }
+diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
+index 79e52f7ba..d702765a2 100644
+--- a/src/main/java/net/minecraft/server/EnumCreatureType.java
++++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
+@@ -16,18 +16,35 @@ public enum EnumCreatureType {
+         this.h = flag1;
+     }
+ 
++    // Paper start
++    public static EnumCreatureType getCreatureType(Entity entity) {
++        Class<?> clazz = entity.getClass();
++
++        if(MONSTER.getInnerClass().isAssignableFrom(clazz)) return MONSTER;
++        if(CREATURE.getInnerClass().isAssignableFrom(clazz)) return CREATURE;
++        if(AMBIENT.getInnerClass().isAssignableFrom(clazz)) return AMBIENT;
++        if(WATER_CREATURE.getInnerClass().isAssignableFrom(clazz)) return WATER_CREATURE;
++
++        return null;
++    }
++    // Paper end
++
++    public Class<? extends IAnimal> getInnerClass() { return a(); } // Paper - OBFHELPER
+     public Class<? extends IAnimal> a() {
+         return this.e;
+     }
+ 
++    public int getSpawnLimit() { return b(); } // Paper - OBFHELPER
+     public int b() {
+         return this.f;
+     }
+ 
++    public boolean isPassive() { return c(); } // Paper - OBFHELPER
+     public boolean c() {
+         return this.g;
+     }
+ 
++    public boolean isRare() { return d(); } // Paper - OBFHELPER
+     public boolean d() {
+         return this.h;
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index fcd9f5491..6f04d4759 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -249,6 +249,7 @@ public class PlayerChunk {
+         return false;
+     }
+ 
++    public boolean isDone() { return e(); } // Paper - OBFHELPER
+     public boolean e() {
+         return this.done;
+     }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index f525fd1b4..2a7a51a81 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -1,10 +1,12 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.collect.Sets;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+ import java.util.Set;
++import java.util.HashSet; // Paper
++import java.util.Map;
++import java.util.EnumMap; // Paper
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -21,10 +23,290 @@ public final class SpawnerCreature {
+     private static final Logger a = LogManager.getLogger();
+     private static final int b = (int) Math.pow(17.0D, 2.0D);
+     private final LongHashSet c = new LongHashSet(); // CraftBukkit
++    public static int seed = "paper".hashCode(); // Paper
+ 
+     public SpawnerCreature() {}
+ 
++    public static class ChunkCoordOrdinalInt3Tuple extends ChunkCoordIntPair {
++        public int ordinal;
++        public int cachedHashCode = -1;
++
++        public static int mix(int hash, int data) {
++            int k = data;
++
++            k *= 0xcc9e2d51;
++            k = (k << 15) | (k >>> -15);
++            k *= 0x1b873593;
++
++            int h = hash ^ k;
++
++            h = (h << 13) | (h >>> -13);
++
++            return h * 5 + 0xe6546b64;
++        }
++
++        public static int createHashCode(int ordinal, int x, int z) {
++            //MurmurHash3_x86_32 hashing
++            int hash = seed;
++
++            //mix
++            hash = mix(hash, ordinal);
++            hash = mix(hash, x);
++            hash = mix(hash, z);
++
++            //finalize/avalanche
++            hash ^= 3;
++            hash ^= hash >>> 16;
++            hash *= 0x85ebca6b;
++            hash ^= hash >>> 13;
++            hash *= 0xc2b2ae35;
++            hash ^= hash >>> 16;
++
++            return hash;
++        }
++
++        public ChunkCoordOrdinalInt3Tuple(int x, int z, int ord) {
++            super(x, z);
++
++            this.ordinal = ord;
++        }
++
++        @Override
++        public int hashCode() {
++            if (cachedHashCode == -1)
++                cachedHashCode = createHashCode(ordinal, x, z);
++
++            return cachedHashCode;
++        }
++
++        @Override public boolean equals(Object object) {
++            if (this == object) {
++                return true;
++            } else if (!(object instanceof ChunkCoordOrdinalInt3Tuple)) {
++                return false;
++            } else {
++                ChunkCoordOrdinalInt3Tuple pair = (ChunkCoordOrdinalInt3Tuple) object;
++
++                return this.x == pair.x && this.z == pair.z && this.ordinal == pair.ordinal;
++            }
++        }
++    }
++
++    public static int getSpawnRange(WorldServer world, EntityHuman player) {
++        byte mobSpawnRange = world.spigotConfig.mobSpawnRange;
++
++        mobSpawnRange = ( mobSpawnRange > world.spigotConfig.viewDistance ) ? (byte) world.spigotConfig.viewDistance : mobSpawnRange;
++        mobSpawnRange = ( mobSpawnRange > 8 ) ? 8 : mobSpawnRange;
++
++        com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
++        event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(
++                (org.bukkit.entity.Player) player.getBukkitEntity(), mobSpawnRange);
++        if (!event.callEvent()) {
++            return 0;
++        }
++
++        return event.getSpawnRadius();
++    }
++
++    public static int getCreatureLimit(WorldServer world, EnumCreatureType type) {
++        switch (type) {
++            case MONSTER:
++                return world.getWorld().getMonsterSpawnLimit();
++            case CREATURE:
++                return world.getWorld().getAnimalSpawnLimit();
++            case WATER_CREATURE:
++                return world.getWorld().getWaterAnimalSpawnLimit();
++            case AMBIENT:
++                return world.getWorld().getAmbientSpawnLimit();
++        }
++
++        return type.getSpawnLimit();
++    }
++
++    public static EntityInsentient paperCreateMob(WorldServer world, EnumCreatureType type, BlockPosition pos, BiomeBase.BiomeMeta biomeSpawn) {
++        if (!world.isBiomeMetaValidFor(type, biomeSpawn, pos)) return null;
++
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++        EntityTypes<? extends EntityInsentient> cls = biomeSpawn.b;
++        org.bukkit.entity.EntityType bType = EntityTypes.clsToTypeMap.get(cls);
++        if (bType != null) {
++            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                    MCUtil.toLocation(world, pos),
++                    bType, SpawnReason.NATURAL
++            );
++            if (!event.callEvent() || event.shouldAbortSpawn())
++                return null;
++        }
++
++        EntityInsentient entity = null;
++
++        try {
++            entity = biomeSpawn.b.a(world);
++        } catch (Exception exception) {
++            SpawnerCreature.a.warn("Failed to create mob", exception);
++            ServerInternalException.reportInternalException(exception);
++        }
++
++        return entity;
++    }
++
++    public int paperSpawnMob(WorldServer world, Set<ChunkCoordIntPair> chunks, EnumCreatureType type, int amount) {
++        if (chunks.isEmpty()) return 0;
++
++        final int maxPackIterations = 20; // X attempts per pack, 1 pack per chunk
++        Iterator<ChunkCoordIntPair> iterator = chunks.iterator();
++        BlockPosition worldSpawn = world.getSpawn();
++
++        int spawned = 0;
++
++        while (spawned < amount && iterator.hasNext()) {
++            ChunkCoordIntPair chunkCoord = iterator.next();
++            int packSize = world.random.nextInt(4) + 1;
++            BlockPosition packCenter = getRandomPosition(world, chunkCoord.x, chunkCoord.z);
++
++            if (world.getType(packCenter).isOccluding()) continue;
++
++            int x = packCenter.getX();
++            int y = packCenter.getY();
++            int z = packCenter.getZ();
++            BlockPosition.MutableBlockPosition blockPointer = new BlockPosition.MutableBlockPosition();
++            BiomeBase.BiomeMeta biomeSpawn = null;
++            GroupDataEntity group = null;
++            int iter = -1;
++            int packSpawned = 0;
++
++            while (packSpawned < packSize && iter < maxPackIterations) {
++                iter++;
++
++                // random walk
++                x += world.random.nextInt(12) - 6;
++                y += world.random.nextInt(2) - 1;
++                z += world.random.nextInt(12) - 6;
++                blockPointer.setValues(x, y, z);
++
++                if (worldSpawn.distanceSquared(x + 0.5, y, z + 0.5) < (24 * 24)) continue;
++
++                if (biomeSpawn == null) {
++                    biomeSpawn = world.getBiomeMetaFor(type, blockPointer);
++
++                    if (biomeSpawn == null) break;
++
++                    int packRange = 1 + biomeSpawn.getMaxPackSize() - biomeSpawn.getMinPackSize();
++                    packSize = biomeSpawn.getMinPackSize() + world.random.nextInt(packRange);
++                }
++
++                EntityInsentient entity = paperCreateMob(world, type, blockPointer, biomeSpawn);
++
++                if (entity == null) continue;
++
++                entity.setPositionRotation(x + 0.5, y, z + 0.5, world.random.nextFloat() * 360.0F, 0.0F);
++
++                if (entity.canSpawnHere() && entity.isNotColliding(world) && !world.isPlayerNearby(x + 0.5, y, z + 0.5, 24)) {
++                    group = entity.prepare(world.getDamageScaler(new BlockPosition(entity)), group, null);
++
++                    if (entity.isNotColliding(world) && world.addEntity(entity, SpawnReason.NATURAL))
++                        packSpawned++;
++
++                    if (packSpawned >= entity.maxPackSize()) break;
++                } else {
++                    entity.die();
++                }
++            }
++
++            spawned += packSpawned;
++        }
++
++        return spawned;
++    }
++
++    public int paperSpawnMob(WorldServer world, boolean spawnMonsters, boolean spawnPassives, boolean spawnRare) {
++        if(!spawnMonsters && !spawnPassives) return 0;
++
++        /*
++        Pick a unique ordinal at the start of every qualify process,
++        that will be used for all ChunkCoordOrdinalInt3Tuple.
++        This ordinal will provide random sorting in the set, but still
++        provide equality as long as the same ordinal is used
++        throughout this invocation of the spawn routine.
++         */
++        int hashOrdinal = world.random.nextInt();
++
++        // use a set here because we have to do two iterations
++        Set<Chunk> rangeChunks = new HashSet();
++        Map<EnumCreatureType, Set<ChunkCoordIntPair>> typeChunks = new EnumMap(EnumCreatureType.class);
++        int[] typeNumSpawn = new int[EnumCreatureType.values().length];
++
++        for (EnumCreatureType type : EnumCreatureType.values()) {
++            if (type.isPassive() && !spawnPassives) continue;
++            if (!type.isPassive() && !spawnMonsters) continue;
++            if (type.isRare() && !spawnRare) continue;
++            if (getCreatureLimit(world, type) <= 0) continue;
++
++            typeChunks.put(type, new HashSet());
++        }
++
++        if (typeChunks.isEmpty()) return 0;
++
++        for (EntityHuman player : world.players) {
++            int spawnRange = getSpawnRange(world, player);
++
++            if (spawnRange <= 0 || player.isSpectator() || !player.affectsSpawning) continue;
++
++            int playerChunkX = MathHelper.floor(player.locX / 16.0);
++            int playerChunkZ = MathHelper.floor(player.locZ / 16.0);
++
++            rangeChunks.clear();
++
++            for (int dX = -spawnRange; dX <= spawnRange; ++dX) {
++                for (int dZ = -spawnRange; dZ <= spawnRange; ++dZ) {
++                    //too close to spawn anyways
++                    if(Math.abs(dX) < 3 || Math.abs(dZ) < 3) continue;
++
++                    ChunkCoordIntPair chunkCoord = new ChunkCoordOrdinalInt3Tuple(
++                            dX + playerChunkX, dZ + playerChunkZ, hashOrdinal);
++
++                    if (!world.getWorldBorder().isInBounds(chunkCoord)) continue;
++
++                    PlayerChunk pChunk = world.getPlayerChunkMap().getChunk(chunkCoord.x, chunkCoord.z);
++
++                    if (pChunk == null || !pChunk.isDone() || pChunk.chunk == null) continue;
++
++                    rangeChunks.add(pChunk.chunk);
++                }
++            }
++
++            for (EnumCreatureType type : typeChunks.keySet()) {
++                int limit = getCreatureLimit(world, type);
++                int creatureTotal = 0;
++
++                for (Chunk chunk : rangeChunks)
++                    creatureTotal += chunk.getCreatureCount(type);
++
++                if (creatureTotal >= limit) continue;
++
++                Set<ChunkCoordIntPair> typeSet = typeChunks.get(type);
++                for (Chunk chunk : rangeChunks)
++                    typeSet.add(chunk.getPos());
++
++                // expect number is rather meaningless, just a ceil
++                int expect = limit - creatureTotal;
++                typeNumSpawn[type.ordinal()] = Math.max(typeNumSpawn[type.ordinal()], expect);
++            }
++        }
++
++        int totalSpawned = 0;
++        for (EnumCreatureType type : typeChunks.keySet()) {
++            Set<ChunkCoordIntPair> chunks = typeChunks.get(type);
++
++            if (!chunks.isEmpty())
++                totalSpawned += paperSpawnMob(world, chunks, type, typeNumSpawn[type.ordinal()]);
++        }
++
++        return totalSpawned;
++    }
++
+     public int a(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
++        if(worldserver.paperConfig.useImprovedSpawning) return paperSpawnMob(worldserver, flag, flag1, flag2); // Paper - improved mob spawning
+         if (!flag && !flag1) {
+             return 0;
+         } else {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 6412715b7..deef5a43a 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -345,6 +345,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         return this.Q;
+     }
+ 
++    // Paper - OBFHELPER
++    @Nullable public BiomeBase.BiomeMeta getBiomeMetaFor(EnumCreatureType enumcreaturetype, BlockPosition blockposition) { return a(enumcreaturetype, blockposition); }
+     @Nullable
+     public BiomeBase.BiomeMeta a(EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
+         List list = this.getChunkProviderServer().a(enumcreaturetype, blockposition);
+@@ -352,6 +354,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         return list.isEmpty() ? null : (BiomeBase.BiomeMeta) WeightedRandom.a(this.random, list);
+     }
+ 
++    // Paper - OBFHELPER
++    public boolean isBiomeMetaValidFor(EnumCreatureType enumcreaturetype, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition blockposition) { return a(enumcreaturetype, biomebase_biomemeta, blockposition); }
+     public boolean a(EnumCreatureType enumcreaturetype, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition blockposition) {
+         List list = this.getChunkProviderServer().a(enumcreaturetype, blockposition);
+ 
+-- 
+2.15.2 (Apple Git-101.1)
+
