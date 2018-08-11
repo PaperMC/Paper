@@ -1484,4 +1484,12 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @return the player's locale
      */
     public String getLocale();
+
+    /**
+     * Update the list of commands sent to the client.
+     * <br>
+     * Generally useful to ensure the client has a complete list of commands
+     * after permission changes are done.
+     */
+    public void updateCommands();
 }
