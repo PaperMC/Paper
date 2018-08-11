@@ -1205,9 +1205,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
     void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
 
     /**
-     * Get existing rules
+     * Get an array containing the names of all the {@link GameRule}s.
      *
-     * @return An array of rules
+     * @return An array of {@link GameRule} names.
      */
     public String[] getGameRules();
 
@@ -1218,7 +1218,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param rule Rule to look up value of
      * @return String value of rule
+     * @deprecated use {@link #getGameRuleValue(GameRule)} instead
      */
+    @Deprecated
     public String getGameRuleValue(String rule);
 
     /**
@@ -1232,7 +1234,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param rule Rule to set
      * @param value Value to set rule to
      * @return True if rule was set
+     * @deprecated use {@link #setGameRule(GameRule, Object)} instead.
      */
+    @Deprecated
     public boolean setGameRuleValue(String rule, String value);
 
     /**
@@ -1242,6 +1246,35 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return True if rule exists
      */
     public boolean isGameRule(String rule);
+
+    /**
+     * Get the current value for a given {@link GameRule}.
+     *
+     * @param rule the GameRule to check
+     * @param <T> the GameRule's type
+     * @return the current value
+     */
+    public <T> T getGameRuleValue(GameRule<T> rule);
+
+    /**
+     * Get the default value for a given {@link GameRule}. This value is not
+     * guaranteed to match the current value.
+     *
+     * @param rule the rule to return a default value for
+     * @param <T> the type of GameRule
+     * @return the default value
+     */
+    public <T> T getGameRuleDefault(GameRule<T> rule);
+
+    /**
+     * Set the given {@link GameRule}'s new value.
+     *
+     * @param rule the GameRule to update
+     * @param newValue the new value
+     * @param <T> the value type of the GameRule
+     * @return true if the value was successfully set
+     */
+    public <T> boolean setGameRule(GameRule<T> rule, T newValue);
 
     /**
      * Gets the world border for this world.
