@@ -1,4 +1,4 @@
-From ea3a8f5ed1c5ca4b73d03342500ca257864570f7 Mon Sep 17 00:00:00 2001
+From 271f251dfa394ddcfa8ff6364ab1eeabfc84aa89 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 16 Jun 2018 13:41:00 -0400
 Subject: [PATCH] Add SentientNPC Interface to Entities
@@ -14,10 +14,10 @@ This interface lets you identify NPC entities capable of sentience, and able to 
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/SentientNPC.java b/src/main/java/com/destroystokyo/paper/entity/SentientNPC.java
 new file mode 100644
-index 00000000..7e393254
+index 000000000..cb8de4629
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/SentientNPC.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,34 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -43,112 +43,68 @@ index 00000000..7e393254
 +
 +package com.destroystokyo.paper.entity;
 +
-+import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Mob;
++
 +
 +/**
-+ * Used to determine ACTUAL Living NPC's. Spigot mistakenly inversed the conditions for LivingEntity, and
-+ * used LivingEntity for Insentient Entities, and named the actual EntityLiving class EntityInsentient.
-+ *
-+ * This should of all been inversed on the implementation side. To make matters worse, Spigot never
-+ * exposed the differentiator that there are entities with AI that are not sentient/alive such as
-+ * Armor stands and Players are the only things that do not implement the REAL EntityLiving class (named Insentient internally)
-+ *
-+ * This interface lets you identify NPC entities capable of sentience, and able to move about and react to the world.
++ * @deprecated Upstream has added this API. Use {@link Mob}. Will be removed in 1.13.1
 + */
-+public interface SentientNPC extends LivingEntity {
-+
-+    /**
-+     * Instructs this Creature to set the specified LivingEntity as its
-+     * target.
-+     * <p>
-+     * Hostile creatures may attack their target, and friendly creatures may
-+     * follow their target.
-+     *
-+     * @param target New LivingEntity to target, or null to clear the target
-+     */
-+    public void setTarget(LivingEntity target);
-+
-+    /**
-+     * Gets the current target of this Creature
-+     *
-+     * @return Current target of this creature, or null if none exists
-+     */
-+    public LivingEntity getTarget();
++@Deprecated
++public interface SentientNPC extends Mob {
 +}
 diff --git a/src/main/java/org/bukkit/entity/Ambient.java b/src/main/java/org/bukkit/entity/Ambient.java
-index 779e3897..ef548fb4 100644
+index 613830a74..4ad71c825 100644
 --- a/src/main/java/org/bukkit/entity/Ambient.java
 +++ b/src/main/java/org/bukkit/entity/Ambient.java
-@@ -3,4 +3,5 @@ package org.bukkit.entity;
+@@ -3,4 +3,4 @@ package org.bukkit.entity;
  /**
   * Represents an ambient mob
   */
--public interface Ambient extends LivingEntity {}
-+public interface Ambient extends LivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
-+}
-diff --git a/src/main/java/org/bukkit/entity/ComplexLivingEntity.java b/src/main/java/org/bukkit/entity/ComplexLivingEntity.java
-index f74411c3..1f00923e 100644
---- a/src/main/java/org/bukkit/entity/ComplexLivingEntity.java
-+++ b/src/main/java/org/bukkit/entity/ComplexLivingEntity.java
-@@ -6,7 +6,7 @@ import java.util.Set;
-  * Represents a complex living entity - one that is made up of various smaller
-  * parts
-  */
--public interface ComplexLivingEntity extends LivingEntity {
-+public interface ComplexLivingEntity extends LivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
-     /**
-      * Gets a list of parts that belong to this complex entity
-      *
+-public interface Ambient extends Mob {}
++public interface Ambient extends Mob, com.destroystokyo.paper.entity.SentientNPC {} // Paper {}
 diff --git a/src/main/java/org/bukkit/entity/Creature.java b/src/main/java/org/bukkit/entity/Creature.java
-index f223f55b..bbfb248e 100644
+index 6c9c5e85e..c796c4dc2 100644
 --- a/src/main/java/org/bukkit/entity/Creature.java
 +++ b/src/main/java/org/bukkit/entity/Creature.java
-@@ -4,7 +4,7 @@ package org.bukkit.entity;
+@@ -4,4 +4,4 @@ package org.bukkit.entity;
   * Represents a Creature. Creatures are non-intelligent monsters or animals
   * which have very simple abilities.
   */
--public interface Creature extends LivingEntity {
-+public interface Creature extends LivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
+-public interface Creature extends Mob {}
++public interface Creature extends Mob, com.destroystokyo.paper.entity.SentientNPC {} // Paper
+diff --git a/src/main/java/org/bukkit/entity/EnderDragon.java b/src/main/java/org/bukkit/entity/EnderDragon.java
+index 4ea0e44e7..8f200e6c4 100644
+--- a/src/main/java/org/bukkit/entity/EnderDragon.java
++++ b/src/main/java/org/bukkit/entity/EnderDragon.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * Represents an Ender Dragon
+  */
+-public interface EnderDragon extends ComplexLivingEntity {
++public interface EnderDragon extends ComplexLivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
  
      /**
-      * Instructs this Creature to set the specified LivingEntity as its
-@@ -15,12 +15,12 @@ public interface Creature extends LivingEntity {
-      *
-      * @param target New LivingEntity to target, or null to clear the target
-      */
--    public void setTarget(LivingEntity target);
-+    //public void setTarget(LivingEntity target); // Paper - moved to SentientNPC
- 
-     /**
-      * Gets the current target of this Creature
-      *
-      * @return Current target of this creature, or null if none exists
-      */
--    public LivingEntity getTarget();
-+    //public LivingEntity getTarget(); // Paper - moved to SentientNPC
- }
+      * Represents a phase or action that an Ender Dragon can perform.
 diff --git a/src/main/java/org/bukkit/entity/Flying.java b/src/main/java/org/bukkit/entity/Flying.java
-index 4f16a26c..207e9922 100644
+index 580ce18bf..45840ee1f 100644
 --- a/src/main/java/org/bukkit/entity/Flying.java
 +++ b/src/main/java/org/bukkit/entity/Flying.java
-@@ -3,4 +3,6 @@ package org.bukkit.entity;
+@@ -3,4 +3,4 @@ package org.bukkit.entity;
  /**
   * Represents a Flying Entity.
   */
--public interface Flying extends LivingEntity {}
-+public interface Flying extends LivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
-+
-+}
+-public interface Flying extends Mob {}
++public interface Flying extends Mob, com.destroystokyo.paper.entity.SentientNPC {} // Paper
 diff --git a/src/main/java/org/bukkit/entity/Slime.java b/src/main/java/org/bukkit/entity/Slime.java
-index 0d87d203..d4eee19c 100644
+index 1119e26e2..46d03d29d 100644
 --- a/src/main/java/org/bukkit/entity/Slime.java
 +++ b/src/main/java/org/bukkit/entity/Slime.java
 @@ -3,7 +3,7 @@ package org.bukkit.entity;
  /**
   * Represents a Slime.
   */
--public interface Slime extends LivingEntity {
-+public interface Slime extends LivingEntity, com.destroystokyo.paper.entity.SentientNPC { // Paper
+-public interface Slime extends Mob {
++public interface Slime extends Mob, com.destroystokyo.paper.entity.SentientNPC { // Paper
  
      /**
       * @return The size of the slime
