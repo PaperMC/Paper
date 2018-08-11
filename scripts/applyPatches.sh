@@ -4,6 +4,7 @@
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 gitcmd="git -c commit.gpgsign=false"
 applycmd="$gitcmd am --3way --ignore-whitespace"
 # Windows detection to workaround ARG_MAX limitation
@@ -91,6 +92,11 @@ cd "$basedir"
 (
     applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
     applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+
+    # if we have previously ran ./paper mcdev, update it
+    if [ -d "$workdir/Minecraft/$minecraftversion/src" ]; then
+        $basedir/scripts/makemcdevsrc.sh $basedir
+    fi
 ) || (
     echo "Failed to apply Paper Patches"
     exit 1
