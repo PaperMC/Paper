@@ -20,6 +20,7 @@ import net.minecraft.server.DynamicOpsNBT;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IBlockState;
 import net.minecraft.server.Item;
+import net.minecraft.server.Items;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
@@ -405,6 +406,10 @@ public class CraftLegacy {
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
                 Item newMaterial = Item.REGISTRY.get(new MinecraftKey(newId));
+
+                if (newMaterial == Items.AIR) {
+                    continue;
+                }
 
                 materialToItem.put(matData, newMaterial);
                 if (!itemToMaterial.containsKey(newMaterial)) {
