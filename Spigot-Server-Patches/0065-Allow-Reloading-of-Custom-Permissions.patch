@@ -1,4 +1,4 @@
-From 9a16f2eedd5904b6a73453ff98fec4295322fced Mon Sep 17 00:00:00 2001
+From 26f80b0fe03d973057cf7c96d6df8a2133b56c26 Mon Sep 17 00:00:00 2001
 From: William <admin@domnian.com>
 Date: Fri, 18 Mar 2016 03:30:17 -0400
 Subject: [PATCH] Allow Reloading of Custom Permissions
@@ -6,30 +6,33 @@ Subject: [PATCH] Allow Reloading of Custom Permissions
 https://github.com/PaperMC/Paper/issues/49
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ed823bef1..6c5357cd1 100644
+index ed823bef1..4dd49110a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1946,5 +1946,20 @@ public final class CraftServer implements Server {
+@@ -1946,5 +1946,23 @@ public final class CraftServer implements Server {
              return false;
          }
      }
 +
 +    @Override
 +    public void reloadPermissions() {
-+        ((SimplePluginManager) pluginManager).clearPermissions();
-+        loadCustomPermissions();
++        pluginManager.clearPermissions();
++        if (com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) loadCustomPermissions();
 +        for (Plugin plugin : pluginManager.getPlugins()) {
-+            plugin.getDescription().getPermissions().forEach((perm) -> {
++            for (Permission perm : plugin.getDescription().getPermissions()) {
 +                try {
 +                    pluginManager.addPermission(perm);
 +                } catch (IllegalArgumentException ex) {
 +                    getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
 +                }
-+            });
++            }
 +        }
++        if (!com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) loadCustomPermissions();
++        DefaultPermissions.registerCorePermissions();
++        CraftDefaultPermissions.registerCorePermissions();
 +    }
      // Paper end
  }
 -- 
-2.18.0
+2.18.0.windows.1
 
