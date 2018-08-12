@@ -1,9 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityInsentient;
+import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.loot.LootTable;
 
 public abstract class CraftMob extends CraftLivingEntity implements Mob {
     public CraftMob(CraftServer server, EntityInsentient entity) {
@@ -35,5 +39,30 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     @Override
     public String toString() {
         return "CraftMob";
+    }
+
+    @Override
+    public void setLootTable(LootTable table) {
+        getHandle().bI = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey()); // PAIL rename lootTableKey
+    }
+
+    @Override
+    public LootTable getLootTable() {
+        if (getHandle().bI == null) {
+            getHandle().bI = getHandle().getLootTable(); // Restore to entity default
+        }
+
+        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().bI); // PAIL rename lootTableKey
+        return Bukkit.getLootTable(key);
+    }
+
+    @Override
+    public void setSeed(long seed) {
+        getHandle().bJ = seed; // PAIL rename lootTableSeed
+    }
+
+    @Override
+    public long getSeed() {
+        return getHandle().bJ; // PAIL rename lootTableSeed
     }
 }

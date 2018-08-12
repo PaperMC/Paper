@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.EnumResourcePackType;
+import net.minecraft.server.LootTableRegistry;
 import net.minecraft.server.ResourceManager;
 import net.minecraft.server.ResourcePackVanilla;
 import net.minecraft.server.TagRegistry;
@@ -24,12 +25,16 @@ public abstract class AbstractTestingBase {
     // Materials that only exist in block form (or are legacy)
     public static final List<Material> INVALIDATED_MATERIALS;
 
+    public static final LootTableRegistry LOOT_TABLE_REGISTRY;
+    public static final TagRegistry TAG_REGISTRY;
+
     static {
         DispenserRegistry.c();
         // Set up resource manager
         ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA);
-        // add tags for unit tests
-        resourceManager.a(new TagRegistry());
+        // add tags and loot tables for unit tests
+        resourceManager.a(TAG_REGISTRY = new TagRegistry());
+        resourceManager.a(LOOT_TABLE_REGISTRY = new LootTableRegistry());
         // Register vanilla pack
         resourceManager.a(Collections.singletonList(new ResourcePackVanilla("minecraft")));
 
@@ -43,6 +48,6 @@ public abstract class AbstractTestingBase {
             }
         }
         INVALIDATED_MATERIALS = builder.build();
-        Assert.assertTrue("Expected 543 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", INVALIDATED_MATERIALS.size() == 543);
+        Assert.assertEquals("Expected 543 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", 543, INVALIDATED_MATERIALS.size());
     }
 }
