@@ -1,12 +1,17 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.TileEntityLootable;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.loot.LootTable;
+import org.bukkit.loot.Lootable;
 
-public abstract class CraftLootable<T extends TileEntityLootable> extends CraftContainer<T> implements Nameable {
+public abstract class CraftLootable<T extends TileEntityLootable> extends CraftContainer<T> implements Nameable, Lootable {
 
     public CraftLootable(Block block, Class<T> tileEntityClass) {
         super(block, tileEntityClass);
@@ -34,5 +39,38 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
         if (!this.getSnapshot().hasCustomName()) {
             lootable.setCustomName(null);
         }
+        if (this.getSnapshot().Q_() == null) {
+            lootable.a((MinecraftKey) null, 0L); // PAIL rename setLootTable
+        }
+    }
+
+    @Override
+    public LootTable getLootTable() {
+        if (getSnapshot().Q_() == null) {
+            return null;
+        }
+
+        MinecraftKey key = getSnapshot().Q_();
+        return Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(key));
+    }
+
+    @Override
+    public void setLootTable(LootTable table) {
+        setLootTable(table, getSeed());
+    }
+
+    @Override
+    public long getSeed() {
+        return getSnapshotNBT().getLong("LootTableSeed"); // returns OL if an error occurred
+    }
+
+    @Override
+    public void setSeed(long seed) {
+        setLootTable(getLootTable(), seed);
+    }
+
+    private void setLootTable(LootTable table, long seed) {
+        MinecraftKey key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
+        getSnapshot().a(key, seed); // PAIL setLootTable
     }
 }

@@ -95,6 +95,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.loot.LootTable;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
@@ -1763,6 +1764,13 @@ public final class CraftServer implements Server {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    public LootTable getLootTable(NamespacedKey key) {
+        Validate.notNull(key, "NamespacedKey cannot be null");
+
+        LootTableRegistry registry = getServer().aP(); // PAIL getLootTableRegistry
+        return new CraftLootTable(key, registry.a(CraftNamespacedKey.toMinecraft(key))); // PAIL rename getLootTable
     }
 
     @Deprecated

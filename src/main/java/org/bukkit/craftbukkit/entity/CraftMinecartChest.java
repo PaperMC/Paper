@@ -9,7 +9,7 @@ import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.Inventory;
 
 @SuppressWarnings("deprecation")
-public class CraftMinecartChest extends CraftMinecart implements StorageMinecart {
+public class CraftMinecartChest extends CraftMinecartContainer implements StorageMinecart {
     private final CraftInventory inventory;
 
     public CraftMinecartChest(CraftServer server, EntityMinecartChest entity) {
