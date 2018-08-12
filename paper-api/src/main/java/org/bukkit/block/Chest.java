@@ -2,11 +2,12 @@ package org.bukkit.block;
 
 import org.bukkit.Nameable;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.loot.Lootable;
 
 /**
  * Represents a captured state of a chest.
  */
-public interface Chest extends Container, Nameable {
+public interface Chest extends Container, Nameable, Lootable {
 
     /**
      * Gets the inventory of the chest block represented by this block state.

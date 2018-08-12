@@ -1,9 +1,11 @@
 package org.bukkit.entity;
 
+import org.bukkit.loot.Lootable;
+
 /**
  * Represents a Mob. Mobs are living entities with simple AI.
  */
-public interface Mob extends LivingEntity {
+public interface Mob extends LivingEntity, Lootable {
 
     /**
      * Instructs this Mob to set the specified LivingEntity as its target.
