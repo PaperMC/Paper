@@ -37,6 +37,8 @@ function applyPatch {
 
     echo "  Applying patches to $target..."
 
+    statusfile=".git/patch-apply-failed"
+    rm -f "$statusfile"
     $gitcmd am --abort >/dev/null 2>&1
 
     # Special case Windows handling because of ARG_MAX constraint
@@ -48,6 +50,7 @@ function applyPatch {
     fi
 
     if [ "$?" != "0" ]; then
+        echo 1 > "$statusfile"
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
         echo "  save the changes with rebuildPatches.sh"
@@ -64,6 +67,7 @@ function applyPatch {
 
         exit 1
     else
+        rm -f "$statusfile"
         echo "  Patches applied cleanly to $target"
     fi
 }

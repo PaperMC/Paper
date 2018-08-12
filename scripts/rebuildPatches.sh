@@ -4,6 +4,7 @@
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+source "$basedir/scripts/functions.sh"
 gitcmd="git -c commit.gpgsign=false -c core.safecrlf=false"
 
 echo "Rebuilding patch files from current fork state..."
@@ -60,5 +61,11 @@ function savePatches {
 }
 
 savePatches "$workdir/Spigot/Spigot-API" "Paper-API"
-savePatches "$workdir/Spigot/Spigot-Server" "Paper-Server"
+if [ -f "$basedir/Paper-API/.git/patch-apply-failed" ]; then
+    echo "$(color 1 31)[[[ WARNING ]]] $(color 1 33)- Not saving Paper-Server as it appears Paper-API did not apply clean.$(colorend)"
+    echo "$(color 1 33)If this is a mistake, delete $(color 1 34)Paper-API/.git/patch-apply-failed$(color 1 33) and run rebuild again.$(colorend)"
+    echo "$(color 1 33)Otherwise, rerun ./paper patch to have a clean Paper-API apply so the latest Paper-Server can build.$(colorend)"
+else
+    savePatches "$workdir/Spigot/Spigot-Server" "Paper-Server"
+fi
 ) || exit 1
