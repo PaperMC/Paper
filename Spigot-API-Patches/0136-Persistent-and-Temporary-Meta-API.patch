@@ -1,4 +1,4 @@
-From 754cc0e4e6e95a2112a009374e0c49960fd6868d Mon Sep 17 00:00:00 2001
+From b006fd6a9a58789e60ce6f70f4ac8205950e7b43 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 15:07:54 -0400
 Subject: [PATCH] Persistent and Temporary Meta API
@@ -555,32 +555,32 @@ index 000000000..cf1838e7f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaMap.java b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
 new file mode 100644
-index 000000000..2d1ae58e0
+index 000000000..41b40af51
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,300 @@
 +package com.destroystokyo.paper.meta;
 +
++import com.google.common.collect.AbstractIterator;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +import org.bukkit.inventory.ItemStack;
 +
 +import javax.annotation.Nonnull;
-+import java.util.HashSet;
++import java.util.AbstractSet;
++import java.util.Iterator;
 +import java.util.Objects;
 +import java.util.Set;
 +
-+@SuppressWarnings({"unchecked", "WeakerAccess"})
++@SuppressWarnings({"unchecked", "WeakerAccess", "unused"})
 +public abstract class MetaMap<K extends MetaKey> implements Cloneable {
 +
 +    private final Int2ObjectOpenHashMap<MetaEntry> map = new Int2ObjectOpenHashMap<>(0);
-+    private final Int2ObjectOpenHashMap<MetaKey> keys = new Int2ObjectOpenHashMap<>(0);
 +
 +    MetaMap() {
 +
 +    }
 +
 +    MetaMap(MetaMap<K> map) {
-+        this.keys.putAll(map.keys);
 +        this.map.putAll(map.map);
 +    }
 +
@@ -726,20 +726,65 @@ index 000000000..2d1ae58e0
 +    // TODO: ConfigurationSerializeable
 +
 +    public Set<MetaKey> getKeys() {
-+        return new HashSet<>(keys.values());
++        return new AbstractSet<MetaKey>() {
++            @Nonnull
++            @Override
++            public Iterator<MetaKey> iterator() {
++                return new Iterator<MetaKey>() {
++                    private final Iterator<MetaEntry> iterator = map.values().iterator();
++
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public MetaKey next() {
++                        return iterator.next().getKey();
++                    }
++
++                    @Override
++                    public void remove() {
++                        iterator.remove();
++                    }
++                };
++            }
++
++            @Override
++            public int size() {
++                return map.size();
++            }
++        };
 +    }
 +
 +    /**
 +     * For saving
 +     */
 +    public Set<MetaEntry> getEntries() {
-+        return new HashSet<>(map.values());
++        return new AbstractSet<MetaEntry>() {
++            @Nonnull
++            @Override
++            public Iterator<MetaEntry> iterator() {
++                return map.values().iterator();
++            }
++
++            @Override
++            public int size() {
++                return map.size();
++            }
++        };
 +    }
 +
 +
 +    public boolean containsKey(K key) {
 +        return map.containsKey(key.getId());
 +    }
++
++    public boolean containsValue(Object object) {
++        //noinspection SuspiciousMethodCalls
++        return map.containsValue(object);
++    }
++
 +
 +    public boolean isEmpty() {
 +        return map.isEmpty();
@@ -751,12 +796,10 @@ index 000000000..2d1ae58e0
 +
 +    public <T> T remove(K k) {
 +        //noinspection unchecked
-+        keys.remove(k.getId());
 +        return (T) map.remove(k.getId());
 +    }
 +
 +    public void clear() {
-+        keys.clear();
 +        map.clear();
 +    }
 +
@@ -780,7 +823,6 @@ index 000000000..2d1ae58e0
 +    }
 +
 +    <T> T putObject0(K key, T value) {
-+        keys.put(key.getId(), key);
 +        //noinspection unchecked
 +        MetaEntry prev = map.put(key.getId(), new MetaEntry(key, value));
 +        return prev != null ? (T) prev.value : null;
