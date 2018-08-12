@@ -1,4 +1,4 @@
-From 4f1dc63c147f7ba3ae36ad4c04f55c852ae84dd7 Mon Sep 17 00:00:00 2001
+From 74dcc240e66bd353b4e94b30769b8dec97ef41ea Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 15:19:49 -0400
 Subject: [PATCH] LootTable API
@@ -12,32 +12,37 @@ Provides methods to determine players looted state for an object
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/Lootable.java b/src/main/java/com/destroystokyo/paper/loottable/Lootable.java
 new file mode 100644
-index 00000000..d962a0ce
+index 000000000..7dd3955b5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/Lootable.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,93 @@
 +package com.destroystokyo.paper.loottable;
++
++import org.bukkit.Bukkit;
++import org.bukkit.NamespacedKey;
++import org.bukkit.loot.LootTable;
 +
 +/**
 + * Defines an object that has a Loot Table and seed associated with it.
-+ *
++ * <p>
 + * How the Loot Table and seed are used may vary based on Minecraft Versions
 + * and what type of object is using the Loot Table
++ *
++ * @deprecated Use {@link org.bukkit.loot.Lootable}
 + */
-+public interface Lootable {
++@Deprecated
++public interface Lootable extends org.bukkit.loot.Lootable {
 +
 +    /**
 +     * Gets the name of the Loot Table to be used in the World Folder
++     *
 +     * @return The name, or null if no loot table exists
++     * @deprecated Use {@link org.bukkit.loot.Lootable#getLootTable()}
 +     */
-+    String getLootTableName();
-+
-+    /**
-+     * Returns whether or not this object has a Loot Table
-+     * @return Has a loot table
-+     */
-+    default boolean hasLootTable() {
-+        return getLootTableName() != null;
++    @Deprecated
++    default String getLootTableName() {
++        LootTable lootTable = getLootTable();
++        return lootTable != null && lootTable.getKey() != null ? lootTable.getKey().toString() : null;
 +    }
 +
 +    /**
@@ -46,7 +51,9 @@ index 00000000..d962a0ce
 +     *
 +     * @param name name in either foo or minecraft:foo format
 +     * @return The previous Loot Table before the change
++     * @deprecated Use {@link org.bukkit.loot.Lootable#setLootTable(LootTable)}
 +     */
++    @Deprecated
 +    default String setLootTable(String name) {
 +        return setLootTable(name, 0);
 +    }
@@ -58,52 +65,63 @@ index 00000000..d962a0ce
 +     * @param name name in either foo or minecraft:foo format
 +     * @param seed seed for the loot table. If 0, seed will be random
 +     * @return The previous Loot Table before the change
++     * @deprecated Use {@link org.bukkit.loot.Lootable#setSeed(long)}
 +     */
-+    String setLootTable(String name, long seed);
++    @Deprecated
++    default String setLootTable(String name, long seed) {
++        String prev = getLootTableName();
++        LootTable lootTable = Bukkit.getLootTable(NamespacedKey.minecraft(name));
++        setLootTable(lootTable, seed);
++        return prev;
++    }
 +
 +    /**
 +     * Gets the current seed associated to the Loot Table on this object
 +     *
 +     * @return The seed, or 0 for random
++     * @deprecated Use {@link org.bukkit.loot.Lootable#getSeed()}
 +     */
-+    long getLootTableSeed();
++    @Deprecated
++    default long getLootTableSeed() {
++        return getSeed();
++    }
 +
 +    /**
 +     * Changes the current seed associated with the Loot Table on this object.
-+     *
++     * <p>
 +     * The seed will have no affect if this object does not have a Loot Table
 +     * associated with it.
 +     *
-+     * @throws IllegalStateException If called when this object does not have a loot table
 +     * @param seed The seed to use, or 0 for random
 +     * @return The previous seed
++     * @throws IllegalStateException If called when this object does not have a loot table
++     * @deprecated Use {@link org.bukkit.loot.Lootable#setSeed(long)}
 +     */
++    @Deprecated
 +    default long setLootTableSeed(long seed) {
 +        final String lootTableName = getLootTableName();
 +        if (lootTableName == null) {
 +            throw new IllegalStateException("This object does not currently have a Loot Table.");
 +        }
 +
-+        long prev = getLootTableSeed();
-+        setLootTable(lootTableName, seed);
++        long prev = getSeed();
++        setSeed(seed);
 +        return prev;
 +    }
-+
-+    /**
-+     * Clears the associated Loot Table to this object
-+     */
-+    void clearLootTable();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
 new file mode 100644
-index 00000000..5e93e7e3
+index 000000000..9095df616
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,15 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.block.Block;
 +
++/**
++ * Represents an Inventory that can generate loot, such as Chests inside of Fortresses and Mineshafts
++ */
 +public interface LootableBlockInventory extends LootableInventory {
 +
 +    /**
@@ -114,14 +132,17 @@ index 00000000..5e93e7e3
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
 new file mode 100644
-index 00000000..8bebf070
+index 000000000..a389f74c6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,15 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Entity;
 +
++/**
++ * Represents an Inventory that can generate loot, such as Minecarts inside of Mineshafts
++ */
 +public interface LootableEntityInventory extends LootableInventory {
 +
 +    /**
@@ -132,7 +153,7 @@ index 00000000..8bebf070
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 new file mode 100644
-index 00000000..cde999ef
+index 000000000..cde999ef4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 @@ -0,0 +1,111 @@
@@ -249,7 +270,7 @@ index 00000000..cde999ef
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
 new file mode 100644
-index 00000000..2169493d
+index 000000000..2169493d9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
 @@ -0,0 +1,41 @@
@@ -295,78 +316,174 @@ index 00000000..2169493d
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/block/Chest.java b/src/main/java/org/bukkit/block/Chest.java
-index 97dc7813..a24a4094 100644
+index 815d79a53..b68ab881d 100644
 --- a/src/main/java/org/bukkit/block/Chest.java
 +++ b/src/main/java/org/bukkit/block/Chest.java
-@@ -1,12 +1,13 @@
+@@ -1,5 +1,6 @@
  package org.bukkit.block;
  
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
  import org.bukkit.Nameable;
-+import com.destroystokyo.paper.loottable.LootableInventory; // Paper
  import org.bukkit.inventory.Inventory;
- 
+ import org.bukkit.loot.Lootable;
+@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
  /**
   * Represents a captured state of a chest.
   */
--public interface Chest extends Container, Nameable {
-+public interface Chest extends Container, Nameable, LootableInventory { // Paper
+-public interface Chest extends Container, Nameable, Lootable {
++public interface Chest extends Container, Nameable, LootableBlockInventory { // Paper
  
      /**
       * Gets the inventory of the chest block represented by this block state.
 diff --git a/src/main/java/org/bukkit/block/Dispenser.java b/src/main/java/org/bukkit/block/Dispenser.java
-index 108332df..4430b123 100644
+index 2741625db..6d180117e 100644
 --- a/src/main/java/org/bukkit/block/Dispenser.java
 +++ b/src/main/java/org/bukkit/block/Dispenser.java
-@@ -1,12 +1,13 @@
+@@ -1,5 +1,6 @@
  package org.bukkit.block;
  
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
  import org.bukkit.Nameable;
-+import com.destroystokyo.paper.loottable.LootableInventory; // Paper
+ import org.bukkit.loot.Lootable;
  import org.bukkit.projectiles.BlockProjectileSource;
- 
+@@ -7,7 +8,7 @@ import org.bukkit.projectiles.BlockProjectileSource;
  /**
   * Represents a captured state of a dispenser.
   */
--public interface Dispenser extends Container, Nameable {
-+public interface Dispenser extends Container, Nameable, LootableInventory { // Paper
+-public interface Dispenser extends Container, Nameable, Lootable {
++public interface Dispenser extends Container, Nameable, LootableBlockInventory { // Paper
  
      /**
       * Gets the BlockProjectileSource object for the dispenser.
-diff --git a/src/main/java/org/bukkit/block/Hopper.java b/src/main/java/org/bukkit/block/Hopper.java
-index bc3aeef2..5b698613 100644
---- a/src/main/java/org/bukkit/block/Hopper.java
-+++ b/src/main/java/org/bukkit/block/Hopper.java
-@@ -1,8 +1,9 @@
+diff --git a/src/main/java/org/bukkit/block/Dropper.java b/src/main/java/org/bukkit/block/Dropper.java
+index 2e8c3f711..47737b590 100644
+--- a/src/main/java/org/bukkit/block/Dropper.java
++++ b/src/main/java/org/bukkit/block/Dropper.java
+@@ -1,12 +1,13 @@
  package org.bukkit.block;
  
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
  import org.bukkit.Nameable;
-+import com.destroystokyo.paper.loottable.LootableInventory; // Paper
+ import org.bukkit.loot.Lootable;
+ 
+ /**
+  * Represents a captured state of a dropper.
+  */
+-public interface Dropper extends Container, Nameable, Lootable {
++public interface Dropper extends Container, Nameable, LootableBlockInventory { // Paper
+ 
+     /**
+      * Tries to drop a randomly selected item from the dropper's inventory,
+diff --git a/src/main/java/org/bukkit/block/Hopper.java b/src/main/java/org/bukkit/block/Hopper.java
+index 73fce5f33..221123e8c 100644
+--- a/src/main/java/org/bukkit/block/Hopper.java
++++ b/src/main/java/org/bukkit/block/Hopper.java
+@@ -1,9 +1,10 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
+ import org.bukkit.Nameable;
+ import org.bukkit.loot.Lootable;
  
  /**
   * Represents a captured state of a hopper.
   */
--public interface Hopper extends Container, Nameable { }
-+public interface Hopper extends Container, Nameable, LootableInventory { } // Paper
-\ No newline at end of file
+-public interface Hopper extends Container, Nameable, Lootable { }
++public interface Hopper extends Container, Nameable, LootableBlockInventory { } // Paper
 diff --git a/src/main/java/org/bukkit/block/ShulkerBox.java b/src/main/java/org/bukkit/block/ShulkerBox.java
-index 4c1740e7..aa1109c4 100644
+index 8e061e4a4..1c02c6e1c 100644
 --- a/src/main/java/org/bukkit/block/ShulkerBox.java
 +++ b/src/main/java/org/bukkit/block/ShulkerBox.java
-@@ -1,12 +1,13 @@
+@@ -1,5 +1,6 @@
  package org.bukkit.block;
  
-+import com.destroystokyo.paper.loottable.LootableInventory;
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
  import org.bukkit.DyeColor;
  import org.bukkit.Nameable;
- 
+ import org.bukkit.loot.Lootable;
+@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
  /**
   * Represents a captured state of a ShulkerBox.
   */
--public interface ShulkerBox extends Container, Nameable {
-+public interface ShulkerBox extends Container, Nameable, LootableInventory { // Paper
+-public interface ShulkerBox extends Container, Nameable, Lootable {
++public interface ShulkerBox extends Container, Nameable, LootableBlockInventory { // Paper
  
      /**
       * Get the {@link DyeColor} corresponding to this ShulkerBox
+diff --git a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+index 8ced54039..865885501 100644
+--- a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.entity.minecart;
+ 
++import com.destroystokyo.paper.loottable.LootableEntityInventory;
+ import org.bukkit.entity.Minecart;
+ import org.bukkit.inventory.InventoryHolder;
+ import org.bukkit.loot.Lootable;
+@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
+ /**
+  * Represents a Minecart with a Hopper inside it
+  */
+-public interface HopperMinecart extends Minecart, InventoryHolder, Lootable {
++public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
+ 
+     /**
+      * Checks whether or not this Minecart will pick up 
+diff --git a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
+index 9ea403e6f..238d118f7 100644
+--- a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.entity.minecart;
+ 
++import com.destroystokyo.paper.loottable.LootableEntityInventory;
+ import org.bukkit.entity.Minecart;
+ import org.bukkit.inventory.InventoryHolder;
+ import org.bukkit.loot.Lootable;
+@@ -9,5 +10,5 @@ import org.bukkit.loot.Lootable;
+  * minecarts} have their own inventory that can be accessed using methods
+  * from the {@link InventoryHolder} interface.
+  */
+-public interface StorageMinecart extends Minecart, InventoryHolder, Lootable {
++public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
+ }
+diff --git a/src/main/java/org/bukkit/loot/Lootable.java b/src/main/java/org/bukkit/loot/Lootable.java
+index f4b3d0215..98a472055 100644
+--- a/src/main/java/org/bukkit/loot/Lootable.java
++++ b/src/main/java/org/bukkit/loot/Lootable.java
+@@ -33,6 +33,31 @@ public interface Lootable {
+      */
+     LootTable getLootTable();
+ 
++    // Paper start
++    /**
++     * Set the loot table and seed for a container or entity at the same time.
++     *
++     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
++     * @param seed the seed to used to generate loot. Default is 0.
++     */
++    void setLootTable(LootTable table, long seed);
++
++    /**
++     * Returns whether or not this object has a Loot Table
++     * @return Has a loot table
++     */
++    default boolean hasLootTable() {
++        return getLootTable() != null;
++    }
++
++    /**
++     * Clears the associated Loot Table to this object
++     */
++    default void clearLootTable() {
++        setLootTable(null);
++    }
++    // Paper end
++
+     /**
+      * Set the seed used when this Loot Table generates loot.
+      *
 -- 
 2.18.0
 
