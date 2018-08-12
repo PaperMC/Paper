@@ -1,4 +1,4 @@
-From 05f0c18ce448cd30506f2eb0fad93420a473e15f Mon Sep 17 00:00:00 2001
+From 06ba67d3f8b96a68e0d0cf9898781aa68546694f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 15:07:54 -0400
 Subject: [PATCH] Persistent and Temporary Meta API
@@ -237,10 +237,10 @@ index 000000000..d0c30692a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaKey.java b/src/main/java/com/destroystokyo/paper/meta/MetaKey.java
 new file mode 100644
-index 000000000..5a7bf2a76
+index 000000000..cf1838e7f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/MetaKey.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,75 @@
 +package com.destroystokyo.paper.meta;
 +
 +import javax.annotation.Nonnull;
@@ -252,17 +252,26 @@ index 000000000..5a7bf2a76
 +public class MetaKey {
 +
 +    private static final Map<String, Integer> idMap = new ConcurrentHashMap<>();
++    private static final Map<Integer, MetaKey> idReverseMap = new ConcurrentHashMap<>();
 +    private static final AtomicInteger idPool = new AtomicInteger(1);
 +    private final String namespace;
 +    private final String key;
 +    private final String label;
 +    private final int id;
 +
++    static MetaKey getMetaKey(int id) {
++        return idReverseMap.get(id);
++    }
++
 +    MetaKey(@Nullable String namespace, @Nonnull String key) {
 +        this.namespace = namespace;
 +        this.key = key;
 +        this.label = namespace != null ? namespace + ":" + key : key;
-+        this.id = idMap.computeIfAbsent(label, (label) -> idPool.getAndIncrement());
++        this.id = idMap.computeIfAbsent(label, (label) -> {
++            int id = idPool.getAndIncrement();
++            idReverseMap.put(id, this);
++            return id;
++        });
 +    }
 +
 +    /**
@@ -309,27 +318,32 @@ index 000000000..5a7bf2a76
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaMap.java b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
 new file mode 100644
-index 000000000..3c84403ec
+index 000000000..b37086b6d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,254 @@
 +package com.destroystokyo.paper.meta;
 +
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +import org.bukkit.inventory.ItemStack;
 +
 +import javax.annotation.Nonnull;
++import java.util.HashSet;
++import java.util.Objects;
++import java.util.Set;
 +
 +@SuppressWarnings({"unchecked", "WeakerAccess"})
 +public abstract class MetaMap<K extends MetaKey> implements Cloneable {
 +
-+    private final Int2ObjectOpenHashMap<Object> map = new Int2ObjectOpenHashMap<>(0);
++    private final Int2ObjectOpenHashMap<MetaEntry> map = new Int2ObjectOpenHashMap<>(0);
++    private final Int2ObjectOpenHashMap<MetaKey> keys = new Int2ObjectOpenHashMap<>(0);
 +
 +    MetaMap() {
 +
 +    }
 +
 +    MetaMap(MetaMap<K> map) {
++        this.keys.putAll(map.keys);
 +        this.map.putAll(map.map);
 +    }
 +
@@ -470,6 +484,18 @@ index 000000000..3c84403ec
 +    // TODO: increment number methods
 +    // TODO: ConfigurationSerializeable
 +
++    public Set<MetaKey> getKeys() {
++        return new HashSet<>(keys.values());
++    }
++
++    /**
++     * For saving
++     */
++    public Set<MetaEntry> getEntries() {
++        return new HashSet<>(map.values());
++    }
++
++
 +    public boolean containsKey(K key) {
 +        return map.containsKey(key.getId());
 +    }
@@ -484,14 +510,17 @@ index 000000000..3c84403ec
 +
 +    public <T> T remove(K k) {
 +        //noinspection unchecked
++        keys.remove(k.getId());
 +        return (T) map.remove(k.getId());
 +    }
 +
 +    public void clear() {
++        keys.clear();
 +        map.clear();
 +    }
 +
 +    // Raw access to map is package private so we can control scope access in persistent
++
 +    <T> T getObject0(K key) {
 +        if (map.isEmpty()) {
 +            return null;
@@ -505,12 +534,46 @@ index 000000000..3c84403ec
 +            return def;
 +        }
 +        //noinspection unchecked
-+        return (T) map.getOrDefault(key.getId(), def);
++        MetaEntry metaEntry = map.get(key.getId());
++        return metaEntry != null ? (T) metaEntry.value : def;
 +    }
 +
 +    <T> T putObject0(K key, T value) {
++        keys.put(key.getId(), key);
 +        //noinspection unchecked
-+        return (T) map.put(key.getId(), value);
++        MetaEntry prev = map.put(key.getId(), new MetaEntry(key, value));
++        return prev != null ? (T) prev.value : null;
++    }
++
++    public static class MetaEntry {
++        private MetaKey key;
++        private Object value;
++
++        public MetaEntry(MetaKey key, Object value) {
++            this.key = key;
++            this.value = value;
++        }
++
++        public MetaKey getKey() {
++            return key;
++        }
++
++        public Object getValue() {
++            return value;
++        }
++
++        @Override
++        public int hashCode() {
++            return key.hashCode();
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            MetaEntry metaEntry = (MetaEntry) o;
++            return key.getId() == metaEntry.key.getId() && Objects.equals(value, metaEntry.value);
++        }
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java
