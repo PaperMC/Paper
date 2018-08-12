@@ -1,0 +1,36 @@
+From a606668643e32d55ab47567a218b7c522526db84 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 12 Aug 2018 02:33:39 -0400
+Subject: [PATCH] Use a Queue for Queueing Commands
+
+Lists are bad as Queues mmmkay.
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 2922915927..6a8292ce45 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -34,7 +34,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Pattern l = Pattern.compile("^[a-fA-F0-9]{40}$");
+-    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.<ServerCommand>newArrayList()); // CraftBukkit - fix decompile error
++    private final java.util.Queue<ServerCommand> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - use a proper queue
+     private RemoteStatusListener n;
+     public final RemoteControlCommandListener remoteControlCommandListener = new RemoteControlCommandListener(this);
+     private RemoteControlListener p;
+@@ -448,8 +448,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     public void aP() {
+         MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
+-        while (!this.serverCommandQueue.isEmpty()) {
+-            ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
++        // Paper start - use proper queue
++        ServerCommand servercommand;
++        while ((servercommand = this.serverCommandQueue.poll()) != null) {
++            // Paper end
+ 
+             // CraftBukkit start - ServerCommand for preprocessing
+             ServerCommandEvent event = new ServerCommandEvent(console, servercommand.command);
+-- 
+2.18.0
+
