@@ -136,6 +136,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             case MULE_SPAWN_EGG:
             case OCELOT_SPAWN_EGG:
             case PARROT_SPAWN_EGG:
+            case PHANTOM_SPAWN_EGG:
             case PIG_SPAWN_EGG:
             case POLAR_BEAR_SPAWN_EGG:
             case RABBIT_SPAWN_EGG:
@@ -148,6 +149,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             case SPIDER_SPAWN_EGG:
             case SQUID_SPAWN_EGG:
             case STRAY_SPAWN_EGG:
+            case TURTLE_SPAWN_EGG:
             case VEX_SPAWN_EGG:
             case VILLAGER_SPAWN_EGG:
             case VINDICATOR_SPAWN_EGG:
