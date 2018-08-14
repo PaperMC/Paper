@@ -1,27 +1,30 @@
-From bf728ecd910318dbd558a3b629c1c4b04507194a Mon Sep 17 00:00:00 2001
+From ed6018ece43a3ef38930a341ef38b4d15bd1966e Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Fri, 10 Aug 2018 19:01:16 -0600
 Subject: [PATCH] Adding alternate and more even spawn mechanic
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 61c8b58b1..3f21de752 100644
+index 61c8b58b1..b3cdee58b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -355,6 +355,11 @@ public class PaperWorldConfig {
+@@ -355,6 +355,14 @@ public class PaperWorldConfig {
          armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
      }
  
 +    public boolean useImprovedSpawning = true;
 +    private void useImprovedSpawning() {
 +        useImprovedSpawning = getBoolean("use-improved-spawning", false);
++        if (useImprovedSpawning) {
++            log("Using improved natural mob spawning.");
++        }
 +    }
 +
      public int maxCollisionsPerEntity;
      private void maxEntityCollision() {
          maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index 1a468e1bb..d2f37a1f5 100644
+index 1a468e1bb..b3b1b0395 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
 @@ -125,7 +125,7 @@ public abstract class BiomeBase {
@@ -49,9 +52,11 @@ index 1a468e1bb..d2f37a1f5 100644
              return Lists.newArrayList();
          });
      }
-@@ -572,7 +572,9 @@ public abstract class BiomeBase {
+@@ -571,8 +571,11 @@ public abstract class BiomeBase {
+ 
      public static class BiomeMeta extends WeightedRandom.WeightedRandomChoice {
  
++        public EntityTypes<? extends EntityInsentient> getEntityType() { return b; } // Paper - OBFHELPER
          public EntityTypes<? extends EntityInsentient> b;
 +        public int getMinPackSize() { return c; } // Paper - OBFHELPER
          public int c;
@@ -144,6 +149,18 @@ index 7b64ec27c..640831b54 100644
      public int dh() {
          return 4;
      }
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index fa268f354..01bb95189 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -263,6 +263,7 @@ public class EntityTypes<T extends Entity> {
+     public T a(World world) {
+         return this.aU.apply(world); // CraftBukkit - decompile error
+     }
++    public T spawnEntity(World world) { return a(world); } // Paper - OBFHELPER
+ 
+     @Nullable
+     public static Entity a(World world, MinecraftKey minecraftkey) {
 diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
 index 79e52f7ba..d702765a2 100644
 --- a/src/main/java/net/minecraft/server/EnumCreatureType.java
@@ -197,7 +214,7 @@ index fcd9f5491..6f04d4759 100644
          return this.done;
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index f525fd1b4..2a7a51a81 100644
+index f525fd1b4..23a0fc6a3 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -1,10 +1,12 @@
@@ -214,7 +231,7 @@ index f525fd1b4..2a7a51a81 100644
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -21,10 +23,290 @@ public final class SpawnerCreature {
+@@ -21,10 +23,288 @@ public final class SpawnerCreature {
      private static final Logger a = LogManager.getLogger();
      private static final int b = (int) Math.pow(17.0D, 2.0D);
      private final LongHashSet c = new LongHashSet(); // CraftBukkit
@@ -322,8 +339,8 @@ index f525fd1b4..2a7a51a81 100644
 +        if (!world.isBiomeMetaValidFor(type, biomeSpawn, pos)) return null;
 +
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+        EntityTypes<? extends EntityInsentient> cls = biomeSpawn.b;
-+        org.bukkit.entity.EntityType bType = EntityTypes.clsToTypeMap.get(cls);
++        EntityTypes<? extends EntityInsentient> entityType = biomeSpawn.getEntityType();
++        org.bukkit.entity.EntityType bType = EntityTypes.clsToTypeMap.get(entityType);
 +        if (bType != null) {
 +            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                    MCUtil.toLocation(world, pos),
@@ -336,7 +353,7 @@ index f525fd1b4..2a7a51a81 100644
 +        EntityInsentient entity = null;
 +
 +        try {
-+            entity = biomeSpawn.b.a(world);
++            entity = entityType.spawnEntity(world);
 +        } catch (Exception exception) {
 +            SpawnerCreature.a.warn("Failed to create mob", exception);
 +            ServerInternalException.reportInternalException(exception);
@@ -348,7 +365,7 @@ index f525fd1b4..2a7a51a81 100644
 +    public int paperSpawnMob(WorldServer world, Set<ChunkCoordIntPair> chunks, EnumCreatureType type, int amount) {
 +        if (chunks.isEmpty()) return 0;
 +
-+        final int maxPackIterations = 20; // X attempts per pack, 1 pack per chunk
++        final int maxPackIterations = 10; // X attempts per pack, 1 pack per chunk
 +        Iterator<ChunkCoordIntPair> iterator = chunks.iterator();
 +        BlockPosition worldSpawn = world.getSpawn();
 +
@@ -367,7 +384,7 @@ index f525fd1b4..2a7a51a81 100644
 +            BlockPosition.MutableBlockPosition blockPointer = new BlockPosition.MutableBlockPosition();
 +            BiomeBase.BiomeMeta biomeSpawn = null;
 +            GroupDataEntity group = null;
-+            int iter = -1;
++            int iter = 0;
 +            int packSpawned = 0;
 +
 +            while (packSpawned < packSize && iter < maxPackIterations) {
@@ -403,6 +420,7 @@ index f525fd1b4..2a7a51a81 100644
 +                        packSpawned++;
 +
 +                    if (packSpawned >= entity.maxPackSize()) break;
++                    if ((packSpawned + spawned) >= amount) break;
 +                } else {
 +                    entity.die();
 +                }
@@ -454,9 +472,6 @@ index f525fd1b4..2a7a51a81 100644
 +
 +            for (int dX = -spawnRange; dX <= spawnRange; ++dX) {
 +                for (int dZ = -spawnRange; dZ <= spawnRange; ++dZ) {
-+                    //too close to spawn anyways
-+                    if(Math.abs(dX) < 3 || Math.abs(dZ) < 3) continue;
-+
 +                    ChunkCoordIntPair chunkCoord = new ChunkCoordOrdinalInt3Tuple(
 +                            dX + playerChunkX, dZ + playerChunkZ, hashOrdinal);
 +
