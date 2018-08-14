@@ -1,19 +1,20 @@
-From 883ac3334bba303050fbf07799feee0d56cea5c7 Mon Sep 17 00:00:00 2001
+From f07a9db92dd5b0017c2cbd316a15fe3ee338057b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 29 Aug 2017 23:58:48 -0400
 Subject: [PATCH] Expand World.spawnParticle API and add Builder
 
 Adds ability to control who receives it and who is the source/sender (vanish API)
 the standard API is to send the packet to everyone in the world, which is ineffecient.
+Adds an option to control the force mode of the particle.
 
 This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 000000000..2bccc4098
+index 000000000..f7aa162fb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
-@@ -0,0 +1,365 @@
+@@ -0,0 +1,378 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.collect.Lists;
@@ -42,6 +43,7 @@ index 000000000..2bccc4098
 +    private double offsetX = 0, offsetY = 0, offsetZ = 0;
 +    private double extra = 1;
 +    private Object data;
++    private boolean force = true;
 +
 +    public ParticleBuilder(Particle particle) {
 +        this.particle = particle;
@@ -57,7 +59,7 @@ index 000000000..2bccc4098
 +        }
 +        location.getWorld().spawnParticle(particle, receivers, source,
 +            location.getX(), location.getY(), location.getZ(),
-+            count, offsetX, offsetY, offsetZ, extra, data
++            count, offsetX, offsetY, offsetZ, extra, data, force
 +        );
 +        return this;
 +    }
@@ -350,6 +352,18 @@ index 000000000..2bccc4098
 +    }
 +
 +    /**
++     * Sets whether the particle is forcefully shown to the player.
++     * If forced, the particle will show faraway, as far as the player's view distance allows.
++     * If false, the particle will show according to the client's particle settings.
++     *
++     * @param force true to force, false for normal
++     */
++    public ParticleBuilder force(boolean force) {
++        this.force = force;
++        return this;
++    }
++
++    /**
 +     * Sets the particle Color.
 +     * Only valid for REDSTONE, SPELL_MOB and SPELL_MOB_AMBIENT.
 +     */
@@ -410,15 +424,15 @@ index 4d0acaf5b..0ae85d855 100644
       * Options which can be applied to redstone dust particles - a particle
       * color and size.
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index cf5bd1540..a7964fb1e 100644
+index cf5bd1540..ef1494dee 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -1709,7 +1709,31 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -1709,7 +1709,57 @@ public interface World extends PluginMessageRecipient, Metadatable {
       *             the type of this depends on {@link Particle#getDataType()}
       * @param <T> Type
       */
 -    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data);
-+    public default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) { spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data); }// Paper start - Expand Particle API
++    public default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) { spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }// Paper start - Expand Particle API
 +    /**
 +     * Spawns the particle (the number of times specified by count)
 +     * at the target location. The position of each particle will be
@@ -441,8 +455,34 @@ index cf5bd1540..a7964fb1e 100644
 +     *             the type of this depends on {@link Particle#getDataType()}
 +     * @param <T> Type
 +     */
-+    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data);
++    public default <T> void spawnParticle(Particle particle, List<Player> receivers, Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) { spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }
++    /**
++     * Spawns the particle (the number of times specified by count)
++     * at the target location. The position of each particle will be
++     * randomized positively and negatively by the offset parameters
++     * on each axis.
++     *
++     * @param particle the particle to spawn
++     * @param receivers List of players to receive the particles, or null for all in world
++     * @param source Source of the particles to be used in visibility checks, or null if no player source
++     * @param x the position on the x axis to spawn at
++     * @param y the position on the y axis to spawn at
++     * @param z the position on the z axis to spawn at
++     * @param count the number of particles
++     * @param offsetX the maximum random offset on the X axis
++     * @param offsetY the maximum random offset on the Y axis
++     * @param offsetZ the maximum random offset on the Z axis
++     * @param extra the extra data for this particle, depends on the
++     *              particle used (normally speed)
++     * @param data the data to use for the particle or null,
++     *             the type of this depends on {@link Particle#getDataType()}
++     * @param <T> Type
++     * @param force allows the particle to be seen further away from the player
++     *              and shows to players using any vanilla client particle settings
++     */
++    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force);
 +    // Paper end
++
  
      // Spigot start
      public class Spigot
