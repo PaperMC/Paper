@@ -25,14 +25,14 @@ public interface Enderman extends Monster {
     /**
      * Gets the data of the block that the Enderman is carrying.
      *
-     * @return BlockData containing the carried block
+     * @return BlockData containing the carried block, or null if none
      */
     public BlockData getCarriedBlock();
 
     /**
      * Sets the data of the block that the Enderman is carrying.
      *
-     * @param blockData data to set the carried block to
+     * @param blockData data to set the carried block to, or null to remove
      */
     public void setCarriedBlock(BlockData blockData);
 }
