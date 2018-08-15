@@ -1,4 +1,4 @@
-From 60f9c2691871bd367f8d30332124e75db1a7eeef Mon Sep 17 00:00:00 2001
+From 9016c516a96ff43872d105aee44a3f22acc36870 Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Fri, 10 Aug 2018 19:01:16 -0600
 Subject: [PATCH] Adding alternate and more even spawn mechanic
@@ -25,21 +25,19 @@ index 61c8b58b1..b3cdee58b 100644
          maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
 diff --git a/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java b/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java
 new file mode 100644
-index 000000000..82f96857b
+index 000000000..bdf66e67b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,42 @@
 +package com.destroystokyo.paper.chunk;
 +
-+import com.google.common.hash.HashCode;
 +import net.minecraft.server.ChunkCoordIntPair;
 +
 +import com.google.common.hash.Hashing;
 +import com.google.common.hash.HashFunction;
 +
 +public class ChunkCoordOrdinalInt3Tuple extends ChunkCoordIntPair {
-+    public static final int seed = "paper".hashCode();
-+    public static final HashFunction hashFunc = Hashing.murmur3_32(seed);
++    public static final HashFunction hashFunc = Hashing.murmur3_32("paper".hashCode());
 +
 +    public final int ordinal;
 +    public final int cachedHashCode;
@@ -183,7 +181,7 @@ index fcd9f5491..6f04d4759 100644
          return this.done;
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index f525fd1b4..0f113d5c9 100644
+index f525fd1b4..bf68f2c45 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -1,10 +1,12 @@
@@ -353,9 +351,8 @@ index f525fd1b4..0f113d5c9 100644
 +         */
 +        int hashOrdinal = world.random.nextInt();
 +
-+        // use a set here because we have to do two iterations
 +        Set<Chunk> rangeChunks = new HashSet();
-+        Map<EnumCreatureType, Set<ChunkCoordIntPair>> typeChunks = new EnumMap(EnumCreatureType.class);
++        Map<EnumCreatureType, Set<ChunkCoordIntPair>> creatureChunks = new EnumMap(EnumCreatureType.class);
 +        int[] typeNumSpawn = new int[EnumCreatureType.values().length];
 +
 +        for (EnumCreatureType type : EnumCreatureType.values()) {
@@ -364,10 +361,10 @@ index f525fd1b4..0f113d5c9 100644
 +            if (type.isRare() && !spawnRare) continue;
 +            if (getCreatureLimit(world, type) <= 0) continue;
 +
-+            typeChunks.put(type, new HashSet());
++            creatureChunks.put(type, new HashSet());
 +        }
 +
-+        if (typeChunks.isEmpty()) return 0;
++        if (creatureChunks.isEmpty()) return 0;
 +
 +        for (EntityHuman player : world.players) {
 +            int spawnRange = getSpawnRange(world, player);
@@ -394,18 +391,19 @@ index f525fd1b4..0f113d5c9 100644
 +                }
 +            }
 +
-+            for (EnumCreatureType type : typeChunks.keySet()) {
++            for (EnumCreatureType type : creatureChunks.keySet()) {
 +                int limit = getCreatureLimit(world, type);
 +                int creatureTotal = 0;
 +
 +                for (Chunk chunk : rangeChunks)
 +                    creatureTotal += chunk.getCreatureCount(type);
 +
++                // if our local count is above the limit, dont qualify our chunks
 +                if (creatureTotal >= limit) continue;
 +
-+                Set<ChunkCoordIntPair> typeSet = typeChunks.get(type);
++                Set<ChunkCoordIntPair> chunks = creatureChunks.get(type);
 +                for (Chunk chunk : rangeChunks)
-+                    typeSet.add(chunk.getPos());
++                    chunks.add(chunk.getPos());
 +
 +                // expect number is rather meaningless, just a ceil
 +                int expect = limit - creatureTotal;
@@ -414,8 +412,8 @@ index f525fd1b4..0f113d5c9 100644
 +        }
 +
 +        int totalSpawned = 0;
-+        for (EnumCreatureType type : typeChunks.keySet()) {
-+            Set<ChunkCoordIntPair> chunks = typeChunks.get(type);
++        for (EnumCreatureType type : creatureChunks.keySet()) {
++            Set<ChunkCoordIntPair> chunks = creatureChunks.get(type);
 +
 +            if (!chunks.isEmpty())
 +                totalSpawned += paperSpawnMob(world, chunks, type, typeNumSpawn[type.ordinal()]);
