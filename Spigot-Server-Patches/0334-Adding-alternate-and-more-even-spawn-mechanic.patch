@@ -1,4 +1,4 @@
-From ed6018ece43a3ef38930a341ef38b4d15bd1966e Mon Sep 17 00:00:00 2001
+From 60f9c2691871bd367f8d30332124e75db1a7eeef Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Fri, 10 Aug 2018 19:01:16 -0600
 Subject: [PATCH] Adding alternate and more even spawn mechanic
@@ -23,35 +23,60 @@ index 61c8b58b1..b3cdee58b 100644
      public int maxCollisionsPerEntity;
      private void maxEntityCollision() {
          maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+diff --git a/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java b/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java
+new file mode 100644
+index 000000000..82f96857b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/chunk/ChunkCoordOrdinalInt3Tuple.java
+@@ -0,0 +1,44 @@
++package com.destroystokyo.paper.chunk;
++
++import com.google.common.hash.HashCode;
++import net.minecraft.server.ChunkCoordIntPair;
++
++import com.google.common.hash.Hashing;
++import com.google.common.hash.HashFunction;
++
++public class ChunkCoordOrdinalInt3Tuple extends ChunkCoordIntPair {
++    public static final int seed = "paper".hashCode();
++    public static final HashFunction hashFunc = Hashing.murmur3_32(seed);
++
++    public final int ordinal;
++    public final int cachedHashCode;
++
++    public ChunkCoordOrdinalInt3Tuple(int x, int z, int ord) {
++        super(x, z);
++
++        this.ordinal = ord;
++
++        cachedHashCode = hashFunc.newHasher()
++            .putInt(ordinal)
++            .putInt(x)
++            .putInt(z)
++            .hash().asInt();
++    }
++
++    @Override
++    public int hashCode() {
++        return cachedHashCode;
++    }
++
++    @Override public boolean equals(Object object) {
++        if (this == object) {
++            return true;
++        } else if (!(object instanceof ChunkCoordOrdinalInt3Tuple)) {
++            return false;
++        } else {
++            ChunkCoordOrdinalInt3Tuple pair = (ChunkCoordOrdinalInt3Tuple) object;
++
++            return this.x == pair.x && this.z == pair.z && this.ordinal == pair.ordinal;
++        }
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index 1a468e1bb..b3b1b0395 100644
+index 821a2f90c..e31bd2420 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -125,7 +125,7 @@ public abstract class BiomeBase {
-     private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> ba = Maps.newHashMap();
- 
-     public static int a(BiomeBase biomebase) {
--        return BiomeBase.REGISTRY_ID.a((Object) biomebase);
-+        return BiomeBase.REGISTRY_ID.a(biomebase);
-     }
- 
-     @Nullable
-@@ -291,13 +291,13 @@ public abstract class BiomeBase {
-     }
- 
-     public <C extends WorldGenFeatureConfiguration> void a(WorldGenStage.Features worldgenstage_features, WorldGenCarverWrapper<C> worldgencarverwrapper) {
--        ((List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features) -> {
-+        ((List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features2) -> {
-             return Lists.newArrayList();
-         })).add(worldgencarverwrapper);
-     }
- 
-     public List<WorldGenCarverWrapper<?>> a(WorldGenStage.Features worldgenstage_features) {
--        return (List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features) -> {
-+        return (List) this.aW.computeIfAbsent(worldgenstage_features, (worldgenstage_features2) -> {
-             return Lists.newArrayList();
-         });
-     }
 @@ -571,8 +571,11 @@ public abstract class BiomeBase {
  
      public static class BiomeMeta extends WeightedRandom.WeightedRandomChoice {
@@ -65,7 +90,7 @@ index 1a468e1bb..b3b1b0395 100644
  
          public BiomeMeta(EntityTypes<? extends EntityInsentient> entitytypes, int i, int j, int k) {
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index db8fbc006..fbdf9dfd6 100644
+index 8759a31da..fbdf9dfd6 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;
@@ -77,53 +102,6 @@ index db8fbc006..fbdf9dfd6 100644
  import java.util.HashMap;
  import java.util.UUID;
  // Paper end
-@@ -106,6 +108,7 @@ public class Chunk implements IChunkAccess {
-     // Keep this synced with entitySlices.add() and entitySlices.remove()
-     private final int[] itemCounts = new int[16];
-     private final int[] inventoryEntityCounts = new int[16];
-+    private final int[] creatureCounts = new int[EnumCreatureType.values().length];
-     // Paper end
-     public boolean areNeighborsLoaded(final int radius) {
-         switch (radius) {
-@@ -744,6 +747,10 @@ public class Chunk implements IChunkAccess {
-             itemCounts[k]++;
-         } else if (entity instanceof IInventory) {
-             inventoryEntityCounts[k]++;
-+        } else if (entity instanceof IAnimal) {
-+            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
-+            if(type != null)
-+                creatureCounts[type.ordinal()]++;
-         }
-         entity.setCurrentChunk(this);
-         entityCounts.increment(entity.getMinecraftKeyString());
-@@ -782,6 +789,16 @@ public class Chunk implements IChunkAccess {
-             itemCounts[i]--;
-         } else if (entity instanceof IInventory) {
-             inventoryEntityCounts[i]--;
-+        } else if (entity instanceof IAnimal) {
-+            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
-+            if(type != null) {
-+                int ord = type.ordinal();
-+
-+                creatureCounts[ord]--;
-+
-+                if(creatureCounts[ord] < 0)
-+                    creatureCounts[ord] = 0;
-+            }
-         }
-         entity.setCurrentChunk(null);
-         entityCounts.decrement(entity.getMinecraftKeyString());
-@@ -1470,6 +1487,10 @@ public class Chunk implements IChunkAccess {
-             runnable.run();
-         }
-     }
-+
-+    int getCreatureCount(EnumCreatureType type) {
-+        return creatureCounts[type.ordinal()];
-+    }
-     // Paper end
- 
-     public static enum EnumTileEntityState {
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
 index 7b64ec27c..640831b54 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
@@ -162,28 +140,19 @@ index fa268f354..01bb95189 100644
      @Nullable
      public static Entity a(World world, MinecraftKey minecraftkey) {
 diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
-index 79e52f7ba..d702765a2 100644
+index c7e4a5905..a1b03e7fd 100644
 --- a/src/main/java/net/minecraft/server/EnumCreatureType.java
 +++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
-@@ -16,18 +16,35 @@ public enum EnumCreatureType {
-         this.h = flag1;
-     }
- 
-+    // Paper start
-+    public static EnumCreatureType getCreatureType(Entity entity) {
-+        Class<?> clazz = entity.getClass();
-+
-+        if(MONSTER.getInnerClass().isAssignableFrom(clazz)) return MONSTER;
-+        if(CREATURE.getInnerClass().isAssignableFrom(clazz)) return CREATURE;
-+        if(AMBIENT.getInnerClass().isAssignableFrom(clazz)) return AMBIENT;
-+        if(WATER_CREATURE.getInnerClass().isAssignableFrom(clazz)) return WATER_CREATURE;
-+
-+        return null;
-+    }
-+    // Paper end
-+
-+    public Class<? extends IAnimal> getInnerClass() { return a(); } // Paper - OBFHELPER
-     public Class<? extends IAnimal> a() {
+@@ -19,7 +19,7 @@ public enum EnumCreatureType {
+     // Paper start
+     public static EnumCreatureType getCreatureType(Entity entity) {
+         Class<?> clazz = entity.getClass();
+-
++        
+         if(MONSTER.getInnerClass().isAssignableFrom(clazz)) return MONSTER;
+         if(CREATURE.getInnerClass().isAssignableFrom(clazz)) return CREATURE;
+         if(AMBIENT.getInnerClass().isAssignableFrom(clazz)) return AMBIENT;
+@@ -34,14 +34,17 @@ public enum EnumCreatureType {
          return this.e;
      }
  
@@ -214,7 +183,7 @@ index fcd9f5491..6f04d4759 100644
          return this.done;
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index f525fd1b4..23a0fc6a3 100644
+index f525fd1b4..0f113d5c9 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -1,10 +1,12 @@
@@ -231,79 +200,19 @@ index f525fd1b4..23a0fc6a3 100644
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -21,10 +23,288 @@ public final class SpawnerCreature {
+@@ -16,6 +18,8 @@ import org.bukkit.craftbukkit.util.LongHashSet;
+ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+ // CraftBukkit end
+ 
++import com.destroystokyo.paper.chunk.ChunkCoordOrdinalInt3Tuple; // Paper
++
+ public final class SpawnerCreature {
+ 
      private static final Logger a = LogManager.getLogger();
-     private static final int b = (int) Math.pow(17.0D, 2.0D);
-     private final LongHashSet c = new LongHashSet(); // CraftBukkit
-+    public static int seed = "paper".hashCode(); // Paper
+@@ -24,7 +28,219 @@ public final class SpawnerCreature {
  
      public SpawnerCreature() {}
  
-+    public static class ChunkCoordOrdinalInt3Tuple extends ChunkCoordIntPair {
-+        public int ordinal;
-+        public int cachedHashCode = -1;
-+
-+        public static int mix(int hash, int data) {
-+            int k = data;
-+
-+            k *= 0xcc9e2d51;
-+            k = (k << 15) | (k >>> -15);
-+            k *= 0x1b873593;
-+
-+            int h = hash ^ k;
-+
-+            h = (h << 13) | (h >>> -13);
-+
-+            return h * 5 + 0xe6546b64;
-+        }
-+
-+        public static int createHashCode(int ordinal, int x, int z) {
-+            //MurmurHash3_x86_32 hashing
-+            int hash = seed;
-+
-+            //mix
-+            hash = mix(hash, ordinal);
-+            hash = mix(hash, x);
-+            hash = mix(hash, z);
-+
-+            //finalize/avalanche
-+            hash ^= 3;
-+            hash ^= hash >>> 16;
-+            hash *= 0x85ebca6b;
-+            hash ^= hash >>> 13;
-+            hash *= 0xc2b2ae35;
-+            hash ^= hash >>> 16;
-+
-+            return hash;
-+        }
-+
-+        public ChunkCoordOrdinalInt3Tuple(int x, int z, int ord) {
-+            super(x, z);
-+
-+            this.ordinal = ord;
-+        }
-+
-+        @Override
-+        public int hashCode() {
-+            if (cachedHashCode == -1)
-+                cachedHashCode = createHashCode(ordinal, x, z);
-+
-+            return cachedHashCode;
-+        }
-+
-+        @Override public boolean equals(Object object) {
-+            if (this == object) {
-+                return true;
-+            } else if (!(object instanceof ChunkCoordOrdinalInt3Tuple)) {
-+                return false;
-+            } else {
-+                ChunkCoordOrdinalInt3Tuple pair = (ChunkCoordOrdinalInt3Tuple) object;
-+
-+                return this.x == pair.x && this.z == pair.z && this.ordinal == pair.ordinal;
-+            }
-+        }
-+    }
-+
 +    public static int getSpawnRange(WorldServer world, EntityHuman player) {
 +        byte mobSpawnRange = world.spigotConfig.mobSpawnRange;
 +

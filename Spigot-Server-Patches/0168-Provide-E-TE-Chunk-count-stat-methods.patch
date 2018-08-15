@@ -1,4 +1,4 @@
-From 232d01433fe37bfda7b651b7070ddc53655592db Mon Sep 17 00:00:00 2001
+From 47faaf10caa4f9f58ebceee8ab31289a484e51a1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 7 Jan 2017 15:24:46 -0500
 Subject: [PATCH] Provide E/TE/Chunk count stat methods
@@ -6,8 +6,85 @@ Subject: [PATCH] Provide E/TE/Chunk count stat methods
 Provides counts without the ineffeciency of using .getEntities().size()
 which creates copy of the collections.
 
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index f6beb6886..de9c8ea10 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -100,6 +100,7 @@ public class Chunk implements IChunkAccess {
+     // Keep this synced with entitySlices.add() and entitySlices.remove()
+     private final int[] itemCounts = new int[16];
+     private final int[] inventoryEntityCounts = new int[16];
++    private final int[] creatureCounts = new int[EnumCreatureType.values().length];
+     // Paper end
+     public boolean areNeighborsLoaded(final int radius) {
+         switch (radius) {
+@@ -711,6 +712,10 @@ public class Chunk implements IChunkAccess {
+             itemCounts[k]++;
+         } else if (entity instanceof IInventory) {
+             inventoryEntityCounts[k]++;
++        } else if (entity instanceof IAnimal) {
++            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
++            if(type != null)
++                creatureCounts[type.ordinal()]++;
+         }
+         entity.setCurrentChunk(this);
+         entityCounts.increment(entity.getMinecraftKeyString());
+@@ -741,6 +746,16 @@ public class Chunk implements IChunkAccess {
+             itemCounts[i]--;
+         } else if (entity instanceof IInventory) {
+             inventoryEntityCounts[i]--;
++        } else if (entity instanceof IAnimal) {
++            EnumCreatureType type = EnumCreatureType.getCreatureType(entity);
++            if(type != null) {
++                int ord = type.ordinal();
++
++                creatureCounts[ord]--;
++
++                if(creatureCounts[ord] < 0)
++                    creatureCounts[ord] = 0;
++            }
+         }
+         entity.setCurrentChunk(null);
+         entityCounts.decrement(entity.getMinecraftKeyString());
+@@ -1381,6 +1396,10 @@ public class Chunk implements IChunkAccess {
+             runnable.run();
+         }
+     }
++
++    int getCreatureCount(EnumCreatureType type) {
++        return creatureCounts[type.ordinal()];
++    }
+     // Paper end
+ 
+     public static enum EnumTileEntityState {
+diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
+index 79e52f7ba..c7e4a5905 100644
+--- a/src/main/java/net/minecraft/server/EnumCreatureType.java
++++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
+@@ -15,7 +15,21 @@ public enum EnumCreatureType {
+         this.g = flag;
+         this.h = flag1;
+     }
++    
++    // Paper start
++    public static EnumCreatureType getCreatureType(Entity entity) {
++        Class<?> clazz = entity.getClass();
+ 
++        if(MONSTER.getInnerClass().isAssignableFrom(clazz)) return MONSTER;
++        if(CREATURE.getInnerClass().isAssignableFrom(clazz)) return CREATURE;
++        if(AMBIENT.getInnerClass().isAssignableFrom(clazz)) return AMBIENT;
++        if(WATER_CREATURE.getInnerClass().isAssignableFrom(clazz)) return WATER_CREATURE;
++
++        return null;
++    }
++    // Paper end
++
++    public Class<? extends IAnimal> getInnerClass() { return a(); } // Paper - OBFHELPER
+     public Class<? extends IAnimal> a() {
+         return this.e;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index d4851dd2a6..84fcebd710 100644
+index d4851dd2a..84fcebd71 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -81,6 +81,29 @@ public class CraftWorld implements World {
@@ -41,5 +118,5 @@ index d4851dd2a6..84fcebd710 100644
  
      public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
 -- 
-2.18.0
+2.15.2 (Apple Git-101.1)
 
