@@ -1,4 +1,4 @@
-From 4f16c3445f22654d43ca5b2006f45fac0e17203b Mon Sep 17 00:00:00 2001
+From 7077ffc2e14e2b759174392e773d65ee8ba303a5 Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Add entity count cache
@@ -52,7 +52,7 @@ index f525fd1b4..494759a1c 100644
  
                      if (k <= l1) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 004c3ec47..dc301c6f4 100644
+index 004c3ec47..e2d591f8f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -11,6 +11,7 @@ import java.util.Iterator;
@@ -113,23 +113,19 @@ index 004c3ec47..dc301c6f4 100644
              return super.remove( o );
          }
  
-@@ -2464,6 +2497,53 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -2464,6 +2497,49 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
          return i;
      }
  
 +    // Paper start - entity count cache
-+    private Map<EnumCreatureType, Integer> countCache = new EnumMap(EnumCreatureType.class);
++    private final int[] countCache = new int[EnumCreatureType.values().length];
 +
 +    public int getCreatureCount(EnumCreatureType type) {
-+        Integer count = countCache.get(type);
-+
-+        return count == null ? 0 : count;
++        return countCache[type.ordinal()];
 +    }
 +
 +    protected void updateEntityCount(EnumCreatureType type, boolean incr) {
-+        Integer countObject = countCache.get(type);
-+
-+        int count = countObject == null ? 0 : countObject;
++        int count = countCache[type.ordinal()];
 +
 +        if (incr) count++;
 +        else count--;
@@ -139,7 +135,7 @@ index 004c3ec47..dc301c6f4 100644
 +            count = 0;
 +        }
 +
-+        countCache.put(type, count);
++        countCache[type.ordinal()] = count;
 +    }
 +
 +    protected void updateEntityCount(Entity entity, boolean incr) {
