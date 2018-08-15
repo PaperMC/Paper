@@ -1,6 +1,103 @@
 --- a/net/minecraft/core/BlockPos.java
 +++ b/net/minecraft/core/BlockPos.java
-@@ -324,9 +324,11 @@
+@@ -158,67 +158,84 @@
+ 
+     @Override
+     public BlockPos above() {
+-        return this.relative(Direction.UP);
++        return new BlockPos(this.getX(), this.getY() + 1, this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos above(int distance) {
+-        return this.relative(Direction.UP, distance);
++        return distance == 0 ? this.immutable() : new BlockPos(this.getX(), this.getY() + distance, this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos below() {
+-        return this.relative(Direction.DOWN);
++        return new BlockPos(this.getX(), this.getY() - 1, this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos below(int i) {
+-        return this.relative(Direction.DOWN, i);
++        return i == 0 ? this.immutable() : new BlockPos(this.getX(), this.getY() - i, this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos north() {
+-        return this.relative(Direction.NORTH);
++        return new BlockPos(this.getX(), this.getY(), this.getZ() - 1); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos north(int distance) {
+-        return this.relative(Direction.NORTH, distance);
++        return distance == 0 ? this.immutable() : new BlockPos(this.getX(), this.getY(), this.getZ() - distance); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos south() {
+-        return this.relative(Direction.SOUTH);
++        return new BlockPos(this.getX(), this.getY(), this.getZ() + 1); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos south(int distance) {
+-        return this.relative(Direction.SOUTH, distance);
++        return distance == 0 ? this.immutable() : new BlockPos(this.getX(), this.getY(), this.getZ() + distance); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos west() {
+-        return this.relative(Direction.WEST);
++        return new BlockPos(this.getX() - 1, this.getY(), this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos west(int distance) {
+-        return this.relative(Direction.WEST, distance);
++        return distance == 0 ? this.immutable() : new BlockPos(this.getX() - distance, this.getY(), this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos east() {
+-        return this.relative(Direction.EAST);
++        return new BlockPos(this.getX() + 1, this.getY(), this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos east(int distance) {
+-        return this.relative(Direction.EAST, distance);
++        return distance == 0 ? this.immutable() : new BlockPos(this.getX() + distance, this.getY(), this.getZ()); // Paper - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+     public BlockPos relative(Direction direction) {
++        // Paper start - Perf: Optimize BlockPosition
++        switch(direction) {
++            case UP:
++                return new BlockPos(this.getX(), this.getY() + 1, this.getZ());
++            case DOWN:
++                return new BlockPos(this.getX(), this.getY() - 1, this.getZ());
++            case NORTH:
++                return new BlockPos(this.getX(), this.getY(), this.getZ() - 1);
++            case SOUTH:
++                return new BlockPos(this.getX(), this.getY(), this.getZ() + 1);
++            case WEST:
++                return new BlockPos(this.getX() - 1, this.getY(), this.getZ());
++            case EAST:
++                return new BlockPos(this.getX() + 1, this.getY(), this.getZ());
++            default:
+         return new BlockPos(this.getX() + direction.getStepX(), this.getY() + direction.getStepY(), this.getZ() + direction.getStepZ());
++        }
++        // Paper end - Perf: Optimize BlockPosition
+     }
+ 
+     @Override
+@@ -324,9 +341,11 @@
  
      public static Iterable<BlockPos> withinManhattan(BlockPos center, int rangeX, int rangeY, int rangeZ) {
          int i = rangeX + rangeY + rangeZ;
@@ -15,7 +112,7 @@
          return () -> new AbstractIterator<BlockPos>() {
                  private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
                  private int currentDepth;
-@@ -340,7 +342,7 @@
+@@ -340,7 +359,7 @@
                  protected BlockPos computeNext() {
                      if (this.zMirror) {
                          this.zMirror = false;
@@ -24,7 +121,7 @@
                          return this.cursor;
                      } else {
                          BlockPos blockPos;
-@@ -366,7 +368,7 @@
+@@ -366,7 +385,7 @@
                              int k = this.currentDepth - Math.abs(i) - Math.abs(j);
                              if (k <= rangeZ) {
                                  this.zMirror = k != 0;
@@ -33,7 +130,7 @@
                              }
                          }
  
-@@ -444,12 +446,12 @@
+@@ -444,12 +463,12 @@
                      if (this.index == l) {
                          return this.endOfData();
                      } else {
