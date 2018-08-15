@@ -1,0 +1,73 @@
+From 8e587147671ae4291c03ddbec1a4687639db87e9 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 15 Aug 2018 01:26:09 -0700
+Subject: [PATCH] Allow disabling armour stand ticking
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c3bd82692..ed1475351 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -584,4 +584,10 @@ public class PaperWorldConfig {
+                 break;
+         }
+     }
++
++    public boolean armorStandTick = true;
++    private void armorStandTick() {
++        this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
++        log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
+index df0d66ad0..dca497072 100644
+--- a/src/main/java/net/minecraft/server/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
+@@ -51,6 +51,7 @@ public class EntityArmorStand extends EntityLiving {
+     public Vector3f leftLegPose;
+     public Vector3f rightLegPose;
+     public boolean canMove = true; // Paper
++    public boolean canTick = true; // Paper - armour stand ticking
+ 
+     public EntityArmorStand(World world) {
+         super(world);
+@@ -64,6 +65,7 @@ public class EntityArmorStand extends EntityLiving {
+         this.rightLegPose = EntityArmorStand.bw;
+         this.noclip = this.isNoGravity();
+         this.setSize(0.5F, 1.975F);
++        if (world != null) this.canTick = world.paperConfig.armorStandTick; // Paper - armour stand ticking
+     }
+ 
+     public EntityArmorStand(World world, double d0, double d1, double d2) {
+@@ -568,6 +570,7 @@ public class EntityArmorStand extends EntityLiving {
+     }
+ 
+     public void B_() {
++        if (!this.canTick) return;// Paper
+         super.B_();
+         Vector3f vector3f = (Vector3f) this.datawatcher.get(EntityArmorStand.b);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 8a06cb165..91b7bc2ed 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -221,4 +221,16 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+     public void setCanMove(boolean move) {
+         getHandle().canMove = move;
+     }
++
++    // Paper start
++    @Override
++    public boolean canTick() {
++        return this.getHandle().canTick;
++    }
++
++    @Override
++    public void setCanTick(final boolean tick) {
++        this.getHandle().canTick = tick;
++    }
++    // Paper end
+ }
+-- 
+2.18.0
+
