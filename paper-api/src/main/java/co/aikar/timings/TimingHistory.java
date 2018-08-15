@@ -125,7 +125,7 @@ public class TimingHistory {
                         data.entityCounts.get(entity.getType()).increment();
                     }
 
-                    for (BlockState tileEntity : chunk.getTileEntities()) {
+                    for (BlockState tileEntity : chunk.getTileEntities(false)) {
                         if (tileEntity == null) {
                             Bukkit.getLogger().warning("Null tileentity detected in chunk at position x: " + chunk.getX() + ", z: " + chunk.getZ());
                             continue;
