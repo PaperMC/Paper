@@ -2514,6 +2514,7 @@ public abstract class EntityLiving extends Entity {
         }
     }
 
+    public final void updateEntityEquipment() { p(); }; // Paper - OBFHELPER
     private void p() {
         Map<EnumItemSlot, ItemStack> map = this.q();
 

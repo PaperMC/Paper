@@ -377,4 +377,10 @@ public class PaperWorldConfig {
     private void armorStandEntityLookups() {
         armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
     }
+
+    public boolean armorStandTick = true;
+    private void armorStandTick() {
+        this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
+        log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
+    }
 }
