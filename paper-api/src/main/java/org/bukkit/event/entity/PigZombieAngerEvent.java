@@ -1,6 +1,5 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.event.Cancellable;
@@ -10,11 +9,7 @@ import org.bukkit.event.HandlerList;
  * Called when a Pig Zombie is angered by another entity.
  * <p>
  * If the event is cancelled, the pig zombie will not be angered.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

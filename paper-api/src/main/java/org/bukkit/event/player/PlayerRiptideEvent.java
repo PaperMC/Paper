@@ -1,6 +1,5 @@
 package org.bukkit.event.player;
 
-import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -10,12 +9,8 @@ import org.bukkit.inventory.ItemStack;
  * their trident to propel them through the air.
  * <br>
  * N.B. the riptide action is currently performed client side, so manipulating
- * the player in this event may have undesired effects
- *
- * @deprecated draft API
+ * the player in this event may have undesired effects.
  */
-@Deprecated
-@Warning(false)
 public class PlayerRiptideEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
