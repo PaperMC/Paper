@@ -129,9 +129,16 @@ public class CraftChunk implements Chunk {
 
     @Override
     public BlockState[] getTileEntities() {
+        // Paper start
+        return getTileEntities(true);
+    }
+
+    @Override
+    public BlockState[] getTileEntities(boolean useSnapshot) {
         if (!isLoaded()) {
             getWorld().getChunkAt(x, z); // Transient load for this tick
         }
+        // Paper end
         int index = 0;
         net.minecraft.server.Chunk chunk = getHandle();
 
@@ -143,7 +150,7 @@ public class CraftChunk implements Chunk {
             }
 
             BlockPosition position = (BlockPosition) obj;
-            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
+            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot); // Paper
         }
 
         return entities;
