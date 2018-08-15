@@ -232,5 +232,16 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     public void setCanMove(boolean move) {
         getHandle().canMove = move;
     }
+
+    @Override
+    public boolean canTick() {
+        return this.getHandle().canTick;
+    }
+
+    @Override
+    public void setCanTick(final boolean tick) {
+        this.getHandle().canTick = tick;
+        this.getHandle().canTickSetByAPI = true;
+    }
     // Paper end
 }
