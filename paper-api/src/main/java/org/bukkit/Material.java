@@ -1981,7 +1981,7 @@ public enum Material implements Keyed {
     }
 
     /**
-     * Creates a new {@link BlockData} instance for the specified Material, with
+     * Creates a new {@link BlockData} instance for this Material, with
      * all properties initialized to unspecified defaults.
      *
      * @param consumer consumer to run on new instance before returning
@@ -1992,15 +1992,16 @@ public enum Material implements Keyed {
     }
 
     /**
-     * Creates a new {@link BlockData} instance with material and properties
-     * parsed from provided data.
+     * Creates a new {@link BlockData} instance for this Material, with all
+     * properties initialized to unspecified defaults, except for those provided
+     * in data.
      *
      * @param data data string
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
     public BlockData createBlockData(String data) throws IllegalArgumentException {
-        return Bukkit.createBlockData(data);
+        return Bukkit.createBlockData(this, data);
     }
 
     /**
