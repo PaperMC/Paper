@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +20,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
     private final NamespacedKey key;
     private final ItemStack output;
     private final List<ItemStack> ingredients = new ArrayList<ItemStack>();
+    private String group = "";
 
     @Deprecated
     public ShapelessRecipe(ItemStack result) {
@@ -238,5 +240,27 @@ public class ShapelessRecipe implements Recipe, Keyed {
     @Override
     public NamespacedKey getKey() {
         return key;
+    }
+
+    /**
+     * Get the group of this recipe. Recipes with the same group may be grouped
+     * together when displayed in the client.
+     *
+     * @return recipe group. An empty string denotes no group. May not be null.
+     */
+    public String getGroup() {
+        return group;
+    }
+
+    /**
+     * Set the group of this recipe. Recipes with the same group may be grouped
+     * together when displayed in the client.
+     *
+     * @param group recipe group. An empty string denotes no group. May not be
+     * null.
+     */
+    public void setGroup(String group) {
+        Preconditions.checkArgument(group != null, "group");
+        this.group = group;
     }
 }
