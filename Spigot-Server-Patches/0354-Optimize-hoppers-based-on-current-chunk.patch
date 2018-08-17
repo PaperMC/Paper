@@ -1,0 +1,231 @@
+From 14a9ca4d25881343d8b9953661c33600387ebaf5 Mon Sep 17 00:00:00 2001
+From: xXkguyXx <xxkguyxxdev@gmail.com>
+Date: Fri, 17 Aug 2018 01:04:34 -0400
+Subject: [PATCH] Optimize hoppers based on current chunk
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 91d3308c..53e68bbe 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -323,15 +323,15 @@ public class BlockChest extends BlockTileEntity {
+     }
+ 
+     @Nullable
+-    public ITileInventory a(World world, BlockPosition blockposition, boolean flag) {
+-        TileEntity tileentity = world.getTileEntity(blockposition);
++    public ITileInventory a(Chunk currentChunk, World world, BlockPosition blockposition, boolean flag) {
++        TileEntity tileentity = world.getTileEntity(currentChunk, blockposition);
+ 
+         if (!(tileentity instanceof TileEntityChest)) {
+             return null;
+         } else {
+             Object object = (TileEntityChest) tileentity;
+ 
+-            if (!flag && this.e(world, blockposition)) {
++            if (!flag && this.e(currentChunk, world, blockposition)) {
+                 return null;
+             } else {
+                 Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
+@@ -339,8 +339,9 @@ public class BlockChest extends BlockTileEntity {
+                 while (iterator.hasNext()) {
+                     EnumDirection enumdirection = (EnumDirection) iterator.next();
+                     BlockPosition blockposition1 = blockposition.shift(enumdirection);
++                    Chunk chunk = world.getChunkAtWorldCoords(blockposition1);
+                     // Paper start - don't load chunks if the other side of the chest is in unloaded chunk
+-                    final IBlockData type = world.getTypeIfLoaded(blockposition1); // Paper
++                    final IBlockData type = chunk.getBlockData(blockposition1); // Paper
+                     if (type ==  null) {
+                         continue;
+                     }
+@@ -348,11 +349,11 @@ public class BlockChest extends BlockTileEntity {
+                     // Paper end
+ 
+                     if (block == this) {
+-                        if (!flag && this.e(world, blockposition1)) { // Paper - check for allowBlocked flag - MC-99321
++                        if (!flag && this.e(currentChunk, world, blockposition1)) { // Paper - check for allowBlocked flag - MC-99321
+                             return null;
+                         }
+ 
+-                        TileEntity tileentity1 = world.getTileEntity(blockposition1);
++                        TileEntity tileentity1 = world.getTileEntity(chunk, blockposition1);
+ 
+                         if (tileentity1 instanceof TileEntityChest) {
+                             if (enumdirection != EnumDirection.WEST && enumdirection != EnumDirection.NORTH) {
+@@ -369,6 +370,11 @@ public class BlockChest extends BlockTileEntity {
+         }
+     }
+ 
++    @Nullable
++    public ITileInventory a(World world, BlockPosition blockposition, boolean flag) {
++        return a(world.getChunkAtWorldCoords(blockposition), world, blockposition, flag);
++    }
++
+     public TileEntity a(World world, int i) {
+         return new TileEntityChest();
+     }
+@@ -396,10 +402,18 @@ public class BlockChest extends BlockTileEntity {
+         return enumdirection == EnumDirection.UP ? iblockdata.a(iblockaccess, blockposition, enumdirection) : 0;
+     }
+ 
++    private boolean e(Chunk chunk, World world, BlockPosition blockposition) {
++        return this.i(chunk, blockposition) || this.j(world, blockposition);
++    }
++
+     private boolean e(World world, BlockPosition blockposition) {
+         return this.i(world, blockposition) || this.j(world, blockposition);
+     }
+ 
++    private boolean i(Chunk chunk, BlockPosition blockposition) {
++        return chunk.getBlockData(blockposition.up()).l();
++    }
++
+     private boolean i(World world, BlockPosition blockposition) {
+         return world.getType(blockposition.up()).l();
+     }
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 4539b560..15cb2a30 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -219,7 +219,7 @@ public final class MCUtil {
+     public static TileEntityHopper getHopper(World world, BlockPosition pos) {
+         Chunk chunk = world.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4);
+         if (chunk != null && chunk.getBlockData(pos).getBlock() == Blocks.HOPPER) {
+-            TileEntity tileEntity = chunk.getTileEntityImmediately(pos);
++            TileEntity tileEntity = world.getTileEntity(chunk, pos);
+             if (tileEntity instanceof TileEntityHopper) {
+                 return (TileEntityHopper) tileEntity;
+             }
+@@ -227,6 +227,24 @@ public final class MCUtil {
+         return null;
+     }
+ 
++    @Nullable
++    public static IInventory getInventory(Chunk chunk, World world, BlockPosition position) {
++        if (chunk == null) {
++            chunk = world.getChunkIfLoaded(position.getX() >> 4, position.getZ() >> 4);
++        }
++        if (chunk == null) return null;
++        Block block = chunk.getBlockData(position).getBlock();
++        if (block instanceof BlockChest) {
++            return ((BlockChest) block).a(chunk, world, position, false);
++        }
++        if (block.isTileEntity()) {
++            TileEntity tile = world.getTileEntity(chunk, position);
++            if (tile instanceof IInventory) return (IInventory) tile;
++        }
++        return null;
++    }
++
++
+     @Nonnull
+     public static World getNMSWorld(@Nonnull org.bukkit.World world) {
+         return ((CraftWorld) world).getHandle();
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 54bfbfc6..ce975711 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -129,7 +129,7 @@ public abstract class TileEntity implements KeyedObject {
+ 
+     public int v() {
+         if (this.g == -1) {
+-            IBlockData iblockdata = this.world.getType(this.position);
++            IBlockData iblockdata = getCurrentChunk().getBlockData(this.position); // Paper - Reduce Chunk lookups
+ 
+             this.g = iblockdata.getBlock().toLegacyData(iblockdata);
+         }
+@@ -140,7 +140,7 @@ public abstract class TileEntity implements KeyedObject {
+     public void update() {
+         if (this.world != null) {
+             if (IGNORE_TILE_UPDATES) return; // Paper
+-            IBlockData iblockdata = this.world.getType(this.position);
++            IBlockData iblockdata = getCurrentChunk().getBlockData(this.position); // Paper - Reduce Chunk lookups
+ 
+             this.g = iblockdata.getBlock().toLegacyData(iblockdata);
+             this.world.b(this.position, this);
+@@ -157,7 +157,7 @@ public abstract class TileEntity implements KeyedObject {
+ 
+     public Block getBlock() {
+         if (this.e == null && this.world != null) {
+-            this.e = this.world.getType(this.position).getBlock();
++            this.e = getCurrentChunk().getBlockData(this.position).getBlock(); // Paper - Reduce Chunk lookups
+         }
+ 
+         return this.e;
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 5198a590..35e3bbda 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -345,7 +345,12 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+ 
+     // Paper end
+     private boolean s() {
+-        IInventory iinventory = this.I();
++        Chunk chunk = getCurrentChunk();
++        BlockPosition blockPosition = getPosition().shift(BlockHopper.b(this.v()));
++        if (chunk.locX != blockPosition.getX() >> 4 || chunk.locZ != blockPosition.getZ() >> 4) {
++            chunk = world.getChunkIfLoaded(blockPosition);
++        }
++        IInventory iinventory = MCUtil.getInventory(chunk, getWorld(), blockPosition);
+ 
+         if (iinventory == null) {
+             return false;
+@@ -461,8 +466,14 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+ 
+     // Paper start - split methods, and only do entity lookup if in pull mode
+     public static boolean a(IHopper ihopper) {
+-        IInventory iinventory = getInventory(ihopper, !(ihopper instanceof TileEntityHopper) || !ihopper.getWorld().paperConfig.isHopperPushBased);
+-
++        IInventory iinventory;
++        if (ihopper.getWorld().paperConfig.isHopperPushBased && ihopper instanceof TileEntityHopper) {
++            TileEntityHopper tileEntityHopper = (TileEntityHopper) ihopper;
++            BlockPosition pos = tileEntityHopper.getPosition().up(); // Only pull from a above, because everything else comes to us
++            iinventory = MCUtil.getInventory(tileEntityHopper.getCurrentChunk(), ihopper.getWorld(), pos);
++        } else {
++            iinventory = getInventory(ihopper, !(ihopper instanceof TileEntityHopper) || !ihopper.getWorld().paperConfig.isHopperPushBased);
++        }
+         return acceptItem(ihopper, iinventory);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 04d0fa1d..852a9edc 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -2111,8 +2111,9 @@ public abstract class World implements IBlockAccess {
+     }
+ 
+     public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
++
+     @Nullable
+-    public TileEntity getTileEntity(BlockPosition blockposition) {
++    public TileEntity getTileEntity(Chunk currentChunk, BlockPosition blockposition) {
+         if (blockposition.isInvalidYLocation()) { // Paper
+             return null;
+         } else {
+@@ -2129,7 +2130,10 @@ public abstract class World implements IBlockAccess {
+             }
+ 
+             if (tileentity == null) {
+-                tileentity = this.getChunkAtWorldCoords(blockposition).a(blockposition, Chunk.EnumTileEntityState.IMMEDIATE);
++                if (currentChunk == null) {
++                    currentChunk = getChunkAtWorldCoords(blockposition);
++                }
++                tileentity = currentChunk.a(blockposition, Chunk.EnumTileEntityState.IMMEDIATE);
+             }
+ 
+             if (tileentity == null) {
+@@ -2140,6 +2144,11 @@ public abstract class World implements IBlockAccess {
+         }
+     }
+ 
++    @Nullable
++    public TileEntity getTileEntity(BlockPosition blockposition) {
++        return getTileEntity(null, blockposition);
++    }
++
+     @Nullable
+     private TileEntity F(BlockPosition blockposition) {
+         for (int i = 0; i < this.b.size(); ++i) {
+-- 
+2.18.0.windows.1
+
