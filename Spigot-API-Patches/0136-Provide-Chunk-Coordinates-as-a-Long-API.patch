@@ -1,0 +1,57 @@
+From b812737b929851249cbbf6c0877d7064ec321c1d Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 4 Aug 2018 19:37:35 -0400
+Subject: [PATCH] Provide Chunk Coordinates as a Long API
+
+Allows you to easily access the chunks X/z as a long, and a method
+to look up by the long key too.
+
+diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
+index 079b9feb..c75bce07 100644
+--- a/src/main/java/org/bukkit/Chunk.java
++++ b/src/main/java/org/bukkit/Chunk.java
+@@ -23,6 +23,15 @@ public interface Chunk {
+      */
+     int getZ();
+ 
++    // Paper start
++    /**
++     * @return The Chunks X and Z coordinates packed into a long
++     */
++    default long getChunkKey() {
++        return (long) getX() & 0xffffffffL | ((long) getZ() & 0xffffffffL) << 32;
++    }
++    // Paper end
++
+     /**
+      * Gets the world containing this chunk
+      *
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index ba300c29..f84f151a 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -137,6 +137,21 @@ public interface World extends PluginMessageRecipient, Metadatable {
+      */
+     public Chunk getChunkAt(Block block);
+ 
++    // Paper start
++    /**
++     * Gets the chunk at the specified chunk key, which is the X and Z packed into a long.
++     *
++     * See {@link Chunk#getChunkKey()} for easy access to the key, or you may calculate it as:
++     * long chunkKey = (long) chunkX &amp; 0xffffffffL | ((long) chunkZ &amp; 0xffffffffL) &gt;&gt; 32;
++     *
++     * @param chunkKey The Chunk Key to look up the chunk by
++     * @return The chunk at the specified key
++     */
++    public default Chunk getChunkAt(long chunkKey) {
++        return getChunkAt((int) chunkKey, (int) (chunkKey >> 32));
++    }
++    // Paper end
++
+     /**
+      * Used by {@link World#getChunkAtAsync(Location,ChunkLoadCallback)} methods
+      * to request a {@link Chunk} to be loaded, with this callback receiving
+-- 
+2.18.0
+
