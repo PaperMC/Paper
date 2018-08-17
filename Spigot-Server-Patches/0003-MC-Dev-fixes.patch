@@ -1,11 +1,11 @@
-From 3d58bb7e7759377a0a59a8cf388372f8918dea2f Mon Sep 17 00:00:00 2001
+From 55e8dd323bd11d246365589cbbf0a40ca81ad2cf Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 002da2a191..9f3aa24590 100644
+index 002da2a19..9f3aa2459 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -150,7 +150,7 @@ public class BlockPosition extends BaseBlockPosition {
@@ -59,7 +59,7 @@ index 002da2a191..9f3aa24590 100644
                          }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 650ef14758..35aea4829f 100644
+index 650ef1475..35aea4829 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -15,7 +15,7 @@ public class ChunkSection {
@@ -71,8 +71,39 @@ index 650ef14758..35aea4829f 100644
          this.emittedLight = new NibbleArray();
          if (flag) {
              this.skyLight = new NibbleArray();
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 20b1bc1b4..e9c59b7d7 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -85,7 +85,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+             Object object = datapalette.a(databits.a(j));
+ 
+             if (object != null) {
+-                this.setBlockIndex(j, object);
++                this.setBlockIndex(j, (T) object); // Paper decompile fix
+             }
+         }
+ 
+@@ -113,7 +113,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+     protected T a(int i) {
+         Object object = this.h.a(this.a.a(i));
+ 
+-        return object == null ? this.g : object;
++        return object == null ? this.g : (T) object; // Paper - decompile fix
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) {
+@@ -138,7 +138,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+         int j = along.length * 64 / 4096;
+ 
+         if (this.h == this.b) {
+-            DataPaletteHash datapalettehash = new DataPaletteHash(this.d, i, this.c, this.e, this.f);
++            DataPaletteHash<T> datapalettehash = new DataPaletteHash<>(this.d, i, this.c, this.e, this.f); // Paper - decompile fix
+ 
+             datapalettehash.a(nbttaglist);
+             DataBits databits = new DataBits(i, 4096, along);
 diff --git a/src/main/java/net/minecraft/server/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
-index 4997255c79..a5545bd4c4 100644
+index 4997255c7..a5545bd4c 100644
 --- a/src/main/java/net/minecraft/server/DedicatedPlayerList.java
 +++ b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
 @@ -135,8 +135,4 @@ public class DedicatedPlayerList extends PlayerList {
@@ -85,7 +116,7 @@ index 4997255c79..a5545bd4c4 100644
 -    }
  }
 diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
-index a661789c1e..785a1a2184 100644
+index a661789c1..785a1a218 100644
 --- a/src/main/java/net/minecraft/server/DefinedStructure.java
 +++ b/src/main/java/net/minecraft/server/DefinedStructure.java
 @@ -88,7 +88,7 @@ public class DefinedStructure {
@@ -140,7 +171,7 @@ index a661789c1e..785a1a2184 100644
  
          public Iterator<IBlockData> iterator() {
 diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
-index 188d49d820..854ad49b6c 100644
+index 188d49d82..854ad49b6 100644
 --- a/src/main/java/net/minecraft/server/EnumDirection.java
 +++ b/src/main/java/net/minecraft/server/EnumDirection.java
 @@ -255,7 +255,7 @@ public enum EnumDirection implements INamable {
@@ -204,7 +235,7 @@ index 188d49d820..854ad49b6c 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
-index 8f06c58485..4361b2cee5 100644
+index 8f06c5848..4361b2cee 100644
 --- a/src/main/java/net/minecraft/server/LocaleLanguage.java
 +++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
 @@ -34,7 +34,7 @@ public class LocaleLanguage {
@@ -217,7 +248,7 @@ index 8f06c58485..4361b2cee5 100644
  
              this.e = SystemUtils.b();
 diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
-index 86585a13ff..f52b9c6f0a 100644
+index 86585a13f..f52b9c6f0 100644
 --- a/src/main/java/net/minecraft/server/MathHelper.java
 +++ b/src/main/java/net/minecraft/server/MathHelper.java
 @@ -8,7 +8,7 @@ import java.util.function.IntPredicate;
@@ -229,8 +260,57 @@ index 86585a13ff..f52b9c6f0a 100644
          for (int i = 0; i < afloat.length; ++i) {
              afloat[i] = (float) Math.sin((double) i * 3.141592653589793D * 2.0D / 65536.0D);
          }
+diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
+index 824e68b50..d0bb115eb 100644
+--- a/src/main/java/net/minecraft/server/ProtoChunk.java
++++ b/src/main/java/net/minecraft/server/ProtoChunk.java
+@@ -65,7 +65,7 @@ public class ProtoChunk implements IChunkAccess {
+         this.b = chunkcoordintpair;
+         this.p = chunkconverter;
+         Predicate predicate = (block) -> {
+-            return block == null || block.getBlockData().isAir();
++            return block == null || ((Block)block).getBlockData().isAir(); // Paper - decompile fix
+         };
+         RegistryBlocks registryblocks = Block.REGISTRY;
+ 
+@@ -325,8 +325,8 @@ public class ProtoChunk implements IChunkAccess {
+     }
+ 
+     private HeightMap c(HeightMap.Type heightmap_type) {
+-        return (HeightMap) this.f.computeIfAbsent(heightmap_type, (heightmap_type) -> {
+-            HeightMap heightmap = new HeightMap(this, heightmap_type);
++        return (HeightMap) this.f.computeIfAbsent(heightmap_type, (heightmap_type2) -> { // Paper - decompile fix
++            HeightMap heightmap = new HeightMap(this, heightmap_type2); // Paper - decompile fix
+ 
+             heightmap.a();
+             return heightmap;
+@@ -372,13 +372,13 @@ public class ProtoChunk implements IChunkAccess {
+ 
+     @Nullable
+     public LongSet b(String s) {
+-        return (LongSet) this.o.computeIfAbsent(s, (s) -> {
++        return (LongSet) this.o.computeIfAbsent(s, (s1) -> { // Paper - decompile fix
+             return new LongOpenHashSet();
+         });
+     }
+ 
+     public void a(String s, long i) {
+-        ((LongSet) this.o.computeIfAbsent(s, (s) -> {
++        ((LongSet) this.o.computeIfAbsent(s, (s1) -> { // Paper - decompile fix
+             return new LongOpenHashSet();
+         })).add(i);
+         this.c = true;
+@@ -493,7 +493,7 @@ public class ProtoChunk implements IChunkAccess {
+     }
+ 
+     public BitSet a(WorldGenStage.Features worldgenstage_features) {
+-        return (BitSet) this.t.computeIfAbsent(worldgenstage_features, (worldgenstage_features) -> {
++        return (BitSet) this.t.computeIfAbsent(worldgenstage_features, (worldgenstage_features1) -> { // Paper - decompile fix
+             return new BitSet(65536);
+         });
+     }
 diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
-index 3b8f6ec167..bde5714dd6 100644
+index 3b8f6ec16..bde5714dd 100644
 --- a/src/main/java/net/minecraft/server/RegistryID.java
 +++ b/src/main/java/net/minecraft/server/RegistryID.java
 @@ -6,7 +6,7 @@ import java.util.Arrays;
@@ -271,7 +351,7 @@ index 3b8f6ec167..bde5714dd6 100644
          this.f = 0;
  
 diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
-index 43596cb2d5..3faf74a22f 100644
+index 43596cb2d..3faf74a22 100644
 --- a/src/main/java/net/minecraft/server/ShapeDetector.java
 +++ b/src/main/java/net/minecraft/server/ShapeDetector.java
 @@ -171,7 +171,7 @@ public class ShapeDetector {
@@ -284,7 +364,7 @@ index 43596cb2d5..3faf74a22f 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/VoxelShape.java b/src/main/java/net/minecraft/server/VoxelShape.java
-index 4b5463cca2..53c9f21887 100644
+index 4b5463cca..53c9f2188 100644
 --- a/src/main/java/net/minecraft/server/VoxelShape.java
 +++ b/src/main/java/net/minecraft/server/VoxelShape.java
 @@ -67,7 +67,7 @@ public abstract class VoxelShape {
