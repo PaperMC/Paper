@@ -1,0 +1,215 @@
+From 3facd0493823185b7d706fdea5f69d1aa4a0471b Mon Sep 17 00:00:00 2001
+From: Colin Godsey <crgodsey@gmail.com>
+Date: Wed, 8 Aug 2018 10:10:06 -0600
+Subject: [PATCH] Cache World Entity Type counts
+
+Optimizes mob spawning by keeping a count of entities by type
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
+new file mode 100644
+index 0000000000..f7b65ccf73
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
+@@ -0,0 +1,114 @@
++package com.destroystokyo.paper;
++
++import net.minecraft.server.Entity;
++import net.minecraft.server.EntityInsentient;
++import net.minecraft.server.EnumCreatureType;
++import net.minecraft.server.IAnimal;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.World;
++import net.minecraft.server.WorldServer;
++
++import java.util.ArrayList;
++import java.util.Collection;
++
++public class PaperWorldEntityList extends ArrayList<Entity> {
++
++    private final WorldServer world;
++    private final int[] entityCounts = new int[EnumCreatureType.values().length];
++
++
++    public PaperWorldEntityList(World world) {
++        this.world = (WorldServer) world;
++    }
++
++    @Override
++    public boolean addAll(Collection<? extends Entity> c) {
++        for (Entity e : c) {
++            updateEntityCount(e, 1);
++        }
++
++        return super.addAll(c);
++    }
++
++    @Override
++    public boolean removeAll(Collection<?> c) {
++        // TODO: Optimize this
++        boolean removed = false;
++        for (Object e : c) {
++            if (remove(e)) {
++                removed = true;
++            }
++        }
++
++        return removed;
++    }
++
++    @Override
++    public boolean add(Entity e) {
++        updateEntityCount(e, 1);
++
++        return super.add(e);
++    }
++
++    @Override
++    public Entity remove(int index) {
++        guard();
++        Entity entity = super.remove(index);
++        if (entity != null) updateEntityCount(entity, -1);
++        return entity;
++    }
++
++    @Override
++    public boolean remove(Object o) {
++        guard();
++        if (super.remove(o)) {
++            updateEntityCount((Entity) o, -1);
++            return true;
++        }
++        return false;
++    }
++
++    private void guard() {
++        if (world.guardEntityList) {
++            throw new java.util.ConcurrentModificationException();
++        }
++    }
++
++    public int getCreatureCount(EnumCreatureType type) {
++        return entityCounts[type.ordinal()];
++    }
++
++    private void updateEntityCount(EnumCreatureType type, int amt) {
++        int count = entityCounts[type.ordinal()];
++
++        count += amt;
++
++        if (count < 0) {
++            MinecraftServer.LOGGER.error("Paper - Entity count cache has gone negative");
++            count = 0;
++        }
++
++        entityCounts[type.ordinal()] = count;
++    }
++
++    public void updateEntityCount(Entity entity, int amt) {
++        if (!(entity instanceof IAnimal)) return;
++
++        if (entity instanceof EntityInsentient) {
++            EntityInsentient entityinsentient = (EntityInsentient) entity;
++            if (amt > 0 && entityinsentient.isDespawnableByDefault() && entityinsentient.isPersistent()) {
++                entityinsentient.countsAgainstSpawnLimit = false;
++                return;
++            } else if (amt < 0 && !entityinsentient.countsAgainstSpawnLimit) {
++                return;
++            }
++        }
++
++        for (EnumCreatureType type : EnumCreatureType.values()) {
++            if (type.matches(entity)) {
++                updateEntityCount(type, amt);
++                break;
++            }
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 903434e5f4..0ad5e1ab47 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -42,6 +42,7 @@ public abstract class EntityInsentient extends EntityLiving {
+     public float[] dropChanceArmor;
+     // public boolean canPickUpLoot; // CraftBukkit - moved up to EntityLiving
+     public boolean persistent;
++    public boolean countsAgainstSpawnLimit = true; // Paper
+     private final Map<PathType, Float> bH;
+     public MinecraftKey bI; // CraftBukkit private -> public
+     public long bJ; // CraftBukkit private -> public
+@@ -614,6 +615,7 @@ public abstract class EntityInsentient extends EntityLiving {
+         return true;
+     }
+ 
++    public boolean isDespawnableByDefault() { return isTypeNotPersistent(); } // Paper - sortof an obf helper, too annoying to change visibility here
+     protected boolean isTypeNotPersistent() {
+         return true;
+     }
+diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
+index 79e52f7bac..42f6a6a93a 100644
+--- a/src/main/java/net/minecraft/server/EnumCreatureType.java
++++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
+@@ -16,6 +16,8 @@ public enum EnumCreatureType {
+         this.h = flag1;
+     }
+ 
++    public boolean matches(Entity entity) { return innerClass().isAssignableFrom(entity.getClass()); } // Paper
++    public Class<? extends IAnimal> innerClass() { return this.a(); } // Paper - OBFHELPER
+     public Class<? extends IAnimal> a() {
+         return this.e;
+     }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index f525fd1b42..2f20dfcfcf 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -113,7 +113,7 @@ public final class SpawnerCreature {
+                 // CraftBukkit end
+ 
+                 if ((!enumcreaturetype.c() || flag1) && (enumcreaturetype.c() || flag) && (!enumcreaturetype.d() || flag2)) {
+-                    k = worldserver.a(enumcreaturetype.a());
++                    k = worldserver.entityList.getCreatureCount(enumcreaturetype); // Paper - entity count cache
+                     int l1 = limit * i / b; // CraftBukkit - use per-world limits
+ 
+                     if (k <= l1) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 004c3ec474..16d0c0d45b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -48,7 +48,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     private static final EnumDirection[] a = EnumDirection.values();
+     private int b = 63;
+     // Spigot start - guard entity list from removals
+-    public final List<Entity> entityList = new java.util.ArrayList<Entity>()
++    public final com.destroystokyo.paper.PaperWorldEntityList entityList = new com.destroystokyo.paper.PaperWorldEntityList(this);
++        /* // Paper start
+     {
+         @Override
+         public Entity remove(int index)
+@@ -72,6 +73,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             }
+         }
+     };
++    */ // Paper end
+     // Spigot end
+     protected final Set<Entity> g = Sets.newHashSet(); public Set<Entity> getEntityUnloadQueue() { return g; };// Paper - OBFHELPER
+     //public final List<TileEntity> tileEntityList = Lists.newArrayList(); // Paper - remove unused list
+@@ -140,7 +142,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
+ 
+     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
+-    private boolean guardEntityList; // Spigot
++    public boolean guardEntityList; // Spigot // Paper - public
+     public static boolean haveWeSilencedAPhysicsCrash;
+     public static String blockLocation;
+     private org.spigotmc.TickLimiter entityLimiter;
+@@ -1151,6 +1153,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             this.getChunkAt(i, j).b(entity);
+         }
+         entity.shouldBeRemoved = true; // Paper
++        entityList.updateEntityCount(entity, -1); // Paper
+ 
+         if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
+         // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
+-- 
+2.18.0
+
