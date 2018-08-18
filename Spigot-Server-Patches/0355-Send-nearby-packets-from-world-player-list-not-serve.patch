@@ -1,11 +1,11 @@
-From aee707c111aa24b4a9036acb37b6e226efc81a44 Mon Sep 17 00:00:00 2001
+From f1a4565a54f292f668f94ac2ff6f3f56937209c0 Mon Sep 17 00:00:00 2001
 From: Mystiflow <mystiflow@gmail.com>
 Date: Fri, 6 Jul 2018 13:21:30 +0100
 Subject: [PATCH] Send nearby packets from world player list not server list
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index eaaa54ac..44ced604 100644
+index eaaa54acd..44ced604a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -1239,8 +1239,25 @@ public abstract class PlayerList {
@@ -46,7 +46,7 @@ index eaaa54ac..44ced604 100644
                  double d5 = d1 - entityplayer.locY;
                  double d6 = d2 - entityplayer.locZ;
 diff --git a/src/main/java/net/minecraft/server/WorldManager.java b/src/main/java/net/minecraft/server/WorldManager.java
-index 2c8fb705..a986e947 100644
+index 2c8fb705d..bfe003f60 100644
 --- a/src/main/java/net/minecraft/server/WorldManager.java
 +++ b/src/main/java/net/minecraft/server/WorldManager.java
 @@ -35,8 +35,8 @@ public class WorldManager implements IWorldAccess {
@@ -78,7 +78,7 @@ index 2c8fb705..a986e947 100644
  
          // CraftBukkit start
          EntityHuman entityhuman = null;
-@@ -67,7 +67,13 @@ public class WorldManager implements IWorldAccess {
+@@ -67,8 +67,14 @@ public class WorldManager implements IWorldAccess {
          if (entity instanceof EntityHuman) entityhuman = (EntityHuman) entity;
          // CraftBukkit end
  
@@ -86,17 +86,19 @@ index 2c8fb705..a986e947 100644
 +        java.util.List<? extends EntityHuman> list = entity != null ? entity.world.players : this.a.getPlayerList().v();
 +        Iterator<? extends EntityHuman> iterator = list.iterator();
          while (iterator.hasNext()) {
+-            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 +            EntityHuman human = iterator.next();
 +            if (!(human instanceof EntityPlayer)) continue;
++            EntityPlayer entityplayer = (EntityPlayer) human;
 +            // Paper end
-             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
              if (entityplayer != null && entityplayer.world == this.world && entityplayer.getId() != i) {
+                 double d0 = (double) blockposition.getX() - entityplayer.locX;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 9fe5c440..8768b0b8 100644
+index a14b5e061..b19942e0f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1234,7 +1234,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1267,7 +1267,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          }
          // CraftBukkit end
          if (super.strikeLightning(entity)) {
@@ -105,7 +107,7 @@ index 9fe5c440..8768b0b8 100644
              return true;
          } else {
              return false;
-@@ -1309,8 +1309,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1342,8 +1342,8 @@ public class WorldServer extends World implements IAsyncTaskHandler {
                  BlockActionData blockactiondata = (BlockActionData) iterator.next();
  
                  if (this.a(blockactiondata)) {
@@ -117,10 +119,10 @@ index 9fe5c440..8768b0b8 100644
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 210e3bc4..170c937a 100644
+index ccff6fd05..567e9acb1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1496,7 +1496,7 @@ public class CraftWorld implements World {
+@@ -1500,7 +1500,7 @@ public class CraftWorld implements World {
          double z = loc.getZ();
  
          PacketPlayOutCustomSoundEffect packet = new PacketPlayOutCustomSoundEffect(sound, SoundCategory.valueOf(category.name()), x, y, z, volume, pitch);
@@ -130,5 +132,5 @@ index 210e3bc4..170c937a 100644
  
      public String getGameRuleValue(String rule) {
 -- 
-2.18.0.rc2.windows.1
+2.18.0
 
