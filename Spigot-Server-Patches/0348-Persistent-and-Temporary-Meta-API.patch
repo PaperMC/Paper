@@ -1,0 +1,605 @@
+From a6a590138f93a34879e4976404b42138d425fcd3 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Aug 2018 00:14:00 -0400
+Subject: [PATCH] Persistent and Temporary Meta API
+
+Allows plugins to store metadata on many objects. Persistent data will
+be saved with the object and survives restarts.
+
+Temporary Metadata is a replacement API for Bukkit's Metadatable interface,
+that provides an API that doesn't suck, and is simpler (ultimately just a hashmap)
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index db8fbc006d..c1f5cf8f40 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -175,6 +175,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public org.bukkit.Chunk bukkitChunk;
++    MetaApiAccessor.ChunkMeta chunkMeta = new MetaApiAccessor.ChunkMeta(); // Paper
+     public boolean mustSave;
+     public boolean newChunk;
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 03d54a7ef4..48187e4d6a 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -52,6 +52,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     // CraftBukkit start
+     private static final int CURRENT_LEVEL = 2;
+     // Paper start
++    public com.destroystokyo.paper.meta.PersistentMetaMap metaMap; // Paper
++    public com.destroystokyo.paper.meta.TempMetaMap tempMetaMap; // Paper
+     public static Random SHARED_RANDOM = new Random() {
+         private boolean locked = false;
+         @Override
+diff --git a/src/main/java/net/minecraft/server/MetaApiAccessor.java b/src/main/java/net/minecraft/server/MetaApiAccessor.java
+new file mode 100644
+index 0000000000..61b1964021
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/MetaApiAccessor.java
+@@ -0,0 +1,489 @@
++package net.minecraft.server;
++
++import com.destroystokyo.paper.meta.MetaMap;
++import com.destroystokyo.paper.meta.PersistentMetaList;
++import com.destroystokyo.paper.meta.PersistentMetaMap;
++import com.destroystokyo.paper.meta.TempMetaMap;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.block.Block;
++import org.bukkit.craftbukkit.CraftChunk;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.entity.Player;
++import org.bukkit.util.Vector;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.Map.Entry;
++import java.util.regex.Pattern;
++
++public final class MetaApiAccessor {
++
++    private static final String META_MAP = "MetaMap";
++    private static final String META_TYPE = "MetaType";
++    private static final String ITEM = "Item";
++    private static final String ENTITY_META = "_EntityMeta";
++    private static final String TILEENTITY_META = "_TileEntityMeta";
++    private static final String WORLD_META = "_WorldMeta";
++    private static final String CHUNK_META_LIST = "_ChunkMetaList";
++    private static final String BLOCK_POS = "_BlockPos";
++    private static final String CHUNK_META = "_ChunkMeta";
++
++    private MetaApiAccessor() {}
++
++    public static PersistentMetaMap getWorldMetaMap(CraftWorld world) {
++        return world.getHandle().worldData.metaMap;
++    }
++
++    public static PersistentMetaMap getTileEntityMetaMap(org.bukkit.block.BlockState block, boolean isWrite) {
++        final CraftBlockState craftBlock = (CraftBlockState) block;
++        final TileEntity tileEntity = ((CraftWorld) craftBlock.getWorld()).getHandle().getTileEntity(MCUtil.toBlockPosition(craftBlock.getLocation()));
++        if (tileEntity == null) {
++            return null;
++        }
++        if (tileEntity.metaMap == null && isWrite) {
++            tileEntity.metaMap = new PersistentMetaMap();
++        }
++        return tileEntity.metaMap;
++    }
++
++    /**
++     * Util for getting a MetaMap by location
++     * @param loc
++     * @return
++     */
++    public static PersistentMetaMap getBlockMetaMap(org.bukkit.Location loc, boolean isWrite) {
++        return getBlockMetaMap(((CraftChunk) loc.getChunk()).getHandle(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), isWrite);
++    }
++
++    /**
++     * Util for getting a MetaMap for a chunk
++     * @param chunk
++     * @return
++     */
++    public static PersistentMetaMap getChunkMetaMap(org.bukkit.Chunk chunk, boolean isWrite) {
++        return getBlockMetaMap(((CraftChunk) chunk).getHandle(), 0, -1, 0, isWrite);
++    }
++
++    /**
++     * Gets the metamap for the specified coords, creating it if it doesnt exists
++     * @param handle
++     * @param x
++     * @param y
++     * @param z
++     * @return
++     */
++    private static PersistentMetaMap getBlockMetaMap(Chunk handle, int x, int y, int z, boolean isWrite) {
++        ChunkPersistentMeta meta = handle.chunkMeta;
++        if (meta == null) {
++            if (!isWrite) {
++                return null;
++            }
++            meta = handle.chunkMeta = new ChunkPersistentMeta();
++        }
++        Vector coords = new Vector(x, y, z);
++        if (!isWrite && !meta.containsKey(coords)) {
++            return null;
++        }
++        PersistentMetaMap ret = meta.get(coords);
++        if (ret == null) {
++            if (isWrite) {
++                ret = new PersistentMetaMap();
++                meta.put(coords, ret);
++            }
++        }
++        return ret;
++    }
++
++    /**
++     * Util for getting a MetaMap for an Entity
++     * @param craftentity
++     * @return
++     */
++    public static PersistentMetaMap getEntityMetaMap(org.bukkit.entity.Entity craftentity, boolean isWrite) {
++        Entity entity = ((CraftEntity) craftentity).getHandle();
++        if (entity.metaMap == null) {
++            if (isWrite) {
++                entity.metaMap = new PersistentMetaMap();
++            }
++        }
++        return entity.metaMap;
++    }
++
++    static void loadEntityMeta(Entity entity, NBTTagCompound nbt) {
++        if (nbt.hasKey(ENTITY_META)) {
++            entity.metaMap = getMetaMapFromCompound(nbt.getCompound(ENTITY_META));
++        }
++    }
++
++    static void saveEntityMeta(Entity entity, NBTTagCompound nbt) {
++        if (entity.metaMap != null && !entity.metaMap.isEmpty()) {
++            nbt.set(ENTITY_META, getNbtFromObject(entity.metaMap));
++        }
++    }
++
++    static void loadTileEntityMeta(TileEntity tileEntity, NBTTagCompound nbt) {
++        if (nbt.hasKey(TILEENTITY_META)) {
++            tileEntity.metaMap = getMetaMapFromCompound(nbt.getCompound(TILEENTITY_META));
++        }
++    }
++
++    static void saveTileEntityMeta(TileEntity tileEntity, NBTTagCompound nbt) {
++        if (tileEntity.metaMap != null && !tileEntity.metaMap.isEmpty()) {
++            nbt.set(TILEENTITY_META, getNbtFromObject(tileEntity.metaMap));
++        }
++    }
++
++    static void loadWorldMeta(WorldData world, NBTTagCompound nbt) {
++        if (nbt.hasKey(WORLD_META)) {
++            NBTTagCompound nbtmeta = nbt.getCompound(WORLD_META);
++            world.metaMap = getMetaMapFromCompound(nbtmeta);
++        }
++        if (world.metaMap == null) {
++            world.metaMap = new PersistentMetaMap();
++        }
++    }
++
++    static void saveWorldMeta(WorldData world, NBTTagCompound nbt) {
++        if (world.metaMap != null && !world.metaMap.isEmpty()) {
++            NBTBase nbtmeta = getNbtFromObject(world.metaMap);
++            nbt.set(WORLD_META, nbtmeta);
++        }
++    }
++
++    /**
++     * Saves this chunks Meta Data into NBT
++     * @param cmp
++     * @param chunk
++     */
++    static void saveChunkMetaNbt(NBTTagCompound cmp, Chunk chunk) {
++        if (chunk.chunkMeta == null || chunk.chunkMeta.isEmpty()) {
++            return;
++        }
++        NBTTagList meta = new NBTTagList();
++        for (Map.Entry<Vector, PersistentMetaMap> entry : chunk.chunkMeta.entrySet()) {
++            PersistentMetaMap list = entry.getValue();
++            if (!list.isEmpty()) {
++                NBTTagCompound pos = serializePos(entry.getKey());
++                NBTTagCompound metacmp = getCompoundFromMetaMap(list);
++                metacmp.set(BLOCK_POS, pos);
++                meta.add(metacmp);
++            }
++        }
++
++        if (!meta.isEmpty()) {
++            cmp.set(CHUNK_META_LIST, meta);
++        }
++    }
++
++    /**
++     * Loads this chunks Meta Data from NBT
++     * @param cmp
++     * @param chunk
++     */
++    static void loadChunkMetaNbt(NBTTagCompound cmp, Chunk chunk) {
++        ChunkPersistentMeta meta = chunk.chunkMeta;
++        if (cmp.hasKey(CHUNK_META)) {
++            NBTTagCompound chunkMeta = cmp.getCompound(CHUNK_META);
++            for (String key : chunkMeta.getKeys()) {
++                NBTTagCompound e = chunkMeta.getCompound(key);
++                meta = loadBlockMeta(meta, deserializeOldLoc(key), e);
++            }
++        } else if (cmp.hasKey(CHUNK_META_LIST)) {
++            NBTTagList chunkMeta = cmp.getList(CHUNK_META_LIST, 10);
++            final int size = chunkMeta.size();
++            for (int i = 0; i < size; i++) {
++                NBTTagCompound e = chunkMeta.getCompound(i);
++                if (e.hasKey(BLOCK_POS)) {
++                    NBTTagCompound blockPos = e.getCompound(BLOCK_POS);
++                    meta = loadBlockMeta(meta, getBlockPosFromCompound(blockPos), e);
++                }
++            }
++        }
++        chunk.chunkMeta = meta;
++    }
++
++    private static ChunkPersistentMeta loadBlockMeta(ChunkPersistentMeta meta, Vector key, NBTTagCompound e) {
++        PersistentMetaMap map = getMetaMapFromCompound(e);
++        if (map != null && !map.isEmpty()) {
++            if (meta == null) {
++                meta = new ChunkPersistentMeta();
++            }
++            meta.put(key, map);
++        }
++        return meta;
++    }
++
++    private static Vector getBlockPosFromCompound(NBTTagCompound pos) {
++        return new Vector(pos.getInt("x"), pos.getInt("y"), pos.getInt("z"));
++    }
++
++    /**
++     * Converts an Object into NBT
++     * @param value
++     * @return
++     */
++    private static NBTBase getNbtFromObject(Object value) {
++        if (value == null) {
++            return null;
++        }
++        if (value instanceof String) {
++            return new NBTTagString((String) value);
++        } else if (value instanceof ItemStack || value instanceof org.bukkit.inventory.ItemStack) {
++            ItemStack item;
++            if (value instanceof org.bukkit.inventory.ItemStack) {
++                item = CraftItemStack.asNMSCopy((org.bukkit.inventory.ItemStack) value);
++            } else {
++                item = (ItemStack) value;
++            }
++            if (item == null) {
++                return null;
++            }
++            NBTTagCompound itemnbt = new NBTTagCompound();
++            itemnbt.setString(META_TYPE, ITEM);
++            return item.save(itemnbt);
++        } else if (value instanceof Long) {
++            return new NBTTagLong((Long) value);
++        } else if (value instanceof Integer) {
++            return new NBTTagInt((Integer) value);
++        } else if (value instanceof Double) {
++            return new NBTTagDouble((Double) value);
++        } else if (value instanceof Float) {
++            return new NBTTagFloat((Float) value);
++        } else if (value instanceof PersistentMetaMap) {
++            return getCompoundFromMetaMap((PersistentMetaMap) value);
++        } else if (value instanceof PersistentMetaList) {
++            NBTTagList list = new NBTTagList();
++            for (Object obj : (Iterable<?>) value) {
++                NBTBase add = getNbtFromObject(obj);
++                if (add != null) {
++                    list.add(add);
++                }
++            }
++            return list.isEmpty() ? null : list;
++        }
++
++        return null;
++    }
++
++    /**
++     * Converts NBT into an Object
++     * @param nbt
++     * @return
++     */
++    @SuppressWarnings("RedundantCast")
++    private static Object getObjectFromNbt(NBTBase nbt) {
++        if (nbt == null) {
++            return null;
++        }
++        if (nbt instanceof NBTTagString) {
++            return (String) nbt.getStringValue();
++            // Redundant casts added to each number so that it will fail to compile
++            // If the method names change for each type. Do not remove.
++        } else if (nbt instanceof NBTTagInt) {
++            return (Integer) ((NBTNumber) nbt).e();
++        } else if (nbt instanceof NBTTagLong) {
++            return (Long) ((NBTNumber) nbt).d();
++        } else if (nbt instanceof NBTTagFloat) {
++            return (Float) ((NBTNumber) nbt).i();
++        } else if (nbt instanceof NBTTagDouble) {
++            return (Double) ((NBTNumber) nbt).asDouble();
++        } else if (nbt instanceof NBTTagList) {
++            NBTTagList nbtlist = (NBTTagList) nbt;
++            if (nbtlist.isEmpty()) {
++                return null;
++            }
++            PersistentMetaList<Object> list = new PersistentMetaList<>();
++            for (int i = 0; i < nbtlist.size(); i++) {
++                final Object obj = getObjectFromNbt(nbtlist.list.get(i));
++                if (obj != null) {
++                    list.add(obj);
++                }
++            }
++            return list.isEmpty() ? null : list;
++        } else if (nbt instanceof NBTTagCompound) {
++            NBTTagCompound cmp = (NBTTagCompound) nbt.clone();
++            if (cmp.hasKey(META_TYPE)) {
++                String type = cmp.getString(META_TYPE);
++                cmp.remove(META_TYPE);
++                if (ITEM.equals(type)) {
++                    return CraftItemStack.asCraftMirror(ItemStack.a(cmp));
++                } else if (META_MAP.equals(type)) {
++                    final PersistentMetaMap metaMap = getMetaMapFromCompound(cmp);
++                    if (metaMap == null || metaMap.isEmpty()) {
++                        return null;
++                    }
++                    return metaMap;
++                }
++            }
++        }
++        return null;
++    }
++
++    /**
++     * Converts a NBTTagCompound to a MetaMap
++     * @param cmp
++     * @return
++     */
++    private static PersistentMetaMap getMetaMapFromCompound(NBTTagCompound cmp) {
++        if (cmp.map.isEmpty()) {
++            return null;
++        }
++        PersistentMetaMap map = new PersistentMetaMap();
++        for (Entry<String, NBTBase> entry : cmp.map.entrySet()) {
++            final Object metaData = getObjectFromNbt(entry.getValue());
++            if (metaData != null) {
++                map.put(entry.getKey(), metaData);
++            }
++        }
++        return map;
++    }
++
++    /**
++     * Converts a MetaMap into an NBTTagCompount
++     * @param map
++     * @return
++     */
++    private static NBTTagCompound getCompoundFromMetaMap(PersistentMetaMap map) {
++        NBTTagCompound cmp = new NBTTagCompound();
++        if (map.isEmpty()) {
++            return cmp;
++        }
++        cmp.setString(META_TYPE, META_MAP);
++        for (MetaMap.MetaEntry entry : map.getEntries()) {
++            NBTBase add = getNbtFromObject(entry.getValue());
++            if (add != null) {
++                // TODO: KEY saving
++                cmp.set(entry.getKey(), add);
++            }
++        }
++        return cmp;
++    }
++
++    /**
++     * Translates BlockPos to a String form
++     * @param coords
++     * @return
++     */
++    private static NBTTagCompound serializePos(Vector coords) {
++        if (coords == null) {
++            return null;
++        }
++        NBTTagCompound cmp = new NBTTagCompound();
++        cmp.setInt("x", coords.getBlockX());
++        cmp.setInt("y", coords.getBlockY());
++        cmp.setInt("z", coords.getBlockZ());
++        return cmp;
++    }
++
++    private static final Pattern COLON_SPLIT = Pattern.compile(":");
++    /**
++     * Parses a string into BlockPos
++     *
++     * @param loc
++     * @return
++     */
++    private static Vector deserializeOldLoc(String loc) {
++        if (loc != null)  {
++            String[] args = COLON_SPLIT.split(loc, 3);
++            if (args.length == 3) {
++                try {
++                    int x = (int) Math.floor(Float.parseFloat(args[0]));
++                    int y = (int) Math.floor(Float.parseFloat(args[1]));
++                    int z = (int) Math.floor(Float.parseFloat(args[2]));
++                    return new Vector(x, y, z);
++                } catch (NumberFormatException ignored) {}
++            }
++        }
++        return null;
++    }
++
++    static void processSetAir(Chunk chunk, BlockPosition pos) {
++        ChunkMeta meta = chunk.chunkMeta;
++        if (meta.blockMetaMap == null) {
++            return;
++        }
++        Vector coords = new Vector(pos.getX(), pos.getY(), pos.getZ());
++        if (meta.blockMetaMap.containsKey(coords)) {
++            //new BlockWithPersistentMetaClearedEvent(MCUtil.toLocation(chunk.world, pos).getBlock()).callEvent();
++        }
++    }
++
++    static void filterTileEntityMeta(NBTTagCompound cmp) {
++        cmp.remove(TILEENTITY_META);
++    }
++
++    public static void reload() {
++        // Players are not guaranteed to be in a chunk if dead
++        for (Player entity : Bukkit.getOnlinePlayers()) {
++            ((CraftEntity) entity).getHandle().tempMetaMap = null;
++        }
++        for (WorldServer world : MinecraftServer.getServer().worlds) {
++            for (Entity entity : world.entityList) {
++                entity.tempMetaMap = null;
++            }
++            for (Chunk chunk : world.getChunkProviderServer().chunks.values()) {
++                ChunkMeta chunkMeta = chunk.chunkMeta;
++                chunkMeta.blockTempMetaMap = null;
++                chunkMeta.locTempMetaMap = null;
++                chunkMeta.tempMetaMap = null;
++            }
++        }
++    }
++
++    public static TempMetaMap getChunkTempMeta(Block block, boolean isWrite) {
++        Location loc = block.getLocation();
++        Chunk chunk = ((CraftChunk) block.getChunk()).getHandle();
++        Vector pos = new Vector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
++        ChunkMeta chunkMeta = chunk.chunkMeta;
++        if (chunkMeta.blockTempMetaMap == null) {
++            if (!isWrite) {
++                return null;
++            }
++            chunkMeta.blockTempMetaMap = new HashMap<>();
++        }
++
++        TempMetaMap map = chunkMeta.blockTempMetaMap.get(pos);
++        if (map == null) {
++            if (!isWrite) {
++                return null;
++            }
++            map = new TempMetaMap();
++            chunkMeta.blockTempMetaMap.put(pos, map);
++        }
++        return map;
++    }
++    public static TempMetaMap getChunkTempMeta(Location loc, boolean isWrite) {
++        Chunk chunk = ((CraftChunk) loc.getChunk()).getHandle();
++        Vector pos = new Vector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
++        ChunkMeta chunkMeta = chunk.chunkMeta;
++        if (chunkMeta.locTempMetaMap == null) {
++            if (!isWrite) {
++                return null;
++            }
++            chunkMeta.locTempMetaMap = new HashMap<>();
++        }
++
++        TempMetaMap map = chunkMeta.locTempMetaMap.get(pos);
++        if (map == null) {
++            if (!isWrite) {
++                return null;
++            }
++            map = new TempMetaMap();
++            chunkMeta.locTempMetaMap.put(pos, map);
++        }
++        return map;
++    }
++
++    static class ChunkMeta {
++        PersistentMetaMap metaMap;
++        TempMetaMap tempMetaMap;
++        Map<Vector, PersistentMetaMap> blockMetaMap;
++        Map<Vector, TempMetaMap> blockTempMetaMap;
++        Map<Vector, PersistentMetaMap> locMetaMap;
++        Map<Vector, TempMetaMap> locTempMetaMap;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
+index e21e60b003..b5e25093ed 100644
+--- a/src/main/java/net/minecraft/server/NBTBase.java
++++ b/src/main/java/net/minecraft/server/NBTBase.java
+@@ -117,6 +117,7 @@ public interface NBTBase {
+ 
+     NBTBase clone();
+ 
++    default String getStringValue() { return b_(); } // Paper - OBFHELPER
+     default String b_() {
+         return this.toString();
+     }
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index d2359a30f8..b1e9fe9ebd 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -11,6 +11,7 @@ import org.bukkit.inventory.InventoryHolder; // CraftBukkit
+ public abstract class TileEntity implements KeyedObject { // Paper
+ 
+     public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
++    public com.destroystokyo.paper.meta.PersistentMetaMap metaMap; // Paper
+     boolean isLoadingStructure = false; // Paper
+     private static final Logger a = LogManager.getLogger();
+     private final TileEntityTypes<?> e; public TileEntityTypes getTileEntityType() { return e; } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/WorldData.java b/src/main/java/net/minecraft/server/WorldData.java
+index b0445d6a26..dab71ba9ea 100644
+--- a/src/main/java/net/minecraft/server/WorldData.java
++++ b/src/main/java/net/minecraft/server/WorldData.java
+@@ -70,6 +70,8 @@ public class WorldData {
+     private NBTTagCompound U;
+     private final GameRules V;
+     public WorldServer world; // CraftBukkit
++    public com.destroystokyo.paper.meta.PersistentMetaMap metaMap; // Paper
++    public com.destroystokyo.paper.meta.TempMetaMap tempMetaMap; // Paper
+ 
+     protected WorldData() {
+         this.f = WorldType.NORMAL;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0552659354..ed7aadc714 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -843,6 +843,7 @@ public final class CraftServer implements Server {
+                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+             ));
+         }
++        net.minecraft.server.MetaApiAccessor.reload();
+         loadPlugins();
+         enablePlugins(PluginLoadOrder.STARTUP);
+         enablePlugins(PluginLoadOrder.POSTWORLD);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+index dd7b3d766f..8255f879e0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+@@ -30,6 +30,17 @@ import org.bukkit.craftbukkit.util.CraftLegacy;
+ 
+ public class CraftInventory implements Inventory {
+     protected final IInventory inventory;
++    // Paper start
++    public com.destroystokyo.paper.meta.TempMetaMap tempMetaMap;
++
++    @Override
++    public com.destroystokyo.paper.meta.TempMetaMap getTempMetaMap(com.destroystokyo.paper.meta.TempMetaKey key, boolean isWrite) {
++        if (tempMetaMap == null && isWrite) {
++            tempMetaMap = new com.destroystokyo.paper.meta.TempMetaMap();
++        }
++        return tempMetaMap;
++    }
++    // Paper end
+ 
+     public CraftInventory(IInventory inventory) {
+         this.inventory = inventory;
+-- 
+2.18.0
+

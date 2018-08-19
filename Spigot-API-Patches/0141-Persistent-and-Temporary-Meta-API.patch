@@ -1,4 +1,4 @@
-From 11bd2e284af6cb775ce95d67ac1f6d9d28da5e49 Mon Sep 17 00:00:00 2001
+From b3a5aea8662d24515563ee637a1bc739fd06998d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 15:07:54 -0400
 Subject: [PATCH] Persistent and Temporary Meta API
@@ -60,10 +60,10 @@ index 000000000..bfe6e3242
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java
 new file mode 100644
-index 000000000..a03f915d3
+index 000000000..6d24e3a1a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java
-@@ -0,0 +1,408 @@
+@@ -0,0 +1,418 @@
 +package com.destroystokyo.paper.meta;
 +
 +import org.bukkit.inventory.ItemStack;
@@ -82,7 +82,17 @@ index 000000000..a03f915d3
 +@SuppressWarnings({"unchecked", "unused"})
 +public interface MetaContainer {
 +
-+    MetaMap getMetaMap(MetaKey key, boolean isWrite);
++    default MetaMap getMetaMap(MetaKey key, boolean isWrite) {
++        if (key instanceof TempMetaKey) {
++            TempMetaMap tempMetaMap = getTempMetaMap((TempMetaKey) key, isWrite);
++            if (tempMetaMap != null) {
++                tempMetaMap.check();
++            }
++            return tempMetaMap;
++        } else {
++            throw new IllegalArgumentException("Invalid Key Type");
++        }
++    }
 +
 +    TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite);
 +
@@ -861,10 +871,10 @@ index 000000000..41b40af51
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java
 new file mode 100644
-index 000000000..07ea80c55
+index 000000000..0fa400c1a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,129 @@
 +package com.destroystokyo.paper.meta;
 +
 +/**
@@ -885,7 +895,11 @@ index 000000000..07ea80c55
 +    @Override
 +    default MetaMap getMetaMap(MetaKey key, boolean isWrite) {
 +        if (key instanceof TempMetaKey) {
-+            return getTempMetaMap((TempMetaKey) key, isWrite);
++            TempMetaMap tempMetaMap = getTempMetaMap((TempMetaKey) key, isWrite);
++            if (tempMetaMap != null) {
++                tempMetaMap.check();
++            }
++            return tempMetaMap;
 +        } else if (key instanceof PersistentMetaKey) {
 +            return getPersistentMetaMap((PersistentMetaKey) key, isWrite);
 +        } else {
@@ -1200,22 +1214,33 @@ index 000000000..36e5f1e62
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java b/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java
 new file mode 100644
-index 000000000..d223e62d8
+index 000000000..577fff580
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,43 @@
 +package com.destroystokyo.paper.meta;
++
++import org.bukkit.Bukkit;
 +
 +import javax.annotation.Nonnull;
 +
 +@SuppressWarnings("WeakerAccess")
 +public class TempMetaMap extends MetaMap<TempMetaKey> {
 +
++    private int reloadCount = Bukkit.getReloadCount();
++
 +    public TempMetaMap() {
 +    }
 +
 +    public TempMetaMap(TempMetaMap map) {
 +        super(map);
++    }
++
++    public void check() {
++        if (Bukkit.getReloadCount() != reloadCount) {
++            reloadCount = Bukkit.getReloadCount();
++            clear();
++        }
 +    }
 +
 +    public <T> T getValue(@Nonnull TempMetaKey key) {
@@ -1236,6 +1261,20 @@ index 000000000..d223e62d8
 +        return new TempMetaMap(this);
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 491c73832..18d441de3 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -555,6 +555,9 @@ public final class Bukkit {
+         return server.createMap(world);
+     }
+ 
++    /** @return How many times the server has been reloaded */ // Paper
++    public static int getReloadCount() { return server.getReloadCount(); } // Paper
++
+     /**
+      * Reloads the server, refreshing settings and plugin information.
+      */
 diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
 index dc847340f..7d11e23c9 100644
 --- a/src/main/java/org/bukkit/Chunk.java
@@ -1325,6 +1364,24 @@ index 7e1ee875e..80efae37e 100644
      @Override
      public boolean equals(Object obj) {
          if (obj == null) {
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index f75fe8b15..dbbeaee61 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -461,6 +461,13 @@ public interface Server extends PluginMessageRecipient {
+      */
+     public MapView createMap(World world);
+ 
++    // Paper start
++    /**
++     * @return How many times the server has been reloaded
++     */
++    public int getReloadCount();
++    // Paper end
++
+     /**
+      * Reloads the server, refreshing settings and plugin information.
+      */
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index 3d8b49253..6c27d081b 100644
 --- a/src/main/java/org/bukkit/World.java
