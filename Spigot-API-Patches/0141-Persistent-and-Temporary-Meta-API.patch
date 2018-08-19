@@ -1,0 +1,1460 @@
+From 11bd2e284af6cb775ce95d67ac1f6d9d28da5e49 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 11 Aug 2018 15:07:54 -0400
+Subject: [PATCH] Persistent and Temporary Meta API
+
+Allows plugins to store metadata on many objects. Persistent data will
+be saved with the object and survives restarts.
+
+Temporary Metadata is a replacement API for Bukkit's Metadatable interface,
+that provides an API that doesn't suck, and is simpler (ultimately just a hashmap)
+
+diff --git a/src/main/java/com/destroystokyo/paper/meta/Meta.java b/src/main/java/com/destroystokyo/paper/meta/Meta.java
+new file mode 100644
+index 000000000..bfe6e3242
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/Meta.java
+@@ -0,0 +1,43 @@
++package com.destroystokyo.paper.meta;
++
++import org.bukkit.NamespacedKey;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.plugin.Plugin;
++
++@SuppressWarnings("WeakerAccess")
++public class Meta {
++
++    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
++    public static boolean isValidPersistentMeta(Object value) {
++        return (value instanceof String) || (value instanceof Long) ||
++            (value instanceof Integer) || (value instanceof ItemStack) ||
++            (value instanceof Float) || (value instanceof Double) ||
++            (value instanceof PersistentMetaMap) || (value instanceof PersistentMetaList) ||
++            (value instanceof PersistentMetaSet);
++        // TODO: ConfigurationSerializable
++    }
++
++    public static TempMetaKey createTempKey(String key) {
++        return new TempMetaKey(null, key);
++    }
++
++    public static PersistentMetaKey createPersistentKey(String key) {
++        return new PersistentMetaKey(null, key);
++    }
++
++    public static TempMetaKey createTempKey(Plugin plugin, String key) {
++        return new TempMetaKey(plugin.getName(), key);
++    }
++
++    public static PersistentMetaKey createPersistentKey(Plugin plugin, String key) {
++        return new PersistentMetaKey(plugin.getName(), key);
++    }
++
++    public static TempMetaKey createTempKey(NamespacedKey key) {
++        return new TempMetaKey(key.getNamespace(), key.getKey());
++    }
++
++    public static PersistentMetaKey createPersistentKey(NamespacedKey key) {
++        return new PersistentMetaKey(key.getNamespace(), key.getKey());
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java
+new file mode 100644
+index 000000000..a03f915d3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java
+@@ -0,0 +1,408 @@
++package com.destroystokyo.paper.meta;
++
++import org.bukkit.inventory.ItemStack;
++
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++/**
++ * Represents an object that can contain metadata.
++ * <p>
++ * This is abstract from the Persistent vs temporary context
++ * <p>
++ * This API is not thread safe!
++ */
++@SuppressWarnings({"unchecked", "unused"})
++public interface MetaContainer {
++
++    MetaMap getMetaMap(MetaKey key, boolean isWrite);
++
++    TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite);
++
++    default <T> T getMeta(TempMetaKey key) {
++        final MetaMap metaMap = getTempMetaMap(key, false);
++        //noinspection unchecked
++        return metaMap != null ? (T) metaMap.getObject0(key, null) : null;
++    }
++
++    default <T> T getMeta(TempMetaKey key, T def) {
++        final MetaMap metaMap = getTempMetaMap(key, false);
++        //noinspection unchecked
++        return metaMap != null ? (T) metaMap.getObject0(key, def) : null;
++    }
++
++    default <T> T setMeta(TempMetaKey key, T val) {
++        TempMetaMap metaMap = getTempMetaMap(key, true);
++        return metaMap != null ? metaMap.setValue(key, val) : null;
++    }
++
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default <K, V> Map<K, V> getMapMeta(TempMetaKey key) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default <K, V> Map<K, V> getMapMeta(TempMetaKey key, Map<K, V> def) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default <K, V> Map<K, V> setMapMeta(TempMetaKey key, Map<K, V> value) {
++        return setMeta(key, value);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param <Z> Expected type of the list items
++     * @return Current value or null if it was not set
++     */
++    default <Z> List<Z> getListMeta(TempMetaKey key) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @param <Z> Expected type of the list items
++     * @return Current value or specified default if it was not set
++     */
++    default <Z> List<Z> getListMeta(TempMetaKey key, List<Z> def) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @param <Z> Expected type of the list items
++     * @return Previous value or null if it was not set
++     */
++    default <Z> List<Z> setListMeta(TempMetaKey key, List<Z> value) {
++        return setMeta(key, value);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param <Z> Expected type of the list items
++     * @return Current value or null if it was not set
++     */
++    default <Z> Set<Z> getSetMeta(TempMetaKey key) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @param <Z> Expected type of the list items
++     * @return Current value or specified default if it was not set
++     */
++    default <Z> Set<Z> getSetMeta(TempMetaKey key, Set<Z> def) {
++        return getMeta(key);
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @param <Z> Expected type of the list items
++     * @return Previous value or null if it was not set
++     */
++    default <Z> Set<Z> setSetMeta(TempMetaKey key, Set<Z> value) {
++        return setMeta(key, value);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return If the object has meta specified by this key
++     */
++    default boolean hasMeta(MetaKey key) {
++        final MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null && !metaMap.isEmpty() && metaMap.containsKey(key);
++    }
++
++    /**
++     * Removes metadata at the specified key, and returns previous value
++     * @param key Meta Key
++     * @param <T> Expected type
++     * @return Previous value or null if it was not set
++     */
++    default <T> T removeMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? (T) metaMap.remove(key) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Integer getIntegerMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getInteger(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Integer getIntegerMeta(MetaKey key, Integer def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getInteger(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Integer setIntegerMeta(MetaKey key, Integer value) {
++        return getMetaMap(key, true).setInteger(key, value);
++    }
++
++    /**
++     * Gets the current value, defaulting to 0 if not set, and adjusts it
++     * and sets and returns the new value.
++     *
++     * @param key Meta Key
++     * @param amount Amount to adjust the number by
++     * @return The new value after adjustment
++     */
++    default Integer adjustIntegerMeta(MetaKey key, int amount) {
++        return getMetaMap(key, true).adjustInteger(key, amount);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Long getLongMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getLong(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Long getLongMeta(MetaKey key, Long def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getLong(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Long setLongMeta(MetaKey key, Long value) {
++        return getMetaMap(key, true).setLong(key, value);
++    }
++
++    /**
++     * Gets the current value, defaulting to 0 if not set, and adjusts it
++     * and sets and returns the new value.
++     *
++     * @param key Meta Key
++     * @param amount Amount to adjust the number by
++     * @return The new value after adjustment
++     */
++    default Long adjustLongMeta(MetaKey key, long amount) {
++        return getMetaMap(key, true).adjustLong(key, amount);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Double getDoubleMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getDouble(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Double getDoubleMeta(MetaKey key, Double def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getDouble(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Double setDoubleMeta(MetaKey key, Double value) {
++        return getMetaMap(key, true).setDouble(key, value);
++    }
++
++    /**
++     * Gets the current value, defaulting to 0 if not set, and adjusts it
++     * and sets and returns the new value.
++     *
++     * @param key Meta Key
++     * @param amount Amount to adjust the number by
++     * @return The new value after adjustment
++     */
++    default Double adjustDoubleMeta(MetaKey key, double amount) {
++        return getMetaMap(key, true).adjustDouble(key, amount);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Float getFloatMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getFloat(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Float getFloatMeta(MetaKey key, Float def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getFloat(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Float setFloatMeta(MetaKey key, Float value) {
++        return getMetaMap(key, true).setFloat(key, value);
++    }
++
++    /**
++     * Gets the current value, defaulting to 0 if not set, and adjusts it
++     * and sets and returns the new value.
++     *
++     * @param key Meta Key
++     * @param amount Amount to adjust the number by
++     * @return The new value after adjustment
++     */
++    default Float adjustFloatMeta(MetaKey key, float amount) {
++        return getMetaMap(key, true).adjustFloat(key, amount);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Short getShortMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getShort(key, null) : null;
++    }
++
++    /**
++     *
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Short getShortMeta(MetaKey key, Short def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getShort(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Short setShortMeta(MetaKey key, Short value) {
++        return getMetaMap(key, true).setShort(key, value);
++    }
++
++    /**
++     * Gets the current value, defaulting to 0 if not set, and adjusts it
++     * and sets and returns the new value.
++     *
++     * @param key Meta Key
++     * @param amount Amount to adjust the number by
++     * @return The new value after adjustment
++     */
++    default Short adjustShortMeta(MetaKey key, short amount) {
++        return getMetaMap(key, true).adjustShort(key, amount);
++    }
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default Boolean getBooleanMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getBoolean(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default Boolean getBooleanMeta(MetaKey key, Boolean def) {
++        MetaMap metaMap = getMetaMap(key, false);
++        return metaMap != null ? metaMap.getBoolean(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default Boolean setBooleanMeta(MetaKey key, Boolean value) {
++        MetaMap metaMap = getMetaMap(key, true);
++        return metaMap != null ? metaMap.setBoolean(key, value) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param <T> Expected Type of the ItemStack (incase Custom Stacks are used)
++     * @return Current value or null if it was not set
++     */
++    default <T extends ItemStack> T getItemStackMeta(MetaKey key) {
++        MetaMap metaMap = getMetaMap(key, true);
++        return metaMap != null ? (T) metaMap.getItemStack(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @param <T> Expected Type of the ItemStack (incase Custom Stacks are used)
++     * @return Current value or specified default if it was not set
++     */
++    default <T extends ItemStack> T getItemStackMeta(MetaKey key, T def) {
++        MetaMap metaMap = getMetaMap(key, true);
++        return metaMap != null ? (T) metaMap.getItemStack(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @param <T> Expected Type of the ItemStack (incase Custom Stacks are used)
++     * @return Previous value or null if it was not set
++     */
++    default <T extends ItemStack> T setItemStackMeta(MetaKey key, ItemStack value) {
++        MetaMap metaMap = getMetaMap(key, true);
++        return metaMap != null ? (T) metaMap.setItemStack(key, value) : null;
++    }
++
++    // TODO: ConfigurationSerializeable
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaKey.java b/src/main/java/com/destroystokyo/paper/meta/MetaKey.java
+new file mode 100644
+index 000000000..cf1838e7f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/MetaKey.java
+@@ -0,0 +1,75 @@
++package com.destroystokyo.paper.meta;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.atomic.AtomicInteger;
++
++public class MetaKey {
++
++    private static final Map<String, Integer> idMap = new ConcurrentHashMap<>();
++    private static final Map<Integer, MetaKey> idReverseMap = new ConcurrentHashMap<>();
++    private static final AtomicInteger idPool = new AtomicInteger(1);
++    private final String namespace;
++    private final String key;
++    private final String label;
++    private final int id;
++
++    static MetaKey getMetaKey(int id) {
++        return idReverseMap.get(id);
++    }
++
++    MetaKey(@Nullable String namespace, @Nonnull String key) {
++        this.namespace = namespace;
++        this.key = key;
++        this.label = namespace != null ? namespace + ":" + key : key;
++        this.id = idMap.computeIfAbsent(label, (label) -> {
++            int id = idPool.getAndIncrement();
++            idReverseMap.put(id, this);
++            return id;
++        });
++    }
++
++    /**
++     * Namespace to bucket meta under. Can be null for root (Vanilla data)
++     *
++     * @return The key
++     */
++    @Nullable
++    public final String namespace() {
++        return namespace;
++    }
++
++    /**
++     * Key name of where to store meta
++     *
++     * @return The key
++     */
++    @Nonnull
++    public final String key() {
++        return key;
++    }
++
++    final int getId() {
++        return id;
++    }
++
++    @Override
++    public String toString() {
++        return label;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        MetaKey that = (MetaKey) o;
++        return id == that.id;
++    }
++
++    @Override
++    public int hashCode() {
++        return id;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaMap.java b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
+new file mode 100644
+index 000000000..41b40af51
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/MetaMap.java
+@@ -0,0 +1,300 @@
++package com.destroystokyo.paper.meta;
++
++import com.google.common.collect.AbstractIterator;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import org.bukkit.inventory.ItemStack;
++
++import javax.annotation.Nonnull;
++import java.util.AbstractSet;
++import java.util.Iterator;
++import java.util.Objects;
++import java.util.Set;
++
++@SuppressWarnings({"unchecked", "WeakerAccess", "unused"})
++public abstract class MetaMap<K extends MetaKey> implements Cloneable {
++
++    private final Int2ObjectOpenHashMap<MetaEntry> map = new Int2ObjectOpenHashMap<>(0);
++
++    MetaMap() {
++
++    }
++
++    MetaMap(MetaMap<K> map) {
++        this.map.putAll(map.map);
++    }
++
++    public String getString(@Nonnull K key) {
++        return getString(key, null);
++    }
++
++    public String getString(@Nonnull K key, String def) {
++        String val = getObject0(key);
++        return val != null ? val : def;
++    }
++
++    public String setString(@Nonnull K key, String val) {
++        return putObject0(key, val);
++    }
++
++    public Integer getInteger(@Nonnull K key) {
++        return getInteger(key, null);
++    }
++
++    public Integer getInteger(@Nonnull K key, Integer def) {
++        Number number = getObject0(key);
++        return number != null ? number.intValue() : def;
++    }
++
++    public Integer setInteger(@Nonnull K key, int val) {
++        Number prev = putObject0(key, val);
++        return prev != null ? prev.intValue() : null;
++    }
++
++    public Integer adjustInteger(@Nonnull K key, int amount) {
++        Integer value = getInteger(key, 0) + amount;
++        putObject0(key, value);
++        return value;
++    }
++
++    public Long getLong(@Nonnull K key) {
++        return getLong(key, null);
++    }
++
++    public Long getLong(@Nonnull K key, Long def) {
++        Number number = getObject0(key);
++        return number != null ? number.longValue() : def;
++    }
++
++    public Long setLong(@Nonnull K key, Long val) {
++        Number prev = putObject0(key, val);
++        return prev != null ? prev.longValue() : null;
++    }
++
++    public Long adjustLong(@Nonnull K key, long amount) {
++        Long value = getLong(key, 0L) + amount;
++        putObject0(key, value);
++        return value;
++    }
++
++    public Double getDouble(@Nonnull K key) {
++        return getDouble(key, null);
++    }
++
++    public Double getDouble(@Nonnull K key, Double def) {
++        Number number = getObject0(key);
++        return number != null ? number.doubleValue() : def;
++    }
++
++    public Double setDouble(@Nonnull K key, Double val) {
++        Number prev = putObject0(key, val);
++        return prev != null ? prev.doubleValue() : null;
++    }
++
++    public Double adjustDouble(@Nonnull K key, double amount) {
++        Double value = getDouble(key, 0D) + amount;
++        putObject0(key, value);
++        return value;
++    }
++
++    public Float getFloat(@Nonnull K key) {
++        return getFloat(key, null);
++    }
++
++    public Float getFloat(@Nonnull K key, Float def) {
++        Number number = getObject0(key);
++        return number != null ? number.floatValue() : def;
++    }
++
++    public Float setFloat(@Nonnull K key, Float val) {
++        Number prev = putObject0(key, val);
++        return prev != null ? prev.floatValue() : null;
++    }
++
++    public Float adjustFloat(@Nonnull K key, float amount) {
++        Float value = getFloat(key, 0F) + amount;
++        putObject0(key, value);
++        return value;
++    }
++
++    public Short getShort(@Nonnull K key) {
++        return getShort(key, null);
++    }
++
++    public Short getShort(@Nonnull K key, Short def) {
++        Number number = getObject0(key);
++        return number != null ? number.shortValue() : def;
++    }
++
++    public Short setShort(@Nonnull K key, Short val) {
++        Number prev = putObject0(key, val);
++        return prev != null ? prev.shortValue() : null;
++    }
++
++    public Short adjustShort(@Nonnull K key, short amount) {
++        Number value = getShort(key, (short) 0) + amount;
++        putObject0(key, value);
++        return value.shortValue();
++    }
++
++    public Boolean getBoolean(@Nonnull K key) {
++        return getBoolean(key, null);
++    }
++
++    public Boolean getBoolean(@Nonnull K key, Boolean def) {
++        Number number = getObject0(key);
++        return number != null ? number.intValue() != 0 : def;
++    }
++
++    public Boolean setBoolean(@Nonnull K key, boolean val) {
++        Number prev = putObject0(key, val ? 1 : 0);
++        return prev != null ? prev.intValue() != 0 : null;
++    }
++
++    public <T extends ItemStack> T setItemStack(@Nonnull K key, ItemStack value) {
++        return (T) putObject0(key, value);
++    }
++
++    public <T extends ItemStack> T getItemStack(@Nonnull K key) {
++        return (T) getObject0(key, null);
++    }
++
++    public <T extends ItemStack> T getItemStack(@Nonnull K key, T def) {
++        return getObject0(key, def);
++    }
++
++    // TODO: ConfigurationSerializeable
++
++    public Set<MetaKey> getKeys() {
++        return new AbstractSet<MetaKey>() {
++            @Nonnull
++            @Override
++            public Iterator<MetaKey> iterator() {
++                return new Iterator<MetaKey>() {
++                    private final Iterator<MetaEntry> iterator = map.values().iterator();
++
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public MetaKey next() {
++                        return iterator.next().getKey();
++                    }
++
++                    @Override
++                    public void remove() {
++                        iterator.remove();
++                    }
++                };
++            }
++
++            @Override
++            public int size() {
++                return map.size();
++            }
++        };
++    }
++
++    /**
++     * For saving
++     */
++    public Set<MetaEntry> getEntries() {
++        return new AbstractSet<MetaEntry>() {
++            @Nonnull
++            @Override
++            public Iterator<MetaEntry> iterator() {
++                return map.values().iterator();
++            }
++
++            @Override
++            public int size() {
++                return map.size();
++            }
++        };
++    }
++
++
++    public boolean containsKey(K key) {
++        return map.containsKey(key.getId());
++    }
++
++    public boolean containsValue(Object object) {
++        //noinspection SuspiciousMethodCalls
++        return map.containsValue(object);
++    }
++
++
++    public boolean isEmpty() {
++        return map.isEmpty();
++    }
++
++    public int size() {
++        return map.size();
++    }
++
++    public <T> T remove(K k) {
++        //noinspection unchecked
++        return (T) map.remove(k.getId());
++    }
++
++    public void clear() {
++        map.clear();
++    }
++
++    // Raw access to map is package private so we can control scope access in persistent
++
++    <T> T getObject0(K key) {
++        if (map.isEmpty()) {
++            return null;
++        }
++        //noinspection unchecked
++        return (T) map.get(key.getId());
++    }
++
++    <T> T getObject0(K key, T def) {
++        if (map.isEmpty()) {
++            return def;
++        }
++        //noinspection unchecked
++        MetaEntry metaEntry = map.get(key.getId());
++        return metaEntry != null ? (T) metaEntry.value : def;
++    }
++
++    <T> T putObject0(K key, T value) {
++        //noinspection unchecked
++        MetaEntry prev = map.put(key.getId(), new MetaEntry(key, value));
++        return prev != null ? (T) prev.value : null;
++    }
++
++    public static class MetaEntry {
++        private MetaKey key;
++        private Object value;
++
++        public MetaEntry(MetaKey key, Object value) {
++            this.key = key;
++            this.value = value;
++        }
++
++        public MetaKey getKey() {
++            return key;
++        }
++
++        public Object getValue() {
++            return value;
++        }
++
++        @Override
++        public int hashCode() {
++            return key.hashCode();
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            MetaEntry metaEntry = (MetaEntry) o;
++            return key.getId() == metaEntry.key.getId() && Objects.equals(value, metaEntry.value);
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java
+new file mode 100644
+index 000000000..07ea80c55
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaContainer.java
+@@ -0,0 +1,125 @@
++package com.destroystokyo.paper.meta;
++
++/**
++ * Represents an object that has the capability of storing metadata and
++ * able to persist it between object reloads such as server restarts or chunk reloads.
++ * <p>
++ * Limited to data formats that can be serialized.
++ * <p>
++ * Use the Bukkit {@link org.bukkit.configuration.serialization.ConfigurationSerializable} API to make
++ * your custom data objects safe for persistence.
++ * <p>
++ * This data will not be removed if your plugin is removed. You must handle clean up on your own.
++ * <p>
++ * This API is not thread safe!
++ */
++public interface PersistentMetaContainer extends MetaContainer {
++
++    @Override
++    default MetaMap getMetaMap(MetaKey key, boolean isWrite) {
++        if (key instanceof TempMetaKey) {
++            return getTempMetaMap((TempMetaKey) key, isWrite);
++        } else if (key instanceof PersistentMetaKey) {
++            return getPersistentMetaMap((PersistentMetaKey) key, isWrite);
++        } else {
++            throw new IllegalArgumentException("Unknown Key Type");
++        }
++    }
++
++    PersistentMetaMap getPersistentMetaMap(PersistentMetaKey key, boolean isWrite);
++
++    /**
++     * @param key Meta Key
++     * @return Current value or null if it was not set
++     */
++    default PersistentMetaMap getPersistentMapMeta(PersistentMetaKey key) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentMap(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @return Current value or specified default if it was not set
++     */
++    default PersistentMetaMap getPersistentMapMeta(PersistentMetaKey key, PersistentMetaMap def) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentMap(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @return Previous value or null if it was not set
++     */
++    default PersistentMetaMap setPersistentMapMeta(PersistentMetaKey key, PersistentMetaMap value) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, true);
++        return metaMap != null ? metaMap.setPersistentMap(key, value) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param <Z> Expected type of the list items
++     * @return Current value or null if it was not set
++     */
++    default <Z> PersistentMetaList<Z> getPersistentListMeta(PersistentMetaKey key) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentList(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @param <Z> Expected type of the list items
++     * @return Current value or specified default if it was not set
++     */
++    default <Z> PersistentMetaList<Z> getPersistentListMeta(PersistentMetaKey key, PersistentMetaList<Z> def) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentList(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @param <Z> Expected type of the list items
++     * @return Previous value or null if it was not set
++     */
++    default <Z> PersistentMetaList<Z> setPersistentListMeta(PersistentMetaKey key, PersistentMetaList<Z> value) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, true);
++        return metaMap != null ? metaMap.setPersistentList(key, value) : null;
++    }
++
++
++    /**
++     * @param key Meta Key
++     * @param <Z> Expected type of the set items
++     * @return Current value or null if it was not set
++     */
++    default <Z> PersistentMetaSet<Z> getPersistentSetMeta(PersistentMetaKey key) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentSet(key, null) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param def Default value to return if not set
++     * @param <Z> Expected type of the set items
++     * @return Current value or specified default if it was not set
++     */
++    default <Z> PersistentMetaSet<Z> getPersistentSetMeta(PersistentMetaKey key, PersistentMetaSet<Z> def) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, false);
++        return metaMap != null ? metaMap.getPersistentSet(key, def) : null;
++    }
++
++    /**
++     * @param key Meta Key
++     * @param value The value to set
++     * @param <Z> Expected type of the set items
++     * @return Previous value or null if it was not set
++     */
++    default <Z> PersistentMetaSet<Z> setPersistentSetMeta(PersistentMetaKey key, PersistentMetaSet<Z> value) {
++        PersistentMetaMap metaMap = getPersistentMetaMap(key, true);
++        return metaMap != null ? metaMap.setPersistentSet(key, value) : null;
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java
+new file mode 100644
+index 000000000..7693fda9e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java
+@@ -0,0 +1,11 @@
++package com.destroystokyo.paper.meta;
++
++public class PersistentMetaKey extends MetaKey {
++    PersistentMetaKey(String namespace, String key) {
++        super(namespace, key);
++    }
++
++    public PersistentMetaKey append(String suffix) {
++        return new PersistentMetaKey(namespace(), key() + suffix);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java
+new file mode 100644
+index 000000000..be2c917ae
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java
+@@ -0,0 +1,47 @@
++package com.destroystokyo.paper.meta;
++
++import org.bukkit.inventory.ItemStack;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class PersistentMetaList<T> extends ArrayList<T> {
++
++    private PersistentMetaList() {
++        super(0);
++    }
++
++    private PersistentMetaList(List<T> copy) {
++        super(copy);
++    }
++
++    public static <T extends Number> PersistentMetaList<T> newNumberList() {
++        return new PersistentMetaList<>();
++    }
++
++    public static <T extends Number> PersistentMetaList<T> newNumberList(List<T> list) {
++        return new PersistentMetaList<>(list);
++    }
++
++    public static <T extends ItemStack> PersistentMetaList<T> newItemStackList() {
++        return new PersistentMetaList<>();
++    }
++
++    public static <T extends ItemStack> PersistentMetaList<T> newItemStackList(List<T> list) {
++        return new PersistentMetaList<>(list);
++    }
++
++    public static <T extends String> PersistentMetaList<T> newStringList() {
++        return new PersistentMetaList<>();
++    }
++
++    public static PersistentMetaList<String> newStringList(List<String> list) {
++        return new PersistentMetaList<>(list);
++    }
++
++    // TODO: ConfigurationSerializable
++
++    public PersistentMetaList<T> clone() {
++        return new PersistentMetaList<>(this);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaMap.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaMap.java
+new file mode 100644
+index 000000000..29afdd827
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaMap.java
+@@ -0,0 +1,62 @@
++package com.destroystokyo.paper.meta;
++
++import javax.annotation.Nonnull;
++
++/**
++ * A type protected hashmap for storing meta values
++ * <p>
++ * This API is not thread safe!
++ */
++@SuppressWarnings({"PublicInnerClass", "unchecked", "WeakerAccess"})
++public class PersistentMetaMap extends MetaMap<PersistentMetaKey> {
++
++
++    public PersistentMetaMap() {
++    }
++
++    public PersistentMetaMap(PersistentMetaMap map) {
++        super(map);
++    }
++
++    public PersistentMetaMap setPersistentMap(@Nonnull PersistentMetaKey key, PersistentMetaMap value) {
++        return putObject0(key, value);
++    }
++
++    public PersistentMetaMap getPersistentMap(@Nonnull PersistentMetaKey key) {
++        return getObject0(key, null);
++    }
++
++    public PersistentMetaMap getPersistentMap(@Nonnull PersistentMetaKey key, PersistentMetaMap def) {
++        return getObject0(key, def);
++    }
++
++    public <Z> PersistentMetaList<Z> setPersistentList(@Nonnull PersistentMetaKey key, PersistentMetaList<Z> value) {
++        return putObject0(key, value);
++    }
++
++    public <Z> PersistentMetaList<Z> getPersistentList(@Nonnull PersistentMetaKey key) {
++        return getObject0(key, null);
++    }
++
++    public <Z> PersistentMetaList<Z> getPersistentList(@Nonnull PersistentMetaKey key, PersistentMetaList<Z> def) {
++        return getObject0(key, def);
++    }
++
++
++    public <Z> PersistentMetaSet<Z> setPersistentSet(@Nonnull PersistentMetaKey key, PersistentMetaSet<Z> value) {
++        return putObject0(key, value);
++    }
++
++    public <Z> PersistentMetaSet<Z> getPersistentSet(@Nonnull PersistentMetaKey key) {
++        return getObject0(key, null);
++    }
++
++    public <Z> PersistentMetaSet<Z> getPersistentSet(@Nonnull PersistentMetaKey key, PersistentMetaSet<Z> def) {
++        return getObject0(key, def);
++    }
++
++    @SuppressWarnings("MethodDoesntCallSuperMethod")
++    public PersistentMetaMap clone() {
++        return new PersistentMetaMap(this);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaSet.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaSet.java
+new file mode 100644
+index 000000000..10f0beb4f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaSet.java
+@@ -0,0 +1,47 @@
++package com.destroystokyo.paper.meta;
++
++import org.bukkit.inventory.ItemStack;
++
++import java.util.HashSet;
++import java.util.Set;
++
++public class PersistentMetaSet<T> extends HashSet<T> {
++
++    private PersistentMetaSet() {
++        super(0);
++    }
++
++    private PersistentMetaSet(Set<T> copy) {
++        super(copy);
++    }
++
++    public static <T extends Number> PersistentMetaSet<T> newNumberSet() {
++        return new PersistentMetaSet<>();
++    }
++
++    public static <T extends Number> PersistentMetaSet<T> newNumberSet(Set<T> list) {
++        return new PersistentMetaSet<>(list);
++    }
++
++    public static <T extends ItemStack> PersistentMetaSet<T> newItemStackSet() {
++        return new PersistentMetaSet<>();
++    }
++
++    public static <T extends ItemStack> PersistentMetaSet<T> newItemStackSet(Set<T> list) {
++        return new PersistentMetaSet<>(list);
++    }
++
++    public static <T extends String> PersistentMetaSet<T> newStringSet() {
++        return new PersistentMetaSet<>();
++    }
++
++    public static PersistentMetaSet<String> newStringSet(Set<String> list) {
++        return new PersistentMetaSet<>(list);
++    }
++
++    // TODO: ConfigurationSerializable
++
++    public PersistentMetaSet<T> clone() {
++        return new PersistentMetaSet<>(this);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java b/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java
+new file mode 100644
+index 000000000..36e5f1e62
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java
+@@ -0,0 +1,11 @@
++package com.destroystokyo.paper.meta;
++
++public class TempMetaKey extends MetaKey {
++    TempMetaKey(String namespace, String key) {
++        super(namespace, key);
++    }
++
++    public TempMetaKey append(String suffix) {
++        return new TempMetaKey(namespace(), key() + suffix);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java b/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java
+new file mode 100644
+index 000000000..d223e62d8
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/meta/TempMetaMap.java
+@@ -0,0 +1,32 @@
++package com.destroystokyo.paper.meta;
++
++import javax.annotation.Nonnull;
++
++@SuppressWarnings("WeakerAccess")
++public class TempMetaMap extends MetaMap<TempMetaKey> {
++
++    public TempMetaMap() {
++    }
++
++    public TempMetaMap(TempMetaMap map) {
++        super(map);
++    }
++
++    public <T> T getValue(@Nonnull TempMetaKey key) {
++        return getObject0(key);
++    }
++
++    public <T> T getValue(@Nonnull TempMetaKey key, T def) {
++        return getObject0(key, def);
++    }
++
++    public <T> T setValue(@Nonnull TempMetaKey key, T value) {
++        return putObject0(key, value);
++    }
++
++    @SuppressWarnings("MethodDoesntCallSuperMethod")
++    @Override
++    public TempMetaMap clone() {
++        return new TempMetaMap(this);
++    }
++}
+diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
+index dc847340f..7d11e23c9 100644
+--- a/src/main/java/org/bukkit/Chunk.java
++++ b/src/main/java/org/bukkit/Chunk.java
+@@ -1,5 +1,11 @@
+ package org.bukkit;
+ 
++// Paper start
++import com.destroystokyo.paper.meta.PersistentMetaKey;
++import com.destroystokyo.paper.meta.PersistentMetaMap;
++import com.destroystokyo.paper.meta.TempMetaKey;
++import com.destroystokyo.paper.meta.TempMetaMap;
++// Paper end
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockState;
+ import org.bukkit.entity.Entity;
+@@ -7,7 +13,7 @@ import org.bukkit.entity.Entity;
+ /**
+  * Represents a chunk of blocks
+  */
+-public interface Chunk {
++public interface Chunk extends com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
+ 
+     /**
+      * Gets the X-coordinate of this chunk
+@@ -30,6 +36,8 @@ public interface Chunk {
+     default long getChunkKey() {
+         return (long) getX() & 0xffffffffL | ((long) getZ() & 0xffffffffL) << 32;
+     }
++    PersistentMetaMap getLocationPersistentMetaMap(double x, double y, double z, PersistentMetaKey key, boolean isBlockMeta, boolean isWrite);
++    TempMetaMap getLocationTempMetaMap(double x, double y, double z, TempMetaKey key, boolean isBlockMeta, boolean isWrite);
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 7e1ee875e..80efae37e 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -10,6 +10,10 @@ import org.bukkit.util.Vector;
+ 
+ // Paper start
+ import java.util.Collection;
++import com.destroystokyo.paper.meta.PersistentMetaKey;
++import com.destroystokyo.paper.meta.PersistentMetaMap;
++import com.destroystokyo.paper.meta.TempMetaKey;
++import com.destroystokyo.paper.meta.TempMetaMap;
+ import java.util.function.Predicate;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.LivingEntity;
+@@ -24,7 +28,7 @@ import org.bukkit.entity.Player;
+  * magnitude than 360 are valid, but may be normalized to any other equivalent
+  * representation by the implementation.
+  */
+-public class Location implements Cloneable, ConfigurationSerializable {
++public class Location implements Cloneable, ConfigurationSerializable, com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
+     private World world;
+     private double x;
+     private double y;
+@@ -882,7 +886,30 @@ public class Location implements Cloneable, ConfigurationSerializable {
+     public boolean createExplosion(Entity source, float power, boolean setFire, boolean breakBlocks) {
+         return world.createExplosion(source, source.getLocation(), power, setFire, breakBlocks);
+     }
++
++    /**
++     * Gets the backing persistent MetaMap for this location. If write is false, and no meta exists, null will be returned
++     * @param key The key thats needing to access the meta map
++     * @param isWrite If the map should be created if it doesn't exists first
++     * @return The map or null if isWrite is false and it doesnt exists.
++     */
++    @Override
++    public PersistentMetaMap getPersistentMetaMap(PersistentMetaKey key, boolean isWrite) {
++        return getChunk().getLocationPersistentMetaMap(getX(), getY(), getZ(), key, false, isWrite);
++    }
++
++    /**
++     * Gets the backing temporary MetaMap for this location. If write is false, and no meta exists, null will be returned
++     * @param key The key thats needing to access the meta map
++     * @param isWrite If the map should be created if it doesn't exists first
++     * @return The map or null if isWrite is false and it doesnt exists.
++     */
++    @Override
++    public TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite) {
++        return getChunk().getLocationTempMetaMap(getX(), getY(), getZ(), key, false, isWrite);
++    }
+     // Paper end
++
+     @Override
+     public boolean equals(Object obj) {
+         if (obj == null) {
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 3d8b49253..6c27d081b 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -26,7 +26,7 @@ import org.bukkit.util.Vector;
+ /**
+  * Represents a world, which may contain entities, chunks and blocks
+  */
+-public interface World extends PluginMessageRecipient, Metadatable {
++public interface World extends PluginMessageRecipient, Metadatable, com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
+ 
+     // Paper start
+     /**
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index d700df538..e7689a481 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -1,5 +1,11 @@
+ package org.bukkit.block;
+ 
++// Paper start
++import com.destroystokyo.paper.meta.PersistentMetaKey;
++import com.destroystokyo.paper.meta.PersistentMetaMap;
++import com.destroystokyo.paper.meta.TempMetaKey;
++import com.destroystokyo.paper.meta.TempMetaMap;
++// Paper end
+ import java.util.Collection;
+ 
+ import org.bukkit.Chunk;
+@@ -21,7 +27,31 @@ import org.bukkit.metadata.Metadatable;
+  * (i.e. lighting and power) may not be able to be safely accessed during world
+  * generation when used in cases like BlockPhysicsEvent!!!!
+  */
+-public interface Block extends Metadatable {
++public interface Block extends Metadatable, com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
++
++    // Paper start
++    /**
++     * Gets the backing persistent MetaMap for this location. If write is false, and no meta exists, null will be returned
++     * @param key The key thats needing to access the meta map
++     * @param isWrite If the map should be created if it doesn't exists first
++     * @return The map or null if isWrite is false and it doesnt exists.
++     */
++    @Override
++    default PersistentMetaMap getPersistentMetaMap(PersistentMetaKey key, boolean isWrite) {
++        return getChunk().getLocationPersistentMetaMap(getX(), getY(), getZ(), key, true, isWrite);
++    }
++
++    /**
++     * Gets the backing temporary MetaMap for this location. If write is false, and no meta exists, null will be returned
++     * @param key The key thats needing to access the meta map
++     * @param isWrite If the map should be created if it doesn't exists first
++     * @return The map or null if isWrite is false and it doesnt exists.
++     */
++    @Override
++    default TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite) {
++        return getChunk().getLocationTempMetaMap(getX(), getY(), getZ(), key, true, isWrite);
++    }
++    // Paper end
+ 
+     /**
+      * Gets the metadata for this block
+diff --git a/src/main/java/org/bukkit/block/BlockState.java b/src/main/java/org/bukkit/block/BlockState.java
+index e6526060a..484d64126 100644
+--- a/src/main/java/org/bukkit/block/BlockState.java
++++ b/src/main/java/org/bukkit/block/BlockState.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.meta.TempMetaKey; // Paper
++import com.destroystokyo.paper.meta.TempMetaMap; // Paper
+ import org.bukkit.Chunk;
+ import org.bukkit.Location;
+ import org.bukkit.Material;
+@@ -17,7 +19,14 @@ import org.bukkit.metadata.Metadatable;
+  * change the state of the block and you will not know, or they may change the
+  * block to another type entirely, causing your BlockState to become invalid.
+  */
+-public interface BlockState extends Metadatable {
++public interface BlockState extends Metadatable, com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
++
++    // Paper start
++    @Override
++    default TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite) {
++        return getLocation().getBlock().getTempMetaMap(key, isWrite);
++    }
++    // Paper end
+ 
+     /**
+      * Gets the block represented by this block state.
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 573a69184..507997a29 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -20,7 +20,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ /**
+  * Represents a base entity in the world
+  */
+-public interface Entity extends Metadatable, CommandSender, Nameable {
++public interface Entity extends Metadatable, CommandSender, Nameable, com.destroystokyo.paper.meta.PersistentMetaContainer { // Paper
+ 
+     /**
+      * Gets the entity's current position
+diff --git a/src/main/java/org/bukkit/inventory/Inventory.java b/src/main/java/org/bukkit/inventory/Inventory.java
+index 2dbba0012..0ccf15f56 100644
+--- a/src/main/java/org/bukkit/inventory/Inventory.java
++++ b/src/main/java/org/bukkit/inventory/Inventory.java
+@@ -13,7 +13,7 @@ import org.bukkit.event.inventory.InventoryType;
+  * Interface to the various inventories. Behavior relating to {@link
+  * Material#AIR} is unspecified.
+  */
+-public interface Inventory extends Iterable<ItemStack> {
++public interface Inventory extends Iterable<ItemStack>, com.destroystokyo.paper.meta.MetaContainer { // Paper
+ 
+     /**
+      * Returns the size of the inventory
+diff --git a/src/main/java/org/bukkit/metadata/Metadatable.java b/src/main/java/org/bukkit/metadata/Metadatable.java
+index b47cf2b00..0fb0c3962 100644
+--- a/src/main/java/org/bukkit/metadata/Metadatable.java
++++ b/src/main/java/org/bukkit/metadata/Metadatable.java
+@@ -7,7 +7,9 @@ import java.util.List;
+ /**
+  * This interface is implemented by all objects that can provide metadata
+  * about themselves.
++ * @deprecated This API has many flaws. Use Papers Meta API. {@link com.destroystokyo.paper.meta.Meta}
+  */
++@Deprecated
+ public interface Metadatable {
+     /**
+      * Sets a metadata value in the implementing object's metadata store.
+-- 
+2.18.0
+
