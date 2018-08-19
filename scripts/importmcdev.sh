@@ -42,10 +42,11 @@ function import {
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
 
 nonnms=$(cat "$basedir/Spigot-Server-Patches/"* | grep "create mode " | grep -Po "src/main/java/net/minecraft/server/(.*?).java" | sort | uniq | sed 's/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g' ;
-    # TODO: Fix non nms to work for Paper, hard code these for now
-    echo "KeyedObject" ;
-    echo "MCUtil" ;
-    echo "PaperLightingQueue"
+    # TODO: Fix non nms to work for Paper, hard code these for now (note we do need the semi colons here, its a single command)
+    echo "KeyedObject";
+    echo "MCUtil";
+    echo "PaperLightingQueue";
+    echo "PaperMetaApi";
 )
 
 function containsElement {

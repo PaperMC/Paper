@@ -1,4 +1,4 @@
-From a6a590138f93a34879e4976404b42138d425fcd3 Mon Sep 17 00:00:00 2001
+From f835911c9fd22d692c9e35e83e75f799e9f8d91a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 19 Aug 2018 00:14:00 -0400
 Subject: [PATCH] Persistent and Temporary Meta API
@@ -10,14 +10,37 @@ Temporary Metadata is a replacement API for Bukkit's Metadatable interface,
 that provides an API that doesn't suck, and is simpler (ultimately just a hashmap)
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index db8fbc006d..c1f5cf8f40 100644
+index db8fbc006d..bcf6cde07d 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -175,6 +175,7 @@ public class Chunk implements IChunkAccess {
+@@ -14,7 +14,6 @@ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.shorts.ShortList;
+ import it.unimi.dsi.fastutil.shorts.ShortListIterator;
+ import java.util.BitSet;
+-import java.util.Collection;
+ import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -23,14 +22,12 @@ import java.util.Set;
+ import java.util.Map.Entry;
+ import java.util.concurrent.ConcurrentLinkedQueue;
+ import java.util.concurrent.atomic.AtomicInteger;
+-import java.util.function.Function;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ import com.google.common.collect.Lists; // CraftBukkit
+-import org.bukkit.Server; // CraftBukkit
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers; // Paper
+ 
+ public class Chunk implements IChunkAccess {
+@@ -175,6 +172,7 @@ public class Chunk implements IChunkAccess {
      }
  
      public org.bukkit.Chunk bukkitChunk;
-+    MetaApiAccessor.ChunkMeta chunkMeta = new MetaApiAccessor.ChunkMeta(); // Paper
++    PaperMetaApi.ChunkMeta chunkMeta = new PaperMetaApi.ChunkMeta(); // Paper
      public boolean mustSave;
      public boolean newChunk;
      // CraftBukkit end
@@ -34,11 +57,23 @@ index 03d54a7ef4..48187e4d6a 100644
      public static Random SHARED_RANDOM = new Random() {
          private boolean locked = false;
          @Override
-diff --git a/src/main/java/net/minecraft/server/MetaApiAccessor.java b/src/main/java/net/minecraft/server/MetaApiAccessor.java
+diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
+index e21e60b003..b5e25093ed 100644
+--- a/src/main/java/net/minecraft/server/NBTBase.java
++++ b/src/main/java/net/minecraft/server/NBTBase.java
+@@ -117,6 +117,7 @@ public interface NBTBase {
+ 
+     NBTBase clone();
+ 
++    default String getStringValue() { return b_(); } // Paper - OBFHELPER
+     default String b_() {
+         return this.toString();
+     }
+diff --git a/src/main/java/net/minecraft/server/PaperMetaApi.java b/src/main/java/net/minecraft/server/PaperMetaApi.java
 new file mode 100644
-index 0000000000..61b1964021
+index 0000000000..1368e3ed8d
 --- /dev/null
-+++ b/src/main/java/net/minecraft/server/MetaApiAccessor.java
++++ b/src/main/java/net/minecraft/server/PaperMetaApi.java
 @@ -0,0 +1,489 @@
 +package net.minecraft.server;
 +
@@ -62,7 +97,7 @@ index 0000000000..61b1964021
 +import java.util.Map.Entry;
 +import java.util.regex.Pattern;
 +
-+public final class MetaApiAccessor {
++public final class PaperMetaApi {
 +
 +    private static final String META_MAP = "MetaMap";
 +    private static final String META_TYPE = "MetaType";
@@ -74,7 +109,7 @@ index 0000000000..61b1964021
 +    private static final String BLOCK_POS = "_BlockPos";
 +    private static final String CHUNK_META = "_ChunkMeta";
 +
-+    private MetaApiAccessor() {}
++    private PaperMetaApi() {}
 +
 +    public static PersistentMetaMap getWorldMetaMap(CraftWorld world) {
 +        return world.getHandle().worldData.metaMap;
@@ -529,18 +564,6 @@ index 0000000000..61b1964021
 +        Map<Vector, TempMetaMap> locTempMetaMap;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
-index e21e60b003..b5e25093ed 100644
---- a/src/main/java/net/minecraft/server/NBTBase.java
-+++ b/src/main/java/net/minecraft/server/NBTBase.java
-@@ -117,6 +117,7 @@ public interface NBTBase {
- 
-     NBTBase clone();
- 
-+    default String getStringValue() { return b_(); } // Paper - OBFHELPER
-     default String b_() {
-         return this.toString();
-     }
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
 index d2359a30f8..b1e9fe9ebd 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
@@ -567,14 +590,14 @@ index b0445d6a26..dab71ba9ea 100644
      protected WorldData() {
          this.f = WorldType.NORMAL;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0552659354..ed7aadc714 100644
+index 0552659354..77cfb437a6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -843,6 +843,7 @@ public final class CraftServer implements Server {
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
          }
-+        net.minecraft.server.MetaApiAccessor.reload();
++        net.minecraft.server.PaperMetaApi.reload();
          loadPlugins();
          enablePlugins(PluginLoadOrder.STARTUP);
          enablePlugins(PluginLoadOrder.POSTWORLD);
