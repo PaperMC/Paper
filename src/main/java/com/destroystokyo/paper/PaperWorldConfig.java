@@ -1,7 +1,9 @@
 package com.destroystokyo.paper;
 
+import java.util.Arrays;
 import java.util.List;
 
+import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.spigotmc.SpigotWorldConfig;
@@ -453,5 +455,32 @@ public class PaperWorldConfig {
     public int maxAutoSaveChunksPerTick = 24;
     private void maxAutoSaveChunksPerTick() {
         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+    }
+
+    public boolean antiXray;
+    public EngineMode engineMode;
+    public int maxChunkSectionIndex;
+    public int updateRadius;
+    public List<String> hiddenBlocks;
+    public List<String> replacementBlocks;
+    private void antiXray() {
+        antiXray = getBoolean("anti-xray.enabled", false);
+        engineMode = EngineMode.getById(getInt("anti-xray.engine-mode", EngineMode.HIDE.getId()));
+        engineMode = engineMode == null ? EngineMode.HIDE : engineMode;
+        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
+        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
+        updateRadius = getInt("anti-xray.update-radius", 2);
+        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "clay", "emerald_ore", "ender_chest"));
+        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList("stone", "oak_planks"));
+        if (PaperConfig.version < 19) {
+            hiddenBlocks.remove("lit_redstone_ore");
+            int index = replacementBlocks.indexOf("planks");
+            if (index != -1) {
+                replacementBlocks.set(index, "oak_planks");
+            }
+            set("anti-xray.hidden-blocks", hiddenBlocks);
+            set("anti-xray.replacement-blocks", replacementBlocks);
+        }
+        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks / Update Radius: " + updateRadius);
     }
 }

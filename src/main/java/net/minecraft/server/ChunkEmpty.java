@@ -12,7 +12,7 @@ public class ChunkEmpty extends Chunk {
     });
 
     public ChunkEmpty(World world, ChunkCoordIntPair chunkcoordintpair) {
-        super(world, chunkcoordintpair, new BiomeStorage(world.r().b(IRegistry.ay), ChunkEmpty.b));
+        super(world, chunkcoordintpair, new BiomeStorage(MinecraftServer.getServer().getCustomRegistry().b(IRegistry.ay), ChunkEmpty.b)); // Paper - world isnt ready yet for anti xray use here, use server singleton for registry
     }
 
     // Paper start

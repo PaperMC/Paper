@@ -609,7 +609,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             }
 
             this.g(chunkcoordintpair);
-            return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a));
+            return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.world)); // Paper - Anti-Xray - Add parameter
         }, this.executor);
     }
 

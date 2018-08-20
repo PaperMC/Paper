@@ -46,16 +46,24 @@ public class ProtoChunk implements IChunkAccess {
     private long s;
     private final Map<WorldGenStage.Features, BitSet> t;
     private volatile boolean u;
+    private final World world; // Paper - Anti-Xray - Add world
 
-    public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) {
+    // Paper start - Anti-Xray - Add world
+    @Deprecated public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) { this(chunkcoordintpair, chunkconverter, null); } // Notice for updates: Please make sure this constructor isn't used anywhere
+    public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, World world) {
+        // Paper end
         this(chunkcoordintpair, chunkconverter, (ChunkSection[]) null, new ProtoChunkTickList<>((block) -> {
             return block == null || block.getBlockData().isAir();
         }, chunkcoordintpair), new ProtoChunkTickList<>((fluidtype) -> {
             return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-        }, chunkcoordintpair));
+        }, chunkcoordintpair), world); // Paper - Anti-Xray - Add world
     }
 
-    public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, @Nullable ChunkSection[] achunksection, ProtoChunkTickList<Block> protochunkticklist, ProtoChunkTickList<FluidType> protochunkticklist1) {
+    // Paper start - Anti-Xray - Add world
+    @Deprecated public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, @Nullable ChunkSection[] achunksection, ProtoChunkTickList<Block> protochunkticklist, ProtoChunkTickList<FluidType> protochunkticklist1) { this(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, null); } // Notice for updates: Please make sure this constructor isn't used anywhere
+    public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, @Nullable ChunkSection[] achunksection, ProtoChunkTickList<Block> protochunkticklist, ProtoChunkTickList<FluidType> protochunkticklist1, World world) {
+        this.world = world;
+        // Paper end
         this.f = Maps.newEnumMap(HeightMap.Type.class);
         this.g = ChunkStatus.EMPTY;
         this.h = Maps.newHashMap();
@@ -210,7 +218,7 @@ public class ProtoChunk implements IChunkAccess {
 
     public ChunkSection a(int i) {
         if (this.j[i] == Chunk.a) {
-            this.j[i] = new ChunkSection(i << 4);
+            this.j[i] = new ChunkSection(i << 4, this, this.world, true); // Paper - Anti-Xray - Add parameters
         }
 
         return this.j[i];

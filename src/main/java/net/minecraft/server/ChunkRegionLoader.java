@@ -58,7 +58,7 @@ public class ChunkRegionLoader {
             byte b0 = nbttagcompound2.getByte("Y");
 
             if (nbttagcompound2.hasKeyOfType("Palette", 9) && nbttagcompound2.hasKeyOfType("BlockStates", 12)) {
-                ChunkSection chunksection = new ChunkSection(b0 << 4);
+                ChunkSection chunksection = new ChunkSection(b0 << 4, null, worldserver, false); // Paper - Anti-Xray - Add parameters
 
                 chunksection.getBlocks().a(nbttagcompound2.getList("Palette", 10), nbttagcompound2.getLongArray("BlockStates"));
                 chunksection.recalcBlockCounts();
@@ -116,7 +116,7 @@ public class ChunkRegionLoader {
                 loadEntities(nbttagcompound1, chunk);
             });
         } else {
-            ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1);
+            ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray - Add parameter
 
             protochunk.a(biomestorage);
             object = protochunk;

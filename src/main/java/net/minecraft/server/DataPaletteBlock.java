@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import com.destroystokyo.paper.antixray.ChunkPacketInfo; // Paper - Anti-Xray - Add chunk packet info
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -18,6 +19,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     private final Function<NBTTagCompound, T> e;
     private final Function<T, NBTTagCompound> f;
     private final T g;
+    private final T[] predefinedObjects; // Paper - Anti-Xray - Add predefined objects
     protected DataBits a; public final DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
     private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
@@ -42,14 +44,47 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         //this.j.unlock(); // Paper - disable this
     }
 
-    public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0) {
+    // Paper start - Anti-Xray - Add predefined objects
+    @Deprecated public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0) { this(datapalette, registryblockid, function, function1, t0, null, true); } // Notice for updates: Please make sure this constructor isn't used anywhere
+    public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0, T[] predefinedObjects, boolean initialize) {
+        // Paper end
         this.b = datapalette;
         this.d = registryblockid;
         this.e = function;
         this.f = function1;
         this.g = t0;
-        this.b(4);
+        // Paper start - Anti-Xray - Add predefined objects
+        this.predefinedObjects = predefinedObjects;
+
+        if (initialize) {
+            if (predefinedObjects == null) {
+                // Default
+                this.initialize(4);
+            } else {
+                // MathHelper.d() is trailingBits(roundCeilPow2(n)), alternatively; (int)ceil(log2(n)); however it's trash, use numberOfLeadingZeros instead
+                // Count the bits of the maximum array index to initialize a data palette with enough space from the beginning
+                // The length of the array is used because air is also added to the data palette from the beginning
+                // Start with at least 4
+                int maxIndex = predefinedObjects.length >> 4;
+                int bitCount = (32 - Integer.numberOfLeadingZeros(Math.max(16, maxIndex) - 1));
+
+                // Initialize with at least 15 free indixes
+                this.initialize((1 << bitCount) - predefinedObjects.length < 16 ? bitCount + 1 : bitCount);
+                this.addPredefinedObjects();
+            }
+        }
+        // Paper end
     }
+
+    // Paper start - Anti-Xray - Add predefined objects
+    private void addPredefinedObjects() {
+        if (this.predefinedObjects != null && this.getDataPalette() != this.getDataPaletteGlobal()) {
+            for (int i = 0; i < this.predefinedObjects.length; i++) {
+                this.getDataPalette().getOrCreateIdFor(this.predefinedObjects[i]);
+            }
+        }
+    }
+    // Paper end
 
     private static int b(int i, int j, int k) {
         return j << 8 | k << 4 | i;
@@ -84,6 +119,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
 
         int j;
 
+        this.addPredefinedObjects(); // Paper - Anti-Xray - Add predefined objects
         for (j = 0; j < databits.b(); ++j) {
             T t1 = datapalette.a(databits.a(j));
 
@@ -133,24 +169,38 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         return t0 == null ? this.g : t0;
     }
 
-    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
-    public synchronized void b(PacketDataSerializer packetdataserializer) { // Paper - synchronize
+    // Paper start - Anti-Xray - Add chunk packet info
+    @Deprecated public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // OBFHELPER // Notice for updates: Please make sure this method isn't used anywhere
+    @Deprecated public void b(PacketDataSerializer packetdataserializer) { this.writeDataPaletteBlock(packetdataserializer, null, 0); } // Notice for updates: Please make sure this method isn't used anywhere
+    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer, ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { this.b(packetDataSerializer, chunkPacketInfo, chunkSectionIndex); } // OBFHELPER
+    public synchronized void b(PacketDataSerializer packetdataserializer, ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { // Paper - synchronize
+        // Paper end
         this.a();
         packetdataserializer.writeByte(this.i);
         this.h.b(packetdataserializer);
+        // Paper start - Anti-Xray - Add chunk packet info
+        if (chunkPacketInfo != null) {
+            chunkPacketInfo.setBitsPerObject(chunkSectionIndex, this.getBitsPerObject());
+            chunkPacketInfo.setDataPalette(chunkSectionIndex, this.getDataPalette());
+            chunkPacketInfo.setDataBitsIndex(chunkSectionIndex, packetdataserializer.writerIndex() + PacketDataSerializer.countBytes(this.getDataBits().getDataBits().length));
+            chunkPacketInfo.setPredefinedObjects(chunkSectionIndex, this.predefinedObjects);
+        }
+        // Paper end
         packetdataserializer.a(this.a.a());
         this.b();
     }
 
     public synchronized void a(NBTTagList nbttaglist, long[] along) { // Paper - synchronize
         this.a();
-        int i = Math.max(4, MathHelper.e(nbttaglist.size()));
+        // Paper - Anti-Xray - TODO: Should this.predefinedObjects.length just be added here (faster) or should the contents be compared to calculate the size (less RAM)?
+        int i = Math.max(4, MathHelper.e(nbttaglist.size() + (this.predefinedObjects == null ? 0 : this.predefinedObjects.length))); // Paper - Anti-Xray - Calculate the size with predefined objects
 
-        if (i != this.i) {
+        if (true || i != this.i) { // Paper - Anti-Xray - Not initialized yet
             this.b(i);
         }
 
         this.h.a(nbttaglist);
+        this.addPredefinedObjects(); // Paper - Anti-Xray - Add predefined objects
         int j = along.length * 64 / 4096;
 
         if (this.h == this.b) {

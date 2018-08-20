@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import co.aikar.timings.Timing;
 import co.aikar.timings.Timings;
+import com.destroystokyo.paper.antixray.ChunkPacketBlockController; // Paper - Anti-Xray
+import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray; // Paper - Anti-Xray
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerInternalException;
 import com.google.common.base.MoreObjects;
@@ -84,6 +86,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
 
     public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
+    public final ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
 
     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
     public static BlockPosition lastPhysicsProblem; // Spigot
@@ -105,9 +108,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return typeKey;
     }
 
-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
         this.generator = gen;
         this.world = new CraftWorld((WorldServer) this, gen, env);
         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
@@ -372,6 +376,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             // CraftBukkit end
 
             IBlockData iblockdata1 = chunk.setType(blockposition, iblockdata, (i & 64) != 0, (i & 1024) == 0); // CraftBukkit custom NO_PLACE flag
+            this.chunkPacketBlockController.onBlockChange(this, blockposition, iblockdata, iblockdata1, i); // Paper - Anti-Xray
 
             if (iblockdata1 == null) {
                 // CraftBukkit start - remove blockstate if failed (or the same)

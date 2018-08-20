@@ -423,7 +423,7 @@ public class Chunk implements IChunkAccess {
                 return null;
             }
 
-            chunksection = new ChunkSection(j >> 4 << 4);
+            chunksection = new ChunkSection(j >> 4 << 4, this, this.world, true); // Paper - Anti-Xray - Add parameters
             this.sections[j >> 4] = chunksection;
         }
 

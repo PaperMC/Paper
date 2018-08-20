@@ -11,7 +11,7 @@ public class ProtoChunkExtension extends ProtoChunk {
     private final Chunk a;
 
     public ProtoChunkExtension(Chunk chunk) {
-        super(chunk.getPos(), ChunkConverter.a);
+        super(chunk.getPos(), ChunkConverter.a, chunk.world); // Paper - Anti-Xray - Add parameter
         this.a = chunk;
     }
 

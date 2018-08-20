@@ -21,9 +21,11 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     private final int maxHeight;
     private final ChunkSection[] sections;
     private Set<BlockPosition> tiles;
+    private World world; // Paper - Anti-Xray - Add world
 
     public CraftChunkData(World world) {
         this(world.getMaxHeight());
+        this.world = world; // Paper - Anti-Xray - Add world
     }
 
     /* pp for tests */ CraftChunkData(int maxHeight) {
@@ -157,7 +159,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     private ChunkSection getChunkSection(int y, boolean create) {
         ChunkSection section = sections[y >> 4];
         if (create && section == null) {
-            sections[y >> 4] = section = new ChunkSection(y >> 4 << 4);
+            sections[y >> 4] = section = new ChunkSection(y >> 4 << 4, null, world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) world).getHandle() : null, true); // Paper - Anti-Xray - Add parameters
         }
         return section;
     }
