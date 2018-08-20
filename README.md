@@ -2,6 +2,19 @@ CraftBukkit
 ======
 An implementation of the [Bukkit](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit) plugin API for [Minecraft](https://minecraft.net/) servers, currently maintained by [SpigotMC](http://www.spigotmc.org/).
 
+#### Index
+
+* [Bug Reporting](#bug-reporting)
+* [Compilation](#compilation)
+* [Contributing](#contributing)
+* [Code Requirements](#code-requirements)
+    * [Applying Patches](#applying-patches)
+    * [Making Changes to Minecraft](#making-changes-to-minecraft)
+    * [Minimal Diff Policy](#minimal-diff-policy)
+    * [CraftBukkit Comments](#craftbukkit-comments)
+* [Creating Pull Requests](#creating-pull-requests)
+* [Useful Resources](#useful-resources)
+
 Bug Reporting
 -------------
 The development team is very open to both bug and feature requests / suggestions. You can submit these on the [JIRA Issue Tracker](http://hub.spigotmc.org/jira/).
@@ -58,24 +71,16 @@ will help to ensure the PR can be easily maintained over time and encourage the 
     * __Absolutely no wildcard imports.__
     * If you only use an import once, don't import it. Use the fully qualified name.
 
-For example:
-```java
-    import java.io.ByteArrayInputStream;
-    import java.io.DataInputStream;
-    import java.io.IOException;
-    import java.io.UnsupportedEncodingException;
-    import java.util.concurrent.ExecutionException;
-    import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-    import org.bukkit.Bukkit;
-    import org.bukkit.Location;
-    import org.bukkit.craftbukkit.CraftWorld;
-    import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-    import org.bukkit.craftbukkit.inventory.CraftItemStack;
-    import org.bukkit.craftbukkit.util.LazyPlayerSet;
-```
-
 Any questions about these requirements can be asked in #spigot-dev in IRC.
+
+Applying Patches
+----------------
+Any time new patches are created and/or updated in CraftBukkit, you need to apply them to your development environment.
+
+1. Pull changes from CraftBukkit repo.
+2. Run the `applyPatches.sh` script in the CraftBukkit directory.
+    - This script requires a decompile directory from BuildTools. (e.g. <BuildTools Directory>/work/decompile-XXXXXX)
+3. Your development environment is now up to date with the latest CraftBukkit patches!
 
 Making Changes to Minecraft
 ---------------------------
@@ -106,8 +111,10 @@ __*Key Points*__:
 * __Never__ rename an existing field or method. If you want something renamed, include a ```PAIL rename``` comment
 * Converting a method/class from one access level to another (i.e. private to public) is fine as long as that method is not overridden in subclasses.
   * If a method is overridden in its' subclasses, create a new method that calls that method instead (along with appropriate CraftBukkit comments).
+* If you can use a field to accomplish something, use that over creating a new method.
 
-**Minimal Diff Policy**
+Minimal Diff Policy
+-------------------
 
 The Minimal Diff Policy is key to any changes made within Minecraft classes. When people think of the phrase "minimal diffs", they often take it
 to the extreme - they go completely out of their way to abstract the changes they are trying to make away from editing Minecraft's classes as much as possible.
@@ -265,53 +272,9 @@ Otherwise, if the change is obvious, such as firing an event, then you can simpl
 __Imports in Minecraft Classes__
 * Do not remove unused imports if they are not marked by CraftBukkit comments.
 
-
-Creating a Pull Request
------------------------
-
-##### Pull Request Title Example
-
-The first line in a Pull Request(PR) message is an imperative statement briefly explaining what the PR is achieving.
-If the PR fixes a bug, or implements a new feature as requested from the [JIRA](http://hub.spigotmc.org/jira/), then it should reference that ticket.
-This is accomplished by simply type SPIGOT-####, where #### is the ticket number. (i.e. SPIGOT-3510).
-You can reference multiple tickets in a single commit message; for example: "SPIGOT-1, SPIGOT-2" without closing punctuation.
-
-__For Example:__
-* SPIGOT-3510: Velocity broken for certain entities
-* MC-111753, SPIGOT-2971: Brewing stand not reloading
-
-As you can see, Minecraft tickets can be referenced by including the appropriate ticket number (i.e. MC-111753)
-
-##### Pull Request Message Expectations
-
-The body of a PR needs to describe how the ticket was resolved, or if there was no ticket, describe the problem itself.
-If a PR is for both Bukkit and CraftBukkit it should include a link to the appropriate PR. [Read this to learn how to link to a PR.](https://confluence.atlassian.com/bitbucketserver053/markdown-syntax-guide-938022413.html?utm_campaign=in-app-help&utm_medium=in-app-help&utm_source=stash#Markdownsyntaxguide-Linkingtopullrequests)
-
-
-##### Submitting the Changes
-
-* Push your changes to a topic branch in your fork of the repository.
-* Submit a pull request to the relevant repository in the Spigot organization.
-    * Make sure your pull request meets our [code requirements.](#code-requirements)
-* If you are fixing a JIRA ticket, be sure to update the ticket with a link to the pull request.
-* Ensure all changes (including in patches) have our Minimal Diff Policy in mind.
-
-
-##### Tips to Get Your Pull Request Accepted
-
-Making sure to follow the conventions!
-
-* Your change should fit with Bukkit's goals.
-* Make sure you follow our conventions to the letter.
-* Check for formatting errors. They may be invisible, but [we notice.](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/pull-requests/298/diff)
-* Provide proper JavaDocs where appropriate.
-    * JavaDocs should detail every limitation, caveat, and gotcha the code has.
-* Provide proper accompanying documentation where appropriate.
-* Test your code and provide material.
-    * For example: adding an event? Test it with a plugin and provide us with the source.
-* Make sure you follow our conventions to the letter.
-
-__Note:__ The project is on a code freeze leading up to the release of a Minecraft update in order to give the team a static code base to work with.
+Creating Pull Requests
+----------------------
+To learn what Spigot expects of a Pull Request please view the [Contributing guidelines](CONTRIBUTING.md)
 
 Useful Resources
 ----------------
