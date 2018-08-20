@@ -1,4 +1,4 @@
-From 418e4383fa9a7f20099b92f6773fbda7aaf51eb3 Mon Sep 17 00:00:00 2001
+From 4ae5f752e34660887703bbf0ebbfc105877d1da2 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -49,7 +49,7 @@ index 458baf44..c4f0d655 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 new file mode 100644
-index 00000000..d8836137
+index 00000000..5ee5c910
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 @@ -0,0 +1,38 @@
@@ -79,12 +79,12 @@ index 00000000..d8836137
 +        return true;
 +    }
 +
-+    public PacketPlayOutMapChunkInfo getPacketPlayOutMapChunkInfo(PacketPlayOutMapChunk packetPlayOutMapChunk, Chunk chunk, int chunkSectionSelector) {
++    public PacketPlayOutMapChunkInfo<IBlockData> getPacketPlayOutMapChunkInfo(PacketPlayOutMapChunk packetPlayOutMapChunk, Chunk chunk, int chunkSectionSelector) {
 +        return null;
 +    }
 +
-+    public void modifyBlocks(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketPlayOutMapChunkInfo packetPlayOutMapChunkInfo) {
-+        //packetPlayOutMapChunk.setReady(true);
++    public void modifyBlocks(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketPlayOutMapChunkInfo<IBlockData> packetPlayOutMapChunkInfo) {
++        packetPlayOutMapChunk.setReady(true);
 +    }
 +
 +    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
@@ -93,16 +93,18 @@ index 00000000..d8836137
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 00000000..8049f421
+index 00000000..b6354bd6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,653 @@
+@@ -0,0 +1,649 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
 +import java.util.Set;
-+import java.util.concurrent.Executors;
 +import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++
++import org.bukkit.World.Environment;
 +
 +import com.destroystokyo.paper.PaperWorldConfig;
 +
@@ -112,7 +114,6 @@ index 00000000..8049f421
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkSection;
 +import net.minecraft.server.DataPalette;
-+import net.minecraft.server.DataPaletteBlock;
 +import net.minecraft.server.DataPaletteGlobal;
 +import net.minecraft.server.GeneratorAccess;
 +import net.minecraft.server.IBlockData;
@@ -120,8 +121,6 @@ index 00000000..8049f421
 +import net.minecraft.server.IWorldReader;
 +import net.minecraft.server.PacketPlayOutMapChunk;
 +import net.minecraft.server.World;
-+
-+import org.bukkit.World.Environment;
 +
 +public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
@@ -136,7 +135,6 @@ index 00000000..8049f421
 +    private final IBlockData[] predefinedBlockDataStone;
 +    private final IBlockData[] predefinedBlockDataNetherrack;
 +    private final IBlockData[] predefinedBlockDataEndStone;
-+    //private final int[] predefinedBlockDataBits; //Outdated
 +    private final int[] predefinedBlockDataBitsGlobal;
 +    private final int[] predefinedBlockDataBitsStoneGlobal;
 +    private final int[] predefinedBlockDataBitsNetherrackGlobal;
@@ -163,7 +161,6 @@ index 00000000..8049f421
 +            predefinedBlockDataStone = new IBlockData[] {Blocks.STONE.getBlockData()};
 +            predefinedBlockDataNetherrack = new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
 +            predefinedBlockDataEndStone = new IBlockData[] {Blocks.END_STONE.getBlockData()};
-+            predefinedBlockDataBits = new int[1]; // TODO: Should not be here
 +            predefinedBlockDataBitsGlobal = null;
 +            predefinedBlockDataBitsStoneGlobal = new int[] {Block.REGISTRY_ID.getId(Blocks.STONE.getBlockData())};
 +            predefinedBlockDataBitsNetherrackGlobal = new int[] {Block.REGISTRY_ID.getId(Blocks.NETHERRACK.getBlockData())};
@@ -183,7 +180,6 @@ index 00000000..8049f421
 +            predefinedBlockDataStone = null;
 +            predefinedBlockDataNetherrack = null;
 +            predefinedBlockDataEndStone = null;
-+            predefinedBlockDataBits = new int[predefinedBlockData.length]; // TODO: Should not be here
 +            predefinedBlockDataBitsGlobal = new int[predefinedBlockData.length];
 +
 +            for (int i = 0; i < predefinedBlockData.length; i++) {
@@ -223,10 +219,10 @@ index 00000000..8049f421
 +    @Override
 +    public IBlockData[] getPredefinedBlockData(IWorldReader world, IChunkAccess chunk, int y) {
 +        //Return the block data which should be added to the data palettes so that they can be used for the obfuscation
-+        if (y >> 4 <= maxChunkSectionIndex && world instanceof GeneratorAccess) {
++        if (y >> 4 <= maxChunkSectionIndex) {
 +            switch (engineMode) {
 +                case HIDE:
-+                    switch (((GeneratorAccess) world).getMinecraftWorld().getWorld().getEnvironment()) {
++                    switch (world instanceof GeneratorAccess ? ((GeneratorAccess) world).getMinecraftWorld().getWorld().getEnvironment() : null) {
 +                        case NETHER:
 +                            return predefinedBlockDataNetherrack;
 +                        case THE_END:
@@ -270,7 +266,7 @@ index 00000000..8049f421
 +    }
 +
 +    @Override
-+    public void modifyBlocks(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketPlayOutMapChunkInfo packetPlayOutMapChunkInfo) {
++    public void modifyBlocks(PacketPlayOutMapChunk packetPlayOutMapChunk, PacketPlayOutMapChunkInfo<IBlockData> packetPlayOutMapChunkInfo) {
 +        if (asynchronous) {
 +            executorService.submit((PacketPlayOutMapChunkInfoAntiXray) packetPlayOutMapChunkInfo);
 +        } else {
@@ -279,7 +275,7 @@ index 00000000..8049f421
 +    }
 +
 +    //Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay
-+    private final int[] predefinedBlockDataBits;
++    private int[] predefinedBlockDataBits;
 +    private final boolean[] solid = new boolean[Block.REGISTRY_ID.size()];
 +    private final boolean[] obfuscate = new boolean[Block.REGISTRY_ID.size()];
 +    //These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
@@ -304,8 +300,8 @@ index 00000000..8049f421
 +                if (packetPlayOutMapChunkInfoAntiXray.getDataPalette(chunkSectionIndex) instanceof DataPaletteGlobal) {
 +                    predefinedBlockDataBitsTemp = engineMode == EngineMode.HIDE ? packetPlayOutMapChunkInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.NETHER ? predefinedBlockDataBitsNetherrackGlobal : packetPlayOutMapChunkInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.THE_END ? predefinedBlockDataBitsEndStoneGlobal : predefinedBlockDataBitsStoneGlobal : predefinedBlockDataBitsGlobal;
 +                } else {
-+                    predefinedBlockDataBitsTemp = predefinedBlockDataBits;
-+                    
++                    predefinedBlockDataBitsTemp = predefinedBlockDataBits == null ? predefinedBlockDataBits = engineMode == EngineMode.HIDE ? new int[1] : new int[predefinedBlockData.length] : predefinedBlockDataBits;
++
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
 +                        predefinedBlockDataBitsTemp[i] = packetPlayOutMapChunkInfoAntiXray.getDataPalette(chunkSectionIndex).getDataBits(packetPlayOutMapChunkInfoAntiXray.getPredefinedBlockData(chunkSectionIndex)[i]);
 +                    }
@@ -904,27 +900,26 @@ index 00000000..aca0b9d7
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfo.java b/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfo.java
 new file mode 100644
-index 00000000..0bd269a0
+index 00000000..a3a1cf3c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfo.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,81 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.DataPalette;
-+import net.minecraft.server.IBlockData;
 +import net.minecraft.server.PacketPlayOutMapChunk;
 +
-+public class PacketPlayOutMapChunkInfo {
++public class PacketPlayOutMapChunkInfo<T> {
 +
 +    private final PacketPlayOutMapChunk packetPlayOutMapChunk;
 +    private final Chunk chunk;
 +    private final int chunkSectionSelector;
 +    private byte[] data;
 +    private final int[] bitsPerValue = new int[16];
-+    private final DataPalette[] dataPalettes = new DataPalette[16];
++    private final Object[] dataPalettes = new Object[16];
 +    private final int[] dataBitsIndexes = new int[16];
-+    private final IBlockData[][] predefinedBlockData = new IBlockData[16][];
++    private final Object[][] predefinedBlockData = new Object[16][];
 +
 +    public PacketPlayOutMapChunkInfo(PacketPlayOutMapChunk packetPlayOutMapChunk, Chunk chunk, int chunkSectionSelector) {
 +        this.packetPlayOutMapChunk = packetPlayOutMapChunk;
@@ -960,11 +955,12 @@ index 00000000..0bd269a0
 +        this.bitsPerValue[chunkSectionIndex] = bitsPerValue;
 +    }
 +
-+    public DataPalette getDataPalette(int chunkSectionIndex) {
-+        return dataPalettes[chunkSectionIndex];
++    @SuppressWarnings("unchecked")
++	public DataPalette<T> getDataPalette(int chunkSectionIndex) {
++        return (DataPalette<T>) dataPalettes[chunkSectionIndex];
 +    }
 +
-+    public void setDataPalette(int chunkSectionIndex, DataPalette dataPalette) {
++    public void setDataPalette(int chunkSectionIndex, DataPalette<T> dataPalette) {
 +        dataPalettes[chunkSectionIndex] = dataPalette;
 +    }
 +
@@ -976,11 +972,12 @@ index 00000000..0bd269a0
 +        dataBitsIndexes[chunkSectionIndex] = dataBitsIndex;
 +    }
 +
-+    public IBlockData[] getPredefinedBlockData(int chunkSectionIndex) {
-+        return predefinedBlockData[chunkSectionIndex];
++    @SuppressWarnings("unchecked")
++	public T[] getPredefinedBlockData(int chunkSectionIndex) {
++        return (T[]) predefinedBlockData[chunkSectionIndex];
 +    }
 +
-+    public void setPredefinedBlockData(int chunkSectionIndex, IBlockData[] predefinedBlockData) {
++    public void setPredefinedBlockData(int chunkSectionIndex, T[] predefinedBlockData) {
 +        this.predefinedBlockData[chunkSectionIndex] = predefinedBlockData;
 +    }
 +
@@ -990,16 +987,17 @@ index 00000000..0bd269a0
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfoAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfoAntiXray.java
 new file mode 100644
-index 00000000..8ea2beb5
+index 00000000..bc11911e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/PacketPlayOutMapChunkInfoAntiXray.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,29 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import net.minecraft.server.Chunk;
++import net.minecraft.server.IBlockData;
 +import net.minecraft.server.PacketPlayOutMapChunk;
 +
-+public class PacketPlayOutMapChunkInfoAntiXray extends PacketPlayOutMapChunkInfo implements Runnable {
++public class PacketPlayOutMapChunkInfoAntiXray extends PacketPlayOutMapChunkInfo<IBlockData> implements Runnable {
 +
 +    private Chunk[] nearbyChunks;
 +    private final ChunkPacketBlockControllerAntiXray chunkPacketBlockControllerAntiXray;
