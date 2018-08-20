@@ -381,7 +381,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             String id = ((NBTTagCompound) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
             int level = 0xffff & ((NBTTagCompound) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
 
-            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromString(id));
+            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
             if (enchant != null) {
                 enchantments.put(enchant, level);
             }
