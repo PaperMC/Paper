@@ -8,6 +8,11 @@ public final class CraftNamespacedKey {
     public CraftNamespacedKey() {
     }
 
+    public static NamespacedKey fromStringOrNull(String string) {
+        MinecraftKey minecraft = MinecraftKey.a(string);
+        return (minecraft == null) ? null : fromMinecraft(minecraft);
+    }
+
     public static NamespacedKey fromString(String string) {
         return fromMinecraft(new MinecraftKey(string));
     }

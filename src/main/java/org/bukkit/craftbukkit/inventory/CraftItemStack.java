@@ -299,7 +299,10 @@ public final class CraftItemStack extends ItemStack {
             String id = ((NBTTagCompound) list.get(i)).getString(ENCHANTMENTS_ID.NBT);
             int level = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
 
-            result.put(Enchantment.getByKey(CraftNamespacedKey.fromString(id)), level);
+            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
+            if (enchant != null) {
+                result.put(enchant, level);
+            }
         }
 
         return result.build();
