@@ -53,7 +53,7 @@ import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Fish;
+import org.bukkit.entity.FishHook;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
@@ -335,7 +335,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
             launch = new EntityThrownExpBottle(world, getHandle());
             ((EntityProjectile) launch).a(getHandle(), getHandle().pitch, getHandle().yaw, -20.0F, 0.7F, 1.0F); // ItemExpBottle
-        } else if (Fish.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
+        } else if (FishHook.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
             launch = new EntityFishingHook(world, (EntityHuman) getHandle());
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             Location location = getEyeLocation();
