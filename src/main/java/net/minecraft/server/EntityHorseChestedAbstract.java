@@ -50,10 +50,18 @@ public abstract class EntityHorseChestedAbstract extends EntityHorseAbstract {
                 this.a((IMaterial) Blocks.CHEST);
             }
 
-            this.setCarryingChest(false);
+            //this.setCarryingChest(false); // Paper - moved to post death logic
         }
 
     }
+
+    // Paper start
+    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {
+        if (this.isCarryingChest() && (event == null || !event.isCancelled())) {
+            this.setCarryingChest(false);
+        }
+    }
+    // Paper end
 
     @Override
     public void saveData(NBTTagCompound nbttagcompound) {

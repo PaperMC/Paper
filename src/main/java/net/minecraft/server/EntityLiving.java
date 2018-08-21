@@ -96,7 +96,7 @@ public abstract class EntityLiving extends Entity {
     protected float aL;
     protected float aM;
     protected float aN;
-    protected int aO;
+    protected int aO;protected int getKillCount() { return this.aO; } // Paper - OBFHELPER
     public float lastDamage;
     protected boolean jumping;
     public float aR;
@@ -140,6 +140,7 @@ public abstract class EntityLiving extends Entity {
     public Set<UUID> collidableExemptions = new HashSet<>();
     public boolean canPickUpLoot;
     public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
+    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
 
     @Override
     public float getBukkitYaw() {
@@ -1249,13 +1250,17 @@ public abstract class EntityLiving extends Entity {
             if (knockbackCancelled) this.world.broadcastEntityEffect(this, (byte) 2); // Paper - Disable explosion knockback
             if (this.dk()) {
                 if (!this.f(damagesource)) {
-                    SoundEffect soundeffect = this.getSoundDeath();
+                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
+                    //SoundEffect soundeffect = this.getSoundDeath();
 
-                    if (flag1 && soundeffect != null) {
-                        this.playSound(soundeffect, this.getSoundVolume(), this.dG());
-                    }
+//                    if (flag1 && soundeffect != null) {
+//                        this.playSound(soundeffect, this.getSoundVolume(), this.dG());
+//                    }
+                    this.silentDeath = !flag1; // mark entity as dying silently
+                    // Paper end
 
                     this.die(damagesource);
+                    this.silentDeath = false; // Paper - cancellable death event - reset to default
                 }
             } else if (flag1) {
                 this.c(damagesource);
@@ -1394,6 +1399,7 @@ public abstract class EntityLiving extends Entity {
             Entity entity = damagesource.getEntity();
             EntityLiving entityliving = this.getKillingEntity();
 
+            /* // Paper - move down to make death event cancellable - this is the runKillTrigger below
             if (this.aO >= 0 && entityliving != null) {
                 entityliving.a(this, this.aO, damagesource);
             }
@@ -1401,20 +1407,40 @@ public abstract class EntityLiving extends Entity {
             if (this.isSleeping()) {
                 this.entityWakeup();
             }
+            */ // Paper
 
             this.killed = true;
-            this.getCombatTracker().g();
+            // this.getCombatTracker().g(); // Paper - moved into if below as .reset()
             if (this.world instanceof WorldServer) {
                 if (entity != null) {
-                    entity.a((WorldServer) this.world, this);
+                    // entity.a((WorldServer) this.world, this); // Paper - move below into if for onKill
                 }
 
-                this.d(damagesource);
+                // Paper start
+                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.d(damagesource);
+                if (deathEvent == null || !deathEvent.isCancelled()) {
+                    if (this.getKillCount() >= 0 && entityliving != null) {
+                        entityliving.runKillTrigger(this, this.getKillCount(), damagesource);
+                    }
+                    if (this.isSleeping()) {
+                        this.entityWakeup();
+                    }
+                    this.getCombatTracker().reset();
+                    if (entity != null) {
+                        entity.onKill((WorldServer) this.world, this);
+                    }
+                } else {
+                    this.killed = false;
+                    this.setHealth((float) deathEvent.getReviveHealth());
+                }
+                // Paper end
                 this.f(entityliving);
             }
 
+            if (this.killed) { // Paper
             this.world.broadcastEntityEffect(this, (byte) 3);
             this.setPose(EntityPose.DYING);
+            } // Paper
         }
     }
 
@@ -1422,7 +1448,7 @@ public abstract class EntityLiving extends Entity {
         if (!this.world.isClientSide) {
             boolean flag = false;
 
-            if (entityliving instanceof EntityWither) {
+            if (this.killed && entityliving instanceof EntityWither) { // Paper
                 if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
                     BlockPosition blockposition = this.getChunkCoordinates();
                     IBlockData iblockdata = Blocks.WITHER_ROSE.getBlockData();
@@ -1443,7 +1469,8 @@ public abstract class EntityLiving extends Entity {
         }
     }
 
-    protected void d(DamageSource damagesource) {
+    protected org.bukkit.event.entity.EntityDeathEvent processDeath(DamageSource damagesource) { return d(damagesource); } // Paper - OBFHELPER
+    protected org.bukkit.event.entity.EntityDeathEvent d(DamageSource damagesource) { // Paper
         Entity entity = damagesource.getEntity();
         int i;
 
@@ -1461,15 +1488,18 @@ public abstract class EntityLiving extends Entity {
             this.dropDeathLoot(damagesource, i, flag);
         }
         // CraftBukkit start - Call death event
-        CraftEventFactory.callEntityDeathEvent(this, this.drops);
+        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops); // Paper
+        this.postDeathDropItems(deathEvent); // Paper
         this.drops = new ArrayList<>();
         // CraftBukkit end
 
         // this.dropInventory();// CraftBukkit - moved up
         this.dropExperience();
+        return deathEvent; // Paper
     }
 
     protected void dropInventory() {}
+    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {} // Paper - method for post death logic that cannot be ran before the event is potentially cancelled
 
     // CraftBukkit start
     public int getExpReward() {
@@ -1554,6 +1584,7 @@ public abstract class EntityLiving extends Entity {
         return SoundEffects.ENTITY_GENERIC_HURT;
     }
 
+    public final SoundEffect getDeathSoundEffect() { return this.getSoundDeath(); } // Paper - OBFHELPER
     @Nullable
     protected SoundEffect getSoundDeath() {
         return SoundEffects.ENTITY_GENERIC_DEATH;
@@ -2084,10 +2115,12 @@ public abstract class EntityLiving extends Entity {
 
     }
 
+    public final float getDeathSoundVolume() { return this.getSoundVolume(); } // Paper - OBFHELPER
     protected float getSoundVolume() {
         return 1.0F;
     }
 
+    public float getSoundPitch() { return dG();} // Paper - OBFHELPER
     protected float dG() {
         return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
     }

@@ -82,6 +82,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public int ping;
     public boolean viewingCredits;
     private int containerUpdateDelay; // Paper
+    // Paper start - cancellable death event
+    public boolean queueHealthUpdatePacket = false;
+    public net.minecraft.server.PacketPlayOutUpdateHealth queuedHealthUpdatePacket;
+    // Paper end
 
     // CraftBukkit start
     public String displayName;
@@ -583,6 +587,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         String deathmessage = defaultMessage.getString();
         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
+        // Paper start - cancellable death event
+        if (event.isCancelled()) {
+            // make compatible with plugins that might have already set the health in an event listener
+            if (this.getHealth() <= 0) {
+                this.setHealth((float) event.getReviveHealth());
+            }
+            return;
+        }
+        // Paper end
 
         // SPIGOT-943 - only call if they have an inventory open
         if (this.activeContainer != this.defaultContainer) {
@@ -734,8 +747,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                         }
                     }
                 }
-
-                return super.damageEntity(damagesource, f);
+                // Paper start - cancellable death events
+                //return super.damageEntity(damagesource, f);
+                this.queueHealthUpdatePacket = true;
+                boolean damaged = super.damageEntity(damagesource, f);
+                this.queueHealthUpdatePacket = false;
+                if (this.queuedHealthUpdatePacket != null) {
+                    this.playerConnection.sendPacket(this.queuedHealthUpdatePacket);
+                    this.queuedHealthUpdatePacket = null;
+                }
+                return damaged;
+                // Paper end
             }
         }
     }

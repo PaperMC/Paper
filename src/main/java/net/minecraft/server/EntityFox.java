@@ -577,15 +577,25 @@ public class EntityFox extends EntityAnimal {
     }
 
     @Override
-    protected void d(DamageSource damagesource) {
-        ItemStack itemstack = this.getEquipment(EnumItemSlot.MAINHAND);
+    protected org.bukkit.event.entity.EntityDeathEvent d(DamageSource damagesource) { // Paper
+        ItemStack itemstack = this.getEquipment(EnumItemSlot.MAINHAND).cloneItemStack(); // Paper
+
+        // Paper start - Cancellable death event
+        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.d(damagesource);
+
+        // Below is code to drop
+
+        if (deathEvent == null || deathEvent.isCancelled()) {
+            return deathEvent;
+        }
+        // Paper end
 
         if (!itemstack.isEmpty()) {
             this.a(itemstack);
             this.setSlot(EnumItemSlot.MAINHAND, ItemStack.b);
         }
 
-        super.d(damagesource);
+        return deathEvent; // Paper
     }
 
     public static boolean a(EntityFox entityfox, EntityLiving entityliving) {
