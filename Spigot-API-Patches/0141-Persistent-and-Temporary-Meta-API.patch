@@ -1,4 +1,4 @@
-From b3a5aea8662d24515563ee637a1bc739fd06998d Mon Sep 17 00:00:00 2001
+From 2db1d12d0a3597d182022b08767163f74f09db44 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 15:07:54 -0400
 Subject: [PATCH] Persistent and Temporary Meta API
@@ -9,55 +9,6 @@ be saved with the object and survives restarts.
 Temporary Metadata is a replacement API for Bukkit's Metadatable interface,
 that provides an API that doesn't suck, and is simpler (ultimately just a hashmap)
 
-diff --git a/src/main/java/com/destroystokyo/paper/meta/Meta.java b/src/main/java/com/destroystokyo/paper/meta/Meta.java
-new file mode 100644
-index 000000000..bfe6e3242
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/meta/Meta.java
-@@ -0,0 +1,43 @@
-+package com.destroystokyo.paper.meta;
-+
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.inventory.ItemStack;
-+import org.bukkit.plugin.Plugin;
-+
-+@SuppressWarnings("WeakerAccess")
-+public class Meta {
-+
-+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-+    public static boolean isValidPersistentMeta(Object value) {
-+        return (value instanceof String) || (value instanceof Long) ||
-+            (value instanceof Integer) || (value instanceof ItemStack) ||
-+            (value instanceof Float) || (value instanceof Double) ||
-+            (value instanceof PersistentMetaMap) || (value instanceof PersistentMetaList) ||
-+            (value instanceof PersistentMetaSet);
-+        // TODO: ConfigurationSerializable
-+    }
-+
-+    public static TempMetaKey createTempKey(String key) {
-+        return new TempMetaKey(null, key);
-+    }
-+
-+    public static PersistentMetaKey createPersistentKey(String key) {
-+        return new PersistentMetaKey(null, key);
-+    }
-+
-+    public static TempMetaKey createTempKey(Plugin plugin, String key) {
-+        return new TempMetaKey(plugin.getName(), key);
-+    }
-+
-+    public static PersistentMetaKey createPersistentKey(Plugin plugin, String key) {
-+        return new PersistentMetaKey(plugin.getName(), key);
-+    }
-+
-+    public static TempMetaKey createTempKey(NamespacedKey key) {
-+        return new TempMetaKey(key.getNamespace(), key.getKey());
-+    }
-+
-+    public static PersistentMetaKey createPersistentKey(NamespacedKey key) {
-+        return new PersistentMetaKey(key.getNamespace(), key.getKey());
-+    }
-+}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java b/src/main/java/com/destroystokyo/paper/meta/MetaContainer.java
 new file mode 100644
 index 000000000..6d24e3a1a
@@ -1006,14 +957,18 @@ index 000000000..0fa400c1a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java
 new file mode 100644
-index 000000000..7693fda9e
+index 000000000..73001bc53
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaKey.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,15 @@
 +package com.destroystokyo.paper.meta;
 +
 +public class PersistentMetaKey extends MetaKey {
-+    PersistentMetaKey(String namespace, String key) {
++    public PersistentMetaKey(String key) {
++        this(null, key);
++    }
++
++    public PersistentMetaKey(String namespace, String key) {
 +        super(namespace, key);
 +    }
 +
@@ -1023,7 +978,7 @@ index 000000000..7693fda9e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java
 new file mode 100644
-index 000000000..be2c917ae
+index 000000000..59561b3fc
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/PersistentMetaList.java
 @@ -0,0 +1,47 @@
@@ -1036,7 +991,7 @@ index 000000000..be2c917ae
 +
 +public class PersistentMetaList<T> extends ArrayList<T> {
 +
-+    private PersistentMetaList() {
++    PersistentMetaList() {
 +        super(0);
 +    }
 +
@@ -1197,14 +1152,19 @@ index 000000000..10f0beb4f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java b/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java
 new file mode 100644
-index 000000000..36e5f1e62
+index 000000000..78e33e3dd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/meta/TempMetaKey.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,16 @@
 +package com.destroystokyo.paper.meta;
 +
 +public class TempMetaKey extends MetaKey {
-+    TempMetaKey(String namespace, String key) {
++
++    public TempMetaKey(String key) {
++        this(null, key);
++    }
++
++    public TempMetaKey(String namespace, String key) {
 +        super(namespace, key);
 +    }
 +
@@ -1276,7 +1236,7 @@ index 491c73832..18d441de3 100644
       * Reloads the server, refreshing settings and plugin information.
       */
 diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
-index dc847340f..7d11e23c9 100644
+index dc847340f..5da872b22 100644
 --- a/src/main/java/org/bukkit/Chunk.java
 +++ b/src/main/java/org/bukkit/Chunk.java
 @@ -1,5 +1,11 @@
@@ -1304,8 +1264,8 @@ index dc847340f..7d11e23c9 100644
      default long getChunkKey() {
          return (long) getX() & 0xffffffffL | ((long) getZ() & 0xffffffffL) << 32;
      }
-+    PersistentMetaMap getLocationPersistentMetaMap(double x, double y, double z, PersistentMetaKey key, boolean isBlockMeta, boolean isWrite);
-+    TempMetaMap getLocationTempMetaMap(double x, double y, double z, TempMetaKey key, boolean isBlockMeta, boolean isWrite);
++    PersistentMetaMap getLocationPersistentMetaMap(long blockKey, PersistentMetaKey key, boolean isBlockMeta, boolean isWrite);
++    TempMetaMap getLocationTempMetaMap(long blockKey, TempMetaKey key, boolean isBlockMeta, boolean isWrite);
      // Paper end
  
      /**
@@ -1383,7 +1343,7 @@ index f75fe8b15..dbbeaee61 100644
       * Reloads the server, refreshing settings and plugin information.
       */
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 3d8b49253..6c27d081b 100644
+index 3170a0746..71bd3db2d 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -26,7 +26,7 @@ import org.bukkit.util.Vector;
@@ -1396,7 +1356,7 @@ index 3d8b49253..6c27d081b 100644
      // Paper start
      /**
 diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
-index d700df538..e7689a481 100644
+index d700df538..e75f8ad29 100644
 --- a/src/main/java/org/bukkit/block/Block.java
 +++ b/src/main/java/org/bukkit/block/Block.java
 @@ -1,5 +1,11 @@
@@ -1427,7 +1387,7 @@ index d700df538..e7689a481 100644
 +     */
 +    @Override
 +    default PersistentMetaMap getPersistentMetaMap(PersistentMetaKey key, boolean isWrite) {
-+        return getChunk().getLocationPersistentMetaMap(getX(), getY(), getZ(), key, true, isWrite);
++        return getChunk().getLocationPersistentMetaMap(getBlockKey(), key, true, isWrite);
 +    }
 +
 +    /**
@@ -1438,7 +1398,7 @@ index d700df538..e7689a481 100644
 +     */
 +    @Override
 +    default TempMetaMap getTempMetaMap(TempMetaKey key, boolean isWrite) {
-+        return getChunk().getLocationTempMetaMap(getX(), getY(), getZ(), key, true, isWrite);
++        return getChunk().getLocationTempMetaMap(getBlockKey(), key, true, isWrite);
 +    }
 +    // Paper end
  
@@ -1499,14 +1459,14 @@ index 2dbba0012..0ccf15f56 100644
      /**
       * Returns the size of the inventory
 diff --git a/src/main/java/org/bukkit/metadata/Metadatable.java b/src/main/java/org/bukkit/metadata/Metadatable.java
-index b47cf2b00..0fb0c3962 100644
+index b47cf2b00..caad9b171 100644
 --- a/src/main/java/org/bukkit/metadata/Metadatable.java
 +++ b/src/main/java/org/bukkit/metadata/Metadatable.java
 @@ -7,7 +7,9 @@ import java.util.List;
  /**
   * This interface is implemented by all objects that can provide metadata
   * about themselves.
-+ * @deprecated This API has many flaws. Use Papers Meta API. {@link com.destroystokyo.paper.meta.Meta}
++ * @deprecated This API has many flaws. Use Papers Meta API. {@link com.destroystokyo.paper.meta.MetaContainer}
   */
 +@Deprecated
  public interface Metadatable {
