@@ -31,6 +31,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
             return (CraftShapelessRecipe) recipe;
         }
         CraftShapelessRecipe ret = new CraftShapelessRecipe(recipe.getKey(), recipe.getResult());
+        ret.setGroup(recipe.getGroup());
         for (ItemStack ingred : recipe.getIngredientList()) {
             ret.addIngredient(ingred.getType(), ingred.getDurability());
         }

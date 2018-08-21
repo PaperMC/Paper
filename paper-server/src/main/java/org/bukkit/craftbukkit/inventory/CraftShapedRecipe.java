@@ -31,6 +31,7 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
             return (CraftShapedRecipe) recipe;
         }
         CraftShapedRecipe ret = new CraftShapedRecipe(recipe.getKey(), recipe.getResult());
+        ret.setGroup(recipe.getGroup());
         String[] shape = recipe.getShape();
         ret.shape(shape);
         Map<Character, ItemStack> ingredientMap = recipe.getIngredientMap();
