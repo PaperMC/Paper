@@ -18,7 +18,9 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
         if (recipe instanceof CraftFurnaceRecipe) {
             return (CraftFurnaceRecipe) recipe;
         }
-        return new CraftFurnaceRecipe(recipe.getKey(), recipe.getResult(), recipe.getInput(), recipe.getExperience(), recipe.getCookingTime());
+        CraftFurnaceRecipe ret = new CraftFurnaceRecipe(recipe.getKey(), recipe.getResult(), recipe.getInput(), recipe.getExperience(), recipe.getCookingTime());
+        ret.setGroup(recipe.getGroup());
+        return ret;
     }
 
     @Override
