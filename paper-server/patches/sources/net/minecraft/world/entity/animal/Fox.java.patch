@@ -29,11 +29,53 @@
              this.ticksSinceEaten = 0;
          }
  
-@@ -852,7 +856,17 @@
+@@ -685,16 +689,38 @@
+         return this.getTrustedUUIDs().contains(uuid);
+     }
  
++    // Paper start - handle the bitten item separately like vanilla
+     @Override
+-    protected void dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
+-        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
++    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++        return slot == EquipmentSlot.MAINHAND;
++    }
++    // Paper end
+ 
+-        if (!itemstack.isEmpty()) {
++    @Override
++    // Paper start - Cancellable death event
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
++        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
++
++        boolean releaseMouth = false;
++        if (!itemstack.isEmpty() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
+             this.spawnAtLocation(world, itemstack);
++            releaseMouth = true;
++        }
++
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(world, damageSource);
++
++        // Below is code to drop
++
++        if (deathEvent == null || deathEvent.isCancelled()) {
++            return deathEvent;
++        }
++
++        if (releaseMouth) {
++            // Paper end - Cancellable death event
+             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+         }
+ 
+-        super.dropAllDeathLoot(world, damageSource);
++        return deathEvent; // Paper - Cancellable death event
+     }
+ 
+     public static boolean isPathClear(Fox fox, LivingEntity chasedEntity) {
+@@ -853,6 +879,16 @@
                  if (entityplayer1 != null && entityplayer != entityplayer1) {
                      entityfox.addTrustedUUID(entityplayer1.getUUID());
-+                }
+                 }
 +                // CraftBukkit start - call EntityBreedEvent
 +                entityfox.setAge(-24000);
 +                entityfox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
@@ -41,13 +83,13 @@
 +                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityfox, this.animal, this.partner, entityplayer, this.animal.breedItem, experience);
 +                if (entityBreedEvent.isCancelled()) {
 +                    return;
-                 }
++                }
 +                experience = entityBreedEvent.getExperience();
 +                // CraftBukkit end
  
                  if (entityplayer2 != null) {
                      entityplayer2.awardStat(Stats.ANIMALS_BRED);
-@@ -863,12 +877,14 @@
+@@ -863,12 +899,14 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -66,7 +108,7 @@
                  }
  
              }
-@@ -1264,6 +1280,11 @@
+@@ -1264,6 +1302,11 @@
              int i = (Integer) state.getValue(SweetBerryBushBlock.AGE);
  
              state.setValue(SweetBerryBushBlock.AGE, 1);
@@ -78,7 +120,7 @@
              int j = 1 + Fox.this.level().random.nextInt(2) + (i == 3 ? 1 : 0);
              ItemStack itemstack = Fox.this.getItemBySlot(EquipmentSlot.MAINHAND);
  
-@@ -1494,7 +1515,7 @@
+@@ -1494,7 +1537,7 @@
          }
  
          public static Fox.Variant byName(String name) {
