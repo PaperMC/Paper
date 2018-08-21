@@ -1,13 +1,12 @@
 package org.bukkit.craftbukkit.command;
 
-import net.minecraft.server.CommandBlockListenerAbstract;
 import net.minecraft.server.CommandListenerWrapper;
-import net.minecraft.server.ICommandListener;
 import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.Vec3D;
+import net.minecraft.server.TileEntity;
 
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 /**
@@ -15,15 +14,16 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
  */
 public class CraftBlockCommandSender extends ServerCommandSender implements BlockCommandSender {
     private final CommandListenerWrapper block;
+    private final TileEntity tile;
 
-    public CraftBlockCommandSender(CommandListenerWrapper commandBlockListenerAbstract) {
+    public CraftBlockCommandSender(CommandListenerWrapper commandBlockListenerAbstract, TileEntity tile) {
         super();
         this.block = commandBlockListenerAbstract;
+        this.tile = tile;
     }
 
     public Block getBlock() {
-        Vec3D pos = block.getPosition();
-        return block.getWorld().getWorld().getBlockAt((int) pos.x, (int) pos.y, (int) pos.z);
+        return CraftBlock.at(tile.getWorld(), tile.getPosition());
     }
 
     public void sendMessage(String message) {
