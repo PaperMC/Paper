@@ -1,4 +1,4 @@
-From 39e3a8200dda351377a5f5e8439b9670c240547f Mon Sep 17 00:00:00 2001
+From 74024df0ef02c68c787f185f91756010e43ed0fb Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -1397,6 +1397,37 @@ index 9787f5b0..70508411 100644
                  packetdataserializer.writeBytes(chunksection.getEmittedLightArray().asBytes());
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index fcd9f549..346367b6 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -110,6 +110,8 @@ public class PlayerChunk {
+             return false;
+         } else if (!this.chunk.isReady()) {
+             return false;
++        } else if (!this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, '\uffff', false)) { // Paper - Anti-Xray - Load nearby chunks if necessary
++            return false; // Paper - Anti-Xray - Wait and try again later
+         } else {
+             this.dirtyCount = 0;
+             this.h = 0;
+@@ -130,6 +132,7 @@ public class PlayerChunk {
+ 
+     public void sendChunk(EntityPlayer entityplayer) {
+         if (this.done) {
++            this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, '\uffff', true); // Paper - Anti-Xray - Load nearby chunks if necessary
+             entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(this.chunk, '\uffff'));
+             this.playerChunkMap.getWorld().getTracker().a(entityplayer, this.chunk);
+         }
+@@ -194,6 +197,9 @@ public class PlayerChunk {
+                         this.a(this.playerChunkMap.getWorld().getTileEntity(blockposition));
+                     }
+                 } else if (this.dirtyCount == 64) {
++                    // Paper - Anti-Xray - Loading chunks here could cause a ConcurrentModificationException #1104
++                    // Paper - Anti-Xray - TODO: Check if this is still the case for 1.13
++                    //this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, this.h, true); // Paper - Anti-Xray - Load nearby chunks if necessary
+                     this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
+                 } else {
+                     this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
 index 584a86c1..98dcfc98 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
