@@ -1,4 +1,4 @@
-From 74024df0ef02c68c787f185f91756010e43ed0fb Mon Sep 17 00:00:00 2001
+From a24ef3693d32abcbb232588ef3c8835de4c332bc Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -49,19 +49,21 @@ index 458baf44..c4f0d655 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 new file mode 100644
-index 00000000..3894b5eb
+index 00000000..1ba8477b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,45 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkSection;
++import net.minecraft.server.EnumDirection;
 +import net.minecraft.server.IBlockData;
 +import net.minecraft.server.IChunkAccess;
 +import net.minecraft.server.IWorldReader;
 +import net.minecraft.server.PacketPlayOutMapChunk;
++import net.minecraft.server.PlayerInteractManager;
 +import net.minecraft.server.World;
 +
 +public class ChunkPacketBlockController {
@@ -88,16 +90,20 @@ index 00000000..3894b5eb
 +        packetPlayOutMapChunk.setReady(true);
 +    }
 +
-+    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
++    public void onBlockChange(World world, BlockPosition blockPosition, IBlockData newBlockData, IBlockData oldBlockData, int flag) {
++
++    }
++
++    public void onPlayerLeftClickBlock(PlayerInteractManager playerInteractManager, BlockPosition blockPosition, EnumDirection enumDirection) {
 +
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 00000000..3f1ff723
+index 00000000..0f8b9734
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,652 @@
+@@ -0,0 +1,670 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -115,11 +121,13 @@ index 00000000..3f1ff723
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkSection;
 +import net.minecraft.server.DataPalette;
++import net.minecraft.server.EnumDirection;
 +import net.minecraft.server.GeneratorAccess;
 +import net.minecraft.server.IBlockData;
 +import net.minecraft.server.IChunkAccess;
 +import net.minecraft.server.IWorldReader;
 +import net.minecraft.server.PacketPlayOutMapChunk;
++import net.minecraft.server.PlayerInteractManager;
 +import net.minecraft.server.World;
 +
 +public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
@@ -142,6 +150,7 @@ index 00000000..3f1ff723
 +    private final boolean[] solidGlobal = new boolean[Block.REGISTRY_ID.size()];
 +    private final boolean[] obfuscateGlobal = new boolean[Block.REGISTRY_ID.size()];
 +    private final ChunkSection[] emptyNearbyChunkSections = {Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION};
++    private final int maxBlockYUpdatePosition;
 +
 +    public ChunkPacketBlockControllerAntiXray(PaperWorldConfig paperWorldConfig) {
 +        asynchronous = paperWorldConfig.asynchronous;
@@ -206,6 +215,8 @@ index 00000000..3f1ff723
 +                solidGlobal[i] = blockData.getBlock().isOccluding(blockData)/* && blockData.getBlock() != Blocks.MOB_SPAWNER /*TODO: Check*//* */ && blockData.getBlock() != Blocks.BARRIER;
 +            }
 +        }
++
++        this.maxBlockYUpdatePosition = (maxChunkSectionIndex + 1) * 16 + updateRadius - 1;
 +    }
 +
 +    private static ExecutorService getExecutorServiceInstance() {
@@ -621,7 +632,7 @@ index 00000000..3f1ff723
 +        return counter;
 +    }
 +
-+    private boolean[] readDataPalette(DataPalette<IBlockData> dataPalette, boolean[] temp, boolean[] global) { //TODO: static?
++    private boolean[] readDataPalette(DataPalette<IBlockData> dataPalette, boolean[] temp, boolean[] global) {
 +        if (dataPalette == ChunkSection.GLOBAL_PALETTE) {
 +            return global;
 +        }
@@ -636,7 +647,20 @@ index 00000000..3f1ff723
 +    }
 +
 +    @Override
-+    public void updateNearbyBlocks(World world, BlockPosition blockPosition) {
++    public void onBlockChange(World world, BlockPosition blockPosition, IBlockData newBlockData, IBlockData oldBlockData, int flag) {
++        if (oldBlockData != null && solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(oldBlockData)] && !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(newBlockData)] && blockPosition.getY() <= maxBlockYUpdatePosition) {
++            updateNearbyBlocks(world, blockPosition);
++        }
++    }
++
++    @Override
++    public void onPlayerLeftClickBlock(PlayerInteractManager playerInteractManager, BlockPosition blockPosition, EnumDirection enumDirection) {
++        if (blockPosition.getY() <= maxBlockYUpdatePosition) {
++            updateNearbyBlocks(playerInteractManager.world, blockPosition);
++        }
++    }
++
++    private void updateNearbyBlocks(World world, BlockPosition blockPosition) {
 +        if (updateRadius >= 2) {
 +            BlockPosition temp = blockPosition.west();
 +            updateBlock(world, temp);
@@ -1112,7 +1136,7 @@ index 668829c5..7c414ed8 100644
          });
      }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 575f9b55..9033f74a 100644
+index 575f9b55..38065c7d 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -1,5 +1,6 @@
@@ -1181,7 +1205,7 @@ index 575f9b55..9033f74a 100644
      }
  
 +    // Paper start - Anti-Xray - Add predefined objects
-+    private void addPredefinedObjects() { // Paper - Anti-Xray - TODO: Check if this.h != this.b here or at invokation
++    private void addPredefinedObjects() {
 +        if (this.predefinedObjects != null && this.getDataPalette() != this.getDataPaletteGlobal()) {
 +            for (int i = 0; i < this.predefinedObjects.length; i++) {
 +                this.h.a(this.predefinedObjects[i]);
@@ -1428,6 +1452,19 @@ index fcd9f549..346367b6 100644
                      this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
                  } else {
                      this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 4a439ef4..063f2b92 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -206,6 +206,8 @@ public class PlayerInteractManager {
+             }
+ 
+         }
++
++        this.world.chunkPacketBlockController.onPlayerLeftClickBlock(this, blockposition, enumdirection); // Paper - Anti-Xray
+     }
+ 
+     public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
 index 584a86c1..98dcfc98 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
@@ -1477,7 +1514,7 @@ index 584a86c1..98dcfc98 100644
  
              if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 004c3ec4..f0d20ea2 100644
+index 004c3ec4..8ff27cb0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
@@ -1505,6 +1542,14 @@ index 004c3ec4..f0d20ea2 100644
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+@@ -382,6 +386,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+             // CraftBukkit end
+ 
+             IBlockData iblockdata1 = chunk.a(blockposition, iblockdata, (i & 64) != 0);
++            this.chunkPacketBlockController.onBlockChange(this, blockposition, iblockdata, iblockdata1, i); // Paper - Anti-Xray
+ 
+             if (iblockdata1 == null) {
+                 // CraftBukkit start - remove blockstate if failed
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
 index c26f0ed1..f6915d32 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
