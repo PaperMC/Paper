@@ -248,6 +248,19 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     }
     // Paper end - chunk long key API
 
+    // Paper start - isChunkGenerated API
+    /**
+     * Checks if a {@link Chunk} has been generated at the specified chunk key,
+     * which is the X and Z packed into a long.
+     *
+     * @param chunkKey The Chunk Key to look up the chunk by
+     * @return true if the chunk has been generated, otherwise false
+     */
+    default boolean isChunkGenerated(long chunkKey) {
+        return isChunkGenerated((int) chunkKey, (int) (chunkKey >> 32));
+    }
+    // Paper end - isChunkGenerated API
+
     /**
      * Checks if the specified {@link Chunk} is loaded
      *
