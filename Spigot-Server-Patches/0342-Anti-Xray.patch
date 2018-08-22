@@ -1,4 +1,4 @@
-From 5c8136e57abaca7011fd680df84753df6edcf92a Mon Sep 17 00:00:00 2001
+From 39e3a8200dda351377a5f5e8439b9670c240547f Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -1047,9 +1047,18 @@ index db8fbc00..24dd9cf9 100644
                  this.initLighting();
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 54840851..fbc436ad 100644
+index 54840851..0f1423c9 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -852,7 +852,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+         }
+ 
+         ChunkConverter chunkconverter = nbttagcompound.hasKeyOfType("UpgradeData", 10) ? new ChunkConverter(nbttagcompound.getCompound("UpgradeData")) : ChunkConverter.a;
+-        ProtoChunk protochunk = new ProtoChunk(i, j, chunkconverter);
++        ProtoChunk protochunk = new ProtoChunk(i, j, chunkconverter, generatoraccess); // Paper - Anti-Xray
+ 
+         protochunk.a(abiomebase);
+         protochunk.b(nbttagcompound.getLong("InhabitedTime"));
 @@ -958,7 +958,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
          for (int i = 0; i < nbttaglist.size(); ++i) {
              NBTTagCompound nbttagcompound = nbttaglist.getCompound(i);
@@ -1080,6 +1089,28 @@ index 233cbb6d..8c116b74 100644
          this.emittedLight = new NibbleArray();
          if (flag) {
              this.skyLight = new NibbleArray();
+diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+index 668829c5..7c414ed8 100644
+--- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
++++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+@@ -43,7 +43,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+ 
+     // CraftBukkit start
+     public void forcePolluteCache(ChunkCoordIntPair chunkcoordintpair) {
+-        this.g.put(chunkcoordintpair.a(), new Scheduler.a(chunkcoordintpair, new ProtoChunk(chunkcoordintpair, ChunkConverter.a), ChunkStatus.EMPTY));
++        this.g.put(chunkcoordintpair.a(), new Scheduler.a(chunkcoordintpair, new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.getWorld()), ChunkStatus.EMPTY)); // Paper - Anti-Xray
+     }
+     // CraftBukkit end
+ 
+@@ -55,7 +55,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+                 protochunk.setLastSaved(this.c.getTime());
+                 return new Scheduler.a(chunkcoordintpair, protochunk, protochunk.i());
+             } else {
+-                return new Scheduler.a(chunkcoordintpair, new ProtoChunk(chunkcoordintpair, ChunkConverter.a), ChunkStatus.EMPTY);
++                return new Scheduler.a(chunkcoordintpair, new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.getWorld()), ChunkStatus.EMPTY); // Paper - Anti-Xray
+             }
+         });
+     }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 index 575f9b55..9033f74a 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
@@ -1367,18 +1398,53 @@ index 9787f5b0..70508411 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index 584a86c1..01f9e1e1 100644
+index 584a86c1..98dcfc98 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/server/ProtoChunk.java
-@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -44,12 +44,24 @@ public class ProtoChunk implements IChunkAccess {
+     private long s;
+     private final Map<WorldGenStage.Features, BitSet> t;
+     private boolean u;
++    private final GeneratorAccess world;
  
--public class ProtoChunk implements IChunkAccess {
-+public class ProtoChunk implements IChunkAccess { // Paper - Anti-Xray - TODO: Check if world instance is necessary to create chunk sections
++    // Paper start - Anti-Xray - Support default constructor
+     public ProtoChunk(int i, int j, ChunkConverter chunkconverter) {
+-        this(new ChunkCoordIntPair(i, j), chunkconverter);
++        this(i, j, chunkconverter, null);
+     }
  
-     private static final Logger a = LogManager.getLogger();
-     private final ChunkCoordIntPair b;
+     public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) {
++        this(chunkcoordintpair, chunkconverter, null);
++    }
++    // Paper end
++
++    public ProtoChunk(int i, int j, ChunkConverter chunkconverter, GeneratorAccess world) { // Paper - Anti-Xray
++        this(new ChunkCoordIntPair(i, j), chunkconverter, world); // Paper - Anti-Xray
++    }
++
++    public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, GeneratorAccess world) { // Paper - Anti-Xray
++        this.world = world; // Paper - Anti-Xray
+         this.d = new AtomicInteger();
+         this.f = Maps.newEnumMap(HeightMap.Type.class);
+         this.g = ChunkStatus.EMPTY;
+@@ -152,7 +164,7 @@ public class ProtoChunk implements IChunkAccess {
+                     return iblockdata;
+                 }
+ 
+-                this.j[j >> 4] = new ChunkSection(j >> 4 << 4, this.x());
++                this.j[j >> 4] = new ChunkSection(j >> 4 << 4, this.x(), this, this.world, true); // Paper - Anti-Xray
+             }
+ 
+             IBlockData iblockdata1 = this.j[j >> 4].getType(i & 15, j & 15, k & 15);
+@@ -406,7 +418,7 @@ public class ProtoChunk implements IChunkAccess {
+                     return;
+                 }
+ 
+-                this.j[i1] = new ChunkSection(i1 << 4, this.x());
++                this.j[i1] = new ChunkSection(i1 << 4, this.x(), this, this.world, true); // Paper - Anti-Xray
+             }
+ 
+             if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 004c3ec4..f0d20ea2 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -1409,18 +1475,30 @@ index 004c3ec4..f0d20ea2 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-index c26f0ed1..c0813942 100644
+index c26f0ed1..f6915d32 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-@@ -14,7 +14,7 @@ import org.bukkit.material.MaterialData;
- /**
-  * Data to be used for the block types and data in a newly generated chunk.
-  */
--public final class CraftChunkData implements ChunkGenerator.ChunkData {
-+public final class CraftChunkData implements ChunkGenerator.ChunkData { // Paper - Anti-Xray - TODO: Check if world instance is necessary to create chunk sections
+@@ -17,9 +17,11 @@ import org.bukkit.material.MaterialData;
+ public final class CraftChunkData implements ChunkGenerator.ChunkData {
      private final int maxHeight;
      private final ChunkSection[] sections;
++    private World world; // Paper - Anti-Xray
  
+     public CraftChunkData(World world) {
+         this(world.getMaxHeight());
++        this.world = world; // Paper - Anti-Xray
+     }
+ 
+     /* pp for tests */ CraftChunkData(int maxHeight) {
+@@ -145,7 +147,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     private ChunkSection getChunkSection(int y, boolean create) {
+         ChunkSection section = sections[y >> 4];
+         if (create && section == null) {
+-            sections[y >> 4] = section = new ChunkSection(y, create);
++            sections[y >> 4] = section = new ChunkSection(y, create, null, world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) world).getHandle() : null, true); // Paper - Anti-Xray
+         }
+         return section;
+     }
 -- 
 2.14.1.windows.1
 
