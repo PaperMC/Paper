@@ -1,4 +1,4 @@
-From 119a38cd778eb71f9d7f1fe6d5ad7e035b030461 Mon Sep 17 00:00:00 2001
+From 3b079599d0b63cbce7a9d151b23084babe37a272 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:39:35 +0100
 Subject: [PATCH] Improve death events
@@ -69,7 +69,7 @@ index dca497072..454c1e7d0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 14637be49..6301a207a 100644
+index 14637be49..dec4b442c 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -75,14 +75,14 @@ public abstract class EntityLiving extends Entity {
@@ -178,7 +178,7 @@ index 14637be49..6301a207a 100644
 +                this.setDying(true);
 +                this.world.broadcastEntityEffect(this, (byte) 3);
 +            } else {
-+                this.setHealth(deathEvent.getReviveHealth() > 0 ? deathEvent.getReviveHealth() : this.getMaxHealth());
++                this.setHealth((float) deathEvent.getReviveHealth());
 +            }
 +            // Paper end
          }
@@ -206,7 +206,7 @@ index 14637be49..6301a207a 100644
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 4ff505cfa..8bfcece8a 100644
+index 4ff505cfa..6afb6cf7b 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -79,6 +79,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -239,8 +239,8 @@ index 4ff505cfa..8bfcece8a 100644
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
-+            if (event.getEntity().getHealth() <= 0) {
-+                event.getEntity().setHealth(event.getReviveHealth() > 0 ? event.getReviveHealth() : this.getMaxHealth());
++            if (this.getHealth() <= 0) {
++                this.setHealth((float) event.getReviveHealth());
 +            }
 +            return;
 +        }
@@ -343,14 +343,14 @@ index 5f480ac06..d59d86efc 100644
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index cce4acc0b..9fd8e1859 100644
+index cce4acc0b..72d85b53f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -392,9 +392,16 @@ public class CraftEventFactory {
      public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, List<org.bukkit.inventory.ItemStack> drops) {
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
-+        setupSound(victim, event); // Paper - make cancellable
++        populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
  
@@ -367,7 +367,7 @@ index cce4acc0b..9fd8e1859 100644
          CraftPlayer entity = victim.getBukkitEntity();
          PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
          event.setKeepInventory(keepInventory);
-+        setupSound(victim, event); // Paper - make cancellable
++        populateFields(victim, event); // Paper - make cancellable
          org.bukkit.World world = entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
 +        // Paper start - make cancellable
@@ -379,13 +379,14 @@ index cce4acc0b..9fd8e1859 100644
  
          victim.keepLevel = event.getKeepLevel();
          victim.newLevel = event.getNewLevel();
-@@ -432,6 +446,30 @@ public class CraftEventFactory {
+@@ -432,6 +446,31 @@ public class CraftEventFactory {
          return event;
      }
  
 +    // Paper start - helper methods for making death event cancellable
-+    // Add sound information to death event
-+    private static void setupSound(EntityLiving victim, EntityDeathEvent event) {
++    // Add information to death event
++    private static void populateFields(EntityLiving victim, EntityDeathEvent event) {
++        event.setReviveHealth(victim.getMaxHealth());
 +        event.setShouldPlayDeathSound(!victim.silentDeath && !victim.isSilent());
 +        SoundEffect soundEffect = victim.getDeathSoundEffect();
 +        event.setDeathSound(soundEffect != null ? org.bukkit.craftbukkit.CraftSound.getSoundByEffect(soundEffect) : null);

@@ -1,4 +1,4 @@
-From 50dbb0833562e99156610ecec420b84da2349cc8 Mon Sep 17 00:00:00 2001
+From b86fe574c68b575d7b24b8f893b3b472d6369fd0 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:32:28 +0100
 Subject: [PATCH] Improve death events
@@ -15,7 +15,7 @@ items and experience which is otherwise only properly possible by using
 internal code.
 
 diff --git a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
-index ab9e81fd..82cc0224 100644
+index ab9e81fd..a7b8f869 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
 @@ -8,10 +8,19 @@ import org.bukkit.inventory.ItemStack;
@@ -29,7 +29,7 @@ index ab9e81fd..82cc0224 100644
      private int dropExp = 0;
 +    // Paper start - make cancellable
 +    private boolean cancelled;
-+    private float reviveHealth = 0;
++    private double reviveHealth = 0;
 +    private boolean shouldPlayDeathSound;
 +    private org.bukkit.Sound deathSound;
 +    private org.bukkit.SoundCategory deathSoundCategory;
@@ -39,7 +39,7 @@ index ab9e81fd..82cc0224 100644
  
      public EntityDeathEvent(final LivingEntity entity, final List<ItemStack> drops) {
          this(entity, drops, 0);
-@@ -69,4 +78,127 @@ public class EntityDeathEvent extends EntityEvent {
+@@ -69,4 +78,132 @@ public class EntityDeathEvent extends EntityEvent {
      public static HandlerList getHandlerList() {
          return handlers;
      }
@@ -57,21 +57,26 @@ index ab9e81fd..82cc0224 100644
 +
 +    /**
 +     * Get the amount of health that the entity should revive with after cancelling the event.
-+     * 0 by default which will result in the entity getting healed to their max health.
++     * Set to the entity's max health by default.
 +     *
 +     * @return The amount of health
 +     */
-+    public float getReviveHealth() {
++    public double getReviveHealth() {
 +        return reviveHealth;
 +    }
 +
 +    /**
 +     * Set the amount of health that the entity should revive with after cancelling the event.
-+     * If this is 0 or less it will heal the entity to their max health.
++     * Revive health value must be between 0 (exclusive) and the entity's max health (inclusive).
 +     *
 +     * @param reviveHealth The amount of health
++     * @throws IllegalArgumentException Thrown if the health is {@literal <= 0 or >} max health
 +     */
-+    public void setReviveHealth(float reviveHealth) {
++    public void setReviveHealth(double reviveHealth) throws IllegalArgumentException {
++        double maxHealth = ((LivingEntity) entity).getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
++        if ((reviveHealth <= 0) || (reviveHealth > maxHealth)) {
++            throw new IllegalArgumentException("Health must be between 0 (exclusive) and " + maxHealth + " (inclusive), but was " + reviveHealth);
++        }
 +        this.reviveHealth = reviveHealth;
 +    }
 +
