@@ -1,0 +1,76 @@
+From 1782b15268da2e8ebd35dbeb1ae11c957fd7ddf3 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Thu, 23 Aug 2018 11:45:32 -0400
+Subject: [PATCH] Cached IBlockData to CraftBlockData conversion
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
+index 4dd6c3276..1b226a77e 100644
+--- a/src/main/java/net/minecraft/server/BlockData.java
++++ b/src/main/java/net/minecraft/server/BlockData.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.ImmutableMap;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ 
+ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
+ 
+@@ -11,4 +12,14 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
+     public Block getBlock() {
+         return (Block) this.e_;
+     }
++
++    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++    private CraftBlockData cachedCraftBlockData;
++
++    @Override
++    public CraftBlockData createCraftBlockData() {
++        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
++        return (CraftBlockData) cachedCraftBlockData.clone();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index b57f6efb3..7b1d750f3 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -28,6 +28,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
+ 
+     Block getBlock();
+ 
++    org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData(); // Paper - property for converting IBlockData to CraftBlockData, should only be used by CraftBlockData#fromData and should return a clone
++
+     default Material getMaterial() {
+         return this.getBlock().n(this);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 472e89c43..8d886c719 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -454,6 +454,7 @@ public class CraftBlockData implements BlockData {
+         register(net.minecraft.server.BlockWitherSkull.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull.class);
+         register(net.minecraft.server.BlockWitherSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkullWall.class);
+         register(net.minecraft.server.BlockWoodButton.class, org.bukkit.craftbukkit.block.impl.CraftWoodButton.class);
++        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData); // Paper - initialize cached data for all IBlockData instances after registration
+     }
+ 
+     private static void register(Class<? extends Block> nms, Class<? extends CraftBlockData> bukkit) {
+@@ -493,7 +494,14 @@ public class CraftBlockData implements BlockData {
+         return craft;
+     }
+ 
++    // Paper start - cache block data getting
+     public static CraftBlockData fromData(IBlockData data) {
++        return data.createCraftBlockData();
++    }
++
++    // Only used by BlockData
++    public static CraftBlockData createData(IBlockData data) {
++        // Paper end
+         Class<? extends CraftBlockData> craft = MAP.get(data.getBlock().getClass());
+         if (craft == null) {
+             craft = CraftBlockData.class;
+-- 
+2.17.1
+
