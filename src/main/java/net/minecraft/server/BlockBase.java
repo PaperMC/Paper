@@ -323,6 +323,14 @@ public abstract class BlockBase {
             this.o = blockbase_info.t;
             this.p = blockbase_info.u;
         }
+        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
+        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
+
+        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
+            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(getBlockData());
+            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
+        }
+        // Paper end
 
         public void a() {
             if (!this.getBlock().o()) {

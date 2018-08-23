@@ -553,7 +553,17 @@ public class CraftBlockData implements BlockData {
         return craft;
     }
 
+    // Paper start - optimize creating BlockData to not need a map lookup
+    static {
+        // Initialize cached data for all IBlockData instances after registration
+        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData);
+    }
     public static CraftBlockData fromData(IBlockData data) {
+        return data.createCraftBlockData();
+    }
+
+    public static CraftBlockData createData(IBlockData data) {
+        // Paper end
         return MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
     }
 }
