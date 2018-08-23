@@ -32,6 +32,13 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private final Block sourceBlock;
     private boolean cancel = false;
 
+    // Paper start - Legacy constructor, use #BlockPhysicsEvent(Block, BlockData, Block)
+    @Deprecated
+    public BlockPhysicsEvent(final Block block, final BlockData changed, final int sourceX, final int sourceY, final int sourceZ) {
+        this(block, changed, block.getWorld().getBlockAt(sourceX, sourceY, sourceZ));
+    }
+    // Paper end
+
     public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed) {
         this(block, changed, block);
     }
@@ -55,7 +62,8 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the type of block that changed, causing this event
+     * Gets the type of block that changed, causing this event.
+     * This is the type of {@link #getBlock()} at the time of the event.
      *
      * @return Changed block's type
      */
@@ -63,6 +71,19 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     public Material getChangedType() {
         return changed.getMaterial();
     }
+
+    // Paper start - Getter for the BlockData
+    /**
+     * Gets the BlockData of the block that changed, causing this event.
+     * This is the BlockData of {@link #getBlock()} at the time of the event.
+     *
+     * @return Changed block's BlockData
+     */
+    @NotNull
+    public BlockData getChangedBlockData() {
+        return changed.clone();
+    }
+    // Paper end
 
     @Override
     public boolean isCancelled() {
