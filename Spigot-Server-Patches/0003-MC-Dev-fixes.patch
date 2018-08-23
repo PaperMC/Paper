@@ -1,256 +1,301 @@
-From f4214b8d94c5a9690fa2e41f7b547545dec26549 Mon Sep 17 00:00:00 2001
+From 3d58bb7e7759377a0a59a8cf388372f8918dea2f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
-diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index d4f412742..d55e180d7 100644
---- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -89,7 +89,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-         return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 002da2a191..9f3aa24590 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -150,7 +150,7 @@ public class BlockPosition extends BaseBlockPosition {
+         return a(Math.min(blockposition.getX(), blockposition1.getX()), Math.min(blockposition.getY(), blockposition1.getY()), Math.min(blockposition.getZ(), blockposition1.getZ()), Math.max(blockposition.getX(), blockposition1.getX()), Math.max(blockposition.getY(), blockposition1.getY()), Math.max(blockposition.getZ(), blockposition1.getZ()));
      }
  
--    public int compareTo(Object object) {
-+    public int compareTo(BaseBlockPosition object) { // Paper - decompile fix
-         return this.l((BaseBlockPosition) object);
+-    public static Iterable<BlockPosition> a(int i, int j, int k, int l, int i1, int j1) {
++    public static Iterable<BlockPosition> a(int x0, int y0, int z0, int l, int i1, int j1) {
+         return () -> {
+             return new AbstractIterator() {
+                 private boolean g = true;
+@@ -161,21 +161,21 @@ public class BlockPosition extends BaseBlockPosition {
+                 protected BlockPosition a() {
+                     if (this.g) {
+                         this.g = false;
+-                        this.h = i;
+-                        this.i = j;
+-                        this.j = k;
+-                        return new BlockPosition(i, j, k);
++                        this.h = x0;
++                        this.i = y0;
++                        this.j = z0;
++                        return new BlockPosition(x0, y0, z0);
+                     } else if (this.h == l && this.i == i1 && this.j == j1) {
+                         return (BlockPosition) this.endOfData();
+                     } else {
+                         if (this.h < l) {
+                             ++this.h;
+                         } else if (this.i < i1) {
+-                            this.h = i;
++                            this.h = x0;
+                             ++this.i;
+                         } else if (this.j < j1) {
+-                            this.h = i;
+-                            this.i = j;
++                            this.h = x0;
++                            this.i = y0;
+                             ++this.j;
+                         }
+ 
+@@ -213,8 +213,11 @@ public class BlockPosition extends BaseBlockPosition {
+                         if (this.g.b < l) {
+                             ++this.g.b;
+                         } else if (this.g.c < i1) {
++                            this.g.b = i; // Paper - Readd line removed by the decompiler
+                             ++this.g.c;
+                         } else if (this.g.d < j1) {
++                            this.g.b = i; // Paper - Readd line removed by the decompiler
++                            this.g.c = j; // Paper - Readd line removed by the decompiler
+                             ++this.g.d;
+                         }
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index 650ef14758..35aea4829f 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -15,7 +15,7 @@ public class ChunkSection {
+ 
+     public ChunkSection(int i, boolean flag) {
+         this.yPos = i;
+-        this.blockIds = new DataPaletteBlock(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData());
++        this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData()); // Paper - Decompile error
+         this.emittedLight = new NibbleArray();
+         if (flag) {
+             this.skyLight = new NibbleArray();
+diff --git a/src/main/java/net/minecraft/server/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
+index 4997255c79..a5545bd4c4 100644
+--- a/src/main/java/net/minecraft/server/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
+@@ -135,8 +135,4 @@ public class DedicatedPlayerList extends PlayerList {
+     public boolean f(GameProfile gameprofile) {
+         return this.getOPs().b(gameprofile);
      }
+-
+-    public MinecraftServer getServer() {
+-        return this.getServer();
+-    }
  }
-diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index 62a9c92f8..1b7599769 100644
---- a/src/main/java/net/minecraft/server/BiomeBase.java
-+++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -46,7 +46,7 @@ public abstract class BiomeBase {
-     protected List<BiomeBase.BiomeMeta> w;
- 
-     public static int a(BiomeBase biomebase) {
--        return BiomeBase.REGISTRY_ID.a((Object) biomebase);
-+        return BiomeBase.REGISTRY_ID.a(biomebase); // Paper - decompile fix
+diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
+index a661789c1e..785a1a2184 100644
+--- a/src/main/java/net/minecraft/server/DefinedStructure.java
++++ b/src/main/java/net/minecraft/server/DefinedStructure.java
+@@ -88,7 +88,7 @@ public class DefinedStructure {
      }
  
-     @Nullable
-diff --git a/src/main/java/net/minecraft/server/CommandAbstract.java b/src/main/java/net/minecraft/server/CommandAbstract.java
-index 76bf04f56..a99d0f870 100644
---- a/src/main/java/net/minecraft/server/CommandAbstract.java
-+++ b/src/main/java/net/minecraft/server/CommandAbstract.java
-@@ -231,7 +231,7 @@ public abstract class CommandAbstract implements ICommand {
+     private void a(World world, BlockPosition blockposition, BlockPosition blockposition1) {
+-        List list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (entity) -> {
++        List list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1),(Predicate<? super Entity>) (entity) -> { // Paper - decompile fix
+             return !(entity instanceof EntityHuman);
+         });
+ 
+@@ -285,21 +285,24 @@ public class DefinedStructure {
+                         voxelshapebitset.a(blockposition3.getX() - i2, blockposition3.getY() - j2, blockposition3.getZ() - l1, true, true);
+                     }
+ 
+-                    voxelshapebitset.a((enumdirection, i, j, k) -> {
+-                        BlockPosition blockposition = new BlockPosition(l + i, i1 + j, j1 + k);
+-                        BlockPosition blockposition1 = blockposition.shift(enumdirection);
+-                        IBlockData iblockdata = generatoraccess.getType(blockposition);
++                    // Paper start - decompile fixes
++                    int finalL = l1;
++                    voxelshapebitset.a((enumdirection, i_, j_, k_) -> {
++                        BlockPosition innerBlockposition = new BlockPosition(i2 + i_, j2 + j_, finalL + k_);
++                        BlockPosition blockposition1 = innerBlockposition.shift(enumdirection);
++                        IBlockData iblockdata = generatoraccess.getType(innerBlockposition);
+                         IBlockData iblockdata1 = generatoraccess.getType(blockposition1);
+-                        IBlockData iblockdata2 = iblockdata.updateState(enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++                        IBlockData iblockdata2 = iblockdata.updateState(enumdirection, iblockdata1, generatoraccess, innerBlockposition, blockposition1);
+ 
+                         if (iblockdata != iblockdata2) {
+-                            generatoraccess.setTypeAndData(blockposition, iblockdata2, k1 & -2 | 16);
++                            generatoraccess.setTypeAndData(innerBlockposition, iblockdata2, i & -2 | 16);
+                         }
+ 
+-                        IBlockData iblockdata3 = iblockdata1.updateState(enumdirection.opposite(), iblockdata2, generatoraccess, blockposition1, blockposition);
++                        IBlockData iblockdata3 = iblockdata1.updateState(enumdirection.opposite(), iblockdata2, generatoraccess, blockposition1, innerBlockposition);
+ 
+                         if (iblockdata1 != iblockdata3) {
+-                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, k1 & -2 | 16);
++                            generatoraccess.setTypeAndData(blockposition1, iblockdata3, i & -2 | 16);
++                            // Paper end - decompile fixes
+                         }
+ 
+                     });
+@@ -734,7 +737,7 @@ public class DefinedStructure {
+         public IBlockData a(int i) {
+             IBlockData iblockdata = (IBlockData) this.b.fromId(i);
+ 
+-            return iblockdata == null ? DefinedStructure.a.a : iblockdata;
++            return iblockdata == null ? a : iblockdata; // Paper - decompile error - Blocks.AIR.getBlockData()
          }
  
-         if (object != null && oclass.isAssignableFrom(object.getClass())) {
--            return (Entity) object;
-+            return (T) object; // Paper - fix decompile error
-         } else {
-             throw new ExceptionEntityNotFound(s);
+         public Iterator<IBlockData> iterator() {
+diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
+index 188d49d820..854ad49b6c 100644
+--- a/src/main/java/net/minecraft/server/EnumDirection.java
++++ b/src/main/java/net/minecraft/server/EnumDirection.java
+@@ -255,7 +255,7 @@ public enum EnumDirection implements INamable {
+             return Iterators.forArray(this.c);
          }
-@@ -448,7 +448,7 @@ public abstract class CommandAbstract implements ICommand {
+ 
+-        public boolean test(@Nullable Object object) {
++        public boolean test(@Nullable EnumDirection object) { // Paper - Decompile fix
+             return this.a((EnumDirection) object);
+         }
      }
- 
-     private static <T extends Comparable<T>> IBlockData a(IBlockData iblockdata, IBlockState<T> iblockstate, Comparable<?> comparable) {
--        return iblockdata.set(iblockstate, comparable);
-+        return iblockdata.set(iblockstate, (T) comparable); // Paper - fix decompiler error
-     }
- 
-     public static Predicate<IBlockData> b(final Block block, String s) throws ExceptionInvalidBlockState {
-@@ -541,7 +541,7 @@ public abstract class CommandAbstract implements ICommand {
- 
-     @Nullable
-     private static <T extends Comparable<T>> T a(IBlockState<T> iblockstate, String s) {
--        return (Comparable) iblockstate.b(s).orNull();
-+        return iblockstate.b(s).orNull(); // Paper - fix decompiler error
-     }
- 
-     public static String a(Object[] aobject) {
-@@ -693,7 +693,7 @@ public abstract class CommandAbstract implements ICommand {
-         return this.getCommand().compareTo(icommand.getCommand());
-     }
- 
--    public int compareTo(Object object) {
-+    public int compareTo(ICommand object) { // Paper - fix decompile error
-         return this.a((ICommand) object);
-     }
- 
-diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 77b81a575..ba461ad48 100644
---- a/src/main/java/net/minecraft/server/EntityTypes.java
-+++ b/src/main/java/net/minecraft/server/EntityTypes.java
-@@ -34,7 +34,7 @@ public class EntityTypes {
- 
-     @Nullable
-     public static String b(Entity entity) {
--        int i = EntityTypes.b.a((Object) entity.getClass());
-+        int i = EntityTypes.b.a(entity.getClass()); // Paper - Decompile fix
- 
-         return i == -1 ? null : (String) EntityTypes.g.get(i);
-     }
-@@ -254,7 +254,7 @@ public class EntityTypes {
-             EntityTypes.d.add(minecraftkey);
- 
-             while (EntityTypes.g.size() <= i) {
--                EntityTypes.g.add((Object) null);
-+                EntityTypes.g.add(null); // Paper - Decompile fix
+@@ -293,9 +293,10 @@ public enum EnumDirection implements INamable {
+                 return d0;
              }
  
-             EntityTypes.g.set(i, s1);
-diff --git a/src/main/java/net/minecraft/server/LotoSelectorEntry.java b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
-index a540167d6..b2860555d 100644
---- a/src/main/java/net/minecraft/server/LotoSelectorEntry.java
-+++ b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
-@@ -85,11 +85,11 @@ public abstract class LotoSelectorEntry {
-             return jsonobject;
+-            public boolean test(@Nullable Object object) {
+-                return super.a((EnumDirection) object);
+-            }
++            // Paper - Decompile fix
++            //public boolean test(@Nullable Object object) {
++            //    return super.a((EnumDirection) object);
++            //}
+         },
+         Y("y") {
+             ;
+@@ -307,9 +308,10 @@ public enum EnumDirection implements INamable {
+                 return d1;
+             }
+ 
+-            public boolean test(@Nullable Object object) {
+-                return super.a((EnumDirection) object);
+-            }
++            // Paper - Decompile fix
++            //public boolean test(@Nullable Object object) {
++            //   return super.a((EnumDirection) object);
++            //}
+         },
+         Z("z") {
+             ;
+@@ -321,9 +323,10 @@ public enum EnumDirection implements INamable {
+                 return d2;
+             }
+ 
+-            public boolean test(@Nullable Object object) {
+-                return super.a((EnumDirection) object);
+-            }
++            // Paper - Decompile fix
++            //public boolean test(@Nullable Object object) {
++            //    return super.a((EnumDirection) object);
++            //}
+         };
+ 
+         private static final Map<String, EnumDirection.EnumAxis> d = (Map) Arrays.stream(values()).collect(Collectors.toMap(EnumDirection.EnumAxis::a, (enumdirection_enumaxis) -> {
+@@ -377,7 +380,7 @@ public enum EnumDirection implements INamable {
+ 
+         public abstract double a(double d0, double d1, double d2);
+ 
+-        public boolean test(@Nullable Object object) {
++        public boolean test(@Nullable EnumDirection object) { // Paper - Decompile fix
+             return this.a((EnumDirection) object);
          }
  
--        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+        public JsonElement serialize(LotoSelectorEntry object, Type type, JsonSerializationContext jsonserializationcontext) {
-             return this.a((LotoSelectorEntry) object, type, jsonserializationcontext);
-         }
+diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
+index 8f06c58485..4361b2cee5 100644
+--- a/src/main/java/net/minecraft/server/LocaleLanguage.java
++++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
+@@ -34,7 +34,7 @@ public class LocaleLanguage {
+                 Entry entry = (Entry) iterator.next();
+                 String s = LocaleLanguage.b.matcher(ChatDeserializer.a((JsonElement) entry.getValue(), (String) entry.getKey())).replaceAll("%$1s");
  
--        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+        public LotoSelectorEntry deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-             return this.a(jsonelement, type, jsondeserializationcontext);
+-                this.d.put(entry.getKey(), s);
++                this.d.put((String) entry.getKey(), s); // Paper - Decompile fix
+             }
+ 
+             this.e = SystemUtils.b();
+diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
+index 86585a13ff..f52b9c6f0a 100644
+--- a/src/main/java/net/minecraft/server/MathHelper.java
++++ b/src/main/java/net/minecraft/server/MathHelper.java
+@@ -8,7 +8,7 @@ import java.util.function.IntPredicate;
+ public class MathHelper {
+ 
+     public static final float a = c(2.0F);
+-    private static final float[] b = (float[]) SystemUtils.a((Object) (new float[65536]), (afloat) -> {
++    private static final float[] b = (float[]) SystemUtils.a((new float[65536]), (afloat) -> { // Paper - Decompile fix
+         for (int i = 0; i < afloat.length; ++i) {
+             afloat[i] = (float) Math.sin((double) i * 3.141592653589793D * 2.0D / 65536.0D);
          }
-     }
-diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 58f47d0de..8860a0129 100644
---- a/src/main/java/net/minecraft/server/RegistryBlockID.java
-+++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
-@@ -8,7 +8,7 @@ import java.util.Iterator;
- import java.util.List;
+diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
+index 3b8f6ec167..bde5714dd6 100644
+--- a/src/main/java/net/minecraft/server/RegistryID.java
++++ b/src/main/java/net/minecraft/server/RegistryID.java
+@@ -6,7 +6,7 @@ import java.util.Arrays;
+ import java.util.Iterator;
  import javax.annotation.Nullable;
  
--public class RegistryBlockID<T> implements Registry<T> {
-+public class RegistryBlockID<T> implements Registry { // Paper - Fix decompile error
+-public class RegistryID<K> implements Registry<K> {
++public class RegistryID<K> implements Registry { // Paper - decompile fix
  
-     private final IdentityHashMap<T, Integer> a;
-     private final List<T> b;
-@@ -26,7 +26,7 @@ public class RegistryBlockID<T> implements Registry<T> {
-         this.a.put(t0, Integer.valueOf(i));
+     private static final Object a = null;
+     private K[] b;
+@@ -17,9 +17,9 @@ public class RegistryID<K> implements Registry<K> {
  
-         while (this.b.size() <= i) {
--            this.b.add((Object) null);
-+            this.b.add(null); // Paper - Fix decompile error
-         }
- 
-         this.b.set(i, t0);
-diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
-index 2179664a0..981582212 100644
---- a/src/main/java/net/minecraft/server/ServerPing.java
-+++ b/src/main/java/net/minecraft/server/ServerPing.java
-@@ -57,7 +57,8 @@ public class ServerPing {
- 
-         public Serializer() {}
- 
--        public ServerPing a(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+        // Paper - decompile fix
-+        public ServerPing deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-             JsonObject jsonobject = ChatDeserializer.m(jsonelement, "status");
-             ServerPing serverping = new ServerPing();
- 
-@@ -80,7 +81,8 @@ public class ServerPing {
-             return serverping;
-         }
- 
--        public JsonElement a(ServerPing serverping, Type type, JsonSerializationContext jsonserializationcontext) {
-+        // Paper - decompile fix
-+        public JsonElement serialize(ServerPing serverping, Type type, JsonSerializationContext jsonserializationcontext) {
-             JsonObject jsonobject = new JsonObject();
- 
-             if (serverping.a() != null) {
-@@ -101,14 +103,6 @@ public class ServerPing {
- 
-             return jsonobject;
-         }
--
--        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--            return this.a((ServerPing) object, type, jsonserializationcontext);
--        }
--
--        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--            return this.a(jsonelement, type, jsondeserializationcontext);
--        }
+     public RegistryID(int i) {
+         i = (int) ((float) i / 0.8F);
+-        this.b = (Object[]) (new Object[i]);
++        this.b = (K[]) (new Object[i]); // Paper - decompile fix
+         this.c = new int[i];
+-        this.d = (Object[]) (new Object[i]);
++        this.d = (K[]) (new Object[i]); // Paper - decompile fix
      }
  
-     public static class ServerData {
-@@ -133,27 +127,21 @@ public class ServerPing {
- 
-             public Serializer() {}
- 
--            public ServerPing.ServerData a(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+            // Paper - decompile fix
-+            public ServerPing.ServerData deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-                 JsonObject jsonobject = ChatDeserializer.m(jsonelement, "version");
- 
-                 return new ServerPing.ServerData(ChatDeserializer.h(jsonobject, "name"), ChatDeserializer.n(jsonobject, "protocol"));
-             }
- 
--            public JsonElement a(ServerPing.ServerData serverping_serverdata, Type type, JsonSerializationContext jsonserializationcontext) {
-+            // Paper - decompile fix
-+            public JsonElement serialize(ServerPing.ServerData serverping_serverdata, Type type, JsonSerializationContext jsonserializationcontext) {
-                 JsonObject jsonobject = new JsonObject();
- 
-                 jsonobject.addProperty("name", serverping_serverdata.a());
-                 jsonobject.addProperty("protocol", Integer.valueOf(serverping_serverdata.getProtocolVersion()));
-                 return jsonobject;
-             }
--
--            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--                return this.a((ServerPing.ServerData) object, type, jsonserializationcontext);
--            }
--
--            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--                return this.a(jsonelement, type, jsondeserializationcontext);
--            }
-         }
+     public int getId(@Nullable K k0) {
+@@ -51,12 +51,12 @@ public class RegistryID<K> implements Registry<K> {
      }
  
-@@ -188,7 +176,8 @@ public class ServerPing {
+     private void d(int i) {
+-        Object[] aobject = this.b;
++        K[] aobject = this.b; // Paper - decompile fix
+         int[] aint = this.c;
  
-             public Serializer() {}
+-        this.b = (Object[]) (new Object[i]);
++        this.b = (K[]) (new Object[i]); // Paper - decompile fix
+         this.c = new int[i];
+-        this.d = (Object[]) (new Object[i]);
++        this.d = (K[]) (new Object[i]); // Paper - decompile fix
+         this.e = 0;
+         this.f = 0;
  
--            public ServerPing.ServerPingPlayerSample a(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+            // Paper - decompile fix
-+            public ServerPing.ServerPingPlayerSample deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-                 JsonObject jsonobject = ChatDeserializer.m(jsonelement, "players");
-                 ServerPing.ServerPingPlayerSample serverping_serverpingplayersample = new ServerPing.ServerPingPlayerSample(ChatDeserializer.n(jsonobject, "max"), ChatDeserializer.n(jsonobject, "online"));
+diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
+index 43596cb2d5..3faf74a22f 100644
+--- a/src/main/java/net/minecraft/server/ShapeDetector.java
++++ b/src/main/java/net/minecraft/server/ShapeDetector.java
+@@ -171,7 +171,7 @@ public class ShapeDetector {
+             return new ShapeDetectorBlock(this.a, blockposition, this.b);
+         }
  
-@@ -212,7 +201,8 @@ public class ServerPing {
-                 return serverping_serverpingplayersample;
-             }
- 
--            public JsonElement a(ServerPing.ServerPingPlayerSample serverping_serverpingplayersample, Type type, JsonSerializationContext jsonserializationcontext) {
-+            // Paper - decompile fix
-+            public JsonElement serialize(ServerPing.ServerPingPlayerSample serverping_serverpingplayersample, Type type, JsonSerializationContext jsonserializationcontext) {
-                 JsonObject jsonobject = new JsonObject();
- 
-                 jsonobject.addProperty("max", Integer.valueOf(serverping_serverpingplayersample.a()));
-@@ -234,14 +224,6 @@ public class ServerPing {
- 
-                 return jsonobject;
-             }
--
--            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--                return this.a((ServerPing.ServerPingPlayerSample) object, type, jsonserializationcontext);
--            }
--
--            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--                return this.a(jsonelement, type, jsondeserializationcontext);
--            }
+-        public Object load(Object object) throws Exception {
++        public ShapeDetectorBlock load(BlockPosition object) throws Exception { // Paper - Decompile fix
+             return this.a((BlockPosition) object);
          }
      }
- }
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
-index f5bcbdbe1..3190cadfc 100644
---- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
-@@ -20,7 +20,7 @@ public class ItemFactoryTest extends AbstractTestingBase {
+diff --git a/src/main/java/net/minecraft/server/VoxelShape.java b/src/main/java/net/minecraft/server/VoxelShape.java
+index 4b5463cca2..53c9f21887 100644
+--- a/src/main/java/net/minecraft/server/VoxelShape.java
++++ b/src/main/java/net/minecraft/server/VoxelShape.java
+@@ -67,7 +67,7 @@ public abstract class VoxelShape {
+         ArrayList arraylist = Lists.newArrayList();
  
-     @Test
-     public void testKnownAttributes() throws Throwable {
--        final ZipInputStream nmsZipStream = new ZipInputStream(CommandAbstract.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream());
-+        final ZipInputStream nmsZipStream = new ZipInputStream(net.minecraft.server.HttpUtilities.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream()); // Paper
-         final Collection<String> names = new HashSet<String>();
-         for (ZipEntry clazzEntry; (clazzEntry = nmsZipStream.getNextEntry()) != null; ) {
-             final String entryName = clazzEntry.getName();
+         this.b((d0, d1, d2, d3, d4, d5) -> {
+-            list.add(new AxisAlignedBB(d0, d1, d2, d3, d4, d5));
++            arraylist.add(new AxisAlignedBB(d0, d1, d2, d3, d4, d5)); // Paper - decompile fix
+         });
+         return arraylist;
+     }
 -- 
-2.17.1
+2.18.0
 

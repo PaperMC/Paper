@@ -1,0 +1,751 @@
+From 42457b83f3c35c1e566f635b53505bc0c53f1eaf Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 20:55:47 -0400
+Subject: [PATCH] MC Utils
+
+
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index c3e990bdff..e2a7b4be2c 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -93,7 +93,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+         return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+     }
+ 
+-    public int compareTo(Object object) {
++    public int compareTo(BaseBlockPosition object) { // Paper - decompile fix
+         return this.l((BaseBlockPosition) object);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 9f3aa24590..7dbea90902 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
+ @Immutable
+ public class BlockPosition extends BaseBlockPosition {
+ 
+-    private static final Logger b = LogManager.getLogger();
+     public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
+     private static final int c = 1 + MathHelper.e(MathHelper.c(30000000));
+     private static final int d = BlockPosition.c;
+@@ -45,6 +44,7 @@ public class BlockPosition extends BaseBlockPosition {
+         return d0 == 0.0D && d1 == 0.0D && d2 == 0.0D ? this : new BlockPosition((double) this.getX() + d0, (double) this.getY() + d1, (double) this.getZ() + d2);
+     }
+ 
++    public BlockPosition add(int i, int j, int k) {return a(i, j, k);} // Paper - OBFHELPER
+     public BlockPosition a(int i, int j, int k) {
+         return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
+     }
+@@ -385,6 +385,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return this.d;
+         }
+ 
++        public BlockPosition.MutableBlockPosition setValues(int i, int j, int k) { return c(i, j, k);} // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
+             this.b = i;
+             this.c = j;
+@@ -392,6 +393,7 @@ public class BlockPosition extends BaseBlockPosition {
+             return this;
+         }
+ 
++        public BlockPosition.MutableBlockPosition setValues(double d0, double d1, double d2) { return c(d0, d1, d2);} // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
+             return this.c(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
+         }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 03c96de98b..2d06202da7 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -28,7 +28,7 @@ import com.google.common.collect.Lists; // CraftBukkit
+ public class Chunk implements IChunkAccess {
+ 
+     private static final Logger e = LogManager.getLogger();
+-    public static final ChunkSection a = null;
++    public static final ChunkSection a = null; public static final ChunkSection EMPTY_CHUNK_SECTION = Chunk.a; // Paper - OBFHELPER
+     private final ChunkSection[] sections;
+     private final BiomeBase[] g;
+     private final boolean[] h;
+@@ -693,6 +693,7 @@ public class Chunk implements IChunkAccess {
+         return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
+     }
+ 
++    @Nullable public final TileEntity getTileEntityImmediately(BlockPosition pos) { return this.a(pos, EnumTileEntityState.IMMEDIATE); } // Paper - OBFHELPER
+     @Nullable
+     public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
+         // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
+index 00a530c51c..2947d9ff6a 100644
+--- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
++++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
+@@ -24,6 +24,8 @@ public class ChunkCoordIntPair {
+         return a(this.x, this.z);
+     }
+ 
++    public static long asLong(final BlockPosition pos) { return a(pos.getX() >> 4, pos.getZ() >> 4); } // Paper - OBFHELPER
++    public static long asLong(int x, int z) { return a(x, z); } // Paper - OBFHELPER
+     public static long a(int i, int j) {
+         return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
+index b347567699..ceed50d8de 100644
+--- a/src/main/java/net/minecraft/server/EntityCreature.java
++++ b/src/main/java/net/minecraft/server/EntityCreature.java
+@@ -6,6 +6,7 @@ import org.bukkit.event.entity.EntityUnleashEvent;
+ 
+ public abstract class EntityCreature extends EntityInsentient {
+ 
++    public org.bukkit.craftbukkit.entity.CraftCreature getBukkitEntity() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
+     private BlockPosition a;
+     private float b;
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 514c951516..5b33997529 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -122,6 +122,7 @@ public abstract class EntityLiving extends Entity {
+     public org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
+     public boolean collides = true;
+     public boolean canPickUpLoot;
++    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
+ 
+     @Override
+     public float getBukkitYaw() {
+diff --git a/src/main/java/net/minecraft/server/EntityMonster.java b/src/main/java/net/minecraft/server/EntityMonster.java
+index 494ce0bc06..04c3756ea3 100644
+--- a/src/main/java/net/minecraft/server/EntityMonster.java
++++ b/src/main/java/net/minecraft/server/EntityMonster.java
+@@ -2,6 +2,7 @@ package net.minecraft.server;
+ 
+ public abstract class EntityMonster extends EntityCreature implements IMonster {
+ 
++    public org.bukkit.craftbukkit.entity.CraftMonster getBukkitEntity() { return (org.bukkit.craftbukkit.entity.CraftMonster) super.getBukkitEntity(); } // Paper
+     protected EntityMonster(EntityTypes<?> entitytypes, World world) {
+         super(entitytypes, world);
+         this.b_ = 5;
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index ca2a14d7ac..9a513b4e3a 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import com.mojang.datafixers.DataFixUtils;
+ import com.mojang.datafixers.types.Type;
+ 
++import java.util.Map;
+ import java.util.Set;
+ import java.util.UUID;
+ import java.util.function.Function;
+@@ -121,9 +122,20 @@ public class EntityTypes<T extends Entity> {
+     public static <T extends Entity> EntityTypes<T> a(String s, EntityTypes.a<T> entitytypes_a) {
+         EntityTypes entitytypes = entitytypes_a.a(s);
+ 
+-        EntityTypes.REGISTRY.a(new MinecraftKey(s), entitytypes);
++        // Paper start
++        if (clsToKeyMap == null ) clsToKeyMap = new java.util.HashMap<>();
++        if (clsToTypeMap == null ) clsToTypeMap = new java.util.HashMap<>();
++
++        MinecraftKey key = new MinecraftKey(s);
++        Class<? extends T> entityClass = entitytypes_a.getEntityClass();
++        EntityTypes.REGISTRY.a(key, entitytypes);
++        clsToKeyMap.put(entityClass, key);
++        clsToTypeMap.put(entityClass, org.bukkit.entity.EntityType.fromName(s));
+         return entitytypes;
+     }
++    public static Map<Class<? extends Entity>, MinecraftKey> clsToKeyMap;
++    public static Map<Class<? extends Entity>, org.bukkit.entity.EntityType> clsToTypeMap;
++    // Paper end
+ 
+     @Nullable
+     public static MinecraftKey getName(EntityTypes<?> entitytypes) {
+@@ -277,7 +289,7 @@ public class EntityTypes<T extends Entity> {
+ 
+     public static class a<T extends Entity> {
+ 
+-        private final Class<? extends T> a;
++        private final Class<? extends T> a; public Class<? extends T> getEntityClass() { return a; } // Paper - OBFHELPER
+         private final Function<? super World, ? extends T> b;
+         private boolean c = true;
+         private boolean d = true;
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 359979cc1c..0c54eaa529 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -26,6 +26,7 @@ import org.bukkit.TreeType;
+ import org.bukkit.block.BlockState;
+ import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.block.BlockFertilizeEvent;
+@@ -561,6 +562,17 @@ public final class ItemStack {
+         return this.tag != null ? this.tag.getList("Enchantments", 10) : new NBTTagList();
+     }
+ 
++    // Paper start - (this is just a good no conflict location)
++    public org.bukkit.inventory.ItemStack asBukkitMirror() {
++        return CraftItemStack.asCraftMirror(this);
++    }
++    public org.bukkit.inventory.ItemStack asBukkitCopy() {
++        return CraftItemStack.asCraftMirror(this.cloneItemStack());
++    }
++    public static ItemStack fromBukkitCopy(org.bukkit.inventory.ItemStack itemstack) {
++        return CraftItemStack.asNMSCopy(itemstack);
++    }
++    // Paper end
+     public void setTag(@Nullable NBTTagCompound nbttagcompound) {
+         this.tag = nbttagcompound;
+     }
+diff --git a/src/main/java/net/minecraft/server/LotoSelectorEntry.java b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
+index a540167d6d..add618866b 100644
+--- a/src/main/java/net/minecraft/server/LotoSelectorEntry.java
++++ b/src/main/java/net/minecraft/server/LotoSelectorEntry.java
+@@ -85,11 +85,11 @@ public abstract class LotoSelectorEntry {
+             return jsonobject;
+         }
+ 
+-        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++        public JsonElement serialize(LotoSelectorEntry object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+             return this.a((LotoSelectorEntry) object, type, jsonserializationcontext);
+         }
+ 
+-        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++        public LotoSelectorEntry deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+             return this.a(jsonelement, type, jsondeserializationcontext);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+new file mode 100644
+index 0000000000..70cdc3f102
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -0,0 +1,292 @@
++package net.minecraft.server;
++
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.Waitable;
++import org.spigotmc.AsyncCatcher;
++
++import javax.annotation.Nullable;
++import java.util.Queue;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ExecutionException;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.TimeoutException;
++import java.util.function.Supplier;
++import java.util.regex.Pattern;
++
++public final class MCUtil {
++    private static final Executor asyncExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build());
++
++    private MCUtil() {}
++
++
++    public static boolean isMainThread() {
++        return MinecraftServer.getServer().isMainThread();
++    }
++
++    private static class DelayedRunnable implements Runnable {
++
++        private final int ticks;
++        private final Runnable run;
++
++        private DelayedRunnable(int ticks, Runnable run) {
++            this.ticks = ticks;
++            this.run = run;
++        }
++
++        @Override
++        public void run() {
++            if (ticks <= 0) {
++                run.run();
++            } else {
++                scheduleTask(ticks-1, run);
++            }
++        }
++    }
++
++    public static void scheduleTask(int ticks, Runnable runnable) {
++        // We use post to main instead of process queue as we don't want to process these mid tick if
++        // Someone uses processQueueWhileWaiting
++        MinecraftServer.getServer().postToMainThread(new DelayedRunnable(ticks, runnable));
++    }
++
++    public static void processQueue() {
++        Runnable runnable;
++        Queue<Runnable> processQueue = getProcessQueue();
++        while ((runnable = processQueue.poll()) != null) {
++            try {
++                runnable.run();
++            } catch (Exception e) {
++                MinecraftServer.LOGGER.error("Error executing task", e);
++            }
++        }
++    }
++    public static <T> T processQueueWhileWaiting(CompletableFuture <T> future) {
++        try {
++            if (isMainThread()) {
++                while (!future.isDone()) {
++                    try {
++                        return future.get(1, TimeUnit.MILLISECONDS);
++                    } catch (TimeoutException ignored) {
++                        processQueue();
++                    }
++                }
++            }
++            return future.get();
++        } catch (Exception e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    public static void ensureMain(Runnable run) {
++        ensureMain(null, run);
++    }
++    /**
++     * Ensures the target code is running on the main thread
++     * @param reason
++     * @param run
++     * @return
++     */
++    public static void ensureMain(String reason, Runnable run) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++            if (reason != null) {
++                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
++            }
++            getProcessQueue().add(run);
++            return;
++        }
++        run.run();
++    }
++
++    private static Queue<Runnable> getProcessQueue() {
++        return MinecraftServer.getServer().processQueue;
++    }
++
++    public static <T> T ensureMain(Supplier<T> run) {
++        return ensureMain(null, run);
++    }
++    /**
++     * Ensures the target code is running on the main thread
++     * @param reason
++     * @param run
++     * @param <T>
++     * @return
++     */
++    public static <T> T ensureMain(String reason, Supplier<T> run) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++            if (reason != null) {
++                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++            }
++            Waitable<T> wait = new Waitable<T>() {
++                @Override
++                protected T evaluate() {
++                    return run.get();
++                }
++            };
++            getProcessQueue().add(wait);
++            try {
++                return wait.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++            }
++            return null;
++        }
++        return run.get();
++    }
++
++    /**
++     * Calculates distance between 2 entities
++     * @param e1
++     * @param e2
++     * @return
++     */
++    public static double distance(Entity e1, Entity e2) {
++        return Math.sqrt(distanceSq(e1, e2));
++    }
++
++
++    /**
++     * Calculates distance between 2 block positions
++     * @param e1
++     * @param e2
++     * @return
++     */
++    public static double distance(BlockPosition e1, BlockPosition e2) {
++        return Math.sqrt(distanceSq(e1, e2));
++    }
++
++    /**
++     * Gets the distance between 2 positions
++     * @param x1
++     * @param y1
++     * @param z1
++     * @param x2
++     * @param y2
++     * @param z2
++     * @return
++     */
++    public static double distance(double x1, double y1, double z1, double x2, double y2, double z2) {
++        return Math.sqrt(distanceSq(x1, y1, z1, x2, y2, z2));
++    }
++
++    /**
++     * Get's the distance squared between 2 entities
++     * @param e1
++     * @param e2
++     * @return
++     */
++    public static double distanceSq(Entity e1, Entity e2) {
++        return distanceSq(e1.locX,e1.locY,e1.locZ, e2.locX,e2.locY,e2.locZ);
++    }
++
++    /**
++     * Gets the distance sqaured between 2 block positions
++     * @param pos1
++     * @param pos2
++     * @return
++     */
++    public static double distanceSq(BlockPosition pos1, BlockPosition pos2) {
++        return distanceSq(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
++    }
++
++    /**
++     * Gets the distance squared between 2 positions
++     * @param x1
++     * @param y1
++     * @param z1
++     * @param x2
++     * @param y2
++     * @param z2
++     * @return
++     */
++    public static double distanceSq(double x1, double y1, double z1, double x2, double y2, double z2) {
++        return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
++    }
++
++    /**
++     * Converts a NMS World/BlockPosition to Bukkit Location
++     * @param world
++     * @param x
++     * @param y
++     * @param z
++     * @return
++     */
++    public static Location toLocation(World world, double x, double y, double z) {
++        return new Location(world.getWorld(), x, y, z);
++    }
++
++    /**
++     * Converts a NMS World/BlockPosition to Bukkit Location
++     * @param world
++     * @param pos
++     * @return
++     */
++    public static Location toLocation(World world, BlockPosition pos) {
++        return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
++    }
++
++    /**
++     * Converts an NMS entity's current location to a Bukkit Location
++     * @param entity
++     * @return
++     */
++    public static Location toLocation(Entity entity) {
++        return new Location(entity.getWorld().getWorld(), entity.locX, entity.locY, entity.locZ);
++    }
++
++    public static BlockPosition toBlockPosition(Location loc) {
++        return new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
++    }
++
++    public static boolean isEdgeOfChunk(BlockPosition pos) {
++        final int modX = pos.getX() & 15;
++        final int modZ = pos.getZ() & 15;
++        return (modX == 0 || modX == 15 || modZ == 0 || modZ == 15);
++    }
++
++    /**
++     * Gets a chunk without changing its boolean for should unload
++     * @param world
++     * @param x
++     * @param z
++     * @return
++     */
++    @Nullable
++    public static Chunk getLoadedChunkWithoutMarkingActive(World world, int x, int z) {
++        return ((ChunkProviderServer) world.chunkProvider).chunks.get(ChunkCoordIntPair.a(x, z));
++    }
++
++    /**
++     * Gets a chunk without changing its boolean for should unload
++     * @param provider
++     * @param x
++     * @param z
++     * @return
++     */
++    @Nullable
++    public static Chunk getLoadedChunkWithoutMarkingActive(IChunkProvider provider, int x, int z) {
++        return ((ChunkProviderServer)provider).chunks.get(ChunkCoordIntPair.a(x, z));
++    }
++
++    /**
++     * Posts a task to be executed asynchronously
++     * @param run
++     */
++    public static void scheduleAsyncTask(Runnable run) {
++        asyncExecutor.execute(run);
++    }
++
++    @Nullable
++    public static TileEntityHopper getHopper(World world, BlockPosition pos) {
++        Chunk chunk = world.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4);
++        if (chunk != null && chunk.getBlockData(pos).getBlock() == Blocks.HOPPER) {
++            TileEntity tileEntity = chunk.getTileEntityImmediately(pos);
++            if (tileEntity instanceof TileEntityHopper) {
++                return (TileEntityHopper) tileEntity;
++            }
++        }
++        return null;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
+index 8170a84280..e21e60b003 100644
+--- a/src/main/java/net/minecraft/server/NBTBase.java
++++ b/src/main/java/net/minecraft/server/NBTBase.java
+@@ -20,7 +20,7 @@ public interface NBTBase {
+ 
+     byte getTypeId();
+ 
+-    static default NBTBase createTag(byte b0) {
++    static NBTBase createTag(byte b0) { // Paper - decompile fix
+         switch (b0) {
+         case 0:
+             return new NBTTagEnd();
+@@ -66,7 +66,7 @@ public interface NBTBase {
+         }
+     }
+ 
+-    static default String n(int i) {
++    static String n(int i) { // Paper - decompile fix
+         switch (i) {
+         case 0:
+             return "TAG_End";
+diff --git a/src/main/java/net/minecraft/server/NBTList.java b/src/main/java/net/minecraft/server/NBTList.java
+index 1a81d8e5f6..057c2077a0 100644
+--- a/src/main/java/net/minecraft/server/NBTList.java
++++ b/src/main/java/net/minecraft/server/NBTList.java
+@@ -13,7 +13,7 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
+     }
+ 
+     public T set(int i, T t0) {
+-        NBTBase nbtbase = this.get(i);
++        T nbtbase = this.get(i); // Paper - decompile fix
+ 
+         this.a(i, t0);
+         return nbtbase;
+@@ -25,11 +25,5 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
+ 
+     public abstract void b(int i);
+ 
+-    public Object set(int i, Object object) {
+-        return this.set(i, (NBTBase) object);
+-    }
+-
+-    public Object get(int i) {
+-        return this.get(i);
+-    }
++    public abstract NBTList<T> clone(); // Paper - decompile fix
+ }
+diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+index 11ffa6c342..3ff3a29835 100644
+--- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+@@ -66,7 +66,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+         return stringbuilder.append(']').toString();
+     }
+ 
+-    public NBTBase clone() {
++    @Override
++    public NBTTagByteArray clone() {
+         byte[] abyte = new byte[this.data.length];
+ 
+         System.arraycopy(this.data, 0, abyte, 0, this.data.length);
+diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
+index 7fc9b5ff32..e658816c24 100644
+--- a/src/main/java/net/minecraft/server/NBTTagCompound.java
++++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
+@@ -24,7 +24,7 @@ public class NBTTagCompound implements NBTBase {
+ 
+     private static final Logger f = LogManager.getLogger();
+     private static final Pattern g = Pattern.compile("[A-Za-z0-9._+-]+");
+-    private final Map<String, NBTBase> map = Maps.newHashMap();
++    public final Map<String, NBTBase> map = Maps.newHashMap(); // Paper
+ 
+     public NBTTagCompound() {}
+ 
+@@ -96,11 +96,13 @@ public class NBTTagCompound implements NBTBase {
+         this.map.put(s, new NBTTagLong(i));
+     }
+ 
++    public void setUUID(String prefix, UUID uuid) { a(prefix, uuid); } // Paper - OBFHELPER
+     public void a(String s, UUID uuid) {
+         this.setLong(s + "Most", uuid.getMostSignificantBits());
+         this.setLong(s + "Least", uuid.getLeastSignificantBits());
+     }
+ 
++    public UUID getUUID(String prefix) { return a(prefix); } // Paper - OBFHELPER
+     @Nullable
+     public UUID a(String s) {
+         return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
+@@ -492,8 +494,4 @@ public class NBTTagCompound implements NBTBase {
+             return chatcomponenttext;
+         }
+     }
+-
+-    public NBTBase clone() {
+-        return this.clone();
+-    }
+ }
+diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+index f5c9b97d5c..d121ad4f7a 100644
+--- a/src/main/java/net/minecraft/server/NBTTagIntArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+@@ -132,7 +132,7 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
+         return this.a(i);
+     }
+ 
+-    public NBTBase clone() {
++    public NBTTagIntArray clone() { // Paper - decompile fix
+         return this.c();
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
+index b3c944d701..a8280acf94 100644
+--- a/src/main/java/net/minecraft/server/NBTTagList.java
++++ b/src/main/java/net/minecraft/server/NBTTagList.java
+@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
+ public class NBTTagList extends NBTList<NBTBase> {
+ 
+     private static final Logger f = LogManager.getLogger();
+-    private List<NBTBase> list = Lists.newArrayList();
++    public List<NBTBase> list = Lists.newArrayList(); // Paper
+     private byte type = 0;
+ 
+     public NBTTagList() {}
+@@ -294,23 +294,7 @@ public class NBTTagList extends NBTList<NBTBase> {
+         return this.type;
+     }
+ 
+-    public NBTBase clone() {
++    public NBTTagList clone() {
+         return this.c();
+     }
+-
+-    public Object remove(int i) {
+-        return this.remove(i);
+-    }
+-
+-    public Object set(int i, Object object) {
+-        return this.set(i, (NBTBase) object);
+-    }
+-
+-    public Object get(int i) {
+-        return this.get(i);
+-    }
+-
+-    public boolean add(Object object) {
+-        return this.add((NBTBase) object);
+-    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 0618962e75..42e0630e60 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -66,9 +66,9 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private final MinecraftServer minecraftServer;
+     public EntityPlayer player;
+     private int e;
+-    private long f;
+-    private boolean g;
+-    private long h;
++    private long f; private void setLastPing(long lastPing) { this.f = lastPing;}; private long getLastPing() { return this.f;}; // Paper - OBFHELPER
++    private boolean g; private void setPendingPing(boolean isPending) { this.g = isPending;}; private boolean isPendingPing() { return this.g;}; // Paper - OBFHELPER
++    private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
+     // CraftBukkit start - multithreaded fields
+     private volatile int chatThrottle;
+     private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
+diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
+index ef332d6517..7cc7eb7735 100644
+--- a/src/main/java/net/minecraft/server/RegistryBlockID.java
++++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
+@@ -8,7 +8,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import javax.annotation.Nullable;
+ 
+-public class RegistryBlockID<T> implements Registry<T> {
++public class RegistryBlockID<T> implements Registry { // Paper - decompile fix
+ 
+     private int a;
+     private final IdentityHashMap<T, Integer> b;
+@@ -27,7 +27,7 @@ public class RegistryBlockID<T> implements Registry<T> {
+         this.b.put(t0, Integer.valueOf(i));
+ 
+         while (this.c.size() <= i) {
+-            this.c.add((Object) null);
++            this.c.add(null); // Paper - decompile fix
+         }
+ 
+         this.c.set(i, t0);
+diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
+index 2179664a0c..d7e1ecc031 100644
+--- a/src/main/java/net/minecraft/server/ServerPing.java
++++ b/src/main/java/net/minecraft/server/ServerPing.java
+@@ -102,11 +102,11 @@ public class ServerPing {
+             return jsonobject;
+         }
+ 
+-        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++        public JsonElement serialize(ServerPing object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+             return this.a((ServerPing) object, type, jsonserializationcontext);
+         }
+ 
+-        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++        public ServerPing deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+             return this.a(jsonelement, type, jsondeserializationcontext);
+         }
+     }
+@@ -147,11 +147,11 @@ public class ServerPing {
+                 return jsonobject;
+             }
+ 
+-            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++            public JsonElement serialize(ServerPing.ServerData object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+                 return this.a((ServerPing.ServerData) object, type, jsonserializationcontext);
+             }
+ 
+-            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++            public ServerPing.ServerData deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+                 return this.a(jsonelement, type, jsondeserializationcontext);
+             }
+         }
+@@ -235,11 +235,11 @@ public class ServerPing {
+                 return jsonobject;
+             }
+ 
+-            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
++            public JsonElement serialize(ServerPing.ServerPingPlayerSample object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
+                 return this.a((ServerPing.ServerPingPlayerSample) object, type, jsonserializationcontext);
+             }
+ 
+-            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
++            public ServerPing.ServerPingPlayerSample deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
+                 return this.a(jsonelement, type, jsondeserializationcontext);
+             }
+         }
+-- 
+2.18.0
+

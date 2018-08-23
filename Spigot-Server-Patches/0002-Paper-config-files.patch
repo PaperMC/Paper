@@ -1,4 +1,4 @@
-From ea90973fc4de71ac189efc820005ea00590223b5 Mon Sep 17 00:00:00 2001
+From cb37d1deb3834306189988414d2c44bd0593dfc1 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,12 +6,15 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 00000000..ecd1c65a
+index 0000000000..e8f7b7292d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,237 @@
 +package com.destroystokyo.paper;
 +
++import com.google.common.base.Functions;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Lists;
 +import com.google.common.collect.Maps;
 +import net.minecraft.server.*;
 +import org.apache.commons.lang3.tuple.MutablePair;
@@ -44,19 +47,60 @@ index 00000000..ecd1c65a
 +    @Override
 +    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
 +        if (args.length <= 1)
-+            return CommandAbstract.getListMatchingLast(args, "heap", "entity", "reload", "version");
++            return getListMatchingLast(args, "heap", "entity", "reload", "version");
 +
 +        switch (args[0].toLowerCase(Locale.ENGLISH))
 +        {
 +            case "entity":
 +                if (args.length == 2)
-+                    return CommandAbstract.getListMatchingLast(args, "help", "list");
++                    return getListMatchingLast(args, "help", "list");
 +                if (args.length == 3)
-+                    return CommandAbstract.getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
++                    return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
 +                break;
 +        }
 +        return Collections.emptyList();
 +    }
++
++    // Code from Mojang - copyright them
++    public static List<String> getListMatchingLast(String[] args, String... matches) {
++        return getListMatchingLast(args, (Collection) Arrays.asList(matches));
++    }
++
++    public static boolean matches(String s, String s1) {
++        return s1.regionMatches(true, 0, s, 0, s.length());
++    }
++
++    public static List<String> getListMatchingLast(String[] strings, Collection<?> collection) {
++        String last = strings[strings.length - 1];
++        ArrayList<String> results = Lists.newArrayList();
++
++        if (!collection.isEmpty()) {
++            Iterator iterator = Iterables.transform(collection, Functions.toStringFunction()).iterator();
++
++            while (iterator.hasNext()) {
++                String s1 = (String) iterator.next();
++
++                if (matches(last, s1)) {
++                    results.add(s1);
++                }
++            }
++
++            if (results.isEmpty()) {
++                iterator = collection.iterator();
++
++                while (iterator.hasNext()) {
++                    Object object = iterator.next();
++
++                    if (object instanceof MinecraftKey && matches(last, ((MinecraftKey) object).getKey())) {
++                        results.add(String.valueOf(object));
++                    }
++                }
++            }
++        }
++
++        return results;
++    }
++    // end copy stuff
 +
 +    @Override
 +    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
@@ -139,7 +183,7 @@ index 00000000..ecd1c65a
 +
 +                List<Entity> entities = world.entityList;
 +                entities.forEach(e -> {
-+                    MinecraftKey key = EntityTypes.getKey(e);
++                    MinecraftKey key = new MinecraftKey(""); // TODO: update in next patch
 +
 +                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
 +                    ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
@@ -205,10 +249,10 @@ index 00000000..ecd1c65a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 00000000..3d8ee9ed
+index 0000000000..104abab84b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,177 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -268,9 +312,13 @@ index 00000000..3d8ee9ed
 +        commands = new HashMap<String, Command>();
 +        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 13);
-+        set("config-version", 13);
++        version = getInt("config-version", 14);
++        set("config-version", 14);
 +        readConfig(PaperConfig.class, null);
++    }
++
++    protected static void logError(String s) {
++        Bukkit.getLogger().severe(s);
 +    }
 +
 +    protected static void log(String s) {
@@ -384,10 +432,10 @@ index 00000000..3d8ee9ed
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 00000000..621bf705
+index 0000000000..b8a6161d84
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,67 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
@@ -397,6 +445,7 @@ index 00000000..621bf705
 +import org.spigotmc.SpigotWorldConfig;
 +
 +import static com.destroystokyo.paper.PaperConfig.log;
++import static com.destroystokyo.paper.PaperConfig.logError;
 +
 +public class PaperWorldConfig {
 +
@@ -454,23 +503,11 @@ index 00000000..621bf705
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/CommandAbstract.java b/src/main/java/net/minecraft/server/CommandAbstract.java
-index 76501e29..76bf04f5 100644
---- a/src/main/java/net/minecraft/server/CommandAbstract.java
-+++ b/src/main/java/net/minecraft/server/CommandAbstract.java
-@@ -634,6 +634,7 @@ public abstract class CommandAbstract implements ICommand {
-         return s1.regionMatches(true, 0, s, 0, s.length());
-     }
- 
-+    public static List<String> getListMatchingLast(String[] args, String... matches) { return a(args, matches); } // Paper - OBFHELPER
-     public static List<String> a(String[] astring, String... astring1) {
-         return a(astring, (Collection) Arrays.asList(astring1));
-     }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 8c5361d6..e1cb96a8 100644
+index 5ff1e96861..3706e44a34 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -184,6 +184,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -192,6 +192,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
              org.spigotmc.SpigotConfig.registerCommands();
              // Spigot end
@@ -482,47 +519,51 @@ index 8c5361d6..e1cb96a8 100644
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index b944be5c..40f06c5b 100644
+index 55bf00be93..a1050912bc 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -122,9 +122,9 @@ public abstract class Entity implements ICommandListener {
-     private static final DataWatcherObject<Boolean> aD = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
-     private static final DataWatcherObject<Boolean> aE = DataWatcher.a(Entity.class, DataWatcherRegistry.h);
-     public boolean aa;
--    public int ab;
--    public int ac;
--    public int ad;
-+    public int ab; public int getChunkX() { return ab; } // Paper - OBFHELPER
-+    public int ac; public int getChunkY() { return ac; } // Paper - OBFHELPER
-+    public int ad; public int getChunkZ() { return ad; } // Paper - OBFHELPER
-     public boolean ah;
+@@ -135,9 +135,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+     private static final DataWatcherObject<Boolean> aG = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Boolean> aH = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
+     public boolean inChunk;
+-    public int ae;
+-    public int af;
+-    public int ag;
++    public int ae; public int getChunkX() { return ae; } // Paper - OBFHELPER
++    public int af; public int getChunkY() { return af; } // Paper - OBFHELPER
++    public int ag; public int getChunkZ() { return ag; } // Paper - OBFHELPER
+     public boolean ak;
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index eb6a955e..77b81a57 100644
+index ad3f891999..ca2a14d7ac 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
-@@ -21,6 +21,7 @@ public class EntityTypes {
-     public static final Set<MinecraftKey> d = Sets.newHashSet();
-     private static final List<String> g = Lists.newArrayList();
+@@ -2,6 +2,8 @@ package net.minecraft.server;
  
-+    @Nullable public static MinecraftKey getKey(Entity entity) { return a(entity); } // Paper - OBFHELPER
-     @Nullable
-     public static MinecraftKey a(Entity entity) {
-         return getName(entity.getClass());
-@@ -78,6 +79,7 @@ public class EntityTypes {
-         return entity;
+ import com.mojang.datafixers.DataFixUtils;
+ import com.mojang.datafixers.types.Type;
++
++import java.util.Set;
+ import java.util.UUID;
+ import java.util.function.Function;
+ import javax.annotation.Nullable;
+@@ -323,4 +325,10 @@ public class EntityTypes<T extends Entity> {
+             return new EntityTypes(this.a, this.b, this.c, this.d, type);
+         }
      }
- 
-+    public static Set<MinecraftKey> getEntityNameList() { return a(); } // Paper - OBFHELPER
-     public static Set<MinecraftKey> a() {
-         return EntityTypes.d;
-     }
++
++    // Paper start
++    public static Set<MinecraftKey> getEntityNameList() {
++        return REGISTRY.keySet();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 740633d9..843320ff 100644
+index 73bd5e1d74..e1cf1e579a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -129,6 +129,8 @@ public abstract class World implements IBlockAccess {
+@@ -127,6 +127,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
      private int tickPosition;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -531,7 +572,7 @@ index 740633d9..843320ff 100644
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      private boolean guardEntityList; // Spigot
      public static boolean haveWeSilencedAPhysicsCrash;
-@@ -151,6 +153,7 @@ public abstract class World implements IBlockAccess {
+@@ -149,6 +151,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
  
      protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
@@ -540,10 +581,10 @@ index 740633d9..843320ff 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0d320baa..b2bbccb5 100644
+index 6ee7c56ada..ed3c23b74e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -699,6 +699,7 @@ public final class CraftServer implements Server {
+@@ -745,6 +745,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -551,7 +592,7 @@ index 0d320baa..b2bbccb5 100644
          for (WorldServer world : console.worlds) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
-@@ -714,6 +715,7 @@ public final class CraftServer implements Server {
+@@ -760,6 +761,7 @@ public final class CraftServer implements Server {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
              world.spigotConfig.init(); // Spigot
@@ -559,15 +600,15 @@ index 0d320baa..b2bbccb5 100644
          }
  
          pluginManager.clearPlugins();
-@@ -721,6 +723,7 @@ public final class CraftServer implements Server {
+@@ -767,6 +769,7 @@ public final class CraftServer implements Server {
          resetRecipes();
          reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
 +        com.destroystokyo.paper.PaperConfig.registerCommands(); // Paper
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-         int pollCount = 0;
-@@ -1783,4 +1786,26 @@ public final class CraftServer implements Server {
+@@ -1874,4 +1877,26 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }
@@ -595,10 +636,10 @@ index 0d320baa..b2bbccb5 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index a151451d..0c5862a3 100644
+index 484869a8a8..f1e8320034 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -126,6 +126,14 @@ public class Main {
+@@ -128,6 +128,14 @@ public class Main {
                          .defaultsTo(new File("spigot.yml"))
                          .describedAs("Yml file");
                  // Spigot End
@@ -614,7 +655,7 @@ index a151451d..0c5862a3 100644
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 01e73eb8..0b66f5e3 100644
+index 95f7a9587a..87bc8e2d9c 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -39,31 +39,31 @@ public class SpigotWorldConfig
@@ -655,5 +696,5 @@ index 01e73eb8..0b66f5e3 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.15.1.windows.2
+2.18.0
 

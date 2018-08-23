@@ -1,0 +1,152 @@
+From 04153abcdce66e6c07ab6ee82ecc367ebf6de536 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 17:58:01 -0600
+Subject: [PATCH] Check Paper versions
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index 760d58eb..044361af 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -28,6 +28,11 @@ import org.json.simple.JSONObject;
+ import org.json.simple.parser.JSONParser;
+ import org.json.simple.parser.ParseException;
+ 
++// Paper start
++import java.io.InputStreamReader;
++import java.net.HttpURLConnection;
++// Paper end
++
+ public class VersionCommand extends BukkitCommand {
+     public VersionCommand(String name) {
+         super(name);
+@@ -151,7 +156,7 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void sendVersion(CommandSender sender) {
+         if (hasVersion) {
+-            if (System.currentTimeMillis() - lastCheck > 21600000) {
++            if (System.currentTimeMillis() - lastCheck > 7200000) { // Paper - Lower to 2 hours
+                 lastCheck = System.currentTimeMillis();
+                 hasVersion = false;
+             } else {
+@@ -182,24 +187,28 @@ public class VersionCommand extends BukkitCommand {
+         }
+     }
+ 
++    // Paper start
+     private void obtainVersion() {
+         String version = Bukkit.getVersion();
+         if (version == null) version = "Custom";
+-        if (version.startsWith("git-Spigot-")) {
+-            String[] parts = version.substring("git-Spigot-".length()).split("-");
+-            int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
+-            int spigotVersions = getDistance("spigot", parts[0]);
+-            if (cbVersions == -1 || spigotVersions == -1) {
+-                setVersionMessage("Error obtaining version information");
+-            } else {
+-                if (cbVersions == 0 && spigotVersions == 0) {
++        if (version.startsWith("git-Paper-")) {
++            String[] parts = version.substring("git-Paper-".length()).split("[-\\s]");
++            int distance = getDistance(null, parts[0]);
++            switch (distance) {
++                case -1:
++                    setVersionMessage("Error obtaining version information");
++                    break;
++                case 0:
+                     setVersionMessage("You are running the latest version");
+-                } else {
+-                    setVersionMessage("You are " + (cbVersions + spigotVersions) + " version(s) behind");
+-                }
++                    break;
++                case -2:
++                    setVersionMessage("Unknown version");
++                    break;
++                default:
++                    setVersionMessage("You are " + distance + " version(s) behind");
+             }
+-
+         } else if (version.startsWith("git-Bukkit-")) {
++            // Paper end
+             version = version.substring("git-Bukkit-".length());
+             int cbVersions = getDistance("craftbukkit", version.substring(0, version.indexOf(' ')));
+             if (cbVersions == -1) {
+@@ -232,8 +241,16 @@ public class VersionCommand extends BukkitCommand {
+         }
+     }
+ 
+-    private static int getDistance(String repo, String hash) {
++    // Paper start
++    private static int getDistance(String repo, String verInfo) {
+         try {
++            int currentVer = Integer.decode(verInfo);
++            return getFromJenkins(currentVer);
++        } catch (NumberFormatException ex) {
++            verInfo = verInfo.replace("\"", "");
++            return getFromRepo("PaperMC/Paper", verInfo);
++        }
++            /*
+             BufferedReader reader = Resources.asCharSource(
+                     new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/SPIGOT/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"),
+                     Charsets.UTF_8
+@@ -247,9 +264,58 @@ public class VersionCommand extends BukkitCommand {
+             } finally {
+                 reader.close();
+             }
++            */
++    }
++
++    private static int getFromJenkins(int currentVer) {
++        try {
++            BufferedReader reader = Resources.asCharSource(
++                    new URL("https://ci.destroystokyo.com/job/Paper/lastSuccessfulBuild/buildNumber"), // Paper
++                    Charsets.UTF_8
++            ).openBufferedStream();
++            try {
++                int newVer = Integer.decode(reader.readLine());
++                return newVer - currentVer;
++            } catch (NumberFormatException ex) {
++                ex.printStackTrace();
++                return -2;
++            } finally {
++                reader.close();
++            }
++        } catch (IOException e) {
++            e.printStackTrace();
++            return -1;
++        }
++    }
++
++    // Contributed by Techcable <Techcable@outlook.com> in GH PR #65
++    private static final String BRANCH = "master";
++    private static int getFromRepo(String repo, String hash) {
++        try {
++            HttpURLConnection connection = (HttpURLConnection) new URL("https://api.github.com/repos/" + repo + "/compare/" + BRANCH + "..." + hash).openConnection();
++            connection.connect();
++            if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) return -2; // Unknown commit
++            try (
++                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), Charsets.UTF_8))
++            ) {
++                JSONObject obj = (JSONObject) new JSONParser().parse(reader);
++                String status = (String) obj.get("status");
++                switch (status) {
++                    case "identical":
++                        return 0;
++                    case "behind":
++                        return ((Number) obj.get("behind_by")).intValue();
++                    default:
++                        return -1;
++                }
++            } catch (ParseException | NumberFormatException e) {
++                e.printStackTrace();
++                return -1;
++            }
+         } catch (IOException e) {
+             e.printStackTrace();
+             return -1;
+         }
+     }
++    // Paper end
+ }
+-- 
+2.18.0
+

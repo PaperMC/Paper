@@ -1,0 +1,75 @@
+From e4c27277cf5edb5505857d8ead06a911f63a33ba Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Wed, 22 Aug 2018 22:15:28 -0400
+Subject: [PATCH] Replace inefficient reflection for Block#getBlockData with
+ cached CraftBlockData for every IBlockData
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
+index 4dd6c327..82534faa 100644
+--- a/src/main/java/net/minecraft/server/BlockData.java
++++ b/src/main/java/net/minecraft/server/BlockData.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.ImmutableMap;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ 
+ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
+ 
+@@ -11,4 +12,13 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
+     public Block getBlock() {
+         return (Block) this.e_;
+     }
++
++    // Paper start - implemented cached CraftBlockData
++    private CraftBlockData craftBlockData = CraftBlockData.createData(this);
++
++    @Override
++    public CraftBlockData getCraftBlockData() {
++        return craftBlockData;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index b57f6efb..98a322bd 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -2,6 +2,7 @@ package net.minecraft.server;
+ 
+ import it.unimi.dsi.fastutil.objects.Object2ByteMap;
+ import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
++
+ import java.util.Random;
+ import java.util.function.Supplier;
+ 
+@@ -28,6 +29,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
+ 
+     Block getBlock();
+ 
++    org.bukkit.craftbukkit.block.data.CraftBlockData getCraftBlockData(); // Paper - add property for bukkit block data so it's not created with reflection every time
++
+     default Material getMaterial() {
+         return this.getBlock().n(this);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 472e89c4..8cf06d79 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -493,7 +493,13 @@ public class CraftBlockData implements BlockData {
+         return craft;
+     }
+ 
++    // Paper start - replace extremely inefficient repeated reflection call, keep old fromData for single usage
+     public static CraftBlockData fromData(IBlockData data) {
++        return data.getCraftBlockData(); // this is created when the IBlockData impl is initialized
++    }
++
++    public static CraftBlockData createData(IBlockData data) {
++        // Paper end
+         Class<? extends CraftBlockData> craft = MAP.get(data.getBlock().getClass());
+         if (craft == null) {
+             craft = CraftBlockData.class;
+-- 
+2.17.1
+

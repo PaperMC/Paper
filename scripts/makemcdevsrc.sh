@@ -5,6 +5,7 @@ set -e
 PS1="$"
 
 basedir="$(cd "$1" && pwd -P)"
+cd "$basedir"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/Minecraft/$minecraftversion"

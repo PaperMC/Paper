@@ -1,0 +1,87 @@
+From 7c9730ec3c04293e069dc8a489a3e3f370fb7a26 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 23:58:50 -0600
+Subject: [PATCH] Configurable top of nether void damage
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 38a697e1b..68898d624 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -124,4 +124,10 @@ public class PaperWorldConfig {
+         if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
+         if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
+     }
++
++    public boolean netherVoidTopDamage;
++    private void netherVoidTopDamage() {
++        netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
++        log("Top of the nether void damage: " + netherVoidTopDamage);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 106cf19d8..c7acd0629 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -462,9 +462,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             this.fallDistance *= 0.5F;
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
+             this.aa();
+         }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         if (!this.world.isClientSide) {
+             this.setFlag(0, this.fireTicks > 0);
+@@ -474,6 +480,14 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.world.methodProfiler.e();
+     }
+ 
++    // Paper start
++    protected void checkAndDoHeightDamage() {
++        if (this.locY < -64.0D || (this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D)) {
++            this.kill();
++        }
++    }
++    // Paper end
++
+     protected void E() {
+         if (this.portalCooldown > 0) {
+             --this.portalCooldown;
+@@ -530,6 +544,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.fireTicks = 0;
+     }
+ 
++    protected final void kill() { this.aa(); } // Paper - OBFHELPER
+     protected void aa() {
+         this.die();
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index 6e48cf475..4644d7efe 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -201,9 +201,15 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
+             this.setDamage(this.getDamage() - 1.0F);
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY < -64.0D) {
+             this.aa();
+         }
++        */
++        this.checkAndDoHeightDamage();
++        // Paper end
+ 
+         int i;
+ 
+-- 
+2.17.1
+
