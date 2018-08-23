@@ -50,7 +50,23 @@
                  }
  
                  state.spawnAfterBreak(world, pos, ItemStack.EMPTY, flag);
-@@ -873,12 +887,14 @@
+@@ -851,7 +865,15 @@
+             this.spawnTerrainParticles = blockbase_info.spawnTerrainParticles;
+             this.instrument = blockbase_info.instrument;
+             this.replaceable = blockbase_info.replaceable;
++        }
++        // Paper start - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
++        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
++
++        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(asState());
++            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
+         }
++        // Paper end - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
+ 
+         private boolean calculateSolid() {
+             if (((Block) this.owner).properties.forceSolidOn) {
+@@ -873,12 +895,14 @@
              }
          }
  
@@ -65,7 +81,7 @@
  
              this.legacySolid = this.calculateSolid();
              this.occlusionShape = this.canOcclude ? ((Block) this.owner).getOcclusionShape(this.asState()) : Shapes.empty();
-@@ -945,8 +961,8 @@
+@@ -945,8 +969,8 @@
              return this.occlusionShape;
          }
  
@@ -76,7 +92,7 @@
          }
  
          public boolean useShapeForLightOcclusion() {
-@@ -1125,9 +1141,15 @@
+@@ -1125,9 +1149,15 @@
          }
  
          public void onPlace(Level world, BlockPos pos, BlockState state, boolean notify) {

@@ -579,7 +579,17 @@ public class CraftBlockData implements BlockData {
         return craft;
     }
 
+    // Paper start - optimize creating BlockData to not need a map lookup
+    static {
+        // Initialize cached data for all IBlockData instances after registration
+        Block.BLOCK_STATE_REGISTRY.iterator().forEachRemaining(net.minecraft.world.level.block.state.BlockState::createCraftBlockData);
+    }
     public static CraftBlockData fromData(net.minecraft.world.level.block.state.BlockState data) {
+        return data.createCraftBlockData();
+    }
+
+    public static CraftBlockData createData(net.minecraft.world.level.block.state.BlockState data) {
+        // Paper end
         return CraftBlockData.MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
     }
 
