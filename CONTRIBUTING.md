@@ -32,7 +32,7 @@ Your commit will be converted into a patch that you can then PR into Paper
 ## Help! I can't find the file I'm looking for!
 By default, Paper (and upstream) only import files that we make changes to.
 If you would like to make changes to a file that isn't present in Paper-Server's source directory, you
-just need to add it to our import script.
+just need to add it to our import script to be ran during the patch process.
 
 1. Save (rebuild) any patches you are in the middle of working on!
 2. Identify the names of the files you want to import.
@@ -40,6 +40,15 @@ just need to add it to our import script.
 3. Open the file at `./scripts/importmcdev.sh` and add the name of your file to the script.
 4. Re-patch the server `./paper patch`
 5. Edit away!
+
+This change is temporary! DO NOT COMMIT CHANGES TO THIS FILE!
+Once you have made your changes to the new file, and rebuilt patches, you may undo your changes to importmcdev.sh
+
+Any file modified in a patch file gets automatically imported, so you only need this temporarily
+to import it to create the first patch.
+
+To undo your changes to the file, type `git checkout scripts/importmcdev.sh`
+
 
 ## Modifying Patches
 Modifying previous patches is a bit more complex:
