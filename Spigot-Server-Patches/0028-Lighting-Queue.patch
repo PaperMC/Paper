@@ -1,4 +1,4 @@
-From fe837b054c13a5ef4ad79e3111af573ff28c2bca Mon Sep 17 00:00:00 2001
+From bd3f0e313c51ef6862f1a954ad030883532ed4d0 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -6,7 +6,7 @@ Subject: [PATCH] Lighting Queue
 This provides option to queue lighting updates to ensure they do not cause the server lag
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 145cb274b..eff9dcf54 100644
+index 145cb274b0..eff9dcf54f 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -50,6 +50,8 @@ public class WorldTimingsHandler {
@@ -28,10 +28,10 @@ index 145cb274b..eff9dcf54 100644
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index a340866f3..1e3405cc1 100644
+index 68898d624f..4b36a0f053 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -129,4 +129,10 @@ public class PaperWorldConfig {
+@@ -130,4 +130,10 @@ public class PaperWorldConfig {
          netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
          log("Top of the nether void damage: " + netherVoidTopDamage);
      }
@@ -43,7 +43,7 @@ index a340866f3..1e3405cc1 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4a4cc6c59..b0060c363 100644
+index 849d8de69b..01401c4447 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -91,6 +91,7 @@ public class Chunk implements IChunkAccess {
@@ -84,7 +84,7 @@ index 4a4cc6c59..b0060c363 100644
                  }
  
                  TileEntity tileentity;
-@@ -1290,6 +1300,16 @@ public class Chunk implements IChunkAccess {
+@@ -1299,6 +1309,16 @@ public class Chunk implements IChunkAccess {
          return this.E == 8;
      }
  
@@ -102,10 +102,10 @@ index 4a4cc6c59..b0060c363 100644
  
          IMMEDIATE, QUEUED, CHECK;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index badfe86b2..51bc23daf 100644
+index aabdc9e2f0..d025d949e3 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -323,6 +323,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -333,6 +333,7 @@ public class ChunkProviderServer implements IChunkProvider {
              return false;
          }
          save = event.isSaveChunk();
@@ -114,10 +114,10 @@ index badfe86b2..51bc23daf 100644
          // Update neighbor counts
          for (int x = -2; x < 3; x++) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2e691b9f6..4473c3b51 100644
+index 6fbf841f06..9dc9668c45 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -825,7 +825,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -864,7 +864,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      protected void v() {
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
          this.slackActivityAccountant.tickStarted(); // Spigot
@@ -126,7 +126,7 @@ index 2e691b9f6..4473c3b51 100644
  
          ++this.ticks;
          if (this.S) {
-@@ -883,6 +883,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -922,6 +922,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          this.methodProfiler.e();
          this.methodProfiler.e();
          org.spigotmc.WatchdogThread.tick(); // Spigot
@@ -136,7 +136,7 @@ index 2e691b9f6..4473c3b51 100644
      }
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 000000000..345cd5824
+index 0000000000..345cd58240
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 @@ -0,0 +1,92 @@
@@ -233,7 +233,7 @@ index 000000000..345cd5824
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c605d7e52..f57bd081b 100644
+index ada8376e8c..776882ba4f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -325,7 +325,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose

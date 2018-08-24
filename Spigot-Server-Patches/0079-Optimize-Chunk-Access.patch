@@ -1,0 +1,40 @@
+From 4849096581eda2911fc4f3dd36f58e4678e5dc29 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 27 Aug 2015 01:15:02 -0400
+Subject: [PATCH] Optimize Chunk Access
+
+getting a loaded chunk is one of the most hottest pieces of code in the game.
+getChunkAt is called for the same chunk multiple times in a row, often from getType();
+
+Optimize this look up by using a Last Access cache.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index 4e51bd301a..7100ec7747 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -98,8 +98,22 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+             }
+         }
+ 
++        // Paper start
++        if (lastChunkByPos != null && i == lastChunkByPos.chunkKey) {
++            lastChunkByPos = null;
++        }
+         return chunk;
+     }
++    private Chunk lastChunkByPos = null; // Paper
++
++    @Override
++    public Chunk get(long l) {
++        if (lastChunkByPos != null && l == lastChunkByPos.chunkKey) {
++            return lastChunkByPos;
++        }
++        return super.get(l);
++    }
++    // Paper end
+ 
+     public Chunk a(Object object) {
+         return this.a(((Long) object).longValue());
+-- 
+2.18.0
+

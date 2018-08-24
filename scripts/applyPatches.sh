@@ -4,6 +4,7 @@
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 gitcmd="git -c commit.gpgsign=false"
 applycmd="$gitcmd am --3way --ignore-whitespace"
 # Windows detection to workaround ARG_MAX limitation
@@ -36,6 +37,8 @@ function applyPatch {
 
     echo "  Applying patches to $target..."
 
+    statusfile=".git/patch-apply-failed"
+    rm -f "$statusfile"
     $gitcmd am --abort >/dev/null 2>&1
 
     # Special case Windows handling because of ARG_MAX constraint
@@ -47,6 +50,7 @@ function applyPatch {
     fi
 
     if [ "$?" != "0" ]; then
+        echo 1 > "$statusfile"
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
         echo "  save the changes with rebuildPatches.sh"
@@ -63,6 +67,7 @@ function applyPatch {
 
         exit 1
     else
+        rm -f "$statusfile"
         echo "  Patches applied cleanly to $target"
     fi
 }
@@ -91,8 +96,13 @@ cd "$basedir"
 (
     applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
     applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+
+    # if we have previously ran ./paper mcdev, update it
+    if [ -d "$workdir/Minecraft/$minecraftversion/src" ]; then
+        $basedir/scripts/makemcdevsrc.sh $basedir
+    fi
 ) || (
     echo "Failed to apply Paper Patches"
     exit 1
 ) || exit 1
-)
+) || exit 1
