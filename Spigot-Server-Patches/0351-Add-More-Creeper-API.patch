@@ -1,0 +1,113 @@
+From 928bf8ccf4da27fecc8a164ab7fa73bc8a38d744 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 24 Aug 2018 11:50:26 -0500
+Subject: [PATCH] Add More Creeper API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityCreeper.java b/src/main/java/net/minecraft/server/EntityCreeper.java
+index bbb4ca0f..0ff8556d 100644
+--- a/src/main/java/net/minecraft/server/EntityCreeper.java
++++ b/src/main/java/net/minecraft/server/EntityCreeper.java
+@@ -14,7 +14,7 @@ public class EntityCreeper extends EntityMonster {
+     private static final DataWatcherObject<Boolean> b = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Boolean> c = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.i);private static final DataWatcherObject<Boolean> isIgnitedDW = c; // Paper OBFHELPER
+     private int bC;
+-    private int fuseTicks;
++    public int fuseTicks; // Paper - public
+     public int maxFuseTicks = 30;
+     public int explosionRadius = 3;
+     private int bG;
+@@ -92,9 +92,12 @@ public class EntityCreeper extends EntityMonster {
+     public void tick() {
+         if (this.isAlive()) {
+             this.bC = this.fuseTicks;
+-            if (this.isIgnited()) {
+-                this.a(1);
+-            }
++            // Paper start - This is no longer needed as the state is being set in setIgnited() now.
++            //               Ensures the CreeperIgniteEvent is not spammed every tick
++            //if (this.isIgnited()) {
++            //    this.a(1);
++            //}
++            // Paper end
+ 
+             int i = this.dA();
+ 
+@@ -151,12 +154,21 @@ public class EntityCreeper extends EntityMonster {
+         return LootTables.x;
+     }
+ 
++    public int getState() { return dA(); } // Paper - OBFHELPER
+     public int dA() {
+         return ((Integer) this.datawatcher.get(EntityCreeper.a)).intValue();
+     }
+ 
++    public void setState(int state) { a(state); } // Paper - OBFHELPER
+     public void a(int i) {
+-        this.datawatcher.set(EntityCreeper.a, Integer.valueOf(i));
++        // Paper start
++        if (getState() != i) {
++            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), i == 1);
++            if (event.callEvent()) {
++                this.datawatcher.set(EntityCreeper.a, event.isIgnited() ? 1 : -1);
++            }
++        }
++        // Paper end
+     }
+ 
+     public void onLightningStrike(EntityLightning entitylightning) {
+@@ -190,6 +202,7 @@ public class EntityCreeper extends EntityMonster {
+         return super.a(entityhuman, enumhand);
+     }
+ 
++    public void explode() { this.dF(); } // Paper - OBFHELPER
+     private void dF() {
+         if (!this.world.isClientSide) {
+             boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
+@@ -241,8 +254,15 @@ public class EntityCreeper extends EntityMonster {
+         return ((Boolean) this.datawatcher.get(EntityCreeper.c)).booleanValue();
+     }
+ 
++    // Paper start
++    public void setIgnited(boolean ignited) {
++        this.datawatcher.set(EntityCreeper.c, ignited);
++        setState(ignited ? 1 : -1);
++    }
++
+     public void dC() {
+-        this.datawatcher.set(EntityCreeper.c, Boolean.valueOf(true));
++        setIgnited(true);
++        // Paper end
+     }
+ 
+     public boolean canCauseHeadDrop() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+index ffebb54c..ab2b20a0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+@@ -76,4 +76,22 @@ public class CraftCreeper extends CraftMonster implements Creeper {
+     public EntityType getType() {
+         return EntityType.CREEPER;
+     }
++
++    // Paper start
++    public void setIgnited(boolean ignited) {
++        getHandle().setIgnited(ignited);
++    }
++
++    public boolean isIgnited() {
++        return getHandle().isIgnited();
++    }
++
++    public int getFuseTicks() {
++        return getHandle().fuseTicks;
++    }
++
++    public void explode() {
++        getHandle().explode();
++    }
++    // Paper end
+ }
+-- 
+2.18.0
+
