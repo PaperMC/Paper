@@ -112,4 +112,20 @@ public interface Creeper extends Monster {
      */
     @Nullable
     public Entity getIgniter();
+    // Paper start
+
+    /**
+     * Set whether creeper is ignited or not (armed to explode)
+     *
+     * @param ignited New ignited state
+     */
+    public void setIgnited(boolean ignited);
+
+    /**
+     * Check if creeper is ignited or not (armed to explode)
+     *
+     * @return Ignited state
+     */
+    public boolean isIgnited();
+    // Paper end
 }
