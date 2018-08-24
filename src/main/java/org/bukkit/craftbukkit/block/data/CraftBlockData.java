@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block.data;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -347,116 +348,116 @@ public class CraftBlockData implements BlockData {
     }
 
     //
-    private static final Map<Class<? extends Block>, Class<? extends CraftBlockData>> MAP = new HashMap<>();
+    private static final Map<Class<? extends Block>, Function<IBlockData, CraftBlockData>> MAP = new HashMap<>();
 
     static {
-        register(net.minecraft.server.BlockAnvil.class, org.bukkit.craftbukkit.block.impl.CraftAnvil.class);
-        register(net.minecraft.server.BlockBanner.class, org.bukkit.craftbukkit.block.impl.CraftBanner.class);
-        register(net.minecraft.server.BlockBannerWall.class, org.bukkit.craftbukkit.block.impl.CraftBannerWall.class);
-        register(net.minecraft.server.BlockBed.class, org.bukkit.craftbukkit.block.impl.CraftBed.class);
-        register(net.minecraft.server.BlockBeetroot.class, org.bukkit.craftbukkit.block.impl.CraftBeetroot.class);
-        register(net.minecraft.server.BlockBrewingStand.class, org.bukkit.craftbukkit.block.impl.CraftBrewingStand.class);
-        register(net.minecraft.server.BlockBubbleColumn.class, org.bukkit.craftbukkit.block.impl.CraftBubbleColumn.class);
-        register(net.minecraft.server.BlockCactus.class, org.bukkit.craftbukkit.block.impl.CraftCactus.class);
-        register(net.minecraft.server.BlockCake.class, org.bukkit.craftbukkit.block.impl.CraftCake.class);
-        register(net.minecraft.server.BlockCarrots.class, org.bukkit.craftbukkit.block.impl.CraftCarrots.class);
-        register(net.minecraft.server.BlockCauldron.class, org.bukkit.craftbukkit.block.impl.CraftCauldron.class);
-        register(net.minecraft.server.BlockChest.class, org.bukkit.craftbukkit.block.impl.CraftChest.class);
-        register(net.minecraft.server.BlockChestTrapped.class, org.bukkit.craftbukkit.block.impl.CraftChestTrapped.class);
-        register(net.minecraft.server.BlockChorusFlower.class, org.bukkit.craftbukkit.block.impl.CraftChorusFlower.class);
-        register(net.minecraft.server.BlockChorusFruit.class, org.bukkit.craftbukkit.block.impl.CraftChorusFruit.class);
-        register(net.minecraft.server.BlockCobbleWall.class, org.bukkit.craftbukkit.block.impl.CraftCobbleWall.class);
-        register(net.minecraft.server.BlockCocoa.class, org.bukkit.craftbukkit.block.impl.CraftCocoa.class);
-        register(net.minecraft.server.BlockCommand.class, org.bukkit.craftbukkit.block.impl.CraftCommand.class);
-        register(net.minecraft.server.BlockCoralFan.class, org.bukkit.craftbukkit.block.impl.CraftCoralFan.class);
-        register(net.minecraft.server.BlockCoralFanAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanAbstract.class);
-        register(net.minecraft.server.BlockCoralFanWall.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWall.class);
-        register(net.minecraft.server.BlockCoralFanWallAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWallAbstract.class);
-        register(net.minecraft.server.BlockCrops.class, org.bukkit.craftbukkit.block.impl.CraftCrops.class);
-        register(net.minecraft.server.BlockDaylightDetector.class, org.bukkit.craftbukkit.block.impl.CraftDaylightDetector.class);
-        register(net.minecraft.server.BlockDirtSnow.class, org.bukkit.craftbukkit.block.impl.CraftDirtSnow.class);
-        register(net.minecraft.server.BlockDispenser.class, org.bukkit.craftbukkit.block.impl.CraftDispenser.class);
-        register(net.minecraft.server.BlockDoor.class, org.bukkit.craftbukkit.block.impl.CraftDoor.class);
-        register(net.minecraft.server.BlockDropper.class, org.bukkit.craftbukkit.block.impl.CraftDropper.class);
-        register(net.minecraft.server.BlockEndRod.class, org.bukkit.craftbukkit.block.impl.CraftEndRod.class);
-        register(net.minecraft.server.BlockEnderChest.class, org.bukkit.craftbukkit.block.impl.CraftEnderChest.class);
-        register(net.minecraft.server.BlockEnderPortalFrame.class, org.bukkit.craftbukkit.block.impl.CraftEnderPortalFrame.class);
-        register(net.minecraft.server.BlockFence.class, org.bukkit.craftbukkit.block.impl.CraftFence.class);
-        register(net.minecraft.server.BlockFenceGate.class, org.bukkit.craftbukkit.block.impl.CraftFenceGate.class);
-        register(net.minecraft.server.BlockFire.class, org.bukkit.craftbukkit.block.impl.CraftFire.class);
-        register(net.minecraft.server.BlockFloorSign.class, org.bukkit.craftbukkit.block.impl.CraftFloorSign.class);
-        register(net.minecraft.server.BlockFluids.class, org.bukkit.craftbukkit.block.impl.CraftFluids.class);
-        register(net.minecraft.server.BlockFurnace.class, org.bukkit.craftbukkit.block.impl.CraftFurnace.class);
-        register(net.minecraft.server.BlockGlassPane.class, org.bukkit.craftbukkit.block.impl.CraftGlassPane.class);
-        register(net.minecraft.server.BlockGlazedTerracotta.class, org.bukkit.craftbukkit.block.impl.CraftGlazedTerracotta.class);
-        register(net.minecraft.server.BlockGrass.class, org.bukkit.craftbukkit.block.impl.CraftGrass.class);
-        register(net.minecraft.server.BlockHay.class, org.bukkit.craftbukkit.block.impl.CraftHay.class);
-        register(net.minecraft.server.BlockHopper.class, org.bukkit.craftbukkit.block.impl.CraftHopper.class);
-        register(net.minecraft.server.BlockHugeMushroom.class, org.bukkit.craftbukkit.block.impl.CraftHugeMushroom.class);
-        register(net.minecraft.server.BlockIceFrost.class, org.bukkit.craftbukkit.block.impl.CraftIceFrost.class);
-        register(net.minecraft.server.BlockIronBars.class, org.bukkit.craftbukkit.block.impl.CraftIronBars.class);
-        register(net.minecraft.server.BlockJukeBox.class, org.bukkit.craftbukkit.block.impl.CraftJukeBox.class);
-        register(net.minecraft.server.BlockKelp.class, org.bukkit.craftbukkit.block.impl.CraftKelp.class);
-        register(net.minecraft.server.BlockLadder.class, org.bukkit.craftbukkit.block.impl.CraftLadder.class);
-        register(net.minecraft.server.BlockLeaves.class, org.bukkit.craftbukkit.block.impl.CraftLeaves.class);
-        register(net.minecraft.server.BlockLever.class, org.bukkit.craftbukkit.block.impl.CraftLever.class);
-        register(net.minecraft.server.BlockLogAbstract.class, org.bukkit.craftbukkit.block.impl.CraftLogAbstract.class);
-        register(net.minecraft.server.BlockMinecartDetector.class, org.bukkit.craftbukkit.block.impl.CraftMinecartDetector.class);
-        register(net.minecraft.server.BlockMinecartTrack.class, org.bukkit.craftbukkit.block.impl.CraftMinecartTrack.class);
-        register(net.minecraft.server.BlockMycel.class, org.bukkit.craftbukkit.block.impl.CraftMycel.class);
-        register(net.minecraft.server.BlockNetherWart.class, org.bukkit.craftbukkit.block.impl.CraftNetherWart.class);
-        register(net.minecraft.server.BlockNote.class, org.bukkit.craftbukkit.block.impl.CraftNote.class);
-        register(net.minecraft.server.BlockObserver.class, org.bukkit.craftbukkit.block.impl.CraftObserver.class);
-        register(net.minecraft.server.BlockPiston.class, org.bukkit.craftbukkit.block.impl.CraftPiston.class);
-        register(net.minecraft.server.BlockPistonExtension.class, org.bukkit.craftbukkit.block.impl.CraftPistonExtension.class);
-        register(net.minecraft.server.BlockPistonMoving.class, org.bukkit.craftbukkit.block.impl.CraftPistonMoving.class);
-        register(net.minecraft.server.BlockPortal.class, org.bukkit.craftbukkit.block.impl.CraftPortal.class);
-        register(net.minecraft.server.BlockPotatoes.class, org.bukkit.craftbukkit.block.impl.CraftPotatoes.class);
-        register(net.minecraft.server.BlockPoweredRail.class, org.bukkit.craftbukkit.block.impl.CraftPoweredRail.class);
-        register(net.minecraft.server.BlockPressurePlateBinary.class, org.bukkit.craftbukkit.block.impl.CraftPressurePlateBinary.class);
-        register(net.minecraft.server.BlockPressurePlateWeighted.class, org.bukkit.craftbukkit.block.impl.CraftPressurePlateWeighted.class);
-        register(net.minecraft.server.BlockPumpkinCarved.class, org.bukkit.craftbukkit.block.impl.CraftPumpkinCarved.class);
-        register(net.minecraft.server.BlockRedstoneComparator.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneComparator.class);
-        register(net.minecraft.server.BlockRedstoneLamp.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneLamp.class);
-        register(net.minecraft.server.BlockRedstoneOre.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneOre.class);
-        register(net.minecraft.server.BlockRedstoneTorch.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneTorch.class);
-        register(net.minecraft.server.BlockRedstoneTorchWall.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneTorchWall.class);
-        register(net.minecraft.server.BlockRedstoneWire.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneWire.class);
-        register(net.minecraft.server.BlockReed.class, org.bukkit.craftbukkit.block.impl.CraftReed.class);
-        register(net.minecraft.server.BlockRepeater.class, org.bukkit.craftbukkit.block.impl.CraftRepeater.class);
-        register(net.minecraft.server.BlockRotatable.class, org.bukkit.craftbukkit.block.impl.CraftRotatable.class);
-        register(net.minecraft.server.BlockSapling.class, org.bukkit.craftbukkit.block.impl.CraftSapling.class);
-        register(net.minecraft.server.BlockSeaPickle.class, org.bukkit.craftbukkit.block.impl.CraftSeaPickle.class);
-        register(net.minecraft.server.BlockShulkerBox.class, org.bukkit.craftbukkit.block.impl.CraftShulkerBox.class);
-        register(net.minecraft.server.BlockSkull.class, org.bukkit.craftbukkit.block.impl.CraftSkull.class);
-        register(net.minecraft.server.BlockSkullPlayer.class, org.bukkit.craftbukkit.block.impl.CraftSkullPlayer.class);
-        register(net.minecraft.server.BlockSkullPlayerWall.class, org.bukkit.craftbukkit.block.impl.CraftSkullPlayerWall.class);
-        register(net.minecraft.server.BlockSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftSkullWall.class);
-        register(net.minecraft.server.BlockSnow.class, org.bukkit.craftbukkit.block.impl.CraftSnow.class);
-        register(net.minecraft.server.BlockSoil.class, org.bukkit.craftbukkit.block.impl.CraftSoil.class);
-        register(net.minecraft.server.BlockStainedGlassPane.class, org.bukkit.craftbukkit.block.impl.CraftStainedGlassPane.class);
-        register(net.minecraft.server.BlockStairs.class, org.bukkit.craftbukkit.block.impl.CraftStairs.class);
-        register(net.minecraft.server.BlockStem.class, org.bukkit.craftbukkit.block.impl.CraftStem.class);
-        register(net.minecraft.server.BlockStemAttached.class, org.bukkit.craftbukkit.block.impl.CraftStemAttached.class);
-        register(net.minecraft.server.BlockStepAbstract.class, org.bukkit.craftbukkit.block.impl.CraftStepAbstract.class);
-        register(net.minecraft.server.BlockStoneButton.class, org.bukkit.craftbukkit.block.impl.CraftStoneButton.class);
-        register(net.minecraft.server.BlockStructure.class, org.bukkit.craftbukkit.block.impl.CraftStructure.class);
-        register(net.minecraft.server.BlockTallPlantFlower.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantFlower.class);
-        register(net.minecraft.server.BlockTallPlantShearable.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantShearable.class);
-        register(net.minecraft.server.BlockTallSeaGrass.class, org.bukkit.craftbukkit.block.impl.CraftTallSeaGrass.class);
-        register(net.minecraft.server.BlockTorchWall.class, org.bukkit.craftbukkit.block.impl.CraftTorchWall.class);
-        register(net.minecraft.server.BlockTrapdoor.class, org.bukkit.craftbukkit.block.impl.CraftTrapdoor.class);
-        register(net.minecraft.server.BlockTripwire.class, org.bukkit.craftbukkit.block.impl.CraftTripwire.class);
-        register(net.minecraft.server.BlockTripwireHook.class, org.bukkit.craftbukkit.block.impl.CraftTripwireHook.class);
-        register(net.minecraft.server.BlockTurtleEgg.class, org.bukkit.craftbukkit.block.impl.CraftTurtleEgg.class);
-        register(net.minecraft.server.BlockVine.class, org.bukkit.craftbukkit.block.impl.CraftVine.class);
-        register(net.minecraft.server.BlockWallSign.class, org.bukkit.craftbukkit.block.impl.CraftWallSign.class);
-        register(net.minecraft.server.BlockWitherSkull.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull.class);
-        register(net.minecraft.server.BlockWitherSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkullWall.class);
-        register(net.minecraft.server.BlockWoodButton.class, org.bukkit.craftbukkit.block.impl.CraftWoodButton.class);
+        register(net.minecraft.server.BlockAnvil.class, org.bukkit.craftbukkit.block.impl.CraftAnvil::new);
+        register(net.minecraft.server.BlockBanner.class, org.bukkit.craftbukkit.block.impl.CraftBanner::new);
+        register(net.minecraft.server.BlockBannerWall.class, org.bukkit.craftbukkit.block.impl.CraftBannerWall::new);
+        register(net.minecraft.server.BlockBed.class, org.bukkit.craftbukkit.block.impl.CraftBed::new);
+        register(net.minecraft.server.BlockBeetroot.class, org.bukkit.craftbukkit.block.impl.CraftBeetroot::new);
+        register(net.minecraft.server.BlockBrewingStand.class, org.bukkit.craftbukkit.block.impl.CraftBrewingStand::new);
+        register(net.minecraft.server.BlockBubbleColumn.class, org.bukkit.craftbukkit.block.impl.CraftBubbleColumn::new);
+        register(net.minecraft.server.BlockCactus.class, org.bukkit.craftbukkit.block.impl.CraftCactus::new);
+        register(net.minecraft.server.BlockCake.class, org.bukkit.craftbukkit.block.impl.CraftCake::new);
+        register(net.minecraft.server.BlockCarrots.class, org.bukkit.craftbukkit.block.impl.CraftCarrots::new);
+        register(net.minecraft.server.BlockCauldron.class, org.bukkit.craftbukkit.block.impl.CraftCauldron::new);
+        register(net.minecraft.server.BlockChest.class, org.bukkit.craftbukkit.block.impl.CraftChest::new);
+        register(net.minecraft.server.BlockChestTrapped.class, org.bukkit.craftbukkit.block.impl.CraftChestTrapped::new);
+        register(net.minecraft.server.BlockChorusFlower.class, org.bukkit.craftbukkit.block.impl.CraftChorusFlower::new);
+        register(net.minecraft.server.BlockChorusFruit.class, org.bukkit.craftbukkit.block.impl.CraftChorusFruit::new);
+        register(net.minecraft.server.BlockCobbleWall.class, org.bukkit.craftbukkit.block.impl.CraftCobbleWall::new);
+        register(net.minecraft.server.BlockCocoa.class, org.bukkit.craftbukkit.block.impl.CraftCocoa::new);
+        register(net.minecraft.server.BlockCommand.class, org.bukkit.craftbukkit.block.impl.CraftCommand::new);
+        register(net.minecraft.server.BlockCoralFan.class, org.bukkit.craftbukkit.block.impl.CraftCoralFan::new);
+        register(net.minecraft.server.BlockCoralFanAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanAbstract::new);
+        register(net.minecraft.server.BlockCoralFanWall.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWall::new);
+        register(net.minecraft.server.BlockCoralFanWallAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWallAbstract::new);
+        register(net.minecraft.server.BlockCrops.class, org.bukkit.craftbukkit.block.impl.CraftCrops::new);
+        register(net.minecraft.server.BlockDaylightDetector.class, org.bukkit.craftbukkit.block.impl.CraftDaylightDetector::new);
+        register(net.minecraft.server.BlockDirtSnow.class, org.bukkit.craftbukkit.block.impl.CraftDirtSnow::new);
+        register(net.minecraft.server.BlockDispenser.class, org.bukkit.craftbukkit.block.impl.CraftDispenser::new);
+        register(net.minecraft.server.BlockDoor.class, org.bukkit.craftbukkit.block.impl.CraftDoor::new);
+        register(net.minecraft.server.BlockDropper.class, org.bukkit.craftbukkit.block.impl.CraftDropper::new);
+        register(net.minecraft.server.BlockEndRod.class, org.bukkit.craftbukkit.block.impl.CraftEndRod::new);
+        register(net.minecraft.server.BlockEnderChest.class, org.bukkit.craftbukkit.block.impl.CraftEnderChest::new);
+        register(net.minecraft.server.BlockEnderPortalFrame.class, org.bukkit.craftbukkit.block.impl.CraftEnderPortalFrame::new);
+        register(net.minecraft.server.BlockFence.class, org.bukkit.craftbukkit.block.impl.CraftFence::new);
+        register(net.minecraft.server.BlockFenceGate.class, org.bukkit.craftbukkit.block.impl.CraftFenceGate::new);
+        register(net.minecraft.server.BlockFire.class, org.bukkit.craftbukkit.block.impl.CraftFire::new);
+        register(net.minecraft.server.BlockFloorSign.class, org.bukkit.craftbukkit.block.impl.CraftFloorSign::new);
+        register(net.minecraft.server.BlockFluids.class, org.bukkit.craftbukkit.block.impl.CraftFluids::new);
+        register(net.minecraft.server.BlockFurnace.class, org.bukkit.craftbukkit.block.impl.CraftFurnace::new);
+        register(net.minecraft.server.BlockGlassPane.class, org.bukkit.craftbukkit.block.impl.CraftGlassPane::new);
+        register(net.minecraft.server.BlockGlazedTerracotta.class, org.bukkit.craftbukkit.block.impl.CraftGlazedTerracotta::new);
+        register(net.minecraft.server.BlockGrass.class, org.bukkit.craftbukkit.block.impl.CraftGrass::new);
+        register(net.minecraft.server.BlockHay.class, org.bukkit.craftbukkit.block.impl.CraftHay::new);
+        register(net.minecraft.server.BlockHopper.class, org.bukkit.craftbukkit.block.impl.CraftHopper::new);
+        register(net.minecraft.server.BlockHugeMushroom.class, org.bukkit.craftbukkit.block.impl.CraftHugeMushroom::new);
+        register(net.minecraft.server.BlockIceFrost.class, org.bukkit.craftbukkit.block.impl.CraftIceFrost::new);
+        register(net.minecraft.server.BlockIronBars.class, org.bukkit.craftbukkit.block.impl.CraftIronBars::new);
+        register(net.minecraft.server.BlockJukeBox.class, org.bukkit.craftbukkit.block.impl.CraftJukeBox::new);
+        register(net.minecraft.server.BlockKelp.class, org.bukkit.craftbukkit.block.impl.CraftKelp::new);
+        register(net.minecraft.server.BlockLadder.class, org.bukkit.craftbukkit.block.impl.CraftLadder::new);
+        register(net.minecraft.server.BlockLeaves.class, org.bukkit.craftbukkit.block.impl.CraftLeaves::new);
+        register(net.minecraft.server.BlockLever.class, org.bukkit.craftbukkit.block.impl.CraftLever::new);
+        register(net.minecraft.server.BlockLogAbstract.class, org.bukkit.craftbukkit.block.impl.CraftLogAbstract::new);
+        register(net.minecraft.server.BlockMinecartDetector.class, org.bukkit.craftbukkit.block.impl.CraftMinecartDetector::new);
+        register(net.minecraft.server.BlockMinecartTrack.class, org.bukkit.craftbukkit.block.impl.CraftMinecartTrack::new);
+        register(net.minecraft.server.BlockMycel.class, org.bukkit.craftbukkit.block.impl.CraftMycel::new);
+        register(net.minecraft.server.BlockNetherWart.class, org.bukkit.craftbukkit.block.impl.CraftNetherWart::new);
+        register(net.minecraft.server.BlockNote.class, org.bukkit.craftbukkit.block.impl.CraftNote::new);
+        register(net.minecraft.server.BlockObserver.class, org.bukkit.craftbukkit.block.impl.CraftObserver::new);
+        register(net.minecraft.server.BlockPiston.class, org.bukkit.craftbukkit.block.impl.CraftPiston::new);
+        register(net.minecraft.server.BlockPistonExtension.class, org.bukkit.craftbukkit.block.impl.CraftPistonExtension::new);
+        register(net.minecraft.server.BlockPistonMoving.class, org.bukkit.craftbukkit.block.impl.CraftPistonMoving::new);
+        register(net.minecraft.server.BlockPortal.class, org.bukkit.craftbukkit.block.impl.CraftPortal::new);
+        register(net.minecraft.server.BlockPotatoes.class, org.bukkit.craftbukkit.block.impl.CraftPotatoes::new);
+        register(net.minecraft.server.BlockPoweredRail.class, org.bukkit.craftbukkit.block.impl.CraftPoweredRail::new);
+        register(net.minecraft.server.BlockPressurePlateBinary.class, org.bukkit.craftbukkit.block.impl.CraftPressurePlateBinary::new);
+        register(net.minecraft.server.BlockPressurePlateWeighted.class, org.bukkit.craftbukkit.block.impl.CraftPressurePlateWeighted::new);
+        register(net.minecraft.server.BlockPumpkinCarved.class, org.bukkit.craftbukkit.block.impl.CraftPumpkinCarved::new);
+        register(net.minecraft.server.BlockRedstoneComparator.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneComparator::new);
+        register(net.minecraft.server.BlockRedstoneLamp.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneLamp::new);
+        register(net.minecraft.server.BlockRedstoneOre.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneOre::new);
+        register(net.minecraft.server.BlockRedstoneTorch.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneTorch::new);
+        register(net.minecraft.server.BlockRedstoneTorchWall.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneTorchWall::new);
+        register(net.minecraft.server.BlockRedstoneWire.class, org.bukkit.craftbukkit.block.impl.CraftRedstoneWire::new);
+        register(net.minecraft.server.BlockReed.class, org.bukkit.craftbukkit.block.impl.CraftReed::new);
+        register(net.minecraft.server.BlockRepeater.class, org.bukkit.craftbukkit.block.impl.CraftRepeater::new);
+        register(net.minecraft.server.BlockRotatable.class, org.bukkit.craftbukkit.block.impl.CraftRotatable::new);
+        register(net.minecraft.server.BlockSapling.class, org.bukkit.craftbukkit.block.impl.CraftSapling::new);
+        register(net.minecraft.server.BlockSeaPickle.class, org.bukkit.craftbukkit.block.impl.CraftSeaPickle::new);
+        register(net.minecraft.server.BlockShulkerBox.class, org.bukkit.craftbukkit.block.impl.CraftShulkerBox::new);
+        register(net.minecraft.server.BlockSkull.class, org.bukkit.craftbukkit.block.impl.CraftSkull::new);
+        register(net.minecraft.server.BlockSkullPlayer.class, org.bukkit.craftbukkit.block.impl.CraftSkullPlayer::new);
+        register(net.minecraft.server.BlockSkullPlayerWall.class, org.bukkit.craftbukkit.block.impl.CraftSkullPlayerWall::new);
+        register(net.minecraft.server.BlockSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftSkullWall::new);
+        register(net.minecraft.server.BlockSnow.class, org.bukkit.craftbukkit.block.impl.CraftSnow::new);
+        register(net.minecraft.server.BlockSoil.class, org.bukkit.craftbukkit.block.impl.CraftSoil::new);
+        register(net.minecraft.server.BlockStainedGlassPane.class, org.bukkit.craftbukkit.block.impl.CraftStainedGlassPane::new);
+        register(net.minecraft.server.BlockStairs.class, org.bukkit.craftbukkit.block.impl.CraftStairs::new);
+        register(net.minecraft.server.BlockStem.class, org.bukkit.craftbukkit.block.impl.CraftStem::new);
+        register(net.minecraft.server.BlockStemAttached.class, org.bukkit.craftbukkit.block.impl.CraftStemAttached::new);
+        register(net.minecraft.server.BlockStepAbstract.class, org.bukkit.craftbukkit.block.impl.CraftStepAbstract::new);
+        register(net.minecraft.server.BlockStoneButton.class, org.bukkit.craftbukkit.block.impl.CraftStoneButton::new);
+        register(net.minecraft.server.BlockStructure.class, org.bukkit.craftbukkit.block.impl.CraftStructure::new);
+        register(net.minecraft.server.BlockTallPlantFlower.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantFlower::new);
+        register(net.minecraft.server.BlockTallPlantShearable.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantShearable::new);
+        register(net.minecraft.server.BlockTallSeaGrass.class, org.bukkit.craftbukkit.block.impl.CraftTallSeaGrass::new);
+        register(net.minecraft.server.BlockTorchWall.class, org.bukkit.craftbukkit.block.impl.CraftTorchWall::new);
+        register(net.minecraft.server.BlockTrapdoor.class, org.bukkit.craftbukkit.block.impl.CraftTrapdoor::new);
+        register(net.minecraft.server.BlockTripwire.class, org.bukkit.craftbukkit.block.impl.CraftTripwire::new);
+        register(net.minecraft.server.BlockTripwireHook.class, org.bukkit.craftbukkit.block.impl.CraftTripwireHook::new);
+        register(net.minecraft.server.BlockTurtleEgg.class, org.bukkit.craftbukkit.block.impl.CraftTurtleEgg::new);
+        register(net.minecraft.server.BlockVine.class, org.bukkit.craftbukkit.block.impl.CraftVine::new);
+        register(net.minecraft.server.BlockWallSign.class, org.bukkit.craftbukkit.block.impl.CraftWallSign::new);
+        register(net.minecraft.server.BlockWitherSkull.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull::new);
+        register(net.minecraft.server.BlockWitherSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkullWall::new);
+        register(net.minecraft.server.BlockWoodButton.class, org.bukkit.craftbukkit.block.impl.CraftWoodButton::new);
     }
 
-    private static void register(Class<? extends Block> nms, Class<? extends CraftBlockData> bukkit) {
+    private static void register(Class<? extends Block> nms, Function<IBlockData, CraftBlockData> bukkit) {
         Preconditions.checkState(MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
     }
 
@@ -494,18 +495,6 @@ public class CraftBlockData implements BlockData {
     }
 
     public static CraftBlockData fromData(IBlockData data) {
-        Class<? extends CraftBlockData> craft = MAP.get(data.getBlock().getClass());
-        if (craft == null) {
-            craft = CraftBlockData.class;
-        }
-
-        CraftBlockData ret;
-        try {
-            ret = craft.getDeclaredConstructor(IBlockData.class).newInstance(data);
-        } catch (ReflectiveOperationException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        return ret;
+        return MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
     }
 }
