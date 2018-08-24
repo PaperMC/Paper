@@ -5,6 +5,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import javax.annotation.Nullable;
+// Paper start
+import com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent;
+import com.destroystokyo.paper.event.entity.SlimeSwimEvent;
+import com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent;
+import com.destroystokyo.paper.event.entity.SlimeWanderEvent;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Slime;
+// Paper end
 // CraftBukkit start
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +73,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
     @Override
     public void saveData(NBTTagCompound nbttagcompound) {
         super.saveData(nbttagcompound);
+        nbttagcompound.setBoolean("Paper.canWander", this.canWander); // Paper
         nbttagcompound.setInt("Size", this.getSize() - 1);
         nbttagcompound.setBoolean("wasOnGround", this.bp);
     }
@@ -79,6 +88,11 @@ public class EntitySlime extends EntityInsentient implements IMonster {
 
         this.setSize(i + 1, false);
         super.loadData(nbttagcompound);
+        // Paper start - check exists before loading or this will be loaded as false
+        if (nbttagcompound.hasKey("Paper.canWander")) {
+            this.canWander = nbttagcompound.getBoolean("Paper.canWander");
+        }
+        // Paper end
         this.bp = nbttagcompound.getBoolean("wasOnGround");
     }
 
@@ -358,7 +372,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
 
         @Override
         public boolean a() {
-            return !this.a.isPassenger();
+            return !this.a.isPassenger() && this.a.canWander && new SlimeWanderEvent((Slime) this.a.getBukkitEntity()).callEvent(); // Paper
         }
 
         @Override
@@ -379,7 +393,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
 
         @Override
         public boolean a() {
-            return (this.a.isInWater() || this.a.aP()) && this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime;
+            return (this.a.isInWater() || this.a.aP()) && this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime && this.a.canWander && new SlimeSwimEvent((Slime) this.a.getBukkitEntity()).callEvent(); // Paper
         }
 
         @Override
@@ -405,14 +419,18 @@ public class EntitySlime extends EntityInsentient implements IMonster {
 
         @Override
         public boolean a() {
-            return this.a.getGoalTarget() == null && (this.a.onGround || this.a.isInWater() || this.a.aP() || this.a.hasEffect(MobEffects.LEVITATION)) && this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime;
+            return this.a.getGoalTarget() == null && (this.a.onGround || this.a.isInWater() || this.a.aP() || this.a.hasEffect(MobEffects.LEVITATION)) && this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime && this.a.canWander; // Paper - add canWander
         }
 
         @Override
         public void e() {
             if (--this.c <= 0) {
                 this.c = 40 + this.a.getRandom().nextInt(60);
-                this.b = (float) this.a.getRandom().nextInt(360);
+                // Paper start
+                SlimeChangeDirectionEvent event = new SlimeChangeDirectionEvent((Slime) this.a.getBukkitEntity(), (float) this.a.getRandom().nextInt(360));
+                if (!this.a.canWander || !event.callEvent()) return;
+                this.b = event.getNewYaw();
+                // Paper end
             }
 
             ((EntitySlime.ControllerMoveSlime) this.a.getControllerMove()).a(this.b, false);
@@ -433,7 +451,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
         public boolean a() {
             EntityLiving entityliving = this.a.getGoalTarget();
 
-            return entityliving == null ? false : (!entityliving.isAlive() ? false : (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable ? false : this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime));
+            // Paper start
+            if (entityliving == null || !entityliving.isAlive()) {
+                return false;
+            }
+            if (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable) {
+                return false;
+            }
+            return this.a.getControllerMove() instanceof EntitySlime.ControllerMoveSlime && this.a.canWander && new SlimeTargetLivingEntityEvent((Slime) this.a.getBukkitEntity(), (LivingEntity) entityliving.getBukkitEntity()).callEvent();
+            // Paper end
         }
 
         @Override
@@ -446,7 +472,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
         public boolean b() {
             EntityLiving entityliving = this.a.getGoalTarget();
 
-            return entityliving == null ? false : (!entityliving.isAlive() ? false : (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable ? false : --this.b > 0));
+            // Paper start
+            if (entityliving == null || !entityliving.isAlive()) {
+                return false;
+            }
+            if (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable) {
+                return false;
+            }
+            return --this.b > 0 && this.a.canWander && new SlimeTargetLivingEntityEvent((Slime) this.a.getBukkitEntity(), (LivingEntity) entityliving.getBukkitEntity()).callEvent();
+            // Paper end
         }
 
         @Override
@@ -454,6 +488,13 @@ public class EntitySlime extends EntityInsentient implements IMonster {
             this.a.a((Entity) this.a.getGoalTarget(), 10.0F, 10.0F);
             ((EntitySlime.ControllerMoveSlime) this.a.getControllerMove()).a(this.a.yaw, this.a.eL());
         }
+
+        // Paper start - clear timer and target when goal resets
+        public void d() {
+            this.b = 0;
+            this.a.setGoalTarget(null);
+        }
+        // Paper end
     }
 
     static class ControllerMoveSlime extends ControllerMove {
@@ -512,4 +553,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
             }
         }
     }
+
+    // Paper start
+    private boolean canWander = true;
+    public boolean canWander() {
+        return canWander;
+    }
+
+    public void setWander(boolean canWander) {
+        this.canWander = canWander;
+    }
+    // Paper end
 }

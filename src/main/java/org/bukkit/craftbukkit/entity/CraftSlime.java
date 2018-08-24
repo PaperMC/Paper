@@ -35,4 +35,14 @@ public class CraftSlime extends CraftMob implements Slime {
     public EntityType getType() {
         return EntityType.SLIME;
     }
+
+    // Paper start
+    public boolean canWander() {
+        return getHandle().canWander();
+    }
+
+    public void setWander(boolean canWander) {
+        getHandle().setWander(canWander);
+    }
+    // Paper end
 }
