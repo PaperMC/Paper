@@ -2,6 +2,13 @@ Bukkit
 ======
 A plugin API for [Minecraft](https://minecraft.net/) servers, currently maintained by [SpigotMC](http://www.spigotmc.org/).
 
+#### Index
+* [Bug Reporting](#bug-reporting)
+* [Compilation](#compilation)
+* [Contributing](#contributing)
+* [Bukkit's Goals](#bukkits-goals)
+* [Code Requirements](#code-requirements)
+
 Bug Reporting
 -------------
 The development team is very open to both bug and feature requests / suggestions. You can submit these on the [JIRA Issue Tracker](http://hub.spigotmc.org/jira/).
@@ -28,7 +35,6 @@ Once you have performed these steps you can create a fork, push your code change
 
 Bukkit's Goals
 --------------
-
 As a rough guideline, ask yourself the following questions to determine if the proposed change fits the Bukkit project's goals. Please remember that this is only a rough guideline
 and it may or may not reflect the definitive answer to this question.
 Discussions about proposed changes are held in the [Spigot IRC](https://www.spigotmc.org/wiki/irc-guide/).
