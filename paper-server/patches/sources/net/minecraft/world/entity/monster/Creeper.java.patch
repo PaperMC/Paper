@@ -22,6 +22,15 @@
  
      public Creeper(EntityType<? extends Creeper> type, Level world) {
          super(type, world);
+@@ -125,7 +133,7 @@
+         }
+ 
+         if (nbt.getBoolean("ignited")) {
+-            this.ignite();
++            this.entityData.set(Creeper.DATA_IS_IGNITED, true); // Paper - set directly to avoid firing event
+         }
+ 
+     }
 @@ -214,9 +222,20 @@
      @Override
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
@@ -98,4 +107,26 @@
 +            this.level().addFreshEntity(entityareaeffectcloud, CreatureSpawnEvent.SpawnReason.EXPLOSION); // CraftBukkit
          }
  
+     }
+@@ -284,9 +315,20 @@
+     }
+ 
+     public void ignite() {
+-        this.entityData.set(Creeper.DATA_IS_IGNITED, true);
++        // Paper start - CreeperIgniteEvent
++        setIgnited(true);
+     }
+ 
++    public void setIgnited(boolean ignited) {
++        if (isIgnited() != ignited) {
++            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
++            if (event.callEvent()) {
++                this.entityData.set(Creeper.DATA_IS_IGNITED, event.isIgnited());
++            }
++        }
++        // Paper end - CreeperIgniteEvent
++    }
++
+     public boolean canDropMobsSkull() {
+         return this.isPowered() && this.droppedSkulls < 1;
      }

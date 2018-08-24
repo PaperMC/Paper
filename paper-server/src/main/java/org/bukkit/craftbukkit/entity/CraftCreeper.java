@@ -101,4 +101,16 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     public String toString() {
         return "CraftCreeper";
     }
+
+    // Paper start
+    @Override
+    public void setIgnited(boolean ignited) {
+        getHandle().setIgnited(ignited);
+    }
+
+    @Override
+    public boolean isIgnited() {
+        return getHandle().isIgnited();
+    }
+    // Paper end
 }
