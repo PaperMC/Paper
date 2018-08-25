@@ -51,6 +51,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param type item material
      * @param amount stack size
      * @param damage durability / damage
+     * @deprecated see {@link #setDurability(short)}
      */
     public ItemStack(final Material type, final int amount, final short damage) {
         this(type, amount, damage, null);
@@ -177,7 +178,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Sets the durability of this item
      *
      * @param durability Durability of this item
+     * @deprecated durability is now part of ItemMeta. To avoid confusion and
+     * misuse, {@link #getItemMeta()}, {@link #setItemMeta(ItemMeta)} and
+     * {@link Damageable#setDamage(int)} should be used instead. This is because
+     * any call to this method will be overwritten by subsequent setting of
+     * ItemMeta which was created before this call.
      */
+    @Deprecated
     public void setDurability(final short durability) {
         ItemMeta meta = getItemMeta();
         if (meta != null) {
@@ -190,7 +197,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * Gets the durability of this item
      *
      * @return Durability of this item
+     * @deprecated see {@link #setDurability(short)}
      */
+    @Deprecated
     public short getDurability() {
         ItemMeta meta = getItemMeta();
         return (meta == null) ? 0 : (short) ((Damageable) meta).getDamage();
