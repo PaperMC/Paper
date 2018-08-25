@@ -229,4 +229,11 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(material.getBlastResistance(), is(CraftMagicNumbers.getBlock(material).getDurability()));
         }
     }
+
+    @Test
+    public void testBlockDataCreation() {
+        if (material.isBlock()) {
+            assertNotNull(material.createBlockData());
+        }
+    }
 }
