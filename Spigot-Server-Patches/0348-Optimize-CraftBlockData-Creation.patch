@@ -1,11 +1,13 @@
-From 1782b15268da2e8ebd35dbeb1ae11c957fd7ddf3 Mon Sep 17 00:00:00 2001
+From 74f68b921eaba613b8368d573d6cc02e80d0a2c1 Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Thu, 23 Aug 2018 11:45:32 -0400
-Subject: [PATCH] Cached IBlockData to CraftBlockData conversion
+Subject: [PATCH] Optimize CraftBlockData Creation
 
+Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
+and cloning it when one is needed.
 
 diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
-index 4dd6c3276..1b226a77e 100644
+index 4dd6c32761..1b226a77e0 100644
 --- a/src/main/java/net/minecraft/server/BlockData.java
 +++ b/src/main/java/net/minecraft/server/BlockData.java
 @@ -1,6 +1,7 @@
@@ -32,7 +34,7 @@ index 4dd6c3276..1b226a77e 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index b57f6efb3..7b1d750f3 100644
+index b57f6efb3a..7b1d750f3a 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
 @@ -28,6 +28,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
@@ -45,32 +47,27 @@ index b57f6efb3..7b1d750f3 100644
          return this.getBlock().n(this);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index 472e89c43..8d886c719 100644
+index a4f3dd1b03..baaace6937 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-@@ -454,6 +454,7 @@ public class CraftBlockData implements BlockData {
-         register(net.minecraft.server.BlockWitherSkull.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull.class);
-         register(net.minecraft.server.BlockWitherSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkullWall.class);
-         register(net.minecraft.server.BlockWoodButton.class, org.bukkit.craftbukkit.block.impl.CraftWoodButton.class);
-+        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData); // Paper - initialize cached data for all IBlockData instances after registration
-     }
- 
-     private static void register(Class<? extends Block> nms, Class<? extends CraftBlockData> bukkit) {
-@@ -493,7 +494,14 @@ public class CraftBlockData implements BlockData {
+@@ -494,7 +494,17 @@ public class CraftBlockData implements BlockData {
          return craft;
      }
  
-+    // Paper start - cache block data getting
++    // Paper start - optimize creating BlockData to not need a map lookup
++    static {
++        // Initialize cached data for all IBlockData instances after registration
++        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData);
++    }
      public static CraftBlockData fromData(IBlockData data) {
 +        return data.createCraftBlockData();
 +    }
 +
-+    // Only used by BlockData
 +    public static CraftBlockData createData(IBlockData data) {
 +        // Paper end
-         Class<? extends CraftBlockData> craft = MAP.get(data.getBlock().getClass());
-         if (craft == null) {
-             craft = CraftBlockData.class;
+         return MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
+     }
+ }
 -- 
-2.17.1
+2.18.0
 
