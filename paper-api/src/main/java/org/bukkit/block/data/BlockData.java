@@ -32,9 +32,7 @@ public interface BlockData extends Cloneable {
      *
      * @param data the data to merge from
      * @return a new instance of this blockdata with the merged data
-     * @deprecated draft API
      */
-    @Deprecated
     BlockData merge(BlockData data);
 
     /**
@@ -51,9 +49,7 @@ public interface BlockData extends Cloneable {
      *
      * @param data the data to match against (normally a parsed constant)
      * @return if there is a match
-     * @deprecated draft API
      */
-    @Deprecated
     boolean matches(BlockData data);
 
     /**
