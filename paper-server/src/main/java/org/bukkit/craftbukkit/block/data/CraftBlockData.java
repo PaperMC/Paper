@@ -352,6 +352,7 @@ public class CraftBlockData implements BlockData {
     private static final Map<Class<? extends Block>, Function<IBlockData, CraftBlockData>> MAP = new HashMap<>();
 
     static {
+        //<editor-fold desc="CraftBlockData Registration" defaultstate="collapsed">
         register(net.minecraft.server.BlockAnvil.class, org.bukkit.craftbukkit.block.impl.CraftAnvil::new);
         register(net.minecraft.server.BlockBanner.class, org.bukkit.craftbukkit.block.impl.CraftBanner::new);
         register(net.minecraft.server.BlockBannerWall.class, org.bukkit.craftbukkit.block.impl.CraftBannerWall::new);
@@ -460,6 +461,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.server.BlockWitherSkull.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkull::new);
         register(net.minecraft.server.BlockWitherSkullWall.class, org.bukkit.craftbukkit.block.impl.CraftWitherSkullWall::new);
         register(net.minecraft.server.BlockWoodButton.class, org.bukkit.craftbukkit.block.impl.CraftWoodButton::new);
+        //</editor-fold>
     }
 
     private static void register(Class<? extends Block> nms, Function<IBlockData, CraftBlockData> bukkit) {
