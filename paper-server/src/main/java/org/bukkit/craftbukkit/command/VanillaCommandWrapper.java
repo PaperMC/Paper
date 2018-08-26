@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.command;
 
 import com.google.common.base.Joiner;
 import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.tree.CommandNode;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +11,6 @@ import net.minecraft.server.CommandListenerWrapper;
 import net.minecraft.server.DedicatedServer;
 import net.minecraft.server.EntityMinecartCommandBlock;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.command.BlockCommandSender;
@@ -63,35 +61,6 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         });
 
         return results;
-    }
-
-    public static class WorldRescueContext {
-
-        private WorldServer[] prev;
-
-        public WorldRescueContext start(WorldServer def) {
-            // Some commands use the worldserver variable but we leave it full of null values,
-            // so we must temporarily populate it with the world of the commandsender
-            prev = MinecraftServer.getServer().worldServer;
-            MinecraftServer server = MinecraftServer.getServer();
-            server.worldServer = new WorldServer[server.worlds.size()];
-            server.worldServer[0] = def;
-            int bpos = 0;
-            for (int pos = 1; pos < server.worldServer.length; pos++) {
-                WorldServer world = server.worlds.get(bpos++);
-                if (server.worldServer[0] == world) {
-                    pos--;
-                    continue;
-                }
-                server.worldServer[pos] = world;
-            }
-
-            return this;
-        }
-
-        public void end() {
-            MinecraftServer.getServer().worldServer = prev;
-        }
     }
 
     private CommandListenerWrapper getListener(CommandSender sender) {

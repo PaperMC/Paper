@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/WorldServer.java
 +++ b/net/minecraft/server/WorldServer.java
-@@ -20,6 +20,18 @@
+@@ -21,6 +21,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -19,66 +19,66 @@
  public class WorldServer extends World implements IAsyncTaskHandler {
  
      private static final Logger a = LogManager.getLogger();
-@@ -38,28 +50,36 @@
+@@ -39,28 +51,36 @@
      ObjectLinkedOpenHashSet<BlockActionData> d;
-     private boolean Q;
+     private boolean P;
  
--    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, WorldData worlddata, int i, MethodProfiler methodprofiler) {
--        super(idatamanager, worlddata, DimensionManager.a(i).d(), methodprofiler, false);
+-    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, PersistentCollection persistentcollection, WorldData worlddata, DimensionManager dimensionmanager, MethodProfiler methodprofiler) {
+-        super(idatamanager, persistentcollection, worlddata, dimensionmanager.e(), methodprofiler, false);
 -        Predicate predicate = (block) -> {
 +    // CraftBukkit start
-+    public final int dimension;
++    public final DimensionManager dimension;
 +
 +    // Add env and gen to constructor
-+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, WorldData worlddata, int i, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-+        super(idatamanager, worlddata, DimensionManager.a(env.getId()).d(), methodprofiler, false, gen, env);
-+        this.dimension = i;
++    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, PersistentCollection persistentcollection, WorldData worlddata, DimensionManager dimensionmanager, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
++        super(idatamanager, persistentcollection, worlddata, DimensionManager.a(env.getId()).e(), methodprofiler, false, gen, env);
++        this.dimension = dimensionmanager;
 +        this.pvpMode = minecraftserver.getPVP();
 +        worlddata.world = this;
 +        // CraftBukkit end
 +        Predicate<Block> predicate = (block) -> { // CraftBukkit - decompile error
              return block == null || block.getBlockData().isAir();
          };
-         RegistryBlocks registryblocks = Block.REGISTRY;
+         IRegistry iregistry = IRegistry.BLOCK;
  
-         Block.REGISTRY.getClass();
-         Function function = registryblocks::b;
--        RegistryBlocks registryblocks1 = Block.REGISTRY;
-+        RegistryBlocks<MinecraftKey, Block> registryblocks1 = Block.REGISTRY; // CraftBukkit - decompile error
+         IRegistry.BLOCK.getClass();
+         Function function = iregistry::getKey;
+-        IRegistry iregistry1 = IRegistry.BLOCK;
++        IRegistry<Block> iregistry1 = IRegistry.BLOCK; // CraftBukkit - decompile error
  
-         Block.REGISTRY.getClass();
--        this.nextTickListBlock = new TickListServer(this, predicate, function, registryblocks1::get, this::b);
+         IRegistry.BLOCK.getClass();
+-        this.nextTickListBlock = new TickListServer(this, predicate, function, iregistry1::getOrDefault, this::b);
 -        predicate = (fluidtype) -> {
-+        this.nextTickListBlock = new TickListServer<>(this, predicate, function, registryblocks1::get, this::b); // CraftBukkit - decompile error
-+        Predicate<FluidType> predicate2 = (fluidtype) -> {
++        this.nextTickListBlock = new TickListServer<>(this, predicate, function, iregistry1::getOrDefault, this::b); // CraftBukkit - decompile error
++        Predicate<FluidType> predicate2 = (fluidtype) -> { // CraftBukkit - decompile error
              return fluidtype == null || fluidtype == FluidTypes.a;
          };
-         registryblocks = FluidType.c;
-         FluidType.c.getClass();
-         function = registryblocks::b;
--        registryblocks1 = FluidType.c;
-+        RegistryBlocks<MinecraftKey, FluidType> registryblocks2 = FluidType.c; // CraftBukkit - decompile error
-         FluidType.c.getClass();
--        this.nextTickListFluid = new TickListServer(this, predicate, function, registryblocks1::get, this::a);
-+        this.nextTickListFluid = new TickListServer<>(this, predicate2, function, registryblocks2::get, this::a); // CraftBukkit - decompile error
+         iregistry = IRegistry.FLUID;
+         IRegistry.FLUID.getClass();
+         function = iregistry::getKey;
+-        iregistry1 = IRegistry.FLUID;
++        IRegistry<FluidType> iregistry2 = IRegistry.FLUID; // CraftBukkit - decompile error
+         IRegistry.FLUID.getClass();
+-        this.nextTickListFluid = new TickListServer(this, predicate, function, iregistry1::getOrDefault, this::a);
++        this.nextTickListFluid = new TickListServer<>(this, predicate2, function, iregistry2::getOrDefault, this::a); // CraftBukkit - decompile error
          this.siegeManager = new VillageSiege(this);
          this.d = new ObjectLinkedOpenHashSet();
          this.server = minecraftserver;
-@@ -67,7 +87,7 @@
+@@ -68,7 +88,7 @@
          this.manager = new PlayerChunkMap(this);
          this.worldProvider.a((World) this);
-         this.chunkProvider = this.q();
+         this.chunkProvider = this.r();
 -        this.portalTravelAgent = new PortalTravelAgent(this);
 +        this.portalTravelAgent = new org.bukkit.craftbukkit.CraftTravelAgent(this); // CraftBukkit
-         this.O();
          this.P();
-         this.getWorldBorder().a(minecraftserver.aw());
+         this.Q();
+         this.getWorldBorder().a(minecraftserver.au());
 @@ -86,6 +106,7 @@
              this.villages.a((World) this);
          }
  
 +        if (getServer().getScoreboardManager() == null) { // CraftBukkit
-         PersistentScoreboard persistentscoreboard = (PersistentScoreboard) this.worldMaps.get(PersistentScoreboard::new, "scoreboard");
+         PersistentScoreboard persistentscoreboard = (PersistentScoreboard) this.a(DimensionManager.OVERWORLD, PersistentScoreboard::new, "scoreboard");
  
          if (persistentscoreboard == null) {
 @@ -95,6 +116,7 @@
@@ -217,9 +217,9 @@
 +    }
 +    // CraftBukkit end
 +
-     public void doTick() {
-         this.Q = true;
-         super.doTick();
+     public void doTick(BooleanSupplier booleansupplier) {
+         this.P = true;
+         super.doTick(booleansupplier);
 @@ -128,9 +271,12 @@
          }
  
@@ -238,8 +238,8 @@
          this.methodProfiler.c("chunkSource");
 @@ -160,6 +306,8 @@
          this.methodProfiler.e();
-         this.am();
-         this.Q = false;
+         this.an();
+         this.P = false;
 +
 +        this.getWorld().processChunkGC(); // CraftBukkit
      }
@@ -257,7 +257,7 @@
 @@ -223,25 +371,46 @@
      }
  
-     private void ai() {
+     private void b() {
 -        this.worldData.setWeatherDuration(0);
 +        // CraftBukkit start
          this.worldData.setStorm(false);
@@ -279,7 +279,7 @@
      }
  
      public boolean everyoneDeeplySleeping() {
-         if (this.K && !this.isClientSide) {
+         if (this.J && !this.isClientSide) {
              Iterator iterator = this.players.iterator();
  
 +            // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
@@ -305,15 +305,15 @@
  
              return false;
          } else {
-@@ -315,7 +484,7 @@
+@@ -316,7 +485,7 @@
                              entityhorseskeleton.s(true);
                              entityhorseskeleton.setAgeRaw(0);
                              entityhorseskeleton.setPosition((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
 -                            this.addEntity(entityhorseskeleton);
 +                            this.addEntity(entityhorseskeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
-                             this.strikeLightning(new EntityLightning(this, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), true));
-                         } else {
-                             this.strikeLightning(new EntityLightning(this, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), false));
+                         }
+ 
+                         this.strikeLightning(new EntityLightning(this, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, flag2));
 @@ -332,11 +501,11 @@
                      BiomeBase biomebase = this.getBiome(blockposition);
  
@@ -363,7 +363,7 @@
      private boolean getSpawnNPCs() {
          return this.server.getSpawnNPCs();
 @@ -513,7 +684,21 @@
-     protected IChunkProvider q() {
+     protected IChunkProvider r() {
          IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
  
 -        return new ChunkProviderServer(this, ichunkloader, this.worldProvider.getChunkGenerator(), this.server);
@@ -411,7 +411,7 @@
 @@ -647,6 +848,7 @@
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
-         if (chunkproviderserver.e()) {
+         if (chunkproviderserver.d()) {
 +            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
@@ -422,11 +422,11 @@
              chunkproviderserver.a(flag);
 -            ArrayList arraylist = Lists.newArrayList(chunkproviderserver.a());
 +            // CraftBukkit - ArrayList -> Collection
-+            Collection arraylist = chunkproviderserver.a();
++            java.util.Collection arraylist = chunkproviderserver.a();
              Iterator iterator = arraylist.iterator();
  
              while (iterator.hasNext()) {
-@@ -692,6 +895,12 @@
+@@ -691,6 +894,12 @@
              }
          }
  
@@ -439,8 +439,8 @@
          this.worldData.a(this.getWorldBorder().getSize());
          this.worldData.d(this.getWorldBorder().getCenterX());
          this.worldData.c(this.getWorldBorder().getCenterZ());
-@@ -706,9 +915,13 @@
-         this.worldMaps.a();
+@@ -705,9 +914,13 @@
+         this.h().a();
      }
  
 -    public boolean addEntity(Entity entity) {
@@ -453,9 +453,9 @@
      }
 +    // CraftBukkit end
  
-     public void a(Collection<Entity> collection) {
-         ArrayList arraylist = Lists.newArrayList(collection);
-@@ -727,7 +940,7 @@
+     public void a(Stream<Entity> stream) {
+         stream.forEach((entity) -> {
+@@ -721,7 +934,7 @@
  
      private boolean j(Entity entity) {
          if (entity.dead) {
@@ -464,7 +464,7 @@
              return false;
          } else {
              UUID uuid = entity.getUniqueID();
-@@ -739,7 +952,7 @@
+@@ -733,7 +946,7 @@
                      this.g.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
@@ -473,7 +473,7 @@
                          return false;
                      }
  
-@@ -792,8 +1005,16 @@
+@@ -786,8 +999,16 @@
      }
  
      public boolean strikeLightning(Entity entity) {
@@ -486,12 +486,12 @@
 +        }
 +        // CraftBukkit end
          if (super.strikeLightning(entity)) {
--            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, this.worldProvider.getDimensionManager().getDimensionID(), new PacketPlayOutSpawnEntityWeather(entity));
+-            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutSpawnEntityWeather(entity));
 +            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, dimension, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension
              return true;
          } else {
              return false;
-@@ -809,6 +1030,14 @@
+@@ -803,6 +1024,14 @@
      }
  
      public Explosion createExplosion(@Nullable Entity entity, DamageSource damagesource, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
@@ -506,7 +506,7 @@
          Explosion explosion = new Explosion(this, entity, d0, d1, d2, f, flag, flag1);
  
          if (damagesource != null) {
-@@ -817,6 +1046,8 @@
+@@ -811,6 +1040,8 @@
  
          explosion.a();
          explosion.a(false);
@@ -515,25 +515,25 @@
          if (!flag1) {
              explosion.clearBlocks();
          }
-@@ -843,7 +1074,8 @@
+@@ -837,7 +1068,8 @@
              BlockActionData blockactiondata = (BlockActionData) this.d.removeFirst();
  
              if (this.a(blockactiondata)) {
--                this.server.getPlayerList().sendPacketNearby((EntityHuman) null, (double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this.worldProvider.getDimensionManager().getDimensionID(), new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.b(), blockactiondata.c(), blockactiondata.d()));
+-                this.server.getPlayerList().sendPacketNearby((EntityHuman) null, (double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.b(), blockactiondata.c(), blockactiondata.d()));
 +                // CraftBukkit - this.worldProvider.dimension -> this.dimension
 +                this.server.getPlayerList().sendPacketNearby((EntityHuman) null, (double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, dimension, new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.b(), blockactiondata.c(), blockactiondata.d()));
              }
          }
  
-@@ -864,6 +1096,7 @@
+@@ -858,6 +1090,7 @@
          boolean flag = this.isRaining();
  
-         super.v();
+         super.w();
 +        /* CraftBukkit start
          if (this.o != this.p) {
-             this.server.getPlayerList().a((Packet) (new PacketPlayOutGameStateChange(7, this.p)), this.worldProvider.getDimensionManager().getDimensionID());
+             this.server.getPlayerList().a((Packet) (new PacketPlayOutGameStateChange(7, this.p)), this.worldProvider.getDimensionManager());
          }
-@@ -882,6 +1115,21 @@
+@@ -876,6 +1109,21 @@
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.p));
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.r));
          }
@@ -555,7 +555,7 @@
  
      }
  
-@@ -915,11 +1163,18 @@
+@@ -909,11 +1157,18 @@
      }
  
      public <T extends ParticleParam> int a(T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {

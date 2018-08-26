@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.enchantments;
 
 import net.minecraft.server.EnchantmentBinding;
 import net.minecraft.server.EnchantmentVanishing;
+import net.minecraft.server.IRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -13,7 +14,7 @@ public class CraftEnchantment extends Enchantment {
     private final net.minecraft.server.Enchantment target;
 
     public CraftEnchantment(net.minecraft.server.Enchantment target) {
-        super(CraftNamespacedKey.fromMinecraft(net.minecraft.server.Enchantment.enchantments.b(target)));
+        super(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(target)));
         this.target = target;
     }
 
@@ -79,7 +80,7 @@ public class CraftEnchantment extends Enchantment {
     @Override
     public String getName() {
         // PAIL: migration paths
-        switch (net.minecraft.server.Enchantment.enchantments.a(target)) {
+        switch (IRegistry.ENCHANTMENT.a(target)) {
         case 0:
             return "PROTECTION_ENVIRONMENTAL";
         case 1:

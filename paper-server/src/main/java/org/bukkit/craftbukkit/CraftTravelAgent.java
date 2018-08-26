@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import net.minecraft.server.BlockPosition;
+import net.minecraft.server.DimensionManager;
 import net.minecraft.server.PortalTravelAgent;
 import net.minecraft.server.WorldServer;
 
@@ -17,7 +18,7 @@ public class CraftTravelAgent extends PortalTravelAgent implements TravelAgent {
 
     public CraftTravelAgent(WorldServer worldserver) {
         super(worldserver);
-        if (DEFAULT == null && worldserver.dimension == 0) {
+        if (DEFAULT == null && worldserver.dimension == DimensionManager.OVERWORLD) {
             DEFAULT = this;
         }
     }

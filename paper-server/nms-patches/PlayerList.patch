@@ -102,7 +102,7 @@
 @@ -82,6 +124,7 @@
          PlayerConnection playerconnection = new PlayerConnection(this.server, networkmanager, entityplayer);
  
-         playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getDimensionID(), worldserver.getDifficulty(), this.getMaxPlayers(), worlddata.getType(), worldserver.getGameRules().getBoolean("reducedDebugInfo")));
+         playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager(), worldserver.getDifficulty(), this.getMaxPlayers(), worlddata.getType(), worldserver.getGameRules().getBoolean("reducedDebugInfo")));
 +        entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.b, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
          playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
@@ -132,10 +132,10 @@
 @@ -186,26 +233,27 @@
      }
  
-     public void setPlayerFileData(WorldServer[] aworldserver) {
+     public void setPlayerFileData(WorldServer worldserver) {
 +        if (playerFileData != null) return; // CraftBukkit
-         this.playerFileData = aworldserver[0].getDataManager().getPlayerFileData();
-         aworldserver[0].getWorldBorder().a(new IWorldBorderListener() {
+         this.playerFileData = worldserver.getDataManager().getPlayerFileData();
+         worldserver.getWorldBorder().a(new IWorldBorderListener() {
              public void a(WorldBorder worldborder, double d0) {
 -                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_SIZE));
 +                PlayerList.this.sendAll(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.SET_SIZE), worldborder.world);
@@ -162,15 +162,6 @@
              }
  
              public void b(WorldBorder worldborder, double d0) {}
-@@ -238,7 +286,7 @@
- 
-     @Nullable
-     public NBTTagCompound a(EntityPlayer entityplayer) {
--        NBTTagCompound nbttagcompound = this.server.worldServer[0].getWorldData().h();
-+        NBTTagCompound nbttagcompound = this.server.worlds.get(0).getWorldData().h(); // CraftBukkit
-         NBTTagCompound nbttagcompound1;
- 
-         if (entityplayer.getDisplayName().getString().equals(this.server.I()) && nbttagcompound != null) {
 @@ -254,13 +302,13 @@
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
@@ -242,12 +233,12 @@
  
 -        worldserver.addEntity(entityplayer);
 -        this.a(entityplayer, (WorldServer) null);
--        this.server.aR().a(entityplayer);
+-        this.server.aP().a(entityplayer);
 +        // CraftBukkit start - Only add if the player wasn't moved in the event
 +        if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
 +            worldserver.addEntity(entityplayer);
 +            this.a(entityplayer, (WorldServer) null);
-+            this.server.aR().a(entityplayer);
++            this.server.aP().a(entityplayer);
 +        }
 +        // CraftBukkit end
      }
@@ -342,7 +333,7 @@
 +        // depending on the outcome.
 +        SocketAddress socketaddress = loginlistener.networkManager.getSocketAddress();
 +
-+        EntityPlayer entity = new EntityPlayer(this.server, this.server.a(DimensionManager.OVERWORLD), gameprofile, new PlayerInteractManager(this.server.a(DimensionManager.OVERWORLD)));
++        EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(DimensionManager.OVERWORLD), gameprofile, new PlayerInteractManager(this.server.getWorldServer(DimensionManager.OVERWORLD)));
 +        Player player = entity.getBukkitEntity();
 +        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
 +
@@ -379,13 +370,13 @@
 +            if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full");
 +            }
-+        }
+         }
 +
 +        cserver.getPluginManager().callEvent(event);
 +        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
 +            loginlistener.disconnect(event.getKickMessage());
 +            return null;
-         }
++        }
 +        return entity;
      }
  
@@ -398,18 +389,18 @@
 @@ -392,17 +555,27 @@
          }
  
-         return new EntityPlayer(this.server, this.server.a(DimensionManager.OVERWORLD), gameprofile, (PlayerInteractManager) object);
+         return new EntityPlayer(this.server, this.server.getWorldServer(DimensionManager.OVERWORLD), gameprofile, (PlayerInteractManager) object);
 +        */
 +        return player;
 +        // CraftBukkit end
      }
  
 +    // CraftBukkit start
-     public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag) {
-+        return this.moveToWorld(entityplayer, i, flag, null, true);
+     public EntityPlayer moveToWorld(EntityPlayer entityplayer, DimensionManager dimensionmanager, boolean flag) {
++        return this.moveToWorld(entityplayer, dimensionmanager, flag, null, true);
 +    }
 +
-+    public EntityPlayer moveToWorld(EntityPlayer entityplayer, int i, boolean flag, Location location, boolean avoidSuffocation) {
++    public EntityPlayer moveToWorld(EntityPlayer entityplayer, DimensionManager dimensionmanager, boolean flag, Location location, boolean avoidSuffocation) {
 +        entityplayer.stopRiding(); // CraftBukkit
          entityplayer.getWorldServer().getTracker().untrackPlayer(entityplayer);
 -        entityplayer.getWorldServer().getTracker().untrackEntity(entityplayer);
@@ -421,7 +412,7 @@
          boolean flag1 = entityplayer.isRespawnForced();
  
 +        /* CraftBukkit start
-         entityplayer.dimension = i;
+         entityplayer.dimension = dimensionmanager;
          Object object;
  
 @@ -413,6 +586,11 @@
@@ -436,7 +427,7 @@
  
          entityplayer1.playerConnection = entityplayer.playerConnection;
          entityplayer1.copyFrom(entityplayer, flag);
-@@ -426,43 +604,166 @@
+@@ -426,43 +604,160 @@
              entityplayer1.addScoreboardTag(s);
          }
  
@@ -467,13 +458,13 @@
 +                    entityplayer1.setRespawnPosition(null, true);
 +                    entityplayer1.playerConnection.sendPacket(new PacketPlayOutGameStateChange(0, 0.0F));
 +                }
-+            }
+             }
 +
 +            if (location == null) {
 +                cworld = (CraftWorld) this.server.server.getWorlds().get(0);
 +                blockposition = entityplayer1.getSpawnPoint(cworld.getHandle());
 +                location = new Location(cworld, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F));
-             }
++            }
 +
 +            Player respawnPlayer = cserver.getPlayer(entityplayer1);
 +            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn);
@@ -482,27 +473,26 @@
 +            location = respawnEvent.getRespawnLocation();
 +            entityplayer.reset();
 +        } else {
-+            location.setWorld(server.getWorldServer(i).getWorld());
++            location.setWorld(server.getWorldServer(dimensionmanager).getWorld());
          }
 +        WorldServer worldserver = ((CraftWorld) location.getWorld()).getHandle();
 +        entityplayer1.forceSetPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
 +        // CraftBukkit end
  
-         worldserver.getChunkProviderServer().getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4);
+         worldserver.getChunkProviderServer().getChunkAt((int) entityplayer1.locX >> 4, (int) entityplayer1.locZ >> 4, true, true);
  
 -        while (!worldserver.getCubes(entityplayer1, entityplayer1.getBoundingBox()) && entityplayer1.locY < 256.0D) {
 +        while (avoidSuffocation && !worldserver.getCubes(entityplayer1, entityplayer1.getBoundingBox()) && entityplayer1.locY < 256.0D) {
              entityplayer1.setPosition(entityplayer1.locX, entityplayer1.locY + 1.0D, entityplayer1.locZ);
          }
 +        // CraftBukkit start
-+        byte actualDimension = (byte) (worldserver.getWorld().getEnvironment().getId());
 +        // Force the client to refresh their chunk cache
 +        if (fromWorld.getEnvironment() == worldserver.getWorld().getEnvironment()) {
-+            entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn((byte) (actualDimension >= 0 ? -1 : 0), worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
++            entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.worldProvider.getDimensionManager().getDimensionID() >= 0 ? DimensionManager.NETHER : DimensionManager.OVERWORLD, worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer.playerInteractManager.getGameMode()));
 +        }
  
 -        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(entityplayer1.dimension, entityplayer1.world.getDifficulty(), entityplayer1.world.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
-+        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(actualDimension, worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
++        entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.worldProvider.getDimensionManager(), worldserver.getDifficulty(), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
 +        entityplayer1.spawnIn(worldserver);
 +        entityplayer1.dead = false;
 +        entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
@@ -556,25 +546,20 @@
      }
  
 +    // CraftBukkit start - Replaced the standard handling of portals with a more customised method.
-+    public void changeDimension(EntityPlayer entityplayer, int i, TeleportCause cause) {
++    public void changeDimension(EntityPlayer entityplayer, DimensionManager dimensionManager, TeleportCause cause) {
 +        WorldServer exitWorld = null;
-+        if (entityplayer.dimension < CraftWorld.CUSTOM_DIMENSION_OFFSET) { // plugins must specify exit from custom Bukkit worlds
-+            // only target existing worlds (compensate for allow-nether/allow-end as false)
-+            for (WorldServer world : this.server.worlds) {
-+                if (world.dimension == i) {
-+                    exitWorld = world;
-+                }
-+            }
++        if (entityplayer.dimension.getDimensionID() < CraftWorld.CUSTOM_DIMENSION_OFFSET) { // plugins must specify exit from custom Bukkit worlds
++            exitWorld = server.getWorldServer(dimensionManager);
 +        }
 +
 +        Location enter = entityplayer.getBukkitEntity().getLocation();
 +        Location exit = null;
 +        boolean useTravelAgent = false; // don't use agent for custom worlds or return from THE_END
 +        if (exitWorld != null) {
-+            if ((cause == TeleportCause.END_PORTAL) && (i == 0)) {
++            if ((cause == TeleportCause.END_PORTAL) && (dimensionManager == DimensionManager.OVERWORLD)) {
 +                // THE_END -> NORMAL; use bed if available, otherwise default spawn
 +                exit = ((org.bukkit.craftbukkit.entity.CraftPlayer) entityplayer.getBukkitEntity()).getBedSpawnLocation();
-+                if (exit == null || ((CraftWorld) exit.getWorld()).getHandle().dimension != 0) {
++                if (exit == null || ((CraftWorld) exit.getWorld()).getHandle().dimension != DimensionManager.OVERWORLD) {
 +                    BlockPosition randomSpawn = entityplayer.getSpawnPoint(exitWorld);
 +                    exit = new Location(exitWorld.getWorld(), randomSpawn.getX(), randomSpawn.getY(), randomSpawn.getZ());
 +                } else {
@@ -620,10 +605,10 @@
      public void f(EntityPlayer entityplayer) {
          GameProfile gameprofile = entityplayer.getProfile();
          int i = this.server.a(gameprofile);
-@@ -499,12 +800,111 @@
+@@ -499,42 +794,69 @@
      }
  
-     public void changeWorld(Entity entity, int i, WorldServer worldserver, WorldServer worldserver1) {
+     public void changeWorld(Entity entity, DimensionManager dimensionmanager, WorldServer worldserver, WorldServer worldserver1) {
 +        // CraftBukkit start - Split into modular functions
 +        Location exit = calculateTarget(entity.getBukkitEntity().getLocation(), worldserver1);
 +        repositionEntity(entity, exit, true);
@@ -633,14 +618,14 @@
 +    public Location calculateTarget(Location enter, World target) {
 +        WorldServer worldserver = ((CraftWorld) enter.getWorld()).getHandle();
 +        WorldServer worldserver1 = ((CraftWorld) target.getWorld()).getHandle();
-+        int i = worldserver.dimension;
++        DimensionManager dimensionmanager = worldserver.dimension;
 +
 +        double y = enter.getY();
 +        float yaw = enter.getYaw();
 +        float pitch = enter.getPitch();
 +        double d0 = enter.getX();
 +        double d1 = enter.getZ();
-+         double d2 = 8.0D;
++        double d2 = 8.0D;
 +        /*
          double d0 = entity.locX;
          double d1 = entity.locZ;
@@ -649,61 +634,64 @@
 +        */
  
          worldserver.methodProfiler.a("moving");
-+        if (worldserver1.dimension == -1) {
-+            d0 = MathHelper.a(d0 / d2, worldserver1.getWorldBorder().b()+ 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
-+            d1 = MathHelper.a(d1 / d2, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
+-        if (entity.dimension == DimensionManager.NETHER) {
++        if (worldserver1.dimension == DimensionManager.NETHER) {
+             d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
+             d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
 +            /*
-+            entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
-+            if (entity.isAlive()) {
-+                worldserver.entityJoinedWorld(entity, false);
-+            }
+             entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
+             if (entity.isAlive()) {
+                 worldserver.entityJoinedWorld(entity, false);
+             }
+-        } else if (entity.dimension == DimensionManager.OVERWORLD) {
 +            */
-+        } else if (worldserver1.dimension == 0) {
-+            d0 = MathHelper.a(d0 * d2, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
-+            d1 = MathHelper.a(d1 * d2, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
++        } else if (worldserver1.dimension == DimensionManager.OVERWORLD) {
+             d0 = MathHelper.a(d0 * 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
+             d1 = MathHelper.a(d1 * 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
 +            /*
-+            entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
-+            if (entity.isAlive()) {
-+                worldserver.entityJoinedWorld(entity, false);
-+            }
+             entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
+             if (entity.isAlive()) {
+                 worldserver.entityJoinedWorld(entity, false);
+             }
 +            */
-+        } else {
-+            BlockPosition blockposition;
-+
-+            if (i == 1) {
+         } else {
+             BlockPosition blockposition;
+ 
+             if (dimensionmanager == DimensionManager.THE_END) {
 +                // use default NORMAL world spawn instead of target
-+                worldserver1 = this.server.worlds.get(0);
-+                blockposition = worldserver1.getSpawn();
-+            } else {
-+                blockposition = worldserver1.getDimensionSpawn();
-+            }
-+
-+            d0 = (double) blockposition.getX();
++                worldserver1 = this.server.getWorldServer(DimensionManager.OVERWORLD);
+                 blockposition = worldserver1.getSpawn();
+             } else {
+                 blockposition = worldserver1.getDimensionSpawn();
+             }
+ 
+             d0 = (double) blockposition.getX();
+-            entity.locY = (double) blockposition.getY();
 +            y = (double) blockposition.getY();
-+            d1 = (double) blockposition.getZ();
+             d1 = (double) blockposition.getZ();
 +            /*
-+            entity.setPositionRotation(d0, entity.locY, d1, 90.0F, 0.0F);
-+            if (entity.isAlive()) {
-+                worldserver.entityJoinedWorld(entity, false);
-+            }
+             entity.setPositionRotation(d0, entity.locY, d1, 90.0F, 0.0F);
+             if (entity.isAlive()) {
+                 worldserver.entityJoinedWorld(entity, false);
+             }
 +            */
-+        }
-+
-+        worldserver.methodProfiler.b();
-+        if (i != 1) {
-+            worldserver.methodProfiler.a("placing");
-+            d0 = (double) MathHelper.clamp((int) d0, -29999872, 29999872);
-+            d1 = (double) MathHelper.clamp((int) d1, -29999872, 29999872);
+         }
+ 
+         worldserver.methodProfiler.e();
+@@ -542,22 +864,119 @@
+             worldserver.methodProfiler.a("placing");
+             d0 = (double) MathHelper.clamp((int) d0, -29999872, 29999872);
+             d1 = (double) MathHelper.clamp((int) d1, -29999872, 29999872);
 +            /*
-+            if (entity.isAlive()) {
-+                entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
-+                worldserver1.getTravelAgent().a(entity, f);
-+                worldserver1.addEntity(entity);
-+                worldserver1.entityJoinedWorld(entity, false);
-+            }
+             if (entity.isAlive()) {
+                 entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
+                 worldserver1.getTravelAgent().a(entity, f);
+                 worldserver1.addEntity(entity);
+                 worldserver1.entityJoinedWorld(entity, false);
+             }
 +            */
 +
-+            worldserver.methodProfiler.b();
++            worldserver.methodProfiler.e();
 +        }
 +
 +        // entity.spawnIn(worldserver1);
@@ -714,7 +702,7 @@
 +    public void repositionEntity(Entity entity, Location exit, boolean portal) {
 +        WorldServer worldserver = (WorldServer) entity.world;
 +        WorldServer worldserver1 = ((CraftWorld) exit.getWorld()).getHandle();
-+        int i = worldserver.dimension;
++        DimensionManager dimensionmanager = worldserver.dimension;
 +
 +        /*
 +        double d0 = entity.locX;
@@ -729,35 +717,49 @@
 +            worldserver.entityJoinedWorld(entity, false);
 +        }
 +        /*
-         if (entity.dimension == -1) {
-             d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
-             d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
-@@ -523,6 +923,8 @@
-             BlockPosition blockposition;
- 
-             if (i == 1) {
++        if (entity.dimension == DimensionManager.NETHER) {
++            d0 = MathHelper.a(d0 / 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
++            d1 = MathHelper.a(d1 / 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
++            entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
++            if (entity.isAlive()) {
++                worldserver.entityJoinedWorld(entity, false);
++            }
++        } else if (entity.dimension == DimensionManager.OVERWORLD) {
++            d0 = MathHelper.a(d0 * 8.0D, worldserver1.getWorldBorder().b() + 16.0D, worldserver1.getWorldBorder().d() - 16.0D);
++            d1 = MathHelper.a(d1 * 8.0D, worldserver1.getWorldBorder().c() + 16.0D, worldserver1.getWorldBorder().e() - 16.0D);
++            entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
++            if (entity.isAlive()) {
++                worldserver.entityJoinedWorld(entity, false);
++            }
++        } else {
++            BlockPosition blockposition;
++
++            if (dimensionmanager == DimensionManager.THE_END) {
 +                // use default NORMAL world spawn instead of target
 +                worldserver1 = this.server.worlds.get(0);
-                 blockposition = worldserver1.getSpawn();
-             } else {
-                 blockposition = worldserver1.getDimensionSpawn();
-@@ -536,16 +938,27 @@
-                 worldserver.entityJoinedWorld(entity, false);
-             }
-         }
++                blockposition = worldserver1.getSpawn();
++            } else {
++                blockposition = worldserver1.getDimensionSpawn();
++            }
++
++            d0 = (double) blockposition.getX();
++            entity.locY = (double) blockposition.getY();
++            d1 = (double) blockposition.getZ();
++            entity.setPositionRotation(d0, entity.locY, d1, 90.0F, 0.0F);
++            if (entity.isAlive()) {
++                worldserver.entityJoinedWorld(entity, false);
++            }
++        }
 +        */
- 
-         worldserver.methodProfiler.e();
-         if (i != 1) {
-             worldserver.methodProfiler.a("placing");
++
++        worldserver.methodProfiler.e();
++        if (dimensionmanager != DimensionManager.THE_END) {
++            worldserver.methodProfiler.a("placing");
 +            /*
-             d0 = (double) MathHelper.clamp((int) d0, -29999872, 29999872);
-             d1 = (double) MathHelper.clamp((int) d1, -29999872, 29999872);
++            d0 = (double) MathHelper.clamp((int) d0, -29999872, 29999872);
++            d1 = (double) MathHelper.clamp((int) d1, -29999872, 29999872);
 +            */
-             if (entity.isAlive()) {
--                entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
--                worldserver1.getTravelAgent().a(entity, f);
--                worldserver1.addEntity(entity);
++            if (entity.isAlive()) {
 +                // entity.setPositionRotation(d0, entity.locY, d1, entity.yaw, entity.pitch);
 +                // worldserver1.getTravelAgent().a(entity, f);
 +                if (portal) {
@@ -769,10 +771,10 @@
 +                    }
 +                }
 +                // worldserver1.addEntity(entity);
-                 worldserver1.entityJoinedWorld(entity, false);
-             }
++                worldserver1.entityJoinedWorld(entity, false);
++            }
  
-@@ -553,11 +966,23 @@
+             worldserver.methodProfiler.e();
          }
  
          entity.spawnIn(worldserver1);
@@ -797,7 +799,7 @@
              this.v = 0;
          }
  
-@@ -570,6 +995,25 @@
+@@ -570,6 +989,25 @@
  
      }
  
@@ -820,10 +822,10 @@
 +    }
 +    // CraftBukkit end
 +
-     public void a(Packet<?> packet, int i) {
-         for (int j = 0; j < this.players.size(); ++j) {
-             EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
-@@ -670,6 +1114,7 @@
+     public void a(Packet<?> packet, DimensionManager dimensionmanager) {
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
+@@ -670,6 +1108,7 @@
              entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, b0));
          }
  
@@ -831,18 +833,9 @@
          this.server.getCommandDispatcher().a(entityplayer);
      }
  
-@@ -678,7 +1123,7 @@
-     }
- 
-     public boolean isOp(GameProfile gameprofile) {
--        return this.operators.d(gameprofile) || this.server.J() && this.server.worldServer[0].getWorldData().u() && this.server.I().equalsIgnoreCase(gameprofile.getName()) || this.u;
-+        return this.operators.d(gameprofile) || this.server.J() && this.server.worlds.get(0).getWorldData().u() && this.server.I().equalsIgnoreCase(gameprofile.getName()) || this.u; // CraftBukkit
-     }
- 
-     @Nullable
-@@ -702,6 +1147,12 @@
-         for (int j = 0; j < this.players.size(); ++j) {
-             EntityPlayer entityplayer = (EntityPlayer) this.players.get(j);
+@@ -702,6 +1141,12 @@
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
  
 +            // CraftBukkit start - Test if player receiving packet can see the source of the packet
 +            if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
@@ -850,19 +843,19 @@
 +            }
 +            // CraftBukkit end
 +
-             if (entityplayer != entityhuman && entityplayer.dimension == i) {
+             if (entityplayer != entityhuman && entityplayer.dimension == dimensionmanager) {
                  double d4 = d0 - entityplayer.locX;
                  double d5 = d1 - entityplayer.locY;
-@@ -741,7 +1192,7 @@
+@@ -741,7 +1186,7 @@
      public void reloadWhitelist() {}
  
      public void b(EntityPlayer entityplayer, WorldServer worldserver) {
--        WorldBorder worldborder = this.server.worldServer[0].getWorldBorder();
+-        WorldBorder worldborder = this.server.getWorldServer(DimensionManager.OVERWORLD).getWorldBorder();
 +        WorldBorder worldborder = entityplayer.world.getWorldBorder(); // CraftBukkit
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutWorldBorder(worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction.INITIALIZE));
          entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle")));
-@@ -749,16 +1200,21 @@
+@@ -749,16 +1194,21 @@
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutSpawnPosition(blockposition));
          if (worldserver.isRaining()) {
@@ -888,16 +881,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(entityplayer.inventory.itemInHandIndex));
      }
  
-@@ -771,7 +1227,7 @@
-     }
- 
-     public String[] getSeenPlayers() {
--        return this.server.worldServer[0].getDataManager().getPlayerFileData().getSeenPlayers();
-+        return this.server.worlds.get(0).getDataManager().getPlayerFileData().getSeenPlayers(); // CraftBukkit
-     }
- 
-     public boolean getHasWhitelist() {
-@@ -820,26 +1276,39 @@
+@@ -820,26 +1270,39 @@
      }
  
      public void u() {
@@ -941,8 +925,8 @@
 +        // CraftBukkit end
  
          if (serverstatisticmanager == null) {
-             File file = new File(this.server.a(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "stats");
-@@ -854,7 +1323,7 @@
+             File file = new File(this.server.getWorldServer(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "stats");
+@@ -854,7 +1317,7 @@
              }
  
              serverstatisticmanager = new ServerStatisticManager(this.server, file1);
@@ -951,7 +935,7 @@
          }
  
          return serverstatisticmanager;
-@@ -862,14 +1331,14 @@
+@@ -862,14 +1325,14 @@
  
      public AdvancementDataPlayer h(EntityPlayer entityplayer) {
          UUID uuid = entityplayer.getUniqueID();
@@ -959,7 +943,7 @@
 +        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementData(); // CraftBukkit
  
          if (advancementdataplayer == null) {
-             File file = new File(this.server.a(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "advancements");
+             File file = new File(this.server.getWorldServer(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "advancements");
              File file1 = new File(file, uuid + ".json");
  
              advancementdataplayer = new AdvancementDataPlayer(this.server, file1, entityplayer);
@@ -968,20 +952,7 @@
          }
  
          advancementdataplayer.a(entityplayer);
-@@ -882,8 +1351,10 @@
-             WorldServer[] aworldserver = this.server.worldServer;
-             int j = aworldserver.length;
- 
--            for (int k = 0; k < j; ++k) {
--                WorldServer worldserver = aworldserver[k];
-+            // CraftBukkit start
-+            for (int k = 0; k < server.worlds.size(); ++k) {
-+                WorldServer worldserver = server.worlds.get(0);
-+                // CraftBukkit end
- 
-                 if (worldserver != null) {
-                     worldserver.getPlayerChunkMap().a(i);
-@@ -908,13 +1379,20 @@
+@@ -905,13 +1368,20 @@
      }
  
      public void reload() {

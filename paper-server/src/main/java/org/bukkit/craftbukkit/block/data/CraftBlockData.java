@@ -19,6 +19,7 @@ import net.minecraft.server.EnumDirection;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IBlockState;
 import net.minecraft.server.INamable;
+import net.minecraft.server.IRegistry;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -310,7 +311,7 @@ public class CraftBlockData implements BlockData {
     private static IBlockState<?> getState(Class<? extends Block> block, String name, boolean optional) {
         IBlockState<?> state = null;
 
-        for (Block instance : (Iterable<Block>) Block.REGISTRY) { // Eclipse fail
+        for (Block instance : (Iterable<Block>) IRegistry.BLOCK) { // Eclipse fail
             if (instance.getClass() == block) {
                 if (state == null) {
                     state = instance.getStates().a(name);
@@ -369,10 +370,13 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.server.BlockCobbleWall.class, org.bukkit.craftbukkit.block.impl.CraftCobbleWall::new);
         register(net.minecraft.server.BlockCocoa.class, org.bukkit.craftbukkit.block.impl.CraftCocoa::new);
         register(net.minecraft.server.BlockCommand.class, org.bukkit.craftbukkit.block.impl.CraftCommand::new);
+        register(net.minecraft.server.BlockConduit.class, org.bukkit.craftbukkit.block.impl.CraftConduit::new);
+        register(net.minecraft.server.BlockCoralDead.class, org.bukkit.craftbukkit.block.impl.CraftCoralDead::new);
         register(net.minecraft.server.BlockCoralFan.class, org.bukkit.craftbukkit.block.impl.CraftCoralFan::new);
         register(net.minecraft.server.BlockCoralFanAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanAbstract::new);
         register(net.minecraft.server.BlockCoralFanWall.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWall::new);
         register(net.minecraft.server.BlockCoralFanWallAbstract.class, org.bukkit.craftbukkit.block.impl.CraftCoralFanWallAbstract::new);
+        register(net.minecraft.server.BlockCoralPlant.class, org.bukkit.craftbukkit.block.impl.CraftCoralPlant::new);
         register(net.minecraft.server.BlockCrops.class, org.bukkit.craftbukkit.block.impl.CraftCrops::new);
         register(net.minecraft.server.BlockDaylightDetector.class, org.bukkit.craftbukkit.block.impl.CraftDaylightDetector::new);
         register(net.minecraft.server.BlockDirtSnow.class, org.bukkit.craftbukkit.block.impl.CraftDirtSnow::new);
@@ -442,6 +446,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.server.BlockStepAbstract.class, org.bukkit.craftbukkit.block.impl.CraftStepAbstract::new);
         register(net.minecraft.server.BlockStoneButton.class, org.bukkit.craftbukkit.block.impl.CraftStoneButton::new);
         register(net.minecraft.server.BlockStructure.class, org.bukkit.craftbukkit.block.impl.CraftStructure::new);
+        register(net.minecraft.server.BlockTNT.class, org.bukkit.craftbukkit.block.impl.CraftTNT::new);
         register(net.minecraft.server.BlockTallPlantFlower.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantFlower::new);
         register(net.minecraft.server.BlockTallPlantShearable.class, org.bukkit.craftbukkit.block.impl.CraftTallPlantShearable::new);
         register(net.minecraft.server.BlockTallSeaGrass.class, org.bukkit.craftbukkit.block.impl.CraftTallSeaGrass::new);
@@ -473,7 +478,7 @@ public class CraftBlockData implements BlockData {
             try {
                 // Material provided, force that material in
                 if (block != null) {
-                    data = Block.REGISTRY.b(block) + data;
+                    data = IRegistry.BLOCK.getKey(block) + data;
                 }
 
                 StringReader reader = new StringReader(data);

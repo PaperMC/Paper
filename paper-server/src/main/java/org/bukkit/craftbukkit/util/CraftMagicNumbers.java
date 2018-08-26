@@ -17,6 +17,7 @@ import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.Block;
 import net.minecraft.server.ChatDeserializer;
 import net.minecraft.server.IBlockData;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
@@ -74,19 +75,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
 
     static {
-        for (Block block : (Iterable<Block>) Block.REGISTRY) { // Eclipse fail
-            BLOCK_MATERIAL.put(block, Material.getMaterial(Block.REGISTRY.b(block).getKey().toUpperCase(Locale.ROOT)));
+        for (Block block : (Iterable<Block>) IRegistry.BLOCK) { // Eclipse fail
+            BLOCK_MATERIAL.put(block, Material.getMaterial(IRegistry.BLOCK.getKey(block).getKey().toUpperCase(Locale.ROOT)));
         }
 
-        for (Item item : (Iterable<Item>) Item.REGISTRY) { // Eclipse fail
-            ITEM_MATERIAL.put(item, Material.getMaterial(Item.REGISTRY.b(item).getKey().toUpperCase(Locale.ROOT)));
+        for (Item item : (Iterable<Item>) IRegistry.ITEM) { // Eclipse fail
+            ITEM_MATERIAL.put(item, Material.getMaterial(IRegistry.ITEM.getKey(item).getKey().toUpperCase(Locale.ROOT)));
         }
 
         for (Material material : Material.values()) {
             MinecraftKey key = key(material);
             // TODO: only register if block/item?
-            MATERIAL_ITEM.put(material, Item.REGISTRY.get(key));
-            MATERIAL_BLOCK.put(material, Block.REGISTRY.get(key));
+            MATERIAL_ITEM.put(material, IRegistry.ITEM.get(key));
+            MATERIAL_BLOCK.put(material, IRegistry.BLOCK.get(key));
         }
     }
 
@@ -144,7 +145,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftBlockData.fromData(getBlock(material, data));
     }
 
-    public static final int DATA_VERSION = 1519;
+    public static final int DATA_VERSION = 1628;
 
     @Override
     public int getDataVersion() {

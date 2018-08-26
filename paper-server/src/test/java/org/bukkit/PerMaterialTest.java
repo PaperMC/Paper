@@ -60,7 +60,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isBlock() {
         if (material != Material.AIR && material != Material.CAVE_AIR && material != Material.VOID_AIR) {
-            assertThat(material.isBlock(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().isAir())));
+            assertThat(material.isBlock(), is(not(CraftMagicNumbers.getBlock(material) == null)));
         }
     }
 
@@ -191,7 +191,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertTrue(material.isBlock());
         } else {
-            assertThat(material.isBlock(), is(equalTo(CraftMagicNumbers.getBlock(material) != Blocks.AIR)));
+            assertThat(material.isBlock(), is(equalTo(CraftMagicNumbers.getBlock(material) != null)));
         }
     }
 
@@ -226,7 +226,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void testBlastResistance() {
         if (material.isBlock()) {
-            assertThat(material.getBlastResistance(), is(CraftMagicNumbers.getBlock(material).k())); // PAIL getDurability
+            assertThat(material.getBlastResistance(), is(CraftMagicNumbers.getBlock(material).getDurability()));
         }
     }
 }

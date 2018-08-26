@@ -43,26 +43,26 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
     @Override
     public void setLootTable(LootTable table) {
-        getHandle().bI = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey()); // PAIL rename lootTableKey
+        getHandle().lootTableKey = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
     }
 
     @Override
     public LootTable getLootTable() {
-        if (getHandle().bI == null) {
-            getHandle().bI = getHandle().getLootTable(); // Restore to entity default
+        if (getHandle().lootTableKey == null) {
+            getHandle().lootTableKey = getHandle().getLootTable();
         }
 
-        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().bI); // PAIL rename lootTableKey
+        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().lootTableKey);
         return Bukkit.getLootTable(key);
     }
 
     @Override
     public void setSeed(long seed) {
-        getHandle().bJ = seed; // PAIL rename lootTableSeed
+        getHandle().lootTableSeed = seed;
     }
 
     @Override
     public long getSeed() {
-        return getHandle().bJ; // PAIL rename lootTableSeed
+        return getHandle().lootTableSeed;
     }
 }

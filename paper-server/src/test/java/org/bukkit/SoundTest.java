@@ -1,7 +1,7 @@
 package org.bukkit;
 
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.SoundEffect;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -20,7 +20,7 @@ public class SoundTest {
 
     @Test
     public void testReverse() {
-        for (MinecraftKey effect : SoundEffect.a.keySet()) {
+        for (MinecraftKey effect : IRegistry.SOUND_EVENT.keySet()) {
             assertNotNull(effect + "", Sound.valueOf(effect.getKey().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)));
         }
     }

@@ -12,7 +12,6 @@ import net.minecraft.server.IInventory;
 import net.minecraft.server.LootTable;
 import net.minecraft.server.LootTableInfo;
 import net.minecraft.server.WorldServer;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -72,24 +71,24 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         Location loc = context.getLocation();
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
-        LootTableInfo.a builder = new LootTableInfo.a(handle); // PAIL rename Builder
-        builder.a(context.getLuck()); // PAIL rename withLuck, luck
+        LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
+        builder.luck(context.getLuck());
 
         if (context.getLootedEntity() != null) {
             Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
-            builder.a(nmsLootedEntity); // PAIL Rename withLootedEntity, lootedEntity
-            builder.a(DamageSource.GENERIC); // PAIL rename withDamageSource, damageSource
-            builder.a(new BlockPosition(nmsLootedEntity)); // PAIL rename withPosition, position
+            builder.entity(nmsLootedEntity);
+            builder.damageSource(DamageSource.GENERIC);
+            builder.position(new BlockPosition(nmsLootedEntity));
         }
 
         if (context.getKiller() != null) {
             EntityHuman nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
-            builder.a(nmsKiller); // PAIL rename withKiller, killer
+            builder.killer(nmsKiller);
             // If there is a player killer, damage source should reflect that in case loot tables use that information
-            builder.a(DamageSource.playerAttack(nmsKiller)); // PAIL rename withDamageSource, damageSource
+            builder.damageSource(DamageSource.playerAttack(nmsKiller));
         }
 
-        return builder.a(); // PAIL rename build
+        return builder.build();
     }
 
     @Override

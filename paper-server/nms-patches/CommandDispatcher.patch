@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/CommandDispatcher.java
 +++ b/net/minecraft/server/CommandDispatcher.java
-@@ -26,12 +26,21 @@
+@@ -27,12 +27,21 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -22,8 +22,8 @@
 +    public final CommandDispatcher init(boolean flag) {
          CommandAdvancement.a(this.b);
          CommandExecute.a(this.b);
-         CommmandBossBar.a(this.b);
-@@ -100,6 +109,11 @@
+         CommandBossBar.a(this.b);
+@@ -102,6 +111,11 @@
          this.b.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
              CommandDispatcher.a.warn("Ambiguity between arguments {} and {} with inputs: {}", this.b.getPath(commandnode1), this.b.getPath(commandnode2), collection);
          });
@@ -35,7 +35,7 @@
          this.b.setConsumer((commandcontext, flag, i) -> {
              ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag, i);
          });
-@@ -114,8 +128,49 @@
+@@ -116,7 +130,47 @@
  
      }
  
@@ -75,18 +75,15 @@
 +    }
 +
      public int a(CommandListenerWrapper commandlistenerwrapper, String s) {
--        String s1 = s;
 +        return this.a(commandlistenerwrapper, s, s);
 +    }
 +
 +    public int a(CommandListenerWrapper commandlistenerwrapper, String s, String label) {
-+        VanillaCommandWrapper.WorldRescueContext rescue = new VanillaCommandWrapper.WorldRescueContext().start(commandlistenerwrapper.getWorld());
-+        String s1 = label;
 +        // CraftBukkit end
+         StringReader stringreader = new StringReader(s);
  
-         if (s.startsWith("/")) {
-             s = s.substring(1);
-@@ -126,7 +181,6 @@
+         if (stringreader.canRead() && stringreader.peek() == 47) {
+@@ -128,7 +182,6 @@
          byte b0;
  
          try {
@@ -94,7 +91,7 @@
              ChatComponentText chatcomponenttext;
  
              try {
-@@ -135,65 +189,95 @@
+@@ -137,52 +190,56 @@
                  return i;
              } catch (CommandException commandexception) {
                  commandlistenerwrapper.sendFailureMessage(commandexception.a());
@@ -136,7 +133,7 @@
 +                    chatmessage.getChatModifier().setColor(EnumChatFormat.RED);
 +                    chatcomponenttext.addSibling(chatmessage);
 +                    chatcomponenttext.getChatModifier().setColor(EnumChatFormat.GRAY);
-+                    chatcomponenttext.getChatModifier().setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s1));
++                    chatcomponenttext.getChatModifier().setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
 +                    commandlistenerwrapper.sendFailureMessage(chatcomponenttext);
                  }
  
@@ -177,10 +174,8 @@
 +            }
          } finally {
              commandlistenerwrapper.getServer().methodProfiler.e();
-+            rescue.end(); // CraftBukkit
          }
- 
-         return b0;
+@@ -191,11 +248,36 @@
      }
  
      public void a(EntityPlayer entityplayer) {

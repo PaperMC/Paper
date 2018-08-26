@@ -134,7 +134,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkProviderServer().getChunkAt(x, z).bukkitChunk;
+        return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -182,7 +182,7 @@ public class CraftWorld implements World {
             return false;
         }
 
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getLoadedChunkAt(x, z);
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z, false, false);
         if (chunk != null) {
             world.getChunkProviderServer().unload(chunk);
         }
@@ -199,7 +199,7 @@ public class CraftWorld implements World {
     }
 
     private boolean unloadChunk0(int x, int z, boolean save) {
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkIfLoaded(x, z);
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z, false, false);
         if (chunk == null) {
             return true;
         }
@@ -216,9 +216,7 @@ public class CraftWorld implements World {
         final long chunkKey = ChunkCoordIntPair.a(x, z);
         world.getChunkProviderServer().unloadQueue.remove(chunkKey);
 
-        net.minecraft.server.Chunk chunk = null;
-
-        chunk = Futures.getUnchecked(world.getChunkProviderServer().generateChunk(x, z, true));
+        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().generateChunk(x, z);
         PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
         if (playerChunk != null) {
             playerChunk.chunk = chunk;
@@ -252,17 +250,12 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkInUse(int x, int z) {
-        return world.getPlayerChunkMap().isChunkInUse(x, z);
+        return world.getPlayerChunkMap().isChunkInUse(x, z) || world.f(x, z);
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
         chunkLoadCount++;
-        if (generate) {
-            // Use the default variant of loadChunk when generate == true.
-            return world.getChunkProviderServer().getChunkAt(x, z) != null;
-        }
-
-        return world.getChunkProviderServer().getOrLoadChunkAt(x, z) != null;
+        return world.getChunkProviderServer().getChunkAt(x, z, true, generate) != null;
     }
 
     public boolean isChunkLoaded(Chunk chunk) {
@@ -1497,13 +1490,13 @@ public class CraftWorld implements World {
             return null;
         }
 
-        switch (value.e()) {
+        switch (value.getType()) {
             case BOOLEAN_VALUE:
                 return rule.getType().cast(value.b());
             case NUMERICAL_VALUE:
                 return rule.getType().cast(value.c());
             default:
-                throw new IllegalArgumentException("Invalid GameRule type (" + value.e() + ") for GameRule " + rule.getName());
+                throw new IllegalArgumentException("Invalid GameRule type (" + value.getType() + ") for GameRule " + rule.getName());
         }
     }
 

@@ -11,9 +11,9 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import net.minecraft.server.Block;
 import net.minecraft.server.EntityTypes;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.RegistryMaterials;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public enum CraftStatistic {
@@ -75,8 +75,14 @@ public enum CraftStatistic {
     CHEST_OPENED(StatisticList.OPEN_CHEST),
     SLEEP_IN_BED(StatisticList.SLEEP_IN_BED),
     SHULKER_BOX_OPENED(StatisticList.OPEN_SHULKER_BOX),
-    TIME_SINCE_REST(StatisticList.n),
-    SWIM_ONE_CM(StatisticList.SWIM_ONE_CM);
+    TIME_SINCE_REST(StatisticList.TIME_SINCE_REST),
+    SWIM_ONE_CM(StatisticList.SWIM_ONE_CM),
+    DAMAGE_DEALT_ABSORBED(StatisticList.DAMAGE_DEALT_ABSORBED),
+    DAMAGE_DEALT_RESISTED(StatisticList.DAMAGE_DEALT_RESISTED),
+    DAMAGE_BLOCKED_BY_SHIELD(StatisticList.DAMAGE_BLOCKED_BY_SHIELD),
+    DAMAGE_ABSORBED(StatisticList.DAMAGE_ABSORBED),
+    DAMAGE_RESISTED(StatisticList.DAMAGE_RESISTED),
+    CLEAN_SHULKER_BOX(StatisticList.CLEAN_SHULKER_BOX);
     private final MinecraftKey minecraftKey;
     private final org.bukkit.Statistic bukkit;
     private static final BiMap<MinecraftKey, org.bukkit.Statistic> statistics;
@@ -98,10 +104,10 @@ public enum CraftStatistic {
     }
 
     public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.server.Statistic<?> statistic) {
-        RegistryMaterials statRegistry = statistic.a().a();
-        MinecraftKey nmsKey = StatisticList.REGISTRY.b(statistic.a());
+        IRegistry statRegistry = statistic.a().a();
+        MinecraftKey nmsKey = IRegistry.STATS.getKey(statistic.a());
 
-        if (statRegistry == StatisticList.REGISTRY_CUSTOM) {
+        if (statRegistry == IRegistry.CUSTOM_STAT) {
             nmsKey = (MinecraftKey) statistic.b();
         }
 
@@ -145,7 +151,7 @@ public enum CraftStatistic {
 
     public static net.minecraft.server.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType entity) {
         if (entity.getName() != null) {
-            EntityTypes<?> nmsEntity = EntityTypes.REGISTRY.get(new MinecraftKey(entity.getName()));
+            EntityTypes<?> nmsEntity = IRegistry.ENTITY_TYPE.get(new MinecraftKey(entity.getName()));
 
             if (stat == org.bukkit.Statistic.KILL_ENTITY) {
                 return net.minecraft.server.StatisticList.ENTITY_KILLED.b(nmsEntity);

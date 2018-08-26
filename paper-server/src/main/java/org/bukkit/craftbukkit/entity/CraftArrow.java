@@ -7,8 +7,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.projectiles.ProjectileSource;
 
 public class CraftArrow extends AbstractProjectile implements Arrow {
@@ -39,10 +39,10 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
     }
 
     public void setShooter(ProjectileSource shooter) {
-        if (shooter instanceof LivingEntity) {
-            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
+        if (shooter instanceof Entity) {
+            getHandle().setShooter(((CraftEntity) shooter).getHandle());
         } else {
-            getHandle().shooter = null;
+            getHandle().setShooter(null);
         }
         getHandle().projectileSource = shooter;
     }

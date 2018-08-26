@@ -192,7 +192,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (iinventory instanceof ITileInventory) {
             if (iinventory instanceof TileEntity) {
                 TileEntity te = (TileEntity) iinventory;
-                if (!te.u()) { // PAIL rename hasWorld
+                if (!te.hasWorld()) {
                     te.setWorld(getHandle().world);
                 }
             }

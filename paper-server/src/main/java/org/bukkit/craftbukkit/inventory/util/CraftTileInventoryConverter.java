@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory.util;
 
+import net.minecraft.server.DimensionManager;
 import net.minecraft.server.ITileInventory;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntityBeacon;
@@ -46,7 +47,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         @Override
         public ITileInventory getTileEntity() {
             TileEntityFurnace furnace = new TileEntityFurnace();
-            furnace.setWorld(MinecraftServer.getServer().getWorldServer(0)); // TODO: customize this if required
+            furnace.setWorld(MinecraftServer.getServer().getWorldServer(DimensionManager.OVERWORLD)); // TODO: customize this if required
             return furnace;
         }
 

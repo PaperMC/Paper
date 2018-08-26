@@ -81,7 +81,7 @@ public class CraftEventFactory {
         WorldServer worldServer = world.getHandle();
         int spawnSize = Bukkit.getServer().getSpawnRadius();
 
-        if (world.getHandle().dimension != 0) return true;
+        if (world.getHandle().dimension != DimensionManager.OVERWORLD) return true;
         if (spawnSize <= 0) return true;
         if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().isEmpty()) return true;
         if (player.isOp()) return true;
@@ -889,12 +889,11 @@ public class CraftEventFactory {
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
     }
 
-    public static void handleEditBookEvent(EntityPlayer player, ItemStack newBookItem) {
-        int itemInHandIndex = player.inventory.itemInHandIndex;
+    public static ItemStack handleEditBookEvent(EntityPlayer player, EnumItemSlot slot, ItemStack itemInHand, ItemStack newBookItem) {
+        int itemInHandIndex = (slot == EnumItemSlot.MAINHAND) ? player.inventory.itemInHandIndex : -1;
 
-        PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), player.inventory.itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(player.inventory.getItemInHand()), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.getItem() == Items.WRITTEN_BOOK);
+        PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(itemInHand), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.getItem() == Items.WRITTEN_BOOK);
         player.world.getServer().getPluginManager().callEvent(editBookEvent);
-        ItemStack itemInHand = player.inventory.getItem(itemInHandIndex);
 
         // If they've got the same item in their hand, it'll need to be updated.
         if (itemInHand != null && itemInHand.getItem() == Items.WRITABLE_BOOK) {
@@ -909,11 +908,9 @@ public class CraftEventFactory {
                 }
                 CraftItemStack.setItemMeta(itemInHand, meta);
             }
-
-            // Client will have updated its idea of the book item; we need to overwrite that
-            Slot slot = player.activeContainer.getSlot(player.inventory, itemInHandIndex);
-            player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, slot.rawSlotIndex, itemInHand));
         }
+
+        return itemInHand;
     }
 
     private static IChatBaseComponent stripEvents(IChatBaseComponent c) {
@@ -925,7 +922,7 @@ public class CraftEventFactory {
         c.setChatModifier(modi);
         if (c instanceof ChatMessage) {
             ChatMessage cm = (ChatMessage) c;
-            Object[] oo = cm.i();
+            Object[] oo = cm.l();
             for (int i = 0; i < oo.length; i++) {
                 Object o = oo[i];
                 if (o instanceof IChatBaseComponent) {
