@@ -53,8 +53,17 @@ public class MobSpawnerPhantom implements MobSpawner {
                                             int k = 1 + random.nextInt(difficultydamagescaler.a().a() + 1);
 
                                             for (int l = 0; l < k; ++l) {
+                                                // Paper start
+                                                com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent event = new com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent(MCUtil.toLocation(worldserver, blockposition1), ((EntityPlayer) entityhuman).getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
+                                                if (!event.callEvent()) {
+                                                    if (event.shouldAbortSpawn()) {
+                                                        break;
+                                                    }
+                                                    continue;
+                                                }
+                                                // Paper end
                                                 EntityPhantom entityphantom = (EntityPhantom) EntityTypes.PHANTOM.a((World) worldserver);
-
+                                                entityphantom.spawningEntity = entityhuman.uniqueID; // Paper
                                                 entityphantom.setPositionRotation(blockposition1, 0.0F, 0.0F);
                                                 groupdataentity = entityphantom.prepare(worldserver, difficultydamagescaler, EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
                                                 worldserver.addAllEntities(entityphantom, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
