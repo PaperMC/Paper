@@ -1,4 +1,4 @@
-From 74dcc240e66bd353b4e94b30769b8dec97ef41ea Mon Sep 17 00:00:00 2001
+From d1fe144a1457bb44d3e453bf5add1a93aea47d4a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 15:19:49 -0400
 Subject: [PATCH] LootTable API
@@ -10,105 +10,6 @@ auto replenish for a player.
 
 Provides methods to determine players looted state for an object
 
-diff --git a/src/main/java/com/destroystokyo/paper/loottable/Lootable.java b/src/main/java/com/destroystokyo/paper/loottable/Lootable.java
-new file mode 100644
-index 000000000..7dd3955b5
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/loottable/Lootable.java
-@@ -0,0 +1,93 @@
-+package com.destroystokyo.paper.loottable;
-+
-+import org.bukkit.Bukkit;
-+import org.bukkit.NamespacedKey;
-+import org.bukkit.loot.LootTable;
-+
-+/**
-+ * Defines an object that has a Loot Table and seed associated with it.
-+ * <p>
-+ * How the Loot Table and seed are used may vary based on Minecraft Versions
-+ * and what type of object is using the Loot Table
-+ *
-+ * @deprecated Use {@link org.bukkit.loot.Lootable}
-+ */
-+@Deprecated
-+public interface Lootable extends org.bukkit.loot.Lootable {
-+
-+    /**
-+     * Gets the name of the Loot Table to be used in the World Folder
-+     *
-+     * @return The name, or null if no loot table exists
-+     * @deprecated Use {@link org.bukkit.loot.Lootable#getLootTable()}
-+     */
-+    @Deprecated
-+    default String getLootTableName() {
-+        LootTable lootTable = getLootTable();
-+        return lootTable != null && lootTable.getKey() != null ? lootTable.getKey().toString() : null;
-+    }
-+
-+    /**
-+     * Sets the name of the Loot Table to be used in the World Folder
-+     * Will use a random seed (0)
-+     *
-+     * @param name name in either foo or minecraft:foo format
-+     * @return The previous Loot Table before the change
-+     * @deprecated Use {@link org.bukkit.loot.Lootable#setLootTable(LootTable)}
-+     */
-+    @Deprecated
-+    default String setLootTable(String name) {
-+        return setLootTable(name, 0);
-+    }
-+
-+    /**
-+     * Sets the name of the Loot Table to be used in the World Folder
-+     * Uses supplied Seed
-+     *
-+     * @param name name in either foo or minecraft:foo format
-+     * @param seed seed for the loot table. If 0, seed will be random
-+     * @return The previous Loot Table before the change
-+     * @deprecated Use {@link org.bukkit.loot.Lootable#setSeed(long)}
-+     */
-+    @Deprecated
-+    default String setLootTable(String name, long seed) {
-+        String prev = getLootTableName();
-+        LootTable lootTable = Bukkit.getLootTable(NamespacedKey.minecraft(name));
-+        setLootTable(lootTable, seed);
-+        return prev;
-+    }
-+
-+    /**
-+     * Gets the current seed associated to the Loot Table on this object
-+     *
-+     * @return The seed, or 0 for random
-+     * @deprecated Use {@link org.bukkit.loot.Lootable#getSeed()}
-+     */
-+    @Deprecated
-+    default long getLootTableSeed() {
-+        return getSeed();
-+    }
-+
-+    /**
-+     * Changes the current seed associated with the Loot Table on this object.
-+     * <p>
-+     * The seed will have no affect if this object does not have a Loot Table
-+     * associated with it.
-+     *
-+     * @param seed The seed to use, or 0 for random
-+     * @return The previous seed
-+     * @throws IllegalStateException If called when this object does not have a loot table
-+     * @deprecated Use {@link org.bukkit.loot.Lootable#setSeed(long)}
-+     */
-+    @Deprecated
-+    default long setLootTableSeed(long seed) {
-+        final String lootTableName = getLootTableName();
-+        if (lootTableName == null) {
-+            throw new IllegalStateException("This object does not currently have a Loot Table.");
-+        }
-+
-+        long prev = getSeed();
-+        setSeed(seed);
-+        return prev;
-+    }
-+}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
 new file mode 100644
 index 000000000..9095df616
@@ -153,13 +54,14 @@ index 000000000..a389f74c6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 new file mode 100644
-index 000000000..cde999ef4
+index 000000000..2fc3e8a1c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,112 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Player;
++import org.bukkit.loot.Lootable;
 +
 +import java.util.UUID;
 +
@@ -449,10 +351,10 @@ index 9ea403e6f..238d118f7 100644
 +public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
  }
 diff --git a/src/main/java/org/bukkit/loot/Lootable.java b/src/main/java/org/bukkit/loot/Lootable.java
-index f4b3d0215..98a472055 100644
+index f4b3d0215..9f1c830f4 100644
 --- a/src/main/java/org/bukkit/loot/Lootable.java
 +++ b/src/main/java/org/bukkit/loot/Lootable.java
-@@ -33,6 +33,31 @@ public interface Lootable {
+@@ -33,6 +33,34 @@ public interface Lootable {
       */
      LootTable getLootTable();
  
@@ -463,7 +365,10 @@ index f4b3d0215..98a472055 100644
 +     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
 +     * @param seed the seed to used to generate loot. Default is 0.
 +     */
-+    void setLootTable(LootTable table, long seed);
++    default void setLootTable(LootTable table, long seed) {
++        setLootTable(table);
++        setSeed(seed);
++    }
 +
 +    /**
 +     * Returns whether or not this object has a Loot Table

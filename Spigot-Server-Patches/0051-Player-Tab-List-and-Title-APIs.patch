@@ -1,45 +1,11 @@
-From 5e67ca7f673b8643db71ce3c7923352e31be10b1 Mon Sep 17 00:00:00 2001
+From 5e5577be71456db68a07895d330eb51ef93d542a Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Thu, 3 Mar 2016 02:32:10 -0600
 Subject: [PATCH] Player Tab List and Title APIs
 
 
-diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-index d7c583a71..7096799c5 100644
---- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-+++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerListHeaderFooter.java
-@@ -6,6 +6,7 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
- 
-     public IChatBaseComponent a; // PAIL
-     public IChatBaseComponent b; // PAIL
-+    public net.md_5.bungee.api.chat.BaseComponent[] header, footer; // Paper
- 
-     public PacketPlayOutPlayerListHeaderFooter() {}
- 
-@@ -15,8 +16,19 @@ public class PacketPlayOutPlayerListHeaderFooter implements Packet<PacketListene
-     }
- 
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
--        packetdataserializer.a(this.a);
--        packetdataserializer.a(this.b);
-+        // Paper start
-+        if (this.header != null) {
-+            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.header));
-+        } else {
-+            packetdataserializer.a(this.a);
-+        }
-+
-+        if (this.footer != null) {
-+            packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.footer));
-+        } else {
-+            packetdataserializer.a(this.b);
-+        }
-+        // Paper end
-     }
- 
-     public void a(PacketListenerPlayOut packetlistenerplayout) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
-index 7b18c1640..900bd8357 100644
+index 7b18c16402..900bd83570 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
 @@ -11,6 +11,18 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
@@ -77,7 +43,7 @@ index 7b18c1640..900bd8357 100644
  
          if (this.a == PacketPlayOutTitle.EnumTitleAction.TIMES) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 02d2c00c0..0beb10f82 100644
+index 3cc16b6923..eceba690af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,5 +1,6 @@
@@ -87,17 +53,15 @@ index 02d2c00c0..0beb10f82 100644
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableSet;
  import com.google.common.io.BaseEncoding;
-@@ -203,6 +204,85 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -203,6 +204,83 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
 +    // Paper start
 +    @Override
 +    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
-+        PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
-+        packet.header = header;
-+        packet.footer = footer;
-+        getHandle().playerConnection.sendPacket(packet);
++        setPlayerListHeader(header == null ? null : net.md_5.bungee.chat.ComponentSerializer.toString(header));
++        setPlayerListFooter(footer == null ? null : net.md_5.bungee.chat.ComponentSerializer.toString(footer));
 +    }
 +
 +    @Override

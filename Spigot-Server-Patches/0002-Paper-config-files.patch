@@ -1,4 +1,4 @@
-From cb37d1deb3834306189988414d2c44bd0593dfc1 Mon Sep 17 00:00:00 2001
+From 2ebf973ac944be514fab4ba6124b066c221a05ef Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,7 +6,7 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000..e8f7b7292d
+index 0000000000..961966e169
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +1,237 @@
@@ -239,7 +239,7 @@ index 0000000000..e8f7b7292d
 +
 +        MinecraftServer console = MinecraftServer.getServer();
 +        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
-+        for (WorldServer world : console.worlds) {
++        for (WorldServer world : console.getWorlds()) {
 +            world.paperConfig.init();
 +        }
 +        console.server.reloadCount++;
@@ -432,7 +432,7 @@ index 0000000000..104abab84b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000..b8a6161d84
+index 0000000000..a738657394
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +1,67 @@
@@ -493,7 +493,7 @@ index 0000000000..b8a6161d84
 +        return (float) getDouble(path, (double) def);
 +    }
 +
-+    private <T> List getList(String path, T def) {
++    private <T> List<T> getList(String path, List<T> def) {
 +        config.addDefault("world-settings.default." + path, def);
 +        return (List<T>) config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path));
 +    }
@@ -504,7 +504,7 @@ index 0000000000..b8a6161d84
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 5ff1e96861..3706e44a34 100644
+index 38720a87da..efa738d4ec 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -192,6 +192,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -519,7 +519,7 @@ index 5ff1e96861..3706e44a34 100644
              DedicatedServer.LOGGER.info("Generating keypair");
              this.a(MinecraftEncryption.b());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 55bf00be93..a1050912bc 100644
+index ef9f0e8834..8997cf84a4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -135,9 +135,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
@@ -536,7 +536,7 @@ index 55bf00be93..a1050912bc 100644
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index ad3f891999..ca2a14d7ac 100644
+index c6434ec371..17bfa356f1 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;
@@ -547,8 +547,8 @@ index ad3f891999..ca2a14d7ac 100644
 +import java.util.Set;
  import java.util.UUID;
  import java.util.function.Function;
- import javax.annotation.Nullable;
-@@ -323,4 +325,10 @@ public class EntityTypes<T extends Entity> {
+ import java.util.stream.Stream;
+@@ -333,4 +335,10 @@ public class EntityTypes<T extends Entity> {
              return new EntityTypes(this.a, this.b, this.c, this.d, type);
          }
      }
@@ -560,10 +560,10 @@ index ad3f891999..ca2a14d7ac 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 73bd5e1d74..e1cf1e579a 100644
+index 8d69cea10e..028678379a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -127,6 +127,8 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -134,6 +134,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      private int tickPosition;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -572,27 +572,27 @@ index 73bd5e1d74..e1cf1e579a 100644
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      private boolean guardEntityList; // Spigot
      public static boolean haveWeSilencedAPhysicsCrash;
-@@ -149,6 +151,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -156,6 +158,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
-     protected World(IDataManager idatamanager, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
+     protected World(IDataManager idatamanager, @Nullable PersistentCollection persistentcollection, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
 +        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6ee7c56ada..ed3c23b74e 100644
+index 77cb857989..46a9ff9482 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -745,6 +745,7 @@ public final class CraftServer implements Server {
+@@ -746,6 +746,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
 +        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
-         for (WorldServer world : console.worlds) {
+         for (WorldServer world : console.getWorlds()) {
              world.worldData.setDifficulty(difficulty);
              world.setSpawnFlags(monsters, animals);
-@@ -760,6 +761,7 @@ public final class CraftServer implements Server {
+@@ -761,6 +762,7 @@ public final class CraftServer implements Server {
                  world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
              }
              world.spigotConfig.init(); // Spigot
@@ -600,7 +600,7 @@ index 6ee7c56ada..ed3c23b74e 100644
          }
  
          pluginManager.clearPlugins();
-@@ -767,6 +769,7 @@ public final class CraftServer implements Server {
+@@ -768,6 +770,7 @@ public final class CraftServer implements Server {
          resetRecipes();
          reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
@@ -608,7 +608,7 @@ index 6ee7c56ada..ed3c23b74e 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
          ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -1874,4 +1877,26 @@ public final class CraftServer implements Server {
+@@ -1894,4 +1897,26 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }

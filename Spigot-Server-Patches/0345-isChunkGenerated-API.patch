@@ -1,0 +1,41 @@
+From 007fad111fa8eb2e98ae7de91d7e2c2020b883f5 Mon Sep 17 00:00:00 2001
+From: cswhite2000 <18whitechristop@gmail.com>
+Date: Tue, 21 Aug 2018 19:44:10 -0700
+Subject: [PATCH] isChunkGenerated API
+
+Resolves #1329
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 5e8a20fdd6..5eaef413a6 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -34,6 +34,9 @@ public class ChunkProviderServer implements IChunkProvider {
+     private long lastQueuedSaves = 0L; // Paper
+     private long lastProcessedSaves = 0L; // Paper
+     private long lastSaveStatPrinted = System.currentTimeMillis();
++    public boolean isChunkGenerated(int x, int z) {
++        return this.chunks.containsKey(ChunkCoordIntPair.asLong(x, z)) || ((ChunkRegionLoader) this.chunkLoader).chunkExists(x, z);
++    }
+     // Paper end
+     public final Long2ObjectMap<Chunk> chunks = Long2ObjectMaps.synchronize(new ChunkMap(8192));
+     private Chunk lastChunk;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index ba2e768594..1ccf2a7609 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -605,6 +605,12 @@ public class CraftWorld implements World {
+         return getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+     }
+ 
++    // Paper start
++    public boolean isChunkGenerated(int x, int z) {
++        return this.getHandle().getChunkProviderServer().isChunkGenerated(x, z);
++    }
++    // Paper end
++
+     public ChunkGenerator getGenerator() {
+         return generator;
+     }
+-- 
+2.18.0
+

@@ -1,4 +1,4 @@
-From de1dc6533183312e946c2138dc81c82ce73a9def Mon Sep 17 00:00:00 2001
+From 4c8a9a911c8fa1fbd7920c736e653b5dc3976cb8 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 11:59:48 -0600
 Subject: [PATCH] Optimize explosions
@@ -10,7 +10,7 @@ This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 53921b381..ae4a7cb09 100644
+index aa2f5414b0..bd1ac77aef 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -142,4 +142,10 @@ public class PaperWorldConfig {
@@ -25,10 +25,10 @@ index 53921b381..ae4a7cb09 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index e558a3a57..18c55402d 100644
+index 439d7ef40c..e440d6d631 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
-@@ -136,7 +136,7 @@ public class Explosion {
+@@ -137,7 +137,7 @@ public class Explosion {
                          d8 /= d11;
                          d9 /= d11;
                          d10 /= d11;
@@ -37,7 +37,7 @@ index e558a3a57..18c55402d 100644
                          double d13 = (1.0D - d7) * d12;
  
                          // CraftBukkit start
-@@ -312,4 +312,85 @@ public class Explosion {
+@@ -313,4 +313,85 @@ public class Explosion {
      public List<BlockPosition> getBlocks() {
          return this.blocks;
      }
@@ -124,22 +124,22 @@ index e558a3a57..18c55402d 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1ac8d61cd..96d31f874 100644
+index c47f56ed8d..bdc779ef3b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1029,6 +1029,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1051,6 +1051,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  worldserver.getTracker().updatePlayers();
                  this.methodProfiler.e();
                  this.methodProfiler.e();
 +                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
              }
+         }
  
-             // this.f[i][this.ticks % 100] = SystemUtils.c() - j; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c40ecbc0c..1ca3eef11 100644
+index 93d1449750..9e192b7c04 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
+@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
  
  // CraftBukkit start
  import com.google.common.collect.Maps;
@@ -147,7 +147,7 @@ index c40ecbc0c..1ca3eef11 100644
  import java.util.Map;
  import org.bukkit.Bukkit;
  import org.bukkit.block.BlockState;
-@@ -138,6 +139,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -145,6 +146,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
