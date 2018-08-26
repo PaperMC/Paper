@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import net.minecraft.server.IRegistry;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -27,7 +28,7 @@ public class ParticleTest extends AbstractTestingBase {
 
             Assert.assertNotNull("Missing Bukkit->NMS particle mapping for " + bukkit, CraftParticle.toNMS(bukkit, data));
         }
-        for (net.minecraft.server.Particle nms : (Iterable<net.minecraft.server.Particle<?>>) net.minecraft.server.Particle.REGISTRY) { // Eclipse fail
+        for (net.minecraft.server.Particle nms : (Iterable<net.minecraft.server.Particle<?>>) IRegistry.PARTICLE_TYPE) { // Eclipse fail
             Assert.assertNotNull("Missing NMS->Bukkit particle mapping for " + nms, CraftParticle.toBukkit(nms));
         }
     }

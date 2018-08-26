@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.Paintings;
 
@@ -16,16 +17,17 @@ import org.bukkit.craftbukkit.CraftArt;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import org.bukkit.support.AbstractTestingBase;
 
-public class ArtTest {
+public class ArtTest extends AbstractTestingBase {
     private static final int UNIT_MULTIPLIER = 16;
 
     @Test
     public void verifyMapping() {
         List<Art> arts = Lists.newArrayList(Art.values());
 
-        for (MinecraftKey key : Paintings.a.keySet()) {
-            Paintings enumArt = Paintings.a.get(key);
+        for (MinecraftKey key : IRegistry.MOTIVE.keySet()) {
+            Paintings enumArt = IRegistry.MOTIVE.get(key);
             String name = key.getKey();
             int width = enumArt.b() / UNIT_MULTIPLIER;
             int height = enumArt.c() / UNIT_MULTIPLIER;
@@ -58,7 +60,7 @@ public class ArtTest {
     @Test
     public void testCraftArtToBukkit() {
         Map<Art, Paintings> cache = new EnumMap(Art.class);
-        for (Paintings enumArt : (Iterable<Paintings>) Paintings.a) { // Eclipse fail
+        for (Paintings enumArt : (Iterable<Paintings>) IRegistry.MOTIVE) { // Eclipse fail
             Art art = CraftArt.NotchToBukkit(enumArt);
             assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
             assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));

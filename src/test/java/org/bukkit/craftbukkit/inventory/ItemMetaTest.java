@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.server.Block;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.ITileEntity;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemBlock;
@@ -159,7 +160,7 @@ public class ItemMetaTest extends AbstractTestingBase {
     public void testBlockStateMeta() {
         List<Block> queue = new ArrayList<>();
 
-        for (Item item : (Iterable<Item>) Item.REGISTRY) { // Eclipse fail
+        for (Item item : (Iterable<Item>) IRegistry.ITEM) { // Eclipse fail
             if (item instanceof ItemBlock) {
                 queue.add(((ItemBlock) item).getBlock());
             }

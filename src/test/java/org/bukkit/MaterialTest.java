@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.*;
 import java.util.Collections;
 import java.util.Map;
 
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
 
@@ -29,13 +30,13 @@ public class MaterialTest extends AbstractTestingBase {
             materials.put(CraftMagicNumbers.key(material), material);
         }
 
-        Iterator<Item> items = Item.REGISTRY.iterator();
+        Iterator<Item> items = IRegistry.ITEM.iterator();
 
         while (items.hasNext()) {
             Item item = items.next();
             if (item == null) continue;
 
-            MinecraftKey id = Item.REGISTRY.b(item);
+            MinecraftKey id = IRegistry.ITEM.getKey(item);
             String name = item.getName();
 
             Material material = materials.remove(id);

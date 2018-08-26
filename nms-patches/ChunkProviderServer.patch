@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -20,6 +20,11 @@
+@@ -18,6 +18,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,93 +12,79 @@
  public class ChunkProviderServer implements IChunkProvider {
  
      private static final Logger a = LogManager.getLogger();
-@@ -35,7 +40,7 @@
-         this.world = worldserver;
+@@ -36,7 +41,7 @@
          this.chunkLoader = ichunkloader;
          this.chunkGenerator = chunkgenerator;
--        this.f = new ChunkTaskScheduler(2, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler);
-+        this.f = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
-         this.g = new SchedulerBatch(this.f);
+         this.asyncTaskHandler = iasynctaskhandler;
+-        this.chunkScheduler = new ChunkTaskScheduler(2, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler);
++        this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
+         this.batchScheduler = new SchedulerBatch(this.chunkScheduler);
      }
  
-@@ -77,9 +82,10 @@
-     @Nullable
-     private Chunk loadChunkAt(int i, int j) {
-         try {
--            Chunk chunk = this.chunkLoader.a(this.world, i, j, (chunk) -> {
--                chunk.setLastSaved(this.world.getTime());
--                this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
-+            // CraftBukkit - decompile error
-+            Chunk chunk = this.chunkLoader.a(this.world, i, j, (chunk1) -> {
-+                chunk1.setLastSaved(this.world.getTime());
-+                this.chunks.put(ChunkCoordIntPair.a(i, j), chunk1);
-             });
+@@ -86,9 +91,10 @@
  
-             if (chunk != null) {
-@@ -104,6 +110,12 @@
+             if (flag) {
+                 try {
+-                    chunk = this.chunkLoader.a(this.world, i, j, (chunk) -> {
+-                        chunk.setLastSaved(this.world.getTime());
+-                        this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
++                    // CraftBukkit - decompile error
++                    chunk = this.chunkLoader.a(this.world, i, j, (chunk1) -> {
++                        chunk1.setLastSaved(this.world.getTime());
++                        this.chunks.put(ChunkCoordIntPair.a(i, j), chunk1);
+                     });
+                 } catch (Exception exception) {
+                     ChunkProviderServer.a.error("Couldn\'t load chunk", exception);
+@@ -103,7 +109,7 @@
+             try {
+                 this.batchScheduler.b();
+                 this.batchScheduler.a(new ChunkCoordIntPair(i, j));
+-                CompletableFuture completablefuture = this.batchScheduler.c();
++                CompletableFuture<ProtoChunk> completablefuture = this.batchScheduler.c(); // CraftBukkit - decompile error
+ 
+                 return (Chunk) completablefuture.thenApply(this::a).join();
+             } catch (RuntimeException runtimeexception) {
+@@ -114,6 +120,22 @@
          }
      }
  
 +    // CraftBukkit start
-+    public Chunk getChunkIfLoaded(int x, int z) {
-+        return chunks.get(ChunkCoordIntPair.a(x, z));
++    public Chunk generateChunk(int x, int z) {
++        try {
++            this.batchScheduler.b();
++            ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
++            this.chunkScheduler.forcePolluteCache(pos);
++            this.batchScheduler.a(pos);
++            CompletableFuture<ProtoChunk> completablefuture = this.batchScheduler.c();
++
++            return (Chunk) completablefuture.thenApply(this::a).join();
++        } catch (RuntimeException runtimeexception) {
++            throw this.a(x, z, (Throwable) runtimeexception);
++        }
 +    }
 +    // CraftBukkit end
 +
-     public Chunk getChunkAt(int i, int j) {
-         Chunk chunk = this.getOrLoadChunkAt(i, j);
+     public IChunkAccess a(int i, int j, boolean flag) {
+         Chunk chunk = this.getChunkAt(i, j, true, false);
  
-@@ -125,7 +137,7 @@
-         synchronized (this.chunks) {
-             IChunkAccess ichunkaccess = (IChunkAccess) this.chunks.get(ChunkCoordIntPair.a(i, j));
+@@ -251,10 +273,12 @@
+                         Chunk chunk = (Chunk) this.chunks.get(olong);
  
--            return ichunkaccess != null ? ichunkaccess : (IChunkAccess) this.f.c((Object) (new ChunkCoordIntPair(i, j)));
-+            return ichunkaccess != null ? ichunkaccess : (IChunkAccess) this.f.c((new ChunkCoordIntPair(i, j))); // CraftBukkit - decompile error
-         }
-     }
- 
-@@ -147,10 +159,21 @@
-         return this.g.c();
-     }
- 
-+    // CraftBukkit start
-     public CompletableFuture<Chunk> generateChunk(int i, int j) {
-+        return this.generateChunk(i, j, false);
-+    }
+                         if (chunk != null) {
+-                            chunk.removeEntities();
+-                            this.saveChunk(chunk);
+-                            this.chunks.remove(olong);
+-                            this.lastChunk = null;
++                            // CraftBukkit start - move unload logic to own method
++                            if (!unloadChunk(chunk, true)) {
++                                continue;
++                            }
++                            // CraftBukkit end
 +
-+    public CompletableFuture<Chunk> generateChunk(int i, int j, boolean force) {
-         this.g.b();
--        this.g.a(new ChunkCoordIntPair(i, j));
--        CompletableFuture completablefuture = this.g.c();
-+
-+        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
-+        if (force) {
-+            this.f.forcePolluteCache(chunkcoordintpair);
-+        }
-+        this.g.a(chunkcoordintpair);
-+        // CraftBukkit end
-+        CompletableFuture<ProtoChunk> completablefuture = this.g.c(); // CraftBukkit - decompile error
- 
-         return completablefuture.thenApply(this::a);
-     }
-@@ -268,10 +291,12 @@
-                     Chunk chunk = (Chunk) this.chunks.get(olong);
- 
-                     if (chunk != null && chunk.d) {
--                        chunk.removeEntities();
--                        this.saveChunk(chunk);
--                        this.saveChunkNOP(chunk);
--                        this.chunks.remove(olong);
-+                        // CraftBukkit start - move unload logic to own method
-+                        if (!unloadChunk(chunk, true)) {
-+                            continue;
-+                        }
-+                        // CraftBukkit end
-+
-                         ++i;
+                             ++i;
+                         }
                      }
-                 }
-@@ -284,6 +309,40 @@
+@@ -267,6 +291,40 @@
          return false;
      }
  
@@ -118,7 +104,7 @@
 +                    continue;
 +                }
 +
-+                Chunk neighbor = this.getChunkIfLoaded(chunk.locX + x, chunk.locZ + z);
++                Chunk neighbor = this.getChunkAt(chunk.locX + x, chunk.locZ + z, false, false);
 +                if (neighbor != null) {
 +                    neighbor.setNeighborUnloaded(-x, -z);
 +                    chunk.setNeighborUnloaded(x, z);
@@ -129,13 +115,13 @@
 +        chunk.removeEntities();
 +        if (save) {
 +            this.saveChunk(chunk);
-+            this.saveChunkNOP(chunk);
 +        }
 +        this.chunks.remove(chunk.chunkKey);
++        this.lastChunk = null;
 +        return true;
 +    }
 +    // CraftBukkit end
 +
-     public boolean e() {
+     public boolean d() {
          return !this.world.savingDisabled;
      }

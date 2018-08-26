@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.DimensionManager;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.WhiteListEntry;
 import net.minecraft.server.WorldNBTStorage;
@@ -32,7 +32,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
         this.server = server;
         this.profile = profile;
-        this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
+        this.storage = (WorldNBTStorage) (server.console.getWorldServer(DimensionManager.OVERWORLD).getDataManager());
 
     }
 

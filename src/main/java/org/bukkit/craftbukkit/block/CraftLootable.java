@@ -39,18 +39,18 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
         if (!this.getSnapshot().hasCustomName()) {
             lootable.setCustomName(null);
         }
-        if (this.getSnapshot().Q_() == null) {
-            lootable.a((MinecraftKey) null, 0L); // PAIL rename setLootTable
+        if (this.getSnapshot().getLootTable()== null) {
+            lootable.setLootTable((MinecraftKey) null, 0L);
         }
     }
 
     @Override
     public LootTable getLootTable() {
-        if (getSnapshot().Q_() == null) {
+        if (getSnapshot().getLootTable() == null) {
             return null;
         }
 
-        MinecraftKey key = getSnapshot().Q_();
+        MinecraftKey key = getSnapshot().getLootTable();
         return Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(key));
     }
 
@@ -71,6 +71,6 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
 
     private void setLootTable(LootTable table, long seed) {
         MinecraftKey key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-        getSnapshot().a(key, seed); // PAIL setLootTable
+        getSnapshot().setLootTable(key, seed);
     }
 }

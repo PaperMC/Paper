@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityArrow.java
 +++ b/net/minecraft/server/EntityArrow.java
-@@ -5,6 +5,13 @@
+@@ -7,6 +7,13 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
@@ -13,16 +13,8 @@
 +
  public abstract class EntityArrow extends Entity implements IProjectile {
  
-     private static final Predicate<Entity> f = IEntitySelector.e.and(IEntitySelector.a.and(Entity::isInteractable));
-@@ -42,6 +49,7 @@
-     protected EntityArrow(EntityTypes<?> entitytypes, EntityLiving entityliving, World world) {
-         this(entitytypes, entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight() - 0.10000000149011612D, entityliving.locZ, world);
-         this.shooter = entityliving;
-+        this.projectileSource = (LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
-         if (entityliving instanceof EntityHuman) {
-             this.fromPlayer = EntityArrow.PickupStatus.ALLOWED;
-         }
-@@ -245,6 +253,7 @@
+     private static final Predicate<Entity> g = IEntitySelector.f.and(IEntitySelector.a.and(Entity::isInteractable));
+@@ -250,6 +257,7 @@
      }
  
      protected void a(MovingObjectPosition movingobjectposition) {
@@ -30,7 +22,7 @@
          if (movingobjectposition.entity != null) {
              this.b(movingobjectposition);
          } else {
-@@ -293,7 +302,13 @@
+@@ -299,7 +307,13 @@
          }
  
          if (this.isBurning() && !(entity instanceof EntityEnderman)) {
@@ -45,10 +37,18 @@
          }
  
          if (entity.damageEntity(damagesource, (float) i)) {
-@@ -430,9 +445,22 @@
+@@ -444,6 +458,7 @@
+ 
+     public void setShooter(@Nullable Entity entity) {
+         this.shooter = entity == null ? null : entity.getUniqueID();
++        this.projectileSource = entity == null ? null : (LivingEntity) entity.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Nullable
+@@ -453,9 +468,22 @@
  
      public void d(EntityHuman entityhuman) {
-         if (!this.world.isClientSide && (this.inGround || this.p()) && this.shake <= 0) {
+         if (!this.world.isClientSide && (this.inGround || this.q()) && this.shake <= 0) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getItemStack();
 +            EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
@@ -61,7 +61,7 @@
 +                    return;
 +                }
 +            }
-             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.p() && this.shooter == entityhuman;
+             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.q() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
  
 -            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.getItemStack())) {
 +            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(item.getItemStack())) {
@@ -69,7 +69,7 @@
                  flag = false;
              }
  
-@@ -505,7 +533,14 @@
+@@ -528,7 +556,14 @@
          }
  
          if (EnchantmentManager.a(Enchantments.ARROW_FIRE, entityliving) > 0) {

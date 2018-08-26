@@ -19,6 +19,7 @@ import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.DynamicOpsNBT;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IBlockState;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.Items;
 import net.minecraft.server.MinecraftKey;
@@ -333,7 +334,10 @@ public class CraftLegacy {
                         name = "minecraft:nether_portal";
                     }
 
-                    Block block = Block.REGISTRY.get(new MinecraftKey(name));
+                    Block block = IRegistry.BLOCK.get(new MinecraftKey(name));
+                    if (block == null) {
+                        continue;
+                    }
                     IBlockData blockData = block.getBlockData();
                     BlockStateList states = block.getStates();
 
@@ -405,7 +409,7 @@ public class CraftLegacy {
                 }
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
-                Item newMaterial = Item.REGISTRY.get(new MinecraftKey(newId));
+                Item newMaterial = IRegistry.ITEM.get(new MinecraftKey(newId));
 
                 if (newMaterial == Items.AIR) {
                     continue;

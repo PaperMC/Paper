@@ -480,7 +480,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isRiptiding() {
-        return getHandle().cO();
+        return getHandle().isRiptiding();
     }
 
     @Override

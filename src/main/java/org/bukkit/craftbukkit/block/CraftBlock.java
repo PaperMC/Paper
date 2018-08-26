@@ -416,7 +416,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return Biome.valueOf(BiomeBase.REGISTRY_ID.b(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
+        return Biome.valueOf(IRegistry.BIOME.getKey(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
     }
 
     public static BiomeBase biomeToBiomeBase(Biome bio) {
@@ -424,7 +424,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return BiomeBase.REGISTRY_ID.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
+        return IRegistry.BIOME.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
     }
 
     public double getTemperature() {
@@ -479,12 +479,12 @@ public class CraftBlock implements Block {
         int x = getX();
         int y = getY();
         int z = getZ();
-        if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y - 1, z), EnumDirection.DOWN)) power = wire.getPower(world, new BlockPosition(x, y - 1, z), power);
-        if ((face == BlockFace.UP || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y + 1, z), EnumDirection.UP)) power = wire.getPower(world, new BlockPosition(x, y + 1, z), power);
-        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x + 1, y, z), EnumDirection.EAST)) power = wire.getPower(world, new BlockPosition(x + 1, y, z), power);
-        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x - 1, y, z), EnumDirection.WEST)) power = wire.getPower(world, new BlockPosition(x - 1, y, z), power);
-        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z - 1), EnumDirection.NORTH)) power = wire.getPower(world, new BlockPosition(x, y, z - 1), power);
-        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z + 1), EnumDirection.SOUTH)) power = wire.getPower(world, new BlockPosition(x, y, z - 1), power);
+        if ((face == BlockFace.DOWN || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y - 1, z), EnumDirection.DOWN)) power = wire.getPower(power, world.getType(new BlockPosition(x, y - 1, z)));
+        if ((face == BlockFace.UP || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y + 1, z), EnumDirection.UP)) power = wire.getPower(power, world.getType(new BlockPosition(x, y + 1, z)));
+        if ((face == BlockFace.EAST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x + 1, y, z), EnumDirection.EAST)) power = wire.getPower(power, world.getType(new BlockPosition(x + 1, y, z)));
+        if ((face == BlockFace.WEST || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x - 1, y, z), EnumDirection.WEST)) power = wire.getPower(power, world.getType(new BlockPosition(x - 1, y, z)));
+        if ((face == BlockFace.NORTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z - 1), EnumDirection.NORTH)) power = wire.getPower(power, world.getType(new BlockPosition(x, y, z - 1)));
+        if ((face == BlockFace.SOUTH || face == BlockFace.SELF) && world.isBlockFacePowered(new BlockPosition(x, y, z + 1), EnumDirection.SOUTH)) power = wire.getPower(power, world.getType(new BlockPosition(x, y, z + 1)));
         return power > 0 ? power : (face == BlockFace.SELF ? isBlockIndirectlyPowered() : isBlockFaceIndirectlyPowered(face)) ? 15 : 0;
     }
 

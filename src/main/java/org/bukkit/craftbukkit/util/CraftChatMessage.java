@@ -197,7 +197,7 @@ public final class CraftChatMessage {
     private static IChatBaseComponent fixComponent(IChatBaseComponent component, Matcher matcher) {
         if (component instanceof ChatComponentText) {
             ChatComponentText text = ((ChatComponentText) component);
-            String msg = text.f();
+            String msg = text.getText();
             if (matcher.reset(msg).find()) {
                 matcher.reset();
 
@@ -248,7 +248,7 @@ public final class CraftChatMessage {
         }
 
         if (component instanceof ChatMessage) {
-            Object[] subs = ((ChatMessage) component).i();
+            Object[] subs = ((ChatMessage) component).l();
             for (int i = 0; i < subs.length; i++) {
                 Object comp = subs[i];
                 if (comp instanceof IChatBaseComponent) {

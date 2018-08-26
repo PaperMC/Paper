@@ -266,8 +266,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
 
         PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
-        packet.a = (this.playerListHeader == null) ? new ChatComponentText("") : this.playerListHeader;
-        packet.b = (this.playerListFooter == null) ? new ChatComponentText("") : this.playerListFooter;
+        packet.header = (this.playerListHeader == null) ? new ChatComponentText("") : this.playerListHeader;
+        packet.footer = (this.playerListFooter == null) ? new ChatComponentText("") : this.playerListFooter;
         getHandle().playerConnection.sendPacket(packet);
     }
 

@@ -177,7 +177,7 @@ public class Main {
                     useConsole = false;
                 }
 
-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new SimpleDateFormat("yyyyMMdd-HHmm").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
@@ -190,8 +190,7 @@ public class Main {
                     }
                 }
 
-                System.err.println("*** WARNING: This build is obsolete. It contains severe bugs that may damage your world. All users are recommended to update to 1.13.1");
-                System.err.println("*** Please see https://www.spigotmc.org/ for more information about updating.");
+                System.err.println("*** WARNING: This is a development build. It is not meant for production server usage! Please keep backups and update frequently.");
 
                 System.out.println("Loading libraries, please wait...");
                 MinecraftServer.main(options);

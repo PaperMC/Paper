@@ -1,10 +1,7 @@
 package org.bukkit.craftbukkit.util;
 
-import java.util.List;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.Block;
 import net.minecraft.server.BlockPosition;
@@ -22,7 +19,6 @@ import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.IChunkProvider;
 import net.minecraft.server.IDataManager;
 import net.minecraft.server.ParticleParam;
-import net.minecraft.server.PersistentBase;
 import net.minecraft.server.PersistentCollection;
 import net.minecraft.server.SoundCategory;
 import net.minecraft.server.SoundEffect;
@@ -48,17 +44,17 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public TickList<Block> I() {
+    public TickList<Block> J() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public TickList<FluidType> H() {
+    public TickList<FluidType> I() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public IChunkAccess c(int i, int i1) {
+    public IChunkAccess b(int i, int i1) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -74,16 +70,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public DifficultyDamageScaler getDamageScaler(BlockPosition bp) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public <T extends PersistentBase> T a(Function<String, T> fnctn, String string) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public PersistentCollection s_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -178,11 +164,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public List<Entity> getEntities(Entity entity, AxisAlignedBB aabb) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public int a(BlockPosition bp, EnumDirection ed) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -214,6 +195,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public Fluid b(BlockPosition bp) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public PersistentCollection h() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
