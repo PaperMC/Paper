@@ -28,4 +28,11 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     public String toString() {
         return "CraftPhantom";
     }
+
+    // Paper start
+    @Override
+    public java.util.UUID getSpawningEntity() {
+        return getHandle().getSpawningEntity();
+    }
+    // Paper end
 }
