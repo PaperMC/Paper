@@ -6,10 +6,11 @@ import java.util.stream.Collectors;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class EntityTypesTest {
+public class EntityTypesTest extends AbstractTestingBase {
 
     @Test
     public void testMaps() {
