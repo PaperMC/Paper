@@ -5,7 +5,7 @@ Subject: [PATCH] Add TNTPrimeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
-index 25a8a1afd..108006d58 100644
+index 24573b4704..ea428e2daf 100644
 --- a/src/main/java/net/minecraft/server/BlockFire.java
 +++ b/src/main/java/net/minecraft/server/BlockFire.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
@@ -28,16 +28,17 @@ index 25a8a1afd..108006d58 100644
  
              if (block instanceof BlockTNT) {
 +                // Paper start - TNTPrimeEvent
-+                org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.FIRE, null).callEvent())
++                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
++                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.FIRE, null).callEvent()) {
 +                    return;
++                }
 +                world.setAir(blockposition); // setair after non cancelled event, it would usually be air by now
 +                // Paper end
                  ((BlockTNT) block).a(world, blockposition);
              }
          }
 diff --git a/src/main/java/net/minecraft/server/BlockTNT.java b/src/main/java/net/minecraft/server/BlockTNT.java
-index 0c48a0cfe..c3eeee263 100644
+index 81c5b60ea1..5fddb29612 100644
 --- a/src/main/java/net/minecraft/server/BlockTNT.java
 +++ b/src/main/java/net/minecraft/server/BlockTNT.java
 @@ -0,0 +0,0 @@
@@ -53,7 +54,7 @@ index 0c48a0cfe..c3eeee263 100644
          if (iblockdata1.getBlock() != iblockdata.getBlock()) {
              if (world.isBlockIndirectlyPowered(blockposition)) {
 +                // Paper start - TNTPrimeEvent
-+                org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
 +                if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.REDSTONE, null).callEvent())
 +                    return;
 +                // Paper end
@@ -65,7 +66,7 @@ index 0c48a0cfe..c3eeee263 100644
      public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1) {
          if (world.isBlockIndirectlyPowered(blockposition)) {
 +            // Paper start - TNTPrimeEvent
-+            org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
 +            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.REDSTONE, null).callEvent())
 +                return;
 +            // Paper end
@@ -77,7 +78,7 @@ index 0c48a0cfe..c3eeee263 100644
      public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
          if (!world.isClientSide) {
 +            // Paper start - TNTPrimeEvent
-+            org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
 +            org.bukkit.entity.Entity source = explosion.source != null ? explosion.source.bukkitEntity : null;
 +            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.EXPLOSION, source).callEvent())
 +                return;
@@ -90,7 +91,7 @@ index 0c48a0cfe..c3eeee263 100644
              return super.interact(iblockdata, world, blockposition, entityhuman, enumhand, enumdirection, f, f1, f2);
          } else {
 +            // Paper start - TNTPrimeEvent
-+            org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
 +            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.ITEM, entityhuman.bukkitEntity).callEvent())
 +                return true;
 +            // Paper end
@@ -102,15 +103,16 @@ index 0c48a0cfe..c3eeee263 100644
                  }
                  // CraftBukkit end
 +                // Paper start - TNTPrimeEvent
-+                org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.PROJECTILE, entityarrow.bukkitEntity).callEvent())
++                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
++                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.PROJECTILE, entityarrow.bukkitEntity).callEvent()) {
 +                    return;
++                }
 +                // Paper end
-                 this.a(world, blockposition, entityarrow.shooter instanceof EntityLiving ? (EntityLiving) entityarrow.shooter : null);
+                 this.a(world, blockposition, entity1 instanceof EntityLiving ? (EntityLiving) entity1 : null);
                  world.setAir(blockposition);
              }
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index d8ab87e21..d5e2a0251 100644
+index 2c735a920d..74d96a2f09 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;

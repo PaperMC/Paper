@@ -19,7 +19,7 @@ may be some delay there, but region files are only copied on demand.
 This is highly experiemental so backup your world before relying on this to not modify it
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index bcdf4f91d..c457d0711 100644
+index bcdf4f91d8..c457d07110 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ import java.util.List;
@@ -59,7 +59,7 @@ index bcdf4f91d..c457d0711 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index bd52bf656..54840851b 100644
+index ffa94ea674..68a3169c31 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -71,10 +71,6 @@ index bd52bf656..54840851b 100644
 +    private final File actualWorld;
 +    private final boolean useAltWorld;
 +
-+    private boolean chunkExists0(int x, int z) {
-+        copyIfNeeded(x, z);
-+        return RegionFileCache.chunkExists(this.actualWorld, x, z);
-+    }
 +    private synchronized void copyIfNeeded(int x, int z) {
 +        if (!useAltWorld) {
 +            return;
@@ -124,7 +120,7 @@ index bd52bf656..54840851b 100644
          }
  
 -        if (RegionFileCache.chunkExists(this.c, x, z)) {
-+        if (chunkExists0(x, z)) { // Paper
++        if (chunkExists(x, z)) { // Paper
              NBTTagCompound nbt = RegionFileCache.read(this.c, x, z);
              if (nbt != null) {
                  NBTTagCompound level = nbt.getCompound("Level");
@@ -133,20 +129,27 @@ index bd52bf656..54840851b 100644
      @Nullable
      private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
 +        copyIfNeeded(i, j); // Paper
-         NBTTagCompound nbttagcompound = RegionFileCache.read(this.c, i, j);
+         NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.b.get(new ChunkCoordIntPair(i, j))); // Spigot
  
-         if (nbttagcompound == null) {
+         if (nbttagcompound != null) {
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
-         Supplier<NBTTagCompound> nbttagcompound = this.b.get(chunkcoordintpair); // Spigot
- 
--        return nbttagcompound != null ? true : RegionFileCache.chunkExists(this.c, i, j);
-+        return nbttagcompound != null ? true : chunkExists0(i, j); // Paper
+         }
      }
  
++    public boolean chunkExists(int x, int z) {
++        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(x, z);
++        if (this.b.containsKey(chunkcoordintpair)) {
++            return true;
++        }
++        copyIfNeeded(x, z);
++        return RegionFileCache.chunkExists(this.actualWorld, x, z);
++    }
++
      @Nullable
+     protected Object[] a(GeneratorAccess generatoraccess, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
+         if (nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8)) {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 609d6c355..f1fa7c717 100644
+index 15666325ea..3501b87f75 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public class RegionFileCache {
@@ -164,7 +167,7 @@ index 609d6c355..f1fa7c717 100644
  
      public static synchronized void a() {
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-index 9a243010d..3fabbe94f 100644
+index ab085788ab..c84e6acdbe 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
 +++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
 @@ -0,0 +0,0 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {

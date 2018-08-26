@@ -32,7 +32,7 @@ index aa0e3c757d..c1845d6811 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ec6b550ff6..499230af60 100644
+index 547ab09627..78a3188274 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ package com.destroystokyo.paper;
@@ -64,30 +64,30 @@ index ec6b550ff6..499230af60 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ace64c0345..229215180b 100644
+index 2efb870dd6..6c766f2bf7 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-     private final TickList<Block> t;
-     private final TickList<FluidType> u;
-     private boolean v;
--    private boolean w;
-+    private boolean w; public boolean hasEntities() { return w; } // Paper - OBFHELPER
+     private final TickList<Block> s;
+     private final TickList<FluidType> t;
+     private boolean u;
+-    private boolean v;
++    private boolean v;public boolean hasEntities() { return v; } // Paper - OBFHELPER
      private long lastSaved;
--    private boolean y;
-+    private boolean y; public boolean isModified() { return y; } // Paper - OBFHELPER
-     private int z;
-     private long A; public long getInhabitedTime() { return A; } // Paper - OBFHELPER
-     private int B;
+-    private boolean x;
++    private boolean x; public boolean isModified() { return x; } // Paper - OBFHELPER
+     private int y;
+     private long z;
+     private int A;
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-             if (this.w && this.world.getTime() != this.lastSaved || this.y) {
+             if (this.v && this.world.getTime() != this.lastSaved || this.x) {
                  return true;
              }
--        } else if (this.w && this.world.getTime() >= this.lastSaved + MinecraftServer.getServer().autosavePeriod * 4) { // Spigot - Only save if we've passed 2 auto save intervals without modification
+-        } else if (this.v && this.world.getTime() >= this.lastSaved + MinecraftServer.getServer().autosavePeriod * 4) { // Spigot - Only save if we've passed 2 auto save intervals without modification
 -            return true;
          }
 -
--        return this.y;
+-        return this.x;
 +        // Paper start - Make world configurable and incremental
 +        // This !flag section should say if isModified or hasEntities, then check auto save
 +        return ((isModified() || hasEntities()) && this.world.getTime() >= this.lastSaved + world.paperConfig.autoSavePeriod);
@@ -96,39 +96,32 @@ index ace64c0345..229215180b 100644
  
      public boolean isEmpty() {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index a5139b0b0d..aa8d25e765 100644
+index 53dc1322e8..90840e4709 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server;
- 
-+import com.destroystokyo.paper.PaperConfig;
- import com.google.common.collect.Lists;
- import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
- import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-                 this.saveChunk(chunk, false); // Spigot
-                 chunk.a(false);
-                 ++i;
--                if (i == 24 && !flag && false) { // Spigot
-+                if (!flag && i >= world.paperConfig.maxAutoSaveChunksPerTick) { // Spigot - // Paper - Incremental Auto Save - cap max per tick
-                     return false;
+                     this.saveChunk(chunk, false); // Spigot
+                     chunk.a(false);
+                     ++i;
+-                    if (i == 24 && !flag && false) { // Spigot
++                    if (!flag && i >= world.paperConfig.maxAutoSaveChunksPerTick) { // Spigot - // Paper - Incremental Auto Save - cap max
+                         return false;
+                     }
                  }
-             }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index bdd1fef710..9c04fa4a6f 100644
+index 96d7be49d8..2c4fc9f3e6 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
      private static final Logger cc = LogManager.getLogger();
-     private static final IChatBaseComponent cd = (new ChatMessage("multiplayer.message_not_delivered", new Object[0])).a(EnumChatFormat.RED);
      public String locale = null; // CraftBukkit - lowercase // Paper - default to null
 +    public long lastSave = MinecraftServer.currentTick; // Paper
      public PlayerConnection playerConnection;
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e3469cacff..02daa43c68 100644
+index 25946d2d79..ee13260af7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -140,7 +133,7 @@ index e3469cacff..02daa43c68 100644
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-             this.n.b().a(agameprofile);
+             this.m.b().a(agameprofile);
          }
  
 -        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
@@ -161,7 +154,7 @@ index e3469cacff..02daa43c68 100644
              // and causes the main thread to sleep for random amounts of time depending on chunk activity
              // Also pass flag to only save modified chunks
              server.playerCommandState = true;
-             for (World world : worlds) {
+             for (World world : getWorlds()) {
 -                world.getWorld().save(false);
 +                if (world.paperConfig.autoSavePeriod > 0) world.getWorld().save(false); // Paper - Incremental / Configurable Auto Saving
              }
@@ -173,9 +166,9 @@ index e3469cacff..02daa43c68 100644
 +        //} // Paper - Incremental Auto Saving
  
          this.methodProfiler.a("snooper");
-         if (getSnooperEnabled() && !this.j.d() && this.ticks > 100) { // Spigot
+         if (getSnooperEnabled() && !this.i.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index d0c547cc99..12f6812d67 100644
+index 02dbb8c6c3..73d72ef7e3 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -214,13 +207,13 @@ index d0c547cc99..12f6812d67 100644
      public WhiteList getWhitelist() {
          return this.whitelist;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 96002184bb..bf07155bc1 100644
+index 4be3a6ae94..59b5a04581 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          ChunkProviderServer chunkproviderserver = this.getChunkProviderServer();
  
-         if (chunkproviderserver.e()) {
+         if (chunkproviderserver.d()) {
 -            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
 +            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper - Incremental Auto Saving - Only fire event on full save
              timings.worldSave.startTiming(); // Paper

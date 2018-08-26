@@ -19,14 +19,13 @@ index a6042ca607..9fe1311143 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 204cf4f648..67c60be6f7 100644
+index 3fe374acb2..b45cdcd09f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         this.a(this.getWorldServer(DimensionManager.OVERWORLD).worldMaps);
+         // CraftBukkit end
  
-         this.a(this.getDifficulty());
-         this.g_();
-+
 +        // Paper start - Handle collideRule team for player collision toggle
 +        final Scoreboard scoreboard = this.getScoreboard();
 +        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(ScoreboardTeam::getName).collect(java.util.stream.Collectors.toList());
@@ -35,7 +34,7 @@ index 204cf4f648..67c60be6f7 100644
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
-+            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + worlds.get(0).random.nextInt(), 16);
++            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
 +            ScoreboardTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
 +            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
@@ -57,7 +56,7 @@ index a6aed2531f..575e3762b2 100644
              packetdataserializer.a(this.c);
              packetdataserializer.a(this.d);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 7f324a9c0f..d0c547cc99 100644
+index 8121f8e40a..02dbb8c6c3 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -73,7 +72,7 @@ index 7f324a9c0f..d0c547cc99 100644
  
          entityplayer.syncInventory();
 +        // Paper start - Add to collideRule team if needed
-+        final Scoreboard scoreboard = this.getServer().getWorldServer(0).getScoreboard();
++        final Scoreboard scoreboard = this.getServer().getWorldServer(DimensionManager.OVERWORLD).getScoreboard();
 +        final ScoreboardTeam collideRuleTeam = scoreboard.getTeam(collideRuleTeamName);
 +        if (this.collideRuleTeamName != null && collideRuleTeam != null && entityplayer.getTeam() == null) {
 +            scoreboard.addPlayerToTeam(entityplayer.getName(), collideRuleTeam);
@@ -88,7 +87,7 @@ index 7f324a9c0f..d0c547cc99 100644
  
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
-+            final Scoreboard scoreBoard = this.server.getWorldServer(0).getScoreboard();
++            final Scoreboard scoreBoard = this.server.getWorldServer(DimensionManager.OVERWORLD).getScoreboard();
 +            final ScoreboardTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
 +            if (entityplayer.getTeam() == team && team != null) {
 +                scoreBoard.removePlayerFromTeam(entityplayer.getName(), team);
@@ -106,7 +105,7 @@ index 7f324a9c0f..d0c547cc99 100644
 -
 +        // Paper start - Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
-+            final Scoreboard scoreboard = this.getServer().getWorldServer(0).getScoreboard();
++            final Scoreboard scoreboard = this.getServer().getWorldServer(DimensionManager.OVERWORLD).getScoreboard();
 +            final ScoreboardTeam team = scoreboard.getTeam(this.collideRuleTeamName);
 +            if (team != null) scoreboard.removeTeam(team);
 +        }

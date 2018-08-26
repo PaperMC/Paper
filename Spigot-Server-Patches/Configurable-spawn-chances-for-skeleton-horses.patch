@@ -5,7 +5,7 @@ Subject: [PATCH] Configurable spawn chances for skeleton horses
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0de3007392..c2c33d75bf 100644
+index 0de3007392..b05277067a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -15,20 +15,23 @@ index 0de3007392..c2c33d75bf 100644
 +
 +    public double skeleHorseSpawnChance;
 +    private void skeleHorseSpawnChance() {
-+        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D); // -1.0D represents a "vanilla" state
++        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D);
++        if (skeleHorseSpawnChance < 0) {
++            skeleHorseSpawnChance = 0.01D; // Vanilla value
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index dd09ab20e7..ecee3b4064 100644
+index 1188184f13..253019d89b 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                     blockposition = this.a(new BlockPosition(j + (l & 15), 0, k + (l >> 8 & 15)));
                      if (this.isRainingAt(blockposition)) {
                          DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
+-                        boolean flag2 = this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * 0.01D;
++                        boolean flag2 = this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
  
--                        if (this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * 0.01D) {
-+                        if (this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance) {
+                         if (flag2) {
                              EntityHorseSkeleton entityhorseskeleton = new EntityHorseSkeleton(this);
- 
-                             entityhorseskeleton.s(true);
 --

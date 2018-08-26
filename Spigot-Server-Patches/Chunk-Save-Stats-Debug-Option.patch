@@ -8,58 +8,57 @@ Adds a command line flag to enable stats on how chunk saves are processing.
 Stats on current queue, how many was processed and how many were queued.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c1a42e61e7..c96f1b2753 100644
+index 87960344f1..6b8d4c79e8 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-     public final Long2ObjectMap<Chunk> chunks = Long2ObjectMaps.synchronize(new ChunkMap(8192));
-     private final ChunkTaskScheduler f;
-     private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> g;
+     public final LongSet unloadQueue = new LongOpenHashSet();
+     public final ChunkGenerator<?> chunkGenerator;
+     private final IChunkLoader chunkLoader;
 +    // Paper start - chunk save stats
 +    private long lastQueuedSaves = 0L; // Paper
 +    private long lastProcessedSaves = 0L; // Paper
 +    private long lastSaveStatPrinted = System.currentTimeMillis();
 +    // Paper end
-     public final WorldServer world;
- 
-     public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
+     public final Long2ObjectMap<Chunk> chunks = Long2ObjectMaps.synchronize(new ChunkMap(8192));
+     private Chunk lastChunk;
+     private final ChunkTaskScheduler chunkScheduler;
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-         // Paper start
-         final ChunkRegionLoader chunkLoader = (ChunkRegionLoader) world.getChunkProviderServer().chunkLoader;
-         final int queueSize = chunkLoader.getQueueSize();
+             // Paper start
+             final ChunkRegionLoader chunkLoader = (ChunkRegionLoader) world.getChunkProviderServer().chunkLoader;
+             final int queueSize = chunkLoader.getQueueSize();
 +
-+        final long now = System.currentTimeMillis();
-+        final long timeSince = (now - lastSaveStatPrinted) / 1000;
-+        final Integer printRateSecs = Integer.getInteger("printSaveStats");
-+        if (printRateSecs != null && timeSince >= printRateSecs) {
-+            final String timeStr = "/" + timeSince  +"s";
-+            final long queuedSaves = chunkLoader.getQueuedSaves();
-+            long queuedDiff = queuedSaves - lastQueuedSaves;
-+            lastQueuedSaves = queuedSaves;
++            final long now = System.currentTimeMillis();
++            final long timeSince = (now - lastSaveStatPrinted) / 1000;
++            final Integer printRateSecs = Integer.getInteger("printSaveStats");
++            if (printRateSecs != null && timeSince >= printRateSecs) {
++                final String timeStr = "/" + timeSince  +"s";
++                final long queuedSaves = chunkLoader.getQueuedSaves();
++                long queuedDiff = queuedSaves - lastQueuedSaves;
++                lastQueuedSaves = queuedSaves;
 +
-+            final long processedSaves = chunkLoader.getProcessedSaves();
-+            long processedDiff = processedSaves - lastProcessedSaves;
-+            lastProcessedSaves = processedSaves;
++                final long processedSaves = chunkLoader.getProcessedSaves();
++                long processedDiff = processedSaves - lastProcessedSaves;
++                lastProcessedSaves = processedSaves;
 +
-+            lastSaveStatPrinted = now;
-+            if (processedDiff > 0 || queueSize > 0 || queuedDiff > 0) {
-+                System.out.println("[Chunk Save Stats] " + world.worldData.getName() +
-+                    " - Current: " + queueSize +
-+                    " - Queued: " + queuedDiff + timeStr +
-+                    " - Processed: " +processedDiff + timeStr
-+                );
++                lastSaveStatPrinted = now;
++                if (processedDiff > 0 || queueSize > 0 || queuedDiff > 0) {
++                    System.out.println("[Chunk Save Stats] " + world.worldData.getName() +
++                        " - Current: " + queueSize +
++                        " - Queued: " + queuedDiff + timeStr +
++                        " - Processed: " +processedDiff + timeStr
++                    );
++                }
 +            }
-+        }
-+
-         if (queueSize > world.paperConfig.queueSizeAutoSaveThreshold){
-             return false;
-         }
+             if (queueSize > world.paperConfig.queueSizeAutoSaveThreshold){
+                 return false;
+             }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 859148cb86..ea8684747d 100644
+index 3283b5047d..110c9ef520 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-         }
+ 
      }
  
 -    public int getQueueSize() { return queue.size(); } // Paper
@@ -74,19 +73,19 @@ index 859148cb86..ea8684747d 100644
      // CraftBukkit start - Add async variant, provide compatibility
      @Nullable
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-     protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
-         queue.add(new QueuedChunk(chunkcoordintpair, nbttagcompound)); // Paper - Chunk queue improvements
-+        queuedSaves++; // Paper
-         this.b.put(chunkcoordintpair, nbttagcompound);
-         FileIOThread.a().a(this);
      }
+ 
+     protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
++        queuedSaves++; // Paper
+         synchronized (this.queue) { // Paper - synchronize while modifying the map
+             queue.add(new QueuedChunk(chunkcoordintpair, nbttagcompound)); // Paper - Chunk queue improvements
+             this.b.put(chunkcoordintpair, nbttagcompound);
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-             return false;
          } else {
              ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
+             Supplier<NBTTagCompound> nbttagcompound = chunk.compoundSupplier; // Spigot // Paper
 +            processedSaves.incrementAndGet(); // Paper
  
-             boolean flag;
- 
+             if (nbttagcompound == null) {
+                 return true;
 --

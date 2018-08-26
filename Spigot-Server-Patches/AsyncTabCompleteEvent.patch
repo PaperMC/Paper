@@ -14,7 +14,7 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 60d9f5706a..a912fb3414 100644
+index 5ffe4b374e..93807ffa62 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -29,8 +29,16 @@ index 60d9f5706a..a912fb3414 100644
 +            minecraftServer.postToMainThread(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
              return;
          }
--        // CraftBukkit end
--        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(packetplayintabcomplete.c(), this.player.getCommandListener());
+         // CraftBukkit end
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             stringreader.skip();
+         }
+ 
+-        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
+-
+-        this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
 +        // Paper start
 +        com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event;
 +        java.util.List<String> completions = new java.util.ArrayList<>();
@@ -65,10 +73,7 @@ index 60d9f5706a..a912fb3414 100644
 +        minecraftServer.postToMainThread(() -> sendSuggestions(packetplayintabcomplete, null));
 +    }
 +    public void sendSuggestions(PacketPlayInTabComplete packetplayintabcomplete, java.util.List<String> otherSuggestions) {
- 
--        this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--            if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
++
 +        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(packetplayintabcomplete.c(), this.player.getCommandListener());
 +        //noinspection unchecked
 +        java.util.concurrent.CompletableFuture<Suggestions> completionSuggestions = this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults);
@@ -85,7 +90,7 @@ index 60d9f5706a..a912fb3414 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3d4bb6d8c9..b5fd412b74 100644
+index 0eea57eb7d..99f4b40f7f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {

@@ -30,23 +30,23 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0560882314..7a7893c4df 100644
+index ee13260af7..5d8dbdf8a3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-     public WorldServer[] worldServer;
+     public final Map<DimensionManager, WorldServer> worldServer = Maps.newIdentityHashMap();
      private PlayerList s;
      private boolean isRunning = true;
 +    private boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
      private boolean isStopped;
      private int ticks;
-     protected final Proxy d;
+     protected final Proxy c;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          if (this.s != null) {
              MinecraftServer.LOGGER.info("Saving players");
              this.s.savePlayers();
 -            this.s.u();
-+            this.s.u(isRestarting);;
++            this.s.u(isRestarting); // Paper
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
@@ -63,22 +63,12 @@ index 0560882314..7a7893c4df 100644
          this.isRunning = false;
 +        this.isRestarting = isRestarting;
      }
- 
 +    // Paper end
-+
-     // Paper start - Further improve server tick loop
-     private static final int TPS = 20;
-     private static final long SEC_IN_NANO = 1000000000;
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-         return this.aa;
-     }
  
-+    public final Thread getServerThread() { return this.aA(); } // Paper - OBFHELPER
-     public Thread aA() {
-         return this.serverThread;
-     }
+     private boolean aT() {
+         return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index c8b5a610aa..0b0d996523 100644
+index cc0ed8546f..a9906f03c9 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {

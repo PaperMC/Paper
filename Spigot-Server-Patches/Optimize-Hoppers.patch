@@ -11,7 +11,7 @@ Subject: [PATCH] Optimize Hoppers
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 458baf4442..a87258bbed 100644
+index 06c949ef06..19f4c61cdc 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -31,7 +31,7 @@ index 458baf4442..a87258bbed 100644
      private void disableSprintInterruptionOnAttack() {
          disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index da11ec1672..d96fdad668 100644
+index 9326eaa2a9..4641113f9d 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -0,0 +0,0 @@ public final class ItemStack {
@@ -47,19 +47,21 @@ index da11ec1672..d96fdad668 100644
          itemstack.d(this.B());
          if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5fdd65b083..f8a1c3b8fa 100644
+index 24e8b5ed14..42e0e16949 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
-             if (true || i == 0 || this.getAllowNether()) { // CraftBukkit
-                 WorldServer worldserver = this.worlds.get(i);
-+                TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
- 
+         // CraftBukkit - dropTickTime
+         for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
+-             WorldServer worldserver = (WorldServer) iterator.next();
++            WorldServer worldserver = (WorldServer) iterator.next();
++            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+             i = SystemUtils.c();
+             if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
-                     return worldserver.getWorldData().getName();
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 536fd37254..d2359a30f8 100644
+index 29fe031d85..d67fd92d9d 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -79,7 +81,7 @@ index 536fd37254..d2359a30f8 100644
              this.world.b(this.position, this);
              if (!this.f.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index bb41d4780f..ef0f8d5c27 100644
+index 5ba009c7cf..a8cf160fe4 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
