@@ -60,6 +60,7 @@ import org.bukkit.block.data.type.Snow;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.block.data.type.Switch;
+import org.bukkit.block.data.type.TNT;
 import org.bukkit.block.data.type.TechnicalPiston;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.block.data.type.Tripwire;
@@ -158,7 +159,7 @@ public enum Material implements Keyed {
     BOOKSHELF(10069),
     BOW(8745, 1, 384),
     BOWL(32661),
-    BRAIN_CORAL(31316),
+    BRAIN_CORAL(31316, Waterlogged.class),
     BRAIN_CORAL_BLOCK(30618),
     BRAIN_CORAL_FAN(13849, Waterlogged.class),
     BRAIN_CORAL_WALL_FAN(22685, CoralWallFan.class),
@@ -183,7 +184,7 @@ public enum Material implements Keyed {
     BROWN_WALL_BANNER(14731, Directional.class),
     BROWN_WOOL(32638),
     BUBBLE_COLUMN(13758, BubbleColumn.class),
-    BUBBLE_CORAL(12464),
+    BUBBLE_CORAL(12464, Waterlogged.class),
     BUBBLE_CORAL_BLOCK(15437),
     BUBBLE_CORAL_FAN(10795, Waterlogged.class),
     BUBBLE_CORAL_WALL_FAN(20382, CoralWallFan.class),
@@ -237,7 +238,7 @@ public enum Material implements Keyed {
     COMMAND_BLOCK_MINECART(7992, 1),
     COMPARATOR(18911, Comparator.class),
     COMPASS(24139),
-    CONDUIT(5148),
+    CONDUIT(5148, Waterlogged.class),
     COOKED_BEEF(21595),
     COOKED_CHICKEN(20780),
     COOKED_COD(9681),
@@ -288,19 +289,24 @@ public enum Material implements Keyed {
     DARK_PRISMARINE_SLAB(7577, Slab.class),
     DARK_PRISMARINE_STAIRS(26511, Stairs.class),
     DAYLIGHT_DETECTOR(8864, DaylightDetector.class),
+    DEAD_BRAIN_CORAL(9116, Waterlogged.class),
     DEAD_BRAIN_CORAL_BLOCK(12979),
     DEAD_BRAIN_CORAL_FAN(26150, Waterlogged.class),
     DEAD_BRAIN_CORAL_WALL_FAN(23718, CoralWallFan.class),
+    DEAD_BUBBLE_CORAL(30583, Waterlogged.class),
     DEAD_BUBBLE_CORAL_BLOCK(28220),
     DEAD_BUBBLE_CORAL_FAN(17322, Waterlogged.class),
     DEAD_BUBBLE_CORAL_WALL_FAN(18453, CoralWallFan.class),
     DEAD_BUSH(22888),
+    DEAD_FIRE_CORAL(8365, Waterlogged.class),
     DEAD_FIRE_CORAL_BLOCK(5307),
     DEAD_FIRE_CORAL_FAN(27073, Waterlogged.class),
     DEAD_FIRE_CORAL_WALL_FAN(23375, CoralWallFan.class),
+    DEAD_HORN_CORAL(5755, Waterlogged.class),
     DEAD_HORN_CORAL_BLOCK(15103),
     DEAD_HORN_CORAL_FAN(11387, Waterlogged.class),
     DEAD_HORN_CORAL_WALL_FAN(27550, CoralWallFan.class),
+    DEAD_TUBE_CORAL(18028, Waterlogged.class),
     DEAD_TUBE_CORAL_BLOCK(28350),
     DEAD_TUBE_CORAL_FAN(17628, Waterlogged.class),
     DEAD_TUBE_CORAL_WALL_FAN(5128, CoralWallFan.class),
@@ -364,7 +370,7 @@ public enum Material implements Keyed {
     FIREWORK_ROCKET(23841),
     FIREWORK_STAR(12190),
     FIRE_CHARGE(4842),
-    FIRE_CORAL(29151),
+    FIRE_CORAL(29151, Waterlogged.class),
     FIRE_CORAL_BLOCK(12119),
     FIRE_CORAL_FAN(11112, Waterlogged.class),
     FIRE_CORAL_WALL_FAN(20100, CoralWallFan.class),
@@ -436,7 +442,7 @@ public enum Material implements Keyed {
     HEAVY_WEIGHTED_PRESSURE_PLATE(16970, AnaloguePowerable.class),
     HOPPER(31974, Hopper.class),
     HOPPER_MINECART(19024, 1),
-    HORN_CORAL(19511),
+    HORN_CORAL(19511, Waterlogged.class),
     HORN_CORAL_BLOCK(19958),
     HORN_CORAL_FAN(13610, Waterlogged.class),
     HORN_CORAL_WALL_FAN(28883, CoralWallFan.class),
@@ -865,7 +871,7 @@ public enum Material implements Keyed {
     TALL_SEAGRASS(27189, Bisected.class),
     TERRACOTTA(16544),
     TIPPED_ARROW(25164),
-    TNT(7896),
+    TNT(7896, TNT.class),
     TNT_MINECART(4277, 1),
     TORCH(6063),
     TOTEM_OF_UNDYING(10139, 1),
@@ -876,7 +882,7 @@ public enum Material implements Keyed {
     TROPICAL_FISH(24879),
     TROPICAL_FISH_BUCKET(29995, 1),
     TROPICAL_FISH_SPAWN_EGG(19713),
-    TUBE_CORAL(23048),
+    TUBE_CORAL(23048, Waterlogged.class),
     TUBE_CORAL_BLOCK(23723),
     TUBE_CORAL_FAN(19929, Waterlogged.class),
     TUBE_CORAL_WALL_FAN(25282, CoralWallFan.class),
@@ -2208,18 +2214,23 @@ public enum Material implements Keyed {
             case DARK_PRISMARINE_STAIRS:
             case DAYLIGHT_DETECTOR:
             case DEAD_BRAIN_CORAL_BLOCK:
+            case DEAD_BRAIN_CORAL:
             case DEAD_BRAIN_CORAL_FAN:
             case DEAD_BRAIN_CORAL_WALL_FAN:
+            case DEAD_BUBBLE_CORAL:
             case DEAD_BUBBLE_CORAL_BLOCK:
             case DEAD_BUBBLE_CORAL_FAN:
             case DEAD_BUBBLE_CORAL_WALL_FAN:
             case DEAD_BUSH:
+            case DEAD_FIRE_CORAL:
             case DEAD_FIRE_CORAL_BLOCK:
             case DEAD_FIRE_CORAL_FAN:
             case DEAD_FIRE_CORAL_WALL_FAN:
+            case DEAD_HORN_CORAL:
             case DEAD_HORN_CORAL_BLOCK:
             case DEAD_HORN_CORAL_FAN:
             case DEAD_HORN_CORAL_WALL_FAN:
+            case DEAD_TUBE_CORAL:
             case DEAD_TUBE_CORAL_BLOCK:
             case DEAD_TUBE_CORAL_FAN:
             case DEAD_TUBE_CORAL_WALL_FAN:
@@ -2965,18 +2976,23 @@ public enum Material implements Keyed {
             case DARK_PRISMARINE_SLAB:
             case DARK_PRISMARINE_STAIRS:
             case DAYLIGHT_DETECTOR:
+            case DEAD_BRAIN_CORAL:
             case DEAD_BRAIN_CORAL_BLOCK:
             case DEAD_BRAIN_CORAL_FAN:
             case DEAD_BRAIN_CORAL_WALL_FAN:
+            case DEAD_BUBBLE_CORAL:
             case DEAD_BUBBLE_CORAL_BLOCK:
             case DEAD_BUBBLE_CORAL_FAN:
             case DEAD_BUBBLE_CORAL_WALL_FAN:
+            case DEAD_FIRE_CORAL:
             case DEAD_FIRE_CORAL_BLOCK:
             case DEAD_FIRE_CORAL_FAN:
             case DEAD_FIRE_CORAL_WALL_FAN:
+            case DEAD_HORN_CORAL:
             case DEAD_HORN_CORAL_BLOCK:
             case DEAD_HORN_CORAL_FAN:
             case DEAD_HORN_CORAL_WALL_FAN:
+            case DEAD_TUBE_CORAL:
             case DEAD_TUBE_CORAL_BLOCK:
             case DEAD_TUBE_CORAL_FAN:
             case DEAD_TUBE_CORAL_WALL_FAN:

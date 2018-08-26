@@ -23,7 +23,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     public PlayerEditBookEvent(Player who, int slot, BookMeta previousBookMeta, BookMeta newBookMeta, boolean isSigning) {
         super(who);
 
-        Validate.isTrue(slot >= 0 && slot <= 8, "Slot must be in range 0-8 inclusive");
+        Validate.isTrue(slot >= -1 && slot <= 8, "Slot must be in range (-1)-8 inclusive");
         Validate.notNull(previousBookMeta, "Previous book meta must not be null");
         Validate.notNull(newBookMeta, "New book meta must not be null");
 
@@ -65,10 +65,13 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      * Gets the inventory slot number for the book item that triggered this
      * event.
      * <p>
-     * This is a slot number on the player's hotbar in the range 0-8.
+     * This is a slot number on the player's hotbar in the range 0-8, or -1 for
+     * off hand.
      *
      * @return the inventory slot number that the book item occupies
+     * @deprecated books may be signed from off hand
      */
+    @Deprecated
     public int getSlot() {
         return slot;
     }
