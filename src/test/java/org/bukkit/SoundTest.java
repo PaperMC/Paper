@@ -7,9 +7,10 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import org.bukkit.craftbukkit.CraftSound;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
-public class SoundTest {
+public class SoundTest extends AbstractTestingBase {
 
     @Test
     public void testGetSound() {
