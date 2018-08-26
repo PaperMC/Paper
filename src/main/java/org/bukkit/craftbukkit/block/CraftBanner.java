@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.server.EnumColor;
@@ -30,7 +31,9 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void load(TileEntityBanner banner) {
         super.load(banner);
 
-        base = DyeColor.getByWoolData((byte) banner.color.getColorIndex());
+        if (banner.color != null) {
+            base = DyeColor.getByWoolData((byte) banner.color.getColorIndex());
+        }
         patterns = new ArrayList<Pattern>();
 
         if (banner.patterns != null) {
@@ -48,6 +51,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
 
     @Override
     public void setBaseColor(DyeColor color) {
+        Preconditions.checkArgument(color != null, "color");
         this.base = color;
     }
 

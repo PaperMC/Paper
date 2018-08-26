@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.server.BlockJukeBox;
+import net.minecraft.server.EnumColor;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
@@ -335,6 +336,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             }
             return new CraftBeacon(material, (TileEntityBeacon) te);
         case SHIELD:
+            if (te == null) {
+                te = new TileEntityBanner();
+            }
+            ((TileEntityBanner) te).color = (blockEntityTag == null) ? EnumColor.WHITE : EnumColor.fromColorIndex(blockEntityTag.getInt(CraftMetaBanner.BASE.NBT));
         case BLACK_BANNER:
         case BLACK_WALL_BANNER:
         case BLUE_BANNER:
@@ -370,7 +375,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             if (te == null) {
                 te = new TileEntityBanner();
             }
-            return new CraftBanner(material, (TileEntityBanner) te);
+            return new CraftBanner(material == Material.SHIELD ? shieldToBannerHack(blockEntityTag) : material, (TileEntityBanner) te);
         case STRUCTURE_BLOCK:
             if (te == null) {
                 te = new TileEntityStructure();
@@ -559,5 +564,52 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         Validate.isTrue(valid, "Invalid blockState for " + material);
 
         blockEntityTag = ((CraftBlockEntityState) blockState).getSnapshotNBT();
+        // Set shield base
+        if (material == Material.SHIELD) {
+            blockEntityTag.setInt(CraftMetaBanner.BASE.NBT, ((CraftBanner) blockState).getBaseColor().getWoolData());
+        }
+    }
+
+    private static Material shieldToBannerHack(NBTTagCompound tag) {
+        if (tag == null || !tag.hasKeyOfType(CraftMetaBanner.BASE.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+            return Material.WHITE_BANNER;
+        }
+
+        switch (tag.getInt(CraftMetaBanner.BASE.NBT)) {
+            case 0:
+                return Material.WHITE_BANNER;
+            case 1:
+                return Material.ORANGE_BANNER;
+            case 2:
+                return Material.MAGENTA_BANNER;
+            case 3:
+                return Material.LIGHT_BLUE_BANNER;
+            case 4:
+                return Material.YELLOW_BANNER;
+            case 5:
+                return Material.LIME_BANNER;
+            case 6:
+                return Material.PINK_BANNER;
+            case 7:
+                return Material.GRAY_BANNER;
+            case 8:
+                return Material.LIGHT_GRAY_BANNER;
+            case 9:
+                return Material.CYAN_BANNER;
+            case 10:
+                return Material.PURPLE_BANNER;
+            case 11:
+                return Material.BLUE_BANNER;
+            case 12:
+                return Material.BROWN_BANNER;
+            case 13:
+                return Material.GREEN_BANNER;
+            case 14:
+                return Material.RED_BANNER;
+            case 15:
+                return Material.BLACK_BANNER;
+            default:
+                throw new IllegalArgumentException("Unknown banner colour");
+        }
     }
 }
