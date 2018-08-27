@@ -39,7 +39,7 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
         if (!this.getSnapshot().hasCustomName()) {
             lootable.setCustomName(null);
         }
-        if (this.getSnapshot().getLootTable()== null) {
+        if (this.getSnapshot().getLootTable() == null) {
             lootable.setLootTable((MinecraftKey) null, 0L);
         }
     }
