@@ -1,34 +1,12 @@
-From cd1396b77d29f151316d181df8ce104bd61c5974 Mon Sep 17 00:00:00 2001
+From 63f3b781dc0ddb6de219759f112f4d18cae510a5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 4 Mar 2013 23:46:10 -0500
 Subject: [PATCH] Chunk Save Reattempt
 
 We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
 
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index b247d5f07..f007af2e1 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -354,11 +354,16 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-                 NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(chunk.compoundSupplier); // Spigot // Paper
- 
-                 if (nbttagcompound != null) {
-+                    int attempts = 0; Exception laste = null; while (attempts++ < 5) { // Paper
-                     try {
-                         this.b(chunkcoordintpair, nbttagcompound);
-+                        laste = null; break; // Paper
-                     } catch (Exception exception) {
--                        ChunkRegionLoader.a.error("Failed to save chunk", exception);
-+                        //ChunkRegionLoader.a.error("Failed to save chunk", exception); // Paper
-+                        laste = exception; // Paper
-                     }
-+                    try {Thread.sleep(10);} catch (InterruptedException e) {e.printStackTrace();} } // Paper
-+                    if (laste != null) { com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste); MinecraftServer.LOGGER.error("Failed to save chunk", laste); } // Paper
-                 }
- 
-                 flag = true;
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index cc7cad8be..b8b514c87 100644
+index cc7cad8be4..b8b514c874 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -238,8 +238,7 @@ public class RegionFile {
@@ -41,6 +19,40 @@ index cc7cad8be..b8b514c87 100644
          }
  
      }
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index e5115863ec..2217adf99c 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -95,11 +95,29 @@ public class RegionFileCache {
+ 
+     @Nullable
+     public static synchronized void write(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
++        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
+         RegionFile regionfile = a(file, i, j);
+ 
+         DataOutputStream dataoutputstream = regionfile.c(i & 31, j & 31);
+         NBTCompressedStreamTools.a(nbttagcompound, (java.io.DataOutput) dataoutputstream);
+         dataoutputstream.close();
++        // Paper start
++            laste = null; break; // Paper
++            } catch (Exception exception) {
++                //ChunkRegionLoader.a.error("Failed to save chunk", exception); // Paper
++                laste = exception; // Paper
++            }
++            try {
++                Thread.sleep(10);
++            } catch (InterruptedException e) {
++                e.printStackTrace();
++            }
++        }
++        if (laste != null) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
++            MinecraftServer.LOGGER.error("Failed to save chunk", laste);
++        }
++        // Paper end
+     }
+ 
+     public static synchronized boolean chunkExists(File file, int i, int j) {
 -- 
 2.18.0
 

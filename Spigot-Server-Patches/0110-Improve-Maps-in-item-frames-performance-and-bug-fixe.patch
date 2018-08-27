@@ -1,4 +1,4 @@
-From 0fdb56f20d6b3b075cfafbdff871e27aedfe96cb Mon Sep 17 00:00:00 2001
+From 9b8549b5f833b30bec269a67c7335f5140ce545e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 29 Apr 2016 20:02:00 -0400
 Subject: [PATCH] Improve Maps (in item frames) performance and bug fixes
@@ -13,7 +13,7 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index ca14080ccd..9814075d6d 100644
+index 63f78924cb..79233fe463 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -610,6 +610,12 @@ public abstract class EntityHuman extends EntityLiving {
@@ -30,7 +30,7 @@ index ca14080ccd..9814075d6d 100644
              ItemStack itemstack1 = this.a(entityitem);
  
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 40e0bd7ce2..a04a06f3bf 100644
+index 63dfede645..cce2ce9397 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -90,7 +90,7 @@ public class EntityTrackerEntry {
@@ -43,30 +43,30 @@ index 40e0bd7ce2..a04a06f3bf 100644
              ItemStack itemstack = entityitemframe.getItem();
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f314925b6b..7dae87199e 100644
+index 3ce6058d4c..8005b0c110 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1086,6 +1086,7 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
-                     {
-                         if ( iter.next().trackee == entity )
+@@ -1109,6 +1109,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                          {
-+                            map.decorations.remove(entity.getUniqueID()); // Paper
-                             iter.remove();
+                             if ( iter.next().trackee == entity )
+                             {
++                                map.decorations.remove(entity.getDisplayName().getString()); // Paper
+                                 iter.remove();
+                             }
                          }
-                     }
 diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
-index c73ffc3bc2..14754bbeb2 100644
+index aa58e34c6f..f26b91b407 100644
 --- a/src/main/java/net/minecraft/server/WorldMap.java
 +++ b/src/main/java/net/minecraft/server/WorldMap.java
-@@ -29,6 +29,7 @@ public class WorldMap extends PersistentBase {
-     public final Map<EntityHuman, WorldMap.WorldMapHumanTracker> j = Maps.newHashMap(); // Spigot private -> public
+@@ -30,6 +30,7 @@ public class WorldMap extends PersistentBase {
      private final Map<String, MapIconBanner> k = Maps.newHashMap();
      public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
+     private final Map<String, WorldMapFrame> l = Maps.newHashMap();
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
      public final CraftMapView mapView;
-@@ -41,6 +42,7 @@ public class WorldMap extends PersistentBase {
+@@ -42,6 +43,7 @@ public class WorldMap extends PersistentBase {
          // CraftBukkit start
          mapView = new CraftMapView(this);
          server = (CraftServer) org.bukkit.Bukkit.getServer();
@@ -74,15 +74,15 @@ index c73ffc3bc2..14754bbeb2 100644
          // CraftBukkit end
      }
  
-@@ -105,6 +107,7 @@ public class WorldMap extends PersistentBase {
+@@ -107,6 +109,7 @@ public class WorldMap extends PersistentBase {
              this.k.put(mapiconbanner.f(), mapiconbanner);
              this.a(mapiconbanner.c(), (GeneratorAccess) null, mapiconbanner.f(), (double) mapiconbanner.a().getX(), (double) mapiconbanner.a().getZ(), 180.0D, mapiconbanner.d());
          }
 +        vanillaRender.buffer = colors; // Paper
  
-     }
+         NBTTagList nbttaglist1 = nbttagcompound.getList("frames", 10);
  
-@@ -148,6 +151,7 @@ public class WorldMap extends PersistentBase {
+@@ -169,6 +172,7 @@ public class WorldMap extends PersistentBase {
          return nbttagcompound;
      }
  
@@ -90,16 +90,16 @@ index c73ffc3bc2..14754bbeb2 100644
      public void a(EntityHuman entityhuman, ItemStack itemstack) {
          if (!this.j.containsKey(entityhuman)) {
              WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
-@@ -361,6 +365,21 @@ public class WorldMap extends PersistentBase {
+@@ -404,6 +408,21 @@ public class WorldMap extends PersistentBase {
  
      public class WorldMapHumanTracker {
  
 +        // Paper start
 +        private void addSeenPlayers(java.util.Collection<MapIcon> icons) {
 +            org.bukkit.entity.Player player = (org.bukkit.entity.Player) trackee.getBukkitEntity();
-+            WorldMap.this.decorations.forEach((uuid, mapIcon) -> {
++            WorldMap.this.decorations.forEach((name, mapIcon) -> {
 +                // If this cursor is for a player check visibility with vanish system
-+                org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayer(uuid); // Spigot
++                org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayerExact(name); // Spigot
 +                if (other == null || player.canSee(other)) {
 +                    icons.add(mapIcon);
 +                }
@@ -112,7 +112,7 @@ index c73ffc3bc2..14754bbeb2 100644
          public final EntityHuman trackee;
          private boolean d = true;
          private int e;
-@@ -377,9 +396,12 @@ public class WorldMap extends PersistentBase {
+@@ -420,9 +439,12 @@ public class WorldMap extends PersistentBase {
          @Nullable
          public Packet<?> a(ItemStack itemstack) {
              // CraftBukkit start
