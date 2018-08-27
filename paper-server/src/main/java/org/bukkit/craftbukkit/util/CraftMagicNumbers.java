@@ -34,9 +34,8 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
-import org.bukkit.plugin.PluginAwareness;
+import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.UnknownDependencyException;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
@@ -204,10 +203,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public void checkSupported(PluginDescriptionFile pdf) {
+    public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {
         if (pdf.getAPIVersion() != null) {
             if (!pdf.getAPIVersion().equals("1.13")) {
-                throw new UnknownDependencyException("Unsupported API version " + pdf.getAPIVersion());
+                throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
             }
         }
     }
