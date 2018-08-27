@@ -157,7 +157,7 @@ public class CraftBlock implements Block {
             return world.setTypeAndData(position, blockData, 3);
         } else {
             IBlockData old = world.getType(position);
-            boolean success = world.setTypeAndData(position, blockData, 18); // NOTIFY | NO_OBSERVER
+            boolean success = world.setTypeAndData(position, blockData, 2 | 16 | 1024); // NOTIFY | NO_OBSERVER | NO_PLACE (custom)
             if (success) {
                 world.getMinecraftWorld().notify(
                         position,
