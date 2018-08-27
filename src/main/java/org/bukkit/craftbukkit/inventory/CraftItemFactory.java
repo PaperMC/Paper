@@ -141,8 +141,11 @@ public final class CraftItemFactory implements ItemFactory {
         case BLAZE_SPAWN_EGG:
         case CAVE_SPIDER_SPAWN_EGG:
         case CHICKEN_SPAWN_EGG:
+        case COD_SPAWN_EGG:
         case COW_SPAWN_EGG:
         case CREEPER_SPAWN_EGG:
+        case DOLPHIN_SPAWN_EGG:
+        case DROWNED_SPAWN_EGG:
         case DONKEY_SPAWN_EGG:
         case ELDER_GUARDIAN_SPAWN_EGG:
         case ENDERMAN_SPAWN_EGG:
@@ -161,7 +164,9 @@ public final class CraftItemFactory implements ItemFactory {
         case PHANTOM_SPAWN_EGG:
         case PIG_SPAWN_EGG:
         case POLAR_BEAR_SPAWN_EGG:
+        case PUFFERFISH_SPAWN_EGG:
         case RABBIT_SPAWN_EGG:
+        case SALMON_SPAWN_EGG:
         case SHEEP_SPAWN_EGG:
         case SHULKER_SPAWN_EGG:
         case SILVERFISH_SPAWN_EGG:
@@ -171,6 +176,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SPIDER_SPAWN_EGG:
         case SQUID_SPAWN_EGG:
         case STRAY_SPAWN_EGG:
+        case TROPICAL_FISH_SPAWN_EGG:
         case TURTLE_SPAWN_EGG:
         case VEX_SPAWN_EGG:
         case VILLAGER_SPAWN_EGG:
