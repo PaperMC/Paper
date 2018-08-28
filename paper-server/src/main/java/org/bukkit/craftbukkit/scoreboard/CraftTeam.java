@@ -61,7 +61,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public String getSuffix() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return CraftChatMessage.fromComponent(team.getPrefix());
+        return CraftChatMessage.fromComponent(team.getSuffix());
     }
 
     public void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException {
