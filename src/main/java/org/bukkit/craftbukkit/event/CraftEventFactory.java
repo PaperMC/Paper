@@ -507,6 +507,8 @@ public class CraftEventFactory {
                 cause = DamageCause.CONTACT;
             } else if (source == DamageSource.HOT_FLOOR) {
                 cause = DamageCause.HOT_FLOOR;
+            } else if (source == DamageSource.MAGIC) {
+                cause = DamageCause.MAGIC;
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
             }
