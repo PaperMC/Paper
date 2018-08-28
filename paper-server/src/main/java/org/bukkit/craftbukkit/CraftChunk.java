@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
@@ -69,6 +70,8 @@ public class CraftChunk implements Chunk {
     }
 
     public Block getBlock(int x, int y, int z) {
+        validateChunkCoordinates(x, y, z);
+
         return new CraftBlock(worldServer, new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
@@ -273,6 +276,12 @@ public class CraftChunk implements Chunk {
         }
 
         return temps;
+    }
+
+    static void validateChunkCoordinates(int x, int y, int z) {
+        Preconditions.checkArgument(0 <= x && x <= 15, "x out of range (expected 0-15, got %s)", x);
+        Preconditions.checkArgument(0 <= y && y <= 255, "y out of range (expected 0-255, got %s)", y);
+        Preconditions.checkArgument(0 <= z && z <= 15, "z out of range (expected 0-15, got %s)", z);
     }
 
     static {

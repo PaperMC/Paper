@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -57,38 +58,54 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public Material getBlockType(int x, int y, int z) {
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
         return CraftMagicNumbers.getMaterial(blockids[y >> 4].a(x, y & 0xF, z).getBlock());
     }
 
     @Override
     public final BlockData getBlockData(int x, int y, int z) {
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
         return CraftBlockData.fromData(blockids[y >> 4].a(x, y & 0xF, z));
     }
 
     @Override
     public final int getData(int x, int y, int z) {
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
         return CraftMagicNumbers.toLegacyData(blockids[y >> 4].a(x, y & 0xF, z));
     }
 
     public final int getBlockSkyLight(int x, int y, int z) {
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
         return (skylight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
     public final int getBlockEmittedLight(int x, int y, int z) {
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
         int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
         return (emitlight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
     public final int getHighestBlockYAt(int x, int z) {
+        CraftChunk.validateChunkCoordinates(x, 0, z);
+
         return hmap.a(x, z);
     }
 
     public final Biome getBiome(int x, int z) {
+        CraftChunk.validateChunkCoordinates(x, 0, z);
+
         return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
     }
 
     public final double getRawBiomeTemperature(int x, int z) {
+        CraftChunk.validateChunkCoordinates(x, 0, z);
+
         return biomeTemp[z << 4 | x];
     }
 
