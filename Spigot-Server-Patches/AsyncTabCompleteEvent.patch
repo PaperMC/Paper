@@ -14,9 +14,17 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 5ffe4b374e..93807ffa62 100644
+index 5ffe4b374e..b296f948ef 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
+ import java.util.Collections;
+ import java.util.Iterator;
++import java.util.List;
+ import java.util.Set;
+ import java.util.function.Consumer;
+ import javax.annotation.Nullable;
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
      }
  
@@ -35,10 +43,6 @@ index 5ffe4b374e..93807ffa62 100644
          }
  
 -        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
--
--        this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--            if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
 +        // Paper start
 +        com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event;
 +        java.util.List<String> completions = new java.util.ArrayList<>();
@@ -47,9 +51,8 @@ index 5ffe4b374e..93807ffa62 100644
 +                buffer, true, null);
 +        event.callEvent();
 +        completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.getCompletions();
-+        if (event.isCancelled() || event.isHandled()) {
-+
-+            // Still fire sync event with the provided completions, if someone is listening
++        // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
++        if (!event.isHandled()) {
 +            if (!event.isCancelled() && org.bukkit.event.server.TabCompleteEvent.getHandlerList().getRegisteredListeners().length > 0) {
 +                java.util.List<String> finalCompletions = completions;
 +                Waitable<java.util.List<String>> syncCompletions = new Waitable<java.util.List<String>>() {
@@ -67,14 +70,22 @@ index 5ffe4b374e..93807ffa62 100644
 +                }
 +            }
 +            java.util.List<String> otherSuggestions = completions;
-+            minecraftServer.postToMainThread(() -> sendSuggestions(packetplayintabcomplete, otherSuggestions));
++            minecraftServer.postToMainThread(() -> sendSuggestions(packetplayintabcomplete, stringreader, otherSuggestions));
 +            return;
-+        }
-+        minecraftServer.postToMainThread(() -> sendSuggestions(packetplayintabcomplete, null));
-+    }
-+    public void sendSuggestions(PacketPlayInTabComplete packetplayintabcomplete, java.util.List<String> otherSuggestions) {
++        } else if (!completions.isEmpty()) {
++            com.mojang.brigadier.suggestion.SuggestionsBuilder suggestionsBuilder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), packetplayintabcomplete.b());
++            completions.forEach(suggestionsBuilder::suggest);
 +
-+        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(packetplayintabcomplete.c(), this.player.getCommandListener());
++            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestionsBuilder.build()));
++        }
+ 
+-        this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
++    }
++    public void sendSuggestions(PacketPlayInTabComplete packetplayintabcomplete, StringReader reader, List<String> otherSuggestions) {
++
++        ParseResults parseresults = this.minecraftServer.getCommandDispatcher().a().parse(reader, this.player.getCommandListener());
 +        //noinspection unchecked
 +        java.util.concurrent.CompletableFuture<Suggestions> completionSuggestions = this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults);
 +        completionSuggestions.thenAccept((Suggestions suggestions) -> {
