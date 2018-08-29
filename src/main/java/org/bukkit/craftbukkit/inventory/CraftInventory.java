@@ -223,10 +223,16 @@ public class CraftInventory implements Inventory {
     }
 
     private int first(ItemStack item, boolean withAmount) {
+        // Paper start
+        return first(item, withAmount, getStorageContents());
+    }
+
+    private int first(ItemStack item, boolean withAmount, ItemStack[] inventory) {
+        // Paper end
         if (item == null) {
             return -1;
         }
-        ItemStack[] inventory = getStorageContents();
+        //ItemStack[] inventory = getStorageContents(); // Paper - let param deal
         for (int i = 0; i < inventory.length; i++) {
             if (inventory[i] == null) continue;
 
@@ -349,6 +355,17 @@ public class CraftInventory implements Inventory {
 
     @Override
     public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {
+        // Paper start
+        return removeItem(false, items);
+    }
+
+    @Override
+    public HashMap<Integer, ItemStack> removeItemAnySlot(ItemStack... items) {
+        return removeItem(true, items);
+    }
+
+    private HashMap<Integer, ItemStack> removeItem(boolean searchEntire, ItemStack... items) {
+        // Paper end
         Validate.notNull(items, "Items cannot be null");
         HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
 
@@ -359,7 +376,10 @@ public class CraftInventory implements Inventory {
             int toDelete = item.getAmount();
 
             while (true) {
-                int first = first(item, false);
+                // Paper start - Allow searching entire contents
+                ItemStack[] toSearch = searchEntire ? getContents() : getStorageContents();
+                int first = first(item, false, toSearch);
+                // Paper end
 
                 // Drat! we don't have this type in the inventory
                 if (first == -1) {
