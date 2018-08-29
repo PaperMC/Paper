@@ -2781,9 +2781,9 @@ public enum Material implements Keyed {
     /**
      * Attempts to match the Material with the given name.
      * <p>
-     * This is a match lookup; names will be converted to uppercase, then
-     * stripped of special characters in an attempt to format it like the
-     * enum.
+     * This is a match lookup; names will be stripped of the "minecraft:"
+     * namespace, converted to uppercase, then stripped of special characters in
+     * an attempt to format it like the enum.
      *
      * @param name Name of the material to get
      * @return Material if found, or null
@@ -2795,9 +2795,9 @@ public enum Material implements Keyed {
     /**
      * Attempts to match the Material with the given name.
      * <p>
-     * This is a match lookup; names will be converted to uppercase, then
-     * stripped of special characters in an attempt to format it like the
-     * enum.
+     * This is a match lookup; names will be stripped of the "minecraft:"
+     * namespace, converted to uppercase, then stripped of special characters in
+     * an attempt to format it like the enum.
      *
      * @param name Name of the material to get
      * @param legacyName whether this is a legacy name
@@ -2806,7 +2806,12 @@ public enum Material implements Keyed {
     public static Material matchMaterial(final String name, boolean legacyName) {
         Validate.notNull(name, "Name cannot be null");
 
-        String filtered = name.toUpperCase(java.util.Locale.ENGLISH);
+        String filtered = name;
+        if (filtered.startsWith(NamespacedKey.MINECRAFT + ":")) {
+            filtered = filtered.substring((NamespacedKey.MINECRAFT + ":").length());
+        }
+
+        filtered = filtered.toUpperCase(java.util.Locale.ENGLISH);
 
         filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
         return getMaterial(filtered, legacyName);

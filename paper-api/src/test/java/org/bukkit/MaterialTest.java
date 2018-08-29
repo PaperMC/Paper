@@ -44,6 +44,26 @@ public class MaterialTest {
     }
 
     @Test
+    public void matchMaterialByKey() {
+        for (Material material : Material.values()) {
+            if (material.isLegacy()) {
+                continue;
+            }
+            assertThat(Material.matchMaterial(material.getKey().toString()), is(material));
+        }
+    }
+
+    @Test
+    public void matchMaterialByWrongNamespace() {
+        for (Material material : Material.values()) {
+            if (material.isLegacy()) {
+                continue;
+            }
+            assertNull(Material.matchMaterial("bogus:" + material.getKey().getKey()));
+        }
+    }
+
+    @Test
     public void matchMaterialByLowerCaseAndSpaces() {
         for (Material material : Material.values()) {
             String name = material.toString().replaceAll("_", " ").toLowerCase(java.util.Locale.ENGLISH);
