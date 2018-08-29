@@ -344,7 +344,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     @Override
-    public final Logger getLogger() {
+    public Logger getLogger() {
         return logger;
     }
 
