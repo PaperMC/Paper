@@ -1,4 +1,4 @@
-From aa104cbbb0974ec67151d8f2a6250668ede5f6f4 Mon Sep 17 00:00:00 2001
+From a5151ecd618a9fce62bccfc2b87a6de0f8654825 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 29 Jul 2018 05:02:15 +0100
 Subject: [PATCH] Break up and make tab spam limits configurable
@@ -22,7 +22,7 @@ to take the burden of this into their own hand without having to rely on
 plugins doing unsafe things.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index c457d07110..046bf33f66 100644
+index c457d07110..cc2e4ad3bd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -327,4 +327,18 @@ public class PaperConfig {
@@ -30,7 +30,7 @@ index c457d07110..046bf33f66 100644
          }
      }
 +
-+    public static int tabSpamIncrement = 2;
++    public static int tabSpamIncrement = 1;
 +    public static int tabSpamLimit = 500;
 +    private static void tabSpamLimiters() {
 +        tabSpamIncrement = getInt("settings.spam-limiter.tab-spam-increment", tabSpamIncrement);
@@ -45,7 +45,7 @@ index c457d07110..046bf33f66 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 5b3d39133d..906abc6541 100644
+index 0d58ea1c2b..906abc6541 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -78,6 +78,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -68,7 +68,7 @@ index 5b3d39133d..906abc6541 100644
      public void a(PacketPlayInTabComplete packetplayintabcomplete) {
          // PlayerConnectionUtils.ensureMainThread(packetplayintabcomplete, this, this.player.getWorldServer()); // Paper - run this async
          // CraftBukkit start
--        if (chatSpamField.addAndGet(this, 2) > 500 && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) {
+-        if (chatSpamField.addAndGet(this, 1) > 500 && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) {
 +        if (tabSpamLimiter.addAndGet(com.destroystokyo.paper.PaperConfig.tabSpamIncrement) > com.destroystokyo.paper.PaperConfig.tabSpamLimit && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) { // Paper start - split and make configurable
              this.disconnect(new ChatMessage("disconnect.spam", new Object[0]));
              minecraftServer.postToMainThread(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
