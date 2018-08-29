@@ -120,6 +120,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         }
         if (type.isLegacy()) {
             createData((byte) 0);
+        } else {
+            this.data = null;
         }
     }
 
@@ -263,7 +265,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         if (stack == this) {
             return true;
         }
-        Material comparisonType = Bukkit.getUnsafe().fromLegacy(this.getType()); // This may be called from legacy item stacks, try to get the right material
+        Material comparisonType = (this.type.isLegacy()) ? Bukkit.getUnsafe().fromLegacy(this.getData(), true) : this.type; // This may be called from legacy item stacks, try to get the right material
         return comparisonType == stack.getType() && getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
     }
 
