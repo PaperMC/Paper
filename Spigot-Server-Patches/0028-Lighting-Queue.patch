@@ -1,4 +1,4 @@
-From 59b57105332ca92c3b777cb704d08541bc89049e Mon Sep 17 00:00:00 2001
+From 26b269dc1444314b35ad44ed36c78c4e125b1ffc Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -136,21 +136,25 @@ index e8c3dcc24..c47f56ed8 100644
      }
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 000000000..60562f1fd
+index 000000000..1864fa9cc
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,100 @@
 +package net.minecraft.server;
 +
 +import co.aikar.timings.Timing;
 +import it.unimi.dsi.fastutil.objects.ObjectCollection;
 +
 +import java.util.ArrayDeque;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ForkJoinPool;
++import java.util.concurrent.TimeUnit;
 +
 +class PaperLightingQueue {
 +    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
 +    private static int updatesThisTick;
 +
++    private static ForkJoinPool pool = (ForkJoinPool) Executors.newWorkStealingPool();
 +
 +    static void processQueue(long curTime) {
 +        updatesThisTick = 0;
@@ -165,12 +169,15 @@ index 000000000..60562f1fd
 +            }
 +
 +            ObjectCollection<Chunk> loadedChunks = ((WorldServer) world).getChunkProviderServer().chunks.values();
-+            for (Chunk chunk : loadedChunks.toArray(new Chunk[loadedChunks.size()])) {
-+                if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
-+                    break START;
-+                }
++            for (Chunk chunk : loadedChunks.toArray(new Chunk[0])) {
++                if (chunk.lightingQueue.isEmpty()) continue;
++                pool.submit(() -> {
++                    chunk.lightingQueue.processQueue(startTime, maxTickTime);
++                });
 +            }
 +        }
++
++        pool.awaitQuiescence(1000, TimeUnit.MILLISECONDS);
 +    }
 +
 +    static class LightingQueue extends ArrayDeque<Runnable> {
@@ -184,7 +191,7 @@ index 000000000..60562f1fd
 +        /**
 +         * Processes the lighting queue for this chunk
 +         *
-+         * @param startTime If start Time is 0, we will not limit execution time
++         * @param startTime   If start time is 0, we will not limit execution time
 +         * @param maxTickTime Maximum time to spend processing lighting updates
 +         * @return true to abort processing furthur lighting updates
 +         */
@@ -246,5 +253,5 @@ index 929875340..0fe8a97f2 100644
                  }
  
 -- 
-2.18.0
+2.17.1
 
