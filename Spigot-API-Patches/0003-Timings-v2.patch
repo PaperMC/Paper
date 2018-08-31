@@ -1,4 +1,4 @@
-From 53a0a166edaf7f461b7da11e6a049283d7ef4cc4 Mon Sep 17 00:00:00 2001
+From 31d02dd41b6c227e18ff687c779cc202ae830991 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,7 +6,7 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 000000000..4d8b633ed
+index 000000000..98079dc0c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 @@ -0,0 +1,82 @@
@@ -15,7 +15,7 @@ index 000000000..4d8b633ed
 +import static co.aikar.timings.TimingsManager.*;
 +
 +public class FullServerTickHandler extends TimingHandler {
-+    private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null, false);
++    private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null);
 +    final TimingData minuteData;
 +    double avgFreeMemory = -1D;
 +    double avgUsedMemory = -1D;
@@ -456,10 +456,10 @@ index 000000000..f222d6b7d
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 000000000..916b6f9d6
+index 000000000..521c985e6
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,200 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -489,12 +489,13 @@ index 000000000..916b6f9d6
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +import org.bukkit.Bukkit;
 +
++import java.util.concurrent.atomic.AtomicInteger;
 +import java.util.logging.Level;
 +
 +class TimingHandler implements Timing {
 +
-+    private static int idPool = 1;
-+    final int id = idPool++;
++    private static AtomicInteger idPool = new AtomicInteger(1);
++    final int id = idPool.getAndIncrement();
 +
 +    final String name;
 +    private final boolean verbose;
@@ -546,21 +547,17 @@ index 000000000..916b6f9d6
 +
 +    @Override
 +    public Timing startTimingIfSync() {
-+        if (Bukkit.isPrimaryThread()) {
-+            startTiming();
-+        }
++        startTiming();
 +        return this;
 +    }
 +
 +    @Override
 +    public void stopTimingIfSync() {
-+        if (Bukkit.isPrimaryThread()) {
-+            stopTiming();
-+        }
++        stopTiming();
 +    }
 +
 +    public Timing startTiming() {
-+        if (enabled && ++timingDepth == 1) {
++        if (enabled && Bukkit.isPrimaryThread() && ++timingDepth == 1) {
 +            start = System.nanoTime();
 +            parent = TimingsManager.CURRENT;
 +            TimingsManager.CURRENT = this;
@@ -569,13 +566,7 @@ index 000000000..916b6f9d6
 +    }
 +
 +    public void stopTiming() {
-+        if (enabled && --timingDepth == 0 && start != 0) {
-+            if (!Bukkit.isPrimaryThread()) {
-+                Bukkit.getLogger().log(Level.SEVERE, "stopTiming called async for " + name);
-+                new Throwable().printStackTrace();
-+                start = 0;
-+                return;
-+            }
++        if (enabled && timingDepth > 0 && Bukkit.isPrimaryThread() && --timingDepth == 0 && start != 0) {
 +            addDiff(System.nanoTime() - start);
 +            start = 0;
 +        }
@@ -1090,10 +1081,10 @@ index 000000000..0e114eb32
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 000000000..623dda49c
+index 000000000..63b4f318a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,108 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1119,12 +1110,12 @@ index 000000000..623dda49c
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
 +import co.aikar.util.LoadingMap;
 +import co.aikar.util.MRUMapCache;
 +
 +import java.util.ArrayDeque;
 +import java.util.Map;
++import java.util.concurrent.atomic.AtomicInteger;
 +
 +/**
 + * <p>Used as a basis for fast HashMap key comparisons for the Timing Map.</p>
@@ -1136,25 +1127,18 @@ index 000000000..623dda49c
 +     * Holds all groups. Autoloads on request for a group by name.
 +     */
 +    static final Map<String, TimingGroup> GROUP_MAP = MRUMapCache.of(
-+        LoadingMap.newIdentityHashMap(new Function<String, TimingGroup>() {
-+            @Override
-+            public TimingGroup apply(String group) {
-+                return new TimingGroup(group);
-+            }
-+        }, 64)
++        LoadingMap.newIdentityHashMap(TimingGroup::new, 64)
 +    );
-+    static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
++    private static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
 +    final String group;
 +    final String name;
 +    final TimingHandler groupHandler;
-+    final boolean protect;
 +    private final int hashCode;
 +
-+    TimingIdentifier(String group, String name, Timing groupHandler, boolean protect) {
++    TimingIdentifier(String group, String name, Timing groupHandler) {
 +        this.group = group != null ? group.intern() : DEFAULT_GROUP.name;
 +        this.name = name.intern();
 +        this.groupHandler = groupHandler != null ? groupHandler.getTimingHandler() : null;
-+        this.protect = protect;
 +        this.hashCode = (31 * this.group.hashCode()) + this.name.hashCode();
 +    }
 +
@@ -1185,8 +1169,8 @@ index 000000000..623dda49c
 +
 +    static class TimingGroup {
 +
-+        private static int idPool = 1;
-+        final int id = idPool++;
++        private static AtomicInteger idPool = new AtomicInteger(1);
++        final int id = idPool.getAndIncrement();
 +
 +        final String name;
 +        ArrayDeque<TimingHandler> handlers = new ArrayDeque<TimingHandler>(64);
@@ -1194,11 +1178,24 @@ index 000000000..623dda49c
 +        private TimingGroup(String name) {
 +            this.name = name;
 +        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            TimingGroup that = (TimingGroup) o;
++            return id == that.id;
++        }
++
++        @Override
++        public int hashCode() {
++            return id;
++        }
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 000000000..32e4bb1e2
+index 000000000..f907649ba
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
 @@ -0,0 +1,284 @@
@@ -1278,7 +1275,7 @@ index 000000000..32e4bb1e2
 +     */
 +    public static Timing of(Plugin plugin, String name, Timing groupHandler) {
 +        Preconditions.checkNotNull(plugin, "Plugin can not be null");
-+        return TimingsManager.getHandler(plugin.getName(), name, groupHandler, true);
++        return TimingsManager.getHandler(plugin.getName(), name, groupHandler);
 +    }
 +
 +    /**
@@ -1310,7 +1307,7 @@ index 000000000..32e4bb1e2
 +     */
 +    public static Timing ofStart(Plugin plugin, String name, Timing groupHandler) {
 +        Timing timing = of(plugin, name, groupHandler);
-+        timing.startTimingIfSync();
++        timing.startTiming();
 +        return timing;
 +    }
 +
@@ -1483,7 +1480,7 @@ index 000000000..32e4bb1e2
 +    }
 +
 +    static TimingHandler ofSafe(String groupName, String name, Timing groupHandler) {
-+        return TimingsManager.getHandler(groupName, name, groupHandler, false);
++        return TimingsManager.getHandler(groupName, name, groupHandler);
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
@@ -1961,10 +1958,10 @@ index 000000000..df7f42595
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 000000000..58ed35e00
+index 000000000..e0f3e07fe
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,187 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1990,7 +1987,6 @@ index 000000000..58ed35e00
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
 +import com.google.common.collect.EvictingQueue;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
@@ -2010,16 +2006,8 @@ index 000000000..58ed35e00
 +public final class TimingsManager {
 +    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP =
 +        Collections.synchronizedMap(LoadingMap.newHashMap(
-+            new Function<TimingIdentifier, TimingHandler>() {
-+                @Override
-+                public TimingHandler apply(TimingIdentifier id) {
-+                    return (id.protect ?
-+                        new UnsafeTimingHandler(id) :
-+                        new TimingHandler(id)
-+                    );
-+                }
-+            },
-+            256, .5F
++            TimingHandler::new,
++            4096, .5F
 +        ));
 +    public static final FullServerTickHandler FULL_SERVER_TICK = new FullServerTickHandler();
 +    public static final TimingHandler TIMINGS_TICK = Timings.ofSafe("Timings Tick", FULL_SERVER_TICK);
@@ -2108,8 +2096,8 @@ index 000000000..58ed35e00
 +        historyStart = System.currentTimeMillis();
 +    }
 +
-+    static TimingHandler getHandler(String group, String name, Timing parent, boolean protect) {
-+        return TIMING_MAP.get(new TimingIdentifier(group, name, parent, protect));
++    static TimingHandler getHandler(String group, String name, Timing parent) {
++        return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
 +    }
 +
 +
