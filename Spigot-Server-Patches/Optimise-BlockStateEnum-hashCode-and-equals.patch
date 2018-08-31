@@ -5,35 +5,38 @@ Subject: [PATCH] Optimise BlockStateEnum hashCode and equals
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 725087de59..5e6cb5d7de 100644
+index 73623a21c5..9d8a03be8d 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -0,0 +0,0 @@ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Map;
+ import java.util.Optional;
++import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.Predicate;
+ import java.util.stream.Collectors;
+ 
 @@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
      private final ImmutableSet<T> a;
      private final Map<String, T> b = Maps.newHashMap();
  
 +    // Paper start - BlockStateEnum is a singleton, so we can use our own hashCode
-+    private static int hashId = 0;
++    private static AtomicInteger hashId = new AtomicInteger(1);
 +    private int hashCode;
 +    // Paper end
 +
      protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
          super(s, oclass);
          this.a = ImmutableSet.copyOf(collection);
+ 
+-        for(Enum oenum : collection) {
++        this.hashCode = hashId.getAndIncrement() * 61; // Paper
++        for(T oenum : collection) { // Paper - decompile fix
+             String s1 = ((INamable)oenum).getName();
+             if (this.b.containsKey(s1)) {
+                 throw new IllegalArgumentException("Multiple values have the same name '" + s1 + "'");
 @@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
-                 throw new IllegalArgumentException("Multiple values have the same name \'" + s1 + "\'");
-             }
- 
--            this.b.put(s1, oenum);
-+            this.b.put(s1, (T) oenum); // Paper - decompile fix
-         }
- 
-+        this.hashCode = hashId++; // Paper
-     }
- 
-     public Collection<T> d() {
-@@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
-         return ((INamable) t0).getName();
+         return ((INamable)oenum).getName();
      }
  
 +    @Override // Paper start - override equals as BlockStateEnum is a singleton
@@ -41,9 +44,8 @@ index 725087de59..5e6cb5d7de 100644
 -        if (this == object) {
 -            return true;
 -        } else if (object instanceof BlockStateEnum && super.equals(object)) {
--            BlockStateEnum blockstateenum = (BlockStateEnum) object;
--
--            return this.a.equals(blockstateenum.a) && this.b.equals(blockstateenum.b);
+-            BlockStateEnum blockstateenum1 = (BlockStateEnum)object;
+-            return this.a.equals(blockstateenum1.a) && this.b.equals(blockstateenum1.b);
 -        } else {
 -            return false;
 -        }
@@ -53,7 +55,6 @@ index 725087de59..5e6cb5d7de 100644
  
      public int c() {
 -        int i = super.c();
--
 -        i = 31 * i + this.a.hashCode();
 -        i = 31 * i + this.b.hashCode();
 -        return i;
