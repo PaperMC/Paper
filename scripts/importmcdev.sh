@@ -11,7 +11,7 @@ gitcmd="git -c commit.gpgsign=false"
 
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/Minecraft/$minecraftversion"
+decompiledir="$workdir/Minecraft/$minecraftversion/forge"
 
 export importedmcdev=""
 function import {

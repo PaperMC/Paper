@@ -5,7 +5,6 @@ PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/Minecraft/$minecraftversion"
 gitcmd="git -c commit.gpgsign=false"
 
 #

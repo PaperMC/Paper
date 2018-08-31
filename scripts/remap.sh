@@ -12,11 +12,12 @@ accesstransforms="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.
 classmappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep classMappings | cut -d '"' -f 4)
 membermappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep memberMappings | cut -d '"' -f 4)
 packagemappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep packageMappings | cut -d '"' -f 4)
-jarpath="$workdir/Minecraft/$minecraftversion/$minecraftversion"
+decompiledir="$workdir/Minecraft/$minecraftversion"
+jarpath="$decompiledir/$minecraftversion"
+mkdir -p "$decompiledir"
 
 echo "Downloading unmapped vanilla jar..."
 if [ ! -f  "$jarpath.jar" ]; then
-    mkdir -p "$workdir/Minecraft/$minecraftversion"
     curl -s -o "$jarpath.jar" "$minecraftserverurl"
     if [ "$?" != "0" ]; then
         echo "Failed to download the vanilla server jar. Check connectivity or try again later."

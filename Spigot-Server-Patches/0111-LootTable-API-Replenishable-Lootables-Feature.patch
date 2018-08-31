@@ -1,4 +1,4 @@
-From f87b03b9d893ea3c081afef79107c62f14ca2407 Mon Sep 17 00:00:00 2001
+From e3250da854818c3f910dbc641c51a86995c4df86 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 21:19:14 -0400
 Subject: [PATCH] LootTable API & Replenishable Lootables Feature
@@ -591,13 +591,13 @@ index 8945ab275b..184809b832 100644
  
              if (this.lootTableSeed == 0L) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
-index 60d200f9eb..228d6b2800 100644
+index 25328bf414..6e3779c417 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLootable.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
-@@ -5,9 +5,10 @@ import javax.annotation.Nullable;
+@@ -4,9 +4,10 @@ import java.util.Random;
+ import javax.annotation.Nullable;
  
  public abstract class TileEntityLootable extends TileEntityContainer implements ILootable {
- 
 -    protected MinecraftKey g;
 -    protected long h;
 +    protected MinecraftKey g; public MinecraftKey getLootTableKey() { return g; } public void setLootTable(MinecraftKey key) { g = key; } // Paper - OBFHELPER
@@ -607,7 +607,7 @@ index 60d200f9eb..228d6b2800 100644
  
      protected TileEntityLootable(TileEntityTypes<?> tileentitytypes) {
          super(tileentitytypes);
-@@ -23,16 +24,18 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -21,16 +22,18 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
      }
  
      protected boolean d(NBTTagCompound nbttagcompound) {
@@ -627,7 +627,7 @@ index 60d200f9eb..228d6b2800 100644
          if (this.g == null) {
              return false;
          } else {
-@@ -41,15 +44,15 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
+@@ -39,14 +42,14 @@ public abstract class TileEntityLootable extends TileEntityContainer implements
                  nbttagcompound.setLong("LootTableSeed", this.h);
              }
  
@@ -640,12 +640,11 @@ index 60d200f9eb..228d6b2800 100644
 -        if (this.g != null && this.world.getMinecraftServer() != null) {
 +        if (lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
              LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.g);
- 
 -            this.g = null;
 +            lootableData.processRefill(entityhuman); // Paper
              Random random;
- 
              if (this.h == 0L) {
+                 random = new Random();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 index ac9b4297b2..0558cafe31 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
@@ -681,7 +680,7 @@ index dff5bb5171..c3e40aa172 100644
      public CraftChest(final Block block) {
          super(block, TileEntityChest.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftLootable.java b/src/main/java/org/bukkit/craftbukkit/block/CraftLootable.java
-index d519252521..a2324c7c8b 100644
+index 7ef68bb626..daf183fb10 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftLootable.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftLootable.java
 @@ -1,5 +1,6 @@

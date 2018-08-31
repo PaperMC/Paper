@@ -1,11 +1,11 @@
-From b10a2ee44d33c6b5cd078b16becfba07f9b57fa3 Mon Sep 17 00:00:00 2001
+From 20e4fb71f59a552f2df178ab805c5c911a76d2e2 Mon Sep 17 00:00:00 2001
 From: kashike <kashike@vq.lc>
 Date: Thu, 21 Apr 2016 23:51:55 -0700
 Subject: [PATCH] Add ability to configure frosted_ice properties
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 56a25531b4..25a5333219 100644
+index 3628ddb4db..df2863ce1b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -247,4 +247,14 @@ public class PaperWorldConfig {
@@ -24,26 +24,32 @@ index 56a25531b4..25a5333219 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockIceFrost.java b/src/main/java/net/minecraft/server/BlockIceFrost.java
-index 39b3c88d64..302d420512 100644
+index af6c744ad3..7bea86f52b 100644
 --- a/src/main/java/net/minecraft/server/BlockIceFrost.java
 +++ b/src/main/java/net/minecraft/server/BlockIceFrost.java
-@@ -12,6 +12,7 @@ public class BlockIceFrost extends BlockIce {
+@@ -11,19 +11,20 @@ public class BlockIceFrost extends BlockIce {
      }
  
      public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
 +        if (!world.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
-         if ((random.nextInt(3) == 0 || this.a(world, blockposition, 4)) && world.getLightLevel(blockposition) > 11 - ((Integer) iblockdata.get(BlockIceFrost.a)).intValue() - iblockdata.b(world, blockposition) && this.c(iblockdata, world, blockposition)) {
-             BlockPosition.b blockposition_b = BlockPosition.b.r();
-             Throwable throwable = null;
-@@ -27,7 +28,7 @@ public class BlockIceFrost extends BlockIce {
-                     IBlockData iblockdata1 = world.getType(blockposition_b);
- 
-                     if (iblockdata1.getBlock() == this && !this.c(iblockdata1, world, blockposition_b)) {
--                        world.J().a(blockposition_b, this, MathHelper.nextInt(random, 20, 40));
-+                        world.J().a(blockposition_b, this, MathHelper.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
+         if ((random.nextInt(3) == 0 || this.a(world, blockposition, 4)) && world.getLightLevel(blockposition) > 11 - iblockdata.get(a) - iblockdata.b(world, blockposition) && this.c(iblockdata, world, blockposition)) {
+             try (BlockPosition.b blockposition$b = BlockPosition.b.r()) {
+                 for(EnumDirection enumdirection : EnumDirection.values()) {
+                     blockposition$b.j(blockposition).d(enumdirection);
+                     IBlockData iblockdata1 = world.getType(blockposition$b);
+                     if (iblockdata1.getBlock() == this && !this.c(iblockdata1, world, blockposition$b)) {
+-                        world.J().a(blockposition$b, this, MathHelper.nextInt(random, 20, 40));
++                        world.J().a(blockposition$b, this, MathHelper.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
                      }
                  }
-             } catch (Throwable throwable1) {
+             }
+ 
+         } else {
+-            world.J().a(blockposition, this, MathHelper.nextInt(random, 20, 40));
++            world.J().a(blockposition, this, MathHelper.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
+         }
+     }
+ 
 -- 
 2.18.0
 

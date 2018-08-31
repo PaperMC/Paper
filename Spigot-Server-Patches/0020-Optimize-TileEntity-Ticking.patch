@@ -1,11 +1,24 @@
-From 13443f9b6f42a4de1fa7b993ef0a6b9bb3be23e2 Mon Sep 17 00:00:00 2001
+From fe5d1f6d166e14ba309e16fb90c12c82ab35e5c4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 9ffec378a9..5401f7d754 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -216,7 +216,7 @@ public class BlockChest extends BlockTileEntity implements IFluidSource, IFluidC
+     }
+ 
+     private boolean b(World world, BlockPosition blockposition) {
+-        List list = world.a(EntityOcelot.class, new AxisAlignedBB((double)blockposition.getX(), (double)(blockposition.getY() + 1), (double)blockposition.getZ(), (double)(blockposition.getX() + 1), (double)(blockposition.getY() + 2), (double)(blockposition.getZ() + 1)));
++        List<EntityOcelot> list = world.a(EntityOcelot.class, new AxisAlignedBB((double)blockposition.getX(), (double)(blockposition.getY() + 1), (double)blockposition.getZ(), (double)(blockposition.getX() + 1), (double)(blockposition.getY() + 2), (double)(blockposition.getZ() + 1))); // Paper - decompile fix
+         if (!list.isEmpty()) {
+             for(EntityOcelot entityocelot : list) {
+                 if (entityocelot.isSitting()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index a534c441a..591524f1e 100644
+index ad601a39d9..9573a4ecdf 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
@@ -91,7 +104,7 @@ index a534c441a..591524f1e 100644
                  int newPower = Math.max(0, Math.min(15, this.f));
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index 61edd7cc6..9407a8c97 100644
+index 05de26405e..bc851d2a04 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -1,6 +1,6 @@
@@ -99,10 +112,10 @@ index 61edd7cc6..9407a8c97 100644
  
 -public class TileEntityEnderChest extends TileEntity implements ITickable {
 +public class TileEntityEnderChest extends TileEntity { // Paper - Remove ITickable
- 
      public float a;
      public float e;
-@@ -17,19 +17,37 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+     public int f;
+@@ -16,16 +16,34 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
          }
  
          this.e = this.a;
@@ -111,9 +124,7 @@ index 61edd7cc6..9407a8c97 100644
          int i = this.position.getX();
          int j = this.position.getY();
          int k = this.position.getZ();
-         float f = 0.1F;
-         double d0;
--
+         float fx = 0.1F;
 +        */
 +        // Paper start
 +    }
@@ -121,13 +132,11 @@ index 61edd7cc6..9407a8c97 100644
 +        int i = this.position.getX();
 +        int j = this.position.getY();
 +        int k = this.position.getZ();
-+        double d0;
 +        // Paper end
          if (this.f > 0 && this.a == 0.0F) {
-             double d1 = (double) i + 0.5D;
- 
-             d0 = (double) k + 0.5D;
-             this.world.a((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.BLOCK_ENDER_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+             double d0 = (double)i + 0.5D;
+             double d1 = (double)k + 0.5D;
+             this.world.a((EntityHuman)null, d0, (double)j + 0.5D, d1, SoundEffects.BLOCK_ENDER_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
          }
 -
 +        // Paper start
@@ -140,9 +149,9 @@ index 61edd7cc6..9407a8c97 100644
 +        double d0;
 +        // Paper end
          if (this.f == 0 && this.a > 0.0F || this.f > 0 && this.a < 1.0F) {
-             float f1 = this.a;
- 
-@@ -76,11 +94,13 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+             float f2 = this.a;
+             if (this.f > 0) {
+@@ -69,11 +87,13 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
      public void c() {
          ++this.f;
          this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.f);

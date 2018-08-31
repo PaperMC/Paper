@@ -6,8 +6,8 @@ PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/Minecraft/$minecraftversion"
-nms="$decompiledir/net/minecraft/server"
+spigotdecompiledir="$workdir/Minecraft/$minecraftversion/spigot"
+nms="$spigotdecompiledir/net/minecraft/server"
 cb="src/main/java/net/minecraft/server"
 gitcmd="git -c commit.gpgsign=false"
 

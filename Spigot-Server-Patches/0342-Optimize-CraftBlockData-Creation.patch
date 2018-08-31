@@ -1,4 +1,4 @@
-From 60322b509f65a591ad5dcce5985e6895cd7b26bc Mon Sep 17 00:00:00 2001
+From 328689b5cc58e53615c8fde2642e9f0d096f2a75 Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Thu, 23 Aug 2018 11:45:32 -0400
 Subject: [PATCH] Optimize CraftBlockData Creation
@@ -7,7 +7,7 @@ Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
 and cloning it when one is needed.
 
 diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
-index 4dd6c32761..1b226a77e0 100644
+index fbe181c1fd..bd86cd2e54 100644
 --- a/src/main/java/net/minecraft/server/BlockData.java
 +++ b/src/main/java/net/minecraft/server/BlockData.java
 @@ -1,6 +1,7 @@
@@ -17,10 +17,10 @@ index 4dd6c32761..1b226a77e0 100644
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
  
  public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
- 
-@@ -11,4 +12,14 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
+     public BlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
+@@ -10,4 +11,14 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
      public Block getBlock() {
-         return (Block) this.e_;
+         return this.e_;
      }
 +
 +    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
@@ -34,10 +34,10 @@ index 4dd6c32761..1b226a77e0 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 6f80876990..726b178fd8 100644
+index bf06a90312..4d62d0093d 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -28,6 +28,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
+@@ -23,6 +23,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
  
      Block getBlock();
  

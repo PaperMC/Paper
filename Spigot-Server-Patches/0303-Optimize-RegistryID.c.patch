@@ -1,4 +1,4 @@
-From fa670184f6b30408f73ebe46e89578a4bd2b68b4 Mon Sep 17 00:00:00 2001
+From b30fb91663c75adb7a5138e6f03a70c63d93c0f6 Mon Sep 17 00:00:00 2001
 From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 23 Jul 2018 13:08:19 -0400
 Subject: [PATCH] Optimize RegistryID.c()
@@ -6,31 +6,31 @@ Subject: [PATCH] Optimize RegistryID.c()
 This is a frequent hotspot for world loading/saving.
 
 diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
-index bde5714dd6..a01cda9d81 100644
+index d03ac0e70c..9242999f70 100644
 --- a/src/main/java/net/minecraft/server/RegistryID.java
 +++ b/src/main/java/net/minecraft/server/RegistryID.java
-@@ -14,12 +14,14 @@ public class RegistryID<K> implements Registry { // Paper - decompile fix
+@@ -13,12 +13,14 @@ public class RegistryID<K> implements Registry<K> {
      private K[] d;
      private int e;
      private int f;
 +    private java.util.BitSet usedIds; // Paper
  
      public RegistryID(int i) {
-         i = (int) ((float) i / 0.8F);
-         this.b = (K[]) (new Object[i]); // Paper - decompile fix
+         i = (int)((float)i / 0.8F);
+         this.b = (K[])(new Object[i]);
          this.c = new int[i];
-         this.d = (K[]) (new Object[i]); // Paper - decompile fix
+         this.d = (K[])(new Object[i]);
 +        this.usedIds = new java.util.BitSet(); // Paper
      }
  
-     public int getId(@Nullable K k0) {
-@@ -43,9 +45,14 @@ public class RegistryID<K> implements Registry { // Paper - decompile fix
+     public int getId(@Nullable K object) {
+@@ -41,9 +43,14 @@ public class RegistryID<K> implements Registry<K> {
      }
  
      private int c() {
 +        // Paper start
 +        /*
-         while (this.e < this.d.length && this.d[this.e] != null) {
+         while(this.e < this.d.length && this.d[this.e] != null) {
              ++this.e;
          }
 +        */
@@ -39,24 +39,24 @@ index bde5714dd6..a01cda9d81 100644
  
          return this.e;
      }
-@@ -59,6 +66,7 @@ public class RegistryID<K> implements Registry { // Paper - decompile fix
-         this.d = (K[]) (new Object[i]); // Paper - decompile fix
+@@ -56,6 +63,7 @@ public class RegistryID<K> implements Registry<K> {
+         this.d = (K[])(new Object[i]);
          this.e = 0;
          this.f = 0;
 +        this.usedIds.clear(); // Paper
  
-         for (int j = 0; j < aobject.length; ++j) {
+         for(int j = 0; j < aobject.length; ++j) {
              if (aobject[j] != null) {
-@@ -84,6 +92,7 @@ public class RegistryID<K> implements Registry { // Paper - decompile fix
-         this.b[k] = k0;
-         this.c[k] = i;
-         this.d[i] = k0;
+@@ -80,6 +88,7 @@ public class RegistryID<K> implements Registry<K> {
+         this.b[l] = object;
+         this.c[l] = i;
+         this.d[i] = object;
 +        this.usedIds.set(i); // Paper
          ++this.f;
          if (i == this.e) {
              ++this.e;
-@@ -148,6 +157,7 @@ public class RegistryID<K> implements Registry { // Paper - decompile fix
-         Arrays.fill(this.d, (Object) null);
+@@ -140,6 +149,7 @@ public class RegistryID<K> implements Registry<K> {
+         Arrays.fill(this.d, (Object)null);
          this.e = 0;
          this.f = 0;
 +        this.usedIds.clear(); // Paper
