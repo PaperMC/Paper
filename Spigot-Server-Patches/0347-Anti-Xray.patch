@@ -1,4 +1,4 @@
-From 57f394938e0a725caa306557459d93867d85d34d Mon Sep 17 00:00:00 2001
+From 3ce5c28b7988c4e38e9ffcfdd295bd4d52fe6289 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -100,7 +100,7 @@ index 0000000000..1ba8477bf9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000..65d3e88c3b
+index 0000000000..d00e113ba8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 @@ -0,0 +1,670 @@
@@ -173,9 +173,9 @@ index 0000000000..65d3e88c3b
 +            predefinedBlockDataNetherrack = new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
 +            predefinedBlockDataEndStone = new IBlockData[] {Blocks.END_STONE.getBlockData()};
 +            predefinedBlockDataBitsGlobal = null;
-+            predefinedBlockDataBitsStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getDataBits(Blocks.STONE.getBlockData())};
-+            predefinedBlockDataBitsNetherrackGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getDataBits(Blocks.NETHERRACK.getBlockData())};
-+            predefinedBlockDataBitsEndStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getDataBits(Blocks.END_STONE.getBlockData())};
++            predefinedBlockDataBitsStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.STONE.getBlockData())};
++            predefinedBlockDataBitsNetherrackGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.NETHERRACK.getBlockData())};
++            predefinedBlockDataBitsEndStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.END_STONE.getBlockData())};
 +        } else {
 +            Set<IBlockData> predefinedBlockDataSet = new HashSet<IBlockData>();
 +
@@ -194,7 +194,7 @@ index 0000000000..65d3e88c3b
 +            predefinedBlockDataBitsGlobal = new int[predefinedBlockData.length];
 +
 +            for (int i = 0; i < predefinedBlockData.length; i++) {
-+                predefinedBlockDataBitsGlobal[i] = ChunkSection.GLOBAL_PALETTE.getDataBits(predefinedBlockData[i]);
++                predefinedBlockDataBitsGlobal[i] = ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(predefinedBlockData[i]);
 +            }
 +
 +            predefinedBlockDataBitsStoneGlobal = null;
@@ -206,7 +206,7 @@ index 0000000000..65d3e88c3b
 +            Block block = IRegistry.BLOCK.get(new MinecraftKey(id));
 +
 +            if (block != null) {
-+                obfuscateGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(block.getBlockData())] = true;
++                obfuscateGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(block.getBlockData())] = true;
 +            }
 +        }
 +
@@ -320,17 +320,17 @@ index 0000000000..65d3e88c3b
 +                    predefinedBlockDataBitsTemp = predefinedBlockDataBits == null ? predefinedBlockDataBits = engineMode == EngineMode.HIDE ? new int[1] : new int[predefinedBlockData.length] : predefinedBlockDataBits;
 +
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
-+                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getDataBits(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
++                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
 +                    }
 +                }
 +
-+                dataBitsWriter.setIndex(chunkPacketInfoAntiXray.getDataBitsIndex(chunkSectionIndex));
++                dataBitsWriter.setIndex(chunkPacketInfoAntiXray.getOrCreateIdForIndex(chunkSectionIndex));
 +
 +                //Check if the chunk section below was not obfuscated
 +                if (chunkSectionIndex == 0 || !chunkPacketInfoAntiXray.isWritten(chunkSectionIndex - 1) || chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex - 1) == null) {
 +                    //If so, initialize some stuff
 +                    dataBitsReader.setBitsPerObject(chunkPacketInfoAntiXray.getBitsPerObject(chunkSectionIndex));
-+                    dataBitsReader.setIndex(chunkPacketInfoAntiXray.getDataBitsIndex(chunkSectionIndex));
++                    dataBitsReader.setIndex(chunkPacketInfoAntiXray.getOrCreateIdForIndex(chunkSectionIndex));
 +                    solidTemp = readDataPalette(chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex), solid, solidGlobal);
 +                    obfuscateTemp = readDataPalette(chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex), obfuscate, obfuscateGlobal);
 +                    //Read the blocks of the upper layer of the chunk section below if it exists
@@ -340,7 +340,7 @@ index 0000000000..65d3e88c3b
 +                    for (int z = 0; z < 16; z++) {
 +                        for (int x = 0; x < 16; x++) {
 +                            current[z][x] = true;
-+                            next[z][x] = skipFirstLayer || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(belowChunkSection.getType(x, 15, z))];
++                            next[z][x] = skipFirstLayer || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(belowChunkSection.getType(x, 15, z))];
 +                        }
 +                    }
 +
@@ -377,7 +377,7 @@ index 0000000000..65d3e88c3b
 +
 +                        for (int z = 0; z < 16; z++) {
 +                            for (int x = 0; x < 16; x++) {
-+                                if (!solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(aboveChunkSection.getType(x, 0, z))]) {
++                                if (!solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(aboveChunkSection.getType(x, 0, z))]) {
 +                                    current[z][x] = true;
 +                                }
 +                            }
@@ -391,7 +391,7 @@ index 0000000000..65d3e88c3b
 +                } else {
 +                    //If not, initialize the reader and other stuff for the chunk section above to obfuscate the upper layer of the current chunk section
 +                    dataBitsReader.setBitsPerObject(chunkPacketInfoAntiXray.getBitsPerObject(chunkSectionIndex + 1));
-+                    dataBitsReader.setIndex(chunkPacketInfoAntiXray.getDataBitsIndex(chunkSectionIndex + 1));
++                    dataBitsReader.setIndex(chunkPacketInfoAntiXray.getOrCreateIdForIndex(chunkSectionIndex + 1));
 +                    solidTemp = readDataPalette(chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex + 1), solid, solidGlobal);
 +                    obfuscateTemp = readDataPalette(chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex + 1), obfuscate, obfuscateGlobal);
 +                    boolean[][] temp = current;
@@ -417,7 +417,7 @@ index 0000000000..65d3e88c3b
 +            next[0][1] = true;
 +            next[1][0] = true;
 +        } else {
-+            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[2].getType(0, y, 15))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[0].getType(15, y, 0))] || current[0][0]) {
++            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(0, y, 15))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, 0))] || current[0][0]) {
 +                dataBitsWriter.skip();
 +            } else {
 +                if (counter >= predefinedBlockDataBits.length) {
@@ -442,7 +442,7 @@ index 0000000000..65d3e88c3b
 +                next[0][x + 1] = true;
 +                next[1][x] = true;
 +            } else {
-+                if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[2].getType(x, y, 15))] || current[0][x]) {
++                if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(x, y, 15))] || current[0][x]) {
 +                    dataBitsWriter.skip();
 +                } else {
 +                    if (counter >= predefinedBlockDataBits.length) {
@@ -466,7 +466,7 @@ index 0000000000..65d3e88c3b
 +            next[0][14] = true;
 +            next[1][15] = true;
 +        } else {
-+            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[2].getType(15, y, 15))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[1].getType(0, y, 0))] || current[0][15]) {
++            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(15, y, 15))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, 0))] || current[0][15]) {
 +                dataBitsWriter.skip();
 +            } else {
 +                if (counter >= predefinedBlockDataBits.length) {
@@ -492,7 +492,7 @@ index 0000000000..65d3e88c3b
 +                next[z - 1][0] = true;
 +                next[z + 1][0] = true;
 +            } else {
-+                if (nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[0].getType(15, y, z))] || current[z][0]) {
++                if (nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, z))] || current[z][0]) {
 +                    dataBitsWriter.skip();
 +                } else {
 +                    if (counter >= predefinedBlockDataBits.length) {
@@ -543,7 +543,7 @@ index 0000000000..65d3e88c3b
 +                next[z - 1][15] = true;
 +                next[z + 1][15] = true;
 +            } else {
-+                if (nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[1].getType(0, y, z))] || current[z][15]) {
++                if (nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, z))] || current[z][15]) {
 +                    dataBitsWriter.skip();
 +                } else {
 +                    if (counter >= predefinedBlockDataBits.length) {
@@ -567,7 +567,7 @@ index 0000000000..65d3e88c3b
 +            next[15][1] = true;
 +            next[14][0] = true;
 +        } else {
-+            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[3].getType(0, y, 0))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[0].getType(15, y, 15))] || current[15][0]) {
++            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(0, y, 0))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, 15))] || current[15][0]) {
 +                dataBitsWriter.skip();
 +            } else {
 +                if (counter >= predefinedBlockDataBits.length) {
@@ -592,7 +592,7 @@ index 0000000000..65d3e88c3b
 +                next[15][x + 1] = true;
 +                next[14][x] = true;
 +            } else {
-+                if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[3].getType(x, y, 0))] || current[15][x]) {
++                if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(x, y, 0))] || current[15][x]) {
 +                    dataBitsWriter.skip();
 +                } else {
 +                    if (counter >= predefinedBlockDataBits.length) {
@@ -616,7 +616,7 @@ index 0000000000..65d3e88c3b
 +            next[15][14] = true;
 +            next[14][15] = true;
 +        } else {
-+            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[3].getType(15, y, 0))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(nearbyChunkSections[1].getType(0, y, 15))] || current[15][15]) {
++            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(15, y, 0))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, 15))] || current[15][15]) {
 +                dataBitsWriter.skip();
 +            } else {
 +                if (counter >= predefinedBlockDataBits.length) {
@@ -642,7 +642,7 @@ index 0000000000..65d3e88c3b
 +        IBlockData blockData;
 +
 +        for (int i = 0; (blockData = dataPalette.getObject(i)) != null; i++) {
-+            temp[i] = global[ChunkSection.GLOBAL_PALETTE.getDataBits(blockData)];
++            temp[i] = global[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(blockData)];
 +        }
 +
 +        return temp;
@@ -650,7 +650,7 @@ index 0000000000..65d3e88c3b
 +
 +    @Override
 +    public void onBlockChange(World world, BlockPosition blockPosition, IBlockData newBlockData, IBlockData oldBlockData, int flag) {
-+        if (oldBlockData != null && solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(oldBlockData)] && !solidGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(newBlockData)] && blockPosition.getY() <= maxBlockYUpdatePosition) {
++        if (oldBlockData != null && solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(oldBlockData)] && !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(newBlockData)] && blockPosition.getY() <= maxBlockYUpdatePosition) {
 +            updateNearbyBlocks(world, blockPosition);
 +        }
 +    }
@@ -704,7 +704,7 @@ index 0000000000..65d3e88c3b
 +    private void updateBlock(World world, BlockPosition blockPosition) {
 +        IBlockData blockData = world.getTypeIfLoaded(blockPosition);
 +
-+        if (blockData != null && obfuscateGlobal[ChunkSection.GLOBAL_PALETTE.getDataBits(blockData)]) {
++        if (blockData != null && obfuscateGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(blockData)]) {
 +            world.notify(blockPosition, blockData, blockData, 3);
 +        }
 +    }
@@ -776,7 +776,7 @@ index 0000000000..65d3e88c3b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java
 new file mode 100644
-index 0000000000..41618994b4
+index 0000000000..a68bace353
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java
 @@ -0,0 +1,81 @@
@@ -840,7 +840,7 @@ index 0000000000..41618994b4
 +        dataPalettes[chunkSectionIndex] = dataPalette;
 +    }
 +
-+    public int getDataBitsIndex(int chunkSectionIndex) {
++    public int getOrCreateIdForIndex(int chunkSectionIndex) {
 +        return dataBitsIndexes[chunkSectionIndex];
 +    }
 +
@@ -1136,7 +1136,7 @@ index 95eb1a84ac..34019bd1b3 100644
              }) : (Scheduler.a) this.progressCache.get(chunkcoordintpair.a());
          }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 6e7454b134..af4b41d976 100644
+index 6e7454b134..71a3636be6 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -1,5 +1,6 @@
@@ -1207,7 +1207,7 @@ index 6e7454b134..af4b41d976 100644
 +    private void addPredefinedObjects() {
 +        if (this.predefinedObjects != null && this.getDataPalette() != this.getDataPaletteGlobal()) {
 +            for (int i = 0; i < this.predefinedObjects.length; i++) {
-+                this.h.a(this.predefinedObjects[i]);
++                this.getDataPalette().getOrCreateIdFor(this.predefinedObjects[i]);
 +            }
 +        }
 +    }
