@@ -1,0 +1,260 @@
+From 1791bc0bf4c38b3d838b09c2d3eaa998a1086e86 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Sat, 1 Sep 2018 12:28:16 -0400
+Subject: [PATCH] Custom plugin advancement API
+
+
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 2912bdae..36795d33 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -13,6 +13,7 @@ import java.util.UUID;
+ import java.util.logging.Logger;
+ 
+ import org.bukkit.Warning.WarningState;
++import org.bukkit.advancement.AdvancementManager;
+ import org.bukkit.boss.BarColor;
+ import org.bukkit.boss.BarFlag;
+ import org.bukkit.boss.BarStyle;
+@@ -863,6 +864,16 @@ public interface Server extends PluginMessageRecipient {
+      */
+     ScoreboardManager getScoreboardManager();
+ 
++    // Paper start - custom advancement API
++
++    /**
++     * Gets the instance of the advancement manager.
++     *
++     * @return the advancement manager
++     */
++    AdvancementManager getAdvancementManager();
++    // Paper end
++
+     /**
+      * Gets an instance of the server's default server-icon.
+      *
+@@ -922,12 +933,12 @@ public interface Server extends PluginMessageRecipient {
+ 
+     /**
+      * Create a ChunkData for use in a generator.
+-     * 
++     *
+      * See {@link ChunkGenerator#generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
+-     * 
++     *
+      * @param world the world to create the ChunkData for
+      * @return a new ChunkData for the world
+-     * 
++     *
+      */
+     public ChunkGenerator.ChunkData createChunkData(World world);
+ 
+diff --git a/src/main/java/org/bukkit/advancement/AdvancementData.java b/src/main/java/org/bukkit/advancement/AdvancementData.java
+new file mode 100644
+index 00000000..9d969fe7
+--- /dev/null
++++ b/src/main/java/org/bukkit/advancement/AdvancementData.java
+@@ -0,0 +1,157 @@
++package org.bukkit.advancement;
++
++import org.bukkit.NamespacedKey;
++import org.bukkit.inventory.ItemStack;
++
++import javax.annotation.Nullable;
++
++public class AdvancementData {
++    private final NamespacedKey parent;
++    private final AdvancementDisplay display;
++    private final AdvancementRewards rewards;
++    private final NamespacedKey key;
++
++    public AdvancementData(@Nullable NamespacedKey parent, AdvancementDisplay display, AdvancementRewards rewards, NamespacedKey key) {
++        this.parent = parent;
++        this.display = display;
++        this.rewards = rewards;
++        this.key = key;
++    }
++
++    public NamespacedKey getKey() {
++        return key;
++    }
++
++    /**
++     * The optional parent advancement of this advancement (does not apply for the root advancement).
++     * @return The parent advancement if present otherwise null
++     */
++    @Nullable
++    public NamespacedKey getParent() {
++        return parent;
++    }
++
++    /**
++     * The optional display data. Controls how the advancement looks for the client.
++     * @return Display data if present otherwise null
++     */
++    @Nullable
++    public AdvancementDisplay getDisplay() {
++        return display;
++    }
++
++    /**
++     * Required rewards object which gives rewards when a player completes the advancement.
++     * Can be used to define a custom function for executing commands (which can then execute code..)
++     * @return The rewards
++     */
++    public AdvancementRewards getRewards() {
++        return rewards;
++    }
++
++    public static class AdvancementRewards {
++        private int experience;
++        private NamespacedKey[] loot;
++        private NamespacedKey[] recipes;
++        @Nullable
++        private NamespacedKey customFunction;
++
++        public AdvancementRewards(int experience) {
++            this(experience, new NamespacedKey[0], new NamespacedKey[0], null);
++        }
++
++        public AdvancementRewards(int experience, NamespacedKey customFunction) {
++            this(experience, new NamespacedKey[0], new NamespacedKey[0], customFunction);
++        }
++
++        public AdvancementRewards(NamespacedKey customFunction) {
++            this(0, new NamespacedKey[0], new NamespacedKey[0], customFunction);
++        }
++
++        public AdvancementRewards(int experience, NamespacedKey[] loot, NamespacedKey[] recipes, @Nullable NamespacedKey customFunction) {
++            this.experience = experience;
++            this.loot = loot;
++            this.recipes = recipes;
++            this.customFunction = customFunction;
++        }
++
++        public int getExperience() {
++            return experience;
++        }
++
++        public NamespacedKey[] getLoot() {
++            return loot;
++        }
++
++        public NamespacedKey[] getRecipes() {
++            return recipes;
++        }
++
++        /**
++         * Functions are text files with the extension .mcfunction in the datapacks folder of your main world
++         */
++        @Nullable
++        public NamespacedKey getCustomFunction() {
++            return customFunction;
++        }
++    }
++
++    public class AdvancementDisplay {
++        private String title;
++        private String description;
++        private ItemStack icon;
++        private NamespacedKey background;
++        private DisplayFrameType frameType;
++        private boolean showToast;
++        private boolean announceToChat;
++        private boolean hidden;
++
++        public AdvancementDisplay(String title, String description, ItemStack icon, NamespacedKey background, DisplayFrameType frameType, boolean showToast, boolean announceToChat, boolean hidden) {
++            this.title = title;
++            this.description = description;
++            this.icon = icon;
++            this.background = background;
++            this.frameType = frameType;
++            this.showToast = showToast;
++            this.announceToChat = announceToChat;
++            this.hidden = hidden;
++        }
++
++        public String getTitle() {
++            return title;
++        }
++
++        public String getDescription() {
++            return description;
++        }
++
++        public ItemStack getIcon() {
++            return icon;
++        }
++
++        @Nullable
++        public NamespacedKey getBackground() {
++            return background;
++        }
++
++        public DisplayFrameType getFrameType() {
++            return frameType;
++        }
++
++        public boolean showToast() {
++            return showToast;
++        }
++
++        public boolean announceToChat() {
++            return announceToChat;
++        }
++
++        public boolean isHidden() {
++            return hidden;
++        }
++    }
++
++    public enum DisplayFrameType {
++        TASK, CHALLENGE, GOAL
++    }
++}
+diff --git a/src/main/java/org/bukkit/advancement/AdvancementManager.java b/src/main/java/org/bukkit/advancement/AdvancementManager.java
+new file mode 100644
+index 00000000..1bf5611d
+--- /dev/null
++++ b/src/main/java/org/bukkit/advancement/AdvancementManager.java
+@@ -0,0 +1,24 @@
++package org.bukkit.advancement;
++
++import org.bukkit.plugin.Plugin;
++
++import java.util.List;
++
++/**
++ * Manager of Advancements
++ */
++public interface AdvancementManager {
++    /**
++     * Clear a plugin's custom advancements
++     * @param plugin the plugin to clear the advancements of
++     */
++    void clearAdvancements(Plugin plugin);
++
++    /**
++     * Registers an advancement to the plugin.
++     * Note: Changes do not take effect until the next tick or Bukkit.reloadData() is called
++     * @param plugin the plugin to register the advancement to
++     * @param advancementData the advancement data to register
++     */
++    void registerAdvancement(Plugin plugin, AdvancementData advancementData);
++}
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index cb2b0b9c..8dfacb04 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -468,6 +468,8 @@ public final class SimplePluginManager implements PluginManager {
+                 handlePluginException("Error occurred (in the plugin loader) while unregistering plugin channels for "
+                         + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
++
++            server.getAdvancementManager().clearAdvancements(plugin); // Paper - custom advancements API
+         }
+     }
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,199 @@
+From 91cb339ac220abce90bf735b3939f0ac643f54b5 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Sat, 1 Sep 2018 12:28:16 -0400
+Subject: [PATCH] Custom plugin advancement API
+
+
+diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
+index 9d957f5ee..6bf32074b 100644
+--- a/src/main/java/net/minecraft/server/Advancement.java
++++ b/src/main/java/net/minecraft/server/Advancement.java
+@@ -128,7 +128,7 @@ public class Advancement {
+         private final Map<String, Criterion> e;
+         private final String[][] f;
+ 
+-        SerializedAdvancement(@Nullable MinecraftKey minecraftkey, @Nullable AdvancementDisplay advancementdisplay, AdvancementRewards advancementrewards, Map<String, Criterion> map, String[][] astring) {
++        public SerializedAdvancement(@Nullable MinecraftKey minecraftkey, @Nullable AdvancementDisplay advancementdisplay, AdvancementRewards advancementrewards, Map<String, Criterion> map, String[][] astring) { // Paper - make it public for advancement API
+             this.a = minecraftkey;
+             this.c = advancementdisplay;
+             this.d = advancementrewards;
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataWorld.java b/src/main/java/net/minecraft/server/AdvancementDataWorld.java
+index db2a1d872..370fa1ad7 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataWorld.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataWorld.java
+@@ -32,6 +32,8 @@ import org.apache.commons.io.FilenameUtils;
+ import org.apache.commons.io.IOUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.CraftServer;
+ 
+ public class AdvancementDataWorld {
+ 
+@@ -60,7 +62,7 @@ public class AdvancementDataWorld {
+         this.e = false;
+         AdvancementDataWorld.REGISTRY.a();
+         Map map = this.d();
+-
++        ((CraftServer) Bukkit.getServer()).advancementManager.inject(map); // Paper - custom advancements API
+         this.a(map);
+         AdvancementDataWorld.REGISTRY.a(map);
+         Iterator iterator = AdvancementDataWorld.REGISTRY.b().iterator();
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index e0546e3dd..b26fbc638 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -770,6 +770,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+             this.methodProfiler.a();
+         }
+ 
++        if(org.bukkit.craftbukkit.advancement.CraftAdvancementManager.needsReload) server.reloadData(); // Paper - custom advancements API
+         this.methodProfiler.a("root");
+         this.D();
+         if (i - this.Z >= 5000000000L) {
+@@ -1663,6 +1664,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+             this.getAdvancementData().reload();
+             this.aL().f();
+             this.getPlayerList().reload();
++            org.bukkit.craftbukkit.advancement.CraftAdvancementManager.needsReload = false;
+         } else {
+             this.postToMainThread(this::reload);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 9fe555986..a1538075a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -51,6 +51,7 @@ import org.bukkit.configuration.ConfigurationSection;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.bukkit.configuration.serialization.ConfigurationSerialization;
+ import org.bukkit.conversations.Conversable;
++import org.bukkit.craftbukkit.advancement.CraftAdvancementManager;
+ import org.bukkit.craftbukkit.boss.CraftBossBar;
+ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+@@ -170,6 +171,7 @@ public final class CraftServer implements Server {
+     private WarningState warningState = WarningState.DEFAULT;
+     private final BooleanWrapper online = new BooleanWrapper();
+     public CraftScoreboardManager scoreboardManager;
++    public CraftAdvancementManager advancementManager = new CraftAdvancementManager(); // Paper - custom advancement API
+     public boolean playerCommandState;
+     private boolean printSaveWarning;
+     private CraftIconCache icon;
+@@ -1738,6 +1740,12 @@ public final class CraftServer implements Server {
+         return scoreboardManager;
+     }
+ 
++    // Paper start - custom advancement API
++    public CraftAdvancementManager getAdvancementManager() {
++        return advancementManager;
++    }
++    // Paper end
++
+     public void checkSaveState() {
+         if (this.playerCommandState || this.printSaveWarning || this.console.autosavePeriod <= 0) {
+             return;
+diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementManager.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementManager.java
+new file mode 100644
+index 000000000..a2603305e
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementManager.java
+@@ -0,0 +1,96 @@
++package org.bukkit.craftbukkit.advancement;
++
++import com.google.common.collect.LinkedListMultimap;
++import com.google.common.collect.ListMultimap;
++import com.google.common.collect.Maps;
++import net.minecraft.server.*;
++import org.bukkit.NamespacedKey;
++import org.bukkit.advancement.AdvancementData;
++import org.bukkit.advancement.AdvancementManager;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.plugin.Plugin;
++
++import java.util.Map;
++
++public class CraftAdvancementManager implements AdvancementManager {
++    private ListMultimap<Plugin, AdvancementData> pluginAdvancements = LinkedListMultimap.create();
++    
++    public static volatile boolean needsReload = false;
++
++    @Override
++    public void clearAdvancements(Plugin plugin) {
++        pluginAdvancements.removeAll(plugin);
++        needsReload = true;
++    }
++
++    @Override
++    public void registerAdvancement(Plugin plugin, AdvancementData advancementData) {
++        pluginAdvancements.put(plugin, advancementData);
++        needsReload = true;
++    }
++
++    public void inject(Map<MinecraftKey, Advancement.SerializedAdvancement> advancements) {
++        pluginAdvancements.values().forEach(data -> {
++            try {
++                MinecraftKey key = CraftNamespacedKey.toMinecraft(data.getKey());
++                Advancement.SerializedAdvancement value = fromPluginAdvancement(data);
++                advancements.put(key, value);
++            } catch (Exception exception) {
++                System.err.println("Failed to load plugin advancement " + data.getKey());
++                exception.printStackTrace();
++            }
++        });
++    }
++
++    private Advancement.SerializedAdvancement fromPluginAdvancement(AdvancementData pluginAdvancement) {
++        MinecraftKey parentKey = null;
++        if (pluginAdvancement.getParent() != null) {
++            parentKey = CraftNamespacedKey.toMinecraft(pluginAdvancement.getParent());
++        }
++
++        AdvancementData.AdvancementDisplay display = pluginAdvancement.getDisplay();
++        AdvancementData.AdvancementRewards rewards = pluginAdvancement.getRewards();
++        AdvancementDisplay mcDisplay = display == null ? null : convertDisplay(display);
++        AdvancementRewards mcRewards = convertRewards(rewards);
++        // Parent is resolved in a later step in NMS, via Advancement.SerializedAdvancement#a(function<MinecraftKey, Advancement>)
++        return new Advancement.SerializedAdvancement(parentKey, mcDisplay, mcRewards, Maps.newHashMap(), new String[0][]);
++    }
++
++    private AdvancementDisplay convertDisplay(AdvancementData.AdvancementDisplay display) {
++        ItemStack mcItem = CraftItemStack.asNMSCopy(display.getIcon());
++        IChatBaseComponent mcTitle = new ChatComponentText(display.getTitle());
++        IChatBaseComponent mcDescription = new ChatComponentText(display.getDescription());
++        NamespacedKey background = display.getBackground();
++        MinecraftKey mcBackground = background == null ? null : CraftNamespacedKey.toMinecraft(background);
++        AdvancementFrameType frameType = convertFrameType(display.getFrameType());
++        return new AdvancementDisplay(mcItem, mcTitle, mcDescription, mcBackground, frameType, display.showToast(), display.announceToChat(), display.isHidden());
++    }
++
++    private AdvancementRewards convertRewards(AdvancementData.AdvancementRewards rewards) {
++        NamespacedKey[] loot = rewards.getLoot();
++        MinecraftKey[] mcLoot = new MinecraftKey[loot.length];
++        for (int i = 0; i < loot.length; i++) mcLoot[i] = CraftNamespacedKey.toMinecraft(loot[i]);
++        NamespacedKey[] recipes = rewards.getRecipes();
++        MinecraftKey[] mcRecipes = new MinecraftKey[recipes.length];
++        for (int i = 0; i < recipes.length; i++) mcRecipes[i] = CraftNamespacedKey.toMinecraft(recipes[i]);
++        NamespacedKey customFunction = rewards.getCustomFunction();
++        CustomFunction.a mcCustomFunction = null;
++        if (customFunction != null)
++            mcCustomFunction = new CustomFunction.a(CraftNamespacedKey.toMinecraft(customFunction));
++        return new AdvancementRewards(rewards.getExperience(), mcLoot, mcRecipes, mcCustomFunction);
++    }
++
++    private AdvancementFrameType convertFrameType(AdvancementData.DisplayFrameType frameType) {
++        switch (frameType) {
++            case TASK:
++                return AdvancementFrameType.TASK;
++            case CHALLENGE:
++                return AdvancementFrameType.CHALLENGE;
++            case GOAL:
++                return AdvancementFrameType.GOAL;
++            default:
++                throw new IllegalArgumentException("Unknown frame type " + frameType);
++        }
++    }
++}
+-- 
+2.17.1
+
