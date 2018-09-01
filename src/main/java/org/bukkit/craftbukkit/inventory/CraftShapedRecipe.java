@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NonNullList;
@@ -11,6 +10,7 @@ import net.minecraft.server.ShapedRecipes;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 
 public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
@@ -34,11 +34,11 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
         ret.setGroup(recipe.getGroup());
         String[] shape = recipe.getShape();
         ret.shape(shape);
-        Map<Character, ItemStack> ingredientMap = recipe.getIngredientMap();
+        Map<Character, RecipeChoice> ingredientMap = recipe.getChoiceMap();
         for (char c : ingredientMap.keySet()) {
-            ItemStack stack = ingredientMap.get(c);
+            RecipeChoice stack = ingredientMap.get(c);
             if (stack != null) {
-                ret.setIngredient(c, stack.getType(), stack.getDurability());
+                ret.setIngredient(c, stack);
             }
         }
         return ret;
@@ -46,14 +46,14 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
 
     public void addToCraftingManager() {
         String[] shape = this.getShape();
-        Map<Character, ItemStack> ingred = this.getIngredientMap();
+        Map<Character, org.bukkit.inventory.RecipeChoice> ingred = this.getChoiceMap();
         int width = shape[0].length();
         NonNullList<RecipeItemStack> data = NonNullList.a(shape.length * width, RecipeItemStack.a);
 
         for (int i = 0; i < shape.length; i++) {
             String row = shape[i];
             for (int j = 0; j < row.length(); j++) {
-                data.set(i * width + j, new RecipeItemStack(Stream.of(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))))));
+                data.set(i * width + j, toNMS(ingred.get(row.charAt(j))));
             }
         }
 

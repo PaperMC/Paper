@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NonNullList;
@@ -11,6 +10,7 @@ import net.minecraft.server.ShapelessRecipes;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapelessRecipe;
 
 public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe {
@@ -32,17 +32,17 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
         }
         CraftShapelessRecipe ret = new CraftShapelessRecipe(recipe.getKey(), recipe.getResult());
         ret.setGroup(recipe.getGroup());
-        for (ItemStack ingred : recipe.getIngredientList()) {
-            ret.addIngredient(ingred.getType(), ingred.getDurability());
+        for (RecipeChoice ingred : recipe.getChoiceList()) {
+            ret.addIngredient(ingred);
         }
         return ret;
     }
 
     public void addToCraftingManager() {
-        List<ItemStack> ingred = this.getIngredientList();
+        List<org.bukkit.inventory.RecipeChoice> ingred = this.getChoiceList();
         NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.a);
         for (int i = 0; i < ingred.size(); i++) {
-            data.set(i, new RecipeItemStack(Stream.of(new RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(ingred.get(i))))));
+            data.set(i, toNMS(ingred.get(i)));
         }
 
         MinecraftServer.getServer().getCraftingManager().a(new ShapelessRecipes(CraftNamespacedKey.toMinecraft(this.getKey()), this.getGroup(), CraftItemStack.asNMSCopy(this.getResult()), data));
