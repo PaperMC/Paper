@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public class ShapedRecipe implements Recipe, Keyed {
     private final NamespacedKey key;
     private final ItemStack output;
     private String[] rows;
-    private Map<Character, ItemStack> ingredients = new HashMap<Character, ItemStack>();
+    private Map<Character, RecipeChoice> ingredients = new HashMap<>();
     private String group = "";
 
     @Deprecated
@@ -75,7 +76,7 @@ public class ShapedRecipe implements Recipe, Keyed {
         }
 
         // Remove character mappings for characters that no longer exist in the shape
-        HashMap<Character, ItemStack> newIngredients = new HashMap<Character, ItemStack>();
+        HashMap<Character, RecipeChoice> newIngredients = new HashMap<>();
         for (String row : shape) {
             for (Character c : row.toCharArray()) {
                 newIngredients.put(c, ingredients.get(c));
@@ -126,7 +127,14 @@ public class ShapedRecipe implements Recipe, Keyed {
             raw = Short.MAX_VALUE;
         }
 
-        ingredients.put(key, new ItemStack(ingredient, 1, (short) raw));
+        ingredients.put(key, new RecipeChoice.MaterialChoice(Collections.singletonList(ingredient)));
+        return this;
+    }
+
+    public ShapedRecipe setIngredient(char key, RecipeChoice ingredient) {
+        Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
+
+        ingredients.put(key, ingredient);
         return this;
     }
 
@@ -137,7 +145,19 @@ public class ShapedRecipe implements Recipe, Keyed {
      */
     public Map<Character, ItemStack> getIngredientMap() {
         HashMap<Character, ItemStack> result = new HashMap<Character, ItemStack>();
-        for (Map.Entry<Character, ItemStack> ingredient : ingredients.entrySet()) {
+        for (Map.Entry<Character, RecipeChoice> ingredient : ingredients.entrySet()) {
+            if (ingredient.getValue() == null) {
+                result.put(ingredient.getKey(), null);
+            } else {
+                result.put(ingredient.getKey(), ingredient.getValue().getItemStack().clone());
+            }
+        }
+        return result;
+    }
+
+    public Map<Character, RecipeChoice> getChoiceMap() {
+        Map<Character, RecipeChoice> result = new HashMap<>();
+        for (Map.Entry<Character, RecipeChoice> ingredient : ingredients.entrySet()) {
             if (ingredient.getValue() == null) {
                 result.put(ingredient.getKey(), null);
             } else {
