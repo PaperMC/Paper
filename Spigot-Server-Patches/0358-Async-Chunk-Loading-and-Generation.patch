@@ -1,4 +1,4 @@
-From 7cd01f88d2e4ac72920b318d32d54715095aa6d6 Mon Sep 17 00:00:00 2001
+From 81caddcfe47f3a85d46cccca66eb071b50928dd8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -144,7 +144,7 @@ index 4698ee99f8..33b30bb7e3 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..6201b93e97
+index 0000000000..285d633c3b
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,243 @@
@@ -191,7 +191,7 @@ index 0000000000..6201b93e97
 +class PaperAsyncChunkProvider {
 +
 +    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(4, Integer.MAX_VALUE,
-+        300L, TimeUnit.SECONDS,
++        120L, TimeUnit.SECONDS,
 +        new SynchronousQueue<>(),
 +        new NamedIncrementingThreadFactory("Paper Chunk Executor")
 +    );
@@ -255,6 +255,7 @@ index 0000000000..6201b93e97
 +            return null;
 +        }
 +    }
++
 +    private Chunk generateChunk(int x, int z) {
 +        try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) {
 +            CompletableFuture<ProtoChunk> pending = new CompletableFuture<>();
@@ -262,14 +263,14 @@ index 0000000000..6201b93e97
 +                this.schedulerBatch.startBatch();
 +                this.schedulerBatch.add(new ChunkCoordIntPair(x, z));
 +                this.schedulerBatch.executeBatch()
-+                    .handleAsync((protoChunk, throwable) -> {
++                    .handle((protoChunk, throwable) -> {
 +                        if (throwable != null) {
 +                            pending.completeExceptionally(throwable);
 +                        } else {
 +                            pending.complete(protoChunk);
 +                        }
 +                        return protoChunk;
-+                    }, EXECUTOR);
++                    });
 +            });
 +            return new Chunk(this.world, pending.join(), x, z);
 +        } catch (RuntimeException runtimeexception) {
@@ -285,6 +286,20 @@ index 0000000000..6201b93e97
 +        }
 +    }
 +
++    private void addEntities(Chunk chunk) {
++        asyncTaskHandler.postToMainThread(chunk::addEntities);
++    }
++
++    private Chunk checkAddChunk(long key, Chunk chunk) {
++        synchronized (server.chunks) {
++            final Chunk other = server.chunks.get(key);
++            if (other == null && chunk != null) {
++                server.chunks.put(key, chunk);
++            }
++            return other;
++        }
++    }
++
 +    private void doNothingChunkConsumer(Chunk unused) {}
 +
 +    private class PendingChunk implements Runnable {
@@ -297,17 +312,16 @@ index 0000000000..6201b93e97
 +
 +        final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        final CompletableFuture<Chunk> generate = new CompletableFuture<>();
-+        private String debug;
 +
 +        PendingChunk(int x, int z, long key, boolean canGenerate) {
 +            this.x = x;
 +            this.z = z;
 +            this.key = key;
 +            this.canGenerate = canGenerate;
-+            debug = x + "," + z;
 +        }
++
 +        boolean loadFinished(Chunk chunk) {
-+            Chunk other = checkAddChunk(chunk);
++            Chunk other = checkAddChunk(key, chunk);
 +            boolean shouldGenerate;
 +            synchronized (pendingChunks) {
 +                shouldGenerate = chunk == null && other == null && canGenerate;
@@ -337,22 +351,8 @@ index 0000000000..6201b93e97
 +            return shouldGenerate;
 +        }
 +
-+        private void addEntities(Chunk chunk) {
-+            PaperAsyncChunkProvider.this.asyncTaskHandler.postToMainThread(chunk::addEntities);
-+        }
-+
-+        private Chunk checkAddChunk(Chunk chunk) {
-+            synchronized (server.chunks) {
-+                final Chunk other = server.chunks.get(key);
-+                if (other == null && chunk != null) {
-+                    server.chunks.put(key, chunk);
-+                }
-+                return other;
-+            }
-+        }
-+
 +        void generateFinished(Chunk chunk) {
-+            Chunk other = checkAddChunk(chunk);
++            Chunk other = checkAddChunk(key, chunk);
 +            synchronized (pendingChunks) {
 +                pendingChunks.remove(key);
 +            }
@@ -363,12 +363,13 @@ index 0000000000..6201b93e97
 +            }
 +            generate.complete(chunk);
 +        }
++
 +        void addListener(CompletableFuture<Chunk> future, boolean gen) {
 +            if (gen) {
 +                canGenerate = true;
-+                generate.thenAcceptAsync(future::complete, EXECUTOR);
++                generate.thenAccept(future::complete);
 +            } else {
-+                loadOnly.thenAcceptAsync(future::complete, EXECUTOR);
++                loadOnly.thenAccept(future::complete);
 +            }
 +        }
 +
@@ -386,7 +387,6 @@ index 0000000000..6201b93e97
 +                e.printStackTrace();
 +                generateFinished(null);
 +            }
-+
 +        }
 +    }
 +
@@ -444,14 +444,14 @@ index e7d465fb8a..35c2080563 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/SchedulerBatch.java b/src/main/java/net/minecraft/server/SchedulerBatch.java
-index d868149d1a..59edc61d10 100644
+index d868149d1a..0d94b262ac 100644
 --- a/src/main/java/net/minecraft/server/SchedulerBatch.java
 +++ b/src/main/java/net/minecraft/server/SchedulerBatch.java
 @@ -9,6 +9,7 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
      private final Scheduler<K, T, R> b;
      private boolean c;
      private int d = 1000;
-+    final java.util.concurrent.locks.ReentrantReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock(); // Paper
++    private final java.util.concurrent.locks.ReentrantLock lock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
  
      public SchedulerBatch(Scheduler<K, T, R> scheduler) {
          this.b = scheduler;
@@ -461,7 +461,7 @@ index d868149d1a..59edc61d10 100644
  
 +    public void startBatch() { b(); } // Paper - OBFHELPER
      public void b() {
-+        lock.writeLock().lock(); // Paper
++        lock.lock(); // Paper
          if (this.c) {
              throw new RuntimeException("Batch already started.");
          } else {
@@ -480,7 +480,7 @@ index d868149d1a..59edc61d10 100644
 +    public CompletableFuture<R> executeBatch() { return c(); } // Paper - OBFHELPER
      public CompletableFuture<R> c() {
 +        // Paper start
-+        if (!lock.isWriteLockedByCurrentThread()) {
++        if (!lock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Current thread does not hold the write lock");
 +        }
 +        try {// Paper end
@@ -491,7 +491,7 @@ index d868149d1a..59edc61d10 100644
              this.c = false;
              return this.b.c();
          }
-+        } finally { lock.writeLock().unlock(); } // Paper
++        } finally { lock.unlock(); } // Paper
      }
  }
 -- 
