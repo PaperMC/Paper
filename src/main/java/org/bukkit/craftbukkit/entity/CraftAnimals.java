@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import java.util.UUID;
 import net.minecraft.server.EntityAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Animals;
@@ -18,5 +19,15 @@ public class CraftAnimals extends CraftAgeable implements Animals {
     @Override
     public String toString() {
         return "CraftAnimals";
+    }
+
+    @Override
+    public UUID getBreedCause() {
+        return getHandle().bD;
+    }
+
+    @Override
+    public void setBreedCause(UUID uuid) {
+        getHandle().bD = uuid;
     }
 }
