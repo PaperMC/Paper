@@ -46,6 +46,7 @@ nonnms=$(cat "$basedir/Spigot-Server-Patches/"* | grep "create mode " | grep -Po
     echo "KeyedObject" ;
     echo "MCUtil" ;
     echo "PaperLightingQueue"
+    echo "PaperAsyncChunkProvider"
 )
 
 function containsElement {
