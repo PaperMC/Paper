@@ -21,7 +21,11 @@ forgeflowercachefile="$decompiledir/forgeflowercache"
 forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptions";
 classdir="$decompiledir/classes"
 
+
+# prep folders
 mkdir -p "$workdir/ForgeFlower"
+mkdir -p "$spigotdecompiledir"
+mkdir -p "$forgedecompiledir"
 
 echo "Extracting NMS classes..."
 if [ ! -d "$classdir" ]; then
@@ -37,10 +41,6 @@ if [ ! -d "$classdir" ]; then
     set -e
 fi
 
-# prep folders
-mkdir -p "$spigotdecompiledir"
-mkdir -p "$forgedecompiledir"
-
 needsDecomp=0
 if [ ! -f "$forgeflowercachefile" ]; then
     needsDecomp=1
@@ -49,7 +49,7 @@ elif [ "$(cat ${forgeflowercachefile})" != "$forgeflowercachevalue" ]; then
 fi
 if [ "$needsDecomp" == "1" ]; then
     # our local cache is now invalidated, we can update forgeflower to get better deobfuscation
-    rm -rf "$forgedecompiledir"
+    rm -rf "$forgedecompiledir/net"
 fi
 
 # Forge (for Paper mc-dev imports, and dev src folders for unimported files)
