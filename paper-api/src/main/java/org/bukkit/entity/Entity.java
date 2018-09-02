@@ -5,7 +5,9 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.block.BlockFace;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.Vector;
 
@@ -508,4 +510,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @return reaction
      */
     PistonMoveReaction getPistonMoveReaction();
+
+    /**
+     * Get the closest cardinal {@link BlockFace} direction an entity is
+     * currently facing.
+     * <br>
+     * This will not return any non-cardinal directions such as
+     * {@link BlockFace#UP} or {@link BlockFace#DOWN}.
+     * <br>
+     * {@link Hanging} entities will override this call and thus their behavior
+     * may be different.
+     *
+     * @return the entity's current cardinal facing.
+     * @see Hanging
+     * @see Directional#getFacing()
+     */
+    BlockFace getFacing();
 }
