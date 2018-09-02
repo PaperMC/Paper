@@ -1,4 +1,4 @@
-From 81caddcfe47f3a85d46cccca66eb071b50928dd8 Mon Sep 17 00:00:00 2001
+From 47653e2b025933fa2a8c5af422ff41ab71819360 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -64,7 +64,7 @@ index b941676829..48cdc97377 100644
  
          return chunk1;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c0ec896eea..f9a49936ec 100644
+index c0ec896eea..27a5b61eba 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -43,7 +43,8 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -73,7 +73,7 @@ index c0ec896eea..f9a49936ec 100644
      public final WorldServer world;
 -    private final IAsyncTaskHandler asyncTaskHandler;
 +    final IAsyncTaskHandler asyncTaskHandler; // Paper
-+    final PaperAsyncChunkProvider asyncChunkLoader; // Paper
++    final PaperAsyncChunkProvider asyncChunkProvider; // Paper
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
@@ -81,7 +81,7 @@ index c0ec896eea..f9a49936ec 100644
          this.asyncTaskHandler = iasynctaskhandler;
          this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
          this.batchScheduler = new SchedulerBatch(this.chunkScheduler);
-+        this.asyncChunkLoader = new PaperAsyncChunkProvider(world, this, asyncTaskHandler, chunkLoader, this.batchScheduler); // Paper - Async Chunks
++        this.asyncChunkProvider = new PaperAsyncChunkProvider(world, this, asyncTaskHandler, chunkLoader, this.batchScheduler); // Paper - Async Chunks
      }
  
      public Collection<Chunk> a() {
@@ -100,7 +100,7 @@ index c0ec896eea..f9a49936ec 100644
 +        if (chunk != null || !load) { // return null if we aren't loading
 +            return chunk;
 +        }
-+        return asyncChunkLoader.loadOrGenerateChunk(x, z, gen, consumer);
++        return asyncChunkProvider.loadOrGenerateChunk(x, z, gen, consumer);
 +    }
      @Nullable
 -    public Chunk getChunkAt(int i, int j, boolean flag, boolean flag1) {
@@ -130,6 +130,35 @@ index 06968974c5..0f216c39bd 100644
              if (cps.isLoaded(x, z)) {
                  return true;
              }
+diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+index 34019bd1b3..08a9beea9a 100644
+--- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
++++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+@@ -20,13 +20,13 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+     private final ChunkGenerator<?> d;
+     private final IChunkLoader e;
+     private final IAsyncTaskHandler f;
+-    private final Long2ObjectMap<Scheduler.a> progressCache = new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error
++    private final Long2ObjectMap<Scheduler.a> progressCache = it.unimi.dsi.fastutil.longs.Long2ObjectMaps.synchronize(new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error // Paper - synchronize
+         protected boolean a(Scheduler.a scheduler_a) {
+             ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
+ 
+             return !protochunk.ab_() /*&& !protochunk.h()*/; // Paper
+         }
+-    };
++    }); // Paper
+ 
+     public ChunkTaskScheduler(int i, World world, ChunkGenerator<?> chunkgenerator, IChunkLoader ichunkloader, IAsyncTaskHandler iasynctaskhandler) {
+         super("WorldGen", i, ChunkStatus.FINALIZED, () -> {
+@@ -50,7 +50,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+     protected Scheduler.a a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
+         IChunkLoader ichunkloader = this.e;
+ 
+-        synchronized (this.e) {
++        synchronized (progressCache) { // Paper - synchronize on progress cache instead
+             return flag ? (Scheduler.a) this.progressCache.computeIfAbsent(chunkcoordintpair.a(), (i) -> {
+                 ProtoChunk protochunk;
+ 
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
 index 4698ee99f8..33b30bb7e3 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
@@ -392,7 +421,7 @@ index 0000000000..285d633c3b
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..35c2080563 100644
+index e7d465fb8a..c325b1304f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,14 @@ public class PlayerChunk {
@@ -423,7 +452,7 @@ index e7d465fb8a..35c2080563 100644
 -        this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
 -        this.chunkExists = this.chunk != null || ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), i, j); // Paper
 +        this.chunk = chunkproviderserver.getChunkAt(i, j, false, false); // Paper
-+        this.chunkExists = this.chunk != null || chunkproviderserver.asyncChunkLoader.chunkGoingToExists(i, j); // Paper
++        this.chunkExists = this.chunk != null || chunkproviderserver.asyncChunkProvider.chunkGoingToExists(i, j); // Paper
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
