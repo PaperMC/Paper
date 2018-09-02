@@ -1,4 +1,4 @@
-From 47653e2b025933fa2a8c5af422ff41ab71819360 Mon Sep 17 00:00:00 2001
+From 45095843bea41f19c4c03437d35da163c7245ee4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -42,37 +42,14 @@ as while looking the chunk up may be safe, absolutely nothing about
 reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
-diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index b941676829..48cdc97377 100644
---- a/src/main/java/net/minecraft/server/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/ChunkMap.java
-@@ -50,6 +50,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
-         }
-         chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
- 
-+        ((ChunkProviderServer) chunk.world.getChunkProvider()).asyncTaskHandler.postToMainThread(() -> {// Paper
-         if (chunk.newChunk) {
-             chunk.world.timings.syncChunkLoadPopulateTimer.startTiming(); // Paper
-             BlockSand.instaFall = true;
-@@ -73,7 +74,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
-             BlockSand.instaFall = false;
-             chunk.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(chunk.bukkitChunk));
-             chunk.world.timings.syncChunkLoadPopulateTimer.stopTiming(); // Paper
--        }
-+        } }); // Paper
-         // CraftBukkit end
- 
-         return chunk1;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c0ec896eea..27a5b61eba 100644
+index c0ec896eea..e595905ad1 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -43,7 +43,8 @@ public class ChunkProviderServer implements IChunkProvider {
-     private final ChunkTaskScheduler chunkScheduler;
+@@ -44,6 +44,7 @@ public class ChunkProviderServer implements IChunkProvider {
      private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler;
      public final WorldServer world;
--    private final IAsyncTaskHandler asyncTaskHandler;
-+    final IAsyncTaskHandler asyncTaskHandler; // Paper
+     private final IAsyncTaskHandler asyncTaskHandler;
 +    final PaperAsyncChunkProvider asyncChunkProvider; // Paper
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
@@ -81,7 +58,7 @@ index c0ec896eea..27a5b61eba 100644
          this.asyncTaskHandler = iasynctaskhandler;
          this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
          this.batchScheduler = new SchedulerBatch(this.chunkScheduler);
-+        this.asyncChunkProvider = new PaperAsyncChunkProvider(world, this, asyncTaskHandler, chunkLoader, this.batchScheduler); // Paper - Async Chunks
++        this.asyncChunkProvider = new PaperAsyncChunkProvider(this, asyncTaskHandler, chunkLoader, this.batchScheduler); // Paper - Async Chunks
      }
  
      public Collection<Chunk> a() {
@@ -173,10 +150,10 @@ index 4698ee99f8..33b30bb7e3 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..285d633c3b
+index 0000000000..33c415007c
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,243 @@
+@@ -0,0 +1,302 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -213,7 +190,6 @@ index 0000000000..285d633c3b
 +import java.util.concurrent.SynchronousQueue;
 +import java.util.concurrent.ThreadPoolExecutor;
 +import java.util.concurrent.TimeUnit;
-+import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.Consumer;
 +
 +@SuppressWarnings("unused")
@@ -226,52 +202,83 @@ index 0000000000..285d633c3b
 +    );
 +    private final ExecutorService chunkGenerationExecutor ;
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
-+    private final IAsyncTaskHandler asyncTaskHandler;
-+    private final ChunkProviderServer server;
++    private final IAsyncTaskHandler asyncHandler;
++    private final ChunkProviderServer provider;
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
-+    private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> schedulerBatch;
++    private final MinecraftServer server;
++    private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> scheduler;
 +
-+    PaperAsyncChunkProvider(WorldServer world, ChunkProviderServer server, IAsyncTaskHandler asynctaskhandler, IChunkLoader chunkloader, SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> schedulerBatch) {
-+        this.server = server;
-+        this.world = world;
-+        this.asyncTaskHandler = asynctaskhandler;
-+        this.chunkLoader = chunkloader;
-+        this.schedulerBatch = schedulerBatch;
-+        this.chunkGenerationExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "Paper Generation Executor - " + world.getWorld().getName()));
++    PaperAsyncChunkProvider(ChunkProviderServer provider, IAsyncTaskHandler asyncTaskHandler, IChunkLoader chunkLoader, SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> scheduler) {
++        this.provider = provider;
++        this.server = provider.world.getMinecraftServer();
++        this.world = provider.world;
++        this.asyncHandler = asyncTaskHandler;
++        this.chunkLoader = chunkLoader;
++        this.scheduler = scheduler;
++        String worldName = this.world.getWorld().getName();
++        this.chunkGenerationExecutor = Executors.newSingleThreadExecutor(r -> {
++            return new Thread(r, "Paper Generation Executor - " + worldName);
++        });
 +    }
 +
 +    Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
-+        long key = ChunkCoordIntPair.asLong(x, z);
-+        AtomicBoolean hadPending = new AtomicBoolean(false);
-+
++        final long key = ChunkCoordIntPair.asLong(x, z);
 +        final CompletableFuture<Chunk> future = new CompletableFuture<>();
-+        final PendingChunk pendingChunk = pendingChunks.compute(key, (prevKey, pending) -> {
-+            if (pending == null) {
++
++        boolean hadPending;
++        final PendingChunk pending;
++        final boolean isFirstMainThreadRequest;
++        synchronized (pendingChunks) {
++            PendingChunk pendingChunk = pendingChunks.get(key);
++            // DO NOT CALL ANY METHODS ON PENDING CHUNK IN THIS BLOCK - WILL DEADLOCK
++            if (pendingChunk == null) {
 +                pending = new PendingChunk(x, z, key, gen);
++                pendingChunks.put(key, pending);
++                hadPending = false;
++            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
++                // need to overwrite the old
++                pending = new PendingChunk(x, z, key, gen);
++                pendingChunks.put(key, pending);
++                hadPending = false;
 +            } else {
-+                hadPending.set(true);
++                pending = pendingChunk;
++                hadPending = true;
 +            }
++        }
++        //noinspection SynchronizationOnLocalVariableOrMethodParameter
++        synchronized (pending) {
++            pending.addListener(future, gen);
 +
-+            if (!gen && pending.generating) {
-+                future.complete(null);
++            // This makes sure this is the first future to be resolved to set the chunk map/entities
++            if (consumer == null && pending.mainThreadRequest == null && server.isMainThread()) {
++                isFirstMainThreadRequest = true;
++                pending.mainThreadRequest = future;
 +            } else {
-+                pending.addListener(future, gen);
++                isFirstMainThreadRequest = false;
 +            }
-+            return pending;
-+        });
++        }
 +
-+
-+        if (!hadPending.get()) {
-+            EXECUTOR.submit(pendingChunk);
++        // A new main thread request may of come in after completion waiting for the next tick loop
++        // We need to go ahead and complete it now!
++        if (isFirstMainThreadRequest && pending.hasFinished) {
++            return pending.postChunk();
++        } else if (!hadPending) {
++            EXECUTOR.submit(pending);
 +        }
 +
 +        if (consumer == null) {
++            Chunk chunk;
 +            try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) {
-+                return future.join();
++                chunk = future.join();
 +            }
++
++            if (isFirstMainThreadRequest) {
++                return pending.postChunk();
++            }
++            return chunk;
 +        } else {
-+            future.thenAccept((c) -> this.asyncTaskHandler.postToMainThread(() -> consumer.accept(c)));
++            future.thenAccept((c) -> this.asyncHandler.postToMainThread(() -> consumer.accept(c)));
 +        }
 +        return null;
 +    }
@@ -289,9 +296,9 @@ index 0000000000..285d633c3b
 +        try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) {
 +            CompletableFuture<ProtoChunk> pending = new CompletableFuture<>();
 +            chunkGenerationExecutor.submit(() -> {
-+                this.schedulerBatch.startBatch();
-+                this.schedulerBatch.add(new ChunkCoordIntPair(x, z));
-+                this.schedulerBatch.executeBatch()
++                this.scheduler.startBatch();
++                this.scheduler.add(new ChunkCoordIntPair(x, z));
++                this.scheduler.executeBatch()
 +                    .handle((protoChunk, throwable) -> {
 +                        if (throwable != null) {
 +                            pending.completeExceptionally(throwable);
@@ -303,7 +310,7 @@ index 0000000000..285d633c3b
 +            });
 +            return new Chunk(this.world, pending.join(), x, z);
 +        } catch (RuntimeException runtimeexception) {
-+            throw this.server.generateChunkError(x, z, runtimeexception);
++            throw this.provider.generateChunkError(x, z, runtimeexception);
 +        }
 +    }
 +
@@ -315,20 +322,6 @@ index 0000000000..285d633c3b
 +        }
 +    }
 +
-+    private void addEntities(Chunk chunk) {
-+        asyncTaskHandler.postToMainThread(chunk::addEntities);
-+    }
-+
-+    private Chunk checkAddChunk(long key, Chunk chunk) {
-+        synchronized (server.chunks) {
-+            final Chunk other = server.chunks.get(key);
-+            if (other == null && chunk != null) {
-+                server.chunks.put(key, chunk);
-+            }
-+            return other;
-+        }
-+    }
-+
 +    private void doNothingChunkConsumer(Chunk unused) {}
 +
 +    private class PendingChunk implements Runnable {
@@ -336,8 +329,12 @@ index 0000000000..285d633c3b
 +        private final int z;
 +        private final long key;
 +
++        volatile CompletableFuture<Chunk> mainThreadRequest;
 +        volatile boolean generating;
 +        volatile boolean canGenerate;
++        volatile boolean hasPosted;
++        volatile boolean hasFinished;
++        volatile Chunk chunk;
 +
 +        final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        final CompletableFuture<Chunk> generate = new CompletableFuture<>();
@@ -349,56 +346,95 @@ index 0000000000..285d633c3b
 +            this.canGenerate = canGenerate;
 +        }
 +
-+        boolean loadFinished(Chunk chunk) {
-+            Chunk other = checkAddChunk(key, chunk);
-+            boolean shouldGenerate;
-+            synchronized (pendingChunks) {
-+                shouldGenerate = chunk == null && other == null && canGenerate;
-+                if (!shouldGenerate) {
-+                    pendingChunks.remove(key);
-+                } else {
-+                    generating = true;
-+                }
-+            }
-+            if (other != null) {
-+                loadOnly.complete(other);
-+                generate.complete(other);
++        synchronized boolean loadFinished(Chunk chunk) {
++            if (chunk != null) {
++                postChunkToMain(chunk);
 +                return false;
-+            } else if (chunk != null) {
-+                chunk.setLastSaved(chunk.world.getTime());
-+                loadOnly.complete(chunk);
-+                generate.complete(chunk);
-+                addEntities(chunk);
-+            } else {
-+                // this is nullable for anyone who doesn't need generation
-+                loadOnly.complete(null);
-+                if (!shouldGenerate) {
-+                    generate.complete(null);
-+                }
 +            }
 +
-+            return shouldGenerate;
++            if (!canGenerate) {
++                this.chunk = null;
++                this.hasFinished = true;
++                pendingChunks.remove(key);
++                completeFutures(null);
++                return false;
++            } else {
++                generating = true;
++                loadOnly.complete(null);
++                return true;
++            }
 +        }
 +
-+        void generateFinished(Chunk chunk) {
-+            Chunk other = checkAddChunk(key, chunk);
-+            synchronized (pendingChunks) {
++        synchronized void generateFinished(Chunk chunk) {
++            this.chunk = chunk;
++            this.hasFinished = true;
++            if (chunk != null) {
++                postChunkToMain(chunk);
++            } else {
 +                pendingChunks.remove(key);
++                completeFutures(null);
 +            }
-+            if (other != null) {
-+                chunk = other;
-+            } else if (chunk != null) {
-+                addEntities(chunk);
++        }
++
++        synchronized private void completeFutures(Chunk chunk) {
++            if (mainThreadRequest != null) {
++                mainThreadRequest.complete(chunk);
 +            }
++            loadOnly.complete(chunk);
 +            generate.complete(chunk);
 +        }
 +
-+        void addListener(CompletableFuture<Chunk> future, boolean gen) {
-+            if (gen) {
++        synchronized private void postChunkToMain(Chunk chunk) {
++            // ensure anything that comes in post this
++            this.chunk = chunk;
++            this.hasFinished = true;
++            if (mainThreadRequest == null) {
++                asyncHandler.postToMainThread(this::postChunk);
++            }
++            completeFutures(chunk);
++        }
++
++        synchronized Chunk postChunk() {
++            if (!server.isMainThread()) {
++                throw new IllegalStateException("Must post from main");
++            }
++            if (hasPosted) {
++                return chunk;
++            }
++            hasPosted = true;
++            pendingChunks.remove(key);
++            synchronized (provider.chunks) {
++                final Chunk other = provider.chunks.get(key);
++                if (other != null) {
++                    this.chunk = other;
++                    return other;
++                }
++                if (chunk != null) {
++                    provider.chunks.put(key, chunk);
++                }
++            }
++
++            if (chunk != null) {
++                if (!chunk.newChunk) {
++                    chunk.setLastSaved(chunk.world.getTime());
++                }
++                chunk.addEntities();
++            }
++            return chunk;
++        }
++
++        synchronized void addListener(CompletableFuture<Chunk> future, boolean gen) {
++            if (hasFinished) {
++                future.complete(chunk);
++            } else if (gen) {
 +                canGenerate = true;
 +                generate.thenAccept(future::complete);
 +            } else {
-+                loadOnly.thenAccept(future::complete);
++                if (!generating) {
++                    future.complete(null);
++                } else {
++                    loadOnly.thenAccept(future::complete);
++                }
 +            }
 +        }
 +
