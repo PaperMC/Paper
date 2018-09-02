@@ -1,4 +1,4 @@
-From bdcc61064ffa8101b6e4bb06bef0b7e6fd8fb90c Mon Sep 17 00:00:00 2001
+From 791c0515fe744ceb9711102738eabf345e4875f9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -572,6 +572,18 @@ index d868149d1a..0d94b262ac 100644
 +        } finally { lock.unlock(); } // Paper
      }
  }
+diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
+index ee5c2421bb..760c9c6d99 100644
+--- a/src/main/java/net/minecraft/server/TickListServer.java
++++ b/src/main/java/net/minecraft/server/TickListServer.java
+@@ -207,6 +207,7 @@ public class TickListServer<T> implements TickList<T> {
+     }
+ 
+     public void a(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
++        org.spigotmc.AsyncCatcher.catchOp("tick list"); // Paper
+         if (!this.a.test(t0)) {
+             if (this.f.isLoaded(blockposition)) {
+                 this.c(blockposition, t0, i, ticklistpriority);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0437cfdd55..c5c13228b5 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -618,6 +630,19 @@ index 0437cfdd55..c5c13228b5 100644
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d9766447de..a83b73e509 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -159,7 +159,7 @@ public class CraftWorld implements World {
+     // Paper start - Async chunk load API
+     public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
+         final ChunkProviderServer cps = this.world.getChunkProviderServer();
+-        callback.onLoad(cps.getChunkAt(x, z, true, true).bukkitChunk); // TODO: Add back async variant
++        cps.getChunkAt(x, z, true, true, chunk -> callback.onLoad(chunk.bukkitChunk));
+         /*cps.getChunkAt(x, z, new Runnable() {
+             @Override
+             public void run() {
 -- 
 2.18.0
 
