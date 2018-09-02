@@ -1,4 +1,4 @@
-From 45095843bea41f19c4c03437d35da163c7245ee4 Mon Sep 17 00:00:00 2001
+From bdcc61064ffa8101b6e4bb06bef0b7e6fd8fb90c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -508,6 +508,19 @@ index e7d465fb8a..c325b1304f 100644
              return this.chunk != null;
          }
      }
+diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
+index 3c35c0f481..187ca2813a 100644
+--- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
++++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
+@@ -35,7 +35,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
+         this.d = l;
+         this.e = i;
+         this.f = j;
+-        this.g = world;
++        this.g = world.regionLimited(this); // Paper
+         this.h = world.getSeed();
+         this.m = world.getChunkProvider().getChunkGenerator().getSettings();
+         this.i = world.getSeaLevel();
 diff --git a/src/main/java/net/minecraft/server/SchedulerBatch.java b/src/main/java/net/minecraft/server/SchedulerBatch.java
 index d868149d1a..0d94b262ac 100644
 --- a/src/main/java/net/minecraft/server/SchedulerBatch.java
@@ -559,6 +572,52 @@ index d868149d1a..0d94b262ac 100644
 +        } finally { lock.unlock(); } // Paper
      }
  }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0437cfdd55..c5c13228b5 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+ import org.bukkit.generator.ChunkGenerator;
+ // CraftBukkit end
+ 
+-public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAccess, AutoCloseable {
++public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAccess, AutoCloseable, Cloneable { // Paper
+ 
+     protected static final Logger e = LogManager.getLogger();
+     private static final EnumDirection[] a = EnumDirection.values();
+@@ -109,6 +109,20 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     protected PersistentVillage villages;
+     public final MethodProfiler methodProfiler;
+     public final boolean isClientSide;
++    // Paper start - yes this is hacky as shit
++    RegionLimitedWorldAccess regionLimited;
++    World originalWorld;
++    public World regionLimited(RegionLimitedWorldAccess limitedWorldAccess) {
++        try {
++            World clone = (World) super.clone();
++            clone.regionLimited = limitedWorldAccess;
++            clone.originalWorld = this;
++            return clone;
++        } catch (CloneNotSupportedException e1) {
++        }
++        return null;
++    }
++    // Paper end
+     public boolean allowMonsters;
+     public boolean allowAnimals;
+     private boolean J;
+@@ -1004,6 +1018,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     }
+ 
+     public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
++        // Paper start
++        if (regionLimited != null) {
++            return regionLimited.addEntity(entity, spawnReason);
++        }
++        // Paper end
+         org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
+         if (entity == null) return false;
+         if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
 -- 
 2.18.0
 
