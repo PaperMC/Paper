@@ -207,6 +207,33 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return blocks.get(0);
     }
 
+    // Paper start
+    @Override
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        return this.getTargetBlockExact(maxDistance, fluidMode.bukkit);
+    }
+
+    @Override
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        return this.getTargetBlockFace(maxDistance, fluidMode.bukkit);
+    }
+
+    @Override
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, org.bukkit.FluidCollisionMode fluidMode) {
+        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode);
+        return result != null ? result.getHitBlockFace() : null;
+    }
+
+    @Override
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode.bukkit);
+        if (result != null && result.getHitBlock() != null && result.getHitBlockFace() != null) {
+            return new com.destroystokyo.paper.block.TargetBlockInfo(result.getHitBlock(), result.getHitBlockFace());
+        }
+        return null;
+    }
+    // Paper end
+
     @Override
     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
         return this.getLineOfSight(transparent, maxDistance, 2);

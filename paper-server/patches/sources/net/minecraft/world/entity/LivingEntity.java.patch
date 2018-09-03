@@ -239,13 +239,10 @@
          if (nbt.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
              this.getAttributes().load(nbt.getList("attributes", 10));
          }
-@@ -778,8 +852,19 @@
-                 if (mobeffect != null) {
-                     this.activeEffects.put(mobeffect.getEffect(), mobeffect);
-                 }
-+            }
-+        }
-+
+@@ -781,6 +855,17 @@
+             }
+         }
+ 
 +        // CraftBukkit start
 +        if (nbt.contains("Bukkit.MaxHealth")) {
 +            Tag nbtbase = nbt.get("Bukkit.MaxHealth");
@@ -253,12 +250,13 @@
 +                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(((FloatTag) nbtbase).getAsDouble());
 +            } else if (nbtbase.getId() == 3) {
 +                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(((IntTag) nbtbase).getAsDouble());
-             }
-         }
++            }
++        }
 +        // CraftBukkit end
- 
++
          if (nbt.contains("Health", 99)) {
              this.setHealth(nbt.getFloat("Health"));
+         }
 @@ -792,6 +877,7 @@
              String s = nbt.getString("Team");
              Scoreboard scoreboard = this.level().getScoreboard();
@@ -826,12 +824,12 @@
 +        // CraftBukkit start - EntityKnockbackEvent
 +        this.knockback(strength, x, z, null, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN); // Paper - knockback events
 +    }
-+
+ 
 +    public void knockback(double d0, double d1, double d2, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause) { // Paper - knockback events
 +        d0 *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
 +        if (true || d0 > 0.0D) { // CraftBukkit - Call event even when force is 0
 +            //this.hasImpulse = true; // CraftBukkit - Move down
- 
++
              Vec3 vec3d;
  
 -            for (vec3d = this.getDeltaMovement(); x * x + z * z < 9.999999747378752E-6D; z = (Math.random() - Math.random()) * 0.01D) {
@@ -927,7 +925,10 @@
 +    // CraftBukkit start
 +    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float f) {
 +        float originalDamage = f;
-+
+ 
+-            amount = Math.max(amount - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - amount));
+-            float f2 = f1 - amount;
 +        com.google.common.base.Function<Double, Double> freezing = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -940,9 +941,6 @@
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
  
--            amount = Math.max(amount - this.getAbsorptionAmount(), 0.0F);
--            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - amount));
--            float f2 = f1 - amount;
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -954,7 +952,7 @@
 +        };
 +        float hardHatModifier = hardHat.apply((double) f).floatValue();
 +        f += hardHatModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> blocking = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1122,27 +1120,26 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,9 +2436,19 @@
+@@ -1935,8 +2436,18 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
-     }
 @@ -1999,7 +2510,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1152,19 +1149,19 @@
                      this.setHealth(0.0F);
                      this.die(this.damageSources().generic());
                  }
-@@ -2182,6 +2693,12 @@
+@@ -2181,6 +2692,12 @@
+     public abstract Iterable<ItemStack> getArmorSlots();
  
      public abstract ItemStack getItemBySlot(EquipmentSlot slot);
- 
++
 +    // CraftBukkit start
 +    public void setItemSlot(EquipmentSlot enumitemslot, ItemStack itemstack, boolean silent) {
 +        this.setItemSlot(enumitemslot, itemstack);
 +    }
 +    // CraftBukkit end
-+
+ 
      public abstract void setItemSlot(EquipmentSlot slot, ItemStack stack);
  
-     public Iterable<ItemStack> getHandSlots() {
 @@ -2494,7 +3011,7 @@
  
      }
@@ -1335,7 +1332,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1358,7 +1355,7 @@
 +                    }
 +                    // Paper end
 +                    // CraftBukkit end
-+
+ 
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
                      }
@@ -1372,7 +1369,7 @@
                  }
  
              }
-@@ -3544,12 +4113,24 @@
+@@ -3544,12 +4113,37 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1384,6 +1381,19 @@
      }
  
 +    // Paper start - Make shield blocking delay configurable
++    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3 start = new Vec3(getX(), getY() + getEyeHeight(), getZ());
++        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
++        Vec3 end = new Vec3(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
++        ClipContext raytrace = new ClipContext(start, end, ClipContext.Block.OUTLINE, fluidCollisionOption, this);
++
++        return this.level().clip(raytrace);
++    }
++
 +    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
 +
 +    public int getShieldBlockingDelay() {
@@ -1398,7 +1408,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3568,12 +4149,18 @@
+@@ -3568,12 +4162,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1419,7 +1429,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4179,43 @@
+@@ -3592,18 +4192,43 @@
              }
  
              if (flag2) {
@@ -1467,7 +1477,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4225,7 @@
+@@ -3613,7 +4238,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1476,7 +1486,7 @@
          }
      }
  
-@@ -3706,7 +4318,7 @@
+@@ -3706,7 +4331,7 @@
      }
  
      public void stopSleeping() {
@@ -1485,7 +1495,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4330,9 @@
+@@ -3718,9 +4343,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1497,7 +1507,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4352,7 @@
+@@ -3740,7 +4365,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1506,7 +1516,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4517,7 @@
+@@ -3905,7 +4530,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
