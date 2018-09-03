@@ -1,4 +1,4 @@
-From 791c0515fe744ceb9711102738eabf345e4875f9 Mon Sep 17 00:00:00 2001
+From 99e75472a9768abc7f7db475eb99f1c8d787af72 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -136,24 +136,67 @@ index 34019bd1b3..08a9beea9a 100644
              return flag ? (Scheduler.a) this.progressCache.computeIfAbsent(chunkcoordintpair.a(), (i) -> {
                  ProtoChunk protochunk;
  
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 2b1affd03c..9d4410f274 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.random = SHARED_RANDOM; // Paper
+         this.fireTicks = -this.getMaxFireTicks();
+         this.justCreated = true;
+-        this.uniqueID = MathHelper.a(this.random);
++        this.uniqueID = MathHelper.a(java.util.concurrent.ThreadLocalRandom.current()); // Paper
+         this.au = this.uniqueID.toString();
+         this.aJ = Sets.newHashSet();
+         this.aL = new double[] { 0.0D, 0.0D, 0.0D};
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 4698ee99f8..33b30bb7e3 100644
+index 4698ee99f8..e4e725a68c 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
-@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
+@@ -5,7 +5,8 @@ import java.util.function.Consumer;
+ import javax.annotation.Nullable;
  
  public interface IChunkLoader {
- 
-+    default Chunk loadChunkAt(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException { return a(generatoraccess, i, j, consumer); } // Paper - OBFHELPER
+-
++    void loadEntities(NBTTagCompound nbttagcompound, Chunk chunk); // Paper - Async Chunks
++    Object[] loadChunk(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException; // Paper - Async Chunks
      @Nullable
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 42e0e16949..2790de96e0 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1007,6 +1007,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         while ((futuretask = (FutureTask) this.f.poll()) != null) {
+             SystemUtils.a(futuretask, MinecraftServer.LOGGER);
+         }
++        PaperAsyncChunkProvider.processChunkLoads(this); // Paper
+         MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
+ 
+         this.methodProfiler.c("commandFunctions");
+@@ -1043,6 +1044,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         // CraftBukkit - dropTickTime
+         for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
+             WorldServer worldserver = (WorldServer) iterator.next();
++            PaperAsyncChunkProvider.processChunkLoads(worldserver); // Paper
+             TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+             i = SystemUtils.c();
+             if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
+@@ -1099,6 +1101,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                 this.methodProfiler.e();
+                 this.methodProfiler.e();
+                 worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++                PaperAsyncChunkProvider.processChunkLoads(worldserver); // Paper
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..33c415007c
+index 0000000000..d89e2fcddc
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,340 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -185,6 +228,7 @@ index 0000000000..33c415007c
 +
 +import java.io.IOException;
 +import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
 +import java.util.concurrent.SynchronousQueue;
@@ -202,6 +246,7 @@ index 0000000000..33c415007c
 +    );
 +    private final ExecutorService chunkGenerationExecutor ;
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
++    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
 +    private final ChunkProviderServer provider;
 +    private final WorldServer world;
@@ -218,17 +263,37 @@ index 0000000000..33c415007c
 +        this.scheduler = scheduler;
 +        String worldName = this.world.getWorld().getName();
 +        this.chunkGenerationExecutor = Executors.newSingleThreadExecutor(r -> {
++            //noinspection CodeBlock2Expr
 +            return new Thread(r, "Paper Generation Executor - " + worldName);
 +        });
 +    }
 +
-+    Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
-+        final long key = ChunkCoordIntPair.asLong(x, z);
-+        final CompletableFuture<Chunk> future = new CompletableFuture<>();
++    static void processChunkLoads(MinecraftServer server) {
++        for (WorldServer world : server.getWorlds()) {
++            processChunkLoads(world);
++        }
++    }
 +
-+        boolean hadPending;
++    static void processChunkLoads(World world) {
++        ((ChunkProviderServer) world.getChunkProvider()).asyncChunkProvider.processChunkLoads();
++    }
++
++    private boolean processChunkLoads() {
++        Runnable run;
++        boolean hadLoad = false;
++        while ((run = mainThreadQueue.poll()) != null) {
++            run.run();
++            hadLoad = true;
++        }
++        return hadLoad;
++    }
++
++    final Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
++        final long key = ChunkCoordIntPair.asLong(x, z);
++
++        // Obtain a PendingChunk
++        final boolean hadPending;
 +        final PendingChunk pending;
-+        final boolean isFirstMainThreadRequest;
 +        synchronized (pendingChunks) {
 +            PendingChunk pendingChunk = pendingChunks.get(key);
 +            // DO NOT CALL ANY METHODS ON PENDING CHUNK IN THIS BLOCK - WILL DEADLOCK
@@ -238,7 +303,7 @@ index 0000000000..33c415007c
 +                hadPending = false;
 +            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
 +                // need to overwrite the old
-+                pending = new PendingChunk(x, z, key, gen);
++                pending = new PendingChunk(x, z, key, true);
 +                pendingChunks.put(key, pending);
 +                hadPending = false;
 +            } else {
@@ -246,72 +311,47 @@ index 0000000000..33c415007c
 +                hadPending = true;
 +            }
 +        }
-+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-+        synchronized (pending) {
-+            pending.addListener(future, gen);
++        // Listen for when result is ready
++        final CompletableFuture<Chunk> future = new CompletableFuture<>();
++        pending.addListener(future, gen);
 +
-+            // This makes sure this is the first future to be resolved to set the chunk map/entities
-+            if (consumer == null && pending.mainThreadRequest == null && server.isMainThread()) {
-+                isFirstMainThreadRequest = true;
-+                pending.mainThreadRequest = future;
-+            } else {
-+                isFirstMainThreadRequest = false;
-+            }
-+        }
-+
-+        // A new main thread request may of come in after completion waiting for the next tick loop
-+        // We need to go ahead and complete it now!
-+        if (isFirstMainThreadRequest && pending.hasFinished) {
++        final boolean isBlockingMain = consumer == null && server.isMainThread();
++        if (isBlockingMain && pending.hasFinished) {
++            processChunkLoads();
 +            return pending.postChunk();
 +        } else if (!hadPending) {
 +            EXECUTOR.submit(pending);
 +        }
 +
-+        if (consumer == null) {
-+            Chunk chunk;
++        if (isBlockingMain) {
 +            try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) {
-+                chunk = future.join();
++                while (!future.isDone()) {
++                    // We aren't done, obtain lock on queue
++                    synchronized (mainThreadQueue) {
++                        // We may of received our request now, check it
++                        if (processChunkLoads()) {
++                            // If we processed SOMETHING, don't wait
++                            continue;
++                        }
++                        try {
++                            // We got nothing from the queue, wait until something has been added
++                            mainThreadQueue.wait(1);
++                        } catch (InterruptedException ignored) {
++                        }
++                    }
++                    // Queue has been notified or timed out, process it
++                    processChunkLoads();
++                }
++                // We should be done AND posted into chunk map now, return it
++                return future.join();
 +            }
-+
-+            if (isFirstMainThreadRequest) {
-+                return pending.postChunk();
-+            }
-+            return chunk;
++        } else if (consumer == null) {
++            // This is on another thread
++            return future.join();
 +        } else {
 +            future.thenAccept((c) -> this.asyncHandler.postToMainThread(() -> consumer.accept(c)));
 +        }
 +        return null;
-+    }
-+
-+    private Chunk loadChunk(int x, int z) {
-+        try {
-+            return this.chunkLoader.loadChunkAt(this.world, x, z, this::doNothingChunkConsumer);
-+        } catch (IOException e) {
-+            MinecraftServer.LOGGER.error("Couldn't load chunk", e);
-+            return null;
-+        }
-+    }
-+
-+    private Chunk generateChunk(int x, int z) {
-+        try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) {
-+            CompletableFuture<ProtoChunk> pending = new CompletableFuture<>();
-+            chunkGenerationExecutor.submit(() -> {
-+                this.scheduler.startBatch();
-+                this.scheduler.add(new ChunkCoordIntPair(x, z));
-+                this.scheduler.executeBatch()
-+                    .handle((protoChunk, throwable) -> {
-+                        if (throwable != null) {
-+                            pending.completeExceptionally(throwable);
-+                        } else {
-+                            pending.complete(protoChunk);
-+                        }
-+                        return protoChunk;
-+                    });
-+            });
-+            return new Chunk(this.world, pending.join(), x, z);
-+        } catch (RuntimeException runtimeexception) {
-+            throw this.provider.generateChunkError(x, z, runtimeexception);
-+        }
 +    }
 +
 +    boolean chunkGoingToExists(int x, int z) {
@@ -322,22 +362,19 @@ index 0000000000..33c415007c
 +        }
 +    }
 +
-+    private void doNothingChunkConsumer(Chunk unused) {}
-+
 +    private class PendingChunk implements Runnable {
 +        private final int x;
 +        private final int z;
 +        private final long key;
++        private final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
++        private final CompletableFuture<Chunk> generate = new CompletableFuture<>();
 +
-+        volatile CompletableFuture<Chunk> mainThreadRequest;
-+        volatile boolean generating;
-+        volatile boolean canGenerate;
-+        volatile boolean hasPosted;
-+        volatile boolean hasFinished;
-+        volatile Chunk chunk;
-+
-+        final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
-+        final CompletableFuture<Chunk> generate = new CompletableFuture<>();
++        private volatile boolean generating;
++        private volatile boolean canGenerate;
++        private volatile boolean hasPosted;
++        private volatile boolean hasFinished;
++        private volatile Chunk chunk;
++        private volatile NBTTagCompound pendingLevel;
 +
 +        PendingChunk(int x, int z, long key, boolean canGenerate) {
 +            this.x = x;
@@ -346,21 +383,54 @@ index 0000000000..33c415007c
 +            this.canGenerate = canGenerate;
 +        }
 +
++        synchronized private Chunk loadChunk(int x, int z) throws IOException {
++            Object[] data = chunkLoader.loadChunk(world, x, z, null);
++            if (data != null) {
++                // Level must be loaded on main
++                this.pendingLevel = ((NBTTagCompound) data[1]).getCompound("Level");
++                return (Chunk) data[0];
++            } else {
++                return null;
++            }
++        }
++
++        private Chunk generateChunk(int x, int z) {
++            try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) {
++                CompletableFuture<ProtoChunk> pending = new CompletableFuture<>();
++                chunkGenerationExecutor.submit(() -> {
++                    scheduler.startBatch();
++                    scheduler.add(new ChunkCoordIntPair(x, z));
++                    scheduler.executeBatch()
++                        .handle((protoChunk, throwable) -> {
++                            if (throwable != null) {
++                                pending.completeExceptionally(throwable);
++                            } else {
++                                pending.complete(protoChunk);
++                            }
++                            return protoChunk;
++                        });
++                });
++                return new Chunk(world, pending.join(), x, z);
++            } catch (RuntimeException runtimeexception) {
++                throw provider.generateChunkError(x, z, runtimeexception);
++            }
++        }
++
 +        synchronized boolean loadFinished(Chunk chunk) {
 +            if (chunk != null) {
 +                postChunkToMain(chunk);
 +                return false;
 +            }
 +
++            loadOnly.complete(null);
++
 +            if (!canGenerate) {
 +                this.chunk = null;
 +                this.hasFinished = true;
 +                pendingChunks.remove(key);
-+                completeFutures(null);
 +                return false;
 +            } else {
 +                generating = true;
-+                loadOnly.complete(null);
 +                return true;
 +            }
 +        }
@@ -377,21 +447,17 @@ index 0000000000..33c415007c
 +        }
 +
 +        synchronized private void completeFutures(Chunk chunk) {
-+            if (mainThreadRequest != null) {
-+                mainThreadRequest.complete(chunk);
-+            }
 +            loadOnly.complete(chunk);
 +            generate.complete(chunk);
 +        }
 +
 +        synchronized private void postChunkToMain(Chunk chunk) {
-+            // ensure anything that comes in post this
 +            this.chunk = chunk;
 +            this.hasFinished = true;
-+            if (mainThreadRequest == null) {
-+                asyncHandler.postToMainThread(this::postChunk);
++            synchronized (mainThreadQueue) {
++                mainThreadQueue.add(this::postChunk);
++                mainThreadQueue.notify();
 +            }
-+            completeFutures(chunk);
 +        }
 +
 +        synchronized Chunk postChunk() {
@@ -402,25 +468,35 @@ index 0000000000..33c415007c
 +                return chunk;
 +            }
 +            hasPosted = true;
-+            pendingChunks.remove(key);
-+            synchronized (provider.chunks) {
-+                final Chunk other = provider.chunks.get(key);
-+                if (other != null) {
-+                    this.chunk = other;
-+                    return other;
++            try {
++                synchronized (provider.chunks) {
++                    final Chunk other = provider.chunks.get(key);
++                    if (other != null) {
++                        this.chunk = other;
++                        completeFutures(other);
++                        return other;
++                    }
++                    if (chunk != null) {
++                        provider.chunks.put(key, chunk);
++                    }
 +                }
-+                if (chunk != null) {
-+                    provider.chunks.put(key, chunk);
-+                }
-+            }
 +
-+            if (chunk != null) {
-+                if (!chunk.newChunk) {
-+                    chunk.setLastSaved(chunk.world.getTime());
++                if (chunk != null) {
++                    if (pendingLevel != null) {
++                        chunkLoader.loadEntities(pendingLevel, chunk);
++                    }
++                    if (!chunk.newChunk) {
++                        chunk.setLastSaved(chunk.world.getTime());
++                    }
++                    chunk.addEntities();
 +                }
-+                chunk.addEntities();
++                completeFutures(chunk);
++                return chunk;
++            } finally {
++                if (chunk != null) {
++                    pendingChunks.remove(key);
++                }
 +            }
-+            return chunk;
 +        }
 +
 +        synchronized void addListener(CompletableFuture<Chunk> future, boolean gen) {
@@ -430,7 +506,7 @@ index 0000000000..33c415007c
 +                canGenerate = true;
 +                generate.thenAccept(future::complete);
 +            } else {
-+                if (!generating) {
++                if (generating) {
 +                    future.complete(null);
 +                } else {
 +                    loadOnly.thenAccept(future::complete);
@@ -440,16 +516,21 @@ index 0000000000..33c415007c
 +
 +        @Override
 +        public void run() {
-+            Chunk chunk = loadChunk(x, z);
-+            if (!loadFinished(chunk)) {
-+                return;
++            try {
++                if (!loadFinished(loadChunk(x, z))) {
++                    return;
++                }
++            } catch (Exception e) {
++                MinecraftServer.LOGGER.error("Couldn't load chunk", e);
++                if (!(e instanceof IOException)) {
++                    return;
++                }
 +            }
 +
 +            try {
-+                chunk = generateChunk(x, z);
-+                generateFinished(chunk);
++                generateFinished(generateChunk(x, z));
 +            } catch (Exception e) {
-+                e.printStackTrace();
++                MinecraftServer.LOGGER.error("Couldn't generate chunk", e);
 +                generateFinished(null);
 +            }
 +        }
@@ -572,18 +653,6 @@ index d868149d1a..0d94b262ac 100644
 +        } finally { lock.unlock(); } // Paper
      }
  }
-diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
-index ee5c2421bb..760c9c6d99 100644
---- a/src/main/java/net/minecraft/server/TickListServer.java
-+++ b/src/main/java/net/minecraft/server/TickListServer.java
-@@ -207,6 +207,7 @@ public class TickListServer<T> implements TickList<T> {
-     }
- 
-     public void a(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
-+        org.spigotmc.AsyncCatcher.catchOp("tick list"); // Paper
-         if (!this.a.test(t0)) {
-             if (this.f.isLoaded(blockposition)) {
-                 this.c(blockposition, t0, i, ticklistpriority);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0437cfdd55..c5c13228b5 100644
 --- a/src/main/java/net/minecraft/server/World.java
