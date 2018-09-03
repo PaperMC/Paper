@@ -41,13 +41,7 @@ function import {
 
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
 
-nonnms=$(cat "$basedir/Spigot-Server-Patches/"* | grep "create mode " | grep -Po "src/main/java/net/minecraft/server/(.*?).java" | sort | uniq | sed 's/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g' ;
-    # TODO: Fix non nms to work for Paper, hard code these for now
-    echo "KeyedObject" ;
-    echo "MCUtil" ;
-    echo "PaperLightingQueue"
-)
-
+nonnms=$(grep "new file mode" -B 1 Spigot-Server-Patches/* | grep -v "new file mode" | grep -oE "net\/minecraft\/server\/.*.java" | grep -oE "[A-Za-z]+?.java$" --color=none | sed 's/.java//g')
 function containsElement {
 	local e
 	for e in "${@:2}"; do
