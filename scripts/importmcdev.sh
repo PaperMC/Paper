@@ -29,6 +29,26 @@ function import {
     fi
 }
 
+function importLibrary {
+    group=$1
+    lib=$2
+    prefix=$3
+    shift 3
+    for file in "$@"; do
+        file="$prefix/$file"
+        target="$workdir/Spigot/Spigot-Server/src/main/java/${file}"
+        targetdir=$(dirname "$target")
+        mkdir -p "${targetdir}"
+        base="$workdir/Minecraft/$minecraftversion/libraries/${group}/${lib}/$file"
+        if [ ! -f "$base" ]; then
+            echo "Missing $base"
+            exit 1
+        fi
+        export MODLOG="$MODLOG  Imported $file from $lib\n";
+        cp "$base" "$target" || exit 1
+    done
+}
+
 (
     cd "$workdir/Spigot/Spigot-Server/"
     lastlog=$($gitcmd log -1 --oneline)
@@ -62,6 +82,10 @@ for f in $files; do
 		fi
 	fi
 done
+
+# Import Libraries - these must always be mapped manually, no automatic stuff
+
+
 
 # Temporarily add new NMS dev imports here before you run paper patch
 # but after you have paper rb'd your changes, remove the line from this file before committing.
