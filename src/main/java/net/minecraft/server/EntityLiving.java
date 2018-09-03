@@ -3474,6 +3474,23 @@ public abstract class EntityLiving extends Entity {
         this.broadcastItemBreak(enumhand == EnumHand.MAIN_HAND ? EnumItemSlot.MAINHAND : EnumItemSlot.OFFHAND);
     }
     // Paper start
+    public MovingObjectPosition getRayTrace(int maxDistance) {
+        return getRayTrace(maxDistance, RayTrace.FluidCollisionOption.NONE);
+    }
+
+    public MovingObjectPosition getRayTrace(int maxDistance, RayTrace.FluidCollisionOption fluidCollisionOption) {
+        if (maxDistance < 1 || maxDistance > 120) {
+            throw new IllegalArgumentException("maxDistance must be between 1-120");
+        }
+
+        Vec3D start = new Vec3D(locX(), locY() + getHeadHeight(), locZ());
+        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
+        Vec3D end = new Vec3D(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
+        RayTrace raytrace = new RayTrace(start, end, RayTrace.BlockCollisionOption.OUTLINE, fluidCollisionOption, this);
+
+        return world.rayTrace(raytrace);
+    }
+
     public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
 
     public int getShieldBlockingDelay() {

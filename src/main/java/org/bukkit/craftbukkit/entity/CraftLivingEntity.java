@@ -201,6 +201,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return blocks.get(0);
     }
 
+    // Paper start
+    @Override
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.server.MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return !(rayTrace instanceof net.minecraft.server.MovingObjectPositionBlock) ? null : org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().world, ((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getBlockPosition());
+    }
+
+    @Override
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.server.MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return !(rayTrace instanceof net.minecraft.server.MovingObjectPositionBlock) ? null : net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getDirection());
+    }
+
+    @Override
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.server.MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return  !(rayTrace instanceof net.minecraft.server.MovingObjectPositionBlock) ? null :
+            new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().world, ((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getBlockPosition()),
+                net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getDirection()));
+    }
+    // Paper end
+
     @Override
     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
         return getLineOfSight(transparent, maxDistance, 2);
