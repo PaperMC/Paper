@@ -1,5 +1,6 @@
 package org.bukkit.loot;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 
@@ -124,5 +125,15 @@ public enum LootTables implements Keyed {
     @Override
     public NamespacedKey getKey() {
         return NamespacedKey.minecraft(location);
+    }
+
+    /**
+     * Get the {@link LootTable} corresponding to this constant. This is
+     * equivalent to calling {@code Bukkit.getLootTable(this.getKey());}.
+     *
+     * @return the associated LootTable
+     */
+    public LootTable getLootTable() {
+        return Bukkit.getLootTable(getKey());
     }
 }
