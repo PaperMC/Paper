@@ -431,7 +431,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean loadChunk(int x, int z, boolean generate) {
         org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
-        ChunkAccess chunk = this.world.getChunkSource().getChunk(x, z, generate ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
+        ChunkAccess chunk = this.world.getChunkSource().getChunk(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true); // Paper
 
         // If generate = false, but the chunk already exists, we will get this back.
         if (chunk instanceof ImposterProtoChunk) {
