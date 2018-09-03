@@ -85,6 +85,98 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @NotNull
     public Block getTargetBlock(@Nullable Set<Material> transparent, int maxDistance);
 
+    // Paper start
+    /**
+     * Gets the block that the living entity has targeted, ignoring fluids
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return block that the living entity has targeted,
+     *     or null if no block is within maxDistance
+     * @deprecated use {@link #getTargetBlockExact(int)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public default Block getTargetBlock(int maxDistance) {
+        return getTargetBlock(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
+    }
+
+    /**
+     * Gets the block that the living entity has targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param fluidMode whether to check fluids or not
+     * @return block that the living entity has targeted,
+     *     or null if no block is within maxDistance
+     * @deprecated use {@link #getTargetBlockExact(int, FluidCollisionMode)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public Block getTargetBlock(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
+
+    /**
+     * Gets the blockface of that block that the living entity has targeted, ignoring fluids
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return blockface of the block that the living entity has targeted,
+     *     or null if no block is targeted
+     */
+    @Nullable
+    public default org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance) {
+        return getTargetBlockFace(maxDistance, org.bukkit.FluidCollisionMode.NEVER);
+    }
+
+    /**
+     * Gets the blockface of that block that the living entity has targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param fluidMode whether to check fluids or not
+     * @return blockface of the block that the living entity has targeted,
+     *     or null if no block is targeted
+     * @deprecated use {@link #getTargetBlockFace(int, FluidCollisionMode)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
+
+    /**
+     * Gets the blockface of that block that the living entity has targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param fluidMode whether to check fluids or not
+     * @return blockface of the block that the living entity has targeted,
+     *     or null if no block is targeted
+     */
+    @Nullable
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, @NotNull FluidCollisionMode fluidMode);
+
+    /**
+     * Gets information about the block the living entity has targeted, ignoring fluids
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return TargetBlockInfo about the block the living entity has targeted,
+     *     or null if no block is targeted
+     * @deprecated use {@link #rayTraceBlocks(double)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public default com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance) {
+        return getTargetBlockInfo(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
+    }
+
+    /**
+     * Gets information about the block the living entity has targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param fluidMode whether to check fluids or not
+     * @return TargetBlockInfo about the block the living entity has targeted,
+     *     or null if no block is targeted
+     * @deprecated use {@link #rayTraceBlocks(double, FluidCollisionMode)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
+    // Paper end
+
     /**
      * Gets the last two blocks along the living entity's line of sight.
      * <p>
