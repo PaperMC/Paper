@@ -1,4 +1,4 @@
-From 2f22a5cc15f69a04dd205f4a24c8cf280f0f4a57 Mon Sep 17 00:00:00 2001
+From 361c1cfba32b0bad5325c9f91c468fcca3cba5b5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 3 Sep 2018 22:18:38 -0400
 Subject: [PATCH] Fix concurrency issues in DataFixers
@@ -12,9 +12,18 @@ be synchronized to be safe for use over multiple threads.
 There may be more cases, but these are extremely obvious ones.
 
 diff --git a/src/main/java/com/mojang/datafixers/DataFixerUpper.java b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
-index fb2c380f8a..9299cbbdbd 100644
+index fb2c380f8a..c8e7a8aa10 100644
 --- a/src/main/java/com/mojang/datafixers/DataFixerUpper.java
 +++ b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
+@@ -65,7 +65,7 @@ public class DataFixerUpper implements DataFixer {
+     private final Int2ObjectSortedMap<Schema> schemas;
+     private final List<DataFix> globalList;
+     private final IntSortedSet fixerVersions;
+-    private final Long2ObjectMap<TypeRewriteRule> rules = new Long2ObjectOpenHashMap<>();
++    private final Long2ObjectMap<TypeRewriteRule> rules = it.unimi.dsi.fastutil.longs.Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>()); // Paper
+ 
+     protected DataFixerUpper(final Int2ObjectSortedMap<Schema> schemas, final List<DataFix> globalList, final IntSortedSet fixerVersions) {
+         this.schemas = schemas;
 @@ -125,7 +125,7 @@ public class DataFixerUpper implements DataFixer {
          final int expandedDataVersion = DataFixUtils.makeKey(dataVersion);
  
