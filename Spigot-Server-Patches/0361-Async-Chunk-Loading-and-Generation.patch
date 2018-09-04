@@ -1,4 +1,4 @@
-From 3f612e84311c13afdef591ef63ee81784d88cf9d Mon Sep 17 00:00:00 2001
+From 451e8efdac1c6ff288c1d4ebc8087d926692d50e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -150,7 +150,7 @@ index 2b1affd03c..9d4410f274 100644
          this.aJ = Sets.newHashSet();
          this.aL = new double[] { 0.0D, 0.0D, 0.0D};
 diff --git a/src/main/java/net/minecraft/server/GameProfileSerializer.java b/src/main/java/net/minecraft/server/GameProfileSerializer.java
-index 6cfa754e57..9faab516d2 100644
+index 6cfa754e57..58e1871b89 100644
 --- a/src/main/java/net/minecraft/server/GameProfileSerializer.java
 +++ b/src/main/java/net/minecraft/server/GameProfileSerializer.java
 @@ -194,9 +194,9 @@ public final class GameProfileSerializer {
@@ -174,14 +174,12 @@ index 6cfa754e57..9faab516d2 100644
          return iblockstate.a(comparable);
      }
  
-@@ -232,6 +232,8 @@ public final class GameProfileSerializer {
+@@ -232,6 +232,6 @@ public final class GameProfileSerializer {
      }
  
      public static NBTTagCompound a(DataFixer datafixer, TypeReference typereference, NBTTagCompound nbttagcompound, int i, int j) {
 -        return (NBTTagCompound)datafixer.update(typereference, new Dynamic(DynamicOpsNBT.a, nbttagcompound), i, j).getValue();
-+        synchronized (datafixer) { // Paper
 +        return (NBTTagCompound) datafixer.update(typereference, new Dynamic(DynamicOpsNBT.a, nbttagcompound), i, j).getValue();
-+        } // Paper
      }
  }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
@@ -689,7 +687,7 @@ index d868149d1a..0d94b262ac 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0437cfdd55..c5c13228b5 100644
+index acd0c93cec..273cfb73ee 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -735,7 +733,7 @@ index 0437cfdd55..c5c13228b5 100644
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index d9766447de..a83b73e509 100644
+index b38e394f83..c2405f6063 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -159,7 +159,7 @@ public class CraftWorld implements World {
