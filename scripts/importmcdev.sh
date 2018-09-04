@@ -84,7 +84,11 @@ for f in $files; do
 done
 
 # Import Libraries - these must always be mapped manually, no automatic stuff
-
+#             group       lib             prefix                    files
+importLibrary com.mojang datafixerupper com/mojang/datafixers \
+    schemas/Schema.java \
+    DataFixerUpper.java \
+    types/families/RecursiveTypeFamily.java
 
 
 # Temporarily add new NMS dev imports here before you run paper patch
