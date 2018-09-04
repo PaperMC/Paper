@@ -2005,6 +2005,7 @@ public abstract class EntityHuman extends EntityLiving {
         this.datawatcher.set(EntityHuman.bl, nbttagcompound);
     }
 
+    public float getCooldownPeriod() { return this.eQ(); } // Paper - OBFHELPER
     public float eQ() {
         return (float) (1.0D / this.b(GenericAttributes.ATTACK_SPEED) * 20.0D);
     }

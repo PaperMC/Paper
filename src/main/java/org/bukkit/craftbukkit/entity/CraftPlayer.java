@@ -1970,6 +1970,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getInventory().setItemInMainHand(hand);
     }
 
+    // Paper start
+    public float getCooldownPeriod() {
+        return getHandle().getCooldownPeriod();
+    }
+
+    public float getCooledAttackStrength(float adjustTicks) {
+        return getHandle().getAttackCooldown(adjustTicks);
+    }
+
+    public void resetCooldown() {
+        getHandle().resetAttackCooldown();
+    }
+    // Paper end
+
     // Spigot start
     private final Player.Spigot spigot = new Player.Spigot()
     {
