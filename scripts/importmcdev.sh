@@ -29,6 +29,26 @@ function import {
     fi
 }
 
+function importLibrary {
+    group=$1
+    lib=$2
+    prefix=$3
+    shift 3
+    for file in "$@"; do
+        file="$prefix/$file"
+        target="$workdir/Spigot/Spigot-Server/src/main/java/${file}"
+        targetdir=$(dirname "$target")
+        mkdir -p "${targetdir}"
+        base="$workdir/Minecraft/$minecraftversion/libraries/${group}/${lib}/$file"
+        if [ ! -f "$base" ]; then
+            echo "Missing $base"
+            exit 1
+        fi
+        export MODLOG="$MODLOG  Imported $file from $lib\n";
+        cp "$base" "$target" || exit 1
+    done
+}
+
 (
     cd "$workdir/Spigot/Spigot-Server/"
     lastlog=$($gitcmd log -1 --oneline)
@@ -41,14 +61,7 @@ function import {
 
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
 
-nonnms=$(cat "$basedir/Spigot-Server-Patches/"* | grep "create mode " | grep -Po "src/main/java/net/minecraft/server/(.*?).java" | sort | uniq | sed 's/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g' ;
-    # TODO: Fix non nms to work for Paper, hard code these for now
-    echo "KeyedObject" ;
-    echo "MCUtil" ;
-    echo "PaperLightingQueue"
-    echo "PaperAsyncChunkProvider"
-)
-
+nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -v "new file mode" | grep -oE "net\/minecraft\/server\/.*.java" | grep -oE "[A-Za-z]+?.java$" --color=none | sed 's/.java//g')
 function containsElement {
 	local e
 	for e in "${@:2}"; do
@@ -69,6 +82,14 @@ for f in $files; do
 		fi
 	fi
 done
+
+# Import Libraries - these must always be mapped manually, no automatic stuff
+#             group       lib             prefix                    files
+importLibrary com.mojang datafixerupper com/mojang/datafixers \
+    schemas/Schema.java \
+    DataFixerUpper.java \
+    types/families/RecursiveTypeFamily.java
+
 
 # Temporarily add new NMS dev imports here before you run paper patch
 # but after you have paper rb'd your changes, remove the line from this file before committing.
