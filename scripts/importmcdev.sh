@@ -83,23 +83,36 @@ for f in $files; do
 	fi
 done
 
-# Import Libraries - these must always be mapped manually, no automatic stuff
-#             group       lib             prefix                    files
-importLibrary com.mojang datafixerupper com/mojang/datafixers \
-    schemas/Schema.java \
-    DataFixerUpper.java \
-    types/families/RecursiveTypeFamily.java
-
-
+########################################################
+########################################################
+########################################################
+#                   NMS IMPORTS
 # Temporarily add new NMS dev imports here before you run paper patch
 # but after you have paper rb'd your changes, remove the line from this file before committing.
-# we do not need any lines added to this file
+# we do not need any lines added to this file for NMS
 
 # import FileName
 
 
 
+########################################################
+########################################################
+########################################################
+#              LIBRARY IMPORTS
+# These must always be mapped manually, no automatic stuff
+#
+#             # group    # lib          # prefix               # many files
+importLibrary com.mojang datafixerupper com/mojang/datafixers \
+    schemas/Schema.java \
+    DataFixerUpper.java \
+    functions/PointFree.java \
+    types/families/RecursiveTypeFamily.java
 
+# dont forget \ at end of each line but last
+
+########################################################
+########################################################
+########################################################
 set -e
 cd "$workdir/Spigot/Spigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh >/dev/null 2>&1
