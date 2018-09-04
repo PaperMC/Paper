@@ -2980,6 +2980,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         return this.adventure$pointers;
     }
+
+    @Override
+    public float getCooldownPeriod() {
+        return getHandle().getCurrentItemAttackStrengthDelay();
+    }
+
+    @Override
+    public float getCooledAttackStrength(float adjustTicks) {
+        return getHandle().getAttackStrengthScale(adjustTicks);
+    }
+
+    @Override
+    public void resetCooldown() {
+        getHandle().resetAttackStrengthTicker();
+    }
     // Paper end
     // Spigot start
     private final Player.Spigot spigot = new Player.Spigot()
