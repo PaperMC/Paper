@@ -1,4 +1,4 @@
-From 451e8efdac1c6ff288c1d4ebc8087d926692d50e Mon Sep 17 00:00:00 2001
+From d66d20b40477bf94bbddf851ef863b797b59a183 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,7 +43,7 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c0ec896eea..e595905ad1 100644
+index c0ec896eea..b7e07839ea 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -44,6 +44,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -86,8 +86,33 @@ index c0ec896eea..e595905ad1 100644
          IChunkLoader ichunkloader = this.chunkLoader;
          Chunk chunk;
  
-@@ -171,6 +187,7 @@ public class ChunkProviderServer implements IChunkProvider {
-         return this.batchScheduler.c();
+@@ -154,23 +170,27 @@ public class ChunkProviderServer implements IChunkProvider {
+     }
+ 
+     public CompletableFuture<ProtoChunk> a(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) {
+-        this.batchScheduler.b();
++        //this.batchScheduler.b(); // Paper
+         Iterator iterator = iterable.iterator();
+ 
+         while (iterator.hasNext()) {
+             ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
+-            Chunk chunk = this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, false);
++            // Paper start - async chunks
++            this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true, consumer);
+ 
++            /*
+             if (chunk != null) {
+                 consumer.accept(chunk);
+             } else {
+                 this.batchScheduler.a(chunkcoordintpair).thenApply(this::a).thenAccept(consumer);
+-            }
++            }*/
+         }
+-
+-        return this.batchScheduler.c();
++        return CompletableFuture.completedFuture(null);
++        // Paper end
++        //return this.batchScheduler.c();
      }
  
 +    ReportedException generateChunkError(int i, int j, Throwable throwable) { return a(i, j, throwable); } // Paper - OBFHELPER
