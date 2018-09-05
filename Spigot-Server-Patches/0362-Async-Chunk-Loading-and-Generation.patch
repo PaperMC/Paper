@@ -1,4 +1,4 @@
-From dabed993c940cb4e25926650d370daec82a165cd Mon Sep 17 00:00:00 2001
+From fdcd5d6c37b4eac7e6b75d6905a0cff4bf4b5481 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,76 +43,86 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c0ec896eea..b7e07839ea 100644
+index c0ec896eea..37b33d57f7 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -44,6 +44,7 @@ public class ChunkProviderServer implements IChunkProvider {
-     private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler;
+@@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
+     public final Long2ObjectMap<Chunk> chunks = Long2ObjectMaps.synchronize(new ChunkMap(8192));
+     private Chunk lastChunk;
+     private final ChunkTaskScheduler chunkScheduler;
+-    private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler;
++    final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler; // Paper
      public final WorldServer world;
-     private final IAsyncTaskHandler asyncTaskHandler;
-+    final PaperAsyncChunkProvider asyncChunkProvider; // Paper
+-    private final IAsyncTaskHandler asyncTaskHandler;
++    final IAsyncTaskHandler asyncTaskHandler; // Paper
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
-@@ -52,6 +53,7 @@ public class ChunkProviderServer implements IChunkProvider {
-         this.asyncTaskHandler = iasynctaskhandler;
-         this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
-         this.batchScheduler = new SchedulerBatch(this.chunkScheduler);
-+        this.asyncChunkProvider = new PaperAsyncChunkProvider(this, asyncTaskHandler, chunkLoader, this.batchScheduler); // Paper - Async Chunks
-     }
- 
-     public Collection<Chunk> a() {
-@@ -80,8 +82,22 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -80,10 +80,33 @@ public class ChunkProviderServer implements IChunkProvider {
          this.unloadQueue.remove(ChunkCoordIntPair.a(i, j));
      }
  
-+    @Nullable// Paper start - Async Chunks
-+    public final Chunk getChunkAt(int i, int j, boolean flag, boolean flag1) {
-+        return getChunkAt(i, j, flag, flag1, null);
++    // Paper start - defaults if Async Chunks is not enabled
++    boolean chunkGoingToExists(int x, int z) {
++        final long k = ChunkCoordIntPair.asLong(x, z);
++        return chunkScheduler.progressCache.containsKey(k);
 +    }
 +
-+    public final Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
-+        long key = ChunkCoordIntPair.asLong(x, z);
-+        Chunk chunk = this.chunks.get(key);
-+        if (chunk != null || !load) { // return null if we aren't loading
-+            return chunk;
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
++        Chunk chunk = getChunkAt(x, z, load, gen);
++        if (consumer != null) {
++            consumer.accept(chunk);
 +        }
-+        return asyncChunkProvider.loadOrGenerateChunk(x, z, gen, consumer);
++        return chunk;
 +    }
++    // Paper end
++
      @Nullable
--    public Chunk getChunkAt(int i, int j, boolean flag, boolean flag1) {
-+    public Chunk getChunkAtOriginal(int i, int j, boolean flag, boolean flag1) { // Paper - rename to disable
-+        // Paper end - Async Chunks
+     public Chunk getChunkAt(int i, int j, boolean flag, boolean flag1) {
          IChunkLoader ichunkloader = this.chunkLoader;
          Chunk chunk;
++        // Paper start - do already loaded checks before synchronize
++        long k = ChunkCoordIntPair.a(i, j);
++        chunk = (Chunk) this.chunks.get(k);
++        if (chunk != null) {
++            //this.lastChunk = chunk; // Paper remove vanilla lastChunk
++            return chunk;
++        }
++        // Paper end
  
-@@ -154,23 +170,27 @@ public class ChunkProviderServer implements IChunkProvider {
-     }
+         synchronized (this.chunkLoader) {
+             // Paper start - remove vanilla lastChunk, we do it more accurately
+@@ -91,13 +114,15 @@ public class ChunkProviderServer implements IChunkProvider {
+                 return this.lastChunk;
+             }*/ // Paper end
  
-     public CompletableFuture<ProtoChunk> a(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) {
--        this.batchScheduler.b();
-+        //this.batchScheduler.b(); // Paper
-         Iterator iterator = iterable.iterator();
+-            long k = ChunkCoordIntPair.a(i, j);
++            // Paper start - move up
++            //long k = ChunkCoordIntPair.a(i, j);
  
-         while (iterator.hasNext()) {
-             ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
--            Chunk chunk = this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, false);
-+            // Paper start - async chunks
-+            this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true, consumer);
- 
-+            /*
+-            chunk = (Chunk) this.chunks.get(k);
++            /*chunk = (Chunk) this.chunks.get(k);
              if (chunk != null) {
-                 consumer.accept(chunk);
-             } else {
-                 this.batchScheduler.a(chunkcoordintpair).thenApply(this::a).thenAccept(consumer);
+                 //this.lastChunk = chunk; // Paper remove vanilla lastChunk
+                 return chunk;
 -            }
 +            }*/
-         }
--
--        return this.batchScheduler.c();
-+        return CompletableFuture.completedFuture(null);
-+        // Paper end
-+        //return this.batchScheduler.c();
++            // Paper end
+ 
+             if (flag) {
+                 try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) { // Paper
+@@ -153,7 +178,8 @@ public class ChunkProviderServer implements IChunkProvider {
+         return (IChunkAccess) (chunk != null ? chunk : (IChunkAccess) this.chunkScheduler.b(new ChunkCoordIntPair(i, j), flag));
+     }
+ 
+-    public CompletableFuture<ProtoChunk> a(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) {
++    public CompletableFuture<Void> loadAllChunks(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) { return a(iterable, consumer).thenCompose(protoChunk -> null); } // Paper - overriden in async chunk provider
++    private CompletableFuture<ProtoChunk> a(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) { // Paper - mark private, use above method
+         this.batchScheduler.b();
+         Iterator iterator = iterable.iterator();
+ 
+@@ -171,6 +197,7 @@ public class ChunkProviderServer implements IChunkProvider {
+         return this.batchScheduler.c();
      }
  
 +    ReportedException generateChunkError(int i, int j, Throwable throwable) { return a(i, j, throwable); } // Paper - OBFHELPER
@@ -133,7 +143,7 @@ index 06968974c5..0f216c39bd 100644
                  return true;
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 34019bd1b3..08a9beea9a 100644
+index 34019bd1b3..68ef87bf38 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -20,13 +20,13 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -141,7 +151,7 @@ index 34019bd1b3..08a9beea9a 100644
      private final IChunkLoader e;
      private final IAsyncTaskHandler f;
 -    private final Long2ObjectMap<Scheduler.a> progressCache = new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error
-+    private final Long2ObjectMap<Scheduler.a> progressCache = it.unimi.dsi.fastutil.longs.Long2ObjectMaps.synchronize(new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error // Paper - synchronize
++    final Long2ObjectMap<Scheduler.a> progressCache = it.unimi.dsi.fastutil.longs.Long2ObjectMaps.synchronize(new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error // Paper - synchronize
          protected boolean a(Scheduler.a scheduler_a) {
              ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
  
@@ -175,24 +185,98 @@ index 1fae9aa074..012b35833b 100644
          this.aJ = Sets.newHashSet();
          this.aL = new double[] { 0.0D, 0.0D, 0.0D};
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 4698ee99f8..e4e725a68c 100644
+index 4698ee99f8..dfb45cc4ea 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
-@@ -5,7 +5,8 @@ import java.util.function.Consumer;
- import javax.annotation.Nullable;
+@@ -6,6 +6,8 @@ import javax.annotation.Nullable;
  
  public interface IChunkLoader {
--
+ 
 +    void loadEntities(NBTTagCompound nbttagcompound, Chunk chunk); // Paper - Async Chunks
 +    Object[] loadChunk(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException; // Paper - Async Chunks
      @Nullable
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 42e0e16949..2790de96e0 100644
+index 42e0e16949..ac0ddad6da 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1007,6 +1007,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -501,6 +501,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+         // CraftBukkit start - fire WorldLoadEvent and handle whether or not to keep the spawn in memory
+         Stopwatch stopwatch = Stopwatch.createStarted();
++        boolean waitForChunks = Boolean.getBoolean("paper.waitforchunks"); // Paper
+         for (WorldServer worldserver : this.getWorlds()) {
+             MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
+             if (!worldserver.getWorld().getKeepSpawnInMemory()) {
+@@ -511,26 +512,41 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             ArrayList arraylist = Lists.newArrayList();
+             Set set = Sets.newConcurrentHashSet();
+ 
+-            // Paper start
+-            short radius = worldserver.paperConfig.keepLoadedRange;
+-            for (int i = -radius; i <= radius && this.isRunning(); i += 16) {
+-                for (int j = -radius; j <= radius && this.isRunning(); j += 16) {
+-                    // Paper end
+-                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
++            // Paper start - make spiral out
++            int radius = worldserver.paperConfig.keepLoadedRange >> 4;
++            for (int r = 1; r <= radius && isRunning(); r++) {
++                int x = -r;
++                int z = r;
++                arraylist.add(new ChunkCoordIntPair(blockposition.getX(), blockposition.getZ()));
++                // Iterates the edge of half of the box; then negates for other half.
++                while (x <= r && z > -r && isRunning()) {
++                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() + x, blockposition.getZ() + z));
++                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() - x, blockposition.getZ() - z));
++
++                    if (x < r) {
++                        x++;
++                    } else {
++                        z--;
++                    }
+                 }
+-            } // Paper
++            }
++
++            // Paper end
+             if (this.isRunning()) { // Paper
+                 int expected = arraylist.size(); // Paper
+ 
+ 
+-                CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
++                CompletableFuture completablefuture = worldserver.getChunkProviderServer().loadAllChunks(arraylist, (chunk) -> { // Paper
+                     set.add(chunk.getPos());
+-                    if (set.size() < expected && set.size() % 25 == 0) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
++                    if (waitForChunks && (set.size() == expected || (set.size() < expected && set.size() % (set.size() / 10) == 0))) {
++                        this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
++                    }
+                 });
+ 
+-                while (!completablefuture.isDone()) {
++                while (waitForChunks && !completablefuture.isDone() && isRunning()) { // Paper
+                     try {
+-                        completablefuture.get(1L, TimeUnit.SECONDS);
++                        PaperAsyncChunkProvider.processChunkLoads(worldserver); // Paper
++                        completablefuture.get(50L, TimeUnit.MILLISECONDS); // Paper
+                     } catch (InterruptedException interruptedexception) {
+                         throw new RuntimeException(interruptedexception);
+                     } catch (ExecutionException executionexception) {
+@@ -540,11 +556,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+                         throw new RuntimeException(executionexception.getCause());
+                     } catch (TimeoutException timeoutexception) {
+-                        this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
++                        //this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+                     }
+                 }
+ 
+-                this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
++                if (waitForChunks) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+             }
+         }
+ 
+@@ -1007,6 +1023,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -200,7 +284,7 @@ index 42e0e16949..2790de96e0 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.c("commandFunctions");
-@@ -1043,6 +1044,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1043,6 +1060,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -208,7 +292,7 @@ index 42e0e16949..2790de96e0 100644
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.c();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-@@ -1099,6 +1101,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1099,6 +1117,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  this.methodProfiler.e();
                  this.methodProfiler.e();
                  worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -218,10 +302,10 @@ index 42e0e16949..2790de96e0 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..d89e2fcddc
+index 0000000000..8787414b1c
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,384 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -247,11 +331,17 @@ index 0000000000..d89e2fcddc
 + */
 +package net.minecraft.server;
 +
++import io.netty.util.concurrent.CompleteFuture;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
 +
++import javax.annotation.Nullable;
 +import java.io.IOException;
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.ExecutorService;
@@ -262,7 +352,7 @@ index 0000000000..d89e2fcddc
 +import java.util.function.Consumer;
 +
 +@SuppressWarnings("unused")
-+class PaperAsyncChunkProvider {
++class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
 +    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(4, Integer.MAX_VALUE,
 +        120L, TimeUnit.SECONDS,
@@ -273,19 +363,18 @@ index 0000000000..d89e2fcddc
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
-+    private final ChunkProviderServer provider;
++
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
 +    private final MinecraftServer server;
-+    private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> scheduler;
 +
-+    PaperAsyncChunkProvider(ChunkProviderServer provider, IAsyncTaskHandler asyncTaskHandler, IChunkLoader chunkLoader, SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> scheduler) {
-+        this.provider = provider;
-+        this.server = provider.world.getMinecraftServer();
-+        this.world = provider.world;
-+        this.asyncHandler = asyncTaskHandler;
++    PaperAsyncChunkProvider(WorldServer world, IChunkLoader chunkLoader, InternalChunkGenerator generator, MinecraftServer server) {
++        super(world, chunkLoader, generator, server);
++
++        this.server = world.getMinecraftServer();
++        this.world = world;
++        this.asyncHandler = server;
 +        this.chunkLoader = chunkLoader;
-+        this.scheduler = scheduler;
 +        String worldName = this.world.getWorld().getName();
 +        this.chunkGenerationExecutor = Executors.newSingleThreadExecutor(r -> {
 +            //noinspection CodeBlock2Expr
@@ -300,7 +389,10 @@ index 0000000000..d89e2fcddc
 +    }
 +
 +    static void processChunkLoads(World world) {
-+        ((ChunkProviderServer) world.getChunkProvider()).asyncChunkProvider.processChunkLoads();
++        IChunkProvider chunkProvider = world.getChunkProvider();
++        if (chunkProvider instanceof PaperAsyncChunkProvider) {
++            ((PaperAsyncChunkProvider) chunkProvider).processChunkLoads();
++        }
 +    }
 +
 +    private boolean processChunkLoads() {
@@ -313,7 +405,24 @@ index 0000000000..d89e2fcddc
 +        return hadLoad;
 +    }
 +
-+    final Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
++    @Nullable
++    @Override
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen) {
++        return getChunkAt(x, z, load, gen, null);
++    }
++
++    @Nullable
++    @Override
++    public final Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
++        long key = ChunkCoordIntPair.asLong(x, z);
++        Chunk chunk = this.chunks.get(key);
++        if (chunk != null || !load) { // return null if we aren't loading
++            return chunk;
++        }
++        return loadOrGenerateChunk(x, z, gen, consumer); // Async overrides this method
++    }
++
++    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
 +        final long key = ChunkCoordIntPair.asLong(x, z);
 +
 +        // Obtain a PendingChunk
@@ -379,6 +488,25 @@ index 0000000000..d89e2fcddc
 +        return null;
 +    }
 +
++    @Override
++    public CompletableFuture<Void> loadAllChunks(Iterable<ChunkCoordIntPair> iterable, Consumer<Chunk> consumer) {
++        Iterator<ChunkCoordIntPair> iterator = iterable.iterator();
++
++        List<CompletableFuture<Chunk>> all = new ArrayList<>();
++        while (iterator.hasNext()) {
++            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
++            CompletableFuture<Chunk> future = new CompletableFuture<>();
++            all.add(future);
++            this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true, chunk -> {
++                future.complete(chunk);
++                if (consumer != null) {
++                    consumer.accept(chunk);
++                }
++            });
++        }
++        return CompletableFuture.allOf(all.toArray(new CompletableFuture[0]));
++    }
++
 +    boolean chunkGoingToExists(int x, int z) {
 +        synchronized (pendingChunks) {
 +            long key = ChunkCoordIntPair.asLong(x, z);
@@ -423,9 +551,9 @@ index 0000000000..d89e2fcddc
 +            try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) {
 +                CompletableFuture<ProtoChunk> pending = new CompletableFuture<>();
 +                chunkGenerationExecutor.submit(() -> {
-+                    scheduler.startBatch();
-+                    scheduler.add(new ChunkCoordIntPair(x, z));
-+                    scheduler.executeBatch()
++                    batchScheduler.startBatch();
++                    batchScheduler.add(new ChunkCoordIntPair(x, z));
++                    batchScheduler.executeBatch()
 +                        .handle((protoChunk, throwable) -> {
 +                            if (throwable != null) {
 +                                pending.completeExceptionally(throwable);
@@ -437,7 +565,7 @@ index 0000000000..d89e2fcddc
 +                });
 +                return new Chunk(world, pending.join(), x, z);
 +            } catch (RuntimeException runtimeexception) {
-+                throw provider.generateChunkError(x, z, runtimeexception);
++                throw generateChunkError(x, z, runtimeexception);
 +            }
 +        }
 +
@@ -494,15 +622,15 @@ index 0000000000..d89e2fcddc
 +            }
 +            hasPosted = true;
 +            try {
-+                synchronized (provider.chunks) {
-+                    final Chunk other = provider.chunks.get(key);
++                synchronized (chunks) {
++                    final Chunk other = chunks.get(key);
 +                    if (other != null) {
 +                        this.chunk = other;
 +                        completeFutures(other);
 +                        return other;
 +                    }
 +                    if (chunk != null) {
-+                        provider.chunks.put(key, chunk);
++                        chunks.put(key, chunk);
 +                    }
 +                }
 +
@@ -563,7 +691,7 @@ index 0000000000..d89e2fcddc
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..c325b1304f 100644
+index e7d465fb8a..09fdd0e4fa 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,14 @@ public class PlayerChunk {
@@ -594,7 +722,7 @@ index e7d465fb8a..c325b1304f 100644
 -        this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
 -        this.chunkExists = this.chunk != null || ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), i, j); // Paper
 +        this.chunk = chunkproviderserver.getChunkAt(i, j, false, false); // Paper
-+        this.chunkExists = this.chunk != null || chunkproviderserver.asyncChunkProvider.chunkGoingToExists(i, j); // Paper
++        this.chunkExists = this.chunk != null || chunkproviderserver.chunkGoingToExists(i, j); // Paper
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
@@ -607,7 +735,7 @@ index e7d465fb8a..c325b1304f 100644
 +            // Paper start - async chunks
 +            if (!loadInProgress) {
 +                loadInProgress = true;
-+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, chunkLoadedConsumer); // Paper
++                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, chunkLoadedConsumer); // Paper)
 +                markChunkUsed(); // Paper - delay chunk unloads
 +            }
 +            // Paper end
@@ -724,8 +852,21 @@ index acd0c93cec..273cfb73ee 100644
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 1e30ba0548..9ae069d5e5 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -732,7 +732,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+             gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
+         }
+ 
+-        return new ChunkProviderServer(this, ichunkloader, gen, this.server);
++        return new PaperAsyncChunkProvider(this, ichunkloader, gen, this.server); // Paper - async chunks
+         // CraftBukkit end
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b38e394f83..c2405f6063 100644
+index b38e394f83..aa3289e66b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -159,7 +159,7 @@ public class CraftWorld implements World {
@@ -733,7 +874,7 @@ index b38e394f83..c2405f6063 100644
      public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
          final ChunkProviderServer cps = this.world.getChunkProviderServer();
 -        callback.onLoad(cps.getChunkAt(x, z, true, true).bukkitChunk); // TODO: Add back async variant
-+        cps.getChunkAt(x, z, true, true, chunk -> callback.onLoad(chunk.bukkitChunk));
++        cps.getChunkAt(x, z, true, true, chunk -> callback.onLoad(chunk != null ? chunk.bukkitChunk : null));
          /*cps.getChunkAt(x, z, new Runnable() {
              @Override
              public void run() {
