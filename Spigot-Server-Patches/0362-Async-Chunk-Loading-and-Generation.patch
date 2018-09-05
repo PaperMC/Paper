@@ -1,4 +1,4 @@
-From d66d20b40477bf94bbddf851ef863b797b59a183 Mon Sep 17 00:00:00 2001
+From dabed993c940cb4e25926650d370daec82a165cd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -162,7 +162,7 @@ index 34019bd1b3..08a9beea9a 100644
                  ProtoChunk protochunk;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 2b1affd03c..9d4410f274 100644
+index 1fae9aa074..012b35833b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -174,39 +174,6 @@ index 2b1affd03c..9d4410f274 100644
          this.au = this.uniqueID.toString();
          this.aJ = Sets.newHashSet();
          this.aL = new double[] { 0.0D, 0.0D, 0.0D};
-diff --git a/src/main/java/net/minecraft/server/GameProfileSerializer.java b/src/main/java/net/minecraft/server/GameProfileSerializer.java
-index 6cfa754e57..58e1871b89 100644
---- a/src/main/java/net/minecraft/server/GameProfileSerializer.java
-+++ b/src/main/java/net/minecraft/server/GameProfileSerializer.java
-@@ -194,9 +194,9 @@ public final class GameProfileSerializer {
-     }
- 
-     private static <S extends IBlockDataHolder<S>, T extends Comparable<T>> S a(S iblockdataholder, IBlockState<T> iblockstate, String s, NBTTagCompound nbttagcompound, NBTTagCompound nbttagcompound1) {
--        Optional optional = iblockstate.b(nbttagcompound.getString(s));
-+        Optional<T> optional = iblockstate.b(nbttagcompound.getString(s)); // Paper - decompile fix
-         if (optional.isPresent()) {
--            return (S)(iblockdataholder.set(iblockstate, (Comparable)optional.get()));
-+            return (S)(iblockdataholder.set(iblockstate, optional.get())); // Paper - decompile fix
-         } else {
-             a.warn("Unable to read property: {} with value: {} for blockstate: {}", s, nbttagcompound.getString(s), nbttagcompound1.toString());
-             return (S)iblockdataholder;
-@@ -223,7 +223,7 @@ public final class GameProfileSerializer {
-         return nbttagcompound;
-     }
- 
--    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<?> comparable) {
-+    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, T comparable) { // Paper - decompile fix
-         return iblockstate.a(comparable);
-     }
- 
-@@ -232,6 +232,6 @@ public final class GameProfileSerializer {
-     }
- 
-     public static NBTTagCompound a(DataFixer datafixer, TypeReference typereference, NBTTagCompound nbttagcompound, int i, int j) {
--        return (NBTTagCompound)datafixer.update(typereference, new Dynamic(DynamicOpsNBT.a, nbttagcompound), i, j).getValue();
-+        return (NBTTagCompound) datafixer.update(typereference, new Dynamic(DynamicOpsNBT.a, nbttagcompound), i, j).getValue();
-     }
- }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
 index 4698ee99f8..e4e725a68c 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java

@@ -1,0 +1,92 @@
+From cf0b7a7bedd11fa9cb57217baf8486647bbe65a2 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 4 Sep 2018 19:07:57 -0400
+Subject: [PATCH] MC-2025: Save and load entity AABB to prevent wobble
+
+What follows is a summarized analysis provided on the Mojira and associated subreddit by various MC community members
+who have investigated this issue and found a solution. This work is largely a result of their efforts.
+
+The underlying cause of MC-2025 is that sometimes an AABB ends up slightly smaller than the desired width. If this
+happens before the entity is pushed up against a boundary (i.e. blocks or walls), then upon chunk save and reload, the
+AABB size will be recomputed such that it is intersecting the wall, allowing the entity to be pushed into the wall,
+suffocate, and die. Although the rounding artifacts get larger at larger world coordinates, the drift we see is
+miniscule. Closer to the world origin, we have seen error on the order of 2-46. Compare this to the fact that
+(due to MC-4), entity coordinates send to clients are quantized to multiples of 1/4096 (2-12).
+
+But, OMG, do the rounding errors mean that AABB's accumulate shrinkage over time? Actually, no. The statistics on IEEE
+rounding do not have that kind of bias. What has not been stated is that the AABB is just as likely to end up larger
+than the expected width; on save and reload, the entity ends up slightly away from the wall, and we don't notice any
+problem. In reality, the AABB size ends up undergoing random wobble around the expected value all the time, and that
+wobble isn't functionally any different from the kind we'd get even if we tried to force the AABB size to be stable!
+
+This reasoning leads us to one clear conclusion: The simplest, least invasive, and most correct solution is to just
+store the AABB in NBT data on chunk save and restore the AABB exactly as it was saved upon reload.
+
+diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+index 92edfe029..624f0e395 100644
+--- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
++++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+@@ -3,12 +3,12 @@ package net.minecraft.server;
+ import javax.annotation.Nullable;
+ 
+ public class AxisAlignedBB {
+-    public final double a;
+-    public final double b;
+-    public final double c;
+-    public final double d;
+-    public final double e;
+-    public final double f;
++    public final double a; public double getMinX() { return this.a; } // Paper - OBFHELPER
++    public final double b; public double getMinY() { return this.b; } // Paper - OBFHELPER
++    public final double c; public double getMinZ() { return this.c; } // Paper - OBFHELPER
++    public final double d; public double getMaxX() { return this.d; } // Paper - OBFHELPER
++    public final double e; public double getMaxY() { return this.e; } // Paper - OBFHELPER
++    public final double f; public double getMaxZ() { return this.f; } // Paper - OBFHELPER
+ 
+     public AxisAlignedBB(double d0, double d1, double d2, double d3, double d4, double d5) {
+         this.a = Math.min(d0, d3);
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 2b1affd03..1fae9aa07 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1658,6 +1658,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
+             }
++            // Paper start - MC-2025 fix - Save entity AABB and load it, floating point issues recalculating AABB can result in wobble
++            AxisAlignedBB boundingBox = this.getBoundingBox();
++            nbttagcompound.set("Paper.AAAB", this.createList(
++                boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(),
++                boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ()
++            ));
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -1747,6 +1753,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (this.aD()) {
+                 this.setPosition(this.locX, this.locY, this.locZ);
+             }
++            // Paper start - MC-2025 fix - Save entity AABB and load it, floating point issues recalculating AABB can result in wobble
++            // Placement is important, always after the setPosition call above
++            if (nbttagcompound.hasKey("Paper.AABB")) {
++                NBTTagList savedBB = nbttagcompound.getList("Paper.AABB", 6);
++                this.setBoundingBox(new AxisAlignedBB(
++                    savedBB.getDoubleAt(0), savedBB.getDoubleAt(1), savedBB.getDoubleAt(2),
++                    savedBB.getDoubleAt(3), savedBB.getDoubleAt(4), savedBB.getDoubleAt(5)
++                ));
++            }
++            // Paper end
+ 
+             // CraftBukkit start
+             if (this instanceof EntityLiving) {
+@@ -2815,6 +2831,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.boundingBox;
+     }
+ 
++    public void setBoundingBox(AxisAlignedBB axisAlignedBB) { this.a(axisAlignedBB); } // Paper - OBFHELPER
+     public void a(AxisAlignedBB axisalignedbb) {
+         // CraftBukkit start - block invalid bounding boxes
+         double a = axisalignedbb.a,
+-- 
+2.18.0
+
