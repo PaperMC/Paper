@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -159,7 +160,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @Override
     public boolean setOwningPlayer(OfflinePlayer owner) {
-        profile = (owner == null) ? null : new GameProfile(owner.getUniqueId(), owner.getName());
+        if (owner == null) {
+            profile = null;
+        } else if (owner instanceof CraftPlayer) {
+            profile = ((CraftPlayer) owner).getProfile();
+        } else {
+            profile = new GameProfile(owner.getUniqueId(), owner.getName());
+        }
 
         return true;
     }
