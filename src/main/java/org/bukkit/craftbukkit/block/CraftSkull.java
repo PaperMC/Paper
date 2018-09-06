@@ -13,6 +13,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
 
@@ -96,7 +97,11 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     public void setOwningPlayer(OfflinePlayer player) {
         Preconditions.checkNotNull(player, "player");
 
-        this.profile = new GameProfile(player.getUniqueId(), player.getName());
+        if (player instanceof CraftPlayer) {
+            this.profile = ((CraftPlayer) player).getProfile();
+        } else {
+            this.profile = new GameProfile(player.getUniqueId(), player.getName());
+        }
     }
 
     @Override
