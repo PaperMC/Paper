@@ -1,6 +1,18 @@
 --- a/net/minecraft/server/CommandTeleport.java
 +++ b/net/minecraft/server/CommandTeleport.java
-@@ -49,7 +49,7 @@
+@@ -14,6 +14,11 @@
+ import java.util.Set;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.event.entity.EntityTeleportEvent;
++// CraftBukkit end
+ 
+ public class CommandTeleport {
+ 
+@@ -49,7 +54,7 @@
          while (iterator.hasNext()) {
              Entity entity1 = (Entity) iterator.next();
  
@@ -9,7 +21,7 @@
          }
  
          if (collection.size() == 1) {
-@@ -120,9 +120,9 @@
+@@ -120,9 +125,9 @@
              }
  
              if (worldserver == entity.world) {
@@ -21,3 +33,25 @@
              }
  
              entity.setHeadRotation(f);
+@@ -131,6 +136,21 @@
+             float f3 = MathHelper.g(f1);
+ 
+             f3 = MathHelper.a(f3, -90.0F, 90.0F);
++            // CraftBukkit start - Teleport event
++            Location to = new Location(worldserver.getWorld(), d0, d1, d2, f2, f3);
++            EntityTeleportEvent event = new EntityTeleportEvent(entity.getBukkitEntity(), entity.getBukkitEntity().getLocation(), to);
++            worldserver.getServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++
++            d0 = to.getX();
++            d1 = to.getY();
++            d2 = to.getZ();
++            f2 = to.getYaw();
++            f3 = to.getPitch();
++            worldserver = ((CraftWorld) to.getWorld()).getHandle();
++            // CraftBukkit end
+             if (worldserver == entity.world) {
+                 entity.setPositionRotation(d0, d1, d2, f2, f3);
+                 entity.setHeadRotation(f2);
