@@ -56,6 +56,7 @@ import ChunkCoordIntPair
 import ChunkProviderFlat
 import ChunkProviderGenerate
 import ChunkProviderHell
+import CombatTracker
 import CommandAbstract
 import CommandScoreboard
 import CommandWhitelist
@@ -103,10 +104,13 @@ import PersistentScoreboard
 import PersistentVillage
 import PlayerConnectionUtils
 import RegionFile
+import Registry
 import RegistryBlockID
+import RegistryMaterials
 import RemoteControlListener
 import RecipeBookServer
 import ServerPing
+import SoundEffect
 import StructureBoundingBox
 import StructurePiece
 import StructureStart
