@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -59,6 +59,13 @@
+@@ -59,6 +59,14 @@
  import org.apache.commons.lang3.Validate;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -10,11 +10,12 @@
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.Main;
++import org.bukkit.event.server.ServerLoadEvent;
 +// CraftBukkit end
  
  public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStatistics, ICommandListener, Runnable {
  
-@@ -129,7 +136,21 @@
+@@ -129,7 +137,21 @@
      private boolean forceUpgrade;
      private float ap;
  
@@ -37,7 +38,7 @@
          this.ac = new ResourceManager(EnumResourcePackType.SERVER_DATA);
          this.resourcePackRepository = new ResourcePackRepository(ResourcePackLoader::new);
          this.ag = new CraftingManager();
-@@ -140,22 +161,51 @@
+@@ -140,22 +162,51 @@
          this.al = new AdvancementDataWorld();
          this.am = new CustomFunctionData(this);
          this.c = proxy;
@@ -93,7 +94,7 @@
      public abstract boolean init() throws IOException;
  
      public void convertWorld(String s) {
-@@ -180,11 +230,11 @@
+@@ -180,11 +231,11 @@
          }
  
          if (this.forceUpgrade) {
@@ -108,7 +109,7 @@
                  IChatBaseComponent ichatbasecomponent = null;
  
                  while (!worldupgrader.b()) {
-@@ -223,8 +273,9 @@
+@@ -223,8 +274,9 @@
      }
  
      public void a(String s, String s1, long i, WorldType worldtype, JsonElement jsonelement) {
@@ -119,7 +120,7 @@
          IDataManager idatamanager = this.getConvertable().a(s, this);
  
          this.a(this.getWorld(), idatamanager);
-@@ -249,54 +300,144 @@
+@@ -249,54 +301,144 @@
          }
  
          this.a(idatamanager.getDirectory(), worlddata);
@@ -296,7 +297,7 @@
          this.resourcePackRepository.a((ResourcePackSource) this.resourcePackFolder);
          this.resourcePackRepository.a();
          ArrayList arraylist = Lists.newArrayList();
-@@ -325,42 +466,52 @@
+@@ -325,42 +467,52 @@
          boolean flag4 = true;
  
          this.b((IChatBaseComponent) (new ChatMessage("menu.generatingTerrain", new Object[0])));
@@ -375,15 +376,18 @@
          MinecraftServer.LOGGER.info("Time elapsed: {} ms", Long.valueOf(stopwatch.elapsed(TimeUnit.MILLISECONDS)));
          Iterator iterator = DimensionManager.b().iterator();
  
-@@ -419,6 +570,7 @@
+@@ -419,6 +571,10 @@
      protected void l() {
          this.w = null;
          this.x = 0;
-+        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD); // CraftBukkit
++        // CraftBukkit Start
++        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        // CraftBukkit end
      }
  
      protected void saveChunks(boolean flag) {
-@@ -442,8 +594,24 @@
+@@ -442,8 +598,24 @@
  
      }
  
@@ -409,7 +413,7 @@
          if (this.getServerConnection() != null) {
              this.getServerConnection().b();
          }
-@@ -452,6 +620,7 @@
+@@ -452,6 +624,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.s.savePlayers();
              this.s.u();
@@ -417,7 +421,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -516,11 +685,13 @@
+@@ -516,11 +689,13 @@
                      if (i > 2000L && this.aa - this.Q >= 15000L) {
                          long j = i / 50L;
  
@@ -431,7 +435,7 @@
                      this.a(this::aT);
                      this.aa += 50L;
  
-@@ -559,6 +730,12 @@
+@@ -559,6 +734,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -444,7 +448,7 @@
                  this.t();
              }
  
-@@ -627,7 +804,7 @@
+@@ -627,7 +808,7 @@
              this.m.b().a(agameprofile);
          }
  
@@ -453,7 +457,7 @@
              this.methodProfiler.a("save");
              this.s.savePlayers();
              this.saveChunks(true);
-@@ -653,6 +830,7 @@
+@@ -653,6 +834,7 @@
      }
  
      public void b(BooleanSupplier booleansupplier) {
@@ -461,7 +465,7 @@
          this.methodProfiler.a("jobs");
  
          FutureTask futuretask;
-@@ -665,23 +843,40 @@
+@@ -665,23 +847,40 @@
          this.getFunctionData().Y_();
          this.methodProfiler.c("levels");
  
@@ -508,7 +512,7 @@
  
                  this.methodProfiler.a("tick");
  
-@@ -732,10 +927,11 @@
+@@ -732,10 +931,11 @@
          this.k.add(itickable);
      }
  
@@ -521,7 +525,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -783,13 +979,16 @@
+@@ -783,13 +983,16 @@
                      ++j;
                  }
              }
@@ -539,7 +543,7 @@
              if (s != null) {
                  dedicatedserver.h(s);
              }
-@@ -827,6 +1026,29 @@
+@@ -827,6 +1030,29 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -569,7 +573,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -838,11 +1060,13 @@
+@@ -838,11 +1064,13 @@
      }
  
      public void v() {
@@ -583,7 +587,7 @@
      }
  
      public File c(String s) {
-@@ -882,7 +1106,7 @@
+@@ -882,7 +1110,7 @@
      }
  
      public boolean isDebugging() {
@@ -592,7 +596,7 @@
      }
  
      public void f(String s) {
-@@ -897,7 +1121,7 @@
+@@ -897,7 +1125,7 @@
      }
  
      public String getServerModName() {
@@ -601,7 +605,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -933,7 +1157,7 @@
+@@ -933,7 +1161,7 @@
      }
  
      public boolean D() {
@@ -610,7 +614,7 @@
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-@@ -1073,7 +1297,7 @@
+@@ -1073,7 +1301,7 @@
      public abstract boolean Q();
  
      public boolean getOnlineMode() {
@@ -619,7 +623,7 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1233,7 +1457,7 @@
+@@ -1233,7 +1461,7 @@
  
      public <V> ListenableFuture<V> a(Callable<V> callable) {
          Validate.notNull(callable);
@@ -628,7 +632,7 @@
              ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
  
              this.f.add(listenablefuturetask);
-@@ -1304,8 +1528,8 @@
+@@ -1304,8 +1532,8 @@
  
              if (!worlddata.N().contains(resourcepackloader.e()) && !arraylist.contains(resourcepackloader)) {
                  MinecraftServer.LOGGER.info("Found new data pack {}, loading it automatically", resourcepackloader.e());
@@ -639,7 +643,7 @@
                  }, false);
              }
          }
-@@ -1314,7 +1538,7 @@
+@@ -1314,7 +1542,7 @@
          ArrayList arraylist1 = Lists.newArrayList();
  
          this.resourcePackRepository.d().forEach((resourcepackloader) -> {
@@ -648,7 +652,7 @@
          });
          this.ac.a((List) arraylist1);
          worlddata.O().clear();
-@@ -1416,4 +1640,11 @@
+@@ -1416,4 +1644,11 @@
              return 0;
          }
      }
