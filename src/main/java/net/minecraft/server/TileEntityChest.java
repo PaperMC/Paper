@@ -300,7 +300,7 @@ public class TileEntityChest extends TileEntityLootable { // Paper - Remove ITic
     // CraftBukkit start
     @Override
     public boolean isFilteredNBT() {
-        return true;
+        return false; // Paper
     }
     // CraftBukkit end
 }

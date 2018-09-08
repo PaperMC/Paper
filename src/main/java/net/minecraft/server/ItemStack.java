@@ -244,6 +244,7 @@ public final class ItemStack {
                     enuminteractionresult = EnumInteractionResult.FAIL; // cancel placement
                     // PAIL: Remove this when MC-99075 fixed
                     placeEvent.getPlayer().updateInventory();
+                    world.capturedTileEntities.clear(); // Paper - clear out tile entities as chests and such will pop loot
                     // revert back all captured blocks
                     for (BlockState blockstate : blocks) {
                         blockstate.update(true, false);
