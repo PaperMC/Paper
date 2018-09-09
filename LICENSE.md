@@ -38,4 +38,5 @@ Andrew Steinborn <git@steinborn.me>
 willies952002 <admin@domnian.com>
 MicleBrick <miclebrick@outlook.com>
 Trigary <trigary0@gmail.com>
+rickyboy320 <rickw320@hotmail.com>
 ```
