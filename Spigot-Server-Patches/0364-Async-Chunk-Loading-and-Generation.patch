@@ -1,4 +1,4 @@
-From 6dbcbec754d7327278de3d622ca33443736b2da9 Mon Sep 17 00:00:00 2001
+From 155fa285997114a8f9cabcd624db8fc70ebf5ecd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -1128,6 +1128,68 @@ index b38e394f83..aa3289e66b 100644
          /*cps.getChunkAt(x, z, new Runnable() {
              @Override
              public void run() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index dc8c3ea758..0e440cbd33 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -76,6 +76,7 @@ public class CraftEventFactory {
+     public static final DamageSource POISON = CraftDamageSource.copyOf(DamageSource.MAGIC);
+     public static org.bukkit.block.Block blockDamage; // For use in EntityDamageByBlockEvent
+     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
++    public static boolean isWorldGen(GeneratorAccess world) { return world instanceof net.minecraft.server.RegionLimitedWorldAccess; } // Paper
+ 
+     // helper methods
+     private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
+@@ -299,6 +300,7 @@ public class CraftEventFactory {
+         CraftServer craftServer = (CraftServer) entity.getServer();
+ 
+         CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
++        if (isWorldGen(entityliving.world)) return event; // Paper - do not call during world gen
+         craftServer.getPluginManager().callEvent(event);
+         return event;
+     }
+@@ -933,6 +935,7 @@ public class CraftEventFactory {
+         }
+ 
+         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(block.getX(), block.getY(), block.getZ()), cause, igniter);
++        if (isWorldGen(world)) return event; // Paper - do not call during world gen
+         world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+@@ -957,6 +960,7 @@ public class CraftEventFactory {
+         }
+ 
+         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, bukkitIgniter);
++        if (isWorldGen(world)) return event; // Paper - do not call during world gen
+         world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+@@ -1164,7 +1168,8 @@ public class CraftEventFactory {
+     public static BlockPhysicsEvent callBlockPhysicsEvent(GeneratorAccess world, BlockPosition blockposition) {
+         org.bukkit.block.Block block = CraftBlock.at(world, blockposition);
+         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
+-        world.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
++        if (isWorldGen(world)) return event; // Paper - do not call during world gen
++        Bukkit.getPluginManager().callEvent(event); // Paper
+         return event;
+     }
+ 
+@@ -1200,6 +1205,7 @@ public class CraftEventFactory {
+         }
+ 
+         EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, cause, action, willOverride);
++        if (isWorldGen(entity.world)) return event; // Paper - do not call during world gen
+         Bukkit.getPluginManager().callEvent(event);
+ 
+         return event;
+@@ -1218,6 +1224,7 @@ public class CraftEventFactory {
+         blockState.setData(block);
+ 
+         BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
++        if (isWorldGen(world)) return true; // Paper - do not call during world gen
+         world.getServer().getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
 -- 
 2.18.0
 
