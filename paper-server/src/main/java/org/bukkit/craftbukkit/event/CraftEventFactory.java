@@ -373,6 +373,19 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static boolean handleMoistureChangeEvent(World world, BlockPosition pos, IBlockData newBlock, int flag) {
+        CraftBlockState state = CraftBlockState.getBlockState(world, pos, flag);
+        state.setData(newBlock);
+
+        MoistureChangeEvent event = new MoistureChangeEvent(state.getBlock(), state);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            state.update(true);
+        }
+        return !event.isCancelled();
+    }
+
     public static boolean handleBlockSpreadEvent(World world, BlockPosition source, BlockPosition target, IBlockData block) {
         return handleBlockSpreadEvent(world, source, target, block, 2);
     }
