@@ -1,4 +1,4 @@
-From e5c85fe8b8be9af8965d9b2ab7aa871edfa14b96 Mon Sep 17 00:00:00 2001
+From 47272a40d066580e0b7d14486215f020684e8bad Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -41,7 +41,7 @@ index 0d68ffd75a..fd00c320ce 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index f969c036f3..2b0a088a6a 100644
+index 2e9bd0949a..3166d4b1ad 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -22,6 +22,7 @@ import java.util.function.Consumer;
@@ -70,7 +70,7 @@ index f969c036f3..2b0a088a6a 100644
 +    // Paper end
 +
      private static final Logger a = LogManager.getLogger();
-     private final Map<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = Maps.newHashMap();
+     private final Map<ChunkCoordIntPair, Supplier<NBTTagCompound>> b = java.util.Collections.synchronizedMap(Maps.newHashMap()); // CraftBukkit // Spigot
      private final File c;
 @@ -305,8 +319,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                      }
@@ -95,10 +95,11 @@ index f969c036f3..2b0a088a6a 100644
          FileIOThread.a().a(this);
      }
  
-@@ -325,19 +342,18 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -325,20 +342,18 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      private boolean processSaveQueueEntry(boolean logCompletion) {
+-        synchronized (this.b) { // CraftBukkit
 -        Iterator iterator = this.b.entrySet().iterator();
 -        if (!iterator.hasNext()) {
 +        // Paper start - Chunk queue improvements
@@ -121,7 +122,7 @@ index f969c036f3..2b0a088a6a 100644
  
              if (nbttagcompound == null) {
                  return true;
-@@ -346,6 +362,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -347,6 +362,14 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                      // CraftBukkit start
                      RegionFileCache.write(this.c, chunkcoordintpair.x, chunkcoordintpair.z, SupplierUtils.getIfExists(nbttagcompound)); // Spigot
  
