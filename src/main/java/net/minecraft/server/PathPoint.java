@@ -2,9 +2,9 @@ package net.minecraft.server;
 
 public class PathPoint {
 
-    public final int a;
-    public final int b;
-    public final int c;
+    public final int a; public final int getX() { return a; } // Paper - OBFHELPER
+    public final int b; public final int getY() { return b; } // Paper - OBFHELPER
+    public final int c; public final int getZ() { return c; } // Paper - OBFHELPER
     private final int m;
     public int d = -1;
     public float e;

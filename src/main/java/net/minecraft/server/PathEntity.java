@@ -5,13 +5,14 @@ import javax.annotation.Nullable;
 
 public class PathEntity {
 
-    private final List<PathPoint> a;
+    private final List<PathPoint> a; public List<PathPoint> getPoints() { return a; } // Paper - OBFHELPER
     private PathPoint[] b = new PathPoint[0];
     private PathPoint[] c = new PathPoint[0];
-    private int e;
+    private int e; public int getNextIndex() { return this.e; } // Paper - OBFHELPER
     private final BlockPosition f;
     private final float g;
     private final boolean h;
+    public boolean hasNext() { return getNextIndex() < getPoints().size(); } // Paper
 
     public PathEntity(List<PathPoint> list, BlockPosition blockposition, boolean flag) {
         this.a = list;
@@ -33,7 +34,7 @@ public class PathEntity {
     }
 
     @Nullable
-    public PathPoint d() {
+    public PathPoint getFinalPoint() { return d(); } @Nullable public PathPoint d() { // Paper - OBFHELPER
         return !this.a.isEmpty() ? (PathPoint) this.a.get(this.a.size() - 1) : null;
     }
 
@@ -81,7 +82,7 @@ public class PathEntity {
         return this.a(entity, this.e);
     }
 
-    public BlockPosition g() {
+    public BlockPosition getNext() { return g(); } public BlockPosition g() { // Paper - OBFHELPER
         return ((PathPoint) this.a.get(this.e)).a();
     }
 

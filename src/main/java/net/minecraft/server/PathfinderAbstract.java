@@ -11,9 +11,9 @@ public abstract class PathfinderAbstract {
     protected int d;
     protected int e;
     protected int f;
-    protected boolean g;
-    protected boolean h;
-    protected boolean i;
+    protected boolean g; public boolean shouldPassDoors() { return g; } public void setShouldPassDoors(boolean b) { g = b; } // Paper - obfhelper
+    protected boolean h; public boolean shouldOpenDoors() { return h; } public void setShouldOpenDoors(boolean b) { h = b; } // Paper - obfhelper
+    protected boolean i; public boolean shouldFloat() { return i; } public void setShouldFloat(boolean b) { i = b; } // Paper - obfhelper
 
     public PathfinderAbstract() {}
 

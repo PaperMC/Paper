@@ -12,8 +12,11 @@ import org.bukkit.loot.LootTable;
 public abstract class CraftMob extends CraftLivingEntity implements Mob {
     public CraftMob(CraftServer server, EntityInsentient entity) {
         super(server, entity);
+         paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper
     }
 
+    private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper
+    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper
     @Override
     public void setTarget(LivingEntity target) {
         EntityInsentient entity = getHandle();

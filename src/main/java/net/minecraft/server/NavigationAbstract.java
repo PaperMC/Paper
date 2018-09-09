@@ -79,7 +79,7 @@ public abstract class NavigationAbstract {
     }
 
     @Nullable
-    public final PathEntity a(double d0, double d1, double d2, int i) {
+    public final PathEntity calculateDestination(double d0, double d1, double d2) { return a(d0, d1, d2, 0); } public final PathEntity a(double d0, double d1, double d2, int i) { // Paper - OBFHELPER
         return this.a(new BlockPosition(d0, d1, d2), i);
     }
 
@@ -104,7 +104,7 @@ public abstract class NavigationAbstract {
     }
 
     @Nullable
-    public PathEntity a(Entity entity, int i) {
+    public final PathEntity calculateDestination(Entity entity) { return a(entity, 0); }  public PathEntity a(Entity entity, int i) {
         return this.a(ImmutableSet.of(entity.getChunkCoordinates()), entity, 16, true, i); // Paper
     }
 
@@ -169,6 +169,7 @@ public abstract class NavigationAbstract {
         return pathentity != null && this.a(pathentity, d0);
     }
 
+    public boolean setDestination(@Nullable PathEntity pathentity, double speed) { return a(pathentity, speed); } // Paper - OBFHELPER
     public boolean a(@Nullable PathEntity pathentity, double d0) {
         if (pathentity == null) {
             this.c = null;
@@ -196,7 +197,7 @@ public abstract class NavigationAbstract {
         }
     }
 
-    @Nullable
+    @Nullable public PathEntity getPathEntity() { return k(); } @Nullable // Paper - OBFHELPER
     public PathEntity k() {
         return this.c;
     }
@@ -320,6 +321,7 @@ public abstract class NavigationAbstract {
         return !this.m();
     }
 
+    public void stopPathfinding() { o(); } // Paper - OBFHELPER
     public void o() {
         this.c = null;
     }
