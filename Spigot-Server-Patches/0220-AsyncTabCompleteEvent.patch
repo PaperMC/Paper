@@ -1,4 +1,4 @@
-From 6f3d6d2e6e806c7d0f7e3981ffb3fd6095a82be3 Mon Sep 17 00:00:00 2001
+From 5d8610763f3b1df0d07861d1b86ef8ad12480a81 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 26 Nov 2017 13:19:58 -0500
 Subject: [PATCH] AsyncTabCompleteEvent
@@ -14,7 +14,7 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 23c07ca5c4..19e0181fc5 100644
+index 23c07ca5c..b04eae4bb 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -10,6 +10,7 @@ import io.netty.util.concurrent.Future;
@@ -73,7 +73,7 @@ index 23c07ca5c4..19e0181fc5 100644
 +            minecraftServer.postToMainThread(() -> sendSuggestions(packetplayintabcomplete, stringreader, otherSuggestions));
 +            return;
 +        } else if (!completions.isEmpty()) {
-+            com.mojang.brigadier.suggestion.SuggestionsBuilder suggestionsBuilder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), packetplayintabcomplete.b());
++            com.mojang.brigadier.suggestion.SuggestionsBuilder suggestionsBuilder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), stringreader.getTotalLength());
 +            completions.forEach(suggestionsBuilder::suggest);
 +
 +            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestionsBuilder.build()));
@@ -90,7 +90,7 @@ index 23c07ca5c4..19e0181fc5 100644
 +        java.util.concurrent.CompletableFuture<Suggestions> completionSuggestions = this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults);
 +        completionSuggestions.thenAccept((Suggestions suggestions) -> {
 +            if (otherSuggestions != null && !otherSuggestions.isEmpty()) {
-+                com.mojang.brigadier.suggestion.SuggestionsBuilder builder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), packetplayintabcomplete.b());
++                com.mojang.brigadier.suggestion.SuggestionsBuilder builder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), reader.getTotalLength());
 +                otherSuggestions.forEach(builder::suggest);
 +                suggestions.getList().addAll(builder.build().getList());
 +            }
@@ -101,7 +101,7 @@ index 23c07ca5c4..19e0181fc5 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c79e673fbf..015a8db94a 100644
+index c79e673fb..015a8db94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1692,7 +1692,7 @@ public final class CraftServer implements Server {
@@ -114,7 +114,7 @@ index c79e673fbf..015a8db94a 100644
  
          return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 1e3aae3b8f..95d13c146b 100644
+index 1e3aae3b8..95d13c146 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -28,6 +28,39 @@ public class ConsoleCommandCompleter implements Completer {
