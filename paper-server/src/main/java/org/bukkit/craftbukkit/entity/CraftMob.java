@@ -14,8 +14,11 @@ import org.bukkit.loot.LootTable;
 public abstract class CraftMob extends CraftLivingEntity implements Mob {
     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
         super(server, entity);
+         paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
     }
 
+    private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
+    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper - Mob Pathfinding API
     @Override
     public void setTarget(LivingEntity target) {
         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
@@ -55,6 +58,14 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     public net.minecraft.world.entity.Mob getHandle() {
         return (net.minecraft.world.entity.Mob) this.entity;
     }
+
+    // Paper start - Mob Pathfinding API
+    @Override
+    public void setHandle(net.minecraft.world.entity.Entity entity) {
+        super.setHandle(entity);
+        paperPathfinder.setHandle(getHandle());
+    }
+    // Paper end - Mob Pathfinding API
 
     @Override
     public String toString() {
