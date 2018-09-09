@@ -1,4 +1,4 @@
-From 7da728f0a01870cfd40186d0486a6c5b0377bcbc Mon Sep 17 00:00:00 2001
+From 6dbcbec754d7327278de3d622ca33443736b2da9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -44,37 +44,63 @@ should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..1ef846bd2d
+index 0000000000..31192074f8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,253 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import net.minecraft.server.NamedIncrementingThreadFactory;
 +
++import javax.annotation.Nonnull;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.concurrent.AbstractExecutorService;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.RejectedExecutionException;
 +import java.util.concurrent.ThreadFactory;
++import java.util.concurrent.TimeUnit;
 +import java.util.function.Supplier;
 +
-+public class PriorityQueuedExecutor {
++/**
++ * Implements an Executor Service that allows specifying Task Priority
++ * and bumping task priority.
++ *
++ * @author aikar
++ */
++@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
++public class PriorityQueuedExecutor extends AbstractExecutorService {
 +    private final ConcurrentLinkedQueue<Runnable> high = new ConcurrentLinkedQueue<>();
 +    private final ConcurrentLinkedQueue<Runnable> normal = new ConcurrentLinkedQueue<>();
++    private final RejectionHandler handler;
 +    private volatile boolean shuttingDown = false;
++    private volatile boolean shuttingDownNow = false;
++    private final List<Thread> threads = new ArrayList<>();
 +
 +    public PriorityQueuedExecutor(String name) {
-+        this(name, Runtime.getRuntime().availableProcessors());
++        this(name, Runtime.getRuntime().availableProcessors(), null);
 +    }
 +
 +    public PriorityQueuedExecutor(String name, int threads) {
++        this(name, threads, null);
++    }
++
++    public PriorityQueuedExecutor(String name, int threads, RejectionHandler handler) {
 +        ThreadFactory factory = new ThreadFactoryBuilder()
 +            .setThreadFactory(new NamedIncrementingThreadFactory(name))
 +            .setDaemon(true)
 +            .build();
 +        for (int i = 0; i < threads; i++) {
-+            factory.newThread(this::processQueues).start();
++            final Thread thread = factory.newThread(this::processQueues);
++            thread.start();
++            this.threads.add(thread);
 +        }
++        if (handler == null) {
++            handler = ABORT_POLICY;
++        }
++        this.handler = handler;
 +    }
 +
 +    public void shutdown() {
@@ -84,10 +110,51 @@ index 0000000000..1ef846bd2d
 +        }
 +    }
 +
-+    public PendingTask<Void> submit(Runnable run) {
-+        return submit(run, Priority.NORMAL);
++    @Nonnull
++    @Override
++    public List<Runnable> shutdownNow() {
++        shuttingDown = true;
++        shuttingDownNow = true;
++        List<Runnable> tasks = new ArrayList<>(high.size() + normal.size());
++        Runnable run;
++        while ((run = getTask()) != null) {
++            tasks.add(run);
++        }
++
++        return tasks;
 +    }
-+    public PendingTask<Void> submit(Runnable run, Priority priority) {
++
++    @Override
++    public boolean isShutdown() {
++        return shuttingDown;
++    }
++
++    @Override
++    public boolean isTerminated() {
++        if (!shuttingDown) {
++            return false;
++        }
++        return high.isEmpty() && normal.isEmpty();
++    }
++
++    @Override
++    public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
++        synchronized (this) {
++            this.notifyAll();
++        }
++        final long wait = unit.toNanos(timeout);
++        final long max = System.nanoTime() + wait;
++        for (;!threads.isEmpty() && System.nanoTime() < max;) {
++            threads.removeIf(thread -> !thread.isAlive());
++        }
++        return isTerminated();
++    }
++
++    public PendingTask<Void> submitTask(Runnable run) {
++        return submitTask(run, Priority.NORMAL);
++    }
++
++    public PendingTask<Void> submitTask(Runnable run, Priority priority) {
 +        PendingTask<Void> pendingTask = new PendingTask<>(priority, () -> {
 +            run.run();
 +            return null;
@@ -97,11 +164,11 @@ index 0000000000..1ef846bd2d
 +    }
 +
 +
-+    public <T> PendingTask<T> submit(Supplier<T> run) {
-+        return submit(run, Priority.NORMAL);
++    public <T> PendingTask<T> submitTask(Supplier<T> run) {
++        return submitTask(run, Priority.NORMAL);
 +    }
 +
-+    public <T> PendingTask<T> submit(Supplier<T> run, Priority priority) {
++    public <T> PendingTask<T> submitTask(Supplier<T> run, Priority priority) {
 +        PendingTask<T> pendingTask = new PendingTask<>(priority, run);
 +        addQueuedTask(pendingTask);
 +        return pendingTask;
@@ -109,7 +176,7 @@ index 0000000000..1ef846bd2d
 +
 +    private void addQueuedTask(PendingTask task) {
 +        if (shuttingDown) {
-+            task.run();
++            handler.onRejection(task, this);
 +            return;
 +        }
 +
@@ -122,6 +189,58 @@ index 0000000000..1ef846bd2d
 +            this.notify();
 +        }
 +    }
++
++    @Override
++    public void execute(@Nonnull Runnable command) {
++        submitTask(command);
++    }
++
++    private Runnable getTask() {
++        Runnable run = high.poll();
++        if (run != null) {
++            return run;
++        }
++        return normal.poll();
++    }
++
++    private void processQueues() {
++        Runnable run = null;
++        while (true) {
++            if (run != null) {
++                run.run();
++            }
++            if (shuttingDownNow) {
++                return;
++            }
++            if ((run = getTask()) != null) {
++                continue;
++            }
++            synchronized (PriorityQueuedExecutor.this) {
++                if ((run = getTask()) != null) {
++                    continue;
++                }
++
++                if (shuttingDown || shuttingDownNow) {
++                    return;
++                }
++                try {
++                    PriorityQueuedExecutor.this.wait(30000);
++                } catch (InterruptedException ignored) {}
++            }
++        }
++    }
++
++    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
++    private boolean processQueue(ConcurrentLinkedQueue<Runnable> queue) {
++        boolean ran = false;
++        Runnable runnable;
++        while ((runnable = queue.poll()) != null) {
++            runnable.run();
++            ran = true;
++        }
++        return ran;
++    }
++
 +
 +    public enum Priority {
 +        HIGH, NORMAL
@@ -170,36 +289,17 @@ index 0000000000..1ef846bd2d
 +            return future;
 +        }
 +    }
-+
-+    private void processQueues() {
-+        while (true) {
-+            if (!processQueue(high) && !processQueue(normal)) {
-+                synchronized (PriorityQueuedExecutor.this) {
-+                    if (!high.isEmpty() || !normal.isEmpty()) {
-+                        continue;
-+                    }
-+
-+                    if (shuttingDown) {
-+                        break;
-+                    }
-+                    try {
-+                        PriorityQueuedExecutor.this.wait(30000);
-+                    } catch (InterruptedException ignored) {}
-+                }
-+            }
-+        }
++    public interface RejectionHandler {
++        void onRejection(Runnable run, PriorityQueuedExecutor executor);
 +    }
 +
-+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-+    private boolean processQueue(ConcurrentLinkedQueue<Runnable> queue) {
-+        boolean ran = false;
-+        Runnable runnable;
-+        while ((runnable = queue.poll()) != null) {
-+            runnable.run();
-+            ran = true;
-+        }
-+        return ran;
-+    }
++    public static final RejectionHandler ABORT_POLICY = (run, executor) -> {
++        throw new RejectedExecutionException("Executor has been shutdown");
++    };
++    public static final RejectionHandler CALLER_RUNS_POLICY = (run, executor) -> {
++        run.run();
++    };
++
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index c0ec896eea..37b33d57f7 100644
@@ -331,7 +431,7 @@ index 34019bd1b3..68ef87bf38 100644
                  ProtoChunk protochunk;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 1fae9aa074..012b35833b 100644
+index 3e69bac9ad..48cb099d2a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -357,10 +457,10 @@ index 4698ee99f8..dfb45cc4ea 100644
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 42e0e16949..ac0ddad6da 100644
+index 80e8b023cf..1fbcb8bc8e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -501,6 +501,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -502,6 +502,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
          // CraftBukkit start - fire WorldLoadEvent and handle whether or not to keep the spawn in memory
          Stopwatch stopwatch = Stopwatch.createStarted();
@@ -368,7 +468,7 @@ index 42e0e16949..ac0ddad6da 100644
          for (WorldServer worldserver : this.getWorlds()) {
              MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
              if (!worldserver.getWorld().getKeepSpawnInMemory()) {
-@@ -511,26 +512,41 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -512,26 +513,41 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              ArrayList arraylist = Lists.newArrayList();
              Set set = Sets.newConcurrentHashSet();
  
@@ -421,7 +521,7 @@ index 42e0e16949..ac0ddad6da 100644
                      } catch (InterruptedException interruptedexception) {
                          throw new RuntimeException(interruptedexception);
                      } catch (ExecutionException executionexception) {
-@@ -540,11 +556,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -541,11 +557,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                          throw new RuntimeException(executionexception.getCause());
                      } catch (TimeoutException timeoutexception) {
@@ -435,7 +535,7 @@ index 42e0e16949..ac0ddad6da 100644
              }
          }
  
-@@ -1007,6 +1023,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1011,6 +1027,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -443,7 +543,7 @@ index 42e0e16949..ac0ddad6da 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.c("commandFunctions");
-@@ -1043,6 +1060,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1047,6 +1064,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -451,7 +551,7 @@ index 42e0e16949..ac0ddad6da 100644
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.c();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-@@ -1099,6 +1117,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1103,6 +1121,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  this.methodProfiler.e();
                  this.methodProfiler.e();
                  worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -461,7 +561,7 @@ index 42e0e16949..ac0ddad6da 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..470f207cba
+index 0000000000..efb971fa53
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,375 @@
@@ -512,7 +612,7 @@ index 0000000000..470f207cba
 +@SuppressWarnings("unused")
 +class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader");
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", Math.min(Integer.getInteger("paper.maxchunkthreads", 6), Runtime.getRuntime().availableProcessors()), PriorityQueuedExecutor.CALLER_RUNS_POLICY);
 +    private final ExecutorService chunkGenerationExecutor ;
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
@@ -685,7 +785,7 @@ index 0000000000..470f207cba
 +            this.key = key;
 +            this.canGenerate = canGenerate;
 +            this.isBlockingMain = isBlockingMain;
-+            this.task = EXECUTOR.submit(this, isBlockingMain ? Priority.HIGH : Priority.NORMAL);
++            this.task = EXECUTOR.submitTask(this, isBlockingMain ? Priority.HIGH : Priority.NORMAL);
 +        }
 +
 +        synchronized private Chunk loadChunk(int x, int z) throws IOException {
