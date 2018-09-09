@@ -1,17 +1,16 @@
-From 17a5dac03ee24a1868c0e0555a175c17d2f45220 Mon Sep 17 00:00:00 2001
+From 6008613ba21322eb9e640a2597ea939572e450b3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 29 Aug 2017 23:58:48 -0400
 Subject: [PATCH] Expand World.spawnParticle API and add Builder
 
 Adds ability to control who receives it and who is the source/sender (vanish API)
 the standard API is to send the packet to everyone in the world, which is ineffecient.
-Adds an option to control the force mode of the particle.
 
 This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 000000000..feebfb653
+index 00000000..50b52d6b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 @@ -0,0 +1,416 @@
@@ -397,55 +396,44 @@ index 000000000..feebfb653
 +
 +    /**
 +     * Sets the particle Color.
-+     * Only valid for REDSTONE, SPELL_MOB and SPELL_MOB_AMBIENT.
++     * Only valid for REDSTONE.
 +     * @param color the new particle color
 +     * @return a reference to this object.
 +     */
 +    public ParticleBuilder color(Color color) {
-+        return color(color.getRed(), color.getGreen(), color.getBlue());
++        return color(color, 1);
++    }
++
++    /**
++     * Sets the particle Color and size.
++     * Only valid for REDSTONE.
++     * @param color the new particle color
++     * @param size the size of the particle
++     * @return a reference to this object.
++     */
++    public ParticleBuilder color(Color color, float size) {
++        if (particle != Particle.REDSTONE) {
++            throw new IllegalStateException("Color may only be set on REDSTONE");
++        }
++        return data(new Particle.DustOptions(color, size));
 +    }
 +
 +    /**
 +     * Sets the particle Color.
-+     * Only valid for REDSTONE, SPELL_MOB and SPELL_MOB_AMBIENT.
++     * Only valid for REDSTONE.
 +     * @param r red color component
 +     * @param g green color component
 +     * @param b blue color component
 +     * @return a reference to this object.
 +     */
 +    public ParticleBuilder color(int r, int g, int b) {
-+        if (particle != Particle.REDSTONE && particle != Particle.SPELL_MOB && particle != Particle.SPELL_MOB_AMBIENT) {
-+            throw new IllegalStateException("Color may only be set on REDSTONE, SPELL_MOB, or SPELL_MOB_AMBIENT");
-+        }
-+        offsetX = convertColorValue(r);
-+        offsetY = convertColorValue(g);
-+        offsetZ = convertColorValue(b);
-+        return this;
-+    }
-+
-+    private static double convertColorValue(double value) {
-+        if (value <= 0.0D) {
-+            value = -1.0D;
-+        }
-+
-+        return value / 255.0D;
++        return color(Color.fromRGB(r, g, b));
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
-index 4d0acaf5b..255efab76 100644
+index 4d0acaf5..827aa00c 100644
 --- a/src/main/java/org/bukkit/Particle.java
 +++ b/src/main/java/org/bukkit/Particle.java
-@@ -21,8 +21,8 @@ public enum Particle {
-     SMOKE_LARGE,
-     SPELL,
-     SPELL_INSTANT,
--    SPELL_MOB,
--    SPELL_MOB_AMBIENT,
-+    SPELL_MOB(DustOptions.class), // Paper
-+    SPELL_MOB_AMBIENT(DustOptions.class), // Paper
-     SPELL_WITCH,
-     DRIP_WATER,
-     DRIP_LAVA,
 @@ -82,6 +82,16 @@ public enum Particle {
          return dataType;
      }
@@ -464,7 +452,7 @@ index 4d0acaf5b..255efab76 100644
       * Options which can be applied to redstone dust particles - a particle
       * color and size.
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 0fb55b071..a8d97c519 100644
+index 0fb55b07..a8d97c51 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -1742,7 +1742,57 @@ public interface World extends PluginMessageRecipient, Metadatable {
@@ -527,5 +515,5 @@ index 0fb55b071..a8d97c519 100644
      /**
       * Spawns the particle (the number of times specified by count)
 -- 
-2.18.0
+2.16.1.windows.1
 

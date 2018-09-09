@@ -1,4 +1,4 @@
-From d966e6583b4b867cac3037e053195d2cac50e5f0 Mon Sep 17 00:00:00 2001
+From cf80f60fecc7b5c5eb6ae69985789c8cdadffc0c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8dc922ccd0..e8c3dcc244 100644
+index 788f0519a8..13c6021ffa 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -145,7 +145,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -146,7 +146,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -24,7 +24,7 @@ index 8dc922ccd0..e8c3dcc244 100644
      public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-@@ -155,7 +155,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -156,7 +156,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      // Spigot start
      public static final int TPS = 20;
      public static final int TICK_TIME = 1000000000 / TPS;
@@ -33,7 +33,7 @@ index 8dc922ccd0..e8c3dcc244 100644
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
-@@ -685,7 +685,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -689,7 +689,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      }
  
      private boolean aT() {
@@ -42,7 +42,7 @@ index 8dc922ccd0..e8c3dcc244 100644
      }
  
      // Spigot Start
-@@ -693,6 +693,53 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -697,6 +697,53 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
      }
@@ -96,7 +96,7 @@ index 8dc922ccd0..e8c3dcc244 100644
      // Spigot End
  
      public void run() {
-@@ -705,29 +752,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -709,29 +756,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -157,10 +157,10 @@ index 8dc922ccd0..e8c3dcc244 100644
                      this.aa += 50L;
                      // Spigot end
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6414f3d6b0..f066af3fe5 100644
+index 273967c2ae..756accd440 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1864,6 +1864,17 @@ public final class CraftServer implements Server {
+@@ -1866,6 +1866,17 @@ public final class CraftServer implements Server {
          return CraftMagicNumbers.INSTANCE;
      }
  

@@ -1,0 +1,122 @@
+From 77036b521bed13898c2987f64afdf0b260b60548 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 9 Sep 2018 00:32:05 -0400
+Subject: [PATCH] Remove deadlock risk in firing async events
+
+The PluginManager incorrectly used synchronization on firing any event
+that was marked as synchronous.
+
+This synchronized did not even protect any concurrency risk as
+handlers were already thread safe in terms of mutations during event
+dispatch.
+
+The way it was used, has commonly led to deadlocks on the server,
+which results in a hard crash.
+
+This change removes the synchronize and adds some protection around enable/disable
+
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index cb2b0b9cb..a7dd902fb 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -385,7 +385,7 @@ public final class SimplePluginManager implements PluginManager {
+      * @param plugin Plugin to check
+      * @return true if the plugin is enabled, otherwise false
+      */
+-    public boolean isPluginEnabled(Plugin plugin) {
++    public synchronized boolean isPluginEnabled(Plugin plugin) { // Paper - synchronize
+         if ((plugin != null) && (plugins.contains(plugin))) {
+             return plugin.isEnabled();
+         } else {
+@@ -393,7 +393,7 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
+-    public void enablePlugin(final Plugin plugin) {
++    public synchronized void enablePlugin(final Plugin plugin) { // Paper - synchronize
+         if (!plugin.isEnabled()) {
+             List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
+ 
+@@ -430,7 +430,7 @@ public final class SimplePluginManager implements PluginManager {
+         disablePlugin(plugin, false);
+     }
+ 
+-    public void disablePlugin(final Plugin plugin, boolean closeClassloader) {
++    public synchronized void disablePlugin(final Plugin plugin, boolean closeClassloader) { // Paper - synchronize
+         // Paper end - close Classloader on disable
+         if (plugin.isEnabled()) {
+             try {
+@@ -490,6 +490,7 @@ public final class SimplePluginManager implements PluginManager {
+             defaultPerms.get(false).clear();
+         }
+     }
++    private void fireEvent(Event event) { callEvent(event); } // Paper - support old method incase plugin uses reflection
+ 
+     /**
+      * Calls an event with the given details.
+@@ -499,22 +500,7 @@ public final class SimplePluginManager implements PluginManager {
+      * @param event Event details
+      */
+     public void callEvent(Event event) {
+-        if (event.isAsynchronous()) {
+-            if (Thread.holdsLock(this)) {
+-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
+-            }
+-            if (server.isPrimaryThread()) {
+-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+-            }
+-            fireEvent(event);
+-        } else {
+-            synchronized (this) {
+-                fireEvent(event);
+-            }
+-        }
+-    }
+-
+-    private void fireEvent(Event event) {
++        // Paper - replace callEvent by merging to below method
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+ 
+diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
+index 6b86128e1..56308c0c6 100644
+--- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
++++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
+@@ -19,7 +19,7 @@ public class PluginManagerTest {
+     private static final PluginManager pm = TestServer.getInstance().getPluginManager();
+ 
+     private final MutableObject store = new MutableObject();
+-
++/* // Paper start - remove unneeded test
+     @Test
+     public void testAsyncSameThread() {
+         final Event event = new TestEvent(true);
+@@ -30,14 +30,14 @@ public class PluginManagerTest {
+             return;
+         }
+         throw new IllegalStateException("No exception thrown");
+-    }
++    }*/ // Paper end
+ 
+     @Test
+     public void testSyncSameThread() {
+         final Event event = new TestEvent(false);
+         pm.callEvent(event);
+     }
+-
++/* // Paper start - remove unneeded test
+     @Test
+     public void testAsyncLocked() throws InterruptedException {
+         final Event event = new TestEvent(true);
+@@ -58,7 +58,7 @@ public class PluginManagerTest {
+         secondThread.join();
+         assertThat(store.value, is(instanceOf(IllegalStateException.class)));
+         assertThat(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.", is(((Throwable) store.value).getMessage()));
+-    }
++    }*/ // Paper end
+ 
+     @Test
+     public void testAsyncUnlocked() throws InterruptedException {
+-- 
+2.18.0
+
