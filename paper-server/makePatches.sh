@@ -7,10 +7,23 @@ then
 fi
 cb=src/main/java/net/minecraft/server
 nms="$1/net/minecraft/server"
+show_diff_msg=true
+
+if [ $# -ge 2 ]
+then
+    show_diff_msg=$2
+    if [ "$show_diff_msg" = false ]
+    then
+        echo "Suppressing normal output. Will only output for changed or created patches."
+    fi
+fi
 
 for file in $(/bin/ls $cb)
 do
-    echo "Diffing $file"
+    if [ "$show_diff_msg" = true ]
+    then
+        echo "Diffing $file"
+    fi
     sed -i 's/\r//' "$nms/$file"
 	sed -i 's/\r//' "$cb/$file"
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
