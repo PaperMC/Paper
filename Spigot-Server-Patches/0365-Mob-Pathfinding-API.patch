@@ -1,4 +1,4 @@
-From 02345434a6ac0af81af23b6dc346d6e1efb0c2ee Mon Sep 17 00:00:00 2001
+From 3b72b5675437928e2fa39a540b2ea0644f173302 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 9 Sep 2018 13:30:00 -0400
 Subject: [PATCH] Mob Pathfinding API
@@ -7,10 +7,10 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000..d166bcdd28
+index 0000000000..ed3d86ddd3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +package com.destroystokyo.paper.entity;
 +
 +import net.minecraft.server.EntityInsentient;
@@ -46,20 +46,20 @@ index 0000000000..d166bcdd28
 +    }
 +
 +    @Override
-+    public boolean hasDestination() {
++    public boolean hasPath() {
 +        return entity.getNavigation().getPathEntity() != null;
 +    }
 +
 +    @Nullable
 +    @Override
-+    public PathResult getCurrentDestination() {
++    public PathResult getCurrentPath() {
 +        PathEntity path = entity.getNavigation().getPathEntity();
 +        return path != null ? new PaperPathResult(path) : null;
 +    }
 +
 +    @Nullable
 +    @Override
-+    public PathResult calculateDestination(Location loc) {
++    public PathResult findPath(Location loc) {
 +        Validate.notNull(loc, "Location can not be null");
 +        PathEntity path = entity.getNavigation().calculateDestination(loc.getX(), loc.getY(), loc.getZ());
 +        return path != null ? new PaperPathResult(path) : null;
@@ -67,18 +67,17 @@ index 0000000000..d166bcdd28
 +
 +    @Nullable
 +    @Override
-+    public PathResult calculateDestination(LivingEntity target) {
++    public PathResult findPath(LivingEntity target) {
 +        Validate.notNull(target, "Target can not be null");
 +        PathEntity path = entity.getNavigation().calculateDestination(((CraftLivingEntity) target).getHandle());
 +        return path != null ? new PaperPathResult(path) : null;
 +    }
 +
 +    @Override
-+    public boolean setDestination(@Nonnull PathResult path, double speed) {
++    public boolean moveTo(@Nonnull PathResult path, double speed) {
 +        Validate.notNull(path, "PathResult can not be null");
 +        PathEntity pathEntity = ((PaperPathResult) path).path;
-+        entity.getNavigation().setDestination(pathEntity, speed);
-+        return false;
++        return entity.getNavigation().setDestination(pathEntity, speed);
 +    }
 +
 +    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
@@ -90,7 +89,7 @@ index 0000000000..d166bcdd28
 +
 +        @Nullable
 +        @Override
-+        public Location getLocation() {
++        public Location getFinalPoint() {
 +            PathPoint point = path.getFinalPoint();
 +            return point != null ? toLoc(point) : null;
 +        }
@@ -113,7 +112,7 @@ index 0000000000..d166bcdd28
 +
 +        @Nullable
 +        @Override
-+        public Location getNextPointLocation() {
++        public Location getNextPoint() {
 +            if (!path.hasNext()) {
 +                return null;
 +            }
