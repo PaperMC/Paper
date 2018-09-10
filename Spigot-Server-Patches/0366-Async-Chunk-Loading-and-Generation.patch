@@ -1,4 +1,4 @@
-From 9e75902c54afc1c604b8a1a997f7025b9f04d250 Mon Sep 17 00:00:00 2001
+From 59a27bc5b6a40187f3ca361f4b06c9cb78341b2a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -389,7 +389,7 @@ index c0ec896eea..37b33d57f7 100644
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 31faeb43f6..049e21696d 100644
+index 31faeb43f6..944b249d66 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -117,7 +117,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -401,6 +401,20 @@ index 31faeb43f6..049e21696d 100644
              if (cps.isLoaded(x, z)) {
                  return true;
              }
+@@ -376,11 +376,12 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                     }
+                 };
+             } else {
++                /* // Paper start - we will never invoke this in an unsafe way
+                 NBTTagCompound nbttagcompound2 = this.a(world, chunkcoordintpair.x, chunkcoordintpair.z);
+ 
+                 if (nbttagcompound2 != null && this.a(nbttagcompound2) == ChunkStatus.Type.LEVELCHUNK) {
+                     return;
+-                }
++                }*/ // Paper end
+ 
+                 completion = new Supplier<NBTTagCompound>() {
+                     public NBTTagCompound get() {
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 index 34019bd1b3..68ef87bf38 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
@@ -561,10 +575,10 @@ index 80e8b023cf..1fbcb8bc8e 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..efb971fa53
+index 0000000000..c63122720b
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,375 @@
+@@ -0,0 +1,386 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -809,7 +823,18 @@ index 0000000000..efb971fa53
 +                        if (throwable != null) {
 +                            pending.completeExceptionally(generateChunkError(x, z, throwable));
 +                        } else {
-+                            pending.complete(new Chunk(world, protoChunk, x, z));
++                            boolean saved = false;
++                            try {
++                                chunkLoader.saveChunk(world, protoChunk, true);
++                                saved = true;
++                            } catch (IOException | ExceptionWorldConflict e) {
++                                e.printStackTrace();
++                            }
++                            Chunk value = new Chunk(world, protoChunk, x, z);
++                            if (saved) {
++                                value.setLastSaved(world.getTime());
++                            }
++                            pending.complete(value);
 +                        }
 +                        return protoChunk;
 +                    });
