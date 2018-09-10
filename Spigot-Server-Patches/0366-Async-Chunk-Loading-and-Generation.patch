@@ -1,4 +1,4 @@
-From 727cd5f1f38e92e3a0d5dfe580ef1f3a5b153f2b Mon Sep 17 00:00:00 2001
+From fc8582aec0c1446767635b6bcca45a3d650a9846 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -575,10 +575,10 @@ index 80e8b023cf..1fbcb8bc8e 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..c63122720b
+index 0000000000..c19c0b518f
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,386 @@
+@@ -0,0 +1,426 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -777,6 +777,37 @@ index 0000000000..c63122720b
 +        }
 +    }
 +
++    private enum PendingStatus {
++        /**
++         * Request has just started
++         */
++        STARTED,
++        /**
++         * Chunk is attempting to be loaded from disk
++         */
++        LOADING,
++        /**
++         * Chunk must generate on main and is pending main
++         */
++        GENERATION_PENDING,
++        /**
++         * Chunk is generating
++         */
++        GENERATING,
++        /**
++         * Chunk is ready and is pending post to main
++         */
++        PENDING_MAIN,
++        /**
++         * Could not load chunk, and did not need to generat
++         */
++        FAIL,
++        /**
++         * Fully done with this request (may or may not of loaded)
++         */
++        DONE
++    }
++
 +    private class PendingChunk implements Runnable {
 +        private final int x;
 +        private final int z;
@@ -785,6 +816,7 @@ index 0000000000..c63122720b
 +        private final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        private final CompletableFuture<Chunk> generate = new CompletableFuture<>();
 +
++        private volatile PendingStatus status = PendingStatus.STARTED;
 +        private volatile boolean generating;
 +        private volatile boolean canGenerate;
 +        private volatile boolean isBlockingMain;
@@ -802,7 +834,12 @@ index 0000000000..c63122720b
 +            this.task = EXECUTOR.submitTask(this, isBlockingMain ? Priority.HIGH : Priority.NORMAL);
 +        }
 +
-+        synchronized private Chunk loadChunk(int x, int z) throws IOException {
++        private synchronized void setStatus(PendingStatus status) {
++            this.status = status;
++        }
++
++        private Chunk loadChunk(int x, int z) throws IOException {
++            setStatus(PendingStatus.LOADING);
 +            Object[] data = chunkLoader.loadChunk(world, x, z, null);
 +            if (data != null) {
 +                // Level must be loaded on main
@@ -847,15 +884,16 @@ index 0000000000..c63122720b
 +                postChunkToMain(chunk);
 +                return false;
 +            }
-+
 +            loadOnly.complete(null);
 +
 +            if (!canGenerate) {
++                setStatus(PendingStatus.FAIL);
 +                this.chunk = null;
 +                this.hasFinished = true;
 +                pendingChunks.remove(key);
 +                return false;
 +            } else {
++                setStatus(PendingStatus.GENERATING);
 +                generating = true;
 +                return true;
 +            }
@@ -878,6 +916,7 @@ index 0000000000..c63122720b
 +        }
 +
 +        synchronized private void postChunkToMain(Chunk chunk) {
++            setStatus(PendingStatus.PENDING_MAIN);
 +            this.chunk = chunk;
 +            this.hasFinished = true;
 +            synchronized (mainThreadQueue) {
@@ -922,6 +961,7 @@ index 0000000000..c63122720b
 +                if (chunk != null) {
 +                    pendingChunks.remove(key);
 +                }
++                setStatus(PendingStatus.DONE);
 +            }
 +        }
 +
