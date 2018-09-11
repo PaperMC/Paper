@@ -23,6 +23,14 @@ public interface ItemFrame extends Hanging {
     public void setItem(ItemStack item);
 
     /**
+     * Set the item in this frame
+     *
+     * @param item the new item
+     * @param playSound whether or not to play the item placement sound
+     */
+    public void setItem(ItemStack item, boolean playSound);
+
+    /**
      * Get the rotation of the frame's item
      *
      * @return the direction
