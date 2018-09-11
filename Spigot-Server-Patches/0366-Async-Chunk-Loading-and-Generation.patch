@@ -1,4 +1,4 @@
-From fc8582aec0c1446767635b6bcca45a3d650a9846 Mon Sep 17 00:00:00 2001
+From 78665481d2c4694b399d95599de8f6fb4f81c3f5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -44,10 +44,10 @@ should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..31192074f8
+index 0000000000..40cbe8bbb1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,281 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -150,44 +150,48 @@ index 0000000000..31192074f8
 +        return isTerminated();
 +    }
 +
++
++    public PendingTask<Void> createPendingTask(Runnable task) {
++        return createPendingTask(task, Priority.NORMAL);
++    }
++    public PendingTask<Void> createPendingTask(Runnable task, Priority priority) {
++        return createPendingTask(() -> {
++            task.run();
++            return null;
++        }, priority);
++    }
++
++    public <T> PendingTask<T> createPendingTask(Supplier<T> task) {
++        return createPendingTask(task, Priority.NORMAL);
++    }
++
++    public <T> PendingTask<T> createPendingTask(Supplier<T> task, Priority priority) {
++        return new PendingTask<>(task, priority);
++    }
++
 +    public PendingTask<Void> submitTask(Runnable run) {
-+        return submitTask(run, Priority.NORMAL);
++        return submitTask(createPendingTask(run));
 +    }
 +
 +    public PendingTask<Void> submitTask(Runnable run, Priority priority) {
-+        PendingTask<Void> pendingTask = new PendingTask<>(priority, () -> {
-+            run.run();
-+            return null;
-+        });
-+        addQueuedTask(pendingTask);
-+        return pendingTask;
++        return submitTask(createPendingTask(run, priority));
 +    }
 +
-+
 +    public <T> PendingTask<T> submitTask(Supplier<T> run) {
-+        return submitTask(run, Priority.NORMAL);
++        return submitTask(createPendingTask(run));
 +    }
 +
 +    public <T> PendingTask<T> submitTask(Supplier<T> run, Priority priority) {
-+        PendingTask<T> pendingTask = new PendingTask<>(priority, run);
-+        addQueuedTask(pendingTask);
-+        return pendingTask;
++        return submitTask(createPendingTask(run, priority));
 +    }
 +
-+    private void addQueuedTask(PendingTask task) {
++    public <T> PendingTask<T> submitTask(PendingTask<T> task) {
 +        if (shuttingDown) {
 +            handler.onRejection(task, this);
-+            return;
++            return task;
 +        }
-+
-+        synchronized (this) {
-+            if (task.priority == Priority.HIGH) {
-+                high.add(task);
-+            } else {
-+                normal.add(task);
-+            }
-+            this.notify();
-+        }
++        task.submit(this);
++        return task;
 +    }
 +
 +    @Override
@@ -230,16 +234,6 @@ index 0000000000..31192074f8
 +        }
 +    }
 +
-+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-+    private boolean processQueue(ConcurrentLinkedQueue<Runnable> queue) {
-+        boolean ran = false;
-+        Runnable runnable;
-+        while ((runnable = queue.poll()) != null) {
-+            runnable.run();
-+            ran = true;
-+        }
-+        return ran;
-+    }
 +
 +
 +    public enum Priority {
@@ -253,8 +247,13 @@ index 0000000000..31192074f8
 +        private final Supplier<T> run;
 +        private volatile boolean hasRan;
 +        private final CompletableFuture<T> future = new CompletableFuture<>();
++        private volatile PriorityQueuedExecutor executor;
 +
-+        public PendingTask(Priority priority, Supplier<T> run) {
++        public PendingTask(Supplier<T> run) {
++            this(run, Priority.NORMAL);
++        }
++
++        public PendingTask(Supplier<T> run, Priority priority) {
 +            this.priority = priority;
 +            this.run = run;
 +        }
@@ -282,11 +281,40 @@ index 0000000000..31192074f8
 +                }
 +                priority = Priority.HIGH;
 +            }
-+            addQueuedTask(this);
++            synchronized (runLock) {
++                if (executor == null) {
++                    return;
++                }
++            }
++            // If we have already been submitted, resubmit with new priority
++            submit(executor);
 +        }
 +
 +        public CompletableFuture<T> onDone() {
 +            return future;
++        }
++
++        public void submit(PriorityQueuedExecutor executor) {
++            synchronized (priorityLock) {
++                if (priority == Priority.HIGH) {
++                    high.add(this);
++                } else {
++                    normal.add(this);
++                }
++            }
++
++            synchronized (runLock) {
++                if (hasRan) {
++                    return;
++                }
++                this.executor = executor;
++            }
++
++            //noinspection SynchronizationOnLocalVariableOrMethodParameter
++            synchronized (executor) {
++                // Wake up a thread to take this work
++                executor.notify();
++            }
 +        }
 +    }
 +    public interface RejectionHandler {
@@ -575,7 +603,7 @@ index 80e8b023cf..1fbcb8bc8e 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..c19c0b518f
+index 0000000000..a20ffd63bf
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,426 @@
@@ -606,10 +634,10 @@ index 0000000000..c19c0b518f
 +
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor.Priority;
-+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
 +
 +import javax.annotation.Nullable;
@@ -619,15 +647,17 @@ index 0000000000..c19c0b518f
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.ExecutorService;
-+import java.util.concurrent.Executors;
 +import java.util.function.Consumer;
++
++import static com.destroystokyo.paper.util.PriorityQueuedExecutor.CALLER_RUNS_POLICY;
 +
 +@SuppressWarnings("unused")
 +class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", Math.min(Integer.getInteger("paper.maxchunkthreads", 6), Runtime.getRuntime().availableProcessors()), PriorityQueuedExecutor.CALLER_RUNS_POLICY);
-+    private final ExecutorService chunkGenerationExecutor ;
++    private static final int CHUNK_THREADS = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, CALLER_RUNS_POLICY);
++
++    private final PriorityQueuedExecutor generationExecutor;
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
@@ -644,7 +674,7 @@ index 0000000000..c19c0b518f
 +        this.asyncHandler = server;
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
-+        this.chunkGenerationExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperChunkGen-" + worldName).setDaemon(true).build());
++        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, 1);
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -707,6 +737,7 @@ index 0000000000..c19c0b518f
 +                pending = pendingChunk;
 +                if (isBlockingMain) {
 +                    pending.task.bumpPriority();
++                    pending.chunkGenTask.bumpPriority();
 +                }
 +            }
 +        }
@@ -756,7 +787,7 @@ index 0000000000..c19c0b518f
 +
 +        List<CompletableFuture<Chunk>> all = new ArrayList<>();
 +        while (iterator.hasNext()) {
-+            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
++            ChunkCoordIntPair chunkcoordintpair = iterator.next();
 +            CompletableFuture<Chunk> future = new CompletableFuture<>();
 +            all.add(future);
 +            this.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true, chunk -> {
@@ -813,6 +844,7 @@ index 0000000000..c19c0b518f
 +        private final int z;
 +        private final long key;
 +        private final PriorityQueuedExecutor.PendingTask<Void> task;
++        private final PriorityQueuedExecutor.PendingTask<Chunk> chunkGenTask;
 +        private final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        private final CompletableFuture<Chunk> generate = new CompletableFuture<>();
 +
@@ -831,7 +863,9 @@ index 0000000000..c19c0b518f
 +            this.key = key;
 +            this.canGenerate = canGenerate;
 +            this.isBlockingMain = isBlockingMain;
-+            this.task = EXECUTOR.submitTask(this, isBlockingMain ? Priority.HIGH : Priority.NORMAL);
++            Priority priority = isBlockingMain ? Priority.HIGH : Priority.NORMAL;
++            this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, priority);
++            this.task = EXECUTOR.submitTask(this, priority);
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -850,33 +884,34 @@ index 0000000000..c19c0b518f
 +            }
 +        }
 +
-+        private CompletableFuture<Chunk> generateChunk(int x, int z) {
++        private Chunk generateChunk() {
 +            CompletableFuture<Chunk> pending = new CompletableFuture<>();
-+            chunkGenerationExecutor.submit(() -> {
-+                batchScheduler.startBatch();
-+                batchScheduler.add(new ChunkCoordIntPair(x, z));
-+                batchScheduler.executeBatch()
-+                    .handle((protoChunk, throwable) -> {
-+                        if (throwable != null) {
-+                            pending.completeExceptionally(generateChunkError(x, z, throwable));
-+                        } else {
-+                            boolean saved = false;
-+                            try {
-+                                chunkLoader.saveChunk(world, protoChunk, true);
-+                                saved = true;
-+                            } catch (IOException | ExceptionWorldConflict e) {
-+                                e.printStackTrace();
-+                            }
-+                            Chunk value = new Chunk(world, protoChunk, x, z);
-+                            if (saved) {
-+                                value.setLastSaved(world.getTime());
-+                            }
-+                            pending.complete(value);
-+                        }
-+                        return protoChunk;
-+                    });
-+            });
-+            return pending;
++            batchScheduler.startBatch();
++            batchScheduler.add(new ChunkCoordIntPair(x, z));
++            try {
++                ProtoChunk protoChunk = batchScheduler.executeBatch().join();
++                boolean saved = false;
++                if (!Bukkit.isPrimaryThread()) {
++                    // If we are async, dispatch later
++                    try {
++                        chunkLoader.saveChunk(world, protoChunk, true);
++                        saved = true;
++                    } catch (IOException | ExceptionWorldConflict e) {
++                        e.printStackTrace();
++                    }
++                }
++                Chunk chunk = new Chunk(world, protoChunk, x, z);
++                if (saved) {
++                    chunk.setLastSaved(world.getTime());
++                }
++                generateFinished(chunk);
++
++                return chunk;
++            } catch (Exception e) {
++                MinecraftServer.LOGGER.error("Couldn't generate chunk (" +world.getWorld().getName() + ":" + x + "," + z + ")", e);
++                generateFinished(null);
++                return null;
++            }
 +        }
 +
 +        synchronized boolean loadFinished(Chunk chunk) {
@@ -993,14 +1028,7 @@ index 0000000000..c19c0b518f
 +                }
 +            }
 +
-+            generateChunk(x, z).handle((chunk, ex) -> {
-+                if (ex != null) {
-+                    MinecraftServer.LOGGER.error("Couldn't generate chunk (" +world.getWorld().getName() + ":" + x + "," + z + ")", ex);
-+                }
-+
-+                generateFinished(chunk);
-+                return chunk;
-+            });
++            generationExecutor.submitTask(chunkGenTask);
 +        }
 +    }
 +
