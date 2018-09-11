@@ -1,4 +1,4 @@
-From 7199d360b2976d395fa21c26781e12591a4e5b61 Mon Sep 17 00:00:00 2001
+From da7880ca6732b6f859467ba9a7097ae3562c8b34 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 20:16:03 -0400
 Subject: [PATCH] Add World Util Methods
@@ -6,7 +6,7 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 68f845986..dcd122d8b 100644
+index 68f8459861..dcd122d8b5 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -639,6 +639,7 @@ public class Chunk implements IChunkAccess {
@@ -17,8 +17,44 @@ index 68f845986..dcd122d8b 100644
      public int a(BlockPosition blockposition, int i) {
          return this.a(blockposition, i, this.world.o().g());
      }
+diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
+index ac85986a1a..06c5a54254 100644
+--- a/src/main/java/net/minecraft/server/IWorldReader.java
++++ b/src/main/java/net/minecraft/server/IWorldReader.java
+@@ -35,6 +35,22 @@ public interface IWorldReader extends IBlockAccess {
+     }
+ 
+     int getLightLevel(BlockPosition var1, int var2);
++    // Paper start
++    default @Nullable
++    IBlockData getTypeIfLoaded(BlockPosition var1) {
++        return isLoaded(var1) ? getType(var1) : null;
++    }
++
++    default @Nullable
++    Block getBlockIfLoaded(BlockPosition var1) {
++        return isLoaded(var1) ? getType(var1).getBlock() : null;
++    }
++
++    default @Nullable
++    Material getMaterialIfLoaded(BlockPosition var1) {
++        return isLoaded(var1) ? getType(var1).getMaterial() : null;
++    }
++    // Paper end
+ 
+     boolean isChunkLoaded(int var1, int var2, boolean var3);
+ 
+@@ -100,7 +116,7 @@ public interface IWorldReader extends IBlockAccess {
+         WorldBorder worldborder = this.getWorldBorder();
+         boolean flag1 = worldborder.b() < (double)i && (double)j < worldborder.d() && worldborder.c() < (double)i1 && (double)j1 < worldborder.e();
+         VoxelShapeBitSet voxelshapebitset = new VoxelShapeBitSet(j - i, l - k, j1 - i1);
+-        Predicate predicate = (voxelshape3) -> {
++        Predicate<VoxelShape> predicate = (voxelshape3) -> { // Paper - decompile fix
+             return !voxelshape3.b() && VoxelShapes.c(voxelshape, voxelshape3, OperatorBoolean.AND);
+         };
+         Stream stream = StreamSupport.stream(BlockPosition.MutableBlockPosition.b(i, k, i1, j - 1, l - 1, j1 - 1).spliterator(), false).map((blockposition$mutableblockposition) -> {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 561bcd07b..94872593b 100644
+index 561bcd07b3..94872593b1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -84,7 +84,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc

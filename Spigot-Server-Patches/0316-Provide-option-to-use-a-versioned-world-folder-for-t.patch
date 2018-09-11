@@ -1,4 +1,4 @@
-From 132c87e612eeb913dc0a57cde399bf0519c66a04 Mon Sep 17 00:00:00 2001
+From bcd7f6ca976d597f8e3b96d581608a071ca24440 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 29 Jul 2018 15:48:50 -0400
 Subject: [PATCH] Provide option to use a versioned world folder for testing
@@ -59,10 +59,10 @@ index bcdf4f91d8..c457d07110 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index e6ede2cc25..93bc613958 100644
+index f22532f071..7db075b731 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -59,8 +59,52 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -59,8 +59,63 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      private PersistentStructureLegacy e;
      // private boolean f; // CraftBukkit
      private static final double SAVE_QUEUE_TARGET_SIZE = 625; // Spigot
@@ -71,29 +71,40 @@ index e6ede2cc25..93bc613958 100644
 +    private final File actualWorld;
 +    private final boolean useAltWorld;
 +
-+    private synchronized void copyIfNeeded(int x, int z) {
++    private void copyIfNeeded(int x, int z) {
 +        if (!useAltWorld) {
 +            return;
 +        }
-+        if (RegionFileCache.hasRegionFile(this.actualWorld, x, z)) {
-+            return;
-+        }
-+        File actual = RegionFileCache.getRegionFileName(this.actualWorld, x, z);
-+        File template = RegionFileCache.getRegionFileName(this.templateWorld, x, z);
-+        if (!actual.exists() && template.exists()) {
-+            try {
-+                //a.info("Copying" + template + " to " + actual);
-+                java.nio.file.Files.copy(template.toPath(), actual.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
-+            } catch (IOException e1) {
-+                LogManager.getLogger().error("Error copying " + template + " to " + actual, e1);
-+                MinecraftServer.getServer().safeShutdown();
-+                org.spigotmc.SneakyThrow.sneaky(e1);
++        synchronized (RegionFileCache.class) {
++            if (RegionFileCache.hasRegionFile(this.actualWorld, x, z)) {
++                return;
++            }
++            File actual = RegionFileCache.getRegionFileName(this.actualWorld, x, z);
++            File template = RegionFileCache.getRegionFileName(this.templateWorld, x, z);
++            if (!actual.exists() && template.exists()) {
++                try {
++                    //a.info("Copying" + template + " to " + actual);
++                    java.nio.file.Files.copy(template.toPath(), actual.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
++                } catch (IOException e1) {
++                    LogManager.getLogger().error("Error copying " + template + " to " + actual, e1);
++                    MinecraftServer.getServer().safeShutdown();
++                    org.spigotmc.SneakyThrow.sneaky(e1);
++                }
 +            }
 +        }
- 
 +    }
++
++    public boolean chunkExists(int x, int z) {
++        if (this.saveMap.containsKey(ChunkCoordIntPair.asLong(x, z))) {
++            return true;
++        }
++        copyIfNeeded(x, z);
++        return RegionFileCache.chunkExists(this.actualWorld, x, z);
++    }
++    // Paper end
+ 
      public ChunkRegionLoader(File file, DataFixer datafixer) {
-+        // Paper
++        // Paper start
 +        this.actualWorld = file;
 +        if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
 +            this.useAltWorld = true;
@@ -115,7 +126,7 @@ index e6ede2cc25..93bc613958 100644
          this.c = file;
          this.d = datafixer;
      }
-@@ -79,7 +123,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -79,7 +134,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
              }
          }
  
@@ -124,30 +135,14 @@ index e6ede2cc25..93bc613958 100644
              NBTTagCompound nbt = RegionFileCache.read(this.c, x, z);
              if (nbt != null) {
                  NBTTagCompound level = nbt.getCompound("Level");
-@@ -99,6 +143,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -99,6 +154,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
      @Nullable
      private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
 +        copyIfNeeded(i, j); // Paper
-         NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.b.get(new ChunkCoordIntPair(i, j))); // Spigot
+         NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.saveMap.get(ChunkCoordIntPair.asLong(i, j))); // Spigot // Paper
  
          if (nbttagcompound != null) {
-@@ -222,6 +267,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-         }
-     }
- 
-+    public boolean chunkExists(int x, int z) {
-+        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(x, z);
-+        if (this.b.containsKey(chunkcoordintpair)) {
-+            return true;
-+        }
-+        copyIfNeeded(x, z);
-+        return RegionFileCache.chunkExists(this.actualWorld, x, z);
-+    }
-+
-     @Nullable
-     protected Object[] a(GeneratorAccess generatoraccess, int i, int j, NBTTagCompound nbttagcompound) { // CraftBukkit - return Chunk -> Object[]
-         if (nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8)) {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
 index 15666325ea..3501b87f75 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
