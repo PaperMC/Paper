@@ -1,27 +1,31 @@
-Paper [![Build Status](https://destroystokyo.com/ci/job/Paper/badge/icon)](https://destroystokyo.com/ci/job/Paper/)
+Paper [![Build Status](https://papermc.io/ci/job/Paper/badge/icon)](https://papermc.io/ci/job/Paper/)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
-[IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=paper)
 
-[Discord](https://discord.gg/jETyjUw)
+**Support and Project Discussion:**
+ - [IRC](http://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/jETyjUw)
 
-
-Documentation
-------
-Access the Paper docs here: [paper.readthedocs.io](https://paper.readthedocs.io/)  
-Access the Paper API javadocs here: [destroystokyo.com/javadocs](https://destroystokyo.com/javadocs/)
 
 How To (Server Admins)
 ------
 Paperclip is a jar file that you can download and run just like a normal jar file.
 
-Download a copy of paperclip.jar from [our build server, here](https://destroystokyo.com/ci/job/PaperSpigot/).
+Download a copy of paperclip.jar from [our build server, here](https://papermc.io/ci/job/Paper/).
 
 Run the Paperclip jar directly from your server. Just like old times
 
-Paper requires [**Java 8**](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) or above.
+  * Documentation on using Paper: [paper.readthedocs.io](https://paper.readthedocs.io/)
+  * For a sneak peak on upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
+
+How To (Plugin Developers)
+------
+ * See our API patches [here](Spigot-API-Patches)
+ * See upcoming, pending, and recently added API [here](https://github.com/PaperMC/Paper/projects/6)
+ * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
+ * Maven Repo (for paper-api): `https://papermc.io/repo/repository/maven-public`
+ * Latest API version: `1.13.1-R0.1-SNAPSHOT`
 
 How To (Compiling Jar From Source)
 ------
