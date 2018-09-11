@@ -4,26 +4,63 @@ Date: Mon, 10 Sep 2018 23:52:28 -0400
 Subject: [PATCH] Prevent pathfinding from loading chunks
 
 
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index 4023253f42..b2480301ef 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
+     protected long n;
+     protected PathfinderAbstract o;
+     private BlockPosition q;
+-    private Pathfinder r;
++    private Pathfinder r; public Pathfinder getPathfinder() { return r; } // Paper - OBFHELPER
+ 
+     public NavigationAbstract(EntityInsentient entityinsentient, World world) {
+         this.a = entityinsentient;
+         this.b = world;
+         this.p = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
+         this.r = this.a();
++        getPathfinder().getPathfinder().world = world; // Paper
+     }
+ 
+     public BlockPosition i() {
+diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
+index 04c71ac0ef..6e583356ce 100644
+--- a/src/main/java/net/minecraft/server/Pathfinder.java
++++ b/src/main/java/net/minecraft/server/Pathfinder.java
+@@ -0,0 +0,0 @@ public class Pathfinder {
+     private final Path a = new Path();
+     private final Set<PathPoint> b = Sets.newHashSet();
+     private final PathPoint[] c = new PathPoint[32];
+-    private PathfinderAbstract d;
++    private PathfinderAbstract d; public PathfinderAbstract getPathfinder() { return d; }  // Paper - OBFHELPER
+ 
+     public Pathfinder(PathfinderAbstract pathfinderabstract) {
+         this.d = pathfinderabstract;
+diff --git a/src/main/java/net/minecraft/server/PathfinderAbstract.java b/src/main/java/net/minecraft/server/PathfinderAbstract.java
+index ba7fe359fe..6716280146 100644
+--- a/src/main/java/net/minecraft/server/PathfinderAbstract.java
++++ b/src/main/java/net/minecraft/server/PathfinderAbstract.java
+@@ -0,0 +0,0 @@ package net.minecraft.server;
+ public abstract class PathfinderAbstract {
+     protected IBlockAccess a;
+     protected EntityInsentient b;
++    public World world; // Paper
+     protected final IntHashMap<PathPoint> c = new IntHashMap<PathPoint>();
+     protected int d;
+     protected int e;
+@@ -0,0 +0,0 @@ public abstract class PathfinderAbstract {
+ 
+     public void a(IBlockAccess iblockaccess, EntityInsentient entityinsentient) {
+         this.a = iblockaccess;
++        if (iblockaccess instanceof World) world = (World) iblockaccess; // Paper
+         this.b = entityinsentient;
+         this.c.c();
+         this.d = MathHelper.d(entityinsentient.width + 1.0F);
 diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
-index 64e0b08170..58aa6df0a1 100644
+index 64e0b08170..93f3d2e363 100644
 --- a/src/main/java/net/minecraft/server/PathfinderNormal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
- 
- public class PathfinderNormal extends PathfinderAbstract {
-     protected float j;
-+    private World world; // Paper
- 
-     public PathfinderNormal() {
-     }
-@@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
-     public void a(IBlockAccess iblockaccess, EntityInsentient entityinsentient) {
-         super.a(iblockaccess, entityinsentient);
-         this.j = entityinsentient.a(PathType.WATER);
-+        this.world = entityinsentient.world; // Paper
-     }
- 
-     public void a() {
 @@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
          BlockPosition blockposition2 = new BlockPosition(this.b);
          PathType pathtype1 = this.a(this.b, blockposition2.getX(), i, blockposition2.getZ());
