@@ -1063,4 +1063,98 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     @SuppressWarnings("javadoc")
     @NotNull
     ItemMeta clone();
+
+    // Paper start - Add an API for can-place-on/can-break adventure mode predicates
+    /**
+     * Gets set of materials what given item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @return Set of materials
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.14")
+    Set<org.bukkit.Material> getCanDestroy();
+
+    /**
+     * Sets set of materials what given item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @param canDestroy Set of materials
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.14")
+    void setCanDestroy(Set<org.bukkit.Material> canDestroy);
+
+    /**
+     * Gets set of materials where given item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @return Set of materials
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.14")
+    Set<org.bukkit.Material> getCanPlaceOn();
+
+    /**
+     * Sets set of materials where given item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @param canPlaceOn Set of materials
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.14")
+    void setCanPlaceOn(Set<org.bukkit.Material> canPlaceOn);
+
+    /**
+     * Gets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @return Set of {@link com.destroystokyo.paper.Namespaced}
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    @NotNull
+    Set<com.destroystokyo.paper.Namespaced> getDestroyableKeys();
+
+    /**
+     * Sets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @param canDestroy Collection of {@link com.destroystokyo.paper.Namespaced}
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    void setDestroyableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canDestroy);
+
+    /**
+     * Gets the collection of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @return Set of {@link com.destroystokyo.paper.Namespaced}
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @NotNull
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    Set<com.destroystokyo.paper.Namespaced> getPlaceableKeys();
+
+    /**
+     * Sets the set of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
+     *
+     * @param canPlaceOn Collection of {@link com.destroystokyo.paper.Namespaced}
+     * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    void setPlaceableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canPlaceOn);
+
+    /**
+     * Checks for the existence of any keys that the item can be placed on
+     *
+     * @return true if this item has placeable keys
+     * @deprecated this API is unsupported and will be replaced
+     */
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    boolean hasPlaceableKeys();
+
+    /**
+     * Checks for the existence of any keys that the item can destroy
+     *
+     * @return true if this item has destroyable keys
+     * @deprecated this API is unsupported and will be replaced
+     */
+    @Deprecated(forRemoval = true, since = "1.20.6")
+    boolean hasDestroyableKeys();
+    // Paper end - Add an API for can-place-on/can-break adventure mode predicates
 }
