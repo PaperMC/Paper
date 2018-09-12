@@ -690,4 +690,22 @@ public class MaterialRerouting {
         return ItemStack.of(material, amount);
     }
     // Paper end
+
+    // Paper start - methods added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/1015)
+    public static Set<Material> getCanDestroy(final ItemMeta meta) {
+        return meta.getCanDestroy();
+    }
+
+    public static void setCanDestroy(final ItemMeta meta, final Set<Material> materials) {
+        meta.setCanDestroy(materials);
+    }
+
+    public static Set<Material> getCanPlaceOn(final ItemMeta meta) {
+        return meta.getCanPlaceOn();
+    }
+
+    public static void setCanPlaceOn(final ItemMeta meta, final Set<Material> materials) {
+        meta.setCanPlaceOn(materials);
+    }
+    // Paper end
 }

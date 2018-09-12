@@ -2521,4 +2521,119 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
     // Paper end
 
+    // Paper start - Add an API for can-place-on/can-break adventure mode predicates
+    @Override
+    public Set<Material> getCanDestroy() {
+        return !this.hasDestroyableKeys() ? Collections.emptySet() : convertToLegacyMaterial(this.canBreakPredicates);
+    }
+
+    @Override
+    public void setCanDestroy(final Set<Material> canDestroy) {
+        Preconditions.checkArgument(canDestroy != null, "Cannot replace with null set!");
+        this.canBreakPredicates = convertFromLegacyMaterial(canDestroy);
+    }
+
+    @Override
+    public Set<Material> getCanPlaceOn() {
+        return !this.hasPlaceableKeys() ? Collections.emptySet() : convertToLegacyMaterial(this.canPlaceOnPredicates);
+    }
+
+    @Override
+    public void setCanPlaceOn(final Set<Material> canPlaceOn) {
+        Preconditions.checkArgument(canPlaceOn != null, "Cannot replace with null set!");
+        this.canPlaceOnPredicates = convertFromLegacyMaterial(canPlaceOn);
+    }
+
+    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
+        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = net.minecraft.server.MinecraftServer.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+        return materials.stream().map(m -> {
+            return net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
+        }).toList();
+    }
+
+    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
+        return predicates.stream()
+            .flatMap(p -> p.blocks().map(net.minecraft.core.HolderSet::stream).orElse(java.util.stream.Stream.empty()))
+            .map(holder -> CraftBlockType.minecraftToBukkit(holder.value()))
+            .collect(java.util.stream.Collectors.toSet());
+    }
+
+    @Override
+    public Set<com.destroystokyo.paper.Namespaced> getDestroyableKeys() {
+        return !this.hasDestroyableKeys() ? Collections.emptySet() : convertToLegacyNamespaced(this.canBreakPredicates);
+    }
+
+    @Override
+    public void setDestroyableKeys(final Collection<com.destroystokyo.paper.Namespaced> canDestroy) {
+        Preconditions.checkArgument(canDestroy != null, "Cannot replace with null collection!");
+        Preconditions.checkArgument(ofAcceptableType(canDestroy), "Can only use NamespacedKey or NamespacedTag objects!");
+        this.canBreakPredicates = convertFromLegacyNamespaced(canDestroy);
+    }
+
+    @Override
+    public Set<com.destroystokyo.paper.Namespaced> getPlaceableKeys() {
+        return !this.hasPlaceableKeys() ? Collections.emptySet() : convertToLegacyNamespaced(this.canPlaceOnPredicates);
+    }
+
+    @Override
+    public void setPlaceableKeys(final Collection<com.destroystokyo.paper.Namespaced> canPlaceOn) {
+        Preconditions.checkArgument(canPlaceOn != null, "Cannot replace with null collection!");
+        Preconditions.checkArgument(ofAcceptableType(canPlaceOn), "Can only use NamespacedKey or NamespacedTag objects!");
+        this.canPlaceOnPredicates = convertFromLegacyNamespaced(canPlaceOn);
+    }
+
+    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
+        final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
+        final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = net.minecraft.server.MinecraftServer.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+        for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
+            if (namespaced instanceof final org.bukkit.NamespacedKey key) {
+                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
+            } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
+                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
+            }
+        }
+        return predicates;
+    }
+
+    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
+        final Set<com.destroystokyo.paper.Namespaced> namespaceds = Sets.newHashSet();
+        for (final net.minecraft.advancements.critereon.BlockPredicate predicate : predicates) {
+            if (predicate.blocks().isEmpty()) {
+                continue;
+            }
+            final net.minecraft.core.HolderSet<net.minecraft.world.level.block.Block> holders = predicate.blocks().get();
+            if (holders instanceof final net.minecraft.core.HolderSet.Named<net.minecraft.world.level.block.Block> named) {
+                namespaceds.add(new com.destroystokyo.paper.NamespacedTag(named.key().location().getNamespace(), named.key().location().getPath()));
+            } else {
+                holders.forEach(h -> {
+                    h.unwrapKey().ifPresent(key -> {
+                        namespaceds.add(new org.bukkit.NamespacedKey(key.location().getNamespace(), key.location().getPath()));
+                    });
+                });
+            }
+        }
+        return namespaceds;
+    }
+
+    @Override
+    public boolean hasPlaceableKeys() {
+        return this.canPlaceOnPredicates != null;
+    }
+
+    @Override
+    public boolean hasDestroyableKeys() {
+        return this.canBreakPredicates != null;
+    }
+
+    // not a fan of this
+    private static boolean ofAcceptableType(final Collection<com.destroystokyo.paper.Namespaced> namespacedResources) {
+        for (com.destroystokyo.paper.Namespaced resource : namespacedResources) {
+            if (!(resource instanceof org.bukkit.NamespacedKey || resource instanceof com.destroystokyo.paper.NamespacedTag)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    // Paper end - Add an API for can-place-on/can-break adventure mode predicates
 }
