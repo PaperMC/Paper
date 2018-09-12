@@ -1,4 +1,4 @@
-From 20d0c65eb08150d38ec8db7b2fb67f122da9d3a7 Mon Sep 17 00:00:00 2001
+From d7124d333ae38455f865cad6d15e6dba35de3ffe Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -44,16 +44,17 @@ should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..40cbe8bbb1
+index 0000000000..7c7d3e1699
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,301 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import net.minecraft.server.NamedIncrementingThreadFactory;
 +
 +import javax.annotation.Nonnull;
++import java.lang.reflect.Field;
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.concurrent.AbstractExecutorService;
@@ -228,13 +229,37 @@ index 0000000000..40cbe8bbb1
 +                    return;
 +                }
 +                try {
-+                    PriorityQueuedExecutor.this.wait(30000);
++                    PriorityQueuedExecutor.this.wait();
 +                } catch (InterruptedException ignored) {}
 +            }
 +        }
 +    }
 +
++    private static final sun.misc.Unsafe UNSAFE;
++    private static final long hasRanIndex;
++    private static final long submittedIndex;
++    private static final long priorityIndex;
++    static {
++        try {
++            UNSAFE = getUnsafe();
++            final Class<PendingTask> cls = PendingTask.class;
++            hasRanIndex = UNSAFE.objectFieldOffset(cls.getDeclaredField("hasRan"));
++            submittedIndex = UNSAFE.objectFieldOffset(cls.getDeclaredField("submitted"));
++            priorityIndex = UNSAFE.objectFieldOffset(cls.getDeclaredField("priority"));
++        } catch (Exception e) {
++            throw new Error(e);
++        }
++    }
++    private static sun.misc.Unsafe getUnsafe() {
++        try {
 +
++            Field unsafe = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
++            unsafe.setAccessible(true);
++            return (sun.misc.Unsafe) unsafe.get(null);
++        } catch (IllegalArgumentException | NoSuchFieldException | IllegalAccessException e) {
++            throw new Error(e);
++        }
++    }
 +
 +    public enum Priority {
 +        HIGH, NORMAL
@@ -243,9 +268,10 @@ index 0000000000..40cbe8bbb1
 +    public class PendingTask <T> implements Runnable {
 +        private final Object runLock = new Object();
 +        private final Object priorityLock = new Object();
-+        private Priority priority;
++        private transient volatile int priority;
++        private transient volatile int hasRan;
++        private transient volatile int submitted = -1;
 +        private final Supplier<T> run;
-+        private volatile boolean hasRan;
 +        private final CompletableFuture<T> future = new CompletableFuture<>();
 +        private volatile PriorityQueuedExecutor executor;
 +
@@ -254,17 +280,14 @@ index 0000000000..40cbe8bbb1
 +        }
 +
 +        public PendingTask(Supplier<T> run, Priority priority) {
-+            this.priority = priority;
++            this.priority = priority == Priority.HIGH ? 1 : 0;
 +            this.run = run;
 +        }
 +
 +        @Override
 +        public void run() {
-+            synchronized (runLock) {
-+                if (hasRan) {
-+                    return;
-+                }
-+                hasRan = true;
++            if (!UNSAFE.compareAndSwapInt(this, hasRanIndex, 0, 1)) {
++                return;
 +            }
 +
 +            try {
@@ -275,19 +298,15 @@ index 0000000000..40cbe8bbb1
 +        }
 +
 +        public void bumpPriority() {
-+            synchronized (priorityLock) {
-+                if (priority == Priority.HIGH) {
-+                    return;
-+                }
-+                priority = Priority.HIGH;
++            if (!UNSAFE.compareAndSwapInt(this, priorityIndex, 0, 1)) {
++                return;
 +            }
-+            synchronized (runLock) {
-+                if (executor == null) {
-+                    return;
-+                }
++
++            if (this.executor == null) {
++                return;
 +            }
 +            // If we have already been submitted, resubmit with new priority
-+            submit(executor);
++            submit(this.executor);
 +        }
 +
 +        public CompletableFuture<T> onDone() {
@@ -295,21 +314,22 @@ index 0000000000..40cbe8bbb1
 +        }
 +
 +        public void submit(PriorityQueuedExecutor executor) {
-+            synchronized (priorityLock) {
-+                if (priority == Priority.HIGH) {
-+                    high.add(this);
-+                } else {
-+                    normal.add(this);
-+                }
-+            }
-+
-+            synchronized (runLock) {
-+                if (hasRan) {
++            for (;;) {
++                final int submitted = this.submitted;
++                final int priority = this.priority;
++                if (submitted == priority) {
 +                    return;
 +                }
-+                this.executor = executor;
-+            }
++                if (UNSAFE.compareAndSwapInt(this, submittedIndex, submitted, priority)) {
++                    if (priority == 1) {
++                        high.add(this);
++                    } else {
++                        normal.add(this);
++                    }
 +
++                    break;
++                }
++            }
 +            //noinspection SynchronizationOnLocalVariableOrMethodParameter
 +            synchronized (executor) {
 +                // Wake up a thread to take this work
