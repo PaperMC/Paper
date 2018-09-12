@@ -1,4 +1,4 @@
-From 934d5f2c5f03e362fc5e1baae4d5407791f08d47 Mon Sep 17 00:00:00 2001
+From 8645760a4de9fc915e4a5e877a5f104e944ca32f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -1212,6 +1212,55 @@ index d868149d1a..0d94b262ac 100644
 +        } finally { lock.unlock(); } // Paper
      }
  }
+diff --git a/src/main/java/net/minecraft/server/StructureStart.java b/src/main/java/net/minecraft/server/StructureStart.java
+index f87182b5c4..574930f5fe 100644
+--- a/src/main/java/net/minecraft/server/StructureStart.java
++++ b/src/main/java/net/minecraft/server/StructureStart.java
+@@ -6,7 +6,7 @@ import java.util.List;
+ import java.util.Random;
+ 
+ public abstract class StructureStart {
+-    protected final List<StructurePiece> a = Lists.newArrayList();
++    protected final List<StructurePiece> a = java.util.Collections.synchronizedList(Lists.newArrayList()); // Paper
+     protected StructureBoundingBox b;
+     protected int c;
+     protected int d;
+@@ -49,9 +49,9 @@ public abstract class StructureStart {
+     protected void a(IBlockAccess var1) {
+         this.b = StructureBoundingBox.a();
+ 
+-        for(StructurePiece structurepiece : this.a) {
++        synchronized (this.a) {for(StructurePiece structurepiece : this.a) { // Paper - synchronize
+             this.b.b(structurepiece.d());
+-        }
++        }} // Paper
+ 
+     }
+ 
+@@ -114,9 +114,9 @@ public abstract class StructureStart {
+         int l = k - this.b.e;
+         this.b.a(0, l, 0);
+ 
+-        for(StructurePiece structurepiece : this.a) {
++        synchronized (this.a) {for(StructurePiece structurepiece : this.a) { // Paper - synchronize
+             structurepiece.a(0, l, 0);
+-        }
++        }} // Paper
+ 
+     }
+ 
+@@ -132,9 +132,9 @@ public abstract class StructureStart {
+         int i1 = l - this.b.b;
+         this.b.a(0, i1, 0);
+ 
+-        for(StructurePiece structurepiece : this.a) {
++        synchronized (this.a) {for(StructurePiece structurepiece : this.a) { // Paper - synchronize
+             structurepiece.a(0, i1, 0);
+-        }
++        }} // Paper
+ 
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index acd0c93cec..273cfb73ee 100644
 --- a/src/main/java/net/minecraft/server/World.java
