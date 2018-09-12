@@ -1,4 +1,4 @@
-From d7124d333ae38455f865cad6d15e6dba35de3ffe Mon Sep 17 00:00:00 2001
+From 934d5f2c5f03e362fc5e1baae4d5407791f08d47 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -492,6 +492,32 @@ index 34019bd1b3..68ef87bf38 100644
              return flag ? (Scheduler.a) this.progressCache.computeIfAbsent(chunkcoordintpair.a(), (i) -> {
                  ProtoChunk protochunk;
  
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 71a3636be6..27ab8aac4f 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -22,17 +22,19 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
+     private final ReentrantLock j = new ReentrantLock();
+ 
+-    private void b() {
++    volatile String current; // Paper
++    private synchronized void b() {
+         if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
+             String s = (String)Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
+                 return thread.getName() + ": \n\tat " + (String)Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
+             }).collect(Collectors.joining("\n"));
+-            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads", new IllegalStateException());
++            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads (" + current + ":" + Thread.currentThread().getName() + ")", new IllegalStateException()); // Paper
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Thread dumps");
+             crashreportsystemdetails.a("Thread dumps", s);
+             throw new ReportedException(crashreport);
+         } else {
+             this.j.lock();
++            current = Thread.currentThread().getName(); // Paper
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index f6c43bab46..e6bd85a223 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -623,10 +649,10 @@ index 80e8b023cf..1fbcb8bc8e 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..a20ffd63bf
+index 0000000000..b11cb69615
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,426 @@
+@@ -0,0 +1,443 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -658,6 +684,7 @@ index 0000000000..a20ffd63bf
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
 +import org.bukkit.craftbukkit.generator.InternalChunkGenerator;
 +
 +import javax.annotation.Nullable;
@@ -685,6 +712,7 @@ index 0000000000..a20ffd63bf
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
 +    private final MinecraftServer server;
++    private final boolean isCustomGenerator;
 +
 +    PaperAsyncChunkProvider(WorldServer world, IChunkLoader chunkLoader, InternalChunkGenerator generator, MinecraftServer server) {
 +        super(world, chunkLoader, generator, server);
@@ -694,7 +722,8 @@ index 0000000000..a20ffd63bf
 +        this.asyncHandler = server;
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
-+        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, 1);
++        this.isCustomGenerator = generator instanceof CustomChunkGenerator;
++        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, isCustomGenerator ? 0 : 1);
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -974,9 +1003,13 @@ index 0000000000..a20ffd63bf
 +            setStatus(PendingStatus.PENDING_MAIN);
 +            this.chunk = chunk;
 +            this.hasFinished = true;
-+            synchronized (mainThreadQueue) {
-+                mainThreadQueue.add(this::postChunk);
-+                mainThreadQueue.notify();
++            if (Bukkit.isPrimaryThread()) {
++                postChunk();
++            } else {
++                synchronized (mainThreadQueue) {
++                    mainThreadQueue.add(this::postChunk);
++                    mainThreadQueue.notify();
++                }
 +            }
 +        }
 +
@@ -1048,7 +1081,17 @@ index 0000000000..a20ffd63bf
 +                }
 +            }
 +
-+            generationExecutor.submitTask(chunkGenTask);
++            if (isCustomGenerator) {
++                synchronized (this) {
++                    setStatus(PendingStatus.GENERATION_PENDING);
++                    mainThreadQueue.add(() -> generateFinished(this.generateChunk()));
++                }
++                synchronized (mainThreadQueue) {
++                    mainThreadQueue.notify();
++                }
++            } else {
++                generationExecutor.submitTask(chunkGenTask);
++            }
 +        }
 +    }
 +
