@@ -45,7 +45,7 @@ public class ArgumentBlock {
     private final boolean j;
     private final Map<IBlockState<?>, Comparable<?>> k = Maps.newLinkedHashMap(); // CraftBukkit - stable
     private final Map<String, String> l = Maps.newHashMap();
-    private MinecraftKey m = new MinecraftKey("");
+    private MinecraftKey m = new MinecraftKey(""); public final MinecraftKey getBlockKey() { return this.m; } // Paper - OBFHELPER
     private BlockStateList<Block, IBlockData> n;
     private IBlockData o;
     @Nullable
@@ -74,11 +74,13 @@ public class ArgumentBlock {
         return this.p;
     }
 
+    public final @Nullable MinecraftKey getTagKey() { return d(); } // Paper - OBFHELPER
     @Nullable
     public MinecraftKey d() {
         return this.q;
     }
 
+    public final ArgumentBlock parse(boolean parseTile) throws CommandSyntaxException { return this.a(parseTile); } // Paper - OBFHELPER
     public ArgumentBlock a(boolean flag) throws CommandSyntaxException {
         this.s = this::l;
         if (this.i.canRead() && this.i.peek() == '#') {
