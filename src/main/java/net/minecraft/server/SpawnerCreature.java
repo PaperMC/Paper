@@ -143,9 +143,9 @@ public final class SpawnerCreature {
         StructureManager structuremanager = worldserver.getStructureManager();
         ChunkGenerator chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
         int i = blockposition.getY();
-        IBlockData iblockdata = ichunkaccess.getType(blockposition);
+        IBlockData iblockdata = worldserver.getTypeIfLoadedAndInBounds(blockposition); // Paper - don't load chunks for mob spawn
 
-        if (!iblockdata.isOccluding(ichunkaccess, blockposition)) {
+        if (iblockdata != null && !iblockdata.isOccluding(ichunkaccess, blockposition)) { // Paper - don't load chunks for mob spawn
             BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
             int j = 0;
             int k = 0;
@@ -174,7 +174,7 @@ public final class SpawnerCreature {
                             if (entityhuman != null) {
                                 double d2 = entityhuman.h(d0, (double) i, d1);
 
-                                if (a(worldserver, ichunkaccess, blockposition_mutableblockposition, d2)) {
+                                if (a(worldserver, ichunkaccess, blockposition_mutableblockposition, d2) && worldserver.isLoadedAndInBounds(blockposition_mutableblockposition)) { // Paper - don't load chunks for mob spawn
                                     if (biomesettingsmobs_c == null) {
                                         biomesettingsmobs_c = a(worldserver, structuremanager, chunkgenerator, enumcreaturetype, worldserver.random, (BlockPosition) blockposition_mutableblockposition);
                                         if (biomesettingsmobs_c == null) {
