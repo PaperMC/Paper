@@ -1,9 +1,21 @@
-From 1ca3b4fcfc301b5dbf685d5a5fcadb65fecc2e32 Mon Sep 17 00:00:00 2001
+From 7074177957c35a70e19afa8d54ca1ac233524dfc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:56:36 -0400
 Subject: [PATCH] Prevent Mob AI Rules from Loading Chunks
 
 
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 1d301dcb70..33f5aa721f 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -488,6 +488,7 @@ public class Chunk implements IChunkAccess {
+         }
+     }
+ 
++    public Fluid getFluid(BlockPosition blockposition) { return b(blockposition); } // Paper - OBFHELPER
+     public Fluid b(BlockPosition blockposition) {
+         return this.b(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 index b1661693cf..2cbb6c8f91 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
@@ -50,6 +62,42 @@ index b1661693cf..2cbb6c8f91 100644
          return block == this.f && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
      }
  }
+diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
+index 800e0046a8..7bece2ccbf 100644
+--- a/src/main/java/net/minecraft/server/RandomPositionGenerator.java
++++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
+@@ -141,6 +141,7 @@ public class RandomPositionGenerator {
+     }
+ 
+     private static boolean b(BlockPosition blockposition, EntityCreature entitycreature) {
+-        return entitycreature.world.b(blockposition).a(TagsFluid.WATER);
++        Fluid fluid = entitycreature.world.getFluidIfLoaded(blockposition); // Paper
++        return fluid != null && fluid.a(TagsFluid.WATER); // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index acd0c93cec..dbdda0a127 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -756,6 +756,18 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         }
+     }
+ 
++    // Paper start
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        if (blockposition.isInvalidYLocation()) { // Paper
++            return getFluid(blockposition);
++        } else {
++            Chunk chunk = this.getChunkIfLoaded(blockposition);
++
++            return chunk != null ? chunk.getFluid(blockposition) : null;
++        }
++    }
++    // Paper end
++    public Fluid getFluid(BlockPosition blockposition) { return b(blockposition); } // Paper - OBFHELPER
+     public Fluid b(BlockPosition blockposition) {
+         if (blockposition.isInvalidYLocation()) { // Paper
+             return FluidTypes.a.i();
 -- 
 2.18.0
 
