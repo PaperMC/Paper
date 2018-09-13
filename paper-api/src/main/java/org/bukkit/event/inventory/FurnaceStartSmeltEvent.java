@@ -18,10 +18,17 @@ public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
     private final CookingRecipe<?> recipe;
     private int totalCookTime;
 
+    @Deprecated // Paper - furnace cook speed multiplier
     public FurnaceStartSmeltEvent(@NotNull final Block furnace, @NotNull ItemStack source, @NotNull final CookingRecipe<?> recipe) {
+        // Paper start
+        this(furnace, source, recipe, recipe.getCookingTime());
+    }
+
+    public FurnaceStartSmeltEvent(final @NotNull Block furnace, final @NotNull ItemStack source, final @NotNull CookingRecipe<?> recipe, final int cookingTime) {
+        // Paper end
         super(furnace, source);
         this.recipe = recipe;
-        this.totalCookTime = recipe.getCookingTime();
+        this.totalCookTime = cookingTime; // Paper - furnace cook speed multiplier
     }
 
     /**
