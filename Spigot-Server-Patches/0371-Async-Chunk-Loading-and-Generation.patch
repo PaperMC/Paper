@@ -1,4 +1,4 @@
-From 00fc8a40fbd0e50c24d8acc0c92a30ef72c98f4c Mon Sep 17 00:00:00 2001
+From e1ccc015d76bb42358ac8b99e8e86e43ec58323a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -350,7 +350,7 @@ index 0000000000..7c7d3e1699
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 99613b2ef3..199b842540 100644
+index 99613b2ef3..742f18b8c2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -365,7 +365,7 @@ index 99613b2ef3..199b842540 100644
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
-@@ -80,10 +80,33 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -80,10 +80,58 @@ public class ChunkProviderServer implements IChunkProvider {
          this.unloadQueue.remove(ChunkCoordIntPair.a(i, j));
      }
  
@@ -373,6 +373,31 @@ index 99613b2ef3..199b842540 100644
 +    boolean chunkGoingToExists(int x, int z) {
 +        final long k = ChunkCoordIntPair.asLong(x, z);
 +        return chunkScheduler.progressCache.containsKey(k);
++    }
++    public void bumpPriority(ChunkCoordIntPair coords) {
++        // do nothing, override in async
++    }
++
++    public List<ChunkCoordIntPair> getSpiralOutChunks(BlockPosition blockposition, int radius) {
++        List<ChunkCoordIntPair> list = com.google.common.collect.Lists.newArrayList();
++
++        for (int r = 1; r <= radius; r++) {
++            int x = -r;
++            int z = r;
++            list.add(new ChunkCoordIntPair(blockposition.getX(), blockposition.getZ()));
++            // Iterates the edge of half of the box; then negates for other half.
++            while (x <= r && z > -r) {
++                list.add(new ChunkCoordIntPair(blockposition.getX() + x, blockposition.getZ() + z));
++                list.add(new ChunkCoordIntPair(blockposition.getX() - x, blockposition.getZ() - z));
++
++                if (x < r) {
++                    x++;
++                } else {
++                    z--;
++                }
++            }
++        }
++        return list;
 +    }
 +
 +    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
@@ -399,7 +424,7 @@ index 99613b2ef3..199b842540 100644
  
          synchronized (this.chunkLoader) {
              // Paper start - remove vanilla lastChunk, we do it more accurately
-@@ -91,13 +114,15 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -91,13 +139,15 @@ public class ChunkProviderServer implements IChunkProvider {
                  return this.lastChunk;
              }*/ // Paper end
  
@@ -418,7 +443,7 @@ index 99613b2ef3..199b842540 100644
  
              if (flag) {
                  try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) { // Paper
-@@ -153,7 +178,8 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -153,7 +203,8 @@ public class ChunkProviderServer implements IChunkProvider {
          return (IChunkAccess) (chunk != null ? chunk : (IChunkAccess) this.chunkScheduler.b(new ChunkCoordIntPair(i, j), flag));
      }
  
@@ -428,7 +453,7 @@ index 99613b2ef3..199b842540 100644
          this.batchScheduler.b();
          Iterator iterator = iterable.iterator();
  
-@@ -171,6 +197,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -171,6 +222,7 @@ public class ChunkProviderServer implements IChunkProvider {
          return this.batchScheduler.c();
      }
  
@@ -436,6 +461,12 @@ index 99613b2ef3..199b842540 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
+@@ -433,4 +485,5 @@ public class ChunkProviderServer implements IChunkProvider {
+     public boolean isLoaded(int i, int j) {
+         return this.chunks.containsKey(ChunkCoordIntPair.a(i, j));
+     }
++
+ }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index c2007b4d0c..9b8db0c612 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -544,8 +575,20 @@ index 4698ee99f8..dfb45cc4ea 100644
      @Nullable
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
+diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
+index 49fba0979e..c6661851d1 100644
+--- a/src/main/java/net/minecraft/server/MathHelper.java
++++ b/src/main/java/net/minecraft/server/MathHelper.java
+@@ -142,6 +142,7 @@ public class MathHelper {
+         return Math.floorMod(i, j);
+     }
+ 
++    public static float normalizeYaw(float fx) { return g(fx); } // Paper
+     public static float g(float fx) {
+         fx = fx % 360.0F;
+         if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 80e8b023cf..1fbcb8bc8e 100644
+index 80e8b023cf..c7c1ef579b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -502,6 +502,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -556,8 +599,12 @@ index 80e8b023cf..1fbcb8bc8e 100644
          for (WorldServer worldserver : this.getWorlds()) {
              MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
              if (!worldserver.getWorld().getKeepSpawnInMemory()) {
-@@ -512,26 +513,41 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-             ArrayList arraylist = Lists.newArrayList();
+@@ -509,29 +510,25 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             }
+ 
+             BlockPosition blockposition = worldserver.getSpawn();
+-            ArrayList arraylist = Lists.newArrayList();
++            List<ChunkCoordIntPair> arraylist = worldserver.getChunkProviderServer().getSpiralOutChunks(blockposition,  worldserver.paperConfig.keepLoadedRange >> 4); // Paper
              Set set = Sets.newConcurrentHashSet();
  
 -            // Paper start
@@ -566,27 +613,9 @@ index 80e8b023cf..1fbcb8bc8e 100644
 -                for (int j = -radius; j <= radius && this.isRunning(); j += 16) {
 -                    // Paper end
 -                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
-+            // Paper start - make spiral out
-+            int radius = worldserver.paperConfig.keepLoadedRange >> 4;
-+            for (int r = 1; r <= radius && isRunning(); r++) {
-+                int x = -r;
-+                int z = r;
-+                arraylist.add(new ChunkCoordIntPair(blockposition.getX(), blockposition.getZ()));
-+                // Iterates the edge of half of the box; then negates for other half.
-+                while (x <= r && z > -r && isRunning()) {
-+                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() + x, blockposition.getZ() + z));
-+                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() - x, blockposition.getZ() - z));
-+
-+                    if (x < r) {
-+                        x++;
-+                    } else {
-+                        z--;
-+                    }
-                 }
+-                }
 -            } // Paper
-+            }
-+
-+            // Paper end
++            // Paper - remove arraylist creation, call spiral above
              if (this.isRunning()) { // Paper
                  int expected = arraylist.size(); // Paper
  
@@ -609,7 +638,7 @@ index 80e8b023cf..1fbcb8bc8e 100644
                      } catch (InterruptedException interruptedexception) {
                          throw new RuntimeException(interruptedexception);
                      } catch (ExecutionException executionexception) {
-@@ -541,11 +557,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -541,11 +538,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                          throw new RuntimeException(executionexception.getCause());
                      } catch (TimeoutException timeoutexception) {
@@ -623,7 +652,7 @@ index 80e8b023cf..1fbcb8bc8e 100644
              }
          }
  
-@@ -1011,6 +1027,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1011,6 +1008,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -631,7 +660,7 @@ index 80e8b023cf..1fbcb8bc8e 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.c("commandFunctions");
-@@ -1047,6 +1064,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1047,6 +1045,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -639,7 +668,7 @@ index 80e8b023cf..1fbcb8bc8e 100644
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.c();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-@@ -1103,6 +1121,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1103,6 +1102,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  this.methodProfiler.e();
                  this.methodProfiler.e();
                  worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -649,10 +678,10 @@ index 80e8b023cf..1fbcb8bc8e 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..b11cb69615
+index 0000000000..120da72d69
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,443 @@
+@@ -0,0 +1,456 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -705,6 +734,7 @@ index 0000000000..b11cb69615
 +    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, CALLER_RUNS_POLICY);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
++    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
@@ -749,6 +779,14 @@ index 0000000000..b11cb69615
 +        return hadLoad;
 +    }
 +
++    @Override
++    public void bumpPriority(ChunkCoordIntPair coords) {
++        PendingChunk pending = pendingChunks.get(coords.asLong());
++        if (pending != null) {
++            pending.bumpPriority();
++        }
++    }
++
 +    @Nullable
 +    @Override
 +    public Chunk getChunkAt(int x, int z, boolean load, boolean gen) {
@@ -785,8 +823,7 @@ index 0000000000..b11cb69615
 +            } else {
 +                pending = pendingChunk;
 +                if (isBlockingMain) {
-+                    pending.task.bumpPriority();
-+                    pending.chunkGenTask.bumpPriority();
++                    pending.bumpPriority();
 +                }
 +            }
 +        }
@@ -1093,14 +1130,19 @@ index 0000000000..b11cb69615
 +                generationExecutor.submitTask(chunkGenTask);
 +            }
 +        }
++
++        void bumpPriority() {
++            task.bumpPriority();
++            chunkGenTask.bumpPriority();
++        }
 +    }
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..09fdd0e4fa 100644
+index e7d465fb8a..5502fe0fe8 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -30,13 +30,14 @@ public class PlayerChunk {
+@@ -30,13 +30,42 @@ public class PlayerChunk {
      // All may seem good at first, but there's deeper issues if you play for a bit
      boolean chunkExists; // Paper
      private boolean loadInProgress = false;
@@ -1117,11 +1159,39 @@ index e7d465fb8a..09fdd0e4fa 100644
 +        pChunk.chunk = chunk;
 +        markChunkUsed(); // Paper - delay chunk unloads
      };
++    private boolean markedHigh = false;
++    void checkHighPriority(EntityPlayer player) {
++        if (markedHigh || chunk != null) {
++            return;
++        }
++        final double dist = getDistance(player.locX, player.locZ);
++        if (dist > 5) {
++            return;
++        }
++        if (dist >= 2 && getDistance(player, 3) > 2) {
++            return;
++        }
++
++        markedHigh = true;
++        playerChunkMap.getWorld().getChunkProviderServer().bumpPriority(location);
++    }
++    private double getDistance(EntityPlayer player, int inFront) {
++        final float yaw = MathHelper.normalizeYaw(player.yaw);
++        final double x = player.locX + (inFront * Math.cos(Math.toRadians(yaw)));
++        final double z = player.locZ + (inFront * Math.sin(Math.toRadians(yaw)));
++        return getDistance(x, z);
++    }
++
++    private double getDistance(double blockX, double blockZ) {
++        final double x = location.x - ((int)Math.floor(blockX) >> 4);
++        final double z = location.z - ((int)Math.floor(blockZ) >> 4);
++        return Math.sqrt((x * x) + (z * z));
++    }
 +    // Paper end
      // Paper start - delay chunk unloads
      public final void markChunkUsed() {
          if (chunk != null && chunk.scheduledForUnload != null) {
-@@ -52,8 +53,8 @@ public class PlayerChunk {
+@@ -52,8 +81,8 @@ public class PlayerChunk {
          ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProviderServer();
  
          chunkproviderserver.a(i, j);
@@ -1132,7 +1202,15 @@ index e7d465fb8a..09fdd0e4fa 100644
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
-@@ -95,8 +96,13 @@ public class PlayerChunk {
+@@ -68,6 +97,7 @@ public class PlayerChunk {
+             if (this.c.isEmpty()) {
+                 this.i = this.playerChunkMap.getWorld().getTime();
+             }
++            checkHighPriority(entityplayer); // Paper
+ 
+             this.c.add(entityplayer);
+             if (this.done) {
+@@ -95,8 +125,13 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
          } else {
@@ -1148,6 +1226,34 @@ index e7d465fb8a..09fdd0e4fa 100644
              return this.chunk != null;
          }
      }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index d1a443ca8d..20fff0d090 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -341,15 +341,20 @@ public class PlayerChunkMap {
+                         if (!this.a(l1, i2, k, l, i1)) {
+                             // this.c(l1, i2).a(entityplayer);
+                             chunksToLoad.add(new ChunkCoordIntPair(l1, i2)); // CraftBukkit
+-                        }
+-
+-                        if (!this.a(l1 - j1, i2 - k1, i, j, i1)) {
++                        } else if (!this.a(l1 - j1, i2 - k1, i, j, i1)) { // Paper - move into else if
+                             PlayerChunk playerchunk = this.getChunk(l1 - j1, i2 - k1);
+ 
+                             if (playerchunk != null) {
+                                 playerchunk.b(entityplayer);
+                             }
++                            // Paper start
++                        } else {
++                            PlayerChunk playerchunk = this.getChunk(l1 - j1, i2 - k1);
++                            if (playerchunk != null) {
++                                playerchunk.checkHighPriority(entityplayer); // Paper
++                            }
+                         }
++                        // Paper end
+                     }
+                 }
+ 
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 index 3c35c0f481..187ca2813a 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
@@ -1289,7 +1395,7 @@ index f87182b5c4..574930f5fe 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index dbdda0a127..6c9992fe8b 100644
+index dbdda0a127..44e3900af2 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -1301,7 +1407,7 @@ index dbdda0a127..6c9992fe8b 100644
  
      protected static final Logger e = LogManager.getLogger();
      private static final EnumDirection[] a = EnumDirection.values();
-@@ -109,6 +109,20 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -109,6 +109,24 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      protected PersistentVillage villages;
      public final MethodProfiler methodProfiler;
      public final boolean isClientSide;
@@ -1318,11 +1424,15 @@ index dbdda0a127..6c9992fe8b 100644
 +        }
 +        return null;
 +    }
++    ChunkCoordIntPair[] strongholdCoords;
++    final java.util.concurrent.atomic.AtomicBoolean
++        strongholdInit = new java.util.concurrent.atomic.AtomicBoolean
++        (false);
 +    // Paper end
      public boolean allowMonsters;
      public boolean allowAnimals;
      private boolean J;
-@@ -1016,6 +1030,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1016,6 +1034,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
@@ -1335,45 +1445,152 @@ index dbdda0a127..6c9992fe8b 100644
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-index fa99fe0146..88de9bd7c2 100644
+index fa99fe0146..4f49786aa3 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
 +++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-@@ -16,7 +16,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+@@ -9,24 +9,29 @@ import java.util.Random;
+ import javax.annotation.Nullable;
+ 
+ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrongholdConfiguration> {
+-    private boolean b;
+-    private ChunkCoordIntPair[] c;
+-    private long d;
++    // Paper start - no shared state
++    //private boolean b;
++    //private ChunkCoordIntPair[] c;
++    //private long d;
++    // Paper end
+ 
      public WorldGenStronghold() {
      }
  
--    protected boolean a(ChunkGenerator<?> chunkgenerator, Random var2, int i, int j) {
-+    protected synchronized boolean a(ChunkGenerator<?> chunkgenerator, Random var2, int i, int j) { // Paper - synchronize
-         if (this.d != chunkgenerator.getSeed()) {
+     protected boolean a(ChunkGenerator<?> chunkgenerator, Random var2, int i, int j) {
+-        if (this.d != chunkgenerator.getSeed()) {
++        // Paper start
++        /*if (this.d != chunkgenerator.getSeed()) {
              this.c();
-         }
-@@ -35,7 +35,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
-         return false;
+-        }
++        }*/
+ 
+-        if (!this.b) {
++        synchronized (chunkgenerator.getWorld().strongholdInit) {
++        if (chunkgenerator.getWorld().strongholdInit.compareAndSet(false, true)) { // Paper
+             this.a(chunkgenerator);
+-            this.b = true;
+-        }
++            //this.b = true;
++        }} // Paper
++        // Paper end
+ 
+-        for(ChunkCoordIntPair chunkcoordintpair : this.c) {
++        for(ChunkCoordIntPair chunkcoordintpair : chunkgenerator.getWorld().strongholdCoords) { // Paper
+             if (i == chunkcoordintpair.x && j == chunkcoordintpair.z) {
+                 return true;
+             }
+@@ -36,8 +41,8 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
      }
  
--    private void c() {
-+    private synchronized void c() { // Paper - synchronize
-         this.b = false;
-         this.c = null;
-     }
-@@ -65,7 +65,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+     private void c() {
+-        this.b = false;
+-        this.c = null;
++        //this.b = false; // Paper
++        //this.c = null; // Paper
      }
  
-     @Nullable
--    public BlockPosition getNearestGeneratedFeature(World world, ChunkGenerator<? extends GeneratorSettings> chunkgenerator, BlockPosition blockposition, int var4, boolean var5) {
-+    public synchronized BlockPosition getNearestGeneratedFeature(World world, ChunkGenerator<? extends GeneratorSettings> chunkgenerator, BlockPosition blockposition, int var4, boolean var5) { // Paper - synchronize
+     protected boolean a(GeneratorAccess generatoraccess) {
+@@ -69,20 +74,23 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
          if (!chunkgenerator.getWorldChunkManager().a(this)) {
              return null;
          } else {
-@@ -98,7 +98,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
-         }
+-            if (this.d != world.getSeed()) {
+-                this.c();
+-            }
++            // Paper start
++        /*if (this.d != chunkgenerator.getSeed()) {
++            this.c();
++        }*/
+ 
+-            if (!this.b) {
+-                this.a(chunkgenerator);
+-                this.b = true;
+-            }
++            synchronized (chunkgenerator.getWorld().strongholdInit) {
++                if (chunkgenerator.getWorld().strongholdInit.compareAndSet(false, true)) { // Paper
++                    this.a(chunkgenerator);
++                    //this.b = true;
++                }} // Paper
++            // Paper end
+ 
+             BlockPosition blockposition1 = null;
+             BlockPosition.MutableBlockPosition blockposition$mutableblockposition = new BlockPosition.MutableBlockPosition(0, 0, 0);
+             double d0 = Double.MAX_VALUE;
+ 
+-            for(ChunkCoordIntPair chunkcoordintpair : this.c) {
++            for(ChunkCoordIntPair chunkcoordintpair : chunkgenerator.getWorld().strongholdCoords) { // Paper
+                 blockposition$mutableblockposition.c((chunkcoordintpair.x << 4) + 8, 32, (chunkcoordintpair.z << 4) + 8);
+                 double d1 = blockposition$mutableblockposition.n(blockposition);
+                 if (blockposition1 == null) {
+@@ -99,7 +107,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
      }
  
--    private void a(ChunkGenerator<?> chunkgenerator) {
-+    private synchronized void a(ChunkGenerator<?> chunkgenerator) { // Paper - synchronize
-         this.d = chunkgenerator.getSeed();
+     private void a(ChunkGenerator<?> chunkgenerator) {
+-        this.d = chunkgenerator.getSeed();
++        //this.d = chunkgenerator.getSeed(); // Paper
          ArrayList arraylist = Lists.newArrayList();
  
+         for(BiomeBase biomebase : IRegistry.BIOME) {
+@@ -111,7 +119,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+         int i2 = chunkgenerator.getSettings().e();
+         int j2 = chunkgenerator.getSettings().f();
+         int i = chunkgenerator.getSettings().g();
+-        this.c = new ChunkCoordIntPair[j2];
++        ChunkCoordIntPair[] strongholdCoords = chunkgenerator.getWorld().strongholdCoords = new ChunkCoordIntPair[j2]; // Paper
+         int j = 0;
+         Long2ObjectMap long2objectmap = chunkgenerator.getStructureStartCache(this);
+         synchronized(long2objectmap) {
+@@ -119,8 +127,8 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+ 
+             while(objectiterator.hasNext()) {
+                 StructureStart structurestart = (StructureStart)objectiterator.next();
+-                if (j < this.c.length) {
+-                    this.c[j++] = new ChunkCoordIntPair(structurestart.e(), structurestart.f());
++                if (j < strongholdCoords.length) { // Paper
++                    strongholdCoords[j++] = new ChunkCoordIntPair(structurestart.e(), structurestart.f()); // Paper
+                 }
+             }
+         }
+@@ -129,11 +137,11 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+         random.setSeed(chunkgenerator.getSeed());
+         double d1 = random.nextDouble() * Math.PI * 2.0D;
+         int k = long2objectmap.size();
+-        if (k < this.c.length) {
++        if (k < strongholdCoords.length) { // Paper
+             int l = 0;
+             int i1 = 0;
+ 
+-            for(int j1 = 0; j1 < this.c.length; ++j1) {
++            for(int j1 = 0; j1 < strongholdCoords.length; ++j1) { // Paper
+                 double d0 = (double)(4 * i2 + i2 * i1 * 6) + (random.nextDouble() - 0.5D) * (double)i2 * 2.5D;
+                 int k1 = (int)Math.round(Math.cos(d1) * d0);
+                 int l1 = (int)Math.round(Math.sin(d1) * d0);
+@@ -144,7 +152,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+                 }
+ 
+                 if (j1 >= k) {
+-                    this.c[j1] = new ChunkCoordIntPair(k1, l1);
++                    strongholdCoords[j1] = new ChunkCoordIntPair(k1, l1); // Paper
+                 }
+ 
+                 d1 += (Math.PI * 2D) / (double)i;
+@@ -153,7 +161,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+                     ++i1;
+                     l = 0;
+                     i = i + 2 * i / (i1 + 1);
+-                    i = Math.min(i, this.c.length - j1);
++                    i = Math.min(i, strongholdCoords.length - j1); // Paper
+                     d1 += random.nextDouble() * Math.PI * 2.0D;
+                 }
+             }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 1e30ba0548..9ae069d5e5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
@@ -1387,8 +1604,36 @@ index 1e30ba0548..9ae069d5e5 100644
          // CraftBukkit end
      }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index bcf7a3b9d8..a12157efcf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1011,8 +1011,12 @@ public final class CraftServer implements Server {
+         if (internal.getWorld().getKeepSpawnInMemory()) {
+             short short1 = internal.paperConfig.keepLoadedRange; // Paper
+             long i = System.currentTimeMillis();
+-            for (int j = -short1; j <= short1; j += 16) {
+-                for (int k = -short1; k <= short1; k += 16) {
++            // Paper start
++            for (ChunkCoordIntPair coords : internal.getChunkProviderServer().getSpiralOutChunks(internal.getSpawn(), short1 >> 4)) {{
++                    int j = coords.x;
++                    int k = coords.z;
++                // Paper end
++
+                     long l = System.currentTimeMillis();
+ 
+                     if (l < i) {
+@@ -1028,7 +1032,7 @@ public final class CraftServer implements Server {
+                     }
+ 
+                     BlockPosition chunkcoordinates = internal.getSpawn();
+-                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true);
++                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true, c -> {}); // Paper
+                 }
+             }
+         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b38e394f83..e7f167c6c1 100644
+index b38e394f83..3f64e85e62 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -159,7 +159,7 @@ public class CraftWorld implements World {
@@ -1400,9 +1645,17 @@ index b38e394f83..e7f167c6c1 100644
          /*cps.getChunkAt(x, z, new Runnable() {
              @Override
              public void run() {
-@@ -1355,7 +1355,7 @@ public class CraftWorld implements World {
-         for (int x = -radius; x <= radius; x++) { // Paper
-             for (int z = -radius; z <= radius; z++) { // Paper
+@@ -1352,10 +1352,13 @@ public class CraftWorld implements World {
+         int chunkCoordZ = chunkcoordinates.getZ() >> 4;
+         // Cycle through the 25x25 Chunks around it to load/unload the chunks.
+         int radius = world.paperConfig.keepLoadedRange / 16; // Paper
+-        for (int x = -radius; x <= radius; x++) { // Paper
+-            for (int z = -radius; z <= radius; z++) { // Paper
++        // Paper start
++        for (ChunkCoordIntPair coords : world.getChunkProviderServer().getSpiralOutChunks(world.getSpawn(), radius)) {{
++            int x = coords.x;
++            int z = coords.z;
++            // Paper end
                  if (keepLoaded) {
 -                    loadChunk(chunkCoordX + x, chunkCoordZ + z);
 +                    getChunkAtAsync(chunkCoordX + x, chunkCoordZ + z, chunk -> {}); // Paper - Async Chunks
