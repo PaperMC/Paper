@@ -1,29 +1,38 @@
-From efe00b392d2d7c0ce533572ff47bd7a27cbb2d57 Mon Sep 17 00:00:00 2001
+From 89178baf536b0d8aaa0e0cb18e96101509ce62a3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:52:28 -0400
 Subject: [PATCH] Prevent pathfinding from loading chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 4023253f42..b2480301ef 100644
+index 4023253f42..113fd9a50f 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
-@@ -21,13 +21,14 @@ public abstract class NavigationAbstract {
+@@ -21,13 +21,15 @@ public abstract class NavigationAbstract {
      protected long n;
      protected PathfinderAbstract o;
      private BlockPosition q;
 -    private Pathfinder r;
 +    private Pathfinder r; public Pathfinder getPathfinder() { return r; } // Paper - OBFHELPER
  
++    private void setWorld() { if (getPathfinder() != null && getPathfinder().getPathfinder() != null) getPathfinder().getPathfinder().world = getEntity().world; } // Paper
      public NavigationAbstract(EntityInsentient entityinsentient, World world) {
          this.a = entityinsentient;
          this.b = world;
          this.p = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
          this.r = this.a();
-+        getPathfinder().getPathfinder().world = world; // Paper
++        setWorld(); // Paper
      }
  
      public BlockPosition i() {
+@@ -166,6 +168,7 @@ public abstract class NavigationAbstract {
+     }
+ 
+     public void d() {
++        setWorld(); // Paper
+         ++this.e;
+         if (this.m) {
+             this.l();
 diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
 index 04c71ac0ef..6e583356ce 100644
 --- a/src/main/java/net/minecraft/server/Pathfinder.java
