@@ -88,4 +88,20 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
 
     @Override
     public abstract CraftFurnace<T> copy(Location location);
+
+    // Paper start - cook speed multiplier API
+    @Override
+    public double getCookSpeedMultiplier() {
+        return this.getSnapshot().cookSpeedMultiplier;
+    }
+
+    @Override
+    public void setCookSpeedMultiplier(double multiplier) {
+        com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
+        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
+        T snapshot = this.getSnapshot();
+        snapshot.cookSpeedMultiplier = multiplier;
+        snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot, snapshot.recipeType, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
+    }
+    // Paper end
 }
