@@ -1,0 +1,99 @@
+From e333a88e4618ffd7dd110daa811fe61236b8fff8 Mon Sep 17 00:00:00 2001
+From: Tassu <git@tassu.me>
+Date: Thu, 13 Sep 2018 08:45:21 +0300
+Subject: [PATCH] Implement furnace cook speed multiplier API
+
+Signed-off-by: Tassu <git@tassu.me>
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+index c439b20c8..cce3d9603 100644
+--- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
++++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+@@ -11,6 +11,7 @@ import java.util.Map.Entry;
+ import javax.annotation.Nullable;
+ // CraftBukkit start
+ import java.util.List;
++
+ import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+@@ -29,6 +30,7 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+     private int ticksForCurrentFuel;
+     private int cookTime;
+     private int cookTimeTotal;
++    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
+     private IChatBaseComponent l;
+     private final Map<MinecraftKey, Integer> m;
+ 
+@@ -199,6 +201,16 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+         this.l = ichatbasecomponent;
+     }
+ 
++    // Paper start - cook speed multiplier API
++    public double getCookSpeedMultiplier() {
++        return cookSpeedMultiplier;
++    }
++
++    public void setCookSpeedMultiplier(double cookSpeedMultiplier) {
++        this.cookSpeedMultiplier = cookSpeedMultiplier;
++    }
++    // Paper end
++
+     public void load(NBTTagCompound nbttagcompound) {
+         super.load(nbttagcompound);
+         this.items = NonNullList.a(this.getSize(), ItemStack.a);
+@@ -220,6 +232,11 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+             this.l = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
+         }
+ 
++        // Paper start - cook speed API
++        if (nbttagcompound.hasKey("CookSpeedMultiplier")) {
++            this.cookSpeedMultiplier = nbttagcompound.getDouble("CookSpeedMultiplier");
++        }
++        // Paper end
+     }
+ 
+     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+@@ -227,6 +244,7 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+         nbttagcompound.setShort("BurnTime", (short) this.burnTime);
+         nbttagcompound.setShort("CookTime", (short) this.cookTime);
+         nbttagcompound.setShort("CookTimeTotal", (short) this.cookTimeTotal);
++        nbttagcompound.setDouble("CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
+         ContainerUtil.a(nbttagcompound, this.items);
+         nbttagcompound.setShort("RecipesUsedSize", (short) this.m.size());
+         int i = 0;
+@@ -301,8 +319,8 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+                 }
+ 
+                 if (this.isBurning() && this.canBurn(irecipe)) {
+-                    ++this.cookTime;
+-                    if (this.cookTime == this.cookTimeTotal) {
++                    this.cookTime += cookSpeedMultiplier; // Paper - cook speed multiplier API
++                    if (this.cookTime >= this.cookTimeTotal) {
+                         this.cookTime = 0;
+                         this.cookTimeTotal = this.s();
+                         this.burn(irecipe);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+index 469dc4ff2..4113b6029 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+@@ -71,4 +71,16 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
+             furnace.setCustomName(null);
+         }
+     }
++
++    @Override
++    public double getCookSpeedMultiplier() {
++        return this.getSnapshot().getCookSpeedMultiplier();
++    }
++
++    @Override
++    public void setCookSpeedMultiplier(double multiplier) throws IllegalArgumentException {
++        com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
++        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
++        this.getSnapshot().setCookSpeedMultiplier(multiplier);
++    }
+ }
+-- 
+2.18.0
+
