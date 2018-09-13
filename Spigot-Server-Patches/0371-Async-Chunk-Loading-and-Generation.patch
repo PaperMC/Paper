@@ -1,4 +1,4 @@
-From f3b293d986848f20c2d1a5a1579c3a43c21f5fed Mon Sep 17 00:00:00 2001
+From 00fc8a40fbd0e50c24d8acc0c92a30ef72c98f4c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -1212,6 +1212,33 @@ index d868149d1a..0d94b262ac 100644
 +        } finally { lock.unlock(); } // Paper
      }
  }
+diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
+index a5cf017da1..def8730b86 100644
+--- a/src/main/java/net/minecraft/server/StructurePiece.java
++++ b/src/main/java/net/minecraft/server/StructurePiece.java
+@@ -14,7 +14,7 @@ public abstract class StructurePiece {
+     private EnumBlockMirror b;
+     private EnumBlockRotation c;
+     protected int o;
+-    private static final Set<Block> d = ImmutableSet.builder().add(Blocks.NETHER_BRICK_FENCE).add(Blocks.TORCH).add(Blocks.WALL_TORCH).add(Blocks.OAK_FENCE).add(Blocks.SPRUCE_FENCE).add(Blocks.DARK_OAK_FENCE).add(Blocks.ACACIA_FENCE).add(Blocks.BIRCH_FENCE).add(Blocks.JUNGLE_FENCE).add(Blocks.LADDER).add(Blocks.IRON_BARS).build();
++    private static final Set<Block> d = ImmutableSet.<Block>builder().add(Blocks.NETHER_BRICK_FENCE).add(Blocks.TORCH).add(Blocks.WALL_TORCH).add(Blocks.OAK_FENCE).add(Blocks.SPRUCE_FENCE).add(Blocks.DARK_OAK_FENCE).add(Blocks.ACACIA_FENCE).add(Blocks.BIRCH_FENCE).add(Blocks.JUNGLE_FENCE).add(Blocks.LADDER).add(Blocks.IRON_BARS).build(); // Paper - decompile error
+ 
+     public StructurePiece() {
+     }
+@@ -63,11 +63,11 @@ public abstract class StructurePiece {
+     }
+ 
+     public static StructurePiece a(List<StructurePiece> list, StructureBoundingBox structureboundingbox) {
+-        for(StructurePiece structurepiece : list) {
++        synchronized (list) { for(StructurePiece structurepiece : list) { // Paper - synchronize main structure list
+             if (structurepiece.d() != null && structurepiece.d().a(structureboundingbox)) {
+                 return structurepiece;
+             }
+-        }
++        }} // Paper
+ 
+         return null;
+     }
 diff --git a/src/main/java/net/minecraft/server/StructureStart.java b/src/main/java/net/minecraft/server/StructureStart.java
 index f87182b5c4..574930f5fe 100644
 --- a/src/main/java/net/minecraft/server/StructureStart.java
@@ -1307,6 +1334,46 @@ index dbdda0a127..6c9992fe8b 100644
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
+index fa99fe0146..88de9bd7c2 100644
+--- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
++++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
+@@ -16,7 +16,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+     public WorldGenStronghold() {
+     }
+ 
+-    protected boolean a(ChunkGenerator<?> chunkgenerator, Random var2, int i, int j) {
++    protected synchronized boolean a(ChunkGenerator<?> chunkgenerator, Random var2, int i, int j) { // Paper - synchronize
+         if (this.d != chunkgenerator.getSeed()) {
+             this.c();
+         }
+@@ -35,7 +35,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+         return false;
+     }
+ 
+-    private void c() {
++    private synchronized void c() { // Paper - synchronize
+         this.b = false;
+         this.c = null;
+     }
+@@ -65,7 +65,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+     }
+ 
+     @Nullable
+-    public BlockPosition getNearestGeneratedFeature(World world, ChunkGenerator<? extends GeneratorSettings> chunkgenerator, BlockPosition blockposition, int var4, boolean var5) {
++    public synchronized BlockPosition getNearestGeneratedFeature(World world, ChunkGenerator<? extends GeneratorSettings> chunkgenerator, BlockPosition blockposition, int var4, boolean var5) { // Paper - synchronize
+         if (!chunkgenerator.getWorldChunkManager().a(this)) {
+             return null;
+         } else {
+@@ -98,7 +98,7 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureStrong
+         }
+     }
+ 
+-    private void a(ChunkGenerator<?> chunkgenerator) {
++    private synchronized void a(ChunkGenerator<?> chunkgenerator) { // Paper - synchronize
+         this.d = chunkgenerator.getSeed();
+         ArrayList arraylist = Lists.newArrayList();
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 1e30ba0548..9ae069d5e5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
