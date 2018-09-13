@@ -1,4 +1,4 @@
-From e1ccc015d76bb42358ac8b99e8e86e43ec58323a Mon Sep 17 00:00:00 2001
+From 3bd285ee710c02d772c457b50d4bf0d2a6947f08 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -350,7 +350,7 @@ index 0000000000..7c7d3e1699
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 99613b2ef3..742f18b8c2 100644
+index 99613b2ef3..0ed639bb79 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -365,7 +365,7 @@ index 99613b2ef3..742f18b8c2 100644
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
-@@ -80,10 +80,58 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -80,10 +80,61 @@ public class ChunkProviderServer implements IChunkProvider {
          this.unloadQueue.remove(ChunkCoordIntPair.a(i, j));
      }
  
@@ -401,6 +401,9 @@ index 99613b2ef3..742f18b8c2 100644
 +    }
 +
 +    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
++        return getChunkAt(x, z, load, gen, consumer, false);
++    }
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer, boolean priority) {
 +        Chunk chunk = getChunkAt(x, z, load, gen);
 +        if (consumer != null) {
 +            consumer.accept(chunk);
@@ -424,7 +427,7 @@ index 99613b2ef3..742f18b8c2 100644
  
          synchronized (this.chunkLoader) {
              // Paper start - remove vanilla lastChunk, we do it more accurately
-@@ -91,13 +139,15 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -91,13 +142,15 @@ public class ChunkProviderServer implements IChunkProvider {
                  return this.lastChunk;
              }*/ // Paper end
  
@@ -443,7 +446,7 @@ index 99613b2ef3..742f18b8c2 100644
  
              if (flag) {
                  try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) { // Paper
-@@ -153,7 +203,8 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -153,7 +206,8 @@ public class ChunkProviderServer implements IChunkProvider {
          return (IChunkAccess) (chunk != null ? chunk : (IChunkAccess) this.chunkScheduler.b(new ChunkCoordIntPair(i, j), flag));
      }
  
@@ -453,7 +456,7 @@ index 99613b2ef3..742f18b8c2 100644
          this.batchScheduler.b();
          Iterator iterator = iterable.iterator();
  
-@@ -171,6 +222,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -171,6 +225,7 @@ public class ChunkProviderServer implements IChunkProvider {
          return this.batchScheduler.c();
      }
  
@@ -461,7 +464,7 @@ index 99613b2ef3..742f18b8c2 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
-@@ -433,4 +485,5 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -433,4 +488,5 @@ public class ChunkProviderServer implements IChunkProvider {
      public boolean isLoaded(int i, int j) {
          return this.chunks.containsKey(ChunkCoordIntPair.a(i, j));
      }
@@ -678,10 +681,10 @@ index 80e8b023cf..c7c1ef579b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..120da72d69
+index 0000000000..c86c1fe8c3
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,456 @@
+@@ -0,0 +1,455 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -795,16 +798,16 @@ index 0000000000..120da72d69
 +
 +    @Nullable
 +    @Override
-+    public final Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer, boolean priority) {
 +        long key = ChunkCoordIntPair.asLong(x, z);
 +        Chunk chunk = this.chunks.get(key);
 +        if (chunk != null || !load) { // return null if we aren't loading
 +            return chunk;
 +        }
-+        return loadOrGenerateChunk(x, z, gen, consumer); // Async overrides this method
++        return loadOrGenerateChunk(x, z, gen, consumer, priority); // Async overrides this method
 +    }
 +
-+    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer) {
++    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer, boolean priority) {
 +        final long key = ChunkCoordIntPair.asLong(x, z);
 +
 +        // Obtain a PendingChunk
@@ -814,15 +817,15 @@ index 0000000000..120da72d69
 +            PendingChunk pendingChunk = pendingChunks.get(key);
 +            // DO NOT CALL ANY METHODS ON PENDING CHUNK IN THIS BLOCK - WILL DEADLOCK
 +            if (pendingChunk == null) {
-+                pending = new PendingChunk(x, z, key, gen, isBlockingMain);
++                pending = new PendingChunk(x, z, key, gen, priority || isBlockingMain);
 +                pendingChunks.put(key, pending);
 +            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
 +                // need to overwrite the old
-+                pending = new PendingChunk(x, z, key, true, isBlockingMain);
++                pending = new PendingChunk(x, z, key, true, priority || isBlockingMain);
 +                pendingChunks.put(key, pending);
 +            } else {
 +                pending = pendingChunk;
-+                if (isBlockingMain) {
++                if (priority || isBlockingMain) {
 +                    pending.bumpPriority();
 +                }
 +            }
@@ -937,21 +940,20 @@ index 0000000000..120da72d69
 +        private volatile PendingStatus status = PendingStatus.STARTED;
 +        private volatile boolean generating;
 +        private volatile boolean canGenerate;
-+        private volatile boolean isBlockingMain;
++        private volatile boolean isHighPriority;
 +        private volatile boolean hasPosted;
 +        private volatile boolean hasFinished;
 +        private volatile Chunk chunk;
 +        private volatile NBTTagCompound pendingLevel;
 +
-+        PendingChunk(int x, int z, long key, boolean canGenerate, boolean isBlockingMain) {
++        PendingChunk(int x, int z, long key, boolean canGenerate, boolean priority) {
 +            this.x = x;
 +            this.z = z;
 +            this.key = key;
 +            this.canGenerate = canGenerate;
-+            this.isBlockingMain = isBlockingMain;
-+            Priority priority = isBlockingMain ? Priority.HIGH : Priority.NORMAL;
-+            this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, priority);
-+            this.task = EXECUTOR.submitTask(this, priority);
++            Priority taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
++            this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
++            this.task = EXECUTOR.submitTask(this, taskPriority);
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -1139,7 +1141,7 @@ index 0000000000..120da72d69
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..5502fe0fe8 100644
+index e7d465fb8a..b72c91752e 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,42 @@ public class PlayerChunk {
@@ -1165,10 +1167,10 @@ index e7d465fb8a..5502fe0fe8 100644
 +            return;
 +        }
 +        final double dist = getDistance(player.locX, player.locZ);
-+        if (dist > 5) {
++        if (dist > 8) {
 +            return;
 +        }
-+        if (dist >= 2 && getDistance(player, 3) > 2) {
++        if (dist >= 3 && getDistance(player, 5) > 3.5) {
 +            return;
 +        }
 +
@@ -1219,7 +1221,7 @@ index e7d465fb8a..5502fe0fe8 100644
 +            // Paper start - async chunks
 +            if (!loadInProgress) {
 +                loadInProgress = true;
-+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, chunkLoadedConsumer); // Paper)
++                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, chunkLoadedConsumer, markedHigh); // Paper)
 +                markChunkUsed(); // Paper - delay chunk unloads
 +            }
 +            // Paper end
@@ -1227,24 +1229,14 @@ index e7d465fb8a..5502fe0fe8 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index d1a443ca8d..20fff0d090 100644
+index d1a443ca8d..6c54294d3f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -341,15 +341,20 @@ public class PlayerChunkMap {
-                         if (!this.a(l1, i2, k, l, i1)) {
-                             // this.c(l1, i2).a(entityplayer);
-                             chunksToLoad.add(new ChunkCoordIntPair(l1, i2)); // CraftBukkit
--                        }
--
--                        if (!this.a(l1 - j1, i2 - k1, i, j, i1)) {
-+                        } else if (!this.a(l1 - j1, i2 - k1, i, j, i1)) { // Paper - move into else if
-                             PlayerChunk playerchunk = this.getChunk(l1 - j1, i2 - k1);
- 
+@@ -349,7 +349,13 @@ public class PlayerChunkMap {
                              if (playerchunk != null) {
                                  playerchunk.b(entityplayer);
                              }
-+                            // Paper start
-+                        } else {
++                        } else { // Paper start
 +                            PlayerChunk playerchunk = this.getChunk(l1 - j1, i2 - k1);
 +                            if (playerchunk != null) {
 +                                playerchunk.checkHighPriority(entityplayer); // Paper
@@ -1254,6 +1246,19 @@ index d1a443ca8d..20fff0d090 100644
                      }
                  }
  
+@@ -360,7 +366,11 @@ public class PlayerChunkMap {
+                 // CraftBukkit start - send nearest chunks first
+                 Collections.sort(chunksToLoad, new ChunkCoordComparator(entityplayer));
+                 for (ChunkCoordIntPair pair : chunksToLoad) {
+-                    this.c(pair.x, pair.z).a(entityplayer);
++                    // Paper start
++                    PlayerChunk c = this.c(pair.x, pair.z);
++                    c.checkHighPriority(entityplayer);
++                    c.a(entityplayer);
++                    // Paper end
+                 }
+                 // CraftBukkit end
+             }
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 index 3c35c0f481..187ca2813a 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
