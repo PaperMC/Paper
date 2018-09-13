@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 // CraftBukkit start
+import java.util.List;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -28,6 +29,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
     protected NonNullList<ItemStack> items;
     public int burnTime;
     private int ticksForCurrentFuel;
+    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
     public int cookTime;
     public int cookTimeTotal;
     protected final IContainerProperties b;
@@ -228,6 +230,11 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
             this.n.put(new MinecraftKey(s), nbttagcompound1.getInt(s));
         }
 
+        // Paper start - cook speed API
+        if (nbttagcompound.hasKey("Paper.CookSpeedMultiplier")) {
+            this.cookSpeedMultiplier = nbttagcompound.getDouble("Paper.CookSpeedMultiplier");
+        }
+        // Paper end
     }
 
     @Override
@@ -236,6 +243,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
         nbttagcompound.setShort("BurnTime", (short) this.burnTime);
         nbttagcompound.setShort("CookTime", (short) this.cookTime);
         nbttagcompound.setShort("CookTimeTotal", (short) this.cookTimeTotal);
+        nbttagcompound.setDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
         ContainerUtil.a(nbttagcompound, this.items);
         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
@@ -295,8 +303,8 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
                 }
 
                 if (this.isBurning() && this.canBurn(irecipe)) {
-                    ++this.cookTime;
-                    if (this.cookTime == this.cookTimeTotal) {
+                    this.cookTime += cookSpeedMultiplier; // Paper - cook speed multiplier API
+                    if (this.cookTime >= this.cookTimeTotal) { // Paper - cook speed multiplier API
                         this.cookTime = 0;
                         this.cookTimeTotal = this.getRecipeCookingTime();
                         this.burn(irecipe);
