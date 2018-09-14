@@ -632,4 +632,26 @@ public class PaperWorldConfig {
             delayChunkUnloadsBy *= 20;
         }
     }
+
+    public double sqrMaxThunderDistance;
+    public double sqrMaxLightningImpactSoundDistance;
+    public double maxLightningFlashDistance;
+    private void lightningStrikeDistanceLimit() {
+        sqrMaxThunderDistance = getInt("lightning-strike-distance-limit.sound", -1);
+        if (sqrMaxThunderDistance > 0) {
+            sqrMaxThunderDistance *= sqrMaxThunderDistance;
+        }
+
+        sqrMaxLightningImpactSoundDistance = getInt("lightning-strike-distance-limit.impact-sound", -1);
+        if (sqrMaxLightningImpactSoundDistance < 0) {
+            sqrMaxLightningImpactSoundDistance = 32 * 32; //Vanilla value
+        } else {
+            sqrMaxLightningImpactSoundDistance *= sqrMaxLightningImpactSoundDistance;
+        }
+
+        maxLightningFlashDistance = getInt("lightning-strike-distance-limit.flash", -1);
+        if (maxLightningFlashDistance < 0) {
+            maxLightningFlashDistance = 512; // Vanilla value
+        }
+    }
 }
