@@ -1,0 +1,63 @@
+From 3660472e741021f5c280222e5b19bc642a9eb8ed Mon Sep 17 00:00:00 2001
+From: Trigary <trigary0@gmail.com>
+Date: Fri, 14 Sep 2018 17:42:08 +0200
+Subject: [PATCH] Limit lightning strike effect distance
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 24f353d6..d739270d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -229,6 +229,24 @@ public class PaperWorldConfig {
+             skeleHorseSpawnChance = 0.01D; // Vanilla value
+         }
+     }
++    
++    public double sqrMaxLightningSoundDistance;
++    private void sqrMaxLightningSoundDistance() {
++        sqrMaxLightningSoundDistance = getInt("lightning-strike-distance-limit.sound", -1);
++        if (sqrMaxLightningSoundDistance < 32) { // Vanilla value: Bolt impact sound effect with 2.0 volume
++            sqrMaxLightningSoundDistance = Double.MAX_VALUE;
++        } else {
++            sqrMaxLightningSoundDistance *= sqrMaxLightningSoundDistance;
++        }
++    }
++    
++    public double maxLightningFlashDistance;
++    private void maxLightningFlashDistance() {
++        maxLightningFlashDistance = getInt("lightning-strike-distance-limit.flash", -1);
++        if (maxLightningFlashDistance < 32) { // Vanilla value: see sqrMaxLightningSoundDistance
++            maxLightningFlashDistance = 512; // Vanilla value
++        }
++    }
+ 
+     public boolean firePhysicsEventForRedstone = false;
+     private void firePhysicsEventForRedstone() {
+diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
+index afbe43dd..f82a6d76 100644
+--- a/src/main/java/net/minecraft/server/EntityLightning.java
++++ b/src/main/java/net/minecraft/server/EntityLightning.java
+@@ -60,6 +60,7 @@ public class EntityLightning extends EntityWeather {
+                 double deltaX = this.locX - player.locX;
+                 double deltaZ = this.locZ - player.locZ;
+                 double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                if (distanceSquared > this.world.paperConfig.sqrMaxLightningSoundDistance) continue; // Paper - Limit lightning strike effect distance
+                 if (distanceSquared > viewDistance * viewDistance) {
+                     double deltaLength = Math.sqrt(distanceSquared);
+                     double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 1e30ba05..eed99be7 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1082,7 +1082,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         }
+         // CraftBukkit end
+         if (super.strikeLightning(entity)) {
+-            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension
++            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, this.paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension, // Paper - Limit lightning strike effect distance
+             return true;
+         } else {
+             return false;
+-- 
+2.16.1.windows.4
+
