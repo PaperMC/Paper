@@ -105,7 +105,12 @@ done
 importLibrary com.mojang datafixerupper com/mojang/datafixers \
     schemas/Schema.java \
     DataFixerUpper.java \
+    NamedChoiceFinder.java \
     functions/PointFree.java \
+    types/Type.java \
+    types/DynamicOps.java \
+    types/templates/Tag.java \
+    types/templates/TaggedChoice.java \
     types/families/RecursiveTypeFamily.java
 
 # dont forget \ at end of each line but last
