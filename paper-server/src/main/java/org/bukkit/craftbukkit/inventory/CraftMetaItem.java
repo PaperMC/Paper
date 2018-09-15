@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.server.ChatComponentText;
+import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.NBTCompressedStreamTools;
 import org.apache.commons.codec.binary.Base64;
 
@@ -562,7 +563,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     }
 
     public String getDisplayName() {
-        return CraftChatMessage.fromComponent(displayName);
+        return CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE);
     }
 
     public final void setDisplayName(String name) {
@@ -575,7 +576,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     @Override
     public String getLocalizedName() {
-        return CraftChatMessage.fromComponent(locName);
+        return CraftChatMessage.fromComponent(locName, EnumChatFormat.WHITE);
     }
 
     @Override
