@@ -1,4 +1,4 @@
-From 46802d69757545e315c417c9092a0ed5d4568100 Mon Sep 17 00:00:00 2001
+From 21e2b383c7c451aab9678a4611b4e8b675da0b0a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Jul 2018 12:18:27 -0400
 Subject: [PATCH] Ignore Dead Entities in entityList iteration
@@ -23,7 +23,7 @@ index 56700fc596..9b9c8361e9 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f5d5f38232..e558197623 100644
+index 8951ac8095..127a7c9b72 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -123,6 +123,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -35,10 +35,10 @@ index f5d5f38232..e558197623 100644
      public float length;
      public float J;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c2d404b813..255829b0b5 100644
+index f21c7f8d90..79f7a678a7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1098,6 +1098,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1105,6 +1105,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          }
  
          entity.valid = true; // CraftBukkit
@@ -46,7 +46,7 @@ index c2d404b813..255829b0b5 100644
          new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
      }
  
-@@ -1166,6 +1167,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1173,6 +1174,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          if (entity.inChunk && this.isChunkLoaded(i, j, true)) {
              this.getChunkAt(i, j).b(entity);
          }
@@ -54,7 +54,7 @@ index c2d404b813..255829b0b5 100644
  
          if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
          // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
-@@ -2376,6 +2378,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2383,6 +2385,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -62,14 +62,14 @@ index c2d404b813..255829b0b5 100644
  
              if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) {
                  arraylist.add(entity);
-@@ -2462,6 +2465,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2469,6 +2472,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
 +            if (entity.shouldBeRemoved) continue; // Paper
-             // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
-             if (entity instanceof EntityInsentient) {
-                 EntityInsentient entityinsentient = (EntityInsentient) entity;
+ 
+             if (!(entity instanceof EntityInsentient) || !((EntityInsentient) entity).isPersistent()) {
+                 if (oclass.isAssignableFrom(entity.getClass())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index af977b171a..80fd49b6e1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -107,5 +107,5 @@ index af977b171a..80fd49b6e1 100644
  
                  if (bukkitEntity == null) {
 -- 
-2.18.0
+2.19.0
 
