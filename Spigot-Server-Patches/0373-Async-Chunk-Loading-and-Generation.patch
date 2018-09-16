@@ -1,4 +1,4 @@
-From e9a91874c595fb65a716f73892afba8ccde49635 Mon Sep 17 00:00:00 2001
+From 35654b8ba8a368aa2cf822f8a4e141a09fe4cdd8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -350,14 +350,16 @@ index 0000000000..7c7d3e1699
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 99613b2ef3..0ed639bb79 100644
+index 99613b2ef3..496d4c342f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -40,10 +40,10 @@ public class ChunkProviderServer implements IChunkProvider {
+     // Paper end
      public final Long2ObjectMap<Chunk> chunks = Long2ObjectMaps.synchronize(new ChunkMap(8192));
      private Chunk lastChunk;
-     private final ChunkTaskScheduler chunkScheduler;
+-    private final ChunkTaskScheduler chunkScheduler;
 -    private final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler;
++    final ChunkTaskScheduler chunkScheduler; // Paper
 +    final SchedulerBatch<ChunkCoordIntPair, ChunkStatus, ProtoChunk> batchScheduler; // Paper
      public final WorldServer world;
 -    private final IAsyncTaskHandler asyncTaskHandler;
@@ -527,31 +529,64 @@ index 34019bd1b3..68ef87bf38 100644
                  ProtoChunk protochunk;
  
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 71a3636be6..27ab8aac4f 100644
+index 71a3636be6..2c17d880ca 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-@@ -22,17 +22,19 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
-     private final ReentrantLock j = new ReentrantLock();
+@@ -3,7 +3,7 @@ package net.minecraft.server;
+ import com.destroystokyo.paper.antixray.ChunkPacketInfo; // Paper - Anti-Xray
+ import java.util.Arrays;
+ import java.util.Objects;
+-import java.util.concurrent.locks.ReentrantLock;
++import java.util.concurrent.locks.ReentrantReadWriteLock;
+ import java.util.function.Function;
+ import java.util.stream.Collectors;
  
--    private void b() {
-+    volatile String current; // Paper
-+    private synchronized void b() {
-         if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
-             String s = (String)Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
-                 return thread.getName() + ": \n\tat " + (String)Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
-             }).collect(Collectors.joining("\n"));
+@@ -20,25 +20,16 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+     protected DataBits a; protected DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
+     private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
+     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
+-    private final ReentrantLock j = new ReentrantLock();
++    // Paper start - use read write locks
++    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+ 
+     private void b() {
+-        if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
+-            String s = (String)Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
+-                return thread.getName() + ": \n\tat " + (String)Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
+-            }).collect(Collectors.joining("\n"));
 -            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads", new IllegalStateException());
-+            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads (" + current + ":" + Thread.currentThread().getName() + ")", new IllegalStateException()); // Paper
-             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Thread dumps");
-             crashreportsystemdetails.a("Thread dumps", s);
-             throw new ReportedException(crashreport);
-         } else {
-             this.j.lock();
-+            current = Thread.currentThread().getName(); // Paper
-         }
+-            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Thread dumps");
+-            crashreportsystemdetails.a("Thread dumps", s);
+-            throw new ReportedException(crashreport);
+-        } else {
+-            this.j.lock();
+-        }
++        lock.writeLock().lock();
+     }
+-
+     private void c() {
+-        this.j.unlock();
++        lock.writeLock().unlock();
+     }
++    // Paper end
+ 
+     public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T object) {
+         // Paper start - Anti-Xray - Support default constructor
+@@ -147,8 +138,13 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
      }
  
+     protected T a(int ix) {
+-        T object = this.h.a(this.a.a(ix)); // Paper - decompile fix
++        try { // Paper
++            lock.readLock().lock();
++            T object = this.h.a(this.a.a(ix)); // Paper - decompile fix
+         return (T)(object == null ? this.g : object);
++        } finally {
++            lock.readLock().unlock();
++        } // Paper
+     }
+ 
+     // Paper start - Anti-Xray - Support default methods
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index f6c43bab46..e6bd85a223 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -681,10 +716,10 @@ index 70a609efcc..14b254fb9d 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..c86c1fe8c3
+index 0000000000..f471eb073f
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,488 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -712,6 +747,8 @@ index 0000000000..c86c1fe8c3
 +
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor.Priority;
++import com.google.common.util.concurrent.ListeningExecutorService;
++import com.google.common.util.concurrent.MoreExecutors;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -721,11 +758,18 @@ index 0000000000..c86c1fe8c3
 +
 +import javax.annotation.Nullable;
 +import java.io.IOException;
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
 +import java.util.ArrayList;
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ForkJoinPool;
++import java.util.concurrent.ForkJoinWorkerThread;
++import java.util.concurrent.atomic.AtomicInteger;
 +import java.util.function.Consumer;
 +
 +import static com.destroystokyo.paper.util.PriorityQueuedExecutor.CALLER_RUNS_POLICY;
@@ -733,11 +777,19 @@ index 0000000000..c86c1fe8c3
 +@SuppressWarnings("unused")
 +class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
-+    private static final int CHUNK_THREADS = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, CALLER_RUNS_POLICY);
-+
-+    private final PriorityQueuedExecutor generationExecutor;
-+    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
++    private static final int CHUNK_THREADS = Integer.getInteger("paper.chunkthreads", (int) Math.min( 8, Runtime.getRuntime().availableProcessors() * 1.5));
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoad", CHUNK_THREADS, CALLER_RUNS_POLICY);
++    private static final AtomicInteger GEN_COUNT = new AtomicInteger(1);
++    private static final ExecutorService GEN_EXECUTOR = new ForkJoinPool((int) Math.min(CHUNK_THREADS / 1.5, 2), (forkjoinpool) -> {
++        return new ForkJoinWorkerThread(forkjoinpool) {
++            {
++                this.setName("PaperChunkGen-" + GEN_COUNT.getAndIncrement());
++            }
++        };
++    }, (thread, throwable) -> {
++        MinecraftServer.LOGGER.error(String.format("Caught exception in thread %s", thread), throwable);
++    }, true);
++    private static final ExecutorService GEN_SCHEDULER = Executors.newSingleThreadExecutor(new NamedIncrementingThreadFactory("PaperChunkGenScheduler"));
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
@@ -756,7 +808,25 @@ index 0000000000..c86c1fe8c3
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
 +        this.isCustomGenerator = generator instanceof CustomChunkGenerator;
-+        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, isCustomGenerator ? 0 : 1);
++        ExecutorService direct = MoreExecutors.newDirectExecutorService();
++        try {
++            // Scheduler class is really bad on decompile, use reflection to modify the executors instead
++            // Custom world gen must run on main, so we use a direct one there. Use a shared pool instead of per world
++            setExecutor("a", isCustomGenerator ? direct : GEN_SCHEDULER);
++            setExecutor("c", isCustomGenerator ? direct : GEN_EXECUTOR);
++        } catch (NoSuchFieldException | IllegalAccessException e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    private void setExecutor(String field, ExecutorService service) throws NoSuchFieldException, IllegalAccessException {
++        Field f = Scheduler.class.getDeclaredField(field);
++        f.setAccessible(true);
++        Field modifiersField = Field.class.getDeclaredField("modifiers");
++        modifiersField.setAccessible(true);
++        modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
++        f.set(this.chunkScheduler, service);
++        modifiersField.setInt(f, f.getModifiers() & Modifier.FINAL);
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -933,7 +1003,7 @@ index 0000000000..c86c1fe8c3
 +        private final int z;
 +        private final long key;
 +        private final PriorityQueuedExecutor.PendingTask<Void> task;
-+        private final PriorityQueuedExecutor.PendingTask<Chunk> chunkGenTask;
++        //private final PriorityQueuedExecutor.PendingTask<Chunk> chunkGenTask;
 +        private final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        private final CompletableFuture<Chunk> generate = new CompletableFuture<>();
 +
@@ -952,8 +1022,8 @@ index 0000000000..c86c1fe8c3
 +            this.key = key;
 +            this.canGenerate = canGenerate;
 +            Priority taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
-+            this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
 +            this.task = EXECUTOR.submitTask(this, taskPriority);
++            //this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -972,34 +1042,32 @@ index 0000000000..c86c1fe8c3
 +            }
 +        }
 +
-+        private Chunk generateChunk() {
-+            CompletableFuture<Chunk> pending = new CompletableFuture<>();
++        private CompletableFuture<Chunk> generateChunk() {
 +            batchScheduler.startBatch();
 +            batchScheduler.add(new ChunkCoordIntPair(x, z));
-+            try {
-+                ProtoChunk protoChunk = batchScheduler.executeBatch().join();
-+                boolean saved = false;
-+                if (!Bukkit.isPrimaryThread()) {
-+                    // If we are async, dispatch later
-+                    try {
-+                        chunkLoader.saveChunk(world, protoChunk, true);
-+                        saved = true;
-+                    } catch (IOException | ExceptionWorldConflict e) {
-+                        e.printStackTrace();
++            return batchScheduler.executeBatch().handle((protoChunk, e) -> {
++                if (e == null) {
++                    boolean saved = false;
++                    if (!Bukkit.isPrimaryThread()) {
++                        // If we are async, dispatch later
++                        try {
++                            chunkLoader.saveChunk(world, protoChunk, true);
++                            saved = true;
++                        } catch (IOException | ExceptionWorldConflict e2) {
++                            e2.printStackTrace();
++                        }
 +                    }
-+                }
-+                Chunk chunk = new Chunk(world, protoChunk, x, z);
-+                if (saved) {
-+                    chunk.setLastSaved(world.getTime());
-+                }
-+                generateFinished(chunk);
++                    Chunk chunk = new Chunk(world, protoChunk, x, z);
++                    if (saved) {
++                        chunk.setLastSaved(world.getTime());
++                    }
 +
-+                return chunk;
-+            } catch (Exception e) {
-+                MinecraftServer.LOGGER.error("Couldn't generate chunk (" +world.getWorld().getName() + ":" + x + "," + z + ")", e);
-+                generateFinished(null);
-+                return null;
-+            }
++                    return chunk;
++                } else {
++                    MinecraftServer.LOGGER.error("Couldn't generate chunk (" +world.getWorld().getName() + ":" + x + "," + z + ")", e);
++                    return null;
++                }
++            });
 +        }
 +
 +        synchronized boolean loadFinished(Chunk chunk) {
@@ -1123,19 +1191,19 @@ index 0000000000..c86c1fe8c3
 +            if (isCustomGenerator) {
 +                synchronized (this) {
 +                    setStatus(PendingStatus.GENERATION_PENDING);
-+                    mainThreadQueue.add(() -> generateFinished(this.generateChunk()));
++                    mainThreadQueue.add(() -> generateFinished(this.generateChunk().join()));
 +                }
 +                synchronized (mainThreadQueue) {
 +                    mainThreadQueue.notify();
 +                }
 +            } else {
-+                generationExecutor.submitTask(chunkGenTask);
++                this.generateChunk().thenAccept(this::generateFinished);
 +            }
 +        }
 +
 +        void bumpPriority() {
 +            task.bumpPriority();
-+            chunkGenTask.bumpPriority();
++            //chunkGenTask.bumpPriority();
 +        }
 +    }
 +
