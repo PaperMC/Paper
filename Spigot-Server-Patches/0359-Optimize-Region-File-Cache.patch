@@ -1,0 +1,67 @@
+From 0ac08bd946937912a9903ff03232a5a26518e58a Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 23 Jul 2018 23:40:04 -0400
+Subject: [PATCH] Optimize Region File Cache
+
+CraftBukkit added synchronization to read and write methods. This adds
+much more contention on this object for accessing region files, as
+the entire read and write of NBT data is now a blocking operation.
+
+This causes issues when something then simply needs to check if a chunk exists
+on the main thread, causing a block...
+
+However, this synchronization was unnecessary, because there is already
+enough synchronization done to keep things safe
+
+1) Obtaining a Region File: Those methods are still static synchronized.
+   Meaning we can safely obtain a Region File concurrently.
+
+2) RegionFile data access: Methods reading and manipulating data from
+   a region file are also marked synchronized, ensuring that no 2 processes
+   are reading or writing data at the same time.
+
+3) Checking a region file for chunkExists: getOffset is also synchronized
+   ensuring that even if a chunk is currently being written, it will be safe.
+
+By removing these synchronizations, we reduce the locking to only
+when data is being write or read.
+
+GZIP compression and NBT Buffer creation will no longer be part of the
+synchronized context, reducing lock times.
+
+Ultimately: This brings us back to Vanilla, which has had no indication of region file loss.
+
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index 7e75658076..15a09ab360 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -95,7 +95,7 @@ public class RegionFileCache {
+     }
+ 
+     // CraftBukkit start - call sites hoisted for synchronization
+-    public static synchronized NBTTagCompound d(File file, int i, int j) throws IOException {
++    public static NBTTagCompound d(File file, int i, int j) throws IOException { // Paper - remove synchronization
+         RegionFile regionfile = a(file, i, j);
+ 
+         DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
+@@ -107,7 +107,7 @@ public class RegionFileCache {
+         return NBTCompressedStreamTools.a(datainputstream);
+     }
+ 
+-    public static synchronized void e(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
++    public static void e(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException { // Paper - remove synchronization
+         RegionFile regionfile = a(file, i, j);
+ 
+         DataOutputStream dataoutputstream = regionfile.b(i & 31, j & 31);
+@@ -116,7 +116,7 @@ public class RegionFileCache {
+     }
+     // CraftBukkit end
+ 
+-    public static synchronized boolean chunkExists(File file, int i, int j) {
++    public static boolean chunkExists(File file, int i, int j) { // Paper - remove synchronization
+         RegionFile regionfile = b(file, i, j);
+ 
+         return regionfile != null ? regionfile.c(i & 31, j & 31) : false;
+-- 
+2.19.0
+
