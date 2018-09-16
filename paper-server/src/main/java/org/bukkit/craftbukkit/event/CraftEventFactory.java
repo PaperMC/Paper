@@ -36,6 +36,7 @@ import org.bukkit.craftbukkit.util.CraftDamageSource;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Bat;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
@@ -1120,6 +1121,12 @@ public class CraftEventFactory {
             blockState.update(true);
         }
 
+        return !event.isCancelled();
+    }
+
+    public static boolean handleBatToggleSleepEvent(Entity bat, boolean awake) {
+        BatToggleSleepEvent event = new BatToggleSleepEvent((Bat) bat.getBukkitEntity(), awake);
+        Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
 }
