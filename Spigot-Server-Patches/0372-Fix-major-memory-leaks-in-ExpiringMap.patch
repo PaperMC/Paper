@@ -1,0 +1,112 @@
+From c9297fde1beff53e303bb09caf0bb4b20c6792ce Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 16 Sep 2018 00:00:16 -0400
+Subject: [PATCH] Fix major memory leaks in ExpiringMap
+
+computeIfAbsent would leak as the entry
+was never registered into the ttl map
+
+This fixes that ,as well as redesigns cleaning to
+not run on every manipulation, and instead to run clean
+once per tick per expiring map.
+
+diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
+index 4006f5a69c..5345b97241 100644
+--- a/src/main/java/net/minecraft/server/ExpiringMap.java
++++ b/src/main/java/net/minecraft/server/ExpiringMap.java
+@@ -6,25 +6,44 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import java.util.Map;
++import java.util.function.LongFunction;
+ 
+ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+     private final int a;
+-    private final Long2LongMap b = new Long2LongLinkedOpenHashMap();
++    private final Long2LongMap ttl = new Long2LongLinkedOpenHashMap(); // Paper
+ 
+     public ExpiringMap(int i, int j) {
+         super(i);
+         this.a = j;
+     }
+ 
+-    private void a(long i) {
+-        long j = SystemUtils.b();
+-        this.b.put(i, j);
+-        ObjectIterator objectiterator = this.b.long2LongEntrySet().iterator();
++    // Paper start
++    private synchronized void setAccess(long i) { a(i); } // Paper - OBFHELPER
++    private synchronized void a(long i) {
++        long j = System.currentTimeMillis(); // Paper
++        this.ttl.put(i, j);
++        if (!registered) {
++            registered = true;
++            MinecraftServer.getServer().expiringMaps.add(this);
++        }
++    }
++
++    @Override
++    public synchronized T computeIfAbsent(long l, LongFunction<? extends T> longFunction) {
++        setAccess(l);
++        return super.computeIfAbsent(l, longFunction);
++    }
++    private boolean registered = false;
++
++    // Break clean to its own method to be ticked
++    synchronized boolean clean() {
++        long now = System.currentTimeMillis();
++        ObjectIterator<Long2LongMap.Entry> objectiterator = this.ttl.long2LongEntrySet().iterator(); // Paper
+ 
+         while(objectiterator.hasNext()) {
+-            Entry entry = (Entry)objectiterator.next();
+-            Object object = super.get(entry.getLongKey());
+-            if (j - entry.getLongValue() <= (long)this.a) {
++            Long2LongMap.Entry entry = objectiterator.next(); // Paper
++            T object = super.get(entry.getLongKey()); // Paper
++            if (now - entry.getLongValue() <= (long)this.a) {
+                 break;
+             }
+ 
+@@ -33,7 +52,18 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+                 objectiterator.remove();
+             }
+         }
+-
++        if (this.ttl.size() != this.size) {
++            MinecraftServer.LOGGER.error("WARNING: ExpiringMap desync - Memory leak risk!");
++            for (Entry<T> entry : this.entries) {
++                ttl.putIfAbsent(entry.getLongKey(), now);
++            }
++        }
++        if (isEmpty()) {
++            registered = false;
++            return true;
++        }
++        return false;
++        // Paper end
+     }
+ 
+     protected boolean a(T var1) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 80e8b023cf..70a609efcc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -155,6 +155,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     public int autosavePeriod;
+     public File bukkitDataPackFolder;
+     public CommandDispatcher vanillaCommandDispatcher;
++    public List<ExpiringMap> expiringMaps = java.util.Collections.synchronizedList(new java.util.ArrayList<>()); // PAper
+     // CraftBukkit end
+     // Spigot start
+     public static final int TPS = 20;
+@@ -995,6 +996,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         this.methodProfiler.e();
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         PaperLightingQueue.processQueue(startTime); // Paper
++        expiringMaps.removeIf(ExpiringMap::clean); // Paper
+         this.slackActivityAccountant.tickEnded(l); // Spigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
+-- 
+2.19.0
+

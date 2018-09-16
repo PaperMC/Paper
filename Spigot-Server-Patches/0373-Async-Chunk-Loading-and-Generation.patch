@@ -1,4 +1,4 @@
-From 5595153a11dd9259ea4feaeb3b77f72da524b53a Mon Sep 17 00:00:00 2001
+From e9a91874c595fb65a716f73892afba8ccde49635 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -591,10 +591,10 @@ index 49fba0979e..c6661851d1 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 80e8b023cf..c7c1ef579b 100644
+index 70a609efcc..14b254fb9d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -502,6 +502,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
          // CraftBukkit start - fire WorldLoadEvent and handle whether or not to keep the spawn in memory
          Stopwatch stopwatch = Stopwatch.createStarted();
@@ -602,7 +602,7 @@ index 80e8b023cf..c7c1ef579b 100644
          for (WorldServer worldserver : this.getWorlds()) {
              MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
              if (!worldserver.getWorld().getKeepSpawnInMemory()) {
-@@ -509,29 +510,25 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -510,29 +511,25 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              }
  
              BlockPosition blockposition = worldserver.getSpawn();
@@ -641,7 +641,7 @@ index 80e8b023cf..c7c1ef579b 100644
                      } catch (InterruptedException interruptedexception) {
                          throw new RuntimeException(interruptedexception);
                      } catch (ExecutionException executionexception) {
-@@ -541,11 +538,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -542,11 +539,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                          throw new RuntimeException(executionexception.getCause());
                      } catch (TimeoutException timeoutexception) {
@@ -655,7 +655,7 @@ index 80e8b023cf..c7c1ef579b 100644
              }
          }
  
-@@ -1011,6 +1008,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1013,6 +1010,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -663,7 +663,7 @@ index 80e8b023cf..c7c1ef579b 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.c("commandFunctions");
-@@ -1047,6 +1045,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1049,6 +1047,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -671,7 +671,7 @@ index 80e8b023cf..c7c1ef579b 100644
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.c();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-@@ -1103,6 +1102,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1105,6 +1104,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  this.methodProfiler.e();
                  this.methodProfiler.e();
                  worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -1400,7 +1400,7 @@ index f87182b5c4..574930f5fe 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index dbdda0a127..44e3900af2 100644
+index 85e6a11d1c..ab23ace37c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -1597,7 +1597,7 @@ index fa99fe0146..4f49786aa3 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1e30ba0548..9ae069d5e5 100644
+index f837e6c36c..271fdc3bd7 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -732,7 +732,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -1730,5 +1730,5 @@ index 83e9a60228..db84b4e086 100644
  
          if (!event.isCancelled()) {
 -- 
-2.18.0
+2.19.0
 
