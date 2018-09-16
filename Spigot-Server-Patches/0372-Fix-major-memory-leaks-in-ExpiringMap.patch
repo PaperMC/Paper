@@ -1,4 +1,4 @@
-From 9a08afb634666123c7181b6d7b26052c4b423588 Mon Sep 17 00:00:00 2001
+From 6a439506b07605dd8566c86b672d3ee955715b51 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 16 Sep 2018 00:00:16 -0400
 Subject: [PATCH] Fix major memory leaks in ExpiringMap
@@ -11,13 +11,15 @@ not run on every manipulation, and instead to run clean
 once per tick per expiring map.
 
 diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
-index 4006f5a69c..3b90f6e6c3 100644
+index 4006f5a69c..49021d29ee 100644
 --- a/src/main/java/net/minecraft/server/ExpiringMap.java
 +++ b/src/main/java/net/minecraft/server/ExpiringMap.java
-@@ -6,25 +6,44 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+@@ -6,25 +6,113 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
  import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import java.util.Map;
++import java.util.function.BiFunction;
++import java.util.function.Function;
 +import java.util.function.LongFunction;
  
  public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
@@ -46,10 +48,77 @@ index 4006f5a69c..3b90f6e6c3 100644
 +    }
 +
 +    @Override
-+    public synchronized T computeIfAbsent(long l, LongFunction<? extends T> longFunction) {
++    public T compute(long l, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
++        setAccess(l);
++        return super.compute(l, biFunction);
++    }
++
++    @Override
++    public T putIfAbsent(long l, T t) {
++        setAccess(l);
++        return super.putIfAbsent(l, t);
++    }
++
++    @Override
++    public T computeIfPresent(long l, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
++        setAccess(l);
++        return super.computeIfPresent(l, biFunction);
++    }
++
++    @Override
++    public T computeIfAbsent(long l, LongFunction<? extends T> longFunction) {
 +        setAccess(l);
 +        return super.computeIfAbsent(l, longFunction);
 +    }
++
++    @Override
++    public boolean replace(long l, T t, T v1) {
++        setAccess(l);
++        return super.replace(l, t, v1);
++    }
++
++    @Override
++    public T replace(long l, T t) {
++        setAccess(l);
++        return super.replace(l, t);
++    }
++
++    @Override
++    public T putIfAbsent(Long aLong, T t) {
++        setAccess(aLong);
++        return super.putIfAbsent(aLong, t);
++    }
++
++    @Override
++    public boolean replace(Long aLong, T t, T v1) {
++        setAccess(aLong);
++        return super.replace(aLong, t, v1);
++    }
++
++    @Override
++    public T replace(Long aLong, T t) {
++        setAccess(aLong);
++        return super.replace(aLong, t);
++    }
++
++    @Override
++    public T computeIfAbsent(Long aLong, Function<? super Long, ? extends T> function) {
++        setAccess(aLong);
++        return super.computeIfAbsent(aLong, function);
++    }
++
++    @Override
++    public T computeIfPresent(Long aLong, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
++        setAccess(aLong);
++        return super.computeIfPresent(aLong, biFunction);
++    }
++
++    @Override
++    public T compute(Long aLong, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
++        setAccess(aLong);
++        return compute(aLong, biFunction);
++    }
++
 +    private boolean registered = false;
 +
 +    // Break clean to its own method to be ticked
@@ -67,7 +136,7 @@ index 4006f5a69c..3b90f6e6c3 100644
                  break;
              }
  
-@@ -33,7 +52,18 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+@@ -33,7 +121,18 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
                  objectiterator.remove();
              }
          }
