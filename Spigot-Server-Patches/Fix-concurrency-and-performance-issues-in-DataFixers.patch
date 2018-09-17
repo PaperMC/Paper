@@ -24,7 +24,7 @@ Additionally, many of the containsKey/get/put style operations were
 also a concurrency risk, resulting in multiple computation/insertions.
 
 diff --git a/src/main/java/com/mojang/datafixers/DataFixerUpper.java b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
-index fb2c380f8a..a4922a35a2 100644
+index fb2c380f8..a4922a35a 100644
 --- a/src/main/java/com/mojang/datafixers/DataFixerUpper.java
 +++ b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
 @@ -0,0 +0,0 @@ public class DataFixerUpper implements DataFixer {
@@ -58,7 +58,7 @@ index fb2c380f8a..a4922a35a2 100644
  
      protected IntSortedSet fixerVersions() {
 diff --git a/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java b/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
-index 2c259d74e9..17481fb6e6 100644
+index 2c259d74e..17481fb6e 100644
 --- a/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
 +++ b/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
 @@ -0,0 +0,0 @@ final class NamedChoiceFinder<FT> implements OpticFinder<FT> {
@@ -75,7 +75,7 @@ index 2c259d74e9..17481fb6e6 100644
                          return Either.right(new Type.FieldNotFoundException(String.format("Type error for choice type \"%s\": expected type: %s, actual type: %s)", name, targetType, elementType)));
                      }
 diff --git a/src/main/java/com/mojang/datafixers/functions/PointFree.java b/src/main/java/com/mojang/datafixers/functions/PointFree.java
-index 0d88490f77..028942b8ea 100644
+index 0d88490f7..028942b8e 100644
 --- a/src/main/java/com/mojang/datafixers/functions/PointFree.java
 +++ b/src/main/java/com/mojang/datafixers/functions/PointFree.java
 @@ -0,0 +0,0 @@ public abstract class PointFree<T> {
@@ -88,7 +88,7 @@ index 0d88490f77..028942b8ea 100644
              initialized = true;
              value = eval();
 diff --git a/src/main/java/com/mojang/datafixers/schemas/Schema.java b/src/main/java/com/mojang/datafixers/schemas/Schema.java
-index 7c67d989e0..f1fd694b06 100644
+index 7c67d989e..7faca88a8 100644
 --- a/src/main/java/com/mojang/datafixers/schemas/Schema.java
 +++ b/src/main/java/com/mojang/datafixers/schemas/Schema.java
 @@ -0,0 +0,0 @@ import java.util.function.Function;
@@ -154,22 +154,6 @@ index 7c67d989e0..f1fd694b06 100644
          return getTemplate(name);
      }
 @@ -0,0 +0,0 @@ public class Schema {
- 
-     public Type<?> getChoiceType(final DSL.TypeReference type, final String choiceName) {
-         final TaggedChoice.TaggedChoiceType<?> choiceType = findChoiceType(type);
--        if (!choiceType.types().containsKey(choiceName)) {
-+        // Paper start - performance and concurrency - don't use containsKey
-+        Type<?> result = choiceType.types().get(choiceName);
-+        if (result == null) {
-             throw new IllegalArgumentException("Data fixer not registered for: " + choiceName + " in " + type.typeName());
-         }
--        return choiceType.types().get(choiceName);
-+        return result;
-+        // Paper end
-     }
- 
-     public TaggedChoice.TaggedChoiceType<?> findChoiceType(final DSL.TypeReference type) {
-@@ -0,0 +0,0 @@ public class Schema {
      public void registerType(final boolean recursive, final DSL.TypeReference type, final Supplier<TypeTemplate> template) {
          TYPE_TEMPLATES.put(type.typeName(), template);
          // TODO: calculate recursiveness instead of hardcoding
@@ -182,7 +166,7 @@ index 7c67d989e0..f1fd694b06 100644
  
      public int getVersionKey() {
 diff --git a/src/main/java/com/mojang/datafixers/types/DynamicOps.java b/src/main/java/com/mojang/datafixers/types/DynamicOps.java
-index 3c76929f24..f21531b3cd 100644
+index 3c76929f2..f21531b3c 100644
 --- a/src/main/java/com/mojang/datafixers/types/DynamicOps.java
 +++ b/src/main/java/com/mojang/datafixers/types/DynamicOps.java
 @@ -0,0 +0,0 @@ public interface DynamicOps<T> {
@@ -201,7 +185,7 @@ index 3c76929f24..f21531b3cd 100644
      }
  
 diff --git a/src/main/java/com/mojang/datafixers/types/Type.java b/src/main/java/com/mojang/datafixers/types/Type.java
-index a80e3fee91..2d5bae7a37 100644
+index a80e3fee9..2d5bae7a3 100644
 --- a/src/main/java/com/mojang/datafixers/types/Type.java
 +++ b/src/main/java/com/mojang/datafixers/types/Type.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -254,7 +238,7 @@ index a80e3fee91..2d5bae7a37 100644
  
      public <FT, FR> Type<?> getSetType(final OpticFinder<FT> optic, final Type<FR> newType) {
 diff --git a/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java b/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
-index 4a1f906837..93c2f565fd 100644
+index 4a1f90683..93c2f565f 100644
 --- a/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
 +++ b/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
 @@ -0,0 +0,0 @@ public final class RecursiveTypeFamily implements TypeFamily {
@@ -267,7 +251,7 @@ index 4a1f906837..93c2f565fd 100644
  
      public RecursiveTypeFamily(final String name, final TypeTemplate template) {
 diff --git a/src/main/java/com/mojang/datafixers/types/templates/Tag.java b/src/main/java/com/mojang/datafixers/types/templates/Tag.java
-index ece3fb5f88..396637bbd1 100644
+index ece3fb5f8..396637bbd 100644
 --- a/src/main/java/com/mojang/datafixers/types/templates/Tag.java
 +++ b/src/main/java/com/mojang/datafixers/types/templates/Tag.java
 @@ -0,0 +0,0 @@ public final class Tag implements TypeTemplate {
@@ -284,7 +268,7 @@ index ece3fb5f88..396637bbd1 100644
                  if (value.isPresent()) {
                      return Pair.of(ops.createMap(map.get().entrySet().stream().filter(e -> !Objects.equals(e.getKey(), nameObject)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), value);
 diff --git a/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java b/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
-index e6dd31233a..77d64362b1 100644
+index e6dd31233..77d64362b 100644
 --- a/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
 +++ b/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
 @@ -0,0 +0,0 @@ public final class TaggedChoice<K> implements TypeTemplate {
