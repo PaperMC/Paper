@@ -1,4 +1,4 @@
-From cf80f60fecc7b5c5eb6ae69985789c8cdadffc0c Mon Sep 17 00:00:00 2001
+From c72a223551fa640d606dc0281553972891d52411 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 788f0519a8..13c6021ffa 100644
+index 788f0519a8..d6ea4ae532 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -146,7 +146,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -42,7 +42,7 @@ index 788f0519a8..13c6021ffa 100644
      }
  
      // Spigot Start
-@@ -697,6 +697,53 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -697,6 +697,57 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
      }
@@ -59,44 +59,48 @@ index 788f0519a8..13c6021ffa 100644
 +    public static class RollingAverage {
 +        private final int size;
 +        private long time;
-+        private double total;
++        private java.math.BigDecimal total;
 +        private int index = 0;
-+        private final double[] samples;
++        private final java.math.BigDecimal[] samples;
 +        private final long[] times;
 +
 +        RollingAverage(int size) {
 +            this.size = size;
 +            this.time = size * SEC_IN_NANO;
-+            this.total = TPS * SEC_IN_NANO * size;
-+            this.samples = new double[size];
++            this.total = dec(TPS).multiply(dec(SEC_IN_NANO)).multiply(dec(size));
++            this.samples = new java.math.BigDecimal[size];
 +            this.times = new long[size];
 +            for (int i = 0; i < size; i++) {
-+                this.samples[i] = TPS;
++                this.samples[i] = dec(TPS);
 +                this.times[i] = SEC_IN_NANO;
 +            }
 +        }
 +
-+        public void add(double x, long t) {
++        private static java.math.BigDecimal dec(long t) {
++            return new java.math.BigDecimal(t);
++        }
++        public void add(java.math.BigDecimal x, long t) {
 +            time -= times[index];
-+            total -= samples[index] * times[index];
++            total = total.subtract(samples[index].multiply(dec(times[index])));
 +            samples[index] = x;
 +            times[index] = t;
 +            time += t;
-+            total += x * t;
++            total = total.add(x.multiply(dec(t)));
 +            if (++index == size) {
 +                index = 0;
 +            }
 +        }
 +
 +        public double getAverage() {
-+            return total / time;
++            return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
 +        }
 +    }
++    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
 +    // Paper End
      // Spigot End
  
      public void run() {
-@@ -709,29 +756,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -709,29 +760,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -138,7 +142,7 @@ index 788f0519a8..13c6021ffa 100644
 -                        recentTps[1] = calcTps( recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
 -                        recentTps[2] = calcTps( recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
 +                        final long diff = curTime - tickSection;
-+                        double currentTps = 1E9 / diff * SAMPLE_INTERVAL;
++                        java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
 +                        tps1.add(currentTps, diff);
 +                        tps5.add(currentTps, diff);
 +                        tps15.add(currentTps, diff);
@@ -220,5 +224,5 @@ index be2e31deae..6d21c32692 100644
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
                  + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
 -- 
-2.18.0
+2.19.0
 
