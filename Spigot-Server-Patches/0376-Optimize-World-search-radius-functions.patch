@@ -1,4 +1,4 @@
-From a308e897bb47c5ae49c32caf0fbb5bfc86cf856b Mon Sep 17 00:00:00 2001
+From ca2123058d492876b8beaee0f49d0bbb376f31a5 Mon Sep 17 00:00:00 2001
 From: egg82 <phantom_zero@ymail.com>
 Date: Tue, 7 Aug 2018 17:55:35 -0600
 Subject: [PATCH] Optimize World search/radius functions
@@ -10,6 +10,9 @@ World.a(double d0, double d1, double d2, double d3, Predicate<Entity> predicate)
 World.isPlayerNearby(double d1, double d2, double d3, double searchRadius)
 World.a(double d0, double d1, double d2, double d3, double d4, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate)
 
+Added functions:
+World.getAllPlayers(@Nullable Predicate<? super Entity> predicate)
+
 Renamed variables in functions and headers, and completely replaced said functions
 The rename shouldn't affect anything but readability
 
@@ -17,10 +20,10 @@ The new code utilizes CraftWorld.getNearbyEntities for later optimization in a f
 It shouldn't affect previous behavior and in fact makes attempts at heading off edge-cases early
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index ce33cd5b8..dcbd515e6 100644
+index f6c43bab4..c9ee9f682 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1398,6 +1398,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1397,6 +1397,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          return MathHelper.c(f * f + f1 * f1 + f2 * f2);
      }
  
@@ -29,10 +32,10 @@ index ce33cd5b8..dcbd515e6 100644
          double d3 = this.locX - d0;
          double d4 = this.locY - d1;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index f7588c4d4..97d229bcc 100644
+index c7dc6fe0e..3b8d72c87 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -881,6 +881,7 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -890,6 +890,7 @@ public abstract class EntityHuman extends EntityLiving {
  
      }
  
@@ -41,10 +44,33 @@ index f7588c4d4..97d229bcc 100644
          int i = 0;
          Iterator iterator = this.inventory.armor.iterator();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 004c3ec47..ed678fe0a 100644
+index e52e4bb45..f20076928 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -2575,47 +2575,67 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+@@ -2394,6 +2394,22 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         return entity == null ? stream : Stream.concat(stream, this.a(entity, voxelshape, set));
+     }
+ 
++    // Paper start
++    public List<EntityHuman> getAllPlayers(@Nullable Predicate<? super Entity> predicate) {
++        List<EntityHuman> retVal = new ArrayList<EntityHuman>(players);
++        if (predicate != null) {
++            for (Iterator<EntityHuman> i = retVal.iterator(); i.hasNext();) {
++                Entity e = i.next();
++
++                if (!predicate.test(e)) {
++                    i.remove();
++                }
++            }
++        }
++        return retVal;
++    }
++    // Paper end
++
+     public List<Entity> getEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super Entity> predicate) {
+         ArrayList arraylist = Lists.newArrayList();
+         int i = MathHelper.floor((axisalignedbb.a - 2.0D) / 16.0D);
+@@ -2632,40 +2648,64 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          return i;
      }
  
@@ -53,160 +79,158 @@ index 004c3ec47..ed678fe0a 100644
 -    public EntityHuman a(double d0, double d1, double d2, double d3, Predicate<Entity> predicate) {
 -        double d4 = -1.0D;
 -        EntityHuman entityhuman = null;
--
++    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadius, Predicate<Entity> predicate) {
++        Collection<? extends Entity> foundEntities = (searchRadius < 0.0d) ? getAllPlayers(predicate)
++            : getEntities(null,
++            new AxisAlignedBB(centerX - searchRadius, centerY - searchRadius, centerZ - searchRadius, centerX + searchRadius, centerY + searchRadius, centerZ + searchRadius),
++                predicate);
++        if (foundEntities.isEmpty()) {
++            return null;
++        }
+ 
 -        for (int i = 0; i < this.players.size(); ++i) {
 -            EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
 -            // CraftBukkit start - Fixed an NPE
 -            if (entityhuman1 == null || entityhuman1.dead) {
-+    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadius, Predicate<Entity> predicate) {
-+        Collection<Entity> foundEntities = getEntities(null, new AxisAlignedBB(centerX - searchRadius, centerY - searchRadius, centerZ - searchRadius, centerX + searchRadius, centerY + searchRadius, centerZ + searchRadius), predicate);
-+        if (foundEntities.isEmpty()) {
-+            return null;
-+        }
-+        
 +        Entity retVal = null;
 +        double minDistance = Double.MAX_VALUE;
 +        double radiusSquared = searchRadius * searchRadius;
-+        
++
 +        for (Entity entity : foundEntities) {
 +            if (entity == null || entity.dead || !(entity instanceof EntityHuman)) {
                  continue;
              }
 -            // CraftBukkit end
--
+ 
 -            if (predicate.test(entityhuman1)) {
 -                double d5 = entityhuman1.d(d0, d1, d2);
--
++            double distance = entity.getDistanceSquared(centerX, centerY, centerZ);
++            if (searchRadius >= 0.0d && distance >= radiusSquared) { // getEntities is a cube. We want a sphere, so double-check distance
++                // Also searchRadius >= 0.0d, keeping with previous behavior - pulling player
++                // closest to x,y,z regardless of distance
++                continue;
++            }
+ 
 -                if ((d3 < 0.0D || d5 < d3 * d3) && (d4 == -1.0D || d5 < d4)) {
 -                    d4 = d5;
 -                    entityhuman = entityhuman1;
 -                }
-+            
-+            double distance = entity.getDistanceSquared(centerX, centerY, centerZ);
-+            if (searchRadius >= 0.0d && distance >= radiusSquared) { // getEntities is a cube. We want a sphere, so double-check distance
-+                // Also searchRadius >= 0.0d, keeping with previous behavior - pulling player closest to x,y,z regardless of distance
-+                continue;
-+            }
-+            
 +            minDistance = Math.min(minDistance, distance);
 +            if (distance == minDistance) {
 +                retVal = entity;
              }
          }
--
+ 
 -        return entityhuman;
-+        
 +        return (EntityHuman) retVal;
      }
  
 -    public boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
 -        for (int i = 0; i < this.players.size(); ++i) {
 -            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
--
--            if (IEntitySelector.e.test(entityhuman) && entityhuman.affectsSpawning) { // Paper - Affects Spawning API
--                double d4 = entityhuman.d(d0, d1, d2);
--
--                if (d3 < 0.0D || d4 < d3 * d3) {
 +    public boolean isPlayerNearby(double centerX, double centerY, double centerZ, double searchRadius) {
 +        if (searchRadius < 0.0d) {
 +            // Keeping with previous behavior
 +            return !this.players.isEmpty();
 +        }
-+        
-+        Collection<Entity> foundEntities = getEntities(null, new AxisAlignedBB(centerX - searchRadius, centerY - searchRadius, centerZ - searchRadius, centerX + searchRadius, centerY + searchRadius, centerZ + searchRadius), IEntitySelector.e);
++
++        Collection<Entity> foundEntities = getEntities(null,
++            new AxisAlignedBB(centerX - searchRadius, centerY - searchRadius, centerZ - searchRadius, centerX + searchRadius, centerY + searchRadius, centerZ + searchRadius), IEntitySelector.e);
 +        if (foundEntities.isEmpty()) {
 +            return false;
 +        }
-+        
+ 
+-            if (IEntitySelector.f.test(entityhuman) && entityhuman.affectsSpawning) { // Paper - Affects Spawning API
+-                double d4 = entityhuman.d(d0, d1, d2);
 +        double radiusSquared = searchRadius * searchRadius;
-+        
+ 
+-                if (d3 < 0.0D || d4 < d3 * d3) {
 +        for (Entity entity : foundEntities) {
 +            if (entity == null || !(entity instanceof EntityHuman)) {
 +                continue;
 +            }
-+            
++
 +            if (((EntityHuman) entity).affectsSpawning) {
 +                double distance = entity.getDistanceSquared(centerX, centerY, centerZ);
 +                if (distance < radiusSquared) { // getEntities is a cube. We want a sphere, so double-check distance
                      return true;
                  }
              }
-         }
--
-+        
+@@ -2673,6 +2713,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+ 
          return false;
      }
 +    // Paper end
  
-     @Nullable
-     public EntityHuman a(Entity entity, double d0, double d1) {
-@@ -2627,45 +2647,67 @@ public abstract class World implements GeneratorAccess, IIBlockAccess, AutoClose
+     public boolean b(double d0, double d1, double d2, double d3) {
+         Iterator iterator = this.players.iterator();
+@@ -2708,45 +2749,74 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          return this.a((double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), d0, d1, (Function) null, (Predicate) null);
      }
  
 +    // Paper start
 +    /*
-+     * We figured out what this function does!
-+     * It determines what player a mob should target
++     * We figured out what this function does! It determines what player a mob
++     * should target
 +     */
      @Nullable
 -    public EntityHuman a(double d0, double d1, double d2, double d3, double d4, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate) {
 -        double d5 = -1.0D;
 -        EntityHuman entityhuman = null;
--
--        for (int i = 0; i < this.players.size(); ++i) {
--            EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
--
--            if (!entityhuman1.abilities.isInvulnerable && entityhuman1.isAlive() && !entityhuman1.isSpectator() && (predicate == null || predicate.test(entityhuman1))) {
--                double d6 = entityhuman1.d(d0, entityhuman1.locY, d2);
--                double d7 = d3;
--
--                if (entityhuman1.isSneaking()) {
--                    d7 = d3 * 0.800000011920929D;
--                }
--
--                if (entityhuman1.isInvisible()) {
--                    float f = entityhuman1.dk();
--
--                    if (f < 0.1F) {
--                        f = 0.1F;
--                    }
-+    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadiusXZ, double searchRadiusY, @Nullable Function<EntityHuman, Double> function, @Nullable Predicate<EntityHuman> predicate) {
-+        Collection<Entity> foundEntities = getEntities(null, new AxisAlignedBB(centerX - searchRadiusXZ, centerY - searchRadiusY, centerZ - searchRadiusXZ, centerX + searchRadiusXZ, centerY + searchRadiusY, centerZ + searchRadiusXZ), IEntitySelector.e);
++    public EntityHuman a(double centerX, double centerY, double centerZ, double searchRadiusXZ, double searchRadiusY, @Nullable Function<EntityHuman, Double> function,
++        @Nullable Predicate<EntityHuman> predicate) {
++        Collection<? extends Entity> foundEntities = (searchRadiusXZ < 0.0d) ? getAllPlayers(IEntitySelector.e)
++            : getEntities(null,
++                new AxisAlignedBB(centerX - searchRadiusXZ, (searchRadiusY < 0.0d) ? Double.MIN_VALUE : centerY - searchRadiusY, centerZ - searchRadiusXZ, centerX + searchRadiusXZ,
++                    (searchRadiusY < 0.0d) ? Double.MAX_VALUE : centerY + searchRadiusY, centerZ + searchRadiusXZ),
++                IEntitySelector.e);
 +        if (foundEntities.isEmpty()) {
 +            return null;
 +        }
-+        
+ 
+-        for (int i = 0; i < this.players.size(); ++i) {
+-            EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
 +        EntityHuman retVal = null;
 +        double minDistance = Double.MAX_VALUE;
-+        
+ 
+-            if (!entityhuman1.abilities.isInvulnerable && entityhuman1.isAlive() && !entityhuman1.isSpectator() && (predicate == null || predicate.test(entityhuman1))) {
+-                double d6 = entityhuman1.d(d0, entityhuman1.locY, d2);
+-                double d7 = d3;
 +        double ySquared = searchRadiusY * searchRadiusY;
-+        
+ 
+-                if (entityhuman1.isSneaking()) {
+-                    d7 = d3 * 0.800000011920929D;
+-                }
 +        for (Entity entity : foundEntities) {
 +            if (entity == null || !entity.isAlive() || !(entity instanceof EntityHuman)) {
 +                continue;
 +            }
-+            
+ 
+-                if (entityhuman1.isInvisible()) {
+-                    float f = entityhuman1.dk();
 +            EntityHuman human = (EntityHuman) entity;
-+            
+ 
+-                    if (f < 0.1F) {
+-                        f = 0.1F;
+-                    }
 +            if (human.abilities.isInvulnerable || (predicate != null && !predicate.test(human))) {
 +                continue;
 +            }
-+            
-+            double distanceXZ = human.getDistanceSquared(centerX, human.locY, centerZ);
-+            double visibilitySearchRadiusXZ = searchRadiusXZ;
  
 -                    d7 *= (double) (0.7F * f);
 -                }
++            double distanceXZ = human.getDistanceSquared(centerX, human.locY, centerZ);
++            double visibilitySearchRadiusXZ = searchRadiusXZ;
++
 +            if (human.isSneaking()) {
 +                visibilitySearchRadiusXZ = searchRadiusXZ * 0.800000011920929d;
 +            }
-+            
-+            if (human.isInvisible()) {
-+                double armorRatio = human.getArmorSlotsUsedRatio();
  
 -                if (function != null) {
 -                    d7 *= ((Double) MoreObjects.firstNonNull(function.apply(entityhuman1), Double.valueOf(1.0D))).doubleValue();
++            if (human.isInvisible()) {
++                double armorRatio = human.getArmorSlotsUsedRatio();
++
 +                if (armorRatio < 0.1d) {
 +                    armorRatio = 0.1d;
                  }
@@ -216,22 +240,23 @@ index 004c3ec47..ed678fe0a 100644
 -                    entityhuman = entityhuman1;
 +                visibilitySearchRadiusXZ *= 0.7d * armorRatio;
 +            }
-+            
++
 +            if (function != null) {
 +                visibilitySearchRadiusXZ *= ((Double) MoreObjects.firstNonNull(function.apply(human), Double.valueOf(1.0d))).doubleValue();
 +            }
-+            
-+            if ((searchRadiusY < 0.0d || Math.abs(human.locY - centerY) < ySquared) && (searchRadiusXZ < 0.0d || distanceXZ < visibilitySearchRadiusXZ * visibilitySearchRadiusXZ)) { // getEntities is a cube. We want a sphere, so double-check distance
-+                // Also searchRadiusY/XZ < 0.0d, keeping with previous behavior - pulling player closest to x,y,z regardless of distance
++
++            // getEntities is a cube. We want a sphere, so double-check distance
++            if ((searchRadiusY < 0.0d || Math.abs(human.locY - centerY) < ySquared) && (searchRadiusXZ < 0.0d || distanceXZ < visibilitySearchRadiusXZ * visibilitySearchRadiusXZ)) {
++                // Also searchRadiusY/XZ < 0.0d, keeping with previous behavior - pulling player
++                // closest to x,y,z regardless of distance
 +                minDistance = Math.min(minDistance, distanceXZ);
 +                if (distanceXZ == minDistance) {
 +                    retVal = human;
                  }
              }
          }
--
+ 
 -        return entityhuman;
-+        
 +        return retVal;
      }
 +    // Paper end
@@ -239,5 +264,5 @@ index 004c3ec47..ed678fe0a 100644
      @Nullable
      public EntityHuman a(String s) {
 -- 
-2.18.0.windows.1
+2.19.0
 
