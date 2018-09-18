@@ -1,0 +1,31 @@
+From e9577dffd96d1e066410dcaa07c1b1f6acb78c13 Mon Sep 17 00:00:00 2001
+From: egg82 <phantom_zero@ymail.com>
+Date: Mon, 17 Sep 2018 18:54:47 -0600
+Subject: [PATCH] Prevent chunk population outside of border
+
+Fixes #1333
+
+World generation past the world border prevents chunks from being created, but still attempts to populate them.
+This patch simply checks the chunk attempting to be populated against the current border and skips population if it is outside of the border.
+
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 97ef41fe..b0724b64 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -292,6 +292,13 @@ public final class SpawnerCreature {
+     public static void a(GeneratorAccess generatoraccess, BiomeBase biomebase, int i, int j, Random random) {
+         List list = biomebase.getMobs(EnumCreatureType.CREATURE);
+ 
++        // Paper start - Prevent spawning in out-of-bounds chunks
++        WorldBorder border = generatoraccess.getWorldBorder();
++        if (!border.isChunkInBounds(i, j)) {
++            return;
++        }
++        // Paper end
++
+         if (!list.isEmpty()) {
+             int k = i << 4;
+             int l = j << 4;
+-- 
+2.19.0
+
