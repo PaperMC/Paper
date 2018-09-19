@@ -131,13 +131,28 @@
                  long j = SystemUtils.c();
  
                  if (this.getWorld() == null) {
-@@ -228,7 +282,18 @@
+@@ -204,7 +258,13 @@
+                 if (worldtype == WorldType.FLAT) {
+                     jsonobject.addProperty("flat_world_options", s2);
+                 } else if (!s2.isEmpty()) {
+-                    jsonobject = ChatDeserializer.a(s2);
++                    // CraftBukkit start
++                    try {
++                        jsonobject = ChatDeserializer.a(s2);
++                    } catch (Exception ex) {
++                        DedicatedServer.LOGGER.warn("Invalid generator-settings, ignoring", ex);
++                    }
++                    // CraftBukkit end
+                 }
+ 
+                 this.a(this.getWorld(), this.getWorld(), k, worldtype, jsonobject);
+@@ -228,8 +288,19 @@
                      DedicatedServer.LOGGER.info("Starting remote control listener");
                      this.l = new RemoteControlListener(this);
                      this.l.a();
 +                    this.remoteConsole = new org.bukkit.craftbukkit.command.CraftRemoteConsoleCommandSender(this.remoteControlCommandListener); // CraftBukkit
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start
 +                if (this.server.getBukkitSpawnRadius() > -1) {
 +                    DedicatedServer.LOGGER.info("'settings.spawn-radius' in bukkit.yml has been moved to 'spawn-protection' in server.properties. I will move your config for you.");
@@ -145,12 +160,13 @@
 +                    this.propertyManager.getInt("spawn-protection", this.server.getBukkitSpawnRadius());
 +                    this.server.removeBukkitSpawnRadius();
 +                    this.propertyManager.savePropertiesFile();
-                 }
++                }
 +                // CraftBukkit end
- 
++
                  if (this.aY() > 0L) {
                      Thread thread1 = new Thread(new ThreadWatchdog(this));
-@@ -303,11 +368,11 @@
+ 
+@@ -303,11 +374,11 @@
          return crashreport;
      }
  
@@ -164,7 +180,7 @@
          super.b(booleansupplier);
          this.aU();
      }
-@@ -342,7 +407,15 @@
+@@ -342,7 +413,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
@@ -181,7 +197,7 @@
          }
  
      }
-@@ -549,16 +622,75 @@
+@@ -549,16 +628,75 @@
      }
  
      public String getPlugins() {
@@ -202,17 +218,17 @@
 +                if (i > 0) {
 +                    result.append("; ");
 +                }
- 
--    public String executeRemoteCommand(String s) {
--        this.remoteControlCommandListener.clearMessages();
--        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
--        return this.remoteControlCommandListener.getMessages();
++
 +                result.append(plugins[i].getDescription().getName());
 +                result.append(" ");
 +                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
 +            }
 +        }
-+
+ 
+-    public String executeRemoteCommand(String s) {
+-        this.remoteControlCommandListener.clearMessages();
+-        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
+-        return this.remoteControlCommandListener.getMessages();
 +        return result.toString();
 +        // CraftBukkit end
 +    }
