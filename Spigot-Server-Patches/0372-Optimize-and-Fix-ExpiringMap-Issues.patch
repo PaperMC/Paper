@@ -1,34 +1,44 @@
-From d6e66d04c997b32aa5563503de5a61f0b09a6507 Mon Sep 17 00:00:00 2001
+From e9f487b844501e35de9892cd88dfb2c85835b8f9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 16 Sep 2018 00:00:16 -0400
-Subject: [PATCH] Fix major memory leaks in ExpiringMap
+Subject: [PATCH] Optimize and Fix ExpiringMap Issues
 
-computeIfAbsent would leak as the entry
-was never registered into the ttl map
+computeIfAbsent would leak as the entry was never
+registered into the ttl map, as well as some other
+methods were at risk, so they were added.
 
-This fixes that ,as well as redesigns cleaning to
-not run on every manipulation, and instead to run clean
-once per tick per expiring map.
+This also synchronizes all access make the map thread safe.
+
+This also redesigns cleaning to not run on every
+manipulation, and instead to run clean
+once per tick per active expiring map.
 
 diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
-index 4006f5a69c..d64c143017 100644
+index 4006f5a69c..9a3b35ea1a 100644
 --- a/src/main/java/net/minecraft/server/ExpiringMap.java
 +++ b/src/main/java/net/minecraft/server/ExpiringMap.java
-@@ -6,25 +6,120 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
+@@ -2,29 +2,124 @@ package net.minecraft.server;
+ 
+ import it.unimi.dsi.fastutil.longs.Long2LongLinkedOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2LongMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+-import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import java.util.Map;
 +import java.util.function.BiFunction;
 +import java.util.function.Function;
 +import java.util.function.LongFunction;
  
- public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+-public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
++public class ExpiringMap<T> extends Long2ObjectMaps.SynchronizedMap<T> { // paper - synchronize accesss
      private final int a;
 -    private final Long2LongMap b = new Long2LongLinkedOpenHashMap();
 +    private final Long2LongMap ttl = new Long2LongLinkedOpenHashMap(); // Paper
  
      public ExpiringMap(int i, int j) {
-         super(i);
+-        super(i);
++        super(new Long2ObjectOpenHashMap<>(i)); // Paper
          this.a = j;
      }
  
@@ -143,7 +153,7 @@ index 4006f5a69c..d64c143017 100644
                  break;
              }
  
-@@ -33,7 +128,25 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+@@ -33,7 +128,29 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
                  objectiterator.remove();
              }
          }
@@ -160,6 +170,10 @@ index 4006f5a69c..d64c143017 100644
 +                    ttl.putIfAbsent(entry.getLongKey(), now);
 +                }
 +            } catch (Exception e) { } // Ignore any como's
++        } else if (ttlSize > this.size()) {
++            try {
++                this.ttl.long2LongEntrySet().removeIf(entry -> !this.containsKey(entry.getLongKey()));
++            } catch (Exception e) { } // Ignore any como's
 +        }
 +        if (isEmpty()) {
 +            registered = false;
@@ -170,15 +184,22 @@ index 4006f5a69c..d64c143017 100644
      }
  
      protected boolean a(T var1) {
-@@ -51,7 +164,7 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+@@ -51,8 +168,13 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
      }
  
      public T get(long i) {
 -        this.a(i);
-+        if (ttl.containsKey(i)) this.setAccess(i); // Paper
-         return (T)super.get(i);
+-        return (T)super.get(i);
++        // Paper start - don't setAccess unless a hit
++        T t = super.get(i);
++        if (t != null) {
++            this.setAccess(i);
++        }
++        return t;
++        // Paper end
      }
  
+     public void putAll(Map<? extends Long, ? extends T> var1) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index eb3fc836fb..81cda5df56 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
