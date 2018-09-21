@@ -26,6 +26,7 @@ import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.StructureType;
 import org.bukkit.TreeType;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -1589,6 +1590,13 @@ public class CraftWorld implements World {
                 force
         );
 
+    }
+
+    @Override
+    public Location locateNearestStructure(Location origin, StructureType structureType, int radius, boolean findUnexplored) {
+        BlockPosition originPos = new BlockPosition(origin.getX(), origin.getY(), origin.getZ());
+        BlockPosition nearest = getHandle().getChunkProviderServer().getChunkGenerator().findNearestMapFeature(getHandle(), structureType.getName(), originPos, radius, findUnexplored);
+        return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
     }
 
     public void processChunkGC() {
