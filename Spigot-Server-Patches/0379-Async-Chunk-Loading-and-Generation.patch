@@ -1,4 +1,4 @@
-From 6679d9a994aadb56b330bb10a0608a8c2f766fed Mon Sep 17 00:00:00 2001
+From abe30e6b1206f0531441208aaa31fc306bfdb8ad Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -326,7 +326,7 @@ index 0000000000..8dfed1a8cf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 99613b2ef3..0ed639bb79 100644
+index 2e9206eee8..4793b2f967 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -684,7 +684,7 @@ index 98d182fdb8..1bff25c679 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..c86c1fe8c3
+index 0000000000..d7d6442b58
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,455 @@
@@ -1012,7 +1012,7 @@ index 0000000000..c86c1fe8c3
 +            }
 +            loadOnly.complete(null);
 +
-+            if (!canGenerate) {
++            if (!canGenerate && !isChunkGenerated(x, z)) {
 +                setStatus(PendingStatus.FAIL);
 +                this.chunk = null;
 +                this.hasFinished = true;
@@ -1641,19 +1641,21 @@ index ba01e51b41..bb7ffcc0d0 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b38e394f83..3f64e85e62 100644
+index b411776c3c..757e44cc7c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -159,7 +159,7 @@ public class CraftWorld implements World {
-     // Paper start - Async chunk load API
-     public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
+@@ -161,9 +161,7 @@ public class CraftWorld implements World {
+     public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
          final ChunkProviderServer cps = this.world.getChunkProviderServer();
--        callback.onLoad(cps.getChunkAt(x, z, true, true).bukkitChunk); // TODO: Add back async variant
-+        cps.getChunkAt(x, z, true, true, chunk -> callback.onLoad(chunk != null ? chunk.bukkitChunk : null));
-         /*cps.getChunkAt(x, z, new Runnable() {
-             @Override
-             public void run() {
-@@ -1352,10 +1352,13 @@ public class CraftWorld implements World {
+         java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
+-        net.minecraft.server.Chunk chunk = cps.getChunkAt(x, z, true, gen);
+-        // TODO: Add back async variant
+-        future.complete(chunk != null ? chunk.bukkitChunk : null);
++        cps.getChunkAt(x, z, true, gen, chunk -> future.complete(chunk != null ? chunk.bukkitChunk : null));
+         return future;
+     }
+     // Paper end
+@@ -1343,10 +1341,13 @@ public class CraftWorld implements World {
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
          int radius = world.paperConfig.keepLoadedRange / 16; // Paper
