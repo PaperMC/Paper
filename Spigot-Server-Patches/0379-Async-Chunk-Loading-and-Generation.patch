@@ -1,4 +1,4 @@
-From 4c1cc35a2ce455c02154b5c2b5e4ceac5b1fec8e Mon Sep 17 00:00:00 2001
+From 18ac452c412fe33357fdfeba0f9199f5883ca4cc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -326,7 +326,7 @@ index 0000000000..8dfed1a8cf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2e9206eee8..4793b2f967 100644
+index 2e9206eee8..9b321a74ce 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -440,7 +440,23 @@ index 2e9206eee8..4793b2f967 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
-@@ -433,4 +488,5 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -290,11 +345,13 @@ public class ChunkProviderServer implements IChunkProvider {
+     }
+ 
+     public void close() {
+-        try {
++        // Paper start - we do not need to wait for chunk generations to finish on close
++        /*try {
+             this.batchScheduler.a();
+         } catch (InterruptedException interruptedexception) {
+             ChunkProviderServer.a.error("Couldn\'t stop taskManager", interruptedexception);
+-        }
++        }*/
++        // Paper end
+ 
+     }
+ 
+@@ -433,4 +490,5 @@ public class ChunkProviderServer implements IChunkProvider {
      public boolean isLoaded(int i, int j) {
          return this.chunks.containsKey(ChunkCoordIntPair.a(i, j));
      }
@@ -594,7 +610,7 @@ index 49fba0979e..c6661851d1 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 98d182fdb8..1bff25c679 100644
+index 98d182fdb8..487d98eb1b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -658,7 +674,15 @@ index 98d182fdb8..1bff25c679 100644
              }
          }
  
-@@ -1017,6 +1014,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -650,6 +647,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             if (hasStopped) return;
+             hasStopped = true;
+         }
++        PaperAsyncChunkProvider.stop(this); // Paper
+         // CraftBukkit end
+         MinecraftServer.LOGGER.info("Stopping server");
+         MinecraftTimings.stopServer(); // Paper
+@@ -1017,6 +1015,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -666,7 +690,7 @@ index 98d182fdb8..1bff25c679 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.c("commandFunctions");
-@@ -1053,6 +1051,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1053,6 +1052,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -674,7 +698,7 @@ index 98d182fdb8..1bff25c679 100644
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.c();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-@@ -1109,6 +1108,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1109,6 +1109,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
                  this.methodProfiler.e();
                  this.methodProfiler.e();
                  worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -684,10 +708,10 @@ index 98d182fdb8..1bff25c679 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..cb46dcda49
+index 0000000000..f1131375b2
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,464 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -731,13 +755,12 @@ index 0000000000..cb46dcda49
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.function.Consumer;
 +
-+import static com.destroystokyo.paper.util.PriorityQueuedExecutor.CALLER_RUNS_POLICY;
-+
 +@SuppressWarnings("unused")
 +class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
++    private static final PriorityQueuedExecutor.RejectionHandler IGNORE_HANDLER = (run, executor) -> {};
 +    private static final int CHUNK_THREADS = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, CALLER_RUNS_POLICY);
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, IGNORE_HANDLER);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
@@ -759,7 +782,7 @@ index 0000000000..cb46dcda49
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
 +        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported);
-+        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1);
++        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1, IGNORE_HANDLER);
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -772,6 +795,16 @@ index 0000000000..cb46dcda49
 +        IChunkProvider chunkProvider = world.getChunkProvider();
 +        if (chunkProvider instanceof PaperAsyncChunkProvider) {
 +            ((PaperAsyncChunkProvider) chunkProvider).processChunkLoads();
++        }
++    }
++
++    static void stop(MinecraftServer server) {
++        EXECUTOR.shutdownNow();
++        for (WorldServer world : server.getWorlds()) {
++            IChunkProvider chunkProvider = world.getChunkProvider();
++            if (chunkProvider instanceof PaperAsyncChunkProvider) {
++                ((PaperAsyncChunkProvider) chunkProvider).generationExecutor.shutdownNow();
++            }
 +        }
 +    }
 +
@@ -1735,7 +1768,7 @@ index 12e2c0f6e1..cd6138855e 100644
  
          if (!event.isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 9c2adb2351..19a7f5eb11 100644
+index 9c2adb2351..62c197b80d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
@@ -1751,13 +1784,13 @@ index 9c2adb2351..19a7f5eb11 100644
          this.generator = generator;
          this.seed = seed;
 +        // Paper start
++        boolean asyncSupported = false;
 +        try {
 +            java.lang.reflect.Field asyncSafe = generator.getClass().getDeclaredField("PAPER_ASYNC_SAFE");
 +            asyncSafe.setAccessible(true);
 +            asyncSupported = asyncSafe.getBoolean(generator);
-+        } catch (NoSuchFieldException | IllegalAccessException e) {
-+            asyncSupported = false;
-+        }
++        } catch (NoSuchFieldException | IllegalAccessException ignored) {}
++        this.asyncSupported = asyncSupported;
 +        // Paper end
  
          this.random = new Random(seed);
