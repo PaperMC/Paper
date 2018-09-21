@@ -1,4 +1,4 @@
-From abe30e6b1206f0531441208aaa31fc306bfdb8ad Mon Sep 17 00:00:00 2001
+From 4c1cc35a2ce455c02154b5c2b5e4ceac5b1fec8e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -684,7 +684,7 @@ index 98d182fdb8..1bff25c679 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..d7d6442b58
+index 0000000000..cb46dcda49
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,455 @@
@@ -748,7 +748,7 @@ index 0000000000..d7d6442b58
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
 +    private final MinecraftServer server;
-+    private final boolean isCustomGenerator;
++    private final boolean shouldGenSync;
 +
 +    PaperAsyncChunkProvider(WorldServer world, IChunkLoader chunkLoader, InternalChunkGenerator generator, MinecraftServer server) {
 +        super(world, chunkLoader, generator, server);
@@ -758,8 +758,8 @@ index 0000000000..d7d6442b58
 +        this.asyncHandler = server;
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
-+        this.isCustomGenerator = generator instanceof CustomChunkGenerator;
-+        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, isCustomGenerator ? 0 : 1);
++        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported);
++        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1);
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -1123,7 +1123,7 @@ index 0000000000..d7d6442b58
 +                }
 +            }
 +
-+            if (isCustomGenerator) {
++            if (shouldGenSync) {
 +                synchronized (this) {
 +                    setStatus(PendingStatus.GENERATION_PENDING);
 +                    mainThreadQueue.add(() -> generateFinished(this.generateChunk()));
@@ -1734,6 +1734,34 @@ index 12e2c0f6e1..cd6138855e 100644
          world.getServer().getPluginManager().callEvent(event);
  
          if (!event.isCancelled()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+index 9c2adb2351..19a7f5eb11 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
+     private final WorldServer world;
+     private final long seed;
+     private final Random random;
++    public final boolean asyncSupported; // Paper
+     private final WorldChunkManager chunkManager;
+     private final WorldGenStronghold strongholdGen = new WorldGenStronghold();
+     private final GeneratorSettingsDefault settings = new GeneratorSettingsDefault();
+@@ -43,6 +44,15 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
+         this.world = (WorldServer) world;
+         this.generator = generator;
+         this.seed = seed;
++        // Paper start
++        try {
++            java.lang.reflect.Field asyncSafe = generator.getClass().getDeclaredField("PAPER_ASYNC_SAFE");
++            asyncSafe.setAccessible(true);
++            asyncSupported = asyncSafe.getBoolean(generator);
++        } catch (NoSuchFieldException | IllegalAccessException e) {
++            asyncSupported = false;
++        }
++        // Paper end
+ 
+         this.random = new Random(seed);
+         this.chunkManager = world.worldProvider.getChunkGenerator().getWorldChunkManager();
 -- 
 2.19.0
 
