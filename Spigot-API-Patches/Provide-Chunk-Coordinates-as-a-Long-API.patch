@@ -7,7 +7,7 @@ Allows you to easily access the chunks X/z as a long, and a method
 to look up by the long key too.
 
 diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
-index 079b9feb..c75bce07 100644
+index 079b9febe..b347a3ccf 100644
 --- a/src/main/java/org/bukkit/Chunk.java
 +++ b/src/main/java/org/bukkit/Chunk.java
 @@ -0,0 +0,0 @@ public interface Chunk {
@@ -19,7 +19,24 @@ index 079b9feb..c75bce07 100644
 +     * @return The Chunks X and Z coordinates packed into a long
 +     */
 +    default long getChunkKey() {
-+        return (long) getX() & 0xffffffffL | ((long) getZ() & 0xffffffffL) << 32;
++        return getChunkKey(getX(), getZ());
++    }
++
++    /**
++     * @param loc Location to get chunk key
++     * @return Location's chunk coordinates packed into a long
++     */
++    static long getChunkKey(Location loc) {
++        return getChunkKey((int) Math.floor(loc.getX()) << 4, (int) Math.floor(loc.getZ()) << 4);
++    }
++
++    /**
++     * @param x X Coordinate
++     * @param z Z Coordinate
++     * @return Chunk coordinates packed into a long
++     */
++    static long getChunkKey(int x, int z) {
++        return (long) x & 0xffffffffL | ((long) z & 0xffffffffL) << 32;
 +    }
 +    // Paper end
 +
@@ -27,7 +44,7 @@ index 079b9feb..c75bce07 100644
       * Gets the world containing this chunk
       *
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index dbbcfec9..724088ec 100644
+index 5e6cb56ab..e451ca611 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -0,0 +0,0 @@ public interface World extends PluginMessageRecipient, Metadatable {
@@ -50,6 +67,6 @@ index dbbcfec9..724088ec 100644
 +    // Paper end
 +
      /**
-      * Used by {@link World#getChunkAtAsync(Location,ChunkLoadCallback)} methods
-      * to request a {@link Chunk} to be loaded, with this callback receiving
+      * Checks if the specified {@link Chunk} is loaded
+      *
 --

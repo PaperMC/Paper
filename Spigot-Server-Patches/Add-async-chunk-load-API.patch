@@ -5,7 +5,7 @@ Subject: [PATCH] Add async chunk load API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e4c4cdb980..af977b171a 100644
+index e4c4cdb980..c2aa3917bf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
@@ -13,23 +13,14 @@ index e4c4cdb980..af977b171a 100644
      }
  
 +    // Paper start - Async chunk load API
-+    public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
++    @Override
++    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
 +        final ChunkProviderServer cps = this.world.getChunkProviderServer();
-+        callback.onLoad(cps.getChunkAt(x, z, true, true).bukkitChunk); // TODO: Add back async variant
-+        /*cps.getChunkAt(x, z, new Runnable() {
-+            @Override
-+            public void run() {
-+                callback.onLoad(cps.getChunkAt(x, z).bukkitChunk);
-+            }
-+        });*/
-+    }
-+
-+    public void getChunkAtAsync(Block block, ChunkLoadCallback callback) {
-+        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, callback);
-+    }
-+
-+    public void getChunkAtAsync(Location location, ChunkLoadCallback callback) {
-+        getChunkAtAsync(location.getBlockX() >> 4, location.getBlockZ() >> 4, callback);
++        java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
++        net.minecraft.server.Chunk chunk = cps.getChunkAt(x, z, true, gen);
++        // TODO: Add back async variant
++        future.complete(chunk != null ? chunk.bukkitChunk : null);
++        return future;
 +    }
 +    // Paper end
 +
