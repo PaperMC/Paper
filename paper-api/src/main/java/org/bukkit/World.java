@@ -1522,6 +1522,20 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force);
 
+    /**
+     * Find the closest nearby structure of a given {@link StructureType}.
+     * Finding unexplored structures can, and will, block if the world is
+     * looking in chunks that gave not generated yet. This can lead to the world
+     * temporarily freezing while locating an unexplored structure.
+     *
+     * @param origin where to start looking for a structure
+     * @param structureType the type of structure to find
+     * @param radius the radius, in chunks, around with to search
+     * @param findUnexplored true to only find unexplored structures
+     * @return the closest {@link Location}, or null if no structure of the
+     * specified type exists.
+     */
+    public Location locateNearestStructure(Location origin, StructureType structureType, int radius, boolean findUnexplored);
 
     /**
      * Represents various map environment types that a world may be
