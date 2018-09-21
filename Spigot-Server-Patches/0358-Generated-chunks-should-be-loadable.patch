@@ -1,0 +1,27 @@
+From 7fd668e77664499c5012e01109165eab285c49a0 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 21 Sep 2018 15:50:48 -0400
+Subject: [PATCH] Generated chunks should be loadable
+
+Some chunks that need conversion may fail the loadChunks pass, and
+end up entering the world gen code to finish processing.
+
+We solved this on the API level before, but this needs to apply to
+all chunk loads when gen=false
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 99613b2ef3..2e9206eee8 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -115,7 +115,7 @@ public class ChunkProviderServer implements IChunkProvider {
+         if (chunk != null) {
+             this.asyncTaskHandler.postToMainThread(chunk::addEntities);
+             return chunk;
+-        } else if (flag1) {
++        } else if (flag1 || (flag && isChunkGenerated(i, j))) { // Paper - chunk conversions can be treated as generations
+             try (co.aikar.timings.Timing timing = world.timings.chunkGeneration.startTiming()) { // Paper
+                 this.batchScheduler.b();
+                 this.batchScheduler.a(new ChunkCoordIntPair(i, j));
+-- 
+2.19.0
+
