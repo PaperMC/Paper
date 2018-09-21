@@ -1,0 +1,38 @@
+From 74bfd7a72f4d6b73add1f237f013a9ef70a19e3c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 21 Sep 2018 11:34:00 -0400
+Subject: [PATCH] Sync Player Position to Vehicles
+
+Player Positions could become desynced with their vehicle resulting
+in chunk conflicts about which chunk the entity should really be in.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7b12d17a4c..1ad6b45196 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -374,10 +374,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+ 
+                 entity.setLocation(d3, d4, d5, f, f1);
++                Location curPos = getPlayer().getLocation(); // Paper
++                player.setLocation(d3, d4, d5, f, f1); // Paper
+                 boolean flag2 = worldserver.getCubes(entity, entity.getBoundingBox().shrink(0.0625D)).isEmpty();
+ 
+                 if (flag && (flag1 || !flag2)) {
+                     entity.setLocation(d0, d1, d2, f, f1);
++                    player.setLocation(d0, d1, d2, f, f1); // Paper
+                     this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
+                     return;
+                 }
+@@ -387,7 +390,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 // Spigot Start
+                 if ( !hasMoved )
+                 {
+-                    Location curPos = player.getLocation();
++                    //Location curPos = player.getLocation(); // Paper - move up
+                     lastPosX = curPos.getX();
+                     lastPosY = curPos.getY();
+                     lastPosZ = curPos.getZ();
+-- 
+2.19.0
+
