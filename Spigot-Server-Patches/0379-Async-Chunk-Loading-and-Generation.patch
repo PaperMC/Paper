@@ -1,4 +1,4 @@
-From 18ac452c412fe33357fdfeba0f9199f5883ca4cc Mon Sep 17 00:00:00 2001
+From 78d87a104c5a06fbdf12f5c10b14489fe1e7c799 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -42,6 +42,26 @@ as while looking the chunk up may be safe, absolutely nothing about
 reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 4093fbeb63..80e76b084a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -372,4 +372,15 @@ public class PaperConfig {
+             }
+         }
+     }
++
++    // Temporary opt out, will be removed later
++    public static boolean asyncChunks = false;
++    private static void disableAsyncChunks() {
++        asyncChunks = config.getBoolean("settings.async-chunks", true);
++        if (!asyncChunks) {
++            log("Async Chunks: Disabled - Chunks will be managed synchronosuly, and will cause tremendous lag.");
++        } else {
++            log("Async Chunks: Enabled - Chunks will be loaded and generated much faster, without lag.");
++        }
++    }
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
 index 0000000000..8dfed1a8cf
@@ -708,10 +728,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..f1131375b2
+index 0000000000..11f3a8ae84
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,464 @@
+@@ -0,0 +1,465 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -737,6 +757,7 @@ index 0000000000..f1131375b2
 + */
 +package net.minecraft.server;
 +
++import com.destroystokyo.paper.PaperConfig;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor.Priority;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -760,7 +781,7 @@ index 0000000000..f1131375b2
 +
 +    private static final PriorityQueuedExecutor.RejectionHandler IGNORE_HANDLER = (run, executor) -> {};
 +    private static final int CHUNK_THREADS = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", CHUNK_THREADS, IGNORE_HANDLER);
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? CHUNK_THREADS : 0, IGNORE_HANDLER);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
@@ -1633,7 +1654,7 @@ index fa99fe0146..4f49786aa3 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f837e6c36c..271fdc3bd7 100644
+index f837e6c36c..409c7d6ee6 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -732,7 +732,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -1641,7 +1662,7 @@ index f837e6c36c..271fdc3bd7 100644
          }
  
 -        return new ChunkProviderServer(this, ichunkloader, gen, this.server);
-+        return new PaperAsyncChunkProvider(this, ichunkloader, gen, this.server); // Paper - async chunks
++        return com.destroystokyo.paper.PaperConfig.asyncChunks ? new PaperAsyncChunkProvider(this, ichunkloader, gen, this.server) : new ChunkProviderServer(this, ichunkloader, gen, this.server); // Paper - async chunks
          // CraftBukkit end
      }
  
