@@ -65,11 +65,11 @@ public class CraftAttributeInstance implements AttributeInstance {
        return handle.getAttribute().getDefault();
     }
 
-    private static net.minecraft.server.AttributeModifier convert(AttributeModifier bukkit) {
+    public static net.minecraft.server.AttributeModifier convert(AttributeModifier bukkit) {
         return new net.minecraft.server.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), bukkit.getOperation().ordinal());
     }
 
-    private static AttributeModifier convert(net.minecraft.server.AttributeModifier nms) {
+    public static AttributeModifier convert(net.minecraft.server.AttributeModifier nms) {
         return new AttributeModifier(nms.a(), nms.b(), nms.d(), AttributeModifier.Operation.values()[nms.c()]);
     }
 }
