@@ -9,10 +9,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
+import net.minecraft.server.EnumItemSlot;
+import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
@@ -20,22 +30,28 @@ import net.minecraft.server.NBTTagList;
 import net.minecraft.server.NBTTagString;
 
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.Overridden;
+import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
+import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -45,14 +61,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.NBTCompressedStreamTools;
 import org.apache.commons.codec.binary.Base64;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Children must include the following:
@@ -206,8 +223,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ENCHANTMENTS_LVL = new ItemMetaKey("lvl");
     static final ItemMetaKey REPAIR = new ItemMetaKey("RepairCost", "repair-cost");
-    @Specific(Specific.To.NBT)
-    static final ItemMetaKey ATTRIBUTES = new ItemMetaKey("AttributeModifiers");
+    static final ItemMetaKey ATTRIBUTES = new ItemMetaKey("AttributeModifiers", "attribute-modifiers");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_IDENTIFIER = new ItemMetaKey("AttributeName");
     @Specific(Specific.To.NBT)
@@ -221,6 +237,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     @Specific(Specific.To.NBT)
     static final ItemMetaKey ATTRIBUTES_UUID_LOW = new ItemMetaKey("UUIDLeast");
     @Specific(Specific.To.NBT)
+    static final ItemMetaKey ATTRIBUTES_SLOT = new ItemMetaKey("Slot");
+    @Specific(Specific.To.NBT)
     static final ItemMetaKey HIDEFLAGS = new ItemMetaKey("HideFlags", "ItemFlags");
     @Specific(Specific.To.NBT)
     static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
@@ -231,6 +249,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     private IChatBaseComponent locName;
     private List<String> lore;
     private Map<Enchantment, Integer> enchantments;
+    private Multimap<Attribute, AttributeModifier> attributeModifiers;
     private int repairCost;
     private int hideFlag;
     private boolean unbreakable;
@@ -255,6 +274,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
         if (meta.hasEnchants()) {
             this.enchantments = new HashMap<Enchantment, Integer>(meta.enchantments);
+        }
+
+        if (meta.hasAttributeModifiers()) {
+            this.attributeModifiers = HashMultimap.create(meta.attributeModifiers);
         }
 
         this.repairCost = meta.repairCost;
@@ -301,6 +324,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         this.enchantments = buildEnchantments(tag, ENCHANTMENTS);
+        this.attributeModifiers = buildModifiers(tag, ATTRIBUTES);
 
         if (tag.hasKey(REPAIR.NBT)) {
             repairCost = tag.getInt(REPAIR.NBT);
@@ -314,52 +338,6 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
         if (tag.hasKey(DAMAGE.NBT)) {
             damage = tag.getInt(DAMAGE.NBT);
-        }
-
-        if (tag.get(ATTRIBUTES.NBT) instanceof NBTTagList) {
-            NBTTagList save = null;
-            NBTTagList nbttaglist = tag.getList(ATTRIBUTES.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
-
-            for (int i = 0; i < nbttaglist.size(); ++i) {
-                if (!(nbttaglist.get(i) instanceof NBTTagCompound)) {
-                    continue;
-                }
-                NBTTagCompound nbttagcompound = (NBTTagCompound) nbttaglist.get(i);
-
-                if (!nbttagcompound.hasKeyOfType(ATTRIBUTES_UUID_HIGH.NBT, CraftMagicNumbers.NBT.TAG_ANY_NUMBER)) {
-                    continue;
-                }
-                if (!nbttagcompound.hasKeyOfType(ATTRIBUTES_UUID_LOW.NBT, CraftMagicNumbers.NBT.TAG_ANY_NUMBER)) {
-                    continue;
-                }
-                if (!(nbttagcompound.get(ATTRIBUTES_IDENTIFIER.NBT) instanceof NBTTagString) || !CraftItemFactory.KNOWN_NBT_ATTRIBUTE_NAMES.contains(nbttagcompound.getString(ATTRIBUTES_IDENTIFIER.NBT))) {
-                    continue;
-                }
-                if (!(nbttagcompound.get(ATTRIBUTES_NAME.NBT) instanceof NBTTagString) || nbttagcompound.getString(ATTRIBUTES_NAME.NBT).isEmpty()) {
-                    continue;
-                }
-                if (!nbttagcompound.hasKeyOfType(ATTRIBUTES_VALUE.NBT, CraftMagicNumbers.NBT.TAG_ANY_NUMBER)) {
-                    continue;
-                }
-                if (!nbttagcompound.hasKeyOfType(ATTRIBUTES_TYPE.NBT, CraftMagicNumbers.NBT.TAG_ANY_NUMBER) || nbttagcompound.getInt(ATTRIBUTES_TYPE.NBT) < 0 || nbttagcompound.getInt(ATTRIBUTES_TYPE.NBT) > 2) {
-                    continue;
-                }
-
-                if (save == null) {
-                    save = new NBTTagList();
-                }
-
-                NBTTagCompound entry = new NBTTagCompound();
-                entry.set(ATTRIBUTES_UUID_HIGH.NBT, nbttagcompound.get(ATTRIBUTES_UUID_HIGH.NBT));
-                entry.set(ATTRIBUTES_UUID_LOW.NBT, nbttagcompound.get(ATTRIBUTES_UUID_LOW.NBT));
-                entry.set(ATTRIBUTES_IDENTIFIER.NBT, nbttagcompound.get(ATTRIBUTES_IDENTIFIER.NBT));
-                entry.set(ATTRIBUTES_NAME.NBT, nbttagcompound.get(ATTRIBUTES_NAME.NBT));
-                entry.set(ATTRIBUTES_VALUE.NBT, nbttagcompound.get(ATTRIBUTES_VALUE.NBT));
-                entry.set(ATTRIBUTES_TYPE.NBT, nbttagcompound.get(ATTRIBUTES_TYPE.NBT));
-                save.add(entry);
-            }
-
-            unhandledTags.put(ATTRIBUTES.NBT, save);
         }
 
         Set<String> keys = tag.getKeys();
@@ -391,6 +369,45 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         return enchantments;
     }
 
+    static Multimap<Attribute, AttributeModifier> buildModifiers(NBTTagCompound tag, ItemMetaKey key) {
+        Multimap<Attribute, AttributeModifier> modifiers = HashMultimap.create();
+        if (!tag.hasKey(key.NBT)) {
+            return modifiers;
+        }
+        NBTTagList mods = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
+        int size = mods.size();
+
+        for (int i = 0; i < size; i++) {
+            NBTTagCompound entry = mods.getCompound(i);
+            if (entry.isEmpty()) {
+                // entry is not an actual NBTTagCompound. getCompound returns empty NBTTagCompound in that case
+                continue;
+            }
+            net.minecraft.server.AttributeModifier nmsModifier = GenericAttributes.a(entry);
+            Preconditions.checkNotNull(nmsModifier, "Could not create AttributeModifier. %s", entry.toString());
+
+            AttributeModifier attribMod = CraftAttributeInstance.convert(nmsModifier);
+
+            String attributeName = entry.getString(ATTRIBUTES_IDENTIFIER.NBT);
+            Preconditions.checkArgument(!Strings.isNullOrEmpty(attributeName), "Missing Attribute for AttributeModifier. %s", entry.toString());
+
+            Attribute attribute = CraftAttributeMap.fromMinecraft(attributeName);
+            Preconditions.checkNotNull(attribute, "Could not convert to Bukkit Attribute. %s", attributeName);
+
+            if (entry.hasKeyOfType(ATTRIBUTES_SLOT.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
+                String slotName = entry.getString(ATTRIBUTES_SLOT.NBT);
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(slotName), "Missing Slot when Slot is specified. %s", entry.toString());
+
+                EquipmentSlot slot = CraftEquipmentSlot.getSlot(EnumItemSlot.a(slotName.toLowerCase(Locale.ROOT))); // PAIL rename fromName
+                Preconditions.checkNotNull(slot, "No Slot found when Slot was specified. %s", entry.toString());
+
+                attribMod = new AttributeModifier(attribMod.getUniqueId(), attribMod.getName(), attribMod.getAmount(), attribMod.getOperation(), slot);
+            }
+            modifiers.put(attribute, attribMod);
+        }
+        return modifiers;
+    }
+
     CraftMetaItem(Map<String, Object> map) {
         setDisplayName(SerializableMeta.getString(map, NAME.BUKKIT, true));
         setLocalizedName(SerializableMeta.getString(map, LOCNAME.BUKKIT, true));
@@ -401,6 +418,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         enchantments = buildEnchantments(map, ENCHANTMENTS);
+        attributeModifiers = buildModifiers(map, ATTRIBUTES);
 
         Integer repairCost = SerializableMeta.getObject(Integer.class, map, REPAIR.BUKKIT, true);
         if (repairCost != null) {
@@ -474,6 +492,42 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         return enchantments;
     }
 
+    static Multimap<Attribute, AttributeModifier> buildModifiers(Map<String, Object> map, ItemMetaKey key) {
+        Map<?, ?> mods = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
+        Multimap<Attribute, AttributeModifier> result = HashMultimap.create();
+        if (mods == null) {
+            return result;
+        }
+
+        for (Object obj : mods.keySet()) {
+            if (!(obj instanceof String)) {
+                continue;
+            }
+            String attributeName = (String) obj;
+            if (Strings.isNullOrEmpty(attributeName)) {
+                continue;
+            }
+            List<?> list = SerializableMeta.getObject(List.class, mods, attributeName, true);
+            if (list == null || list.isEmpty()) {
+                return result;
+            }
+
+            for (Object o : list) {
+                if (!(o instanceof AttributeModifier)) { // this catches null
+                    continue;
+                }
+                AttributeModifier modifier = (AttributeModifier) o;
+                Attribute attribute = EnumUtils.getEnum(Attribute.class, attributeName.toUpperCase(Locale.ROOT));
+                if (attribute == null) {
+                    continue;
+                }
+
+                result.put(attribute, modifier);
+            }
+        }
+        return result;
+    }
+
     @Overridden
     void applyToItem(NBTTagCompound itemTag) {
         if (hasDisplayName()) {
@@ -492,6 +546,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
+        applyModifiers(attributeModifiers, itemTag, ATTRIBUTES);
 
         if (hasRepairCost()) {
             itemTag.setInt(REPAIR.NBT, repairCost);
@@ -542,6 +597,35 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         tag.set(key.NBT, list);
     }
 
+    static void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, NBTTagCompound tag, ItemMetaKey key) {
+        if (modifiers == null || modifiers.isEmpty()) {
+            return;
+        }
+
+        NBTTagList list = new NBTTagList();
+        for (Map.Entry<Attribute, AttributeModifier> entry : modifiers.entries()) {
+            if (entry.getKey() == null || entry.getValue() == null) {
+                continue;
+            }
+            net.minecraft.server.AttributeModifier nmsModifier = CraftAttributeInstance.convert(entry.getValue());
+            NBTTagCompound sub = GenericAttributes.a(nmsModifier);
+            Preconditions.checkState(!sub.isEmpty(), "Could not convert AttributeModifier. It was supplied in an invalid format. The following was supplied: %s", sub.toString());
+
+            String name = CraftAttributeMap.toMinecraft(entry.getKey());
+            Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Could not convert to Bukkit Attribute. %s", entry.getKey().name());
+
+            sub.setString(ATTRIBUTES_IDENTIFIER.NBT, name); // Attribute Name
+            if (entry.getValue().getSlot() != null) {
+                EnumItemSlot slot = CraftEquipmentSlot.getNMS(entry.getValue().getSlot());
+                if (slot != null) {
+                    sub.setString(ATTRIBUTES_SLOT.NBT, slot.d()); // PAIL rename getSlotName, getName
+                }
+            }
+            list.add(sub);
+        }
+        tag.set(key.NBT, list);
+    }
+
     void setDisplayTag(NBTTagCompound tag, String key, NBTBase value) {
         final NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
 
@@ -559,7 +643,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage());
+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
     }
 
     public String getDisplayName() {
@@ -714,6 +798,136 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     }
 
     @Override
+    public boolean hasAttributeModifiers() {
+        return attributeModifiers != null && !attributeModifiers.isEmpty();
+    }
+
+    @Override
+    public Multimap<Attribute, AttributeModifier> getAttributeModifiers() {
+        return hasAttributeModifiers() ? ImmutableMultimap.copyOf(attributeModifiers) : null;
+    }
+
+    private void checkAttributeList() {
+        if (attributeModifiers == null) {
+            attributeModifiers = HashMultimap.create();
+        }
+    }
+
+    @Override
+    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(@Nullable EquipmentSlot slot) {
+        checkAttributeList();
+        SetMultimap<Attribute, AttributeModifier> result = HashMultimap.create();
+        for (Map.Entry<Attribute, AttributeModifier> entry : attributeModifiers.entries()) {
+            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Collection<AttributeModifier> getAttributeModifiers(@Nonnull Attribute attribute) {
+        Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+        return attributeModifiers.containsKey(attribute) ? ImmutableList.copyOf(attributeModifiers.get(attribute)) : null;
+    }
+
+    @Override
+    public boolean addAttributeModifier(@Nonnull Attribute attribute, @Nonnull AttributeModifier modifier) {
+        Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+        Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
+        checkAttributeList();
+        for (Map.Entry<Attribute, AttributeModifier> entry : attributeModifiers.entries()) {
+            Preconditions.checkArgument(!entry.getValue().getUniqueId().equals(modifier.getUniqueId()), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier);
+        }
+        return attributeModifiers.put(attribute, modifier);
+    }
+
+    @Override
+    public void setAttributeModifiers(@Nullable Multimap<Attribute, AttributeModifier> attributeModifiers) {
+        if (attributeModifiers == null || attributeModifiers.isEmpty()) {
+            this.attributeModifiers = HashMultimap.create();
+            return;
+        }
+        Iterator<Map.Entry<Attribute, AttributeModifier>> iterator = attributeModifiers.entries().iterator();
+        this.attributeModifiers.clear();
+        while (iterator.hasNext()) {
+            Map.Entry<Attribute, AttributeModifier> next = iterator.next();
+
+            if (next.getKey() == null || next.getValue() == null) {
+                iterator.remove();
+                continue;
+            }
+            this.attributeModifiers.put(next.getKey(), next.getValue());
+        }
+    }
+
+    @Override
+    public boolean removeAttributeModifier(@Nonnull Attribute attribute) {
+        Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+        checkAttributeList();
+        return !attributeModifiers.removeAll(attribute).isEmpty();
+    }
+
+    @Override
+    public boolean removeAttributeModifier(@Nullable EquipmentSlot slot) {
+        checkAttributeList();
+        int removed = 0;
+        Iterator<Map.Entry<Attribute, AttributeModifier>> iter = attributeModifiers.entries().iterator();
+
+        while (iter.hasNext()) {
+            Map.Entry<Attribute, AttributeModifier> entry = iter.next();
+            // Explicitly match against null because (as of MC 1.13) AttributeModifiers without a -
+            // set slot are active in any slot.
+            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+                iter.remove();
+                ++removed;
+            }
+        }
+        return removed > 0;
+    }
+
+    @Override
+    public boolean removeAttributeModifier(@Nonnull Attribute attribute, @Nonnull AttributeModifier modifier) {
+        Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+        Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
+        checkAttributeList();
+        int removed = 0;
+        Iterator<Map.Entry<Attribute, AttributeModifier>> iter = attributeModifiers.entries().iterator();
+
+        while (iter.hasNext()) {
+            Map.Entry<Attribute, AttributeModifier> entry = iter.next();
+            if (entry.getKey() == null || entry.getValue() == null) {
+                iter.remove();
+                ++removed;
+                continue; // remove all null values while we are here
+            }
+
+            if (entry.getKey() == attribute && entry.getValue().getUniqueId().equals(modifier.getUniqueId())) {
+                iter.remove();
+                ++removed;
+            }
+        }
+        return removed > 0;
+    }
+
+    private static boolean compareModifiers(Multimap<Attribute, AttributeModifier> first, Multimap<Attribute, AttributeModifier> second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        for (Map.Entry<Attribute, AttributeModifier> entry : first.entries()) {
+            if (!second.containsEntry(entry.getKey(), entry.getValue())) {
+                return false;
+            }
+        }
+        for (Map.Entry<Attribute, AttributeModifier> entry : second.entries()) {
+            if (!first.containsEntry(entry.getKey(), entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
     public boolean hasDamage() {
         return damage > 0;
     }
@@ -754,6 +968,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
+                && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
                 && (this.unhandledTags.equals(that.unhandledTags))
                 && (this.hideFlag == that.hideFlag)
                 && (this.isUnbreakable() == that.isUnbreakable())
@@ -787,6 +1002,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         hash = 61 * hash + hideFlag;
         hash = 61 * hash + (isUnbreakable() ? 1231 : 1237);
         hash = 61 * hash + (hasDamage() ? this.damage : 0);
+        hash = 61 * hash + (hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
         return hash;
     }
 
@@ -800,6 +1016,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             }
             if (this.enchantments != null) {
                 clone.enchantments = new HashMap<Enchantment, Integer>(this.enchantments);
+            }
+            if (this.hasAttributeModifiers()) {
+                clone.attributeModifiers = HashMultimap.create(this.attributeModifiers);
             }
             clone.hideFlag = this.hideFlag;
             clone.unbreakable = this.unbreakable;
@@ -831,6 +1050,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         serializeEnchantments(enchantments, builder, ENCHANTMENTS);
+        serializeModifiers(attributeModifiers, builder, ATTRIBUTES);
 
         if (hasRepairCost()) {
             builder.put(REPAIR.BUKKIT, repairCost);
@@ -891,6 +1111,25 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         builder.put(key.BUKKIT, enchants.build());
     }
 
+    static void serializeModifiers(Multimap<Attribute, AttributeModifier> modifiers, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
+        if (modifiers == null || modifiers.isEmpty()) {
+            return;
+        }
+
+        Map<String, List<Object>> mods = new HashMap<>();
+        for (Map.Entry<Attribute, AttributeModifier> entry : modifiers.entries()) {
+            if (entry.getKey() == null) {
+                continue;
+            }
+            Collection<AttributeModifier> modCollection = modifiers.get(entry.getKey());
+            if (modCollection == null || modCollection.isEmpty()) {
+                continue;
+            }
+            mods.put(entry.getKey().name(), new ArrayList<>(modCollection));
+        }
+        builder.put(key.BUKKIT, mods);
+    }
+
     static void safelyAdd(Iterable<?> addFrom, Collection<String> addTo, int maxItemLength) {
         if (addFrom == null) {
             return;
@@ -944,6 +1183,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                         HIDEFLAGS.NBT,
                         UNBREAKABLE.NBT,
                         DAMAGE.NBT,
+                        ATTRIBUTES.NBT,
+                        ATTRIBUTES_IDENTIFIER.NBT,
+                        ATTRIBUTES_NAME.NBT,
+                        ATTRIBUTES_VALUE.NBT,
+                        ATTRIBUTES_UUID_HIGH.NBT,
+                        ATTRIBUTES_UUID_LOW.NBT,
+                        ATTRIBUTES_SLOT.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaMap.MAP_ID.NBT,
                         CraftMetaPotion.POTION_EFFECTS.NBT,
