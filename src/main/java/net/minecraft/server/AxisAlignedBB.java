@@ -112,6 +112,7 @@ public class AxisAlignedBB {
         return this.b(vec3d.x, vec3d.y, vec3d.z);
     }
 
+    public final AxisAlignedBB expand(double x, double y, double z) { return b(x, y, z); } // Paper - OBFHELPER
     public AxisAlignedBB b(double d0, double d1, double d2) {
         double d3 = this.minX;
         double d4 = this.minY;
@@ -140,6 +141,12 @@ public class AxisAlignedBB {
 
         return new AxisAlignedBB(d3, d4, d5, d6, d7, d8);
     }
+
+    // Paper start
+    public AxisAlignedBB grow(double d0) {
+        return grow(d0, d0, d0);
+    }
+    // Paper end
 
     public AxisAlignedBB grow(double d0, double d1, double d2) {
         double d3 = this.minX - d0;
@@ -200,6 +207,7 @@ public class AxisAlignedBB {
         return this.minX < d3 && this.maxX > d0 && this.minY < d4 && this.maxY > d1 && this.minZ < d5 && this.maxZ > d2;
     }
 
+    public final boolean contains(Vec3D vec3d) { return d(vec3d); } // Paper - OBFHELPER
     public boolean d(Vec3D vec3d) {
         return this.e(vec3d.x, vec3d.y, vec3d.z);
     }
@@ -233,6 +241,7 @@ public class AxisAlignedBB {
         return this.g(-d0);
     }
 
+    public final Optional<Vec3D> calculateIntercept(Vec3D vec3d, Vec3D vec3d1) { return b(vec3d, vec3d1); } // Paper - OBFHELPER
     public Optional<Vec3D> b(Vec3D vec3d, Vec3D vec3d1) {
         double[] adouble = new double[]{1.0D};
         double d0 = vec3d1.x - vec3d.x;

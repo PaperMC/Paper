@@ -3526,6 +3526,37 @@ public abstract class EntityLiving extends Entity {
         return world.rayTrace(raytrace);
     }
 
+    public MovingObjectPositionEntity getTargetEntity(int maxDistance) {
+        if (maxDistance < 1 || maxDistance > 120) {
+            throw new IllegalArgumentException("maxDistance must be between 1-120");
+        }
+
+        Vec3D start = this.getEyePosition(1.0F);
+        Vec3D direction = this.getLookDirection();
+        Vec3D end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
+
+        List<Entity> entityList = world.getEntities(this, getBoundingBox().expand(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).grow(1.0D, 1.0D, 1.0D), IEntitySelector.canAITarget().and(Entity::isInteractable));
+
+        double distance = 0.0D;
+        MovingObjectPositionEntity result = null;
+
+        for (Entity entity : entityList) {
+            AxisAlignedBB aabb = entity.getBoundingBox().grow((double) entity.getCollisionBorderSize());
+            Optional<Vec3D> rayTraceResult = aabb.calculateIntercept(start, end);
+
+            if (rayTraceResult.isPresent()) {
+                Vec3D rayTrace = rayTraceResult.get();
+                double distanceTo = start.distanceSquared(rayTrace);
+                if (distanceTo < distance || distance == 0.0D) {
+                    result = new MovingObjectPositionEntity(entity, rayTrace);
+                    distance = distanceTo;
+                }
+            }
+        }
+
+        return result;
+    }
+
     public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
 
     public int getShieldBlockingDelay() {
