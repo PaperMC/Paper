@@ -1,4 +1,4 @@
-From 78d87a104c5a06fbdf12f5c10b14489fe1e7c799 Mon Sep 17 00:00:00 2001
+From bdc8345590a88a3bf49f1e01407d2c46086702b7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -345,6 +345,45 @@ index 0000000000..8dfed1a8cf
 +    };
 +
 +}
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ca5cd62866..0101c07b32 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -923,6 +923,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public void addEntities() {
++        ChunkMap.onPostLoad(this); // Paper
+         this.i = true;
+         this.world.a(this.tileEntities.values());
+         List[] aentityslice = this.entitySlices; // Spigot
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index b941676829..1b85520775 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -48,7 +48,13 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                 }
+             }
+         }
++
+         chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
++        // Paper start
++        return chunk1;
++    }
++    static void onPostLoad(Chunk chunk) {
++        // Paper end
+ 
+         if (chunk.newChunk) {
+             chunk.world.timings.syncChunkLoadPopulateTimer.startTiming(); // Paper
+@@ -76,7 +82,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+         }
+         // CraftBukkit end
+ 
+-        return chunk1;
++        //return chunk1; // Paper
+     }
+ 
+     public Chunk a(Long olong, Chunk chunk) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 2e9206eee8..9b321a74ce 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
