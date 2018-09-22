@@ -1,4 +1,4 @@
-From bdc8345590a88a3bf49f1e01407d2c46086702b7 Mon Sep 17 00:00:00 2001
+From d40ff656d5f935e5c889d7f6dc05967d080d2dec Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -385,7 +385,7 @@ index b941676829..1b85520775 100644
  
      public Chunk a(Long olong, Chunk chunk) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2e9206eee8..9b321a74ce 100644
+index 2e9206eee8..40fb448cd8 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -41,9 +41,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -436,9 +436,9 @@ index 2e9206eee8..9b321a74ce 100644
 +    }
 +
 +    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer) {
-+        return getChunkAt(x, z, load, gen, consumer, false);
++        return getChunkAt(x, z, load, gen, false, consumer);
 +    }
-+    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer, boolean priority) {
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, boolean priority, Consumer<Chunk> consumer) {
 +        Chunk chunk = getChunkAt(x, z, load, gen);
 +        if (consumer != null) {
 +            consumer.accept(chunk);
@@ -767,7 +767,7 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..11f3a8ae84
+index 0000000000..908e23760c
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,465 @@
@@ -894,16 +894,16 @@ index 0000000000..11f3a8ae84
 +
 +    @Nullable
 +    @Override
-+    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, Consumer<Chunk> consumer, boolean priority) {
++    public Chunk getChunkAt(int x, int z, boolean load, boolean gen, boolean priority, Consumer<Chunk> consumer) {
 +        long key = ChunkCoordIntPair.asLong(x, z);
 +        Chunk chunk = this.chunks.get(key);
 +        if (chunk != null || !load) { // return null if we aren't loading
 +            return chunk;
 +        }
-+        return loadOrGenerateChunk(x, z, gen, consumer, priority); // Async overrides this method
++        return loadOrGenerateChunk(x, z, gen, priority, consumer); // Async overrides this method
 +    }
 +
-+    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, Consumer<Chunk> consumer, boolean priority) {
++    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, boolean priority, Consumer<Chunk> consumer) {
 +        final long key = ChunkCoordIntPair.asLong(x, z);
 +
 +        // Obtain a PendingChunk
@@ -1237,7 +1237,7 @@ index 0000000000..11f3a8ae84
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..b72c91752e 100644
+index e7d465fb8a..61de438fdf 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,42 @@ public class PlayerChunk {
@@ -1317,7 +1317,7 @@ index e7d465fb8a..b72c91752e 100644
 +            // Paper start - async chunks
 +            if (!loadInProgress) {
 +                loadInProgress = true;
-+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, chunkLoadedConsumer, markedHigh); // Paper)
++                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, markedHigh, chunkLoadedConsumer); // Paper)
 +                markChunkUsed(); // Paper - delay chunk unloads
 +            }
 +            // Paper end
@@ -1496,7 +1496,7 @@ index f87182b5c4..574930f5fe 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e52e4bb458..b0a38add8e 100644
+index e52e4bb458..13f69f1b82 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -1533,7 +1533,54 @@ index e52e4bb458..b0a38add8e 100644
      public boolean allowMonsters;
      public boolean allowAnimals;
      private boolean J;
-@@ -1022,6 +1040,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -741,17 +759,42 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+ 
+     }
+ 
+-    public IBlockData getType(BlockPosition blockposition) {
+-        // CraftBukkit start - tree generation
++    // Paper - async variant
++    public java.util.concurrent.CompletableFuture<IBlockData> getTypeAsync(BlockPosition blockposition) {
++        int x = blockposition.getX();
++        int z = blockposition.getZ();
+         if (captureTreeGeneration) {
+             Iterator<CraftBlockState> it = capturedBlockStates.iterator();
+             while (it.hasNext()) {
+                 CraftBlockState previous = it.next();
+-                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                    return previous.getHandle();
++                if (previous.getX() == x && previous.getY() == blockposition.getY() && previous.getZ() == z) {
++                    return java.util.concurrent.CompletableFuture.completedFuture(previous.getHandle());
+                 }
+             }
+         }
++        if (blockposition.isInvalidYLocation()) {
++            return java.util.concurrent.CompletableFuture.completedFuture(Blocks.VOID_AIR.getBlockData());
++        } else {
++            java.util.concurrent.CompletableFuture<IBlockData> future = new java.util.concurrent.CompletableFuture<>();
++            ((ChunkProviderServer) chunkProvider).getChunkAt(x << 4, z << 4, true, true, (chunk) -> {
++                future.complete(chunk.getType(blockposition));
++            });
++            return future;
++        }
++    }
++    // Paper end
++
++    public IBlockData getType(BlockPosition blockposition) {
++        // CraftBukkit start - tree generation
++        if (captureTreeGeneration) { // If any of this logic updates, update async variant above
++            Iterator<CraftBlockState> it = capturedBlockStates.iterator();
++            while (it.hasNext()) { // If any of this logic updates, update async variant above
++                CraftBlockState previous = it.next();
++                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
++                    return previous.getHandle(); // If any of this logic updates, update async variant above
++                }
++            } // If any of this logic updates, update async variant above
++        }
+         // CraftBukkit end
+         if (blockposition.isInvalidYLocation()) { // Paper
+             return Blocks.VOID_AIR.getBlockData();
+@@ -1022,6 +1065,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
