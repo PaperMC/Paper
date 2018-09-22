@@ -1,4 +1,4 @@
-From 9cf6515af10a67c0778bbd697d12254907ad766a Mon Sep 17 00:00:00 2001
+From c4dc3979a681aac06deeda8f8a3ff0939108b413 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -159,10 +159,10 @@ index d6ea4ae532..5086fe4027 100644
      }
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 0000000000..f3d6eb7694
+index 0000000000..84e313bf8c
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,98 @@
 +package net.minecraft.server;
 +
 +import co.aikar.timings.Timing;
@@ -176,6 +176,10 @@ index 0000000000..f3d6eb7694
 +    static void processQueue(long curTime) {
 +        final long startTime = System.nanoTime();
 +        final long maxTickTime = MAX_TIME - (startTime - curTime);
++
++        if (maxTickTime <= 0) {
++            return;
++        }
 +
 +        START:
 +        for (World world : MinecraftServer.getServer().getWorlds()) {
@@ -212,13 +216,16 @@ index 0000000000..f3d6eb7694
 +            if (this.isEmpty()) {
 +                return false;
 +            }
++            if (isOutOfTime(maxTickTime, startTime)) {
++                return true;
++            }
 +            try (Timing ignored = chunk.world.timings.lightingQueueTimer.startTiming()) {
 +                Runnable lightUpdate;
 +                while ((lightUpdate = this.poll()) != null) {
-+                    if (startTime > 0 && isOutOfTime(maxTickTime, System.nanoTime() - startTime)) {
++                    lightUpdate.run();
++                    if (isOutOfTime(maxTickTime, startTime)) {
 +                        return true;
 +                    }
-+                    lightUpdate.run();
 +                }
 +            }
 +
@@ -234,7 +241,7 @@ index 0000000000..f3d6eb7694
 +            }
 +            processQueue(0, 0); // No timeout
 +
-+            final int radius = 1; // TODO: bitflip, why should this ever be 2?
++            final int radius = 1;
 +            for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
 +                for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
 +                    if (x == chunk.locX && z == chunk.locZ) {
@@ -250,8 +257,8 @@ index 0000000000..f3d6eb7694
 +        }
 +    }
 +
-+    private static boolean isOutOfTime(long maxTickTime, long l) {
-+        return l > maxTickTime;
++    private static boolean isOutOfTime(long maxTickTime, long startTime) {
++        return startTime > 0 && System.nanoTime() - startTime > maxTickTime;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
