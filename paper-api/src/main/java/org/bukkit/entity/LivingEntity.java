@@ -175,6 +175,77 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
     public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return entity being targeted, or null if no entity is targeted
+     */
+    @Nullable
+    public default Entity getTargetEntity(int maxDistance) {
+        return getTargetEntity(maxDistance, false);
+    }
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param ignoreBlocks true to scan through blocks
+     * @return entity being targeted, or null if no entity is targeted
+     */
+    @Nullable
+    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks);
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return TargetEntityInfo about the entity being targeted,
+     *     or null if no entity is targeted
+     * @deprecated use {@link #rayTraceEntities(int)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public default com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance) {
+        return getTargetEntityInfo(maxDistance, false);
+    }
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @return RayTraceResult about the entity being targeted,
+     *     or null if no entity is targeted
+     */
+    @Nullable
+    default RayTraceResult rayTraceEntities(int maxDistance) {
+        return this.rayTraceEntities(maxDistance, false);
+    }
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param ignoreBlocks true to scan through blocks
+     * @return TargetEntityInfo about the entity being targeted,
+     *     or null if no entity is targeted
+     * @deprecated use {@link #rayTraceEntities(int, boolean)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19.3")
+    @Nullable
+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks);
+
+    /**
+     * Gets information about the entity being targeted
+     *
+     * @param maxDistance this is the maximum distance to scan
+     * @param ignoreBlocks true to scan through blocks
+     * @return RayTraceResult about the entity being targeted,
+     *     or null if no entity is targeted
+     */
+    @Nullable
+    RayTraceResult rayTraceEntities(int maxDistance, boolean ignoreBlocks);
     // Paper end
 
     /**
