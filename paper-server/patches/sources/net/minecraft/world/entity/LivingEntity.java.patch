@@ -17,11 +17,10 @@
  import net.minecraft.world.entity.projectile.AbstractArrow;
  import net.minecraft.world.entity.projectile.Projectile;
  import net.minecraft.world.item.AxeItem;
-@@ -135,6 +136,30 @@
- import net.minecraft.world.scores.PlayerTeam;
+@@ -136,6 +137,30 @@
  import net.minecraft.world.scores.Scoreboard;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import java.util.HashSet;
@@ -45,9 +44,10 @@
 +import org.bukkit.event.entity.EntityTeleportEvent;
 +import org.bukkit.event.player.PlayerItemConsumeEvent;
 +// CraftBukkit end
- 
++
  public abstract class LivingEntity extends Entity implements Attackable {
  
+     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -174,7 +199,7 @@
      public static final float DEFAULT_BABY_SCALE = 0.5F;
      public static final String ATTRIBUTES_FIELD = "attributes";
@@ -266,10 +266,14 @@
              boolean flag = scoreboardteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), scoreboardteam);
  
              if (!flag) {
-@@ -819,9 +906,32 @@
+@@ -815,13 +902,36 @@
  
-     }
- 
+         if (nbt.contains("Brain", 10)) {
+             this.brain = this.makeBrain(new Dynamic(NbtOps.INSTANCE, nbt.get("Brain")));
++        }
++
++    }
++
 +    // CraftBukkit start
 +    private boolean isTickingEffects = false;
 +    private List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
@@ -283,15 +287,15 @@
 +        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
 +            this.effect = effect;
 +            this.cause = cause;
-+        }
-+
+         }
+ 
 +        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
 +            this.type = type;
 +            this.cause = cause;
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      protected void tickEffects() {
          Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
  
@@ -857,7 +861,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1527,27 +1854,55 @@
+@@ -1527,25 +1854,53 @@
          }
      }
  
@@ -904,8 +908,8 @@
          }
  
 +        return 0; // CraftBukkit
-     }
- 
++    }
++
 +    protected void dropExperience(ServerLevel world, @Nullable Entity attacker) {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
@@ -913,11 +917,9 @@
 +            this.expToDrop = 0;
 +        }
 +        // CraftBukkit end
-+    }
-+
-     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
+     }
  
-     public long getLootTableSeed() {
+     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
 @@ -1612,19 +1967,35 @@
      }
  
@@ -961,10 +963,11 @@
          }
      }
  
-@@ -1683,6 +2054,20 @@
+@@ -1682,6 +2053,20 @@
+     public LivingEntity.Fallsounds getFallSounds() {
          return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
      }
- 
++
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getHurtSound0(DamageSource damagesource) {
 +        return this.getHurtSound(damagesource);
@@ -978,10 +981,9 @@
 +        return this.getFallDamageSound(fallHeight);
 +    }
 +    // CraftBukkit end
-+
+ 
      public Optional<BlockPos> getLastClimbablePos() {
          return this.lastClimbablePos;
-     }
 @@ -1757,9 +2142,14 @@
          int i = this.calculateFallDamage(fallDistance, damageMultiplier);
  
@@ -1044,7 +1046,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1090,7 +1092,7 @@
 +        };
 +        float resistanceModifier = resistance.apply((double) f).floatValue();
 +        f += resistanceModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> magic = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1379,12 +1381,13 @@
                  }
  
                  Iterator iterator1 = list.iterator();
+-
+-                while (iterator1.hasNext()) {
+-                    Entity entity1 = (Entity) iterator1.next();
 +                this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper - Cap entity collisions
  
--                while (iterator1.hasNext()) {
 +                while (iterator1.hasNext() && this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions) { // Paper - Cap entity collisions
-                     Entity entity1 = (Entity) iterator1.next();
--
++                    Entity entity1 = (Entity) iterator1.next();
 +                    entity1.numCollisions++; // Paper - Cap entity collisions
 +                    this.numCollisions++; // Paper - Cap entity collisions
                      this.doPush(entity1);
@@ -1474,7 +1477,7 @@
                  }
  
              }
-@@ -3544,12 +4164,37 @@
+@@ -3544,12 +4164,69 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1499,6 +1502,38 @@
 +        return this.level().clip(raytrace);
 +    }
 +
++    public @Nullable net.minecraft.world.phys.EntityHitResult getTargetEntity(int maxDistance) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3 start = this.getEyePosition(1.0F);
++        Vec3 direction = this.getLookAngle();
++        Vec3 end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
++
++        List<Entity> entityList = this.level().getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0D, 1.0D, 1.0D), EntitySelector.NO_SPECTATORS.and(Entity::isPickable));
++
++        double distance = 0.0D;
++        net.minecraft.world.phys.EntityHitResult result = null;
++
++        for (Entity entity : entityList) {
++            final double inflationAmount = (double) entity.getPickRadius();
++            AABB aabb = entity.getBoundingBox().inflate(inflationAmount, inflationAmount, inflationAmount);
++            Optional<Vec3> rayTraceResult = aabb.clip(start, end);
++
++            if (rayTraceResult.isPresent()) {
++                Vec3 rayTrace = rayTraceResult.get();
++                double distanceTo = start.distanceToSqr(rayTrace);
++                if (distanceTo < distance || distance == 0.0D) {
++                    result = new net.minecraft.world.phys.EntityHitResult(entity, rayTrace);
++                    distance = distanceTo;
++                }
++            }
++        }
++
++        return result;
++    }
++
 +    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
 +
 +    public int getShieldBlockingDelay() {
@@ -1513,7 +1548,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3568,12 +4213,18 @@
+@@ -3568,12 +4245,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1534,7 +1569,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4243,43 @@
+@@ -3592,18 +4275,43 @@
              }
  
              if (flag2) {
@@ -1546,7 +1581,7 @@
 +                this.setPos(d0, d6, d2);
                  if (world.noCollision((Entity) this) && !world.containsAnyLiquid(this.getBoundingBox())) {
                      flag1 = true;
-                 }
++                }
 +                // now revert and call event if the teleport place is valid
 +                this.setPos(d3, d4, d5);
 +
@@ -1566,7 +1601,7 @@
 +                            return Optional.empty();
 +                        }
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
              }
          }
@@ -1582,7 +1617,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4289,7 @@
+@@ -3613,7 +4321,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1591,7 +1626,7 @@
          }
      }
  
-@@ -3706,7 +4382,7 @@
+@@ -3706,7 +4414,7 @@
      }
  
      public void stopSleeping() {
@@ -1600,7 +1635,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4394,9 @@
+@@ -3718,9 +4426,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1612,7 +1647,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4416,7 @@
+@@ -3740,7 +4448,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1621,7 +1656,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4581,7 @@
+@@ -3905,7 +4613,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  

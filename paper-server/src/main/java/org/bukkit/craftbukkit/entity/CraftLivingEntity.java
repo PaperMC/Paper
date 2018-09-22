@@ -232,6 +232,39 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
         return null;
     }
+
+    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks) {
+        net.minecraft.world.phys.EntityHitResult rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
+        return rayTrace == null ? null : rayTrace.getEntity().getBukkitEntity();
+    }
+
+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
+        net.minecraft.world.phys.EntityHitResult rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
+        return rayTrace == null ? null : new com.destroystokyo.paper.entity.TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getLocation().x, rayTrace.getLocation().y, rayTrace.getLocation().z));
+    }
+
+    @Override
+    public RayTraceResult rayTraceEntities(int maxDistance, boolean ignoreBlocks) {
+        net.minecraft.world.phys.EntityHitResult rayTrace = this.rayTraceEntity(maxDistance, ignoreBlocks);
+        return rayTrace == null ? null : new org.bukkit.util.RayTraceResult(org.bukkit.craftbukkit.util.CraftVector.toBukkit(rayTrace.getLocation()), rayTrace.getEntity().getBukkitEntity());
+    }
+
+    public net.minecraft.world.phys.EntityHitResult rayTraceEntity(int maxDistance, boolean ignoreBlocks) {
+        net.minecraft.world.phys.EntityHitResult rayTrace = getHandle().getTargetEntity(maxDistance);
+        if (rayTrace == null) {
+            return null;
+        }
+        if (!ignoreBlocks) {
+            net.minecraft.world.phys.HitResult rayTraceBlocks = getHandle().getRayTrace(maxDistance, net.minecraft.world.level.ClipContext.Fluid.NONE);
+            if (rayTraceBlocks != null) {
+                net.minecraft.world.phys.Vec3 eye = getHandle().getEyePosition(1.0F);
+                if (eye.distanceToSqr(rayTraceBlocks.getLocation()) <= eye.distanceToSqr(rayTrace.getLocation())) {
+                    return null;
+                }
+            }
+        }
+        return rayTrace;
+    }
     // Paper end
 
     @Override
