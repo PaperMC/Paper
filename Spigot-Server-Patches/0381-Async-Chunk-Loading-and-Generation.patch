@@ -1,4 +1,4 @@
-From a2b8fcc4d15fe4d1bb84d4063662eb9e402aba10 Mon Sep 17 00:00:00 2001
+From 48491f86a5955d590572ab37feeb7d1d5b29a503 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -767,10 +767,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..5a2ca39ba3
+index 0000000000..2ff5f98afa
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,470 @@
+@@ -0,0 +1,478 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1098,34 +1098,40 @@ index 0000000000..5a2ca39ba3
 +            }
 +        }
 +
-+        synchronized boolean loadFinished(Chunk chunk) {
++        boolean loadFinished(Chunk chunk) {
 +            if (chunk != null) {
 +                postChunkToMain(chunk);
 +                return false;
 +            }
 +            loadOnly.complete(null);
 +
-+            if (!canGenerate) {
-+                setStatus(PendingStatus.FAIL);
-+                this.chunk = null;
-+                this.hasFinished = true;
-+                pendingChunks.remove(key);
-+                return false;
-+            } else {
-+                setStatus(PendingStatus.GENERATING);
-+                generating = true;
-+                return true;
++            synchronized (this) {
++                if (!canGenerate) {
++                    setStatus(PendingStatus.FAIL);
++                    this.chunk = null;
++                    this.hasFinished = true;
++                    pendingChunks.remove(key);
++                    return false;
++                } else {
++                    setStatus(PendingStatus.GENERATING);
++                    generating = true;
++                    return true;
++                }
 +            }
 +        }
 +
-+        synchronized void generateFinished(Chunk chunk) {
-+            this.chunk = chunk;
-+            this.hasFinished = true;
++        void generateFinished(Chunk chunk) {
++            synchronized (this) {
++                this.chunk = chunk;
++                this.hasFinished = true;
++            }
 +            if (chunk != null) {
 +                postChunkToMain(chunk);
 +            } else {
-+                pendingChunks.remove(key);
-+                completeFutures(null);
++                synchronized (this) {
++                    pendingChunks.remove(key);
++                    completeFutures(null);
++                }
 +            }
 +        }
 +
@@ -1134,10 +1140,12 @@ index 0000000000..5a2ca39ba3
 +            generate.complete(chunk);
 +        }
 +
-+        synchronized private void postChunkToMain(Chunk chunk) {
-+            setStatus(PendingStatus.PENDING_MAIN);
-+            this.chunk = chunk;
-+            this.hasFinished = true;
++        private void postChunkToMain(Chunk chunk) {
++            synchronized (this) {
++                setStatus(PendingStatus.PENDING_MAIN);
++                this.chunk = chunk;
++                this.hasFinished = true;
++            }
 +            if (Bukkit.isPrimaryThread()) {
 +                postChunk();
 +            } else {
