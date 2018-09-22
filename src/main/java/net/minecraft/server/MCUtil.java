@@ -507,4 +507,19 @@ public final class MCUtil {
                 return null;
         }
     }
+
+    @Nullable
+    public static IChatBaseComponent getBaseComponentFromNbt(String key, NBTTagCompound compound) {
+        if (!compound.hasKey(key)) {
+            return null;
+        }
+        String string = compound.getString(key);
+        try {
+            return IChatBaseComponent.ChatSerializer.jsonToComponent(string);
+        } catch (com.google.gson.JsonParseException e) {
+            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
+        }
+
+        return null;
+    }
 }

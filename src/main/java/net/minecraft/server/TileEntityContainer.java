@@ -17,7 +17,7 @@ public abstract class TileEntityContainer extends TileEntity implements IInvento
         super.load(iblockdata, nbttagcompound);
         this.chestLock = ChestLock.b(nbttagcompound);
         if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
-            this.customName = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
+            this.customName = MCUtil.getBaseComponentFromNbt("CustomName", nbttagcompound); // Paper - Catch ParseException
         }
 
     }
