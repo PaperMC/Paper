@@ -1,4 +1,4 @@
-From aaed8833321200f3791770db4b61fea6c619d772 Mon Sep 17 00:00:00 2001
+From a2b8fcc4d15fe4d1bb84d4063662eb9e402aba10 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 1 Sep 2018 12:20:09 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -767,10 +767,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..a191ded807
+index 0000000000..5a2ca39ba3
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,470 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1148,15 +1148,29 @@ index 0000000000..a191ded807
 +            }
 +        }
 +
-+        synchronized Chunk postChunk() {
++        Chunk postChunk() {
 +            if (!server.isMainThread()) {
 +                throw new IllegalStateException("Must post from main");
 +            }
-+            if (hasPosted) {
-+                return chunk;
++            synchronized (this) {
++                if (hasPosted) {
++                    return chunk;
++                }
++                hasPosted = true;
 +            }
-+            hasPosted = true;
 +            try {
++                if (chunk == null) {
++                    chunk = chunks.get(key);
++                    completeFutures(chunk);
++                    return chunk;
++                }
++                if (pendingLevel != null) {
++                    chunkLoader.loadEntities(pendingLevel, chunk);
++                    pendingLevel = null;
++                }
++                if (!chunk.newChunk) {
++                    chunk.setLastSaved(chunk.world.getTime());
++                }
 +                synchronized (chunks) {
 +                    final Chunk other = chunks.get(key);
 +                    if (other != null) {
@@ -1169,21 +1183,12 @@ index 0000000000..a191ded807
 +                    }
 +                }
 +
-+                if (chunk != null) {
-+                    if (pendingLevel != null) {
-+                        chunkLoader.loadEntities(pendingLevel, chunk);
-+                    }
-+                    if (!chunk.newChunk) {
-+                        chunk.setLastSaved(chunk.world.getTime());
-+                    }
-+                    chunk.addEntities();
-+                }
++                chunk.addEntities();
++
 +                completeFutures(chunk);
 +                return chunk;
 +            } finally {
-+                if (chunk != null) {
-+                    pendingChunks.remove(key);
-+                }
++                pendingChunks.remove(key);
 +                setStatus(PendingStatus.DONE);
 +            }
 +        }
