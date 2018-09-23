@@ -1,4 +1,4 @@
-From 3d33437ccf59ffaab3dd7b23e615245d9f4b2882 Mon Sep 17 00:00:00 2001
+From c4dc3979a681aac06deeda8f8a3ff0939108b413 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -28,7 +28,7 @@ index 145cb274b0..eff9dcf54f 100644
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 39d565db1f..f0d1ae630e 100644
+index 39d565db1f..9fd1bde0ef 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -130,4 +130,10 @@ public class PaperWorldConfig {
@@ -36,16 +36,25 @@ index 39d565db1f..f0d1ae630e 100644
          log("Top of the nether void damage: " + netherVoidTopDamage);
      }
 +
-+    public boolean queueLightUpdates;
++    public boolean queueLightUpdates = true; // This doesn't need to be configurable, it's not buggy.
 +    private void queueLightUpdates() {
-+        queueLightUpdates = getBoolean("queue-light-updates", false);
-+        log("Lighting Queue enabled: " + queueLightUpdates);
++        //queueLightUpdates = getBoolean("queue-light-updates", false);
++        //log("Lighting Queue enabled: " + queueLightUpdates);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4622e92b05..d4bebddab0 100644
+index 4622e92b05..703c377f93 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -38,7 +38,7 @@ public class Chunk implements IChunkAccess {
+     public final Map<HeightMap.Type, HeightMap> heightMap;
+     public final int locX;
+     public final int locZ;
+-    private boolean l;
++    private boolean l; public boolean needsGapCheck() { return l; } // Paper - OBFHELPER
+     private final ChunkConverter m;
+     public final Map<BlockPosition, TileEntity> tileEntities;
+     public final List<Entity>[] entitySlices; // Spigot
 @@ -90,6 +90,7 @@ public class Chunk implements IChunkAccess {
              return removed;
          }
@@ -54,21 +63,15 @@ index 4622e92b05..d4bebddab0 100644
      // Paper end
      public boolean areNeighborsLoaded(final int radius) {
          switch (radius) {
-@@ -280,6 +281,13 @@ public class Chunk implements IChunkAccess {
+@@ -277,6 +278,7 @@ public class Chunk implements IChunkAccess {
+         this.l = true;
+     }
+ 
++    private void recheckGaps(boolean flag) { g(flag); } // Paper - OBFHELPER
      private void g(boolean flag) {
          this.world.methodProfiler.a("recheckGaps");
          if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
-+            this.runOrQueueLightUpdate(() -> recheckGaps(flag)); // Paper - Queue light update
-+        }
-+    }
-+
-+    private void recheckGaps(boolean flag) {
-+        if (true) {
-+            // Paper end
-             for (int i = 0; i < 16; ++i) {
-                 for (int j = 0; j < 16; ++j) {
-                     if (this.g[i + j * 16]) {
-@@ -530,6 +538,7 @@ public class Chunk implements IChunkAccess {
+@@ -530,6 +532,7 @@ public class Chunk implements IChunkAccess {
                  if (flag1) {
                      this.initLighting();
                  } else {
@@ -76,7 +79,7 @@ index 4622e92b05..d4bebddab0 100644
                      int i1 = iblockdata.b(this.world, blockposition);
                      int j1 = iblockdata1.b(this.world, blockposition);
  
-@@ -537,6 +546,7 @@ public class Chunk implements IChunkAccess {
+@@ -537,6 +540,7 @@ public class Chunk implements IChunkAccess {
                      if (i1 != j1 && (i1 < j1 || this.getBrightness(EnumSkyBlock.SKY, blockposition) > 0 || this.getBrightness(EnumSkyBlock.BLOCK, blockposition) > 0)) {
                          this.c(i, k);
                      }
@@ -84,6 +87,26 @@ index 4622e92b05..d4bebddab0 100644
                  }
  
                  TileEntity tileentity;
+@@ -974,10 +978,16 @@ public class Chunk implements IChunkAccess {
+         return false;
+     }
+ 
+-    public void d(boolean flag) {
+-        if (this.l && this.world.worldProvider.g() && !flag) {
+-            this.g(this.world.isClientSide);
++    // Paper start
++    private boolean shouldRecheckGaps = false;
++    public void doGapCheck() {
++        if (shouldRecheckGaps) {
++            this.recheckGaps(false);
++            shouldRecheckGaps = false;
+         }
++    }
++    public void d(boolean flag) {
++        shouldRecheckGaps = this.needsGapCheck() && this.world.worldProvider.hasNaturalLight() && !flag; // Paper
+ 
+         this.u = true;
+ 
 @@ -1307,6 +1317,16 @@ public class Chunk implements IChunkAccess {
          return this.D == 8;
      }
@@ -136,10 +159,10 @@ index d6ea4ae532..5086fe4027 100644
      }
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 0000000000..60562f1fd2
+index 0000000000..84e313bf8c
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,98 @@
 +package net.minecraft.server;
 +
 +import co.aikar.timings.Timing;
@@ -149,14 +172,14 @@ index 0000000000..60562f1fd2
 +
 +class PaperLightingQueue {
 +    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
-+    private static int updatesThisTick;
-+
 +
 +    static void processQueue(long curTime) {
-+        updatesThisTick = 0;
-+
 +        final long startTime = System.nanoTime();
 +        final long maxTickTime = MAX_TIME - (startTime - curTime);
++
++        if (maxTickTime <= 0) {
++            return;
++        }
 +
 +        START:
 +        for (World world : MinecraftServer.getServer().getWorlds()) {
@@ -165,10 +188,11 @@ index 0000000000..60562f1fd2
 +            }
 +
 +            ObjectCollection<Chunk> loadedChunks = ((WorldServer) world).getChunkProviderServer().chunks.values();
-+            for (Chunk chunk : loadedChunks.toArray(new Chunk[loadedChunks.size()])) {
++            for (Chunk chunk : loadedChunks.toArray(new Chunk[0])) {
 +                if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
 +                    break START;
 +                }
++                chunk.doGapCheck();
 +            }
 +        }
 +    }
@@ -192,14 +216,15 @@ index 0000000000..60562f1fd2
 +            if (this.isEmpty()) {
 +                return false;
 +            }
++            if (isOutOfTime(maxTickTime, startTime)) {
++                return true;
++            }
 +            try (Timing ignored = chunk.world.timings.lightingQueueTimer.startTiming()) {
 +                Runnable lightUpdate;
 +                while ((lightUpdate = this.poll()) != null) {
 +                    lightUpdate.run();
-+                    if (startTime > 0 && ++PaperLightingQueue.updatesThisTick % 10 == 0 && PaperLightingQueue.updatesThisTick > 10) {
-+                        if (System.nanoTime() - startTime > maxTickTime) {
-+                            return true;
-+                        }
++                    if (isOutOfTime(maxTickTime, startTime)) {
++                        return true;
 +                    }
 +                }
 +            }
@@ -216,7 +241,7 @@ index 0000000000..60562f1fd2
 +            }
 +            processQueue(0, 0); // No timeout
 +
-+            final int radius = 1; // TODO: bitflip, why should this ever be 2?
++            final int radius = 1;
 +            for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
 +                for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
 +                    if (x == chunk.locX && z == chunk.locZ) {
@@ -231,6 +256,10 @@ index 0000000000..60562f1fd2
 +            }
 +        }
 +    }
++
++    private static boolean isOutOfTime(long maxTickTime, long startTime) {
++        return startTime > 0 && System.nanoTime() - startTime > maxTickTime;
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 499d64ea2c..e06da6bef9 100644
@@ -244,6 +273,19 @@ index 499d64ea2c..e06da6bef9 100644
 +                    chunk.runOrQueueLightUpdate(() -> this.r(blockposition)); // Paper - Queue light update
                      this.methodProfiler.e();
                  }
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldProvider.java b/src/main/java/net/minecraft/server/WorldProvider.java
+index 517b1e7124..53ce7d5e11 100644
+--- a/src/main/java/net/minecraft/server/WorldProvider.java
++++ b/src/main/java/net/minecraft/server/WorldProvider.java
+@@ -7,7 +7,7 @@ public abstract class WorldProvider {
+     protected World b;
+     protected boolean c;
+     protected boolean d;
+-    protected boolean e;
++    protected boolean e; public boolean hasNaturalLight() { return e; } // Paper - OBFHELPER
+     protected final float[] f = new float[16];
+     private final float[] g = new float[4];
  
 -- 
 2.19.0
