@@ -61,7 +61,7 @@ public class CraftInventoryCustom extends CraftInventory {
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
             this.items = NonNullList.a(size, ItemStack.a);
-            this.title = CraftChatMessage.fromStringOrNull(title);
+            this.title = CraftChatMessage.fromString(title)[0];
             this.viewers = new ArrayList<HumanEntity>();
             this.owner = owner;
             this.type = InventoryType.CHEST;
