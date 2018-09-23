@@ -1,0 +1,325 @@
+From a0647a441898664025560ad39980647620736867 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 3 Sep 2018 22:18:38 -0400
+Subject: [PATCH] Fix concurrency and performance issues in DataFixers
+
+We are seeing issues with DataFixers being not thread safe in async chunks
+and even in some spigot packet sending code.
+
+There are a few more global objects that are mutated that need to
+be synchronized to be safe for use over multiple threads.
+
+There may be more cases, but these are extremely obvious ones.
+
+Also replaced quite a few bad uses of Map.containsKey
+
+containsKey is a common newbie mistake that "reads" cleaner, but
+results in double the performance cost of all map operations as
+containsKey in MOST cases where null values are not used is identical to get() == null
+
+Considering how deep datafixers go in call stacks, with tons of map lookups,
+this micro optimization could provide some gains.
+
+Additionally, many of the containsKey/get/put style operations were
+also a concurrency risk, resulting in multiple computation/insertions.
+
+diff --git a/src/main/java/com/mojang/datafixers/DataFixerUpper.java b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
+index fb2c380f8..a4922a35a 100644
+--- a/src/main/java/com/mojang/datafixers/DataFixerUpper.java
++++ b/src/main/java/com/mojang/datafixers/DataFixerUpper.java
+@@ -65,7 +65,7 @@ public class DataFixerUpper implements DataFixer {
+     private final Int2ObjectSortedMap<Schema> schemas;
+     private final List<DataFix> globalList;
+     private final IntSortedSet fixerVersions;
+-    private final Long2ObjectMap<TypeRewriteRule> rules = new Long2ObjectOpenHashMap<>();
++    private final Long2ObjectMap<TypeRewriteRule> rules = it.unimi.dsi.fastutil.longs.Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>()); // Paper
+ 
+     protected DataFixerUpper(final Int2ObjectSortedMap<Schema> schemas, final List<DataFix> globalList, final IntSortedSet fixerVersions) {
+         this.schemas = schemas;
+@@ -125,7 +125,7 @@ public class DataFixerUpper implements DataFixer {
+         final int expandedDataVersion = DataFixUtils.makeKey(dataVersion);
+ 
+         final long key = (long) expandedVersion << 32 | expandedDataVersion;
+-        if (!rules.containsKey(key)) {
++        return rules.computeIfAbsent(key, k -> { // Paper
+             final List<TypeRewriteRule> rules = Lists.newArrayList();
+             for (final DataFix fix : globalList) {
+                 final int fixVersion = fix.getVersionKey();
+@@ -137,9 +137,8 @@ public class DataFixerUpper implements DataFixer {
+                     rules.add(fixRule);
+                 }
+             }
+-            this.rules.put(key, TypeRewriteRule.seq(rules));
+-        }
+-        return rules.get(key);
++            return TypeRewriteRule.seq(rules); // Paper
++        }); // Paper
+     }
+ 
+     protected IntSortedSet fixerVersions() {
+diff --git a/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java b/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
+index 2c259d74e..17481fb6e 100644
+--- a/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
++++ b/src/main/java/com/mojang/datafixers/NamedChoiceFinder.java
+@@ -71,8 +71,10 @@ final class NamedChoiceFinder<FT> implements OpticFinder<FT> {
+             }*/
+             if (targetType instanceof TaggedChoice.TaggedChoiceType<?>) {
+                 final TaggedChoice.TaggedChoiceType<?> choiceType = (TaggedChoice.TaggedChoiceType<?>) targetType;
+-                if (choiceType.types().containsKey(name)) {
+-                    final Type<?> elementType = choiceType.types().get(name);
++                // Paper start - performance - don't use containsKey
++                final Type<?> elementType = choiceType.types().get(name);
++                if (elementType != null) {
++                    // Paper end
+                     if (!Objects.equals(type, elementType)) {
+                         return Either.right(new Type.FieldNotFoundException(String.format("Type error for choice type \"%s\": expected type: %s, actual type: %s)", name, targetType, elementType)));
+                     }
+diff --git a/src/main/java/com/mojang/datafixers/functions/PointFree.java b/src/main/java/com/mojang/datafixers/functions/PointFree.java
+index 0d88490f7..028942b8e 100644
+--- a/src/main/java/com/mojang/datafixers/functions/PointFree.java
++++ b/src/main/java/com/mojang/datafixers/functions/PointFree.java
+@@ -14,7 +14,7 @@ public abstract class PointFree<T> {
+     private Function<DynamicOps<?>, T> value;
+ 
+     @SuppressWarnings("ConstantConditions")
+-    public Function<DynamicOps<?>, T> evalCached() {
++    public synchronized Function<DynamicOps<?>, T> evalCached() { // Paper
+         if (!initialized) {
+             initialized = true;
+             value = eval();
+diff --git a/src/main/java/com/mojang/datafixers/schemas/Schema.java b/src/main/java/com/mojang/datafixers/schemas/Schema.java
+index 7c67d989e..7faca88a8 100644
+--- a/src/main/java/com/mojang/datafixers/schemas/Schema.java
++++ b/src/main/java/com/mojang/datafixers/schemas/Schema.java
+@@ -20,8 +20,8 @@ import java.util.function.Function;
+ import java.util.function.Supplier;
+ 
+ public class Schema {
+-    protected final Object2IntMap<String> RECURSIVE_TYPES = new Object2IntOpenHashMap<>();
+-    private final Map<String, Supplier<TypeTemplate>> TYPE_TEMPLATES = Maps.newHashMap();
++    protected final Object2IntMap<String> RECURSIVE_TYPES = it.unimi.dsi.fastutil.objects.Object2IntMaps.synchronize(new Object2IntOpenHashMap<>()); // Paper
++    private final Map<String, Supplier<TypeTemplate>> TYPE_TEMPLATES = Maps.newConcurrentMap(); // Paper
+     private final Map<String, Type<?>> TYPES;
+     private final int versionKey;
+     private final String name;
+@@ -37,26 +37,31 @@ public class Schema {
+     }
+ 
+     protected Map<String, Type<?>> buildTypes() {
+-        final Map<String, Type<?>> types = Maps.newHashMap();
++        final Map<String, Type<?>> types = Maps.newConcurrentMap(); // Paper
+ 
+         final List<TypeTemplate> templates = Lists.newArrayList();
+ 
++        synchronized (RECURSIVE_TYPES) { // Paper
+         for (final Object2IntMap.Entry<String> entry : RECURSIVE_TYPES.object2IntEntrySet()) {
+             templates.add(DSL.check(entry.getKey(), entry.getIntValue(), getTemplate(entry.getKey())));
+-        }
++        } } // Paper
+ 
+         final TypeTemplate choice = templates.stream().reduce(DSL::or).get();
+         final TypeFamily family = new RecursiveTypeFamily(name, choice);
+ 
++        synchronized (TYPE_TEMPLATES) { // Paper
+         for (final String name : TYPE_TEMPLATES.keySet()) {
+             final Type<?> type;
+-            if (RECURSIVE_TYPES.containsKey(name)) {
+-                type = family.apply(RECURSIVE_TYPES.getInt(name));
++            // Paper start - concurrency and performance improvement, don't use containsKey
++            int recurseId = RECURSIVE_TYPES.getOrDefault(name, -1);
++            if (recurseId != -1) {
++                type = family.apply(recurseId);
++                // Paper end
+             } else {
+                 type = getTemplate(name).apply(family).apply(-1);
+             }
+             types.put(name, type);
+-        }
++        } } // Paper
+         return types;
+     }
+ 
+@@ -89,8 +94,11 @@ public class Schema {
+     }
+ 
+     public TypeTemplate id(final String name) {
+-        if (RECURSIVE_TYPES.containsKey(name)) {
+-            return DSL.id(RECURSIVE_TYPES.get(name));
++        // Paper start - improve concurrency and performance
++        int id = RECURSIVE_TYPES.getOrDefault(name, -1);
++        if (id != -1) {
++            return DSL.id(id);
++            // Paper end
+         }
+         return getTemplate(name);
+     }
+@@ -138,9 +146,10 @@ public class Schema {
+     public void registerType(final boolean recursive, final DSL.TypeReference type, final Supplier<TypeTemplate> template) {
+         TYPE_TEMPLATES.put(type.typeName(), template);
+         // TODO: calculate recursiveness instead of hardcoding
++        synchronized (RECURSIVE_TYPES) { // Paper
+         if (recursive && !RECURSIVE_TYPES.containsKey(type.typeName())) {
+             RECURSIVE_TYPES.put(type.typeName(), RECURSIVE_TYPES.size());
+-        }
++        } } // Paper
+     }
+ 
+     public int getVersionKey() {
+diff --git a/src/main/java/com/mojang/datafixers/types/DynamicOps.java b/src/main/java/com/mojang/datafixers/types/DynamicOps.java
+index 3c76929f2..f21531b3c 100644
+--- a/src/main/java/com/mojang/datafixers/types/DynamicOps.java
++++ b/src/main/java/com/mojang/datafixers/types/DynamicOps.java
+@@ -151,10 +151,10 @@ public interface DynamicOps<T> {
+ 
+     default Optional<T> getGeneric(final T input, final T key) {
+         return getMapValues(input).flatMap(map -> {
+-            if (map.containsKey(key)) {
+-                return Optional.of(map.get(key));
+-            }
+-            return Optional.empty();
++            // Paper start - performance - don't use containsKey
++            T value = map.get(key);
++            return value != null ? Optional.of(value) : Optional.empty();
++            // Paper end
+         });
+     }
+ 
+diff --git a/src/main/java/com/mojang/datafixers/types/Type.java b/src/main/java/com/mojang/datafixers/types/Type.java
+index a80e3fee9..2d5bae7a3 100644
+--- a/src/main/java/com/mojang/datafixers/types/Type.java
++++ b/src/main/java/com/mojang/datafixers/types/Type.java
+@@ -27,8 +27,10 @@ import javax.annotation.Nullable;
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.Optional;
++import java.util.concurrent.CompletableFuture;
+ 
+ public abstract class Type<A> implements App<Type.Mu, A> {
++    private static final Map<Triple<Type<?>, TypeRewriteRule, PointFreeRule>, CompletableFuture<Optional<? extends RewriteResult<?, ?>>>> PENDING_REWRITE_CACHE = Maps.newConcurrentMap();
+     private static final Map<Triple<Type<?>, TypeRewriteRule, PointFreeRule>, Optional<? extends RewriteResult<?, ?>>> REWRITE_CACHE = Maps.newConcurrentMap();
+ 
+     public static class Mu implements K1 {}
+@@ -155,11 +157,34 @@ public abstract class Type<A> implements App<Type.Mu, A> {
+     @SuppressWarnings("unchecked")
+     public Optional<RewriteResult<A, ?>> rewrite(final TypeRewriteRule rule, final PointFreeRule fRule) {
+         final Triple<Type<?>, TypeRewriteRule, PointFreeRule> key = Triple.of(this, rule, fRule);
+-        if (!REWRITE_CACHE.containsKey(key)) {
+-            final Optional<? extends RewriteResult<?, ?>> result = rule.rewrite(this).flatMap(r -> r.view().rewrite(fRule).map(view -> RewriteResult.create(view, r.recData())));
++        // Paper start - concurrency and performance boost - this code under contention would generate multiple rewrites
++        // rewrite this to use a CompletableFuture for pending rewrites. We can not use computeIfAbsent because this is
++        // a recursive call that will block server startup during the Bootstrap phrase thats trying to precache these rewrites
++        Optional<? extends RewriteResult<?, ?>> rewrite = REWRITE_CACHE.get(key);
++        //noinspection OptionalAssignedToNull
++        if (rewrite != null) {
++            return (Optional<RewriteResult<A, ?>>) rewrite;
++        }
++        CompletableFuture<Optional<? extends RewriteResult<?, ?>>> pending;
++        boolean needsCreate;
++        synchronized (PENDING_REWRITE_CACHE) {
++            pending = PENDING_REWRITE_CACHE.get(key);
++            needsCreate = pending == null;
++            if (pending == null) {
++                pending = new CompletableFuture<>();
++                PENDING_REWRITE_CACHE.put(key, pending);
++            }
++        }
++        if (needsCreate) {
++            Optional<RewriteResult<A, ?>> result = rule.rewrite(this).flatMap(r -> r.view().rewrite(fRule).map(view -> RewriteResult.create(view, r.recData())));
+             REWRITE_CACHE.put(key, result);
++            pending.complete(result);
++            PENDING_REWRITE_CACHE.remove(key);
++            return result;
++        } else {
++            return (Optional<RewriteResult<A, ?>>) pending.join();
+         }
+-        return (Optional<RewriteResult<A, ?>>) REWRITE_CACHE.get(key);
++        // Paper end
+     }
+ 
+     public <FT, FR> Type<?> getSetType(final OpticFinder<FT> optic, final Type<FR> newType) {
+diff --git a/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java b/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
+index 4a1f90683..93c2f565f 100644
+--- a/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
++++ b/src/main/java/com/mojang/datafixers/types/families/RecursiveTypeFamily.java
+@@ -32,7 +32,7 @@ public final class RecursiveTypeFamily implements TypeFamily {
+     private final TypeTemplate template;
+     private final int size;
+ 
+-    private final Int2ObjectMap<RecursivePoint.RecursivePointType<?>> types = new Int2ObjectOpenHashMap<>();
++    private final Int2ObjectMap<RecursivePoint.RecursivePointType<?>> types = it.unimi.dsi.fastutil.ints.Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>()); // Paper
+     private final int hashCode;
+ 
+     public RecursiveTypeFamily(final String name, final TypeTemplate template) {
+diff --git a/src/main/java/com/mojang/datafixers/types/templates/Tag.java b/src/main/java/com/mojang/datafixers/types/templates/Tag.java
+index ece3fb5f8..396637bbd 100644
+--- a/src/main/java/com/mojang/datafixers/types/templates/Tag.java
++++ b/src/main/java/com/mojang/datafixers/types/templates/Tag.java
+@@ -173,8 +173,10 @@ public final class Tag implements TypeTemplate {
+         public <T> Pair<T, Optional<A>> read(final DynamicOps<T> ops, final T input) {
+             final Optional<Map<T, T>> map = ops.getMapValues(input);
+             final T nameObject = ops.createString(name);
+-            if (map.isPresent() && map.get().containsKey(nameObject)) {
+-                final T elementValue = map.get().get(nameObject);
++            // Paper start - performance - don't use containsKey
++            final T elementValue;
++            if (map.isPresent() && (elementValue = map.get().get(nameObject)) != null) {
++                // Paper end
+                 final Optional<A> value = element.read(ops, elementValue).getSecond();
+                 if (value.isPresent()) {
+                     return Pair.of(ops.createMap(map.get().entrySet().stream().filter(e -> !Objects.equals(e.getKey(), nameObject)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))), value);
+diff --git a/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java b/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
+index e6dd31233..77d64362b 100644
+--- a/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
++++ b/src/main/java/com/mojang/datafixers/types/templates/TaggedChoice.java
+@@ -187,17 +187,25 @@ public final class TaggedChoice<K> implements TypeTemplate {
+             if (values.isPresent()) {
+                 final Map<T, T> map = values.get();
+                 final T nameObject = ops.createString(name);
+-                if (map.containsKey(nameObject)) {
+-                    final Optional<K> key = keyType.read(ops, map.get(nameObject)).getSecond();
+-                    if (!key.isPresent() || !types.containsKey(key.get())) {
++                // Paper start - performance - don't use containsKey
++                T mapValue = map.get(nameObject);
++                if (mapValue != null) {
++                    final Optional<K> key = keyType.read(ops, mapValue).getSecond();
++                    // also skip containsKey here
++                    //noinspection OptionalIsPresent
++                    K keyValue = key.isPresent() ? key.get() : null;
++                    Type<?> type = keyValue != null ? types.get(keyValue) : null;
++                    if (type == null) {
+                         if (DataFixerUpper.ERRORS_ARE_FATAL) {
+-                            throw new IllegalArgumentException("Unsupported key: " + key.get() + " in " + this);
++                            throw new IllegalArgumentException("Unsupported key: " + keyValue + " in " + this);
+                         } else {
+-                            LOGGER.warn("Unsupported key: {} in {}", key.get(), this);
++                            LOGGER.warn("Unsupported key: {} in {}", keyValue, this);
+                             return Pair.of(input, Optional.empty());
+                         }
+                     }
+-                    return types.get(key.get()).read(ops, input).mapSecond(vo -> vo.map(v -> Pair.of(key.get(), v)));
++
++                    return type.read(ops, input).mapSecond(vo -> vo.map(v -> Pair.of(keyValue, v)));
++                    // Paper end
+                 }
+             }
+             return Pair.of(input, Optional.empty());
+@@ -205,12 +213,14 @@ public final class TaggedChoice<K> implements TypeTemplate {
+ 
+         @Override
+         public <T> T write(final DynamicOps<T> ops, final T rest, final Pair<K, ?> value) {
+-            if (!types.containsKey(value.getFirst())) {
++            // Paper start - performance - don't use containsKey
++            final Type<?> type = types.get(value.getFirst());
++            if (type == null) {
+                 // TODO: better error handling?
+                 // TODO: See todo in read method
+                 throw new IllegalArgumentException("Unsupported key: " + value.getFirst() + " in " + this);
+             }
+-            final Type<?> type = types.get(value.getFirst());
++            // Paper end
+             return capWrite(ops, type, value.getFirst(), value.getSecond(), rest);
+         }
+ 
+-- 
+2.18.0
+

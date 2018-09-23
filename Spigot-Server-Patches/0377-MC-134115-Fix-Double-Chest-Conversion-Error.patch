@@ -1,0 +1,67 @@
+From 87788b37febf210a1c7e65dfee02385c878e80cb Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 20 Sep 2018 19:11:33 -0400
+Subject: [PATCH] MC-134115: Fix Double Chest Conversion Error
+
+A bug with double chest conversion would lead to data
+loss from chunks if they crossed chunk boundries.
+
+This fixes the issue.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 4f72b1b184..1c4e892aad 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -515,6 +515,26 @@ public class Chunk implements IChunkAccess {
+         return this.a(blockposition, iblockdata, flag, true);
+     }
+ 
++    // Paper start
++    public void setTypeDirect(BlockPosition blockposition, IBlockData iblockdata) {
++        int i = blockposition.getX() & 15;
++        int j = blockposition.getY();
++        int k = blockposition.getZ() & 15;
++        ChunkSection section = this.sections[j >> 4];
++
++        if (section == Chunk.EMPTY_CHUNK_SECTION) {
++            if (iblockdata.isAir()) {
++                return;
++            }
++
++            section = new ChunkSection(j >> 4 << 4, this.world.worldProvider.g(), this, this.world, true); // Paper - Anti-Xray
++            this.sections[j >> 4] = section;
++        }
++
++        section.setType(i, j & 15, k, iblockdata);
++    }
++    // Paper end
++
+     @Nullable
+     public IBlockData a(BlockPosition blockposition, IBlockData iblockdata, boolean flag, boolean doPlace) {
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/ChunkConverter.java b/src/main/java/net/minecraft/server/ChunkConverter.java
+index 65b2654de8..70c60d54e7 100644
+--- a/src/main/java/net/minecraft/server/ChunkConverter.java
++++ b/src/main/java/net/minecraft/server/ChunkConverter.java
+@@ -198,10 +198,15 @@ public class ChunkConverter {
+                     EnumDirection enumdirection1 = (EnumDirection)iblockdata.get(BlockChest.FACING);
+                     if (enumdirection.k() != enumdirection1.k() && enumdirection1 == iblockdata1.get(BlockChest.FACING)) {
+                         BlockPropertyChestType blockpropertychesttype = enumdirection == enumdirection1.e() ? BlockPropertyChestType.LEFT : BlockPropertyChestType.RIGHT;
+-                        generatoraccess.setTypeAndData(blockposition1, (IBlockData)iblockdata1.set(BlockChest.b, blockpropertychesttype.a()), 18);
++                        // Paper start
++                        Chunk chunk = ((World) generatoraccess.getMinecraftWorld()).getChunkAtWorldCoords(blockposition);
++                        Chunk chunk1 = ((World) generatoraccess.getMinecraftWorld()).getChunkAtWorldCoords(blockposition1);
++                        chunk1.setTypeDirect(blockposition1, (IBlockData)iblockdata1.set(BlockChest.b, blockpropertychesttype.a()));
++
+                         if (enumdirection1 == EnumDirection.NORTH || enumdirection1 == EnumDirection.EAST) {
+-                            TileEntity tileentity = generatoraccess.getTileEntity(blockposition);
+-                            TileEntity tileentity1 = generatoraccess.getTileEntity(blockposition1);
++                            TileEntity tileentity = chunk.getTileEntity(blockposition);
++                            TileEntity tileentity1 = chunk1.getTileEntity(blockposition1);
++                            // Paper end
+                             if (tileentity instanceof TileEntityChest && tileentity1 instanceof TileEntityChest) {
+                                 TileEntityChest.a((TileEntityChest)tileentity, (TileEntityChest)tileentity1);
+                             }
+-- 
+2.19.0
+

@@ -1,35 +1,26 @@
-From 1bd10f722ce808327480228cfa9924c43dd9e989 Mon Sep 17 00:00:00 2001
+From dbf563359289ee3bddce540d2ee7ef2b209711b5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Add async chunk load API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e4c4cdb980..af977b171a 100644
+index 74f09ac45..0c83a070f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -156,6 +156,27 @@ public class CraftWorld implements World {
+@@ -157,6 +157,18 @@ public class CraftWorld implements World {
          }
      }
  
 +    // Paper start - Async chunk load API
-+    public void getChunkAtAsync(final int x, final int z, final ChunkLoadCallback callback) {
++    @Override
++    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
 +        final ChunkProviderServer cps = this.world.getChunkProviderServer();
-+        callback.onLoad(cps.getChunkAt(x, z, true, true).bukkitChunk); // TODO: Add back async variant
-+        /*cps.getChunkAt(x, z, new Runnable() {
-+            @Override
-+            public void run() {
-+                callback.onLoad(cps.getChunkAt(x, z).bukkitChunk);
-+            }
-+        });*/
-+    }
-+
-+    public void getChunkAtAsync(Block block, ChunkLoadCallback callback) {
-+        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, callback);
-+    }
-+
-+    public void getChunkAtAsync(Location location, ChunkLoadCallback callback) {
-+        getChunkAtAsync(location.getBlockX() >> 4, location.getBlockZ() >> 4, callback);
++        java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
++        net.minecraft.server.Chunk chunk = cps.getChunkAt(x, z, true, gen);
++        // TODO: Add back async variant
++        future.complete(chunk != null ? chunk.bukkitChunk : null);
++        return future;
 +    }
 +    // Paper end
 +
@@ -37,5 +28,5 @@ index e4c4cdb980..af977b171a 100644
          return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
      }
 -- 
-2.18.0
+2.19.0
 

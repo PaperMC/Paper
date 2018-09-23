@@ -1,4 +1,4 @@
-From 8680a88f33ba22fdceb70ffd3a876f4284244a4b Mon Sep 17 00:00:00 2001
+From 1e8f3a642dfd5240ff160e1ed23e41db1e6f0ac7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 29 Aug 2018 21:59:22 -0400
 Subject: [PATCH] Optimize getChunkIfLoaded type calls
@@ -10,7 +10,7 @@ Will improve inlining across many hot methods.
 Improve getBrightness to not do double chunk map lookups.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 96d49b469a..c0ec896eea 100644
+index fc621911e..99613b2ef 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -381,7 +381,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -23,7 +23,7 @@ index 96d49b469a..c0ec896eea 100644
                      neighbor.setNeighborUnloaded(-x, -z);
                      chunk.setNeighborUnloaded(x, z);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 2b5b0c4df6..acd0c93cec 100644
+index 2ff8536d5..0c42d042b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -165,7 +165,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -35,7 +35,7 @@ index 2b5b0c4df6..acd0c93cec 100644
      }
  
      protected World(IDataManager idatamanager, @Nullable PersistentCollection persistentcollection, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
-@@ -715,7 +715,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -721,7 +721,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
          }
  
@@ -45,7 +45,7 @@ index 2b5b0c4df6..acd0c93cec 100644
      }
  
      public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
-@@ -2017,7 +2018,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2030,7 +2031,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          if (blockposition.isInvalidYLocation()) { // Paper
              return false;
          } else {
@@ -55,10 +55,10 @@ index 2b5b0c4df6..acd0c93cec 100644
              return chunk != null && !chunk.isEmpty();
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 755d2632fd..585a0c7fd2 100644
+index 580e248f8..6b46b97c8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -227,7 +227,7 @@ public class CraftWorld implements World {
+@@ -219,7 +219,7 @@ public class CraftWorld implements World {
              return false;
          }
  
@@ -67,7 +67,7 @@ index 755d2632fd..585a0c7fd2 100644
          if (chunk != null) {
              world.getChunkProviderServer().unload(chunk);
          }
-@@ -246,7 +246,7 @@ public class CraftWorld implements World {
+@@ -238,7 +238,7 @@ public class CraftWorld implements World {
  
      private boolean unloadChunk0(int x, int z, boolean save) {
          Boolean result = MCUtil.ensureMain("Unload Chunk", () -> { // Paper - Ensure never async
@@ -77,5 +77,5 @@ index 755d2632fd..585a0c7fd2 100644
              return true;
          }
 -- 
-2.18.0
+2.19.0
 

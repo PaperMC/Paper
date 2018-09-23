@@ -1,17 +1,17 @@
-From 8cf00241b984108b5fa89837e961d8c767833922 Mon Sep 17 00:00:00 2001
+From fd5b90921efcc1fcbdf8390c356af04e3bda7190 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 14:35:27 -0600
 Subject: [PATCH] Add player view distance API
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 9f23c0d2c2..b44d056651 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -71,6 +71,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-     public boolean f;
-     public int ping;
-     public boolean viewingCredits;
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 89f3d17f2..6c4c19244 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -75,6 +75,15 @@ public abstract class EntityHuman extends EntityLiving {
+     // Paper start
+     public boolean affectsSpawning = true;
+     // Paper end
 +    // Paper start - Player view distance API
 +    private int viewDistance = -1;
 +    public int getViewDistance() {
@@ -23,9 +23,34 @@ index 9f23c0d2c2..b44d056651 100644
 +    // Paper end
  
      // CraftBukkit start
-     public String displayName;
+     public boolean fauxSleeping;
+diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
+index 70c9b1f50..0ea639228 100644
+--- a/src/main/java/net/minecraft/server/EntityTracker.java
++++ b/src/main/java/net/minecraft/server/EntityTracker.java
+@@ -200,6 +200,7 @@ public class EntityTracker {
+ 
+     }
+ 
++    public void updatePlayer(EntityPlayer entityplayer) { a(entityplayer); } // Paper - OBFHELPER
+     public void a(EntityPlayer entityplayer) {
+         Iterator iterator = this.c.iterator();
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 8478a81f5..5dbd493f4 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -435,7 +435,7 @@ public class EntityTrackerEntry {
+     public boolean c(EntityPlayer entityplayer) {
+         double d0 = entityplayer.locX - (double) this.xLoc / 4096.0D;
+         double d1 = entityplayer.locZ - (double) this.zLoc / 4096.0D;
+-        int i = Math.min(this.e, this.f);
++        int i = Math.min(this.e, (entityplayer.getViewDistance() - 1) * 16); // Paper - Use player view distance API
+ 
+         return d0 >= (double) (-i) && d0 <= (double) i && d1 >= (double) (-i) && d1 <= (double) i && this.tracker.a(entityplayer);
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index d975c2ccf1..6ece565c51 100644
+index d975c2ccf..fb593529e 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -35,7 +35,7 @@ public class PlayerChunkMap {
@@ -65,27 +90,17 @@ index d975c2ccf1..6ece565c51 100644
                  PlayerChunk playerchunk = this.getChunk(k, l);
  
                  if (playerchunk != null) {
-@@ -316,7 +322,9 @@ public class PlayerChunkMap {
+@@ -316,7 +322,8 @@ public class PlayerChunkMap {
          if (d2 >= 64.0D) {
              int k = (int) entityplayer.d >> 4;
              int l = (int) entityplayer.e >> 4;
 -            int i1 = this.j;
-+            final int viewDistance = entityplayer.getViewDistance(); // Paper - Player view distance API
-+            int i1 = Math.max(getViewDistance(), viewDistance); // Paper - Player view distance API
++            int i1 = entityplayer.getViewDistance(); // Paper - Player view distance API
 +
              int j1 = i - k;
              int k1 = j - l;
  
-@@ -325,7 +333,7 @@ public class PlayerChunkMap {
-             if (j1 != 0 || k1 != 0) {
-                 for (int l1 = i - i1; l1 <= i + i1; ++l1) {
-                     for (int i2 = j - i1; i2 <= j + i1; ++i2) {
--                        if (!this.a(l1, i2, k, l, i1)) {
-+                        if (!this.a(l1, i2, k, l, viewDistance)) { // Paper - Player view distance API
-                             // this.c(l1, i2).a(entityplayer);
-                             chunksToLoad.add(new ChunkCoordIntPair(l1, i2)); // CraftBukkit
-                         }
-@@ -360,6 +368,8 @@ public class PlayerChunkMap {
+@@ -360,6 +367,8 @@ public class PlayerChunkMap {
          return playerchunk != null && playerchunk.d(entityplayer) && playerchunk.e();
      }
  
@@ -94,7 +109,7 @@ index d975c2ccf1..6ece565c51 100644
      public void a(int i) {
          i = MathHelper.clamp(i, 3, 32);
          if (i != this.j) {
-@@ -369,36 +379,55 @@ public class PlayerChunkMap {
+@@ -369,36 +378,55 @@ public class PlayerChunkMap {
  
              while (iterator.hasNext()) {
                  EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -172,7 +187,7 @@ index d975c2ccf1..6ece565c51 100644
  
      private void e() {
          this.l = true;
-@@ -477,4 +506,29 @@ public class PlayerChunkMap {
+@@ -477,4 +505,32 @@ public class PlayerChunkMap {
          }
      }
      // CraftBukkit end
@@ -198,12 +213,28 @@ index d975c2ccf1..6ece565c51 100644
 +            // Order matters
 +            this.setViewDistance(player, toSet);
 +            player.setViewDistance(playerViewDistance);
++
++            //Force update entity trackers
++            this.getWorld().getTracker().updatePlayer(player);
 +        }
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 9e24b77ad..50b1175cc 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -44,7 +44,7 @@ public final class SpawnerCreature {
+                     boolean flag3 = true;
+                     // Spigot Start
+                     byte b0 = worldserver.spigotConfig.mobSpawnRange;
+-                    b0 = ( b0 > worldserver.spigotConfig.viewDistance ) ? (byte) worldserver.spigotConfig.viewDistance : b0;
++                    b0 = ( b0 > entityhuman.getViewDistance() ) ? (byte) entityhuman.getViewDistance() : b0; // Paper - Use player view distance API
+                     b0 = ( b0 > 8 ) ? 8 : b0;
+ 
+                     for (int i1 = -b0; i1 <= b0; ++i1) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 8ecef3ff96..3cc16b6923 100644
+index 8ecef3ff9..3cc16b692 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1641,6 +1641,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -223,6 +254,27 @@ index 8ecef3ff96..3cc16b6923 100644
      // Paper end
  
      @Override
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 1aade75f3..f52de1023 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -108,13 +108,13 @@ public class ActivationRange
+ 
+         int maxRange = Math.max( monsterActivationRange, animalActivationRange );
+         maxRange = Math.max( maxRange, miscActivationRange );
+-        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
++        //maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange ); Paper - Use player view distance API below instead
+ 
+         for ( EntityHuman player : world.players )
+         {
+-
++            int playerMaxRange = maxRange = Math.min( ( player.getViewDistance() << 4 ) - 8, maxRange ); // Paper - Use player view distance API
+             player.activatedTick = MinecraftServer.currentTick;
+-            maxBB = player.getBoundingBox().grow( maxRange, 256, maxRange );
++            maxBB = player.getBoundingBox().grow( playerMaxRange, 256, playerMaxRange ); // Paper - Use player view distance API
+             miscBB = player.getBoundingBox().grow( miscActivationRange, 256, miscActivationRange );
+             animalBB = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
+             monsterBB = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
 -- 
-2.18.0
+2.18.0.windows.1
 
