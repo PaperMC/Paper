@@ -1,0 +1,55 @@
+From 09b0529f9a30a17ba7c288f1ea973300b8f4e84f Mon Sep 17 00:00:00 2001
+From: Kyle Wood <demonwav@gmail.com>
+Date: Sun, 23 Sep 2018 12:52:21 -0500
+Subject: [PATCH] Enable experimental ASM support for Java 11 plugins
+
+JEP 181 brings a new bytecode format for nest mates. ASM API 7 supports
+this, but API 7 is still experimental. Attempting to load a Java 11
+class that contains nest mates will cause an
+UnsupportedOperationException, as API 6 can't handle them. This doesn't
+really require any changes to the rest of the code, since this is just
+related to ASM's visitor.
+
+We want to use the stable API 6 for all other plugins, only using the
+experimental API when required, so we check the class version first.
+
+This should be removed as soon as ASM API 7 is stable.
+
+diff --git a/pom.xml b/pom.xml
+index 1e7d2b550..6d8b27e92 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -83,7 +83,7 @@
+         <dependency>
+             <groupId>org.ow2.asm</groupId>
+             <artifactId>asm</artifactId>
+-            <version>6.2</version>
++            <version>6.2.1</version>
+             <scope>compile</scope>
+         </dependency>
+         <dependency>
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index d172a1aeb..7f2a73d6f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -127,7 +127,16 @@ public class Commodore
+         ClassReader cr = new ClassReader( b );
+         ClassWriter cw = new ClassWriter( cr, 0 );
+ 
+-        cr.accept( new ClassVisitor( Opcodes.ASM6, cw )
++        // Paper start - experimental support of Java 11
++        final int apiVersion;
++        if ( cr.readShort(6) == Opcodes.V11 ) {
++            apiVersion = Opcodes.ASM7_EXPERIMENTAL;
++        } else {
++            apiVersion = Opcodes.ASM6;
++        }
++
++        cr.accept( new ClassVisitor( apiVersion, cw )
++        // Paper end - experimental support of Java 11
+         {
+             @Override
+             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions)
+-- 
+2.19.0
+
