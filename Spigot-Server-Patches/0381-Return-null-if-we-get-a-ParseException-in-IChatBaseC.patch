@@ -1,0 +1,41 @@
+From 353f3324ebd9b865b078e5c67fdda196e3de5080 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 22 Sep 2018 15:56:59 -0400
+Subject: [PATCH] Return null if we get a ParseException in IChatBaseComponent
+
+This is allowed as the method is explicitly marked as nullable and is
+preferable to returning an empty string in this instance.
+
+As a result, data that no longer parses correctly will not crash the server
+instead just logging the exception and continuing (and in most cases should
+fix the data)
+
+Player data is fixed pretty much immediately but some block data (like
+Shulkers) may need to be changed in order for it to re-save properly
+
+No more crashing though.
+
+diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+index ff14b3e093..03c148f4f6 100644
+--- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
++++ b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+@@ -357,7 +357,15 @@ public interface IChatBaseComponent extends Message, Iterable<IChatBaseComponent
+         @Nullable public static IChatBaseComponent jsonToComponent(String json) { return a(json);} // Paper - OBFHELPER
+         @Nullable
+         public static IChatBaseComponent a(String s) {
+-            return (IChatBaseComponent)ChatDeserializer.a(a, s, IChatBaseComponent.class, false);
++            // Paper start - Catch parse exception and return null
++            try {
++                return (IChatBaseComponent)ChatDeserializer.a(a, s, IChatBaseComponent.class, false);
++            } catch (JsonParseException ex) {
++                org.bukkit.Bukkit.getLogger().severe("Unable to deserialize component: " + s);
++                ex.printStackTrace();
++                return null;
++            }
++            // Paper end
+         }
+ 
+         @Nullable
+-- 
+2.19.0
+
