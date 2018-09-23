@@ -24,8 +24,22 @@ How To (Plugin Developers)
  * See our API patches [here](Spigot-API-Patches)
  * See upcoming, pending, and recently added API [here](https://github.com/PaperMC/Paper/projects/6)
  * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
- * Maven Repo (for paper-api): `https://papermc.io/repo/repository/maven-public`
- * Latest API version: `1.13.1-R0.1-SNAPSHOT`
+ * Maven Repo (for paper-api):
+```xml
+<repository>
+    <id>papermc</id>
+    <url>https://papermc.io/repo/repository/maven-public/</url>
+</repository>
+```
+ * Artifact Information:
+```xml
+<dependency>
+    <groupId>com.destroystokyo.paper</groupId>
+    <artifactId>paper-api</artifactId>
+    <version>1.13.1-R0.1-SNAPSHOT</version>
+    <scope>provided</scope>
+ </dependency>
+ ```
 
 How To (Compiling Jar From Source)
 ------
