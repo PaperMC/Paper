@@ -1,0 +1,68 @@
+From d0f944db060ea8e9ffd782f139bc26ce8948b33f Mon Sep 17 00:00:00 2001
+From: cswhite2000 <18whitechristop@gmail.com>
+Date: Tue, 21 Aug 2018 19:39:46 -0700
+Subject: [PATCH] isChunkGenerated API
+
+
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 7e1ee875e..9457832bc 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -9,6 +9,7 @@ import org.bukkit.util.NumberConversions;
+ import org.bukkit.util.Vector;
+ 
+ // Paper start
++import com.google.common.base.Preconditions;
+ import java.util.Collection;
+ import java.util.function.Predicate;
+ import org.bukkit.entity.Entity;
+@@ -502,6 +503,15 @@ public class Location implements Cloneable, ConfigurationSerializable {
+     public boolean isChunkLoaded() { return world.isChunkLoaded(locToBlock(x) >> 4, locToBlock(z) >> 4); } // Paper
+ 
+     // Paper start
++    /**
++     * Checks if a {@link Chunk} has been generated at this location.
++     *
++     * @return true if a chunk has been generated at this location
++     */
++    public boolean isGenerated() {
++        Preconditions.checkNotNull(world, "Location has no world!");
++        return world.isChunkGenerated(locToBlock(x) >> 4, locToBlock(z) >> 4);
++    }
+ 
+     /**
+      * Sets the position of this Location and returns itself
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 348f1c98d..9c06fc163 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -182,6 +182,26 @@ public interface World extends PluginMessageRecipient, Metadatable {
+         return getChunkAt((int) chunkKey, (int) (chunkKey >> 32));
+     }
+ 
++    /**
++     * Checks if a {@link Chunk} has been generated at the specified chunk key,
++     * which is the X and Z packed into a long.
++     *
++     * @param chunkKey The Chunk Key to look up the chunk by
++     * @return true if the chunk has been generated, otherwise false
++     */
++    public default boolean isChunkGenerated(long chunkKey) {
++        return isChunkGenerated((int) chunkKey, (int) (chunkKey >> 32));
++    }
++
++    /**
++     * Checks if a {@link Chunk} has been generated at the given coordinates.
++     *
++     * @param x X-coordinate of the chunk
++     * @param z Z-coordinate of the chunk
++     * @return true if the chunk has been generated, otherwise false
++     */
++    public boolean isChunkGenerated(int x, int z);
++
+     /**
+      * This is the Legacy API before Java 8 was supported. Java 8 Consumer is provided,
+      * as well as future support
+-- 
+2.19.0
+

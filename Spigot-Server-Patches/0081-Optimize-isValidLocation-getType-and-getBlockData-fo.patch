@@ -1,4 +1,4 @@
-From 2429e8939eb62f6c57e3b5a6ab067e0942371932 Mon Sep 17 00:00:00 2001
+From a13d2700664c3333e72da26c2ea598c4cad882f2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -52,10 +52,10 @@ index 5ed34cf7e3..f4ed98d2d9 100644
          public MutableBlockPosition() {
              this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index dcd122d8b5..dee1f7bfe9 100644
+index b006282f38..a36034cc52 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -427,12 +427,24 @@ public class Chunk implements IChunkAccess {
+@@ -421,12 +421,24 @@ public class Chunk implements IChunkAccess {
          return this.getBlockData(i, j, k).b(this.world, new BlockPosition(i, j, k));
      }
  
@@ -97,7 +97,7 @@ index 274c449480..7e4c79a1ce 100644
      private NibbleArray skyLight;
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 94872593b1..ee5d4c5272 100644
+index 275978de83..cad60e4f8b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -263,11 +263,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -114,7 +114,7 @@ index 94872593b1..ee5d4c5272 100644
      }
  
      public boolean isEmpty(BlockPosition blockposition) {
-@@ -281,7 +281,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -284,7 +284,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      // test if meets light level, return faster
      // logic copied from below
      public boolean isLightLevel(BlockPosition blockposition, int level) {
@@ -123,7 +123,7 @@ index 94872593b1..ee5d4c5272 100644
              if (this.getType(blockposition).c(this, blockposition)) {
                  int sky = getSkylightSubtracted();
                  if (this.getLightLevel(blockposition.up(), sky) >= level) {
-@@ -325,7 +325,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -331,7 +331,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          // CraftBukkit end
          Chunk chunk = this.getChunkIfLoaded(blockposition);
          if (chunk != null) {
@@ -132,7 +132,7 @@ index 94872593b1..ee5d4c5272 100644
          }
          return null;
      }
-@@ -380,7 +380,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -386,7 +386,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              return true;
          }
          // CraftBukkit end
@@ -141,7 +141,7 @@ index 94872593b1..ee5d4c5272 100644
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
              return false;
-@@ -701,11 +701,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -707,11 +707,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
          }
  
@@ -155,7 +155,7 @@ index 94872593b1..ee5d4c5272 100644
              if (this.isLoaded(blockposition)) {
                  this.getChunkAtWorldCoords(blockposition).a(enumskyblock, blockposition, i);
                  this.m(blockposition);
-@@ -732,7 +732,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -738,7 +738,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              }
          }
          // CraftBukkit end
@@ -164,7 +164,7 @@ index 94872593b1..ee5d4c5272 100644
              return Blocks.VOID_AIR.getBlockData();
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-@@ -742,7 +742,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -748,7 +748,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public Fluid b(BlockPosition blockposition) {
@@ -173,7 +173,7 @@ index 94872593b1..ee5d4c5272 100644
              return FluidTypes.a.i();
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-@@ -1803,7 +1803,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1816,7 +1816,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
      @Nullable
      public TileEntity getTileEntity(BlockPosition blockposition) {
@@ -182,7 +182,7 @@ index 94872593b1..ee5d4c5272 100644
              return null;
          } else {
              // CraftBukkit start
-@@ -1844,7 +1844,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1857,7 +1857,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
@@ -191,7 +191,7 @@ index 94872593b1..ee5d4c5272 100644
              if (tileentity != null && !tileentity.x()) {
                  // CraftBukkit start
                  if (captureBlockStates) {
-@@ -1905,7 +1905,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1918,7 +1918,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public boolean p(BlockPosition blockposition) {
@@ -201,5 +201,5 @@ index 94872593b1..ee5d4c5272 100644
          } else {
              Chunk chunk = this.chunkProvider.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, false, false);
 -- 
-2.18.0
+2.19.0
 

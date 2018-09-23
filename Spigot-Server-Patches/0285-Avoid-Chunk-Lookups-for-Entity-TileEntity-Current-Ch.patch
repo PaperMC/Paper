@@ -1,4 +1,4 @@
-From 771d740dc6145e2bf73fc418477e9e8c292479a3 Mon Sep 17 00:00:00 2001
+From e9cd3efda6cfbe48f2c343c4efbd63bb2fdfa894 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -10,10 +10,10 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 614fce444..e806d13d2 100644
+index 9f2a08b03d..0dab65c870 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -725,6 +725,7 @@ public class Chunk implements IChunkAccess {
+@@ -719,6 +719,7 @@ public class Chunk implements IChunkAccess {
          ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
@@ -22,10 +22,10 @@ index 614fce444..e806d13d2 100644
          this.a(entity, entity.af);
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index be6d21e4c..ba1fb577a 100644
+index 7cf4a9c11e..ee2cdb897c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1245,12 +1245,15 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1258,12 +1258,15 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          int j;
          // Paper start - Set based removal lists
          for (Entity e : this.g) {
@@ -42,7 +42,7 @@ index be6d21e4c..ba1fb577a 100644
          }
  
          for (Entity e : this.g) {
-@@ -1311,12 +1314,17 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1324,12 +1327,17 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              this.methodProfiler.e();
              this.methodProfiler.a("remove");
              if (entity.dead) {
@@ -61,7 +61,7 @@ index be6d21e4c..ba1fb577a 100644
  
                  guardEntityList = false; // Spigot
                  this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
-@@ -1361,7 +1369,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1374,7 +1382,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  BlockPosition blockposition = tileentity.getPosition();
  
                  // Paper start - Skip ticking in chunks scheduled for unload
@@ -70,7 +70,7 @@ index be6d21e4c..ba1fb577a 100644
                  boolean shouldTick = chunk != null;
                  if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
                      shouldTick = shouldTick && chunk.scheduledForUnload == null;
-@@ -1397,8 +1405,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1410,8 +1418,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  tilesThisCycle--;
                  this.tileEntityListTick.remove(tileTickPosition--);
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
@@ -85,5 +85,5 @@ index be6d21e4c..ba1fb577a 100644
              }
          }
 -- 
-2.18.0
+2.19.0
 

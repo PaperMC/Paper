@@ -1,0 +1,70 @@
+From d5864c694fd05c2230856192ea3bbccb8ac3695a Mon Sep 17 00:00:00 2001
+From: Senmori <thesenmori@gmail.com>
+Date: Sat, 22 Sep 2018 12:55:43 -0400
+Subject: [PATCH] Spigot PR 493
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index c9d4d45564..d928119254 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -423,22 +423,34 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+                 continue;
+             }
+             net.minecraft.server.AttributeModifier nmsModifier = GenericAttributes.a(entry);
+-            Preconditions.checkNotNull(nmsModifier, "Could not create AttributeModifier. %s", entry.toString());
++            if (nmsModifier == null) {
++                continue;
++            }
+ 
+             AttributeModifier attribMod = CraftAttributeInstance.convert(nmsModifier);
+ 
+             String attributeName = entry.getString(ATTRIBUTES_IDENTIFIER.NBT);
+-            Preconditions.checkArgument(!Strings.isNullOrEmpty(attributeName), "Missing Attribute for AttributeModifier. %s", entry.toString());
++            if (attributeName == null || attributeName.isEmpty()) {
++                continue;
++            }
+ 
+             Attribute attribute = CraftAttributeMap.fromMinecraft(attributeName);
+-            Preconditions.checkNotNull(attribute, "Could not convert to Bukkit Attribute. %s", attributeName);
++            if (attribute == null) {
++                continue;
++            }
+ 
+             if (entry.hasKeyOfType(ATTRIBUTES_SLOT.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
+                 String slotName = entry.getString(ATTRIBUTES_SLOT.NBT);
+-                Preconditions.checkArgument(!Strings.isNullOrEmpty(slotName), "Missing Slot when Slot is specified. %s", entry.toString());
++                if (slotName == null || slotName.isEmpty()) {
++                    modifiers.put(attribute, attribMod);
++                    continue;
++                }
+ 
+                 EquipmentSlot slot = CraftEquipmentSlot.getSlot(EnumItemSlot.a(slotName.toLowerCase(Locale.ROOT))); // PAIL rename fromName
+-                Preconditions.checkNotNull(slot, "No Slot found when Slot was specified. %s", entry.toString());
++                if (slot == null) {
++                    modifiers.put(attribute, attribMod);
++                    continue;
++                }
+ 
+                 attribMod = new AttributeModifier(attribMod.getUniqueId(), attribMod.getName(), attribMod.getAmount(), attribMod.getOperation(), slot);
+             }
+@@ -667,10 +679,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+             }
+             net.minecraft.server.AttributeModifier nmsModifier = CraftAttributeInstance.convert(entry.getValue());
+             NBTTagCompound sub = GenericAttributes.a(nmsModifier);
+-            Preconditions.checkState(!sub.isEmpty(), "Could not convert AttributeModifier. It was supplied in an invalid format. The following was supplied: %s", sub.toString());
++            if (sub.isEmpty()) {
++                continue;
++            }
+ 
+             String name = CraftAttributeMap.toMinecraft(entry.getKey());
+-            Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Could not convert to Bukkit Attribute. %s", entry.getKey().name());
++            if (name == null || name.isEmpty()) {
++                continue;
++            }
+ 
+             sub.setString(ATTRIBUTES_IDENTIFIER.NBT, name); // Attribute Name
+             if (entry.getValue().getSlot() != null) {
+-- 
+2.19.0
+
