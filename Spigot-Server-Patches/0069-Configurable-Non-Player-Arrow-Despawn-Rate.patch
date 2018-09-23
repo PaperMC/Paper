@@ -1,4 +1,4 @@
-From 6e22f788fdc7627d53014e39fc83e9810d82ab64 Mon Sep 17 00:00:00 2001
+From cc78b6a0a71a18db09dd96d40bf04cf330e84327 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 15:12:22 -0400
 Subject: [PATCH] Configurable Non Player Arrow Despawn Rate
@@ -6,25 +6,31 @@ Subject: [PATCH] Configurable Non Player Arrow Despawn Rate
 Can set a much shorter despawn rate for arrows that players can not pick up.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6f96627a2e..0de3007392 100644
+index f238394923..7b821ebf16 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -203,4 +203,13 @@ public class PaperWorldConfig {
+@@ -203,4 +203,19 @@ public class PaperWorldConfig {
      private void allowLeashingUndeadHorse() {
          allowLeashingUndeadHorse = getBoolean("allow-leashing-undead-horse", false);
      }
 +
 +    public int nonPlayerArrowDespawnRate = -1;
++    public int creativeArrowDespawnRate = -1;
 +    private void nonPlayerArrowDespawnRate() {
 +        nonPlayerArrowDespawnRate = getInt("non-player-arrow-despawn-rate", -1);
 +        if (nonPlayerArrowDespawnRate == -1) {
 +            nonPlayerArrowDespawnRate = spigotConfig.arrowDespawnRate;
 +        }
++        creativeArrowDespawnRate = getInt("creative-arrow-despawn-rate", -1);
++        if (creativeArrowDespawnRate == -1) {
++            creativeArrowDespawnRate = spigotConfig.arrowDespawnRate;
++        }
 +        log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
++        log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index b0f93d9cf5..c24225892f 100644
+index b0f93d9cf5..74cf2ab68a 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
 @@ -262,7 +262,7 @@ public abstract class EntityArrow extends Entity implements IProjectile {
@@ -32,10 +38,10 @@ index b0f93d9cf5..c24225892f 100644
      protected void f() {
          ++this.despawnCounter;
 -        if (this.despawnCounter >= world.spigotConfig.arrowDespawnRate) { // Spigot
-+        if (this.despawnCounter >= (fromPlayer != PickupStatus.DISALLOWED ? world.spigotConfig.arrowDespawnRate : world.paperConfig.nonPlayerArrowDespawnRate)) { // Spigot // Paper
++        if (this.despawnCounter >= (fromPlayer == PickupStatus.CREATIVE_ONLY ? world.paperConfig.creativeArrowDespawnRate : (fromPlayer == PickupStatus.DISALLOWED ? world.paperConfig.nonPlayerArrowDespawnRate : world.spigotConfig.arrowDespawnRate))) { // Spigot // Paper
              this.die();
          }
  
 -- 
-2.18.0
+2.19.0
 
