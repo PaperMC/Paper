@@ -531,6 +531,47 @@ public final class Bukkit {
     }
 
     /**
+     * Create a new explorer map targeting the closest nearby structure of a
+     * given {@link StructureType}.
+     * <br>
+     * This method uses implementation default values for radius and
+     * findUnexplored (usually 100, true).
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structureType the type of structure to find
+     * @return a newly created item stack
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      org.bukkit.StructureType, int, boolean)
+     */
+    public static ItemStack createExplorerMap(World world, Location location, StructureType structureType) {
+        return server.createExplorerMap(world, location, structureType);
+    }
+
+    /**
+     * Create a new explorer map targeting the closest nearby structure of a
+     * given {@link StructureType}.
+     * <br>
+     * This method uses implementation default values for radius and
+     * findUnexplored (usually 100, true).
+     *
+     * @param world the world the map will belong to
+     * @param location the origin location to find the nearest structure
+     * @param structureType the type of structure to find
+     * @param radius radius to search, see World#locateNearestStructure for more
+     *               information
+     * @param findUnexplored whether to find unexplored structures
+     * @return the newly created item stack
+     *
+     * @see World#locateNearestStructure(org.bukkit.Location,
+     *      org.bukkit.StructureType, int, boolean)
+     */
+    public static ItemStack createExplorerMap(World world, Location location, StructureType structureType, int radius, boolean findUnexplored) {
+        return server.createExplorerMap(world, location, structureType, radius, findUnexplored);
+    }
+
+    /**
      * Reloads the server, refreshing settings and plugin information.
      */
     public static void reload() {
