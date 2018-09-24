@@ -1,0 +1,145 @@
+From d34f861c60d8b6a41b6091118cfffe747420d72b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 23 Sep 2018 20:44:52 -0400
+Subject: [PATCH] Backport light queue changes from 1.13
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ed14753512..10262b29fa 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -141,10 +141,10 @@ public class PaperWorldConfig {
+         log("Top of the nether void damage: " + netherVoidTopDamage);
+     }
+ 
+-    public boolean queueLightUpdates;
++    public boolean queueLightUpdates = true;
+     private void queueLightUpdates() {
+-        queueLightUpdates = getBoolean("queue-light-updates", false);
+-        log("Lighting Queue enabled: " + queueLightUpdates);
++        //queueLightUpdates = getBoolean("queue-light-updates", false);
++        //log("Lighting Queue enabled: " + queueLightUpdates);
+     }
+ 
+     public boolean disableEndCredits;
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 523d10e8bc..b6acf7c13f 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -272,16 +272,10 @@ public class Chunk {
+         this.m = true;
+     }
+ 
++    private void recheckGaps(boolean flag) { h(flag); } // Paper
+     private void h(boolean flag) {
+         this.world.methodProfiler.a("recheckGaps");
+         if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
+-            this.runOrQueueLightUpdate(() -> recheckGaps(flag)); // Paper - Queue light update
+-        }
+-    }
+-
+-    private void recheckGaps(boolean flag) {
+-        if (true) {
+-            // Paper end
+             for (int i = 0; i < 16; ++i) {
+                 for (int j = 0; j < 16; ++j) {
+                     if (this.i[i + j * 16]) {
+@@ -1231,9 +1225,19 @@ public class Chunk {
+         return new BlockPosition(blockposition.getX(), this.h[k], blockposition.getZ());
+     }
+ 
++    // Paper start
++    private boolean shouldRecheckGaps = false;
++    public void doGapCheck() {
++        if (shouldRecheckGaps) {
++            this.recheckGaps(false);
++            shouldRecheckGaps = false;
++        }
++    }
++    // Paper end
++
+     public void b(boolean flag) {
+         if (this.m && this.world.worldProvider.m() && !flag) {
+-            this.h(this.world.isClientSide);
++            shouldRecheckGaps = true; // Paper
+         }
+ 
+         this.r = true;
+diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+index 345cd58240..325255e9d4 100644
+--- a/src/main/java/net/minecraft/server/PaperLightingQueue.java
++++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
+@@ -7,15 +7,15 @@ import java.util.ArrayDeque;
+ 
+ class PaperLightingQueue {
+     private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
+-    private static int updatesThisTick;
+-
+ 
+     static void processQueue(long curTime) {
+-        updatesThisTick = 0;
+-
+         final long startTime = System.nanoTime();
+         final long maxTickTime = MAX_TIME - (startTime - curTime);
+ 
++        if (maxTickTime <= 0) {
++            return;
++        }
++
+         START:
+         for (World world : MinecraftServer.getServer().worlds) {
+             if (!world.paperConfig.queueLightUpdates) {
+@@ -23,10 +23,11 @@ class PaperLightingQueue {
+             }
+ 
+             ObjectCollection<Chunk> loadedChunks = ((WorldServer) world).getChunkProviderServer().chunks.values();
+-            for (Chunk chunk : loadedChunks.toArray(new Chunk[loadedChunks.size()])) {
++            for (Chunk chunk : loadedChunks.toArray(new Chunk[0])) {
+                 if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
+                     break START;
+                 }
++                chunk.doGapCheck();
+             }
+         }
+     }
+@@ -50,14 +51,15 @@ class PaperLightingQueue {
+             if (this.isEmpty()) {
+                 return false;
+             }
++            if (isOutOfTime(maxTickTime, startTime)) {
++                return true;
++            }
+             try (Timing ignored = chunk.world.timings.lightingQueueTimer.startTiming()) {
+                 Runnable lightUpdate;
+                 while ((lightUpdate = this.poll()) != null) {
+                     lightUpdate.run();
+-                    if (startTime > 0 && ++PaperLightingQueue.updatesThisTick % 10 == 0 && PaperLightingQueue.updatesThisTick > 10) {
+-                        if (System.nanoTime() - startTime > maxTickTime) {
+-                            return true;
+-                        }
++                    if (isOutOfTime(maxTickTime, startTime)) {
++                        return true;
+                     }
+                 }
+             }
+@@ -74,7 +76,7 @@ class PaperLightingQueue {
+             }
+             processQueue(0, 0); // No timeout
+ 
+-            final int radius = 1; // TODO: bitflip, why should this ever be 2?
++            final int radius = 1;
+             for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
+                 for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
+                     if (x == chunk.locX && z == chunk.locZ) {
+@@ -89,4 +91,8 @@ class PaperLightingQueue {
+             }
+         }
+     }
++
++    private static boolean isOutOfTime(long maxTickTime, long startTime) {
++        return startTime > 0 && System.nanoTime() - startTime > maxTickTime;
++    }
+ }
+-- 
+2.19.0
+
