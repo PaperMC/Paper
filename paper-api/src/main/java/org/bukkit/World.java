@@ -1527,10 +1527,21 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Finding unexplored structures can, and will, block if the world is
      * looking in chunks that gave not generated yet. This can lead to the world
      * temporarily freezing while locating an unexplored structure.
+     * <p>
+     * The {@code radius} is not a rigid square radius. Each structure may alter
+     * how many chunks to check for each iteration. Do not assume that only a
+     * radius x radius chunk area will be checked. For example,
+     * {@link StructureType#WOODLAND_MANSION} can potentially check up to 20,000
+     * blocks away (or more) regardless of the radius used.
+     * <p>
+     * This will <i>not</i> load or generate chunks. This can also lead to
+     * instances where the server can hang if you are only looking for
+     * unexplored structures. This is because it will keep looking further and
+     * further out in order to find the structure.
      *
      * @param origin where to start looking for a structure
      * @param structureType the type of structure to find
-     * @param radius the radius, in chunks, around with to search
+     * @param radius the radius, in chunks, around which to search
      * @param findUnexplored true to only find unexplored structures
      * @return the closest {@link Location}, or null if no structure of the
      * specified type exists.
