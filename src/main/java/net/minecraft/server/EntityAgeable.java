@@ -73,6 +73,7 @@ public abstract class EntityAgeable extends EntityCreature {
     }
 
     public void setAge(int i, boolean flag) {
+        if (ageLocked) return; // Paper - GH-1459
         int j = this.getAge();
         int k = j;
 
