@@ -37,6 +37,7 @@ import org.bukkit.Server;
 import org.bukkit.UnsafeValues;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.World;
+import org.bukkit.StructureType;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
 import org.bukkit.boss.BarColor;
@@ -59,6 +60,7 @@ import org.bukkit.craftbukkit.generator.CraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
@@ -96,6 +98,7 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
@@ -1252,6 +1255,30 @@ public final class CraftServer implements Server {
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Items.MAP, 1);
         WorldMap worldmap = ItemWorldMap.getSavedMap(stack, ((CraftWorld) world).getHandle());
         return worldmap.mapView;
+    }
+
+    @Override
+    public ItemStack createExplorerMap(World world, Location location, StructureType structureType) {
+        return this.createExplorerMap(world, location, structureType, 100, true);
+    }
+
+    @Override
+    public ItemStack createExplorerMap(World world, Location location, StructureType structureType, int radius, boolean findUnexplored) {
+        Validate.notNull(world, "World cannot be null");
+        Validate.notNull(structureType, "StructureType cannot be null");
+        Validate.notNull(structureType.getMapIcon(), "Cannot create explorer maps for StructureType " + structureType.getName());
+
+        WorldServer worldServer = ((CraftWorld) world).getHandle();
+        Location structureLocation = world.locateNearestStructure(location, structureType, radius, findUnexplored);
+        BlockPosition structurePosition = new BlockPosition(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
+
+        // Create map with trackPlayer = true, unlimitedTracking = true
+        net.minecraft.server.ItemStack stack = ItemWorldMap.a(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true); //PAIL rename setFilledMapView
+        ItemWorldMap.a(worldServer, stack); // PAIL rename sepiaMapFilter
+        // "+" map ID taken from EntityVillager
+        ItemWorldMap.getSavedMap(stack, worldServer).a(stack, structurePosition, "+", MapIcon.Type.a(structureType.getMapIcon().getValue())); // PAIL rename decorateMap
+
+        return CraftItemStack.asBukkitCopy(stack);
     }
 
     @Override
