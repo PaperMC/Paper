@@ -1,4 +1,4 @@
-From 6ed05ed8dce0c0fda2374cd0f6e529bd1f7643da Mon Sep 17 00:00:00 2001
+From fb750f7e99c0c9d56b594609f9f61e6fb6d38216 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Sat, 22 Sep 2018 15:56:59 -0400
 Subject: [PATCH] Catch JsonParseException in Entity and TE names
@@ -13,7 +13,7 @@ Shulkers) may need to be changed in order for it to re-save properly
 No more crashing though.
 
 diff --git a/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java b/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java
-index 729859d13..2a1dffbf4 100644
+index 729859d132..2a1dffbf48 100644
 --- a/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java
 +++ b/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java
 @@ -57,7 +57,7 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
@@ -26,7 +26,7 @@ index 729859d13..2a1dffbf4 100644
  
          if (nbttagcompound.hasKeyOfType("TrackOutput", 1)) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f6c43bab4..8c2ce7006 100644
+index f6c43bab46..8c2ce70060 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -1733,7 +1733,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -39,28 +39,31 @@ index f6c43bab4..8c2ce7006 100644
  
              this.setCustomNameVisible(nbttagcompound.getBoolean("CustomNameVisible"));
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index f7856897f..a50224734 100644
+index f7856897f6..e11f439ff1 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -363,4 +363,16 @@ public final class MCUtil {
+@@ -363,4 +363,19 @@ public final class MCUtil {
                  return null;
          }
      }
 +
 +    @Nullable
 +    public static IChatBaseComponent getBaseComponentFromNbt(String key, NBTTagCompound compound) {
-+        IChatBaseComponent component = null;
++        if (!compound.hasKey(key)) {
++            return null;
++        }
++        String string = compound.getString(key);
 +        try {
-+            component = IChatBaseComponent.ChatSerializer.a(compound.getString("CustomName"));
-+        } catch (com.google.gson.JsonParseException ignored) {
-+            org.bukkit.Bukkit.getLogger().warning("Unable to load " + key + " from " + compound);
++            return IChatBaseComponent.ChatSerializer.jsonToComponent(string);
++        } catch (com.google.gson.JsonParseException e) {
++            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
 +        }
 +
-+        return component;
++        return null;
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/TileEntityBanner.java b/src/main/java/net/minecraft/server/TileEntityBanner.java
-index b4fae0d30..364a9fa7a 100644
+index b4fae0d307..364a9fa7a9 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBanner.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBanner.java
 @@ -74,7 +74,7 @@ public class TileEntityBanner extends TileEntity implements INamableTileEntity {
@@ -73,7 +76,7 @@ index b4fae0d30..364a9fa7a 100644
  
          if (this.hasWorld()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityBrewingStand.java b/src/main/java/net/minecraft/server/TileEntityBrewingStand.java
-index 480faa66e..f3ddb86d0 100644
+index 480faa66e4..f3ddb86d04 100644
 --- a/src/main/java/net/minecraft/server/TileEntityBrewingStand.java
 +++ b/src/main/java/net/minecraft/server/TileEntityBrewingStand.java
 @@ -236,7 +236,7 @@ public class TileEntityBrewingStand extends TileEntityContainer implements IWorl
@@ -86,7 +89,7 @@ index 480faa66e..f3ddb86d0 100644
  
          this.fuelLevel = nbttagcompound.getByte("Fuel");
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index 7594c16e9..803793072 100644
+index 7594c16e99..8037930727 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -83,7 +83,7 @@ public class TileEntityChest extends TileEntityLootable { // Paper - Remove ITic
@@ -99,7 +102,7 @@ index 7594c16e9..803793072 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/TileEntityDispenser.java b/src/main/java/net/minecraft/server/TileEntityDispenser.java
-index ddd2e0eb0..21bd156e9 100644
+index ddd2e0eb0b..21bd156e91 100644
 --- a/src/main/java/net/minecraft/server/TileEntityDispenser.java
 +++ b/src/main/java/net/minecraft/server/TileEntityDispenser.java
 @@ -107,7 +107,7 @@ public class TileEntityDispenser extends TileEntityLootable {
@@ -112,7 +115,7 @@ index ddd2e0eb0..21bd156e9 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index a537d35b7..f6bc6403f 100644
+index a537d35b73..f6bc6403fb 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 @@ -219,7 +219,7 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
@@ -125,7 +128,7 @@ index a537d35b7..f6bc6403f 100644
  
          // Paper start - cook speed API
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index a8cf160fe..c56422170 100644
+index a8cf160fe4..c56422170c 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -61,7 +61,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -138,7 +141,7 @@ index a8cf160fe..c56422170 100644
  
          this.f = nbttagcompound.getInt("TransferCooldown");
 diff --git a/src/main/java/net/minecraft/server/TileEntityShulkerBox.java b/src/main/java/net/minecraft/server/TileEntityShulkerBox.java
-index df9a30560..65a685452 100644
+index df9a30560c..65a6854521 100644
 --- a/src/main/java/net/minecraft/server/TileEntityShulkerBox.java
 +++ b/src/main/java/net/minecraft/server/TileEntityShulkerBox.java
 @@ -254,7 +254,7 @@ public class TileEntityShulkerBox extends TileEntityLootable implements IWorldIn
