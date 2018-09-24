@@ -11,6 +11,7 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
 
     private String[] lines;
+    private boolean editable;
 
     public CraftSign(final Block block) {
         super(block, TileEntitySign.class);
@@ -26,6 +27,7 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
 
         lines = new String[sign.lines.length];
         System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
+        editable = sign.isEditable;
     }
 
     @Override
@@ -44,11 +46,22 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     }
 
     @Override
+    public boolean isEditable() {
+        return this.editable;
+    }
+
+    @Override
+    public void setEditable(boolean editable) {
+        this.editable = editable;
+    }
+
+    @Override
     public void applyTo(TileEntitySign sign) {
         super.applyTo(sign);
 
         IChatBaseComponent[] newLines = sanitizeLines(lines);
         System.arraycopy(newLines, 0, sign.lines, 0, 4);
+        sign.isEditable = editable;
     }
 
     public static IChatBaseComponent[] sanitizeLines(String[] lines) {
