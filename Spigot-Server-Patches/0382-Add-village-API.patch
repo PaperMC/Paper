@@ -1,0 +1,256 @@
+From ab26c1695ea1dc8ab402cb4b95ba601d7a0af9fe Mon Sep 17 00:00:00 2001
+From: egg82 <phantom_zero@ymail.com>
+Date: Tue, 25 Sep 2018 13:06:18 -0600
+Subject: [PATCH] Add village API
+
+This adds the NMS-facing code for a village API.
+This API allows viewing and modifying of data specfically related to villages such
+as number of golems or villagers, player reputation, village center and radius, etc.
+
+All of this data is visible in NMS, but this API will expose some of the more useful methods for plugins.
+
+diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
+index 5f280fcab..486c549fb 100644
+--- a/src/main/java/net/minecraft/server/Village.java
++++ b/src/main/java/net/minecraft/server/Village.java
+@@ -9,8 +9,11 @@ import java.util.Map;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
+ 
++import org.bukkit.craftbukkit.CraftVillage; // Paper - add village API
++
+ public class Village {
+ 
++    public World getWorld() { return this.a; } // Paper - OBFHELPER
+     private World a;
+     private final List<VillageDoor> b = Lists.newArrayList();
+     private BlockPosition c;
+@@ -22,13 +25,18 @@ public class Village {
+     private int i;
+     private final Map<String, Integer> j;
+     private final List<Village.Aggressor> k;
++    public int getNumGolems() { return this.l; } // Paper - OBFHELPER
+     private int l;
+ 
++    private CraftVillage village; // Paper - add village API
++
+     private Village() { // Paper - Nothing should call this - world needs to be set.
+         this.c = BlockPosition.ZERO;
+         this.d = BlockPosition.ZERO;
+         this.j = Maps.newHashMap();
+         this.k = Lists.newArrayList();
++
++        village = new CraftVillage(this); // Paper - add village API
+     }
+ 
+     public Village(World world) {
+@@ -37,7 +45,11 @@ public class Village {
+         this.j = Maps.newHashMap();
+         this.k = Lists.newArrayList();
+         this.a = world;
++
++        village = new CraftVillage(this); // Paper - add village API
+     }
++    
++    public CraftVillage getVillage() { return this.village; } // Paper - add village API
+ 
+     public void a(World world) {
+         this.a = world;
+@@ -105,14 +117,17 @@ public class Village {
+ 
+     }
+ 
++    public BlockPosition getCenter() { return a(); } // Paper - OBFHELPER
+     public BlockPosition a() {
+         return this.d;
+     }
+ 
++    public int getRadius() { return b(); } // Paper - OBFHELPER
+     public int b() {
+         return this.e;
+     }
+ 
++    public int getNumDoors() { return c(); } // Paper - OBFHELPER
+     public int c() {
+         return this.b.size();
+     }
+@@ -121,6 +136,7 @@ public class Village {
+         return this.g - this.f;
+     }
+ 
++    public int getNumVillagers() { return e(); } // Paper - OBFHELPER
+     public int e() {
+         return this.h;
+     }
+@@ -208,6 +224,7 @@ public class Village {
+         this.f = villagedoor.h();
+     }
+ 
++    public boolean isAnnihilated() { return g(); } // Paper - OBFHELPER
+     public boolean g() {
+         return this.b.isEmpty();
+     }
+@@ -344,12 +361,14 @@ public class Village {
+         }
+     }
+ 
++    public int getReputation(String playerName) { return a(playerName); } // Paper - OBFHELPER
+     public int a(String s) {
+         Integer integer = (Integer) this.j.get(s);
+ 
+         return integer == null ? 0 : integer.intValue();
+     }
+ 
++    public int addReputation(String playerName, int delta) { return a(playerName, delta); } // Paper - OBFHELPER
+     public int a(String s, int i) {
+         int j = this.a(s);
+         int k = MathHelper.clamp(j + i, -30, 10);
+@@ -358,6 +377,7 @@ public class Village {
+         return k;
+     }
+ 
++    public boolean isHostile(String playerName) { return d(playerName); } // Paper - OBFHELPER
+     public boolean d(String s) {
+         return this.a(s) <= -15;
+     }
+@@ -453,14 +473,19 @@ public class Village {
+         nbttagcompound.set("Players", nbttaglist1);
+     }
+ 
++    public void endMatingSeason() { h(); } // Paper - OBFHELPER
+     public void h() {
+         this.i = this.g;
+     }
++    
++    public void beginMatingSeason() { this.i = this.g - 3600; } // Paper - add village API
+ 
++    public boolean isMatingSeason() { return i(); } // Paper - OBFHELPER
+     public boolean i() {
+         return this.i == 0 || this.g - this.i >= 3600;
+     }
+ 
++    public void resetAllReputation(int newReputation) { b(newReputation); } // Paper - OBFHELPER
+     public void b(int i) {
+         Iterator iterator = this.j.keySet().iterator();
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index e52e4bb45..92ff49c50 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -3004,6 +3004,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         this.H = i;
+     }
+ 
++    public PersistentVillage getVillages() { return af(); } // Paper - OBFHELPER
+     public PersistentVillage af() {
+         return this.villages;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftVillage.java b/src/main/java/org/bukkit/craftbukkit/CraftVillage.java
+new file mode 100644
+index 000000000..68d06bc25
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/CraftVillage.java
+@@ -0,0 +1,78 @@
++package org.bukkit.craftbukkit;
++
++import org.apache.commons.lang.Validate;
++import org.bukkit.Location;
++import org.bukkit.OfflinePlayer;
++
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Village;
++
++// Paper - Add village API
++public class CraftVillage implements org.bukkit.Village {
++    private Village village = null;
++
++    public CraftVillage(Village village) {
++        this.village = village;
++    }
++
++    public Location getCenter() {
++        BlockPosition center = village.getCenter();
++        return new Location(village.getWorld().getWorld(), center.getX(), center.getY(), center.getZ());
++    }
++
++    public int getRadius() {
++        return village.getRadius();
++    }
++
++    public int getNumDoors() {
++        return village.getNumDoors();
++    }
++
++    public int getNumVillagers() {
++        return village.getNumVillagers();
++    }
++    public int getMaxVillagers() {
++        return (int) (village.getNumDoors() * 0.35d); // https://www.reddit.com/r/Minecraft/comments/vcjzf/here_is_how_village_housingdoorsreproduction/c53a5oz
++    }
++
++    public int getNumGolems() {
++        return village.getNumGolems();
++    }
++    public int getMaxGolems() {
++        return (village.getNumDoors() <= 20) ? 0 : (int) (village.getNumVillagers() * 0.0625d); // https://www.reddit.com/r/Minecraft/comments/vcjzf/here_is_how_village_housingdoorsreproduction/c59u16p
++    }
++
++    public int getReputation(OfflinePlayer player) {
++        Validate.notNull(player, "cannot get reputation for a null player");
++        Validate.notNull(player.getName(), "cannot get reputation for a player with no name");
++        return village.getReputation(player.getName());
++    }
++    public int addReputation(OfflinePlayer player, int delta) {
++        Validate.notNull(player, "cannot add reputation for a null player");
++        Validate.notNull(player.getName(), "cannot add reputation for a player with no name");
++        return village.addReputation(player.getName(), delta);
++    }
++    public void resetAllReputation(int newReputation) {
++        village.resetAllReputation(newReputation);
++    }
++    public boolean isHostile(OfflinePlayer player) {
++        Validate.notNull(player, "cannot get reputation for a null player");
++        Validate.notNull(player.getName(), "cannot get reputation for a player with no name");
++        return village.isHostile(player.getName());
++    }
++
++    public boolean isAnnihilated() {
++        return village.isAnnihilated();
++    }
++
++    public boolean isMatingSeason() {
++        return village.isMatingSeason();
++    }
++
++    public void beginMatingSeason() {
++        village.beginMatingSeason();
++    }
++    public void endMatingSeason() {
++        village.endMatingSeason();
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 3bd32ef3e..1b87d82b0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -780,6 +780,17 @@ public class CraftWorld implements World {
+     }
+     // Paper end
+ 
++    // Paper start - add village API
++    public List<org.bukkit.Village> getVillages() {
++        List<org.bukkit.Village> retVal = new ArrayList<org.bukkit.Village>();
++        PersistentVillage pVillage = this.world.getVillages();
++        for (Village v : pVillage.getVillages()) {
++            retVal.add(v.getVillage());
++        }
++        return retVal;
++    }
++    // Paper end
++
+     public void save() {
+     // Spigot start
+         save(true);
+-- 
+2.19.0
+
