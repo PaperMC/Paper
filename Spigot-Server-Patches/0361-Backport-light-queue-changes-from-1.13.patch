@@ -1,29 +1,11 @@
-From d34f861c60d8b6a41b6091118cfffe747420d72b Mon Sep 17 00:00:00 2001
+From 7ddde7192795ce5518a53680ad998839aab39eba Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 23 Sep 2018 20:44:52 -0400
 Subject: [PATCH] Backport light queue changes from 1.13
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ed14753512..10262b29fa 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -141,10 +141,10 @@ public class PaperWorldConfig {
-         log("Top of the nether void damage: " + netherVoidTopDamage);
-     }
- 
--    public boolean queueLightUpdates;
-+    public boolean queueLightUpdates = true;
-     private void queueLightUpdates() {
--        queueLightUpdates = getBoolean("queue-light-updates", false);
--        log("Lighting Queue enabled: " + queueLightUpdates);
-+        //queueLightUpdates = getBoolean("queue-light-updates", false);
-+        //log("Lighting Queue enabled: " + queueLightUpdates);
-     }
- 
-     public boolean disableEndCredits;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 523d10e8bc..b6acf7c13f 100644
+index 523d10e8bc..0f3ef1ba18 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -272,16 +272,10 @@ public class Chunk {
@@ -33,7 +15,7 @@ index 523d10e8bc..b6acf7c13f 100644
 +    private void recheckGaps(boolean flag) { h(flag); } // Paper
      private void h(boolean flag) {
          this.world.methodProfiler.a("recheckGaps");
-         if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
+-        if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
 -            this.runOrQueueLightUpdate(() -> recheckGaps(flag)); // Paper - Queue light update
 -        }
 -    }
@@ -41,9 +23,19 @@ index 523d10e8bc..b6acf7c13f 100644
 -    private void recheckGaps(boolean flag) {
 -        if (true) {
 -            // Paper end
++        if (this.areNeighborsLoaded(1)) { // Paper
              for (int i = 0; i < 16; ++i) {
                  for (int j = 0; j < 16; ++j) {
                      if (this.i[i + j * 16]) {
+@@ -332,7 +326,7 @@ public class Chunk {
+     }
+ 
+     private void a(int i, int j, int k, int l) {
+-        if (l > k && this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)) {
++        if (l > k && this.areNeighborsLoaded(1)) { // Paper
+             for (int i1 = k; i1 < l; ++i1) {
+                 this.world.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
+             }
 @@ -1231,9 +1225,19 @@ public class Chunk {
          return new BlockPosition(blockposition.getX(), this.h[k], blockposition.getZ());
      }
@@ -66,15 +58,17 @@ index 523d10e8bc..b6acf7c13f 100644
  
          this.r = true;
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-index 345cd58240..325255e9d4 100644
+index 345cd58240..9ef414da09 100644
 --- a/src/main/java/net/minecraft/server/PaperLightingQueue.java
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-@@ -7,15 +7,15 @@ import java.util.ArrayDeque;
+@@ -6,16 +6,16 @@ import it.unimi.dsi.fastutil.objects.ObjectCollection;
+ import java.util.ArrayDeque;
  
  class PaperLightingQueue {
-     private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
+-    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
 -    private static int updatesThisTick;
 -
++    private static final long MAX_TIME = (long) (1000000000 / 20 * 1.15);
  
      static void processQueue(long curTime) {
 -        updatesThisTick = 0;
