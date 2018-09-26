@@ -146,6 +146,11 @@ public class CraftWorld implements World {
         return world.getChunkProviderServer().isLoaded(x, z);
     }
 
+    @Override
+    public boolean isChunkGenerated(int x, int z) {
+        return isChunkLoaded(x, z) || ((ChunkRegionLoader) world.getChunkProviderServer().chunkLoader).chunkExists(x, z);
+    }
+
     public Chunk[] getLoadedChunks() {
         Object[] chunks = world.getChunkProviderServer().chunks.values().toArray();
         org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
