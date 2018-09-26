@@ -8,7 +8,9 @@ about: Report server crashes and/or scary stacktraces
 
     You can also simply just use code formatting in markdown!
 
-___We need all of the stack trace! Do not cut off parts of it.___
+___We need all of the stack trace! Do not cut off parts of it. Please do not use attachments. Upload your logs to a paste site or paste directly here.___
+
+___Please do not make reports when the report says "DO NOT REPORT THIS TO PAPER". These are simply messages informing you of lag, to find what is causing it. Ask for tips on Discord or IRC instead.___
 
 ### Plugin list:
 ___A list of your plugins___
