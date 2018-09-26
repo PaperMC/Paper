@@ -1,4 +1,4 @@
-From c4dc3979a681aac06deeda8f8a3ff0939108b413 Mon Sep 17 00:00:00 2001
+From 0456b068872c42d73906d26a8cbba37ea9be9ae6 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 00:52:31 -0600
 Subject: [PATCH] Lighting Queue
@@ -27,23 +27,41 @@ index 145cb274b0..eff9dcf54f 100644
      }
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 4812da0dac..d0eb7c0fc2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -184,6 +184,11 @@ public class PaperConfig {
+         return config.getString(path, config.getString(path));
+     }
+ 
++    public static int maxTickMsLostLightQueue;
++    private static void lightQueue() {
++        maxTickMsLostLightQueue = getInt("queue-light-updates-max-loss", 10);
++    }
++
+     private static void timings() {
+         boolean timings = getBoolean("timings.enabled", true);
+         boolean verboseTimings = getBoolean("timings.verbose", true);
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 39d565db1f..9fd1bde0ef 100644
+index 39d565db1f..8f6f0288be 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -130,4 +130,10 @@ public class PaperWorldConfig {
+@@ -130,4 +130,12 @@ public class PaperWorldConfig {
          netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
          log("Top of the nether void damage: " + netherVoidTopDamage);
      }
 +
-+    public boolean queueLightUpdates = true; // This doesn't need to be configurable, it's not buggy.
++    public boolean queueLightUpdates;
 +    private void queueLightUpdates() {
-+        //queueLightUpdates = getBoolean("queue-light-updates", false);
-+        //log("Lighting Queue enabled: " + queueLightUpdates);
++        queueLightUpdates = getBoolean("queue-light-updates", false);
++        log("Lighting Queue enabled: " + queueLightUpdates);
++        log("Warning: This feature may help reduce TPS loss from light, but comes at the cost of buggy light data");
++        log("We are working to improve this feature.");
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4622e92b05..703c377f93 100644
+index 4622e92b05..e43442c8bd 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -38,7 +38,7 @@ public class Chunk implements IChunkAccess {
@@ -63,14 +81,27 @@ index 4622e92b05..703c377f93 100644
      // Paper end
      public boolean areNeighborsLoaded(final int radius) {
          switch (radius) {
-@@ -277,6 +278,7 @@ public class Chunk implements IChunkAccess {
+@@ -277,9 +278,10 @@ public class Chunk implements IChunkAccess {
          this.l = true;
      }
  
 +    private void recheckGaps(boolean flag) { g(flag); } // Paper - OBFHELPER
      private void g(boolean flag) {
          this.world.methodProfiler.a("recheckGaps");
-         if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
+-        if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
++        if (this.areNeighborsLoaded(1)) { // Paper
+             for (int i = 0; i < 16; ++i) {
+                 for (int j = 0; j < 16; ++j) {
+                     if (this.g[i + j * 16]) {
+@@ -330,7 +332,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     private void a(int i, int j, int k, int l) {
+-        if (l > k && this.world.areChunksLoaded(new BlockPosition(i, 0, j), 16)) {
++        if (l > k && this.areNeighborsLoaded(1)) { // Paper
+             for (int i1 = k; i1 < l; ++i1) {
+                 this.world.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
+             }
 @@ -530,6 +532,7 @@ public class Chunk implements IChunkAccess {
                  if (flag1) {
                      this.initLighting();
@@ -159,19 +190,20 @@ index d6ea4ae532..5086fe4027 100644
      }
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 new file mode 100644
-index 0000000000..84e313bf8c
+index 0000000000..bfb05e8766
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,99 @@
 +package net.minecraft.server;
 +
 +import co.aikar.timings.Timing;
++import com.destroystokyo.paper.PaperConfig;
 +import it.unimi.dsi.fastutil.objects.ObjectCollection;
 +
 +import java.util.ArrayDeque;
 +
 +class PaperLightingQueue {
-+    private static final long MAX_TIME = (long) (1000000000 / 20 * .95);
++    private static final long MAX_TIME = (long) (1000000 * (50 + PaperConfig.maxTickMsLostLightQueue));
 +
 +    static void processQueue(long curTime) {
 +        final long startTime = System.nanoTime();
