@@ -139,6 +139,15 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean isChunkLoaded(int x, int z);
 
     /**
+     * Checks if the {@link Chunk} at the specified coordinates is generated
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return true if the chunk is generated, otherwise false
+     */
+    public boolean isChunkGenerated(int x, int z);
+
+    /**
      * Checks if the {@link Chunk} at the specified coordinates is loaded and
      * in use by one or more players
      *
