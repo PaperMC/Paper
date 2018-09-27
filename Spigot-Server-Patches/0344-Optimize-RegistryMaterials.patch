@@ -1,0 +1,27 @@
+From b75ab3f3e18bc6a798970e8dc7b1811b39da3f7c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Aug 2018 20:49:50 -0400
+Subject: [PATCH] Optimize RegistryMaterials
+
+Use larger initial sizes to increase bucket capacity on the BiMap
+
+BiMap.get was seen to be using a good bit of CPU time.
+
+diff --git a/src/main/java/net/minecraft/server/RegistryMaterials.java b/src/main/java/net/minecraft/server/RegistryMaterials.java
+index 83ce386e05..a47110bba8 100644
+--- a/src/main/java/net/minecraft/server/RegistryMaterials.java
++++ b/src/main/java/net/minecraft/server/RegistryMaterials.java
+@@ -13,8 +13,8 @@ import org.apache.logging.log4j.Logger;
+ 
+ public class RegistryMaterials<V> implements IRegistry<V> {
+     protected static final Logger a = LogManager.getLogger();
+-    protected final RegistryID<V> b = new RegistryID<V>(256);
+-    protected final BiMap<MinecraftKey, V> c = HashBiMap.create();
++    protected final RegistryID<V> b = new RegistryID<V>(2048); // Paper - use bigger expected size to reduce collisions
++    protected final BiMap<MinecraftKey, V> c = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
+     protected Object[] d;
+     private int x;
+ 
+-- 
+2.19.0
+
