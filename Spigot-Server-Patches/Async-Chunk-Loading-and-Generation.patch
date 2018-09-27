@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Sat, 1 Sep 2018 12:20:09 -0400
+Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
 
 This brings back parity to 1.12 and older versions in that any
@@ -346,7 +346,7 @@ index 0000000000..8dfed1a8cf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 165a901010..51d1503fb3 100644
+index a0d08a89a3..e885dd5755 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -385,7 +385,7 @@ index b941676829..1b85520775 100644
  
      public Chunk a(Long olong, Chunk chunk) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 99613b2ef3..56576d2d06 100644
+index 5b57ea93c8..4f36ddc042 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -522,7 +522,7 @@ index 99613b2ef3..56576d2d06 100644
 +
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index c2007b4d0c..9b8db0c612 100644
+index c233b7e903..edd0742527 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -644,7 +644,7 @@ index 271dc41d45..bd15534c23 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 8c2ce70060..244302d45b 100644
+index 0237049a40..cd601f29a3 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -1807,20 +1807,26 @@ index cb2255a5d0..19f2f2bbd8 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3bd32ef3e9..70b6a59d97 100644
+index d0110070a9..02b6bf2990 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
-     public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
-         final ChunkProviderServer cps = this.world.getChunkProviderServer();
-         java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
--        net.minecraft.server.Chunk chunk = cps.getChunkAt(x, z, true, gen);
--        // TODO: Add back async variant
--        future.complete(chunk != null ? chunk.bukkitChunk : null);
-+        cps.getChunkAt(x, z, true, gen, chunk -> future.complete(chunk != null ? chunk.bukkitChunk : null));
-         return future;
+         }
      }
-     // Paper end
+ 
++    // Paper start - Async chunk load API
++    @Override
++    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
++        final ChunkProviderServer cps = this.world.getChunkProviderServer();
++        java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
++        cps.getChunkAt(x, z, true, gen, chunk -> future.complete(chunk != null ? chunk.bukkitChunk : null));
++        return future;
++    }
++    // Paper end
++
+     public Chunk getChunkAt(int x, int z) {
+         return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
+     }
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
