@@ -56,7 +56,7 @@
  
 +    public org.bukkit.Chunk bukkitChunk;
 +    public boolean mustSave;
-+    public boolean newChunk;
++    private boolean needsDecoration;
 +    // CraftBukkit end
 +
      public Chunk(World world, ProtoChunk protochunk, int i, int j) {
@@ -76,7 +76,7 @@
  
          this.x = true;
          this.a(ChunkStatus.FULLCHUNK);
-+        this.newChunk = true; // CraftBukkit
++        this.needsDecoration = protochunk.needsDecoration; // CraftBukkit
      }
  
      public Set<BlockPosition> t() {
@@ -153,7 +153,7 @@
          }
      }
  
-@@ -720,6 +792,17 @@
+@@ -720,6 +792,40 @@
              }));
          }
  
@@ -165,13 +165,36 @@
 +             * the World constructor. We can't reliably alter that, so we have
 +             * no way of creating a CraftWorld/CraftServer at that point.
 +             */
-+            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.newChunk));
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
++
++            if (this.needsDecoration) {
++                BlockSand.instaFall = true;
++                java.util.Random random = new java.util.Random();
++                random.setSeed(world.getSeed());
++                long xRand = random.nextLong() / 2L * 2L + 1L;
++                long zRand = random.nextLong() / 2L * 2L + 1L;
++                random.setSeed((long) locX * xRand + (long) locZ * zRand ^ world.getSeed());
++
++                org.bukkit.World world = this.world.getWorld();
++                if (world != null) {
++                    this.world.populating = true;
++                    try {
++                        for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                            populator.populate(world, random, bukkitChunk);
++                        }
++                    } finally {
++                        this.world.populating = false;
++                    }
++                }
++                BlockSand.instaFall = false;
++                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++            }
 +        }
 +        // CraftBukkit end
      }
  
      public void removeEntities() {
-@@ -736,9 +819,21 @@
+@@ -736,9 +842,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -195,7 +218,7 @@
          }
  
      }
-@@ -800,8 +895,8 @@
+@@ -800,8 +918,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -206,7 +229,7 @@
                  }
              }
          }
-@@ -1007,13 +1102,13 @@
+@@ -1007,13 +1125,13 @@
  
      @Nullable
      public LongSet b(String s) {
@@ -222,7 +245,7 @@
              return new LongOpenHashSet();
          })).add(i);
      }
-@@ -1061,18 +1156,18 @@
+@@ -1061,18 +1179,18 @@
              }
  
              if (this.s instanceof ProtoChunkTickList) {
@@ -246,7 +269,7 @@
  
              while (iterator.hasNext()) {
                  Entry entry = (Entry) iterator.next();
-@@ -1080,6 +1175,8 @@
+@@ -1080,6 +1198,8 @@
                  NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue();
  
                  if (this.getTileEntity(blockposition1) == null) {
@@ -255,7 +278,7 @@
                      TileEntity tileentity;
  
                      if ("DUMMY".equals(nbttagcompound.getString("id"))) {
-@@ -1101,15 +1198,43 @@
+@@ -1101,15 +1221,43 @@
                      } else {
                          Chunk.d.warn("Tried to load a block entity for block {} but failed at location {}", this.getType(blockposition1), blockposition1);
                      }
