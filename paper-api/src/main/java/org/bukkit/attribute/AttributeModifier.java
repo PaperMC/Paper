@@ -2,6 +2,7 @@ package org.bukkit.attribute;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.apache.commons.lang.Validate;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -103,8 +104,19 @@ public class AttributeModifier implements ConfigurationSerializable {
             return false;
         }
         AttributeModifier mod = (AttributeModifier) other;
-        boolean slots = (this.slot != null ? (this.slot == mod.slot) : mod.slot != null);
+        boolean slots = (this.slot != null ? (this.slot == mod.slot) : mod.slot == null);
         return this.uuid.equals(mod.uuid) && this.name.equals(mod.name) && this.amount == mod.amount && this.operation == mod.operation && slots;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 17 * hash + Objects.hashCode(this.uuid);
+        hash = 17 * hash + Objects.hashCode(this.name);
+        hash = 17 * hash + (int) (Double.doubleToLongBits(this.amount) ^ (Double.doubleToLongBits(this.amount) >>> 32));
+        hash = 17 * hash + Objects.hashCode(this.operation);
+        hash = 17 * hash + Objects.hashCode(this.slot);
+        return hash;
     }
 
     @Override
