@@ -106,7 +106,7 @@
                      iblockdata.onPlace(this.world, blockposition, iblockdata1);
                  }
  
-@@ -653,7 +701,12 @@
+@@ -653,7 +701,19 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -116,11 +116,30 @@
 +        if (tileentity == null) {
 +            tileentity = (TileEntity) this.tileEntities.get(blockposition);
 +        }
++        if (tileentity == null) {
++            NBTTagCompound pending = this.h.remove(blockposition);
++            if (pending != null) {
++                this.processQueuedTile(blockposition, pending);
++                return this.a(blockposition, chunk_enumtileentitystate);
++            }
++        }
 +        // CraftBukkit end
  
          if (tileentity == null) {
              if (chunk_enumtileentitystate == Chunk.EnumTileEntityState.IMMEDIATE) {
-@@ -688,6 +741,13 @@
+@@ -679,6 +739,11 @@
+     }
+ 
+     public void a(BlockPosition blockposition, TileEntity tileentity) {
++        // CraftBukkit start
++        if (blockposition instanceof BlockPosition.MutableBlockPosition) {
++            blockposition = new BlockPosition(blockposition);
++        }
++        // CraftBukkit end
+         tileentity.setWorld(this.world);
+         tileentity.setPosition(blockposition);
+         if (this.getType(blockposition).getBlock() instanceof ITileEntity) {
+@@ -688,6 +753,13 @@
  
              tileentity.z();
              this.tileEntities.put(blockposition, tileentity);
@@ -134,7 +153,7 @@
          }
      }
  
-@@ -720,6 +780,17 @@
+@@ -720,6 +792,17 @@
              }));
          }
  
@@ -152,7 +171,7 @@
      }
  
      public void removeEntities() {
-@@ -736,9 +807,21 @@
+@@ -736,9 +819,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -162,21 +181,21 @@
 +            java.util.Iterator<Entity> iter = newList.iterator();
 +            while (iter.hasNext()) {
 +                Entity entity = iter.next();
-+
+ 
+-            this.world.b((Collection) entityslice);
 +                // Do not pass along players, as doing so can get them stuck outside of time.
 +                // (which for example disables inventory icon updates and prevents block breaking)
 +                if (entity instanceof EntityPlayer) {
 +                    iter.remove();
 +                }
 +            }
- 
--            this.world.b((Collection) entityslice);
++
 +            this.world.b((Collection) newList);
 +            // CraftBukkit end
          }
  
      }
-@@ -800,8 +883,8 @@
+@@ -800,8 +895,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -187,7 +206,7 @@
                  }
              }
          }
-@@ -1007,13 +1090,13 @@
+@@ -1007,13 +1102,13 @@
  
      @Nullable
      public LongSet b(String s) {
@@ -203,7 +222,7 @@
              return new LongOpenHashSet();
          })).add(i);
      }
-@@ -1061,14 +1144,14 @@
+@@ -1061,18 +1156,18 @@
              }
  
              if (this.s instanceof ProtoChunkTickList) {
@@ -222,3 +241,62 @@
                  });
              }
  
+-            Iterator iterator = this.h.entrySet().iterator();
++            Iterator iterator = Maps.newHashMap(this.h).entrySet().iterator(); // CraftBukkit
+ 
+             while (iterator.hasNext()) {
+                 Entry entry = (Entry) iterator.next();
+@@ -1080,6 +1175,8 @@
+                 NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue();
+ 
+                 if (this.getTileEntity(blockposition1) == null) {
++                    // CraftBukkit start
++                    /*
+                     TileEntity tileentity;
+ 
+                     if ("DUMMY".equals(nbttagcompound.getString("id"))) {
+@@ -1101,15 +1198,43 @@
+                     } else {
+                         Chunk.d.warn("Tried to load a block entity for block {} but failed at location {}", this.getType(blockposition1), blockposition1);
+                     }
++                     */
++                    // CraftBukkit end
+                 }
+             }
+ 
+-            this.h.clear();
++            com.google.common.base.Preconditions.checkState(this.h.isEmpty(), "Pending tiles not empty"); // CraftBukkit
+             this.a(ChunkStatus.POSTPROCESSED);
+             this.m.a(this);
+         }
+     }
+ 
++    // CraftBukkit start
++    private void processQueuedTile(BlockPosition blockposition1, NBTTagCompound nbttagcompound) {
++        TileEntity tileentity;
++
++        if ("DUMMY".equals(nbttagcompound.getString("id"))) {
++            Block block = this.getType(blockposition1).getBlock();
++
++            if (block instanceof ITileEntity) {
++                tileentity = ((ITileEntity) block).a(this.world);
++            } else {
++                tileentity = null;
++                Chunk.d.warn("Tried to load a DUMMY block entity @ {} but found not tile entity block {} at location", blockposition1, this.getType(blockposition1));
++            }
++        } else {
++            tileentity = TileEntity.create(nbttagcompound);
++        }
++
++        if (tileentity != null) {
++            tileentity.setPosition(blockposition1);
++            this.a(tileentity);
++        } else {
++            Chunk.d.warn("Tried to load a block entity for block {} but failed at location {}", this.getType(blockposition1), blockposition1);
++        }
++    }
++    // CraftBukkit end
++
+     public ChunkConverter F() {
+         return this.m;
+     }
