@@ -598,6 +598,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
     }
 
+    public void neighborChanged(BlockPosition pos, Block blockIn, BlockPosition fromPos) { a(pos, blockIn, fromPos); } // Paper - OBFHELPER
     public void a(BlockPosition blockposition, Block block, BlockPosition blockposition1) {
         if (!this.isClientSide) {
             IBlockData iblockdata = this.getType(blockposition);
@@ -1223,6 +1224,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return this.getBlockFacePower(blockposition.down(), EnumDirection.DOWN) > 0 ? true : (this.getBlockFacePower(blockposition.up(), EnumDirection.UP) > 0 ? true : (this.getBlockFacePower(blockposition.north(), EnumDirection.NORTH) > 0 ? true : (this.getBlockFacePower(blockposition.south(), EnumDirection.SOUTH) > 0 ? true : (this.getBlockFacePower(blockposition.west(), EnumDirection.WEST) > 0 ? true : this.getBlockFacePower(blockposition.east(), EnumDirection.EAST) > 0))));
     }
 
+    public int isBlockIndirectlyGettingPowered(BlockPosition pos) { return this.s(pos); } // Paper - OBFHELPER
     public int s(BlockPosition blockposition) {
         int i = 0;
         EnumDirection[] aenumdirection = World.a;

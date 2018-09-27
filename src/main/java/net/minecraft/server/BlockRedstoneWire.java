@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.PaperConfig;
+import com.destroystokyo.paper.util.RedstoneWireTurbo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -25,7 +27,7 @@ public class BlockRedstoneWire extends Block {
     private final Map<IBlockData, VoxelShape> j = Maps.newHashMap();
     private static final Vector3fa[] k = new Vector3fa[16];
     private final IBlockData o;
-    private boolean p = true;
+    private boolean p = true; public final boolean canProvidePower() { return this.p; } public final void setCanProvidePower(boolean value) { this.p = value; } // Paper - OBFHELPER
 
     public BlockRedstoneWire(BlockBase.Info blockbase_info) {
         super(blockbase_info);
@@ -212,6 +214,120 @@ public class BlockRedstoneWire extends Block {
         return iblockdata.d(iblockaccess, blockposition, EnumDirection.UP) || iblockdata.a(Blocks.HOPPER);
     }
 
+    // Paper start - Optimize redstone
+    // The bulk of the new functionality is found in RedstoneWireTurbo.java
+    RedstoneWireTurbo turbo = new RedstoneWireTurbo(this);
+
+    /*
+     * Modified version of pre-existing updateSurroundingRedstone, which is called from
+     * this.neighborChanged and a few other methods in this class.
+     * Note: Added 'source' argument so as to help determine direction of information flow
+     */
+    private void updateSurroundingRedstone(World worldIn, BlockPosition pos, IBlockData state, BlockPosition source) {
+        if (worldIn.paperConfig.useEigencraftRedstone) {
+            turbo.updateSurroundingRedstone(worldIn, pos, state, source);
+        }
+        a(worldIn, pos, state);
+    }
+
+    /*
+     * Slightly modified method to compute redstone wire power levels from neighboring blocks.
+     * Modifications cut the number of power level changes by about 45% from vanilla, and this
+     * optimization synergizes well with the breadth-first search implemented in
+     * RedstoneWireTurbo.
+     * Note:  RedstoneWireTurbo contains a faster version of this code.
+     * Note:  Made this public so that RedstoneWireTurbo can access it.
+     */
+    public IBlockData calculateCurrentChanges(World worldIn, BlockPosition pos1, BlockPosition pos2, IBlockData state) {
+        IBlockData iblockstate = state;
+        int i = state.get(POWER);
+        int j = 0;
+        j = this.getPower(j, worldIn.getType(pos2));
+        this.setCanProvidePower(false);
+        int k = worldIn.isBlockIndirectlyGettingPowered(pos1);
+        this.setCanProvidePower(true);
+
+        if (!worldIn.paperConfig.useEigencraftRedstone) {
+            // This code is totally redundant to if statements just below the loop.
+            if (k > 0 && k > j - 1) {
+                j = k;
+            }
+        }
+
+        int l = 0;
+
+        // The variable 'k' holds the maximum redstone power value of any adjacent blocks.
+        // If 'k' has the highest level of all neighbors, then the power level of this
+        // redstone wire will be set to 'k'.  If 'k' is already 15, then nothing inside the
+        // following loop can affect the power level of the wire.  Therefore, the loop is
+        // skipped if k is already 15.
+        if (!worldIn.paperConfig.useEigencraftRedstone || k < 15) {
+            for (EnumDirection enumfacing : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
+                BlockPosition blockpos = pos1.shift(enumfacing);
+                boolean flag = blockpos.getX() != pos2.getX() || blockpos.getZ() != pos2.getZ();
+
+                if (flag) {
+                    l = this.getPower(l, worldIn.getType(blockpos));
+                }
+
+                if (worldIn.getType(blockpos).isOccluding(worldIn, blockpos) && !worldIn.getType(pos1.up()).isOccluding(worldIn, pos1)) {
+                    if (flag && pos1.getY() >= pos2.getY()) {
+                        l = this.getPower(l, worldIn.getType(blockpos.up()));
+                    }
+                } else if (!worldIn.getType(blockpos).isOccluding(worldIn, blockpos) && flag && pos1.getY() <= pos2.getY()) {
+                    l = this.getPower(l, worldIn.getType(blockpos.down()));
+                }
+            }
+        }
+
+        if (!worldIn.paperConfig.useEigencraftRedstone) {
+            // The old code would decrement the wire value only by 1 at a time.
+            if (l > j) {
+                j = l - 1;
+            } else if (j > 0) {
+                --j;
+            } else {
+                j = 0;
+            }
+
+            if (k > j - 1) {
+                j = k;
+            }
+        } else {
+            // The new code sets this RedstoneWire block's power level to the highest neighbor
+            // minus 1.  This usually results in wire power levels dropping by 2 at a time.
+            // This optimization alone has no impact on update order, only the number of updates.
+            j = l - 1;
+
+            // If 'l' turns out to be zero, then j will be set to -1, but then since 'k' will
+            // always be in the range of 0 to 15, the following if will correct that.
+            if (k > j) j = k;
+        }
+
+        if (i != j) {
+            state = state.set(POWER, j);
+
+            if (worldIn.getType(pos1) == iblockstate) {
+                worldIn.setTypeAndData(pos1, state, 2);
+            }
+
+            // 1.16(.1?) dropped the need for blocks needing updates.
+            // Whether this is necessary after all is to be seen.
+//            if (!worldIn.paperConfig.useEigencraftRedstone) {
+//                // The new search algorithm keeps track of blocks needing updates in its own data structures,
+//                // so only add anything to blocksNeedingUpdate if we're using the vanilla update algorithm.
+//                this.getBlocksNeedingUpdate().add(pos1);
+//
+//                for (EnumDirection enumfacing1 : EnumDirection.values()) {
+//                    this.getBlocksNeedingUpdate().add(pos1.shift(enumfacing1));
+//                }
+//            }
+        }
+
+        return state;
+    }
+    // Paper end
+
     private void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
         int i = this.a(world, blockposition);
 
@@ -281,6 +397,8 @@ public class BlockRedstoneWire extends Block {
         return Math.max(i, j - 1);
     }
 
+    private int getPower(int min, IBlockData iblockdata) { return Math.max(min, getPower(iblockdata)); } // Paper - Optimize redstone
+    private int getPower(IBlockData iblockdata) { return this.o(iblockdata); } // Paper - OBFHELPER
     private int o(IBlockData iblockdata) {
         return iblockdata.a((Block) this) ? (Integer) iblockdata.get(BlockRedstoneWire.POWER) : 0;
     }
@@ -303,7 +421,7 @@ public class BlockRedstoneWire extends Block {
     @Override
     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
         if (!iblockdata1.a(iblockdata.getBlock()) && !world.isClientSide) {
-            this.a(world, blockposition, iblockdata);
+            this.updateSurroundingRedstone(world, blockposition, iblockdata, null); // Paper - Optimize redstone
             Iterator iterator = EnumDirection.EnumDirectionLimit.VERTICAL.iterator();
 
             while (iterator.hasNext()) {
@@ -330,7 +448,7 @@ public class BlockRedstoneWire extends Block {
                     world.applyPhysics(blockposition.shift(enumdirection), this);
                 }
 
-                this.a(world, blockposition, iblockdata);
+                this.updateSurroundingRedstone(world, blockposition, iblockdata, null); // Paper - Optimize redstone
                 this.d(world, blockposition);
             }
         }
@@ -365,7 +483,7 @@ public class BlockRedstoneWire extends Block {
     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
         if (!world.isClientSide) {
             if (iblockdata.canPlace(world, blockposition)) {
-                this.a(world, blockposition, iblockdata);
+                this.updateSurroundingRedstone(world, blockposition, iblockdata, blockposition1); // Paper - Optimize redstone
             } else {
                 c(iblockdata, world, blockposition);
                 world.a(blockposition, false);

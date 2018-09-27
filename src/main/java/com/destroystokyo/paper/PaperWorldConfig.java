@@ -659,4 +659,14 @@ public class PaperWorldConfig {
     private void zombiesTargetTurtleEggs() {
         zombiesTargetTurtleEggs = getBoolean("zombies-target-turtle-eggs", zombiesTargetTurtleEggs);
     }
+
+    public boolean useEigencraftRedstone = false;
+    private void useEigencraftRedstone() {
+        useEigencraftRedstone = this.getBoolean("use-faster-eigencraft-redstone", false);
+        if (useEigencraftRedstone) {
+            log("Using Eigencraft redstone algorithm by theosib.");
+        } else {
+            log("Using vanilla redstone algorithm.");
+        }
+    }
 }
