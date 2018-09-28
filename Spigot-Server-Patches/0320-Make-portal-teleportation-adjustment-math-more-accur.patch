@@ -1,0 +1,95 @@
+From 921f30bc3afaba7d60be1a9f6190c260b88ab761 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 31 Jul 2018 19:32:57 -0500
+Subject: [PATCH] Make portal teleportation adjustment math more accurate
+
+
+diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
+index c0853f0fcd..7aa940672e 100644
+--- a/src/main/java/net/minecraft/server/EnumDirection.java
++++ b/src/main/java/net/minecraft/server/EnumDirection.java
+@@ -95,6 +95,7 @@ public enum EnumDirection implements INamable {
+         return this.i;
+     }
+ 
++    public final EnumDirection.EnumAxisDirection getAxisDirection() { return c(); } // Paper - OBFHELPER
+     public EnumDirection.EnumAxisDirection c() {
+         return this.l;
+     }
+@@ -103,6 +104,7 @@ public enum EnumDirection implements INamable {
+         return fromType1(this.h);
+     }
+ 
++    public final EnumDirection rotateY() { return e(); } // Paper - OBFHELPER
+     public EnumDirection e() {
+         switch(this) {
+         case NORTH:
+@@ -333,6 +335,7 @@ public enum EnumDirection implements INamable {
+             this.d = s1;
+         }
+ 
++        public final int getOffset() { return a(); } // Paper - OBFHELPER
+         public int a() {
+             return this.c;
+         }
+diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
+index d53d0c2422..49fba0979e 100644
+--- a/src/main/java/net/minecraft/server/MathHelper.java
++++ b/src/main/java/net/minecraft/server/MathHelper.java
+@@ -83,6 +83,7 @@ public class MathHelper {
+         }
+     }
+ 
++    public static double clamp(double d0, double d1, double d2) { return a(d0, d1, d2); } // Paper - OBFHELPER
+     public static double a(double d0, double d1, double d2) {
+         if (d0 < d1) {
+             return d1;
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index 20f2a9197c..fd372103be 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -208,11 +208,27 @@ public class PortalTravelAgent {
+                 ++d4;
+             }
+ 
++            // Paper start - Prevent portal suffocation (and therefore getting teleported up in an attempt to avoid it)
++            // Based on work by CarpetMod - Licensed GPL-3.0
++            double offset = (1.0D - entity.getPortalOffset().x) * (double) shapedetector_shapedetectorcollection.getWidth() * (double) shapedetector_shapedetectorcollection.getFacing().rotateY().getAxisDirection().getOffset();
++            double adjustedRadius = 1.02 * entity.width / 2;
++            if (adjustedRadius >= shapedetector_shapedetectorcollection.getWidth() - adjustedRadius) {
++                // entity wider than portal, place it in the middle
++                adjustedRadius = (double) shapedetector_shapedetectorcollection.getWidth() / 2 - 0.001;
++            }
++
++            if (offset >= 0) {
++                offset = MathHelper.clamp(offset, adjustedRadius, (double) shapedetector_shapedetectorcollection.getWidth() - adjustedRadius);
++            } else {
++                offset = MathHelper.clamp(offset, (double) -shapedetector_shapedetectorcollection.getWidth() + adjustedRadius, -adjustedRadius);
++            }
++
+             if (shapedetector_shapedetectorcollection.getFacing().k() == EnumDirection.EnumAxis.X) {
+-                d3 = d4 + (1.0D - entity.getPortalOffset().x) * (double) shapedetector_shapedetectorcollection.d() * (double) shapedetector_shapedetectorcollection.getFacing().e().c().a();
++                d3 = d4 + offset;
+             } else {
+-                d2 = d4 + (1.0D - entity.getPortalOffset().x) * (double) shapedetector_shapedetectorcollection.d() * (double) shapedetector_shapedetectorcollection.getFacing().e().c().a();
++                d2 = d4 + offset;
+             }
++            // Paper end
+ 
+             float f1 = 0.0F;
+             float f2 = 0.0F;
+diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
+index 0c9910d9a5..446cdb86d8 100644
+--- a/src/main/java/net/minecraft/server/ShapeDetector.java
++++ b/src/main/java/net/minecraft/server/ShapeDetector.java
+@@ -143,6 +143,7 @@ public class ShapeDetector {
+             return this.c;
+         }
+ 
++        public final int getWidth() { return this.d(); } // Paper - OBFHELPER
+         public int d() {
+             return this.e;
+         }
+-- 
+2.19.0
+

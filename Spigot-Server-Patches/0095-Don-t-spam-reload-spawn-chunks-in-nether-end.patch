@@ -1,0 +1,42 @@
+From dcc23b7c3d5bef992833093cc60898dee23f8662 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Apr 2016 19:42:22 -0400
+Subject: [PATCH] Don't spam reload spawn chunks in nether/end
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b4274cf0ec..796ce3103a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -2877,6 +2877,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         return this.K;
+     }
+ 
++    public boolean isSpawnChunk(int i,  int j) { return e(i, j); } // Paper - OBFHELPER
+     public boolean e(int i, int j) {
+         BlockPosition blockposition = this.getSpawn();
+         int k = i * 16 + 8 - blockposition.getX();
+@@ -2893,6 +2894,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         return (LongSet) (forcedchunk != null ? LongSets.unmodifiable(forcedchunk.a()) : LongSets.EMPTY_SET);
+     }
+ 
++    public boolean isForcedChunk(int i, int j) { return f(i, j); } // Paper - OBFHELPER
+     public boolean f(int i, int j) {
+         ForcedChunk forcedchunk = (ForcedChunk) this.a(this.worldProvider.getDimensionManager(), ForcedChunk::new, "chunks");
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldProvider.java b/src/main/java/net/minecraft/server/WorldProvider.java
+index 53ce7d5e11..e1fe195bf8 100644
+--- a/src/main/java/net/minecraft/server/WorldProvider.java
++++ b/src/main/java/net/minecraft/server/WorldProvider.java
+@@ -72,7 +72,7 @@ public abstract class WorldProvider {
+     }
+ 
+     public boolean a(int i, int j) {
+-        return !this.b.f(i, j);
++        return !this.b.isSpawnChunk(i, j) && !this.b.isForcedChunk(i, j); // Paper - Use spawn chunks check for all worlds
+     }
+ 
+     protected abstract void m();
+-- 
+2.19.0
+

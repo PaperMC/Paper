@@ -1,4 +1,4 @@
-From d4b39b8ec7ba1b81f51e9ace99e7e1e767976691 Mon Sep 17 00:00:00 2001
+From f8e6bf89950a7fef6a1f05d8e973eae16c41acc3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -316,8 +316,28 @@ index 8811dbc9b3..7818a3b6a7 100644
      protected final MaterialMapColor l;
      private final float frictionFactor;
      protected final BlockStateList<Block, IBlockData> blockStateList;
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 6ec067be48..8ba8af2773 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -841,6 +841,7 @@ public class Chunk implements IChunkAccess {
+             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
+ 
+             if (this.needsDecoration) {
++                this.world.timings.syncChunkLoadPopulateTimer.startTiming(); // Paper
+                 BlockSand.instaFall = true;
+                 java.util.Random random = new java.util.Random();
+                 random.setSeed(world.getSeed());
+@@ -861,6 +862,7 @@ public class Chunk implements IChunkAccess {
+                 }
+                 BlockSand.instaFall = false;
+                 server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++                this.world.timings.syncChunkLoadPopulateTimer.stopTiming(); // Paper
+             }
+         }
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index e3d1761b49..fbebd4591c 100644
+index 85a065f039..4b8b77710b 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -14,6 +14,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -328,25 +348,14 @@ index e3d1761b49..fbebd4591c 100644
          Chunk chunk1 = (Chunk) super.put(i, chunk);
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
  
-@@ -46,8 +47,10 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+@@ -46,6 +47,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
                  }
              }
          }
 +        chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
- 
-         if (chunk.newChunk) {
-+            chunk.world.timings.syncChunkLoadPopulateTimer.startTiming(); // Paper
-             BlockSand.instaFall = true;
-             java.util.Random random = new java.util.Random();
-             random.setSeed(chunk.world.getSeed());
-@@ -68,6 +71,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
-             }
-             BlockSand.instaFall = false;
-             chunk.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(chunk.bukkitChunk));
-+            chunk.world.timings.syncChunkLoadPopulateTimer.stopTiming(); // Paper
-         }
          // CraftBukkit end
  
+         return chunk1;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 0c8c10b7a7..31ed3e43a5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -1554,19 +1563,21 @@ index 413dd35f06..52a8c48fa4 100644
  
      public void callStage3(QueuedChunk queuedChunk, Chunk chunk, Runnable runnable) throws RuntimeException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9f78f2c4ae..b8bdcb6b74 100644
+index 9f78f2c4ae..832d2de476 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1715,6 +1715,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1715,6 +1715,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              packet.components = components;
              getHandle().playerConnection.sendPacket(packet);
          }
 +
++        // Paper start
 +        @Override
 +        public int getPing()
 +        {
 +            return getHandle().ping;
 +        }
++        // Paper end
      };
  
      public Player.Spigot spigot()

@@ -1,0 +1,43 @@
+From cfb497b52aa5b4c3620c53fa6db506f5210a4c1f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 1 Jan 2018 15:41:59 -0500
+Subject: [PATCH] Configurable Chunks Sends per Tick setting
+
+Vanilla already had this limited, make it configurable.
+
+Limit how much exploration lags the server
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7391a4a6a8..af69342e6c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -379,4 +379,13 @@ public class PaperWorldConfig {
+         expMergeMaxValue = getInt("experience-merge-max-value", -1);
+         log("Experience Merge Max Value: " + expMergeMaxValue);
+     }
++
++    public int maxChunkSendsPerTick = 81;
++    private void maxChunkSendsPerTick() {
++        maxChunkSendsPerTick = getInt("max-chunk-sends-per-tick", maxChunkSendsPerTick);
++        if (maxChunkSendsPerTick <= 0) {
++            maxChunkSendsPerTick = 81;
++        }
++        log("Max Chunk Sends Per Tick: " + maxChunkSendsPerTick);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 395b5a470f..54f31349e9 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -172,7 +172,7 @@ public class PlayerChunkMap {
+         }
+ 
+         if (!this.g.isEmpty()) {
+-            j = 81;
++            j = world.paperConfig.maxChunkSendsPerTick; // Paper
+             try (Timing ignored = world.timings.doChunkMapPendingSendToPlayers.startTiming()) { // Paper
+             Iterator iterator2 = this.g.iterator();
+ 
+-- 
+2.19.0
+

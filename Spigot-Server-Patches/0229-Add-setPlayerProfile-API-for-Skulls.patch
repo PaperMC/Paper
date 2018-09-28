@@ -1,0 +1,94 @@
+From ff7609807c3c69ad099fb67cc7fde75494090a99 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 19 Jan 2018 00:36:25 -0500
+Subject: [PATCH] Add setPlayerProfile API for Skulls
+
+This allows you to create already filled textures on Skulls to avoid texture lookups
+which commonly cause rate limit issues with Mojang API
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
+index ad7a2dd170..207546f03a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.google.common.base.Preconditions;
+ import com.mojang.authlib.GameProfile;
+ import net.minecraft.server.MinecraftServer;
+@@ -14,6 +16,7 @@ import org.bukkit.block.BlockFace;
+ import org.bukkit.block.Skull;
+ import org.bukkit.block.data.Rotatable;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
++import javax.annotation.Nullable;
+ 
+ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
+ 
+@@ -104,6 +107,20 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerProfile(PlayerProfile profile) {
++        Preconditions.checkNotNull(profile, "profile");
++        this.profile = CraftPlayerProfile.asAuthlibCopy(profile);
++    }
++
++    @Nullable
++    @Override
++    public PlayerProfile getPlayerProfile() {
++        return profile != null ? CraftPlayerProfile.asBukkitCopy(profile) : null;
++    }
++    // Paper end
++
+     @Override
+     public BlockFace getRotation() {
+         return ((Rotatable) getBlockData()).getRotation();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index 2ea2a355ba..398cf958cc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.inventory;
+ 
+ import java.util.Map;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import net.minecraft.server.GameProfileSerializer;
+ import net.minecraft.server.NBTBase;
+ import net.minecraft.server.NBTTagCompound;
+@@ -20,6 +22,8 @@ import org.bukkit.inventory.meta.SkullMeta;
+ import com.google.common.collect.ImmutableMap.Builder;
+ import com.mojang.authlib.GameProfile;
+ 
++import javax.annotation.Nullable;
++
+ @DelegateDeserialization(SerializableMeta.class)
+ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+ 
+@@ -131,6 +135,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+         return hasOwner() ? profile.getName() : null;
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerProfile(@Nullable PlayerProfile profile) {
++        this.profile = (profile == null) ? null : CraftPlayerProfile.asAuthlibCopy(profile);
++    }
++
++    @Nullable
++    @Override
++    public PlayerProfile getPlayerProfile() {
++        return profile != null ? CraftPlayerProfile.asBukkitCopy(profile) : null;
++    }
++    // Paper end
++
+     @Override
+     public OfflinePlayer getOwningPlayer() {
+         if (hasOwner()) {
+-- 
+2.19.0
+

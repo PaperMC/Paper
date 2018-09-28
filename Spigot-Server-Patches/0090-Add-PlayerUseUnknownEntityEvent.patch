@@ -1,0 +1,43 @@
+From 43cd905fa897553b08251ada854025047bc63f6d Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 2 Apr 2016 05:09:16 -0400
+Subject: [PATCH] Add PlayerUseUnknownEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketPlayInUseEntity.java b/src/main/java/net/minecraft/server/PacketPlayInUseEntity.java
+index a4b98c81f5..53d38ea40f 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayInUseEntity.java
++++ b/src/main/java/net/minecraft/server/PacketPlayInUseEntity.java
+@@ -4,7 +4,7 @@ import java.io.IOException;
+ import javax.annotation.Nullable;
+ 
+ public class PacketPlayInUseEntity implements Packet<PacketListenerPlayIn> {
+-    private int a;
++    private int a; public int getEntityId() { return this.a; } // Paper - add accessor
+     private PacketPlayInUseEntity.EnumEntityUseAction action;
+     private Vec3D c;
+     private EnumHand d;
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7362b73b20..4df7b4a249 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1905,6 +1905,16 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+             }
+         }
++        // Paper start - fire event
++        else {
++            this.server.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
++                this.getPlayer(),
++                packetplayinuseentity.getEntityId(),
++                packetplayinuseentity.b() == PacketPlayInUseEntity.EnumEntityUseAction.ATTACK,
++                packetplayinuseentity.c() == EnumHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND
++            ));
++        }
++        // Paper end
+ 
+     }
+ 
+-- 
+2.19.0
+

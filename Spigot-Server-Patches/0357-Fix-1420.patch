@@ -1,0 +1,33 @@
+From e06803bd62e09787db83ae3506c2785a567a83db Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Sep 2018 18:28:24 -0500
+Subject: [PATCH] Fix #1420
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index a82dc0a94e..529629a867 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -492,6 +492,7 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+         if (!this.world.isClientSide && (this.inGround || this.q()) && this.shake <= 0) {
+             // CraftBukkit start
+             ItemStack itemstack = this.getItemStack();
++            if (!itemstack.isEmpty()) { // Paper - GH-1420 (skip pick up event for fully damaged (or air) itemstack)
+             EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
+             if (this.fromPlayer == PickupStatus.ALLOWED && entityhuman.inventory.canHold(itemstack) > 0) {
+                 PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), (org.bukkit.entity.Arrow) this.getBukkitEntity());
+@@ -502,9 +503,10 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+                     return;
+                 }
+             }
++            } // Paper - GH-1420
+             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.q() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
+ 
+-            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(item.getItemStack())) {
++            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(itemstack)) { // Paper - GH-1420
+                 // CraftBukkit end
+                 flag = false;
+             }
+-- 
+2.19.0
+

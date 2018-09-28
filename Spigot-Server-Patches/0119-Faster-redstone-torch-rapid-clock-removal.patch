@@ -1,0 +1,43 @@
+From b0b8145ed696c7f8761e5f48077eba9429a4a6a1 Mon Sep 17 00:00:00 2001
+From: Martin Panzer <postremus1996@googlemail.com>
+Date: Mon, 23 May 2016 12:12:37 +0200
+Subject: [PATCH] Faster redstone torch rapid clock removal
+
+Only resize the the redstone torch list once, since resizing arrays / lists is costly
+
+diff --git a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+index 35abdee5e5..42cb2d47ca 100644
+--- a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
++++ b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+@@ -63,9 +63,17 @@ public class BlockRedstoneTorch extends BlockTorch {
+     public static void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random, boolean flag) {
+         List list = (List) BlockRedstoneTorch.b.get(world);
+ 
+-        while (list != null && !list.isEmpty() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
+-            list.remove(0);
++        // Paper start
++        if (list != null) {
++            int index = 0;
++            while (index < list.size() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(index)).getTime() > 60L) {
++                index++;
++            }
++            if (index > 0) {
++                list.subList(0, index).clear();
++            }
+         }
++        // Paper end
+ 
+         // CraftBukkit start
+         org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
+@@ -169,7 +177,7 @@ public class BlockRedstoneTorch extends BlockTorch {
+     public static class RedstoneUpdateInfo {
+ 
+         private final BlockPosition a;
+-        private final long b;
++        private final long b; final long getTime() { return this.b; } // Paper - OBFHELPER
+ 
+         public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
+             this.a = blockposition;
+-- 
+2.19.0
+

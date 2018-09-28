@@ -1,0 +1,57 @@
+From 2eeade3b60ffa9d2da91ae718e6c0ec98986f926 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Thu, 3 Mar 2016 02:39:54 -0600
+Subject: [PATCH] Change implementation of (tile)entity removal list
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 352a7f25a7..65e84b666f 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -73,11 +73,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         }
+     };
+     // Spigot end
+-    protected final List<Entity> g = Lists.newArrayList();
++    protected final Set<Entity> g = com.google.common.collect.Sets.newHashSet(); // Paper
+     public final List<TileEntity> tileEntityList = Lists.newArrayList();
+     public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
+     private final List<TileEntity> c = Lists.newArrayList();
+-    private final List<TileEntity> tileEntityListUnload = Lists.newArrayList();
++    private final Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet(); // Paper
+     public final List<EntityHuman> players = Lists.newArrayList();
+     public final List<Entity> k = Lists.newArrayList();
+     protected final IntHashMap<Entity> entitiesById = new IntHashMap();
+@@ -1145,20 +1145,20 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         this.entityList.removeAll(this.g);
+ 
+         int j;
++        // Paper start - Set based removal lists
++        for (Entity e : this.g) {
++            j = e.getChunkZ();
++            int k = e.getChunkX();
+ 
+-        for (i = 0; i < this.g.size(); ++i) {
+-            entity = (Entity) this.g.get(i);
+-            int k = entity.ae;
+-
+-            j = entity.ag;
+-            if (entity.inChunk && this.isChunkLoaded(k, j, true)) {
+-                this.getChunkAt(k, j).b(entity);
++            if (e.inChunk && this.isChunkLoaded(k, j, true)) {
++                this.getChunkAt(k, j).b(e);
+             }
+         }
+ 
+-        for (i = 0; i < this.g.size(); ++i) {
+-            this.c((Entity) this.g.get(i));
++        for (Entity e : this.g) {
++            this.c(e);
+         }
++        // Paper end
+ 
+         this.g.clear();
+         this.p_();
+-- 
+2.19.0
+
