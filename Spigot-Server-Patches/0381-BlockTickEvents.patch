@@ -1,0 +1,97 @@
+From abeede1f6a33d91863fb14d7751c28fb8aac20e6 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 28 Sep 2018 08:45:10 -0500
+Subject: [PATCH] BlockTickEvents
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4b4223a9f..95f845515 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -321,6 +321,13 @@ public class PaperWorldConfig {
+         skipEntityTickingInChunksScheduledForUnload = getBoolean("skip-entity-ticking-in-chunks-scheduled-for-unload", skipEntityTickingInChunksScheduledForUnload);
+     }
+ 
++    public boolean blockTickEvent = false;
++    public boolean fluidTickEvent = false;
++    private void tickEvents() {
++        blockTickEvent = getBoolean("block-tick-events", false);
++        fluidTickEvent = getBoolean("fluid-tick-events", false);
++    }
++
+     public int autoSavePeriod = -1;
+     private void autoSavePeriod() {
+         autoSavePeriod = getInt("auto-save-interval", -1);
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 409c7d6ee..f03d8be83 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -564,13 +564,16 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                                 Fluid fluid = chunksection.b(i2, k2, j2);
+ 
+                                 this.methodProfiler.a("randomTick");
+-                                if (iblockdata.t()) {
+-                                    iblockdata.b((World) this, new BlockPosition(i2 + j, k2 + chunksection.getYPosition(), j2 + k), this.random);
++                                // Paper start
++                                BlockPosition pos = new BlockPosition(i2 + j, k2 + chunksection.getYPosition(), j2 + k);
++                                if (iblockdata.t() && (!paperConfig.blockTickEvent || new com.destroystokyo.paper.event.block.BlockTickEvent(getWorld(), pos.x, pos.y, pos.z, true).callEvent())) {
++                                    iblockdata.b(this, pos, this.random);
+                                 }
+ 
+-                                if (fluid.h()) {
+-                                    fluid.b(this, new BlockPosition(i2 + j, k2 + chunksection.getYPosition(), j2 + k), this.random);
++                                if (fluid.h() && (!paperConfig.fluidTickEvent || new com.destroystokyo.paper.event.block.FluidTickEvent(getWorld(), pos.x, pos.y, pos.z, true).callEvent())) {
++                                    fluid.b(this, pos, this.random);
+                                 }
++                                // Paper end
+ 
+                                 this.methodProfiler.e();
+                             }
+@@ -679,6 +682,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         Fluid fluid = this.b(nextticklistentry.a);
+ 
+         if (fluid.c() == nextticklistentry.a()) {
++            if (paperConfig.fluidTickEvent && !new com.destroystokyo.paper.event.block.FluidTickEvent(getWorld(), nextticklistentry.a.x, nextticklistentry.a.y, nextticklistentry.a.z).callEvent()) return; // Paper
+             fluid.a((World) this, nextticklistentry.a);
+         }
+ 
+@@ -688,6 +692,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         IBlockData iblockdata = this.getType(nextticklistentry.a);
+ 
+         if (iblockdata.getBlock() == nextticklistentry.a()) {
++            if (paperConfig.blockTickEvent && !new com.destroystokyo.paper.event.block.BlockTickEvent(getWorld(), nextticklistentry.a.x, nextticklistentry.a.y, nextticklistentry.a.z).callEvent()) return; // Paper
+             stopPhysicsEvent = !paperConfig.firePhysicsEventForRedstone && (iblockdata.getBlock() instanceof BlockDiodeAbstract || iblockdata.getBlock() instanceof BlockRedstoneTorch); // Paper
+             iblockdata.a((World) this, nextticklistentry.a, this.random);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 02b6bf299..d08e0266c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -567,6 +567,24 @@ public class CraftWorld implements World {
+         return createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire);
+     }
+ 
++    // Paper start
++    public boolean isBlockTickEventEnabled() {
++        return getHandle().paperConfig.blockTickEvent;
++    }
++
++    public void setBlockTickEventEnabled(boolean enabled) {
++        getHandle().paperConfig.blockTickEvent = enabled;
++    }
++
++    public boolean isFluidTickEventEnabled() {
++        return getHandle().paperConfig.fluidTickEvent;
++    }
++
++    public void setFluidTickEventEnabled(boolean enabled) {
++        getHandle().paperConfig.fluidTickEvent = enabled;
++    }
++    // Paper end
++
+     public Environment getEnvironment() {
+         return environment;
+     }
+-- 
+2.19.0
+
