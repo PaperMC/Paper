@@ -1,9 +1,25 @@
-From 60447cd725a01e031a362cac7ffee4be685e221d Mon Sep 17 00:00:00 2001
+From b4c5310990c048a6ca00d5e91f9bab489cf49003 Mon Sep 17 00:00:00 2001
 From: MiniDigger <admin@minidigger.me>
 Date: Fri, 28 Sep 2018 08:08:15 +0000
 Subject: [PATCH] Textual Chat Format
 
 
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+index e7c389c0..2834b0e8 100644
+--- a/src/main/java/co/aikar/timings/TimingsReportListener.java
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -58,6 +58,11 @@ public class TimingsReportListener implements MessageCommandSender {
+         senders.forEach((sender) -> sender.sendMessage(message));
+     }
+ 
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage) {
++         senders.forEach((sender) -> sender.sendEnhancedMessage(enhancedMessage));
++    }
++
+     public void addConsoleIfNeeded() {
+         boolean hasConsole = false;
+         for (CommandSender sender : this.senders) {
 diff --git a/src/main/java/com/destroystokyo/paper/ChatParser.java b/src/main/java/com/destroystokyo/paper/ChatParser.java
 new file mode 100644
 index 00000000..09447ef8
@@ -347,6 +363,76 @@ index 00000000..58ee9b4b
 +        return String.format("{/%s}", content);
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
+index fd452bce..3e3d8f49 100644
+--- a/src/main/java/org/bukkit/command/BufferedCommandSender.java
++++ b/src/main/java/org/bukkit/command/BufferedCommandSender.java
+@@ -8,6 +8,12 @@ public class BufferedCommandSender implements MessageCommandSender {
+         buffer.append("\n");
+     }
+ 
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage) {
++        buffer.append(enhancedMessage);//TODO check that this actually works
++        buffer.append("\n");
++    }
++
+     public String getBuffer() {
+         return buffer.toString();
+     }
+diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
+index fcb03b83..106bee9b 100644
+--- a/src/main/java/org/bukkit/command/CommandSender.java
++++ b/src/main/java/org/bukkit/command/CommandSender.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.command;
+ 
++import com.destroystokyo.paper.ChatParser;
++
+ import org.bukkit.Server;
+ import org.bukkit.permissions.Permissible;
+ 
+@@ -19,6 +21,22 @@ public interface CommandSender extends Permissible {
+      */
+     public void sendMessage(String[] messages);
+ 
++    /**
++     * Sends this sender a enhanced message<br>
++     * For details on the enhanced/textual string format, see {@link ChatParser}
++     *
++     * @param message Enhanced message to be displayed
++     */
++    public void sendEnhancedMessage(String enhancedMessage);
++
++    /**
++     * Sends this sender multiple enhanced messages<br>
++     * For details on the enhanced/textual string format, see {@link ChatParser}
++     *
++     * @param messages An array of enhanced messages to be displayed
++     */
++    public void sendEnhancedMessage(String[] enhancedMessages);
++
+     /**
+      * Returns the server instance that this command is running on
+      *
+diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
+index 5527e7c8..7d27238c 100644
+--- a/src/main/java/org/bukkit/command/MessageCommandSender.java
++++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
+@@ -22,6 +22,13 @@ public interface MessageCommandSender extends CommandSender {
+         }
+     }
+ 
++    @Override
++    default void sendEnhancedMessage(String[] enhancedMessages) {
++        for (String message : enhancedMessages) {
++            sendEnhancedMessage(message);
++        }
++    }
++
+     @Override
+     default Server getServer() {
+         return Bukkit.getServer();
 diff --git a/src/test/java/com/destroystokyo/paper/ChatParserTest.java b/src/test/java/com/destroystokyo/paper/ChatParserTest.java
 new file mode 100644
 index 00000000..5a55290c
@@ -448,7 +534,7 @@ index 00000000..5a55290c
 +}
 diff --git a/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
 new file mode 100644
-index 00000000..af3a7ec6
+index 00000000..549be130
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
 @@ -0,0 +1,52 @@
@@ -493,7 +579,7 @@ index 00000000..af3a7ec6
 +        String expected = "{red}This is a {/red}{blue}blue {/blue}{red}test";
 +
 +        ComponentBuilder builder = new ComponentBuilder("This is a ").color(ChatColor.RED)
-+                    .append("blue  ", FormatRetention.NONE).color(ChatColor.BLUE)
++                    .append("blue ", FormatRetention.NONE).color(ChatColor.BLUE)
 +                    .append("test", FormatRetention.NONE).color(ChatColor.RED);
 +
 +        test(builder, expected);
@@ -504,5 +590,6 @@ index 00000000..af3a7ec6
 +        assertEquals(expected, string);
 +    }
 +}
---
+-- 
 2.17.1
+
