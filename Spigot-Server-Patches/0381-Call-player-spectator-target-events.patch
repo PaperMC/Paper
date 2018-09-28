@@ -1,0 +1,76 @@
+From 87763b907bba20d2cab322b73ab8f5635864d5dd Mon Sep 17 00:00:00 2001
+From: Caleb Bassham <caleb.bassham@gmail.com>
+Date: Fri, 28 Sep 2018 02:32:19 -0500
+Subject: [PATCH] Call player spectator target events
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 5ab4e01e..683a9284 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1,18 +1,16 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent;
++import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+ import io.netty.buffer.Unpooled;
+-import io.netty.util.concurrent.Future;
+-import io.netty.util.concurrent.GenericFutureListener;
++
+ import java.util.ArrayDeque; // Paper
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Deque; // Paper
+-import java.util.Iterator;
+-import java.util.List;
+ import java.util.Random;
+-import java.util.function.Consumer;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -1373,15 +1371,36 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return (Entity) (this.cv == null ? this : this.cv);
+     }
+ 
+-    public void setSpectatorTarget(Entity entity) {
+-        Entity entity1 = this.getSpecatorTarget();
++    public void setSpectatorTarget(Entity newSpectatorTarget) {
++        Entity currentSpectatorTarget = this.getSpecatorTarget();
++
++        if (newSpectatorTarget == null) {
++            this.cv = this;
++            newSpectatorTarget = this;
++        }
++
++        if (currentSpectatorTarget != newSpectatorTarget) {
++            if (newSpectatorTarget == this) {
++                PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new PlayerStopSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) currentSpectatorTarget);
++                Bukkit.getPluginManager().callEvent(playerStopSpectatingEntityEvent);
++
++                if (playerStopSpectatingEntityEvent.isCancelled()) {
++                    return;
++                }
++            } else {
++                PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new PlayerStartSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) currentSpectatorTarget, (org.bukkit.entity.Entity) newSpectatorTarget);
++                Bukkit.getPluginManager().callEvent(playerStartSpectatingEntityEvent);
++
++                if (playerStartSpectatingEntityEvent.isCancelled()) {
++                    return;
++                }
++            }
+ 
+-        this.cv = (Entity) (entity == null ? this : entity);
+-        if (entity1 != this.cv) {
+             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
+             this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+         }
+ 
++        this.cv = newSpectatorTarget;
+     }
+ 
+     protected void E() {
+-- 
+2.19.0
+
