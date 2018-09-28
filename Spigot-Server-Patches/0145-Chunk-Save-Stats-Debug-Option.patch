@@ -1,4 +1,4 @@
-From 71c127a8ceda8537198adecb9db62402cb66b25d Mon Sep 17 00:00:00 2001
+From 2803838d0058fe88698e854f9fa2bff26baba686 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Nov 2016 02:12:10 -0400
 Subject: [PATCH] Chunk Save Stats Debug Option
@@ -8,13 +8,13 @@ Adds a command line flag to enable stats on how chunk saves are processing.
 Stats on current queue, how many was processed and how many were queued.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 8acbd7bbff..edb4f2bb65 100644
+index 5197062293..e4d2a3a0b5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -30,6 +30,11 @@ public class ChunkProviderServer implements IChunkProvider {
      public final LongSet unloadQueue = new LongOpenHashSet();
      public final ChunkGenerator<?> chunkGenerator;
-     private final IChunkLoader chunkLoader;
+     public final IChunkLoader chunkLoader; // PAIL
 +    // Paper start - chunk save stats
 +    private long lastQueuedSaves = 0L; // Paper
 +    private long lastProcessedSaves = 0L; // Paper
@@ -54,10 +54,10 @@ index 8acbd7bbff..edb4f2bb65 100644
                  return false;
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index fc8f7574cf..94ed728c0e 100644
+index e86d47a05e..ec328126cf 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -148,7 +148,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -152,7 +152,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
      }
  
@@ -72,7 +72,7 @@ index fc8f7574cf..94ed728c0e 100644
  
      // CraftBukkit start - Add async variant, provide compatibility
      @Nullable
-@@ -340,6 +346,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -344,6 +350,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
          this.saveMap.put(chunkcoordintpair.asLong(), nbttagcompound); // Paper
          queue.add(new QueuedChunk(chunkcoordintpair, nbttagcompound)); // Paper - Chunk queue improvements
@@ -80,7 +80,7 @@ index fc8f7574cf..94ed728c0e 100644
          FileIOThread.a().a(this);
      }
  
-@@ -367,6 +374,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -371,6 +378,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
              // Paper end
              ChunkCoordIntPair chunkcoordintpair = chunk.coords; // Paper - Chunk queue improvements
              Supplier<NBTTagCompound> nbttagcompound = chunk.compoundSupplier; // Spigot // Paper
@@ -89,5 +89,5 @@ index fc8f7574cf..94ed728c0e 100644
              if (nbttagcompound == null) {
                  return true;
 -- 
-2.18.0
+2.19.0
 

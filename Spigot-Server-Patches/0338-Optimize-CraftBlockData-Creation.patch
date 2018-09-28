@@ -1,0 +1,73 @@
+From eda4e5cc46dd7581de017e16bc4002f3ed10b5a6 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Thu, 23 Aug 2018 11:45:32 -0400
+Subject: [PATCH] Optimize CraftBlockData Creation
+
+Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
+and cloning it when one is needed.
+
+diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
+index fbe181c1fd..bd86cd2e54 100644
+--- a/src/main/java/net/minecraft/server/BlockData.java
++++ b/src/main/java/net/minecraft/server/BlockData.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.ImmutableMap;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ 
+ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
+     public BlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
+@@ -10,4 +11,14 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
+     public Block getBlock() {
+         return this.e_;
+     }
++
++    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++    private CraftBlockData cachedCraftBlockData;
++
++    @Override
++    public CraftBlockData createCraftBlockData() {
++        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
++        return (CraftBlockData) cachedCraftBlockData.clone();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index bf06a90312..4d62d0093d 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -23,6 +23,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
+ 
+     Block getBlock();
+ 
++    org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData(); // Paper - property for converting IBlockData to CraftBlockData, should only be used by CraftBlockData#fromData and should return a clone
++
+     default Material getMaterial() {
+         return this.getBlock().n(this);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index d470e2b34a..b9279d925c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -501,7 +501,17 @@ public class CraftBlockData implements BlockData {
+         return craft;
+     }
+ 
++    // Paper start - optimize creating BlockData to not need a map lookup
++    static {
++        // Initialize cached data for all IBlockData instances after registration
++        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData);
++    }
+     public static CraftBlockData fromData(IBlockData data) {
++        return data.createCraftBlockData();
++    }
++
++    public static CraftBlockData createData(IBlockData data) {
++        // Paper end
+         return MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
+     }
+ }
+-- 
+2.19.0
+
