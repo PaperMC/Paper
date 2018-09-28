@@ -1,0 +1,508 @@
+From 60447cd725a01e031a362cac7ffee4be685e221d Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Fri, 28 Sep 2018 08:08:15 +0000
+Subject: [PATCH] Textual Chat Format
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/ChatParser.java b/src/main/java/com/destroystokyo/paper/ChatParser.java
+new file mode 100644
+index 00000000..09447ef8
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ChatParser.java
+@@ -0,0 +1,268 @@
++package com.destroystokyo.paper;
++
++import net.md_5.bungee.api.ChatColor;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.ClickEvent;
++import net.md_5.bungee.api.chat.ComponentBuilder;
++import net.md_5.bungee.api.chat.HoverEvent;
++
++import java.util.ArrayList;
++import java.util.EnumSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.Stack;
++import javax.annotation.Nonnull;
++
++import org.bukkit.util.Consumer;
++
++public class ChatParser {
++
++    @Nonnull
++    public static BaseComponent[] parseFormat(@Nonnull String string, String... placeholders) {
++        if (placeholders.length % 2 != 0) {
++            throw new RuntimeException("Invalid number placeholders defined, usage: parseFormat(format, key, value, key, value...)");
++        }
++        for (int i = 0; i < placeholders.length; i += 2) {
++            string = string.replace("{" + placeholders[i] + "}", placeholders[i + 1]);
++        }
++        return parseFormat(string);
++    }
++
++    @Nonnull
++    public static BaseComponent[] parseFormat(@Nonnull String string, Map<String, String> placeholders) {
++        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
++            string = string.replace(entry.getKey(), entry.getValue());
++        }
++        return parseFormat(string);
++    }
++
++    @Nonnull
++    public static BaseComponent[] parseFormat(@Nonnull String string) {
++        ComponentBuilder builder = null;
++
++        List<String> tokens = tokenize(string);
++
++        Stack<ClickEvent> clickEvents = new Stack<>();
++        Stack<HoverEvent> hoverEvents = new Stack<>();
++        Stack<ChatColor> colors = new Stack<>();
++        EnumSet<TextDecoration> decorations = EnumSet.noneOf(TextDecoration.class);
++
++        for (String token : tokens) {
++            if (token.equals("")) continue;
++
++            // click
++            if (token.startsWith("click:")) {
++                clickEvents.push(handleClick(token));
++            } else if (token.equals("/click")) {
++                clickEvents.pop();
++            }
++            // hover
++            else if (token.startsWith("hover:")) {
++                hoverEvents.push(handleHover(token));
++            } else if (token.equals("/hover")) {
++                hoverEvents.pop();
++            }
++            // decoration
++            else if (resolveDecoration(token).isPresent()) {
++                decorations.add(handleDecoration(token));
++            } else if (token.startsWith("/") && resolveDecoration(token.replace("/", "")).isPresent()) {
++                decorations.remove(handleDecoration(token.replace("/", "")));
++            }
++            // color
++            else if (resolveColor(token).isPresent()) {
++                colors.push(handleColor(token));
++            } else if (token.startsWith("/") && resolveColor(token.replace("/", "")).isPresent()) {
++                colors.pop();
++            }
++            // normal text
++            else {
++                if (builder == null) {
++                    builder = new ComponentBuilder(token);
++                } else {
++                    builder.append(token, ComponentBuilder.FormatRetention.NONE);
++                }
++
++                // set everything that is not closed yet
++                if (clickEvents.size() > 0) {
++                    builder.event(clickEvents.peek());
++                }
++                if (hoverEvents.size() > 0) {
++                    builder.event(hoverEvents.peek());
++                }
++                if (colors.size() > 0) {
++                    builder.color(colors.peek());
++                }
++                if (decorations.size() > 0) {
++                    // no lambda because builder isn't effective final :/
++                    for (TextDecoration deco : decorations) {
++                        deco.apply(builder);
++                    }
++                }
++            }
++        }
++
++        if (builder == null) {
++            // lets just return an empty component
++            builder = new ComponentBuilder("");
++        }
++
++        return builder.create();
++    }
++
++    @Nonnull
++    private static ClickEvent handleClick(@Nonnull String token) {
++        String[] args = token.split(":");
++        ClickEvent clickEvent;
++        if (args.length < 2) {
++            throw new RuntimeException("Can't parse click action (too few args) " + token);
++        }
++        switch (args[1]) {
++            case "run_command":
++                clickEvent = new ClickEvent(ClickEvent.Action.RUN_COMMAND, token.replace("click:run_command:", ""));
++                break;
++            case "suggest_command":
++                clickEvent = new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, token.replace("click:suggest_command:", ""));
++                break;
++            case "open_url":
++                clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, token.replace("click:open_url:", ""));
++                break;
++            case "change_page":
++                clickEvent = new ClickEvent(ClickEvent.Action.CHANGE_PAGE, token.replace("click:change_page:", ""));
++                break;
++            default:
++                throw new RuntimeException("Can't parse click action (invalid type " + args[1] + ") " + token);
++        }
++        return clickEvent;
++    }
++
++    @Nonnull
++    private static HoverEvent handleHover(@Nonnull String token) {
++        String[] args = token.split(":");
++        HoverEvent hoverEvent;
++        if (args.length < 2) {
++            throw new RuntimeException("Can't parse hover action (too few args) " + token);
++        }
++        switch (args[1]) {
++            case "show_text":
++                hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, parseFormat(token.replace("hover:show_text:", "")));
++                break;
++            case "show_item":
++                hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_ITEM, parseFormat(token.replace("hover:show_item:", "")));
++                break;
++            case "show_entity":
++                hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_ENTITY, parseFormat(token.replace("hover:show_entity:", "")));
++                break;
++            default:
++                throw new RuntimeException("Can't parse hover action (invalid type " + args[1] + ") " + token);
++        }
++        return hoverEvent;
++    }
++
++    @Nonnull
++    private static ChatColor handleColor(@Nonnull String token) {
++        return resolveColor(token).orElseThrow(() -> new RuntimeException("Can't parse color " + token));
++    }
++
++    @Nonnull
++    private static TextDecoration handleDecoration(@Nonnull String token) {
++        return resolveDecoration(token).orElseThrow(() -> new RuntimeException("Can't parse decoration " + token));
++    }
++
++    @Nonnull
++    private static Optional<ChatColor> resolveColor(@Nonnull String token) {
++        try {
++            return Optional.of(ChatColor.valueOf(token.toUpperCase()));
++        } catch (IllegalArgumentException ex) {
++            return Optional.empty();
++        }
++    }
++
++    @Nonnull
++    private static Optional<TextDecoration> resolveDecoration(@Nonnull String token) {
++        try {
++            return Optional.of(TextDecoration.valueOf(token.toUpperCase()));
++        } catch (IllegalArgumentException ex) {
++            return Optional.empty();
++        }
++    }
++
++    @Nonnull
++    private static List<String> tokenize(@Nonnull String input) {
++        List<String> result = new ArrayList<>();
++        StringBuilder buffer = new StringBuilder();
++        boolean skip = false;
++
++        for (int i = 0; i < input.length(); i++) {
++            char cI = input.charAt(i);
++            if (cI == '"') {
++                if (i < input.length() - 1 && input.charAt(i + 1) == '{'
++                    || i < input.length() - 1 && input.charAt(i + 1) == '}') {
++                    // don't add the surrounding "s
++                    continue;
++                }
++            } else if (cI == '{') {
++                if (i > 0 && input.charAt(i - 1) == '"') {
++                    // we found a nested value, lets skip the next brackets till we find the end of the nesting
++                    skip = true;
++                    buffer.append('{');
++                    continue;
++                } else {
++                    if (!skip) {
++                        // split at {
++                        result.add(buffer.toString());
++                        buffer = new StringBuilder();
++                        continue;
++                    }
++                }
++            } else if (cI == '}') {
++                if (i > 0 && input.charAt(i - 1) == '"') {
++                    // the end of the nesting was found, time to disable skipping
++                    skip = false;
++                    result.add(buffer.toString());
++                    buffer = new StringBuilder();
++                    continue;
++                } else {
++                    if (!skip) {
++                        // split at }
++                        result.add(buffer.toString());
++                        buffer = new StringBuilder();
++                        continue;
++                    }
++                }
++            }
++
++            // normal char, lets add it
++            buffer.append(cI);
++        }
++
++        // add rest
++        result.add(buffer.toString());
++
++        return result;
++    }
++
++    enum TextDecoration {
++        BOLD(comp -> comp.setBold(true), builder -> builder.bold(true)),
++        ITALIC(comp -> comp.setItalic(true), builder -> builder.italic(true)),
++        UNDERLINE(comp -> comp.setUnderlined(true), builder -> builder.underlined(true)),
++        STRIKETHROUGH(comp -> comp.setStrikethrough(true), builder -> builder.strikethrough(true)),
++        OBFUSCATED(comp -> comp.setObfuscated(true), builder -> builder.obfuscated(true));
++
++        private Consumer<BaseComponent> base;
++        private Consumer<ComponentBuilder> builder;
++
++        TextDecoration(Consumer<BaseComponent> base, Consumer<ComponentBuilder> builder) {
++            this.base = base;
++            this.builder = builder;
++        }
++
++        public void apply(BaseComponent comp) {
++            base.accept(comp);
++        }
++
++        public void apply(ComponentBuilder comp) {
++            builder.accept(comp);
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/ChatSerializer.java b/src/main/java/com/destroystokyo/paper/ChatSerializer.java
+new file mode 100644
+index 00000000..58ee9b4b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ChatSerializer.java
+@@ -0,0 +1,63 @@
++package com.destroystokyo.paper;
++
++import java.lang.StringBuilder;
++import java.util.Stack;
++
++import javax.annotation.Nonnull;
++
++import net.md_5.bungee.api.ChatColor;
++import net.md_5.bungee.api.chat.BaseComponent;
++
++public class ChatSerializer {
++
++    @Nonnull
++    public static String serialize(@Nonnull BaseComponent... components) {
++        StringBuilder sb = new StringBuilder();
++
++        for (int i = 0; i < components.length; i++) {
++            BaseComponent comp = components[i];
++
++            // # start tags
++
++            // ## color
++            // ### white is not important
++            if(!ChatColor.WHITE.equals(comp.getColor())) {
++                sb.append(startColor(comp.getColor()));
++            }
++
++            // # append text
++            sb.append(comp.toPlainText());
++
++            // # end tags
++
++            // ## no end tags for last component
++            if(i == components.length - 1) {
++                continue;
++            }
++
++            // ## color
++            // ### white is not important
++            if(!ChatColor.WHITE.equals(comp.getColor())) {
++                sb.append(endColor(comp.getColor()));
++            }
++        }
++
++        return sb.toString();
++    }
++
++    private static String startColor(ChatColor color) {
++        return startTag(color.name().toLowerCase());
++    }
++
++    private static String endColor(ChatColor color) {
++        return endTag(color.name().toLowerCase());
++    }
++
++    private static String startTag(String content) {
++        return String.format("{%s}", content);
++    }
++
++    private static String endTag(String content) {
++        return String.format("{/%s}", content);
++    }
++}
+diff --git a/src/test/java/com/destroystokyo/paper/ChatParserTest.java b/src/test/java/com/destroystokyo/paper/ChatParserTest.java
+new file mode 100644
+index 00000000..5a55290c
+--- /dev/null
++++ b/src/test/java/com/destroystokyo/paper/ChatParserTest.java
+@@ -0,0 +1,93 @@
++package com.destroystokyo.paper;
++
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.chat.ComponentSerializer;
++
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++
++public class ChatParserTest {
++
++    @Test
++    public void checkPlaceholder() {
++        String input = "{test}";
++        String expected = "{\"text\":\"Hello!\"}";
++        BaseComponent[] comp = ChatParser.parseFormat(input, "test", "Hello!");
++
++        test(comp, expected);
++    }
++
++    @Test
++    public void testNiceMix() {
++        String input = "{yellow}{test} random {bold}stranger{/bold}{click:run_command:test command}{underline}{red}click here{/click}{blue} to {bold}FEEL{/underline} it";
++        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"Hello! random \"},{\"color\":\"yellow\",\"bold\":true,\"text\":\"stranger\"},{\"color\":\"red\",\"underlined\":true,\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test command\"},\"text\":\"click here\"},{\"color\":\"blue\",\"underlined\":true,\"text\":\" to \"},{\"color\":\"blue\",\"bold\":true,\"underlined\":true,\"text\":\"FEEL\"},{\"color\":\"blue\",\"bold\":true,\"text\":\" it\"}],\"text\":\"\"}";
++        BaseComponent[] comp = ChatParser.parseFormat(input, "test", "Hello!");
++
++        test(comp, expected);
++    }
++
++    @Test
++    public void testColorSimple() {
++        String input = "{yellow}TEST";
++        String expected = "{\"color\":\"yellow\",\"text\":\"TEST\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testColorNested() {
++        String input = "{yellow}TEST{green}nested{/green}Test";
++        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"TEST\"},{\"color\":\"green\",\"text\":\"nested\"},{\"color\":\"yellow\",\"text\":\"Test\"}],\"text\":\"\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testColorNotNested() {
++        String input = "{yellow}TEST{/yellow}{green}nested{/green}Test";
++        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"TEST\"},{\"color\":\"green\",\"text\":\"nested\"},{\"text\":\"Test\"}],\"text\":\"\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testHover() {
++        String input = "{hover:show_text:\"{red}test\"}TEST";
++        String expected = "{\"hoverEvent\":{\"action\":\"show_text\",\"value\":[{\"color\":\"red\",\"text\":\"test\"}]},\"text\":\"TEST\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testHoverWithColon() {
++        String input = "{hover:show_text:\"{red}test:TEST\"}TEST";
++        String expected = "{\"hoverEvent\":{\"action\":\"show_text\",\"value\":[{\"color\":\"red\",\"text\":\"test:TEST\"}]},\"text\":\"TEST\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testClick() {
++        String input = "{click:run_command:test}TEST";
++        String expected = "{\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test\"},\"text\":\"TEST\"}";
++
++        test(input, expected);
++    }
++
++    @Test
++    public void testClickExtendedCommand() {
++        String input = "{click:run_command:test command}TEST";
++        String expected = "{\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test command\"},\"text\":\"TEST\"}";
++
++        test(input, expected);
++    }
++
++    private void test(String input, String expected) {
++        test(ChatParser.parseFormat(input), expected);
++    }
++
++    private void test(BaseComponent[] comp, String expected) {
++        assertEquals(expected, ComponentSerializer.toString(comp));
++    }
++}
+diff --git a/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
+new file mode 100644
+index 00000000..af3a7ec6
+--- /dev/null
++++ b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
+@@ -0,0 +1,52 @@
++package com.destroystokyo.paper;
++
++import net.md_5.bungee.api.ChatColor;
++import net.md_5.bungee.api.chat.ComponentBuilder;
++import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
++
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++
++public class ChatSerializerTest {
++
++    @Test
++    public void testColor() {
++        String expected = "{red}This is a test";
++
++        ComponentBuilder builder = new ComponentBuilder("This is a test");
++        builder.color(ChatColor.RED);
++
++        test(builder, expected);
++    }
++
++        @Test
++    public void testColorClosing() {
++        String expected = "{red}This is a {/red}test";
++
++        ComponentBuilder builder = new ComponentBuilder("This is a ");
++        builder.color(ChatColor.RED);
++        builder.append("test", FormatRetention.NONE);
++
++        test(builder, expected);
++    }
++
++            @Test
++    public void testNestedColor() {
++        // TODO what the fuck do we actually expect here?....
++        //String expected = "{red}This is a {blue}blue {/blue}test";
++        //String expected = "{red}This is a {blue}blue {red}test";
++        String expected = "{red}This is a {/red}{blue}blue {/blue}{red}test";
++
++        ComponentBuilder builder = new ComponentBuilder("This is a ").color(ChatColor.RED)
++                    .append("blue  ", FormatRetention.NONE).color(ChatColor.BLUE)
++                    .append("test", FormatRetention.NONE).color(ChatColor.RED);
++
++        test(builder, expected);
++    }
++
++    private void test(ComponentBuilder builder, String expected) {
++        String string = ChatSerializer.serialize(builder.create());
++        assertEquals(expected, string);
++    }
++}
+--
+2.17.1
