@@ -1,14 +1,22 @@
-From b4c5310990c048a6ca00d5e91f9bab489cf49003 Mon Sep 17 00:00:00 2001
+From 44e0062a8eebeebfc4723cd4263986396550fc15 Mon Sep 17 00:00:00 2001
 From: MiniDigger <admin@minidigger.me>
 Date: Fri, 28 Sep 2018 08:08:15 +0000
 Subject: [PATCH] Textual Chat Format
 
 
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
-index e7c389c0..2834b0e8 100644
+index e7c389c0..f6e429ff 100644
 --- a/src/main/java/co/aikar/timings/TimingsReportListener.java
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -58,6 +58,11 @@ public class TimingsReportListener implements MessageCommandSender {
+@@ -9,6 +9,7 @@ import org.bukkit.command.MessageCommandSender;
+ import org.bukkit.command.RemoteConsoleCommandSender;
+ 
+ import java.util.List;
++import java.util.Map;
+ 
+ @SuppressWarnings("WeakerAccess")
+ public class TimingsReportListener implements MessageCommandSender {
+@@ -58,6 +59,21 @@ public class TimingsReportListener implements MessageCommandSender {
          senders.forEach((sender) -> sender.sendMessage(message));
      }
  
@@ -17,15 +25,25 @@ index e7c389c0..2834b0e8 100644
 +         senders.forEach((sender) -> sender.sendEnhancedMessage(enhancedMessage));
 +    }
 +
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage, String... placeholders) {
++         senders.forEach((sender) -> sender.sendEnhancedMessage(enhancedMessage, placeholders));
++    }
++
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage, Map<String, String> placeholders) {
++         senders.forEach((sender) -> sender.sendEnhancedMessage(enhancedMessage, placeholders));
++    }
++
      public void addConsoleIfNeeded() {
          boolean hasConsole = false;
          for (CommandSender sender : this.senders) {
 diff --git a/src/main/java/com/destroystokyo/paper/ChatParser.java b/src/main/java/com/destroystokyo/paper/ChatParser.java
 new file mode 100644
-index 00000000..09447ef8
+index 00000000..3e725639
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ChatParser.java
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,291 @@
 +package com.destroystokyo.paper;
 +
 +import net.md_5.bungee.api.ChatColor;
@@ -47,7 +65,30 @@ index 00000000..09447ef8
 +public class ChatParser {
 +
 +    @Nonnull
-+    public static BaseComponent[] parseFormat(@Nonnull String string, String... placeholders) {
++    public static String toPlainText(@Nonnull String message) {
++        return toPlainText(parseFormat(message));
++    }
++
++    @Nonnull
++    public static String toPlainText(@Nonnull String message, @Nonnull String... placeholders) {
++        return toPlainText(parseFormat(message, placeholders));
++    }
++
++    @Nonnull
++    public static String toPlainText(@Nonnull String message, @Nonnull Map<String, String> placeholders) {
++        return toPlainText(parseFormat(message, placeholders));
++    }
++
++    private static String toPlainText(BaseComponent[] comps) {
++        StringBuilder sb = new StringBuilder();
++        for(BaseComponent comp : comps) {
++            sb.append(comp.toPlainText());
++        }
++        return sb.toString();
++    }
++
++    @Nonnull
++    public static BaseComponent[] parseFormat(@Nonnull String string, @Nonnull String... placeholders) {
 +        if (placeholders.length % 2 != 0) {
 +            throw new RuntimeException("Invalid number placeholders defined, usage: parseFormat(format, key, value, key, value...)");
 +        }
@@ -58,7 +99,7 @@ index 00000000..09447ef8
 +    }
 +
 +    @Nonnull
-+    public static BaseComponent[] parseFormat(@Nonnull String string, Map<String, String> placeholders) {
++    public static BaseComponent[] parseFormat(@Nonnull String string, @Nonnull Map<String, String> placeholders) {
 +        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
 +            string = string.replace(entry.getKey(), entry.getValue());
 +        }
@@ -364,24 +405,38 @@ index 00000000..58ee9b4b
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
-index fd452bce..3e3d8f49 100644
+index fd452bce..7a969823 100644
 --- a/src/main/java/org/bukkit/command/BufferedCommandSender.java
 +++ b/src/main/java/org/bukkit/command/BufferedCommandSender.java
-@@ -8,6 +8,12 @@ public class BufferedCommandSender implements MessageCommandSender {
+@@ -8,6 +8,26 @@ public class BufferedCommandSender implements MessageCommandSender {
          buffer.append("\n");
      }
  
++    // Paper start: textual chat format
 +    @Override
 +    public void sendEnhancedMessage(String enhancedMessage) {
 +        buffer.append(enhancedMessage);//TODO check that this actually works
 +        buffer.append("\n");
 +    }
 +
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage, String... placeholders) {
++        buffer.append(enhancedMessage);//TODO fixme
++        buffer.append("\n");
++    }
++
++    @Override
++    public void sendEnhancedMessage(String enhancedMessage, java.util.Map<String, String> placeholders) {
++        buffer.append(enhancedMessage);//TODO fixme
++        buffer.append("\n");
++    }
++    // Paper end
++
      public String getBuffer() {
          return buffer.toString();
      }
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
-index fcb03b83..106bee9b 100644
+index fcb03b83..c36aec1c 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
 +++ b/src/main/java/org/bukkit/command/CommandSender.java
 @@ -1,5 +1,7 @@
@@ -392,10 +447,11 @@ index fcb03b83..106bee9b 100644
  import org.bukkit.Server;
  import org.bukkit.permissions.Permissible;
  
-@@ -19,6 +21,22 @@ public interface CommandSender extends Permissible {
+@@ -19,6 +21,42 @@ public interface CommandSender extends Permissible {
       */
      public void sendMessage(String[] messages);
  
++    // Paper start: textual chat format
 +    /**
 +     * Sends this sender a enhanced message<br>
 +     * For details on the enhanced/textual string format, see {@link ChatParser}
@@ -405,12 +461,31 @@ index fcb03b83..106bee9b 100644
 +    public void sendEnhancedMessage(String enhancedMessage);
 +
 +    /**
++     * Sends this sender a enhanced message with placeholders<br>
++     * For details on the enhanced/textual string format, see {@link ChatParser}
++     *
++     * @param enhancedMessage Enhanced message to be displayed
++     * @param placeholders key and value pairs for placeholders in the message
++     */
++    public void sendEnhancedMessage(String enhancedMessage, String... placeholders);
++
++    /**
++     * Sends this sender a enhanced message with placeholders<br>
++     * For details on the enhanced/textual string format, see {@link ChatParser}
++     *
++     * @param enhancedMessage Enhanced message to be displayed
++     * @param placeholders key and value pairs for placeholders in the message
++     */
++    public void sendEnhancedMessage(String enhancedMessage, java.util.Map<String, String> placeholders);
++
++    /**
 +     * Sends this sender multiple enhanced messages<br>
 +     * For details on the enhanced/textual string format, see {@link ChatParser}
 +     *
 +     * @param messages An array of enhanced messages to be displayed
 +     */
 +    public void sendEnhancedMessage(String[] enhancedMessages);
++    // Paper end
 +
      /**
       * Returns the server instance that this command is running on
