@@ -1128,6 +1128,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     }
 
     // CraftBukkit start - Delegate to teleport(Location)
+    public final void teleport(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) { this.a(d0, d1, d2, f, f1, cause); } // Paper - OBFHELPER
     public void a(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) {
         this.a(d0, d1, d2, f, f1, Collections.<PacketPlayOutPosition.EnumPlayerTeleportFlags>emptySet(), cause);
     }

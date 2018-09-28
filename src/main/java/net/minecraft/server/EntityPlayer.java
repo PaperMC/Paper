@@ -1660,15 +1660,59 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         return (Entity) (this.spectatedEntity == null ? this : this.spectatedEntity);
     }
 
-    public void setSpectatorTarget(Entity entity) {
+    public void setSpectatorTarget(Entity newSpectatorTarget) {
+        // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity Event and improve implementation
         Entity entity1 = this.getSpecatorTarget();
 
-        this.spectatedEntity = (Entity) (entity == null ? this : entity);
-        if (entity1 != this.spectatedEntity) {
-            this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
-            this.playerConnection.a(this.spectatedEntity.locX(), this.spectatedEntity.locY(), this.spectatedEntity.locZ(), this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+        if (newSpectatorTarget == null) {
+            newSpectatorTarget = this;
         }
 
+        if (entity1 == newSpectatorTarget) return; // new spec target is the current spec target
+
+        if (newSpectatorTarget == this) {
+            com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
+
+            if (!playerStopSpectatingEntityEvent.callEvent()) {
+                return;
+            }
+        } else {
+            com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), newSpectatorTarget.getBukkitEntity());
+
+            if (!playerStartSpectatingEntityEvent.callEvent()) {
+                return;
+            }
+        }
+        // Validate
+        if (newSpectatorTarget != this) {
+            if (newSpectatorTarget.dead || newSpectatorTarget.shouldBeRemoved || !newSpectatorTarget.valid || newSpectatorTarget.world == null) {
+                MinecraftServer.LOGGER.info("Blocking player " + this.toString() + " from spectating invalid entity " + newSpectatorTarget.toString());
+                return;
+            }
+            if (this.isFrozen()) {
+                // use debug: clients might maliciously spam this
+                MinecraftServer.LOGGER.debug("Blocking frozen player " + this.toString() + " from spectating entity " + newSpectatorTarget.toString());
+                return;
+            }
+        }
+
+        this.spectatedEntity = newSpectatorTarget; // only set after validating state
+
+        if (newSpectatorTarget != this) {
+            // Make sure we're in the right place
+            this.ejectPassengers(); // teleport can fail if we have passengers...
+            this.getBukkitEntity().teleport(new Location(newSpectatorTarget.getWorld().getWorld(), newSpectatorTarget.locX(), newSpectatorTarget.locY(), newSpectatorTarget.locZ(), this.yaw, this.pitch), TeleportCause.SPECTATE); // Correctly handle cross-world entities from api calls by using CB teleport
+
+            // Make sure we're tracking the entity before sending
+            PlayerChunkMap.EntityTracker tracker = ((WorldServer)newSpectatorTarget.world).getChunkProvider().playerChunkMap.trackedEntities.get(newSpectatorTarget.getId());
+            if (tracker != null) { // dumb plugins...
+                tracker.updatePlayer(this);
+            }
+        } else {
+            this.playerConnection.teleport(this.spectatedEntity.locX(), this.spectatedEntity.locY(), this.spectatedEntity.locZ(), this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+        }
+        this.playerConnection.sendPacket(new PacketPlayOutCamera(newSpectatorTarget));
+        // Paper end
     }
 
     @Override
