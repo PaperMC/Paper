@@ -43,7 +43,7 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index fca18fbb81..ce52733840 100644
+index da710cc6fe..6b65364e22 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -345,47 +345,8 @@ index 0000000000..8dfed1a8cf
 +    };
 +
 +}
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a0d08a89a3..e885dd5755 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-     }
- 
-     public void addEntities() {
-+        ChunkMap.onPostLoad(this); // Paper
-         this.i = true;
-         this.world.a(this.tileEntities.values());
-         List[] aentityslice = this.entitySlices; // Spigot
-diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index b941676829..1b85520775 100644
---- a/src/main/java/net/minecraft/server/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
-                 }
-             }
-         }
-+
-         chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
-+        // Paper start
-+        return chunk1;
-+    }
-+    static void onPostLoad(Chunk chunk) {
-+        // Paper end
- 
-         if (chunk.newChunk) {
-             chunk.world.timings.syncChunkLoadPopulateTimer.startTiming(); // Paper
-@@ -0,0 +0,0 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
-         }
-         // CraftBukkit end
- 
--        return chunk1;
-+        //return chunk1; // Paper
-     }
- 
-     public Chunk a(Long olong, Chunk chunk) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 5b57ea93c8..4f36ddc042 100644
+index 5b57ea93c8..5d5834ba7f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -515,12 +476,6 @@ index 5b57ea93c8..4f36ddc042 100644
  
      }
  
-@@ -0,0 +0,0 @@ public class ChunkProviderServer implements IChunkProvider {
-     public boolean isLoaded(int i, int j) {
-         return this.chunks.containsKey(ChunkCoordIntPair.a(i, j));
-     }
-+
- }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index c233b7e903..edd0742527 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -670,14 +625,14 @@ index 4698ee99f8..dfb45cc4ea 100644
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
 diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
-index 49fba0979e..c6661851d1 100644
+index 49fba0979e..9ad646f8d4 100644
 --- a/src/main/java/net/minecraft/server/MathHelper.java
 +++ b/src/main/java/net/minecraft/server/MathHelper.java
 @@ -0,0 +0,0 @@ public class MathHelper {
          return Math.floorMod(i, j);
      }
  
-+    public static float normalizeYaw(float fx) { return g(fx); } // Paper
++    public static float normalizeYaw(float fx) { return g(fx); } // Paper - OBFHELPER
      public static float g(float fx) {
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
@@ -780,7 +735,7 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..604f1db287
+index 0000000000..47d9ecdbf1
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +0,0 @@
@@ -1188,9 +1143,6 @@ index 0000000000..604f1db287
 +                if (pendingLevel != null) {
 +                    chunkLoader.loadEntities(pendingLevel, chunk);
 +                    pendingLevel = null;
-+                }
-+                if (!chunk.newChunk) {
-+                    chunk.setLastSaved(chunk.world.getTime());
 +                }
 +                synchronized (chunks) {
 +                    final Chunk other = chunks.get(key);
