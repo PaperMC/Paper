@@ -1,4 +1,4 @@
-From 13ef375a527f72393b88a6aef14b2ddbd2113677 Mon Sep 17 00:00:00 2001
+From afa37770f08dd663e681ec36f7a6742fe5a9073d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
@@ -18,7 +18,7 @@ index 42c1c47c58..3606c78843 100644
          if (bukkitEntity == null) {
              bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index b76b8dbf5d..709f3e525c 100644
+index 27278078e4..f6becaae43 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -55,6 +55,10 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -32,15 +32,21 @@ index b76b8dbf5d..709f3e525c 100644
  
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, PersistentCollection persistentcollection, WorldData worlddata, DimensionManager dimensionmanager, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-@@ -975,6 +979,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -974,7 +978,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
      private boolean j(Entity entity) {
          if (entity.dead) {
-             WorldServer.a.warn("Tried to add entity {} but it was marked as removed already: " + entity); // CraftBukkit // Paper
-+            if (DEBUG_ENTITIES) getAddToWorldStackTrace(entity).printStackTrace();
+-            // WorldServer.a.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getName(entity.P())); // CraftBukkit
++            // Paper start
++            if (DEBUG_ENTITIES) {
++                new Throwable("Tried to add entity " + entity + " but it was marked as removed already").printStackTrace(); // CraftBukkit
++                getAddToWorldStackTrace(entity).printStackTrace();
++            }
++            // Paper end
              return false;
          } else {
              UUID uuid = entity.getUniqueID();
-@@ -986,8 +991,14 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -986,8 +995,14 @@ public class WorldServer extends World implements IAsyncTaskHandler {
                      this.g.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
@@ -56,7 +62,7 @@ index b76b8dbf5d..709f3e525c 100644
                          return false;
                      }
  
-@@ -1004,7 +1015,25 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1004,7 +1019,25 @@ public class WorldServer extends World implements IAsyncTaskHandler {
      protected void b(Entity entity) {
          super.b(entity);
          this.entitiesById.a(entity.getId(), entity);
