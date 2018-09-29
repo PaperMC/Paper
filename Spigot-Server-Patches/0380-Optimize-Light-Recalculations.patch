@@ -1,4 +1,4 @@
-From bfe4057567647862f7f8c377acc4bff3788e42d5 Mon Sep 17 00:00:00 2001
+From 4f23ede23ade4b6f09398c7b12f6044ad88914d7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 28 Sep 2018 20:46:29 -0400
 Subject: [PATCH] Optimize Light Recalculations
@@ -10,38 +10,21 @@ do not impact light calculations.
 So the only way light should change, is if the block itself
 changes from 1 block to another.
 
-Additionally, as of 1.13, water now only blocks 1 light level
-instead of 3, meaning that light level decreasing is the same as air.
-
-This means, transitions between water and air also do not need
-to recalculate light, which saves a TON of updates caused by
-fluids flowing.
-
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 53aab97866..dad294ecbe 100644
+index 53aab97866..e4bda70bb9 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -103,6 +103,9 @@ public class Chunk implements IChunkAccess {
-     // Keep this synced with entitySlices.add() and entitySlices.remove()
-     private final int[] itemCounts = new int[16];
-     private final int[] inventoryEntityCounts = new int[16];
-+    public static boolean shouldRecheckLight(Block block, Block block1) {
-+        return !(block == block1 || (block1 == Blocks.WATER && block == Blocks.AIR) || (block == Blocks.WATER && block1 == Blocks.AIR));
-+    }
-     // Paper end
-     public boolean areNeighborsLoaded(final int radius) {
-         switch (radius) {
-@@ -578,7 +581,7 @@ public class Chunk implements IChunkAccess {
+@@ -578,7 +578,7 @@ public class Chunk implements IChunkAccess {
              } else {
                  if (flag1) {
                      this.initLighting();
 -                } else {
-+                } else if (shouldRecheckLight(block, block1)) { // Paper - Optimize light recalculations
++                } else if (block != block1) { // Paper - Optimize light recalculations
                      this.runOrQueueLightUpdate(() -> { // Paper - Queue light update
                      int i1 = iblockdata.b(this.world, blockposition);
                      int j1 = iblockdata1.b(this.world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 13f69f1b82..cd25bf3d9e 100644
+index 13f69f1b82..763401835d 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -444,7 +444,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -49,7 +32,7 @@ index 13f69f1b82..cd25bf3d9e 100644
                  IBlockData iblockdata2 = this.getType(blockposition);
  
 -                if (iblockdata2.b(this, blockposition) != iblockdata1.b(this, blockposition) || iblockdata2.e() != iblockdata1.e()) {
-+                if (Chunk.shouldRecheckLight(iblockdata.getBlock(), iblockdata2.getBlock()) && iblockdata2.b(this, blockposition) != iblockdata1.b(this, blockposition) || iblockdata2.e() != iblockdata1.e()) { // Paper - optimize light recalculations
++                if (iblockdata.getBlock() != iblockdata2.getBlock() && iblockdata2.b(this, blockposition) != iblockdata1.b(this, blockposition) || iblockdata2.e() != iblockdata1.e()) { // Paper - optimize light recalculations
                      this.methodProfiler.a("checkLight");
                      chunk.runOrQueueLightUpdate(() -> this.r(blockposition)); // Paper - Queue light update
                      this.methodProfiler.e();
