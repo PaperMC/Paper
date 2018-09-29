@@ -1,4 +1,4 @@
-From bce7593da2a2876e500cc9404bb898fe2fd276a2 Mon Sep 17 00:00:00 2001
+From b75c9e7ccdb0bd7cedb1938ca328089e9bee5c51 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -64,7 +64,7 @@ index da710cc6fe..6b65364e22 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..8dfed1a8cf
+index 0000000000..0a9fd5d662
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 @@ -0,0 +1,277 @@
@@ -258,7 +258,7 @@ index 0000000000..8dfed1a8cf
 +    }
 +
 +    public enum Priority {
-+        HIGH, NORMAL
++        NORMAL, HIGH
 +    }
 +
 +    public class PendingTask <T> implements Runnable {
@@ -316,7 +316,7 @@ index 0000000000..8dfed1a8cf
 +                    return;
 +                }
 +                if (this.submitted.compareAndSet(submitted, priority)) {
-+                    if (priority == 1) {
++                    if (priority == Priority.HIGH.ordinal()) {
 +                        high.add(this);
 +                    } else {
 +                        normal.add(this);
@@ -1718,7 +1718,7 @@ index fa99fe0146..4f49786aa3 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f837e6c36c..409c7d6ee6 100644
+index 14905fceb0..c0aeccffbf 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -732,7 +732,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
