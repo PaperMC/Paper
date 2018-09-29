@@ -1,0 +1,73 @@
+From 4845bcc6753c152c5e32d4257e64204cfa31b4db Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Jun 2018 00:32:22 -0400
+Subject: [PATCH] Configurable Villages loading chunks for door checks
+
+This avoids villages spam loading chunks sync.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index af6b97708a..a005c8c4ec 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -420,4 +420,12 @@ public class PaperWorldConfig {
+         disableEnderpearlExploit = getBoolean("game-mechanics.disable-unloaded-chunk-enderpearl-exploit", disableEnderpearlExploit);
+         log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
+     }
++
++    public boolean villagesLoadChunks = false;
++    private void villagesLoadChunks() {
++        villagesLoadChunks = getBoolean("game-mechanics.villages-load-chunks", false);
++        if (villagesLoadChunks) {
++            log("Villages can load chunks - Warning this can cause intense TPS loss. Strongly consider disabling this.");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PersistentVillage.java b/src/main/java/net/minecraft/server/PersistentVillage.java
+index d14a9e3a3e..0be1bf0d99 100644
+--- a/src/main/java/net/minecraft/server/PersistentVillage.java
++++ b/src/main/java/net/minecraft/server/PersistentVillage.java
+@@ -123,7 +123,7 @@ public class PersistentVillage extends PersistentBase {
+             for(int j = -4; j < 4; ++j) {
+                 for(int k = -16; k < 16; ++k) {
+                     blockposition$mutableblockposition.g(blockposition).d(i, j, k);
+-                    IBlockData iblockdata = this.world.getType(blockposition$mutableblockposition);
++                    IBlockData iblockdata = this.world.paperConfig.villagesLoadChunks ? this.world.getType(blockposition$mutableblockposition) : this.world.getTypeIfLoaded(blockposition$mutableblockposition); // Paper
+                     if (this.a(iblockdata)) {
+                         VillageDoor villagedoor = this.c(blockposition$mutableblockposition);
+                         if (villagedoor == null) {
+@@ -193,7 +193,7 @@ public class PersistentVillage extends PersistentBase {
+     }
+ 
+     private boolean a(IBlockData iblockdata) {
+-        return iblockdata.getBlock() instanceof BlockDoor && iblockdata.getMaterial() == Material.WOOD;
++        return iblockdata != null && iblockdata.getBlock() instanceof BlockDoor && iblockdata.getMaterial() == Material.WOOD; // Paper
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
+index bda67faefe..1cc9096f01 100644
+--- a/src/main/java/net/minecraft/server/Village.java
++++ b/src/main/java/net/minecraft/server/Village.java
+@@ -297,7 +297,7 @@ public class Village {
+                 villagedoor.a();
+             }
+ 
+-            if (!this.g(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
++            if ((!this.g(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) && this.a.isLoaded(villagedoor.getPosition())) { // Paper - don't expire doors unless the chunk is loaded
+                 this.c = this.c.b(villagedoor.d());
+                 flag = true;
+                 villagedoor.a(true);
+@@ -312,7 +312,9 @@ public class Village {
+     }
+ 
+     private boolean g(BlockPosition blockposition) {
+-        IBlockData iblockdata = this.a.getType(blockposition);
++        IBlockData iblockdata = this.a.paperConfig.villagesLoadChunks ? this.a.getType(blockposition) : this.a.getTypeIfLoaded(blockposition); // Paper
++        if (iblockdata == null) return false; // Paper
++
+         Block block = iblockdata.getBlock();
+ 
+         return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
+-- 
+2.19.0
+
