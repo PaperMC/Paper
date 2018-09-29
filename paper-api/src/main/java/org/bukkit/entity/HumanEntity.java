@@ -1,8 +1,10 @@
 package org.bukkit.entity;
 
+import java.util.Collection;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Inventory;
@@ -255,6 +257,57 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, Inv
      * @return Experience required to level up
      */
     public int getExpToLevel();
+
+    /**
+     * Discover a recipe for this player such that it has not already been
+     * discovered. This method will add the key's associated recipe to the
+     * player's recipe book.
+     *
+     * @param recipe the key of the recipe to discover
+     *
+     * @return whether or not the recipe was newly discovered
+     */
+    public boolean discoverRecipe(NamespacedKey recipe);
+
+    /**
+     * Discover a collection of recipes for this player such that they have not
+     * already been discovered. This method will add the keys' associated
+     * recipes to the player's recipe book. If a recipe in the provided
+     * collection has already been discovered, it will be silently ignored.
+     *
+     * @param recipes the keys of the recipes to discover
+     *
+     * @return the amount of newly discovered recipes where 0 indicates that
+     * none were newly discovered and a number equal to {@code recipes.size()}
+     * indicates that all were new
+     */
+    public int discoverRecipes(Collection<NamespacedKey> recipes);
+
+    /**
+     * Undiscover a recipe for this player such that it has already been
+     * discovered. This method will remove the key's associated recipe from the
+     * player's recipe book.
+     *
+     * @param recipe the key of the recipe to undiscover
+     *
+     * @return whether or not the recipe was successfully undiscovered (i.e. it
+     * was previously discovered)
+     */
+    public boolean undiscoverRecipe(NamespacedKey recipe);
+
+    /**
+     * Undiscover a collection of recipes for this player such that they have
+     * already been discovered. This method will remove the keys' associated
+     * recipes from the player's recipe book. If a recipe in the provided
+     * collection has not yet been discovered, it will be silently ignored.
+     *
+     * @param recipes the keys of the recipes to undiscover
+     *
+     * @return the amount of undiscovered recipes where 0 indicates that none
+     * were undiscovered and a number equal to {@code recipes.size()} indicates
+     * that all were undiscovered
+     */
+    public int undiscoverRecipes(Collection<NamespacedKey> recipes);
 
     /**
      * Gets the entity currently perched on the left shoulder or null if no
