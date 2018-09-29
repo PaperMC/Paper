@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 
 import net.minecraft.server.*;
@@ -10,6 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.inventory.InventoryType;
@@ -27,6 +31,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -453,6 +458,42 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
 
         getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material), ticks);
+    }
+
+    @Override
+    public boolean discoverRecipe(NamespacedKey recipe) {
+        return discoverRecipes(Arrays.asList(recipe)) != 0;
+    }
+
+    @Override
+    public int discoverRecipes(Collection<NamespacedKey> recipes) {
+        return getHandle().a(bukkitKeysToMinecraftRecipes(recipes)); // PAIL rename discoverRecipes
+    }
+
+    @Override
+    public boolean undiscoverRecipe(NamespacedKey recipe) {
+        return undiscoverRecipes(Arrays.asList(recipe)) != 0;
+    }
+
+    @Override
+    public int undiscoverRecipes(Collection<NamespacedKey> recipes) {
+        return getHandle().b(bukkitKeysToMinecraftRecipes(recipes)); // PAIL rename undiscoverRecipes
+    }
+
+    private Collection<IRecipe> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {
+        Collection<IRecipe> recipes = new ArrayList<>();
+        CraftingManager manager = getHandle().world.getMinecraftServer().getCraftingManager();
+
+        for (NamespacedKey recipeKey : recipeKeys) {
+            IRecipe recipe = manager.a(CraftNamespacedKey.toMinecraft(recipeKey));
+            if (recipe == null) {
+                continue;
+            }
+
+            recipes.add(recipe);
+        }
+
+        return recipes;
     }
 
     @Override
