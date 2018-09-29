@@ -31,7 +31,7 @@ public class EntityTurtle extends EntityAnimal {
         this.datawatcher.set(EntityTurtle.bp, blockposition);
     }
 
-    private BlockPosition getHomePos() {
+    public BlockPosition getHomePos() { // Paper - public
         return (BlockPosition) this.datawatcher.get(EntityTurtle.bp);
     }
 
@@ -47,31 +47,37 @@ public class EntityTurtle extends EntityAnimal {
         return (Boolean) this.datawatcher.get(EntityTurtle.bq);
     }
 
-    private void setHasEgg(boolean flag) {
+    public void setHasEgg(boolean flag) { // Paper
         this.datawatcher.set(EntityTurtle.bq, flag);
     }
 
+    public final boolean isDigging() { return this.eL(); } // Paper - OBFHELPER
     public boolean eL() {
         return (Boolean) this.datawatcher.get(EntityTurtle.br);
     }
 
+    public final void setDigging(boolean digging) { this.u(digging); } // Paper - OBFHELPER
     private void u(boolean flag) {
         this.bv = flag ? 1 : 0;
         this.datawatcher.set(EntityTurtle.br, flag);
     }
 
+    public final boolean isGoingHome() { return this.eU(); } // Paper - OBFHELPER
     private boolean eU() {
         return (Boolean) this.datawatcher.get(EntityTurtle.bt);
     }
 
+    public final void setGoingHome(boolean goingHome) { this.v(goingHome); } // Paper - OBFHELPER
     private void v(boolean flag) {
         this.datawatcher.set(EntityTurtle.bt, flag);
     }
 
+    public final boolean isTravelling() { return this.eV(); } // Paper - OBFHELPER
     private boolean eV() {
         return (Boolean) this.datawatcher.get(EntityTurtle.bu);
     }
 
+    public final void setTravelling(boolean travelling) { this.w(travelling); } // Paper - OBFHELPER
     private void w(boolean flag) {
         this.datawatcher.set(EntityTurtle.bu, flag);
     }
@@ -438,14 +444,17 @@ public class EntityTurtle extends EntityAnimal {
 
             if (!this.g.isInWater() && this.l()) {
                 if (this.g.bv < 1) {
-                    this.g.u(true);
+                    this.g.setDigging(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.g.getBukkitEntity(), MCUtil.toLocation(this.g.world, this.getTargetPosition())).callEvent()); // Paper
                 } else if (this.g.bv > 200) {
                     World world = this.g.world;
 
                     // CraftBukkit start
-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.g, this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1)).isCancelled()) {
+                    // Paper start
+                    int eggCount = this.g.random.nextInt(4) + 1;
+                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.g.getBukkitEntity(), MCUtil.toLocation(this.g.world, this.e.up()), eggCount);
+                    if (layEggEvent.callEvent() && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.g, this.e.up(), Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, layEggEvent.getEggCount())).isCancelled()) {
                     world.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_LAY_EGG, SoundCategory.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
-                    world.setTypeAndData(this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1), 3);
+                    world.setTypeAndData(this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, layEggEvent.getEggCount()), 3);
                     }
                     // CraftBukkit end
                     this.g.setHasEgg(false);
@@ -574,7 +583,7 @@ public class EntityTurtle extends EntityAnimal {
 
         @Override
         public boolean a() {
-            return this.a.isBaby() ? false : (this.a.hasEgg() ? true : (this.a.getRandom().nextInt(700) != 0 ? false : !this.a.getHomePos().a((IPosition) this.a.getPositionVector(), 64.0D)));
+            return this.a.isBaby() ? false : (this.a.hasEgg() ? true : (this.a.getRandom().nextInt(700) != 0 ? false : !this.a.getHomePos().a((IPosition) this.a.getPositionVector(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.a.getBukkitEntity()).callEvent(); // Paper
         }
 
         @Override

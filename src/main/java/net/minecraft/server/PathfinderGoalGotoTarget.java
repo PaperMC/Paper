@@ -9,7 +9,7 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
     protected int c;
     protected int d;
     private int g;
-    protected BlockPosition e;
+    protected BlockPosition e;public final BlockPosition getTargetPosition() { return this.e; } // Paper - OBFHELPER
     private boolean h;
     private final int i;
     private final int j;
