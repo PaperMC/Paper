@@ -1,58 +1,43 @@
-From ceb661d27afb088323d6dd417de2a9e2accdd597 Mon Sep 17 00:00:00 2001
+From 56358236f603519affbb0d600cd4efc6147763af Mon Sep 17 00:00:00 2001
 From: Caleb Bassham <caleb.bassham@gmail.com>
 Date: Fri, 28 Sep 2018 02:32:19 -0500
 Subject: [PATCH] Call player spectator target events
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 5ab4e01e..1a7df643 100644
+index 5ab4e01ed..3283ef215 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -1,10 +1,13 @@
- package net.minecraft.server;
- 
-+import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent;
-+import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
- import com.google.common.collect.Lists;
- import com.mojang.authlib.GameProfile;
- import io.netty.buffer.Unpooled;
- import io.netty.util.concurrent.Future;
- import io.netty.util.concurrent.GenericFutureListener;
-+
- import java.util.ArrayDeque; // Paper
- import java.util.ArrayList;
- import java.util.Collection;
-@@ -1373,15 +1376,34 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1373,15 +1373,34 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          return (Entity) (this.cv == null ? this : this.cv);
      }
  
 -    public void setSpectatorTarget(Entity entity) {
--        Entity entity1 = this.getSpecatorTarget();
 +    public void setSpectatorTarget(Entity newSpectatorTarget) {
-+        Entity currentSpectatorTarget = this.getSpecatorTarget();
-+
+         Entity entity1 = this.getSpecatorTarget();
+ 
+-        this.cv = (Entity) (entity == null ? this : entity);
+-        if (entity1 != this.cv) {
 +        if (newSpectatorTarget == null) {
 +            this.cv = this;
 +            newSpectatorTarget = this;
 +        }
 +
-+        if (currentSpectatorTarget != newSpectatorTarget) {
++        if (entity1 != newSpectatorTarget) {
 +            if (newSpectatorTarget == this) {
-+                PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new PlayerStopSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) currentSpectatorTarget);
++                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) entity1);
 +
 +                if (!playerStopSpectatingEntityEvent.callEvent()) {
 +                    return;
 +                }
 +            } else {
-+                PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new PlayerStartSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) currentSpectatorTarget, (org.bukkit.entity.Entity) newSpectatorTarget);
++                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent((org.bukkit.entity.Player) this, (org.bukkit.entity.Entity) entity1, (org.bukkit.entity.Entity) newSpectatorTarget);
 +
 +                if (!playerStartSpectatingEntityEvent.callEvent()) {
 +                    return;
 +                }
 +            }
- 
--        this.cv = (Entity) (entity == null ? this : entity);
--        if (entity1 != this.cv) {
++
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
              this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
          }
