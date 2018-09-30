@@ -1,6 +1,5 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -12,11 +11,7 @@ import org.bukkit.util.Vector;
  * <p>
  * If a Block Dispense Armor event is cancelled, the equipment will not be
  * equipped on the target entity.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class BlockDispenseArmorEvent extends BlockDispenseEvent {
 
     private final LivingEntity target;

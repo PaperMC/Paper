@@ -1,6 +1,5 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
@@ -8,11 +7,7 @@ import org.bukkit.event.HandlerList;
 
 /**
  * Called when the moisture level of a soil block changes.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class MoistureChangeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

@@ -13,10 +13,7 @@ import org.bukkit.Material;
  * recipe must be satisfied for it to be craftable.
  *
  * <b>This class is not legal for implementation by plugins!</b>
- *
- * @deprecated draft API
  */
-@Deprecated
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     /**
