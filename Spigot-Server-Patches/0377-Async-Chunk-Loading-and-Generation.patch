@@ -1,4 +1,4 @@
-From 34048ff608e60efadf17ad137dd11cf19ac7dc34 Mon Sep 17 00:00:00 2001
+From 8a454e3fcde0690de840976757e8c22cb5974e73 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -735,10 +735,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..47d9ecdbf1
+index 0000000000..a3fc989832
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,475 @@
+@@ -0,0 +1,478 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -866,6 +866,9 @@ index 0000000000..47d9ecdbf1
 +        long key = ChunkCoordIntPair.asLong(x, z);
 +        Chunk chunk = this.chunks.get(key);
 +        if (chunk != null || !load) { // return null if we aren't loading
++            if (consumer != null) {
++                consumer.accept(chunk);
++            }
 +            return chunk;
 +        }
 +        return loadOrGenerateChunk(x, z, gen, priority, consumer); // Async overrides this method
@@ -1215,7 +1218,7 @@ index 0000000000..47d9ecdbf1
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2a889dc20a..242691d89d 100644
+index 2c7c8adf7c..04ad94e171 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,42 @@ public class PlayerChunk {
@@ -1237,7 +1240,7 @@ index 2a889dc20a..242691d89d 100644
      };
 +    private boolean markedHigh = false;
 +    void checkHighPriority(EntityPlayer player) {
-+        if (markedHigh || chunk != null) {
++        if (done || markedHigh || chunk != null) {
 +            return;
 +        }
 +        final double dist = getDistance(player.locX, player.locZ);
@@ -1278,15 +1281,16 @@ index 2a889dc20a..242691d89d 100644
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
-@@ -76,6 +105,7 @@ public class PlayerChunk {
-                 chunkHasPlayers = false; // Paper - delay chunk unloads
-                 markChunkUsed(); // Paper - delay chunk unloads
-             }
-+            checkHighPriority(entityplayer); // Paper
- 
+@@ -80,7 +109,7 @@ public class PlayerChunk {
              this.c.add(entityplayer);
              if (this.done) {
-@@ -105,8 +135,13 @@ public class PlayerChunk {
+                 this.sendChunk(entityplayer);
+-            }
++            } else checkHighPriority(entityplayer); // Paper
+ 
+         }
+     }
+@@ -105,8 +134,13 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
          } else {

@@ -1,4 +1,4 @@
-From a372872c9ea4562ff3b4cf6ab8b5853649d9db80 Mon Sep 17 00:00:00 2001
+From 35769e706c68ba327d1264aacd7cd27c1df767fe Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -99,7 +99,7 @@ index 2d10f4aa37..719d5deb2c 100644
              this.chunkScheduler.a(booleansupplier);
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ac0e90eeca..abf5a7554d 100644
+index ac0e90eeca..2fd8fa30ee 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -33,8 +33,22 @@ public class PlayerChunk {
@@ -114,13 +114,13 @@ index ac0e90eeca..abf5a7554d 100644
 +        if (chunk == null) {
 +            return;
 +        }
-+        if (!chunkHasPlayers) {
++        if (chunkHasPlayers) {
 +            chunk.scheduledForUnload = null;
 +        } else if (chunk.scheduledForUnload == null) {
 +            chunk.scheduledForUnload = System.currentTimeMillis();
 +        }
 +    }
-+    private boolean chunkHasPlayers = true;
++    private boolean chunkHasPlayers = false;
 +    // Paper end
      // CraftBukkit end
  
@@ -137,7 +137,7 @@ index ac0e90eeca..abf5a7554d 100644
          } else {
              if (this.c.isEmpty()) {
                  this.i = this.playerChunkMap.getWorld().getTime();
-+                chunkHasPlayers = false; // Paper - delay chunk unloads
++                chunkHasPlayers = true; // Paper - delay chunk unloads
 +                markChunkUsed(); // Paper - delay chunk unloads
              }
  
@@ -146,7 +146,7 @@ index ac0e90eeca..abf5a7554d 100644
  
              this.c.remove(entityplayer);
              if (this.c.isEmpty()) {
-+                chunkHasPlayers = true; // Paper - delay chunk unloads
++                chunkHasPlayers = false; // Paper - delay chunk unloads
 +                markChunkUsed(); // Paper - delay chunk unloads
                  this.playerChunkMap.b(this);
              }
