@@ -16,6 +16,9 @@ before it actually unloads, which is maintained separately from ChunkGC.
 This allows servers with smaller worlds who do less long distance exploring to stop
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
 
+This also makes the Chunk GC System useless, by auto scheduling unload as soon as
+a spare chunk is added to the server thats outside of view distance.
+
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index ff1a2046f6..0cd15c17e8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -51,6 +54,26 @@ index 41d3aaa80b..824727ec66 100644
      public final int locX;
      public final int locZ;
      private boolean l; public boolean needsGapCheck() { return l; } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index df967ff07d..a3dc90fd2b 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -0,0 +0,0 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                 }
+             }
+         }
++        // Paper start - if this is a spare chunk (not part of any players view distance), go ahead and queue it for unload.
++        if (!((WorldServer)chunk.world).getPlayerChunkMap().isChunkInUse(chunk.locX, chunk.locZ)) {
++            if (chunk.world.paperConfig.delayChunkUnloadsBy > 0) {
++                chunk.scheduledForUnload = System.currentTimeMillis();
++            } else {
++                ((WorldServer) chunk.world).getChunkProviderServer().unload(chunk);
++            }
++        }
++        // Paper end
+         chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
+         // CraftBukkit end
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 2d10f4aa37..719d5deb2c 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -76,7 +99,7 @@ index 2d10f4aa37..719d5deb2c 100644
              this.chunkScheduler.a(booleansupplier);
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ac0e90eeca..3f4a8f21c0 100644
+index ac0e90eeca..abf5a7554d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -0,0 +0,0 @@ public class PlayerChunk {
@@ -87,11 +110,17 @@ index ac0e90eeca..3f4a8f21c0 100644
          }
      };
 +    // Paper start - delay chunk unloads
-+    public final void markChunkUsed() {
-+        if (chunk != null && chunk.scheduledForUnload != null) {
++    private void markChunkUsed() {
++        if (chunk == null) {
++            return;
++        }
++        if (!chunkHasPlayers) {
 +            chunk.scheduledForUnload = null;
++        } else if (chunk.scheduledForUnload == null) {
++            chunk.scheduledForUnload = System.currentTimeMillis();
 +        }
 +    }
++    private boolean chunkHasPlayers = true;
 +    // Paper end
      // CraftBukkit end
  
@@ -104,6 +133,24 @@ index ac0e90eeca..3f4a8f21c0 100644
      }
  
      public ChunkCoordIntPair a() {
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         } else {
+             if (this.c.isEmpty()) {
+                 this.i = this.playerChunkMap.getWorld().getTime();
++                chunkHasPlayers = false; // Paper - delay chunk unloads
++                markChunkUsed(); // Paper - delay chunk unloads
+             }
+ 
+             this.c.add(entityplayer);
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+ 
+             this.c.remove(entityplayer);
+             if (this.c.isEmpty()) {
++                chunkHasPlayers = true; // Paper - delay chunk unloads
++                markChunkUsed(); // Paper - delay chunk unloads
+                 this.playerChunkMap.b(this);
+             }
+ 
 @@ -0,0 +0,0 @@ public class PlayerChunk {
              return true;
          } else {
