@@ -1,4 +1,4 @@
-From e46d08efd3f5e429c3d0cabb76bf8456bd03324b Mon Sep 17 00:00:00 2001
+From a372872c9ea4562ff3b4cf6ab8b5853649d9db80 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -15,6 +15,9 @@ before it actually unloads, which is maintained separately from ChunkGC.
 
 This allows servers with smaller worlds who do less long distance exploring to stop
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
+
+This also makes the Chunk GC System useless, by auto scheduling unload as soon as
+a spare chunk is added to the server thats outside of view distance.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index ff1a2046f6..0cd15c17e8 100644
@@ -51,6 +54,26 @@ index 41d3aaa80b..824727ec66 100644
      public final int locX;
      public final int locZ;
      private boolean l; public boolean needsGapCheck() { return l; } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index df967ff07d..a3dc90fd2b 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -48,6 +48,15 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                 }
+             }
+         }
++        // Paper start - if this is a spare chunk (not part of any players view distance), go ahead and queue it for unload.
++        if (!((WorldServer)chunk.world).getPlayerChunkMap().isChunkInUse(chunk.locX, chunk.locZ)) {
++            if (chunk.world.paperConfig.delayChunkUnloadsBy > 0) {
++                chunk.scheduledForUnload = System.currentTimeMillis();
++            } else {
++                ((WorldServer) chunk.world).getChunkProviderServer().unload(chunk);
++            }
++        }
++        // Paper end
+         chunk.world.timings.syncChunkLoadPostTimer.stopTiming(); // Paper
+         // CraftBukkit end
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 2d10f4aa37..719d5deb2c 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -76,10 +99,10 @@ index 2d10f4aa37..719d5deb2c 100644
              this.chunkScheduler.a(booleansupplier);
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ac0e90eeca..3f4a8f21c0 100644
+index ac0e90eeca..abf5a7554d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -33,8 +33,16 @@ public class PlayerChunk {
+@@ -33,8 +33,22 @@ public class PlayerChunk {
          public void run() {
              loadInProgress = false;
              PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(location.x, location.z, true, true);
@@ -87,16 +110,22 @@ index ac0e90eeca..3f4a8f21c0 100644
          }
      };
 +    // Paper start - delay chunk unloads
-+    public final void markChunkUsed() {
-+        if (chunk != null && chunk.scheduledForUnload != null) {
++    private void markChunkUsed() {
++        if (chunk == null) {
++            return;
++        }
++        if (!chunkHasPlayers) {
 +            chunk.scheduledForUnload = null;
++        } else if (chunk.scheduledForUnload == null) {
++            chunk.scheduledForUnload = System.currentTimeMillis();
 +        }
 +    }
++    private boolean chunkHasPlayers = true;
 +    // Paper end
      // CraftBukkit end
  
      public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
-@@ -44,6 +52,7 @@ public class PlayerChunk {
+@@ -44,6 +58,7 @@ public class PlayerChunk {
  
          chunkproviderserver.a(i, j);
          this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
@@ -104,7 +133,25 @@ index ac0e90eeca..3f4a8f21c0 100644
      }
  
      public ChunkCoordIntPair a() {
-@@ -85,6 +94,7 @@ public class PlayerChunk {
+@@ -56,6 +71,8 @@ public class PlayerChunk {
+         } else {
+             if (this.c.isEmpty()) {
+                 this.i = this.playerChunkMap.getWorld().getTime();
++                chunkHasPlayers = false; // Paper - delay chunk unloads
++                markChunkUsed(); // Paper - delay chunk unloads
+             }
+ 
+             this.c.add(entityplayer);
+@@ -74,6 +91,8 @@ public class PlayerChunk {
+ 
+             this.c.remove(entityplayer);
+             if (this.c.isEmpty()) {
++                chunkHasPlayers = true; // Paper - delay chunk unloads
++                markChunkUsed(); // Paper - delay chunk unloads
+                 this.playerChunkMap.b(this);
+             }
+ 
+@@ -85,6 +104,7 @@ public class PlayerChunk {
              return true;
          } else {
              this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag);

@@ -1,4 +1,4 @@
-From b75c9e7ccdb0bd7cedb1938ca328089e9bee5c51 Mon Sep 17 00:00:00 2001
+From 34048ff608e60efadf17ad137dd11cf19ac7dc34 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -1215,7 +1215,7 @@ index 0000000000..47d9ecdbf1
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index e7d465fb8a..61de438fdf 100644
+index 2a889dc20a..242691d89d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -30,13 +30,42 @@ public class PlayerChunk {
@@ -1265,9 +1265,9 @@ index e7d465fb8a..61de438fdf 100644
 +    }
 +    // Paper end
      // Paper start - delay chunk unloads
-     public final void markChunkUsed() {
-         if (chunk != null && chunk.scheduledForUnload != null) {
-@@ -52,8 +81,8 @@ public class PlayerChunk {
+     private void markChunkUsed() {
+         if (chunk == null) {
+@@ -58,8 +87,8 @@ public class PlayerChunk {
          ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProviderServer();
  
          chunkproviderserver.a(i, j);
@@ -1278,15 +1278,15 @@ index e7d465fb8a..61de438fdf 100644
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
-@@ -68,6 +97,7 @@ public class PlayerChunk {
-             if (this.c.isEmpty()) {
-                 this.i = this.playerChunkMap.getWorld().getTime();
+@@ -76,6 +105,7 @@ public class PlayerChunk {
+                 chunkHasPlayers = false; // Paper - delay chunk unloads
+                 markChunkUsed(); // Paper - delay chunk unloads
              }
 +            checkHighPriority(entityplayer); // Paper
  
              this.c.add(entityplayer);
              if (this.done) {
-@@ -95,8 +125,13 @@ public class PlayerChunk {
+@@ -105,8 +135,13 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
          } else {
