@@ -735,7 +735,7 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..47d9ecdbf1
+index 0000000000..a3fc989832
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +0,0 @@
@@ -866,6 +866,9 @@ index 0000000000..47d9ecdbf1
 +        long key = ChunkCoordIntPair.asLong(x, z);
 +        Chunk chunk = this.chunks.get(key);
 +        if (chunk != null || !load) { // return null if we aren't loading
++            if (consumer != null) {
++                consumer.accept(chunk);
++            }
 +            return chunk;
 +        }
 +        return loadOrGenerateChunk(x, z, gen, priority, consumer); // Async overrides this method
@@ -1215,7 +1218,7 @@ index 0000000000..47d9ecdbf1
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2a889dc20a..242691d89d 100644
+index 2c7c8adf7c..04ad94e171 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -0,0 +0,0 @@ public class PlayerChunk {
@@ -1237,7 +1240,7 @@ index 2a889dc20a..242691d89d 100644
      };
 +    private boolean markedHigh = false;
 +    void checkHighPriority(EntityPlayer player) {
-+        if (markedHigh || chunk != null) {
++        if (done || markedHigh || chunk != null) {
 +            return;
 +        }
 +        final double dist = getDistance(player.locX, player.locZ);
@@ -1279,13 +1282,14 @@ index 2a889dc20a..242691d89d 100644
      }
  
 @@ -0,0 +0,0 @@ public class PlayerChunk {
-                 chunkHasPlayers = false; // Paper - delay chunk unloads
-                 markChunkUsed(); // Paper - delay chunk unloads
-             }
-+            checkHighPriority(entityplayer); // Paper
- 
              this.c.add(entityplayer);
              if (this.done) {
+                 this.sendChunk(entityplayer);
+-            }
++            } else checkHighPriority(entityplayer); // Paper
+ 
+         }
+     }
 @@ -0,0 +0,0 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
