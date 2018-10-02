@@ -197,9 +197,10 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * By default all entities are persistent. An entity will also not get
      * persisted, if it is riding an entity that is not persistent.
      * <p>
-     * The persistent flag has no effect on players. If a player is directly or
-     * indirectly riding a non-persistent entity, the vehicle at the root and
-     * all its passengers won't get persisted.
+     * The persistent flag on players controls whether or not to save their
+     * playerdata file when they quit. If a player is directly or indirectly
+     * riding a non-persistent entity, the vehicle at the root and all its
+     * passengers won't get persisted.
      * <p>
      * <b>This should not be confused with
      * {@link LivingEntity#setRemoveWhenFarAway(boolean)} which controls
