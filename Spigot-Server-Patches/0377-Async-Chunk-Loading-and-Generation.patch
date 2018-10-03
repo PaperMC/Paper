@@ -1,4 +1,4 @@
-From 523a76f0b9a204e83620100df735b2228c22306e Mon Sep 17 00:00:00 2001
+From 5b1ddb18ea0397774eed24f27ab4d3fe2449141c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,22 +43,64 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index da710cc6fe..6b65364e22 100644
+index 912c990404..2f6d7f2976 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -372,4 +372,15 @@ public class PaperConfig {
+@@ -372,4 +372,57 @@ public class PaperConfig {
              }
          }
      }
 +
-+    // Temporary opt out, will be removed later
 +    public static boolean asyncChunks = false;
-+    private static void disableAsyncChunks() {
-+        asyncChunks = config.getBoolean("settings.async-chunks", true);
++    public static boolean asyncChunkGeneration = true;
++    public static boolean asyncChunkGenThreadPerWorld = true;
++    public static int asyncChunkLoadThreads = -1;
++    private static void asyncChunks() {
++        if (version < 15) {
++            boolean enabled = config.getBoolean("settings.async-chunks", true);
++            ConfigurationSection section = config.createSection("settings.async-chunks");
++            section.set("enable", enabled);
++            section.set("load-threads", -1);
++            section.set("generation", true);
++            section.set("thread-per-world-generation", true);
++        }
++
++        asyncChunks = getBoolean("settings.async-chunks.enable", true);
++        asyncChunkGeneration = getBoolean("settings.async-chunks.generation", true);
++        asyncChunkGenThreadPerWorld = getBoolean("settings.async-chunks.thread-per-world-generation", true);
++        asyncChunkLoadThreads = getInt("settings.async-chunks.load-threads", -1);
++        if (asyncChunkLoadThreads <= 0) {
++            asyncChunkLoadThreads = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
++        }
++
++        // Let Shared Host set some limits
++        String sharedHostEnvGen = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_GEN");
++        String sharedHostEnvLoad = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_LOAD");
++        if ("1".equals(sharedHostEnvGen)) {
++            log("Async Chunks - Generation: Your host has requested to use a single thread world generation");
++            asyncChunkGenThreadPerWorld = false;
++        } else if ("2".equals(sharedHostEnvGen)) {
++            log("Async Chunks - Generation: Your host has disabled async world generation - You will experience lag from world generation");
++            asyncChunkGeneration = false;
++        }
++
++        if (sharedHostEnvLoad != null) {
++            try {
++                asyncChunkLoadThreads = Math.max(1, Math.min(asyncChunkLoadThreads, Integer.parseInt(sharedHostEnvLoad)));
++            } catch (NumberFormatException ignored) {}
++        }
++
 +        if (!asyncChunks) {
 +            log("Async Chunks: Disabled - Chunks will be managed synchronosuly, and will cause tremendous lag.");
 +        } else {
-+            log("Async Chunks: Enabled - Chunks will be loaded and generated much faster, without lag.");
++            log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
++            if (!asyncChunkGeneration) {
++                log("Async Chunks - Generation: Disabled - Chunks will be generated synchronosuly, and will cause tremendous lag.");
++            } else if (asyncChunkGenThreadPerWorld) {
++                log("Async Chunks - Generation: Enabled - Chunks will be generated much faster, without lag.");
++            } else {
++                log("Async Chunks - Generation: Enabled (Single Thread) - Chunks will be generated much faster, without lag.");
++            }
 +        }
 +    }
  }
@@ -794,10 +836,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..a3fc989832
+index 0000000000..1c592c7956
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,478 @@
+@@ -0,0 +1,477 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -846,8 +888,8 @@ index 0000000000..a3fc989832
 +public class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
 +    private static final PriorityQueuedExecutor.RejectionHandler IGNORE_HANDLER = (run, executor) -> {};
-+    private static final int CHUNK_THREADS = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? CHUNK_THREADS : 0, IGNORE_HANDLER);
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0, IGNORE_HANDLER);
++    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0, IGNORE_HANDLER);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
@@ -868,8 +910,8 @@ index 0000000000..a3fc989832
 +        this.asyncHandler = server;
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
-+        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported);
-+        this.generationExecutor = new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1, IGNORE_HANDLER);
++        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported) || !PaperConfig.asyncChunkGeneration;
++        this.generationExecutor = PaperConfig.asyncChunkGenThreadPerWorld ? new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1, IGNORE_HANDLER) : SINGLE_GEN_EXECUTOR;
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -1176,13 +1218,12 @@ index 0000000000..a3fc989832
 +                this.chunk = chunk;
 +                this.hasFinished = true;
 +            }
-+            if (Bukkit.isPrimaryThread()) {
-+                postChunk();
-+            } else {
-+                synchronized (mainThreadQueue) {
-+                    mainThreadQueue.add(this::postChunk);
-+                    mainThreadQueue.notify();
-+                }
++
++            // Don't post here, even if on main, it must enter the queue so we can exit any open batch
++            // schedulers, as post stage may trigger a new generation and cause errors
++            synchronized (mainThreadQueue) {
++                mainThreadQueue.add(this::postChunk);
++                mainThreadQueue.notify();
 +            }
 +        }
 +
@@ -1410,7 +1451,7 @@ index 3c35c0f481..187ca2813a 100644
          this.m = world.getChunkProvider().getChunkGenerator().getSettings();
          this.i = world.getSeaLevel();
 diff --git a/src/main/java/net/minecraft/server/SchedulerBatch.java b/src/main/java/net/minecraft/server/SchedulerBatch.java
-index d868149d1a..0d94b262ac 100644
+index d868149d1a..0d45d933ee 100644
 --- a/src/main/java/net/minecraft/server/SchedulerBatch.java
 +++ b/src/main/java/net/minecraft/server/SchedulerBatch.java
 @@ -9,6 +9,7 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
@@ -1421,16 +1462,18 @@ index d868149d1a..0d94b262ac 100644
  
      public SchedulerBatch(Scheduler<K, T, R> scheduler) {
          this.b = scheduler;
-@@ -18,7 +19,9 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
+@@ -18,8 +19,10 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
          this.b.b();
      }
  
 +    public void startBatch() { b(); } // Paper - OBFHELPER
      public void b() {
+-        if (this.c) {
 +        lock.lock(); // Paper
-         if (this.c) {
++        if (false && this.c) { // Paper
              throw new RuntimeException("Batch already started.");
          } else {
+             this.d = 1000;
 @@ -27,6 +30,7 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
          }
      }
@@ -1439,20 +1482,22 @@ index d868149d1a..0d94b262ac 100644
      public CompletableFuture<R> a(K object) {
          if (!this.c) {
              throw new RuntimeException("Batch not properly started. Please use startBatch to create a new batch.");
-@@ -42,7 +46,13 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
+@@ -42,8 +46,14 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
          }
      }
  
 +    public CompletableFuture<R> executeBatch() { return c(); } // Paper - OBFHELPER
      public CompletableFuture<R> c() {
+-        if (!this.c) {
 +        // Paper start
 +        if (!lock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Current thread does not hold the write lock");
 +        }
 +        try {// Paper end
-         if (!this.c) {
++        if (false && !this.c) { // Paper
              throw new RuntimeException("Batch not properly started. Please use startBatch to create a new batch.");
          } else {
+             if (this.d != 1000) {
 @@ -53,5 +63,6 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
              this.c = false;
              return this.b.c();
