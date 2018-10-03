@@ -1,11 +1,11 @@
-From c7cba25fff8b3dacf6a6ac702169f308be67770b Mon Sep 17 00:00:00 2001
+From 12fc862bde751d3c9842ff5a59eb75da76f3dbac Mon Sep 17 00:00:00 2001
 From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
 Date: Wed, 12 Sep 2018 18:53:55 +0300
 Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 55afe8382c..d928119254 100644
+index 55afe8382c..598ad807a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -252,6 +252,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
@@ -43,7 +43,7 @@ index 55afe8382c..d928119254 100644
          this.unhandledTags.putAll(meta.unhandledTags);
  
          this.internalTag = meta.internalTag;
-@@ -347,6 +361,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+@@ -347,6 +361,31 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
          if (tag.hasKey(DAMAGE.NBT)) {
              damage = tag.getInt(DAMAGE.NBT);
          }
@@ -52,6 +52,10 @@ index 55afe8382c..d928119254 100644
 +            NBTTagList list = tag.getList(CAN_DESTROY.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
 +                Material material = Material.matchMaterial(list.getString(i), false);
++                if (material == null) {
++                    continue;
++                }
++
 +                this.canDestroy.add(material);
 +            }
 +        }
@@ -60,6 +64,10 @@ index 55afe8382c..d928119254 100644
 +            NBTTagList list = tag.getList(CAN_PLACE_ON.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
 +                Material material = Material.matchMaterial(list.getString(i), false);
++                if (material == null) {
++                    continue;
++                }
++
 +                this.canPlaceOn.add(material);
 +            }
 +        }
@@ -67,7 +75,7 @@ index 55afe8382c..d928119254 100644
  
          Set<String> keys = tag.getKeys();
          for (String key : keys) {
-@@ -579,6 +610,25 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+@@ -579,6 +618,25 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
          if (hasDamage()) {
              itemTag.setInt(DAMAGE.NBT, damage);
          }
@@ -93,7 +101,7 @@ index 55afe8382c..d928119254 100644
  
          for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
              itemTag.set(e.getKey(), e.getValue());
-@@ -1247,7 +1297,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+@@ -1247,7 +1305,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                          CraftMetaArmorStand.NO_BASE_PLATE.NBT,
                          CraftMetaArmorStand.SHOW_ARMS.NBT,
                          CraftMetaArmorStand.SMALL.NBT,
@@ -104,7 +112,7 @@ index 55afe8382c..d928119254 100644
                          // Paper end
                  ));
              }
-@@ -1294,4 +1346,35 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+@@ -1294,4 +1354,35 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
          return spigot;
      }
      // Spigot end
