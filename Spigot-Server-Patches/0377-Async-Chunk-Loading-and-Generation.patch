@@ -1,4 +1,4 @@
-From 446a8037bfb38116cc712bf89d52dde7cd5aff68 Mon Sep 17 00:00:00 2001
+From 523a76f0b9a204e83620100df735b2228c22306e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -345,6 +345,18 @@ index 0000000000..0a9fd5d662
 +    };
 +
 +}
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 9162151e2a..15a327923f 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -184,6 +184,7 @@ public class Chunk implements IChunkAccess {
+ 
+         for (k = 0; k < this.sections.length; ++k) {
+             this.sections[k] = protochunk.getSections()[k];
++            if (this.sections[k] != null) this.sections[k].disableLocks(); // Paper - Async Chunks - disable locks used during world gen
+         }
+ 
+         Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 5b57ea93c8..5d5834ba7f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -503,6 +515,28 @@ index c233b7e903..edd0742527 100644
  
                  completion = new Supplier<NBTTagCompound>() {
                      public NBTTagCompound get() {
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index bdfc7d81ff..a5c4564d60 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -24,7 +24,17 @@ public class ChunkSection {
+             this.skyLight = new NibbleArray();
+         }
+ 
++        // Paper start - Async Chunks - Lock during world gen
++        if (chunk instanceof ProtoChunk) {
++            this.blockIds.enableLocks();
++        } else {
++            this.blockIds.disableLocks();
++        }
++    }
++    void disableLocks() {
++        this.blockIds.disableLocks();
+     }
++    // Paper end
+ 
+     public IBlockData getType(int i, int j, int k) {
+         return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 index 34019bd1b3..4ca977645f 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
@@ -526,7 +560,7 @@ index 34019bd1b3..4ca977645f 100644
                  ProtoChunk protochunk;
  
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 71a3636be6..b0170db9ca 100644
+index 71a3636be6..ff0fe25417 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -3,7 +3,7 @@ package net.minecraft.server;
@@ -538,15 +572,29 @@ index 71a3636be6..b0170db9ca 100644
  import java.util.function.Function;
  import java.util.stream.Collectors;
  
-@@ -20,25 +20,16 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+@@ -20,25 +20,42 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
      protected DataBits a; protected DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
      private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
      private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
 -    private final ReentrantLock j = new ReentrantLock();
-+    // Paper start - use read write locks
-+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
++    // Paper start - use read write locks only during generation, disable once back on main thread
++    private static final NoopLock NOOP_LOCK = new NoopLock();
++    private java.util.concurrent.locks.Lock readLock = NOOP_LOCK;
++    private java.util.concurrent.locks.Lock writeLock = NOOP_LOCK;
++
++    private static class NoopLock extends ReentrantReadWriteLock.WriteLock {
++        private NoopLock() {
++            super(new ReentrantReadWriteLock());
++        }
++
++        @Override
++        public final void lock() {
++        }
++
++        @Override
++        public final void unlock() {
  
-     private void b() {
+-    private void b() {
 -        if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
 -            String s = (String)Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
 -                return thread.getName() + ": \n\tat " + (String)Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
@@ -557,31 +605,42 @@ index 71a3636be6..b0170db9ca 100644
 -            throw new ReportedException(crashreport);
 -        } else {
 -            this.j.lock();
--        }
-+        lock.writeLock().lock();
+         }
      }
--
+ 
++    synchronized void enableLocks() {
++        ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
++        readLock = lock.readLock();
++        writeLock = lock.writeLock();
++    }
++    synchronized void disableLocks() {
++        readLock = NOOP_LOCK;
++        writeLock = NOOP_LOCK;
++    }
++    private void b() {
++        writeLock.lock();
++    }
      private void c() {
 -        this.j.unlock();
-+        lock.writeLock().unlock();
++        writeLock.unlock();
      }
 +    // Paper end
  
      public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T object) {
          // Paper start - Anti-Xray - Support default constructor
-@@ -147,8 +138,13 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+@@ -147,8 +164,13 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
      }
  
      protected T a(int ix) {
 -        T object = this.h.a(this.a.a(ix)); // Paper - decompile fix
 -        return (T)(object == null ? this.g : object);
-+        try { // Paper
-+            lock.readLock().lock();
++        try { // Paper start - read lock
++            readLock.lock();
 +            T object = this.h.a(this.a.a(ix)); // Paper - decompile fix
 +            return (T)(object == null ? this.g : object);
 +        } finally {
-+            lock.readLock().unlock();
-+        } // Paper
++            readLock.unlock();
++        } // Paper end
      }
  
      // Paper start - Anti-Xray - Support default methods
