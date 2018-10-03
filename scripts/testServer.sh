@@ -63,16 +63,23 @@ fi
 # JAR CHECK
 #
 
-jar="$basedir/Paper-Server/target/paper-${minecraftversion}.jar"
+folder="$basedir/Paper-Server"
+jar="$folder/target/paper-${minecraftversion}.jar"
+if [ ! -d "$folder" ]; then
+(
+    echo "Building Patched Repo"
+    cd "$basedir"
+    ./paper patch
+)
+fi
+
 if [ ! -f "$jar" ] || [ "$2" == "build" ] || [ "$3" == "build" ]; then
 (
     echo "Building Paper"
     cd "$basedir"
-    ./paper patch
-    mvn clean install
+    mvn package
 )
 fi
-
 
 #
 # JVM FLAGS
