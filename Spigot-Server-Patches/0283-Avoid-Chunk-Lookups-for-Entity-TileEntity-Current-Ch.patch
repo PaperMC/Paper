@@ -1,0 +1,89 @@
+From fe1b8ed7df7010ef1aa4dbac5e2c88df3962df29 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 03:39:51 -0400
+Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
+
+In many places where we simply want the current chunk the entity
+is in, instead of doing a hashmap lookup for it, we now have access
+to the object directly on the Entity/TileEntity object we can directly grab.
+
+Use that local value instead to reduce lookups in many hot places.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 1652d88298..982b3de65c 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -719,6 +719,7 @@ public class Chunk implements IChunkAccess {
+         ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
+     }
+ 
++    public void removeEntity(Entity entity) { b(entity); } // Paper - OBFHELPER
+     public void b(Entity entity) {
+         this.a(entity, entity.af);
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 7cf4a9c11e..ee2cdb897c 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1258,12 +1258,15 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         int j;
+         // Paper start - Set based removal lists
+         for (Entity e : this.g) {
++            /*
+             j = e.getChunkZ();
+             int k = e.getChunkX();
+ 
+             if (e.inChunk && this.isChunkLoaded(k, j, true)) {
+                 this.getChunkAt(k, j).b(e);
+-            }
++            }*/
++            Chunk chunk = e.inChunk ? e.getCurrentChunk() : null;
++            if (chunk != null) chunk.removeEntity(e);
+         }
+ 
+         for (Entity e : this.g) {
+@@ -1324,12 +1327,17 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+             this.methodProfiler.e();
+             this.methodProfiler.a("remove");
+             if (entity.dead) {
++                // Paper start
++                /*
+                 j = entity.ae;
+                 int l = entity.ag;
+ 
+                 if (entity.inChunk && this.isChunkLoaded(j, l, true)) {
+                     this.getChunkAt(j, l).b(entity);
+-                }
++                }*/
++                Chunk chunk = entity.inChunk ? entity.getCurrentChunk() : null;
++                if (chunk != null) chunk.removeEntity(entity);
++                // Paper end
+ 
+                 guardEntityList = false; // Spigot
+                 this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
+@@ -1374,7 +1382,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+                 BlockPosition blockposition = tileentity.getPosition();
+ 
+                 // Paper start - Skip ticking in chunks scheduled for unload
+-                net.minecraft.server.Chunk chunk = this.getChunkIfLoaded(blockposition);
++                net.minecraft.server.Chunk chunk = tileentity.getCurrentChunk();
+                 boolean shouldTick = chunk != null;
+                 if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
+                     shouldTick = shouldTick && chunk.scheduledForUnload == null;
+@@ -1410,8 +1418,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+                 tilesThisCycle--;
+                 this.tileEntityListTick.remove(tileTickPosition--);
+                 //this.tileEntityList.remove(tileentity); // Paper - remove unused list
+-                if (this.isLoaded(tileentity.getPosition())) {
+-                    this.getChunkAtWorldCoords(tileentity.getPosition()).d(tileentity.getPosition());
++                // Paper start
++                net.minecraft.server.Chunk chunk = tileentity.getCurrentChunk();
++                if (chunk != null) {
++                    chunk.removeTileEntity(tileentity.getPosition());
++                    // Paper end
+                 }
+             }
+         }
+-- 
+2.19.0
+

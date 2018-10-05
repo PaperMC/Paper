@@ -1,0 +1,101 @@
+From 39b86fa69e8d2d6404b044b90c923f766294834e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Dec 2017 17:36:49 -0500
+Subject: [PATCH] Ability to apply mending to XP API
+
+This allows plugins that give players the ability to apply the experience
+points to the Item Mending formula, which will repair an item instead
+of giving the player experience points.
+
+Both an API To standalone mend, and apply mending logic to .giveExp has been added.
+
+diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
+index fd6df39f17..f03aef2fed 100644
+--- a/src/main/java/net/minecraft/server/EnchantmentManager.java
++++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
+@@ -223,6 +223,7 @@ public class EnchantmentManager {
+         return getEnchantmentLevel(Enchantments.F, itemstack) > 0;
+     }
+ 
++    public static ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, EntityLiving entityliving) { return b(enchantment, entityliving); } // Paper - OBFHELPER
+     public static ItemStack b(Enchantment enchantment, EntityLiving entityliving) {
+         List<ItemStack> list = enchantment.a(entityliving);// Paper - decompile fix
+         if (list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/Enchantments.java b/src/main/java/net/minecraft/server/Enchantments.java
+index 8cfb38b826..44b2d428b3 100644
+--- a/src/main/java/net/minecraft/server/Enchantments.java
++++ b/src/main/java/net/minecraft/server/Enchantments.java
+@@ -35,7 +35,7 @@ public class Enchantments {
+     public static final Enchantment D = a("impaling");
+     public static final Enchantment E = a("riptide");
+     public static final Enchantment F = a("channeling");
+-    public static final Enchantment G = a("mending");
++    public static final Enchantment G = a("mending");public static final Enchantment MENDING = G; // Paper - OBFHELPER
+     public static final Enchantment H = a("vanishing_curse");
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+index dcef63bb1f..53cfc10017 100644
+--- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+@@ -246,10 +246,12 @@ public class EntityExperienceOrb extends Entity {
+         }
+     }
+ 
++    public int durToXp(int i) { return b(i); } // Paper OBFHELPER
+     private int b(int i) {
+         return i / 2;
+     }
+ 
++    public int xpToDur(int i) { return c(i); } // Paper OBFHELPER
+     private int c(int i) {
+         return i * 2;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 0d76a42997..1c40f17ce9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1023,8 +1023,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().getId());
+     }
+ 
++    // Paper start
+     @Override
+-    public void giveExp(int exp) {
++    public int applyMending(int amount) {
++        EntityPlayer handle = getHandle();
++        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
++        net.minecraft.server.ItemStack itemstack = net.minecraft.server.EnchantmentManager.getRandomEquippedItemWithEnchant(net.minecraft.server.Enchantments.MENDING, handle);
++        if (!itemstack.isEmpty() && itemstack.getItem().usesDurability()) {
++
++            net.minecraft.server.EntityExperienceOrb orb = new net.minecraft.server.EntityExperienceOrb(handle.world);
++            orb.value = amount;
++            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
++            orb.locX = handle.locX;
++            orb.locY = handle.locY;
++            orb.locZ = handle.locZ;
++
++            int i = Math.min(orb.xpToDur(amount), itemstack.getDamage());
++            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, i);
++            i = event.getRepairAmount();
++            orb.dead = true;
++            if (!event.isCancelled()) {
++                amount -= orb.durToXp(i);
++                itemstack.setDamage(itemstack.getDamage() - i);
++            }
++        }
++        return amount;
++    }
++
++    @Override
++    public void giveExp(int exp, boolean applyMending) {
++        if (applyMending) {
++            exp = this.applyMending(exp);
++        }
++        // Paper end
+         getHandle().giveExp(exp);
+     }
+ 
+-- 
+2.19.0
+

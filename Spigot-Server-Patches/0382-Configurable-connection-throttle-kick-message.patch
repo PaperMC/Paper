@@ -1,0 +1,38 @@
+From 19ab64e9d4f2203808f7baf0fa7d45913de4f208 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 2 Oct 2018 09:57:50 +0100
+Subject: [PATCH] Configurable connection throttle kick message
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 2f6d7f2976..effc296e3e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -292,6 +292,11 @@ public class PaperConfig {
+         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
+     }
+ 
++    public static String connectionThrottleKickMessage = "Connection throttled! Please wait before reconnecting.";
++    private static void connectionThrottleKickMessage() {
++        connectionThrottleKickMessage = getString("messages.kick.connection-throttle", connectionThrottleKickMessage);
++    }
++
+     public static boolean savePlayerData = true;
+     private static void savePlayerData() {
+         savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
+diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
+index a02fa29217..7dc51fd995 100644
+--- a/src/main/java/net/minecraft/server/HandshakeListener.java
++++ b/src/main/java/net/minecraft/server/HandshakeListener.java
+@@ -37,7 +37,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
+                 synchronized (throttleTracker) {
+                     if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
+                         throttleTracker.put(address, currentTime);
+-                        chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
++                        chatmessage = new ChatMessage(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage); // Paper - Configurable connection throttle kick message
+                         this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
+                         this.b.close(chatmessage);
+                         return;
+-- 
+2.19.0
+

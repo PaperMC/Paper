@@ -1,0 +1,45 @@
+From 1e8c6bcd03fc5466a28c8f17e76e871d09558bc1 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 22 Jul 2018 21:21:41 -0400
+Subject: [PATCH] Don't save Proto Chunks
+
+These chunks are unfinished, and waste cpu time saving these unfinished chunks.
+the loadChunk method refuses to acknoledge they exists, and will restart
+a new chunk generation process to begin with, so saving them serves no benefit.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index ec328126cf..3d8f0b5786 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -300,6 +300,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     }
+ 
+     public void saveChunk(World world, IChunkAccess ichunkaccess, boolean unloaded) throws IOException, ExceptionWorldConflict {
++        if (ichunkaccess.i().d() == ChunkStatus.Type.PROTOCHUNK) { return; } // Paper - don't save proto chunks
+         // Spigot end
+         world.checkSession();
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+index 22af9c1885..95eb1a84ac 100644
+--- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
++++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
+@@ -24,7 +24,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+         protected boolean a(Scheduler.a scheduler_a) {
+             ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
+ 
+-            return !protochunk.ab_() && !protochunk.h();
++            return !protochunk.ab_() /*&& !protochunk.h()*/; // Paper
+         }
+     };
+ 
+@@ -88,6 +88,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+     }
+ 
+     public void a(BooleanSupplier booleansupplier) {
++        if (true) return; // Paper - we don't save proto chunks, and don't want to block thread
+         IChunkLoader ichunkloader = this.e;
+ 
+         synchronized (this.e) {
+-- 
+2.19.0
+
