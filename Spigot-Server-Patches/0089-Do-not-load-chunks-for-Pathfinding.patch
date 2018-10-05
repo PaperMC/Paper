@@ -1,11 +1,22 @@
-From 19bc80177637e62f6abf6e8422fb97663e2bd524 Mon Sep 17 00:00:00 2001
+From d8f79a7c0c289ac8d6ca3fd0e9c9be164ea452c5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 31 Mar 2016 19:17:58 -0400
-Subject: [PATCH] Do not load chunks for light checks
+Subject: [PATCH] Do not load chunks for Pathfinding
 
-Should only happen for blocks on the edge that uses neighbors light level
-(certain blocks). In that case, there will be 3-4 other neighbors to get a light level from.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
+index ff740bc1a7..78adbf9062 100644
+--- a/src/main/java/net/minecraft/server/ChunkCache.java
++++ b/src/main/java/net/minecraft/server/ChunkCache.java
+@@ -21,7 +21,7 @@ public class ChunkCache implements IIBlockAccess {
+ 
+         for(int l = this.a; l <= j; ++l) {
+             for(int i1 = this.b; i1 <= k; ++i1) {
+-                this.c[l - this.a][i1 - this.b] = world.getChunkAt(l, i1);
++                this.c[l - this.a][i1 - this.b] = world.getChunkIfLoaded(l, i1); // Paper
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
 index a8b070ed32..7a4bc0fcc3 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
@@ -122,18 +133,6 @@ index 64e0b08170..93f3d2e363 100644
          Block block = iblockdata.getBlock();
          Material material = iblockdata.getMaterial();
          if (iblockdata.isAir()) {
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 207f53a9c3..b8fcfb6092 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -663,6 +663,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-                 if (blockposition.getY() >= 256) {
-                     blockposition = new BlockPosition(blockposition.getX(), 255, blockposition.getZ());
-                 }
-+                if (!this.isLoaded(blockposition)) return 0; // Paper
- 
-                 return this.getChunkAtWorldCoords(blockposition).a(blockposition, i);
-             }
 -- 
 2.19.0
 
