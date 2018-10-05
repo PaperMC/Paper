@@ -1,14 +1,16 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Tue, 27 Dec 2016 22:38:06 -0500
+Date: Fri, 13 May 2016 01:38:06 -0400
 Subject: [PATCH] Activation Range Improvements
+
+Optimizes performance of Activation Range
 
 Fixes and adds new Immunities to improve gameplay behavior
 
 Adds water Mobs to activation range config and nerfs fish
 
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index f4ed98d2d9..1dfd71df0a 100644
+index d81e2dc1c5..7bd51b3578 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
@@ -112,34 +114,51 @@ index 9a75cb63ba..cf10605aaa 100644
                          }
                      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index f9bb19fed6..d176008f44 100644
+index f52de10238..05e10fb366 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -0,0 +0,0 @@ import net.minecraft.server.EntityArrow;
- import net.minecraft.server.EntityComplexPart;
- import net.minecraft.server.EntityCreature;
+@@ -0,0 +0,0 @@ package org.spigotmc;
+ 
+ import java.util.List;
+ import java.util.Set;
++
++import co.aikar.timings.MinecraftTimings;
+ import net.minecraft.server.AxisAlignedBB;
+ import net.minecraft.server.Chunk;
+ import net.minecraft.server.Entity;
+@@ -0,0 +0,0 @@ import net.minecraft.server.EntityCreature;
  import net.minecraft.server.EntityCreeper;
-+import net.minecraft.server.EntityDrowned;
  import net.minecraft.server.EntityEnderCrystal;
  import net.minecraft.server.EntityEnderDragon;
- import net.minecraft.server.EntityFallingBlock;
+-import net.minecraft.server.EntityFallingBlock; // Paper
++import net.minecraft.server.EntityFallingBlock;
  import net.minecraft.server.EntityFireball;
  import net.minecraft.server.EntityFireworks;
 +import net.minecraft.server.EntityFish;
  import net.minecraft.server.EntityHuman;
++import net.minecraft.server.EntityInsentient;
  import net.minecraft.server.EntityLiving;
 +import net.minecraft.server.EntityLlama;
  import net.minecraft.server.EntityMonster;
  import net.minecraft.server.EntityProjectile;
  import net.minecraft.server.EntitySheep;
-@@ -0,0 +0,0 @@ import net.minecraft.server.EntitySlime;
+-import net.minecraft.server.EntitySlice;
+ import net.minecraft.server.EntitySlime;
  import net.minecraft.server.EntityTNTPrimed;
  import net.minecraft.server.EntityThrownTrident;
  import net.minecraft.server.EntityVillager;
 +import net.minecraft.server.EntityWaterAnimal;
  import net.minecraft.server.EntityWeather;
  import net.minecraft.server.EntityWither;
- import net.minecraft.server.MCUtil;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MathHelper;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.NavigationGuardian;
+ import net.minecraft.server.World;
+-import co.aikar.timings.MinecraftTimings;
+ 
+ public class ActivationRange
+ {
 @@ -0,0 +0,0 @@ public class ActivationRange
      static AxisAlignedBB maxBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
      static AxisAlignedBB miscBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
@@ -172,6 +191,12 @@ index f9bb19fed6..d176008f44 100644
  
          int maxRange = Math.max( monsterActivationRange, animalActivationRange );
          maxRange = Math.max( maxRange, miscActivationRange );
+         //maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange ); Paper - Use player view distance API below instead
+ 
++        Chunk chunk; // Paper
+         for ( EntityHuman player : world.players )
+         {
+             int playerMaxRange = maxRange = Math.min( ( player.getViewDistance() << 4 ) - 8, maxRange ); // Paper - Use player view distance API
 @@ -0,0 +0,0 @@ public class ActivationRange
              maxBB = player.getBoundingBox().grow( playerMaxRange, 256, playerMaxRange ); // Paper - Use player view distance API
              miscBB = player.getBoundingBox().grow( miscActivationRange, 256, miscActivationRange );
@@ -180,6 +205,18 @@ index f9bb19fed6..d176008f44 100644
              monsterBB = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
  
              int i = MathHelper.floor( maxBB.a / 16.0D );
+@@ -0,0 +0,0 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
++                    if ( (chunk = world.getChunkIfLoaded(i1, j1 )) != null ) // Paper
+                     {
+-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
++                        activateChunkEntities( chunk ); // Paper
+                     }
+                 }
+             }
 @@ -0,0 +0,0 @@ public class ActivationRange
                                  entity.activatedTick = MinecraftServer.currentTick;
                              }
@@ -199,17 +236,23 @@ index f9bb19fed6..d176008f44 100644
       */
      public static boolean checkEntityImmunities(Entity entity)
      {
+-        // quick checks.
+-        if ( entity.inWater || entity.fireTicks > 0 )
+-        {
 +        // Paper start - optimize Water cases
 +        if (entity instanceof EntityFish) {
 +            return false;
 +        }
-         // quick checks.
--        if ( entity.inWater || entity.fireTicks > 0 )
-+        if ( (entity.inWater && (!(entity instanceof EntityWaterAnimal || entity instanceof EntityDrowned))) || entity.fireTicks > 0 )
-+        // Paper end
-         {
++        if ((entity.inWater && entity instanceof EntityInsentient && !(((EntityInsentient) entity).getNavigation() instanceof NavigationGuardian))) {
              return true;
          }
++        if (entity.fireTicks > 0) {
++            return true;
++        }
++        // Paper end
+         if ( !( entity instanceof EntityArrow ) )
+         {
+             if ( !entity.onGround || !entity.passengers.isEmpty() || entity.isPassenger() )
 @@ -0,0 +0,0 @@ public class ActivationRange
          if ( entity instanceof EntityLiving )
          {
