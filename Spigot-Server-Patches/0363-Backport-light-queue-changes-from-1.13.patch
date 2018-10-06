@@ -1,18 +1,15 @@
-From 7ddde7192795ce5518a53680ad998839aab39eba Mon Sep 17 00:00:00 2001
+From 659e74a4f51ee97e903472c73e725d728a87dc7d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 23 Sep 2018 20:44:52 -0400
 Subject: [PATCH] Backport light queue changes from 1.13
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 523d10e8bc..0f3ef1ba18 100644
+index 523d10e8bc..6541f5af47 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -272,16 +272,10 @@ public class Chunk {
-         this.m = true;
-     }
+@@ -274,14 +274,7 @@ public class Chunk {
  
-+    private void recheckGaps(boolean flag) { h(flag); } // Paper
      private void h(boolean flag) {
          this.world.methodProfiler.a("recheckGaps");
 -        if (this.world.areChunksLoaded(new BlockPosition(this.locX * 16 + 8, 0, this.locZ * 16 + 8), 16)) {
@@ -27,7 +24,7 @@ index 523d10e8bc..0f3ef1ba18 100644
              for (int i = 0; i < 16; ++i) {
                  for (int j = 0; j < 16; ++j) {
                      if (this.i[i + j * 16]) {
-@@ -332,7 +326,7 @@ public class Chunk {
+@@ -332,7 +325,7 @@ public class Chunk {
      }
  
      private void a(int i, int j, int k, int l) {
@@ -36,29 +33,8 @@ index 523d10e8bc..0f3ef1ba18 100644
              for (int i1 = k; i1 < l; ++i1) {
                  this.world.c(EnumSkyBlock.SKY, new BlockPosition(i, i1, j));
              }
-@@ -1231,9 +1225,19 @@ public class Chunk {
-         return new BlockPosition(blockposition.getX(), this.h[k], blockposition.getZ());
-     }
- 
-+    // Paper start
-+    private boolean shouldRecheckGaps = false;
-+    public void doGapCheck() {
-+        if (shouldRecheckGaps) {
-+            this.recheckGaps(false);
-+            shouldRecheckGaps = false;
-+        }
-+    }
-+    // Paper end
-+
-     public void b(boolean flag) {
-         if (this.m && this.world.worldProvider.m() && !flag) {
--            this.h(this.world.isClientSide);
-+            shouldRecheckGaps = true; // Paper
-         }
- 
-         this.r = true;
 diff --git a/src/main/java/net/minecraft/server/PaperLightingQueue.java b/src/main/java/net/minecraft/server/PaperLightingQueue.java
-index 345cd58240..9ef414da09 100644
+index 345cd58240..f1c013116f 100644
 --- a/src/main/java/net/minecraft/server/PaperLightingQueue.java
 +++ b/src/main/java/net/minecraft/server/PaperLightingQueue.java
 @@ -6,16 +6,16 @@ import it.unimi.dsi.fastutil.objects.ObjectCollection;
@@ -83,7 +59,7 @@ index 345cd58240..9ef414da09 100644
          START:
          for (World world : MinecraftServer.getServer().worlds) {
              if (!world.paperConfig.queueLightUpdates) {
-@@ -23,10 +23,11 @@ class PaperLightingQueue {
+@@ -23,7 +23,7 @@ class PaperLightingQueue {
              }
  
              ObjectCollection<Chunk> loadedChunks = ((WorldServer) world).getChunkProviderServer().chunks.values();
@@ -92,11 +68,7 @@ index 345cd58240..9ef414da09 100644
                  if (chunk.lightingQueue.processQueue(startTime, maxTickTime)) {
                      break START;
                  }
-+                chunk.doGapCheck();
-             }
-         }
-     }
-@@ -50,14 +51,15 @@ class PaperLightingQueue {
+@@ -50,14 +50,15 @@ class PaperLightingQueue {
              if (this.isEmpty()) {
                  return false;
              }
@@ -116,7 +88,7 @@ index 345cd58240..9ef414da09 100644
                      }
                  }
              }
-@@ -74,7 +76,7 @@ class PaperLightingQueue {
+@@ -74,7 +75,7 @@ class PaperLightingQueue {
              }
              processQueue(0, 0); // No timeout
  
@@ -125,7 +97,7 @@ index 345cd58240..9ef414da09 100644
              for (int x = chunk.locX - radius; x <= chunk.locX + radius; ++x) {
                  for (int z = chunk.locZ - radius; z <= chunk.locZ + radius; ++z) {
                      if (x == chunk.locX && z == chunk.locZ) {
-@@ -89,4 +91,8 @@ class PaperLightingQueue {
+@@ -89,4 +90,8 @@ class PaperLightingQueue {
              }
          }
      }
