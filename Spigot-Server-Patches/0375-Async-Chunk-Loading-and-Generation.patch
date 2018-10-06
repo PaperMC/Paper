@@ -1,4 +1,4 @@
-From a7faf5d399919612519fa88efe145384fd12ea0c Mon Sep 17 00:00:00 2001
+From c5afbbb654d50ae0d6706ed7a3bed749aa7f60c0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -106,10 +106,10 @@ index 912c990404..2f6d7f2976 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..0a9fd5d662
+index 0000000000..5c77b6e8e1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,281 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -321,6 +321,10 @@ index 0000000000..0a9fd5d662
 +            this.run = run;
 +        }
 +
++        public boolean cancel() {
++            return hasRan.compareAndSet(false, true);
++        }
++
 +        @Override
 +        public void run() {
 +            if (!hasRan.compareAndSet(false, true)) {
@@ -400,7 +404,7 @@ index 9162151e2a..15a327923f 100644
  
          Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 5b57ea93c8..5d5834ba7f 100644
+index 958a4084e6..56a76e17ef 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -38,9 +38,9 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -415,7 +419,7 @@ index 5b57ea93c8..5d5834ba7f 100644
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
-@@ -77,10 +77,61 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -77,10 +77,76 @@ public class ChunkProviderServer implements IChunkProvider {
          this.unloadQueue.remove(ChunkCoordIntPair.a(i, j));
      }
  
@@ -460,6 +464,21 @@ index 5b57ea93c8..5d5834ba7f 100644
 +        }
 +        return chunk;
 +    }
++
++    PaperAsyncChunkProvider.CancellableChunkRequest requestChunk(int x, int z, boolean gen, boolean priority, Consumer<Chunk> consumer) {
++        Chunk chunk = getChunkAt(x, z, gen, priority, consumer);
++        return new PaperAsyncChunkProvider.CancellableChunkRequest() {
++            @Override
++            public void cancel() {
++
++            }
++
++            @Override
++            public Chunk getChunk() {
++                return chunk;
++            }
++        };
++    }
 +    // Paper end
 +
      @Nullable
@@ -477,7 +496,7 @@ index 5b57ea93c8..5d5834ba7f 100644
  
          synchronized (this.chunkLoader) {
              // Paper start - remove vanilla lastChunk, we do it more accurately
-@@ -88,13 +139,15 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -88,13 +154,15 @@ public class ChunkProviderServer implements IChunkProvider {
                  return this.lastChunk;
              }*/ // Paper end
  
@@ -496,7 +515,7 @@ index 5b57ea93c8..5d5834ba7f 100644
  
              if (flag) {
                  try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) { // Paper
-@@ -150,7 +203,8 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -150,7 +218,8 @@ public class ChunkProviderServer implements IChunkProvider {
          return (IChunkAccess) (chunk != null ? chunk : (IChunkAccess) this.chunkScheduler.b(new ChunkCoordIntPair(i, j), flag));
      }
  
@@ -506,7 +525,7 @@ index 5b57ea93c8..5d5834ba7f 100644
          this.batchScheduler.b();
          Iterator iterator = iterable.iterator();
  
-@@ -168,6 +222,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -168,6 +237,7 @@ public class ChunkProviderServer implements IChunkProvider {
          return this.batchScheduler.c();
      }
  
@@ -514,7 +533,7 @@ index 5b57ea93c8..5d5834ba7f 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
-@@ -287,11 +342,13 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -287,11 +357,13 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
      public void close() {
@@ -836,10 +855,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..1c592c7956
+index 0000000000..7fb95330fa
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,477 @@
+@@ -0,0 +1,572 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -882,6 +901,8 @@ index 0000000000..1c592c7956
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.atomic.AtomicBoolean;
++import java.util.concurrent.atomic.AtomicInteger;
 +import java.util.function.Consumer;
 +
 +@SuppressWarnings("unused")
@@ -976,6 +997,10 @@ index 0000000000..1c592c7956
 +    }
 +
 +    private Chunk loadOrGenerateChunk(int x, int z, boolean gen, boolean priority, Consumer<Chunk> consumer) {
++        return requestChunk(x, z, gen, priority, consumer).getChunk();
++    }
++
++    PendingChunkRequest requestChunk(int x, int z, boolean gen, boolean priority, Consumer<Chunk> consumer) {
 +        final long key = ChunkCoordIntPair.asLong(x, z);
 +
 +        // Obtain a PendingChunk
@@ -983,7 +1008,6 @@ index 0000000000..1c592c7956
 +        final boolean isBlockingMain = consumer == null && server.isMainThread();
 +        synchronized (pendingChunks) {
 +            PendingChunk pendingChunk = pendingChunks.get(key);
-+            // DO NOT CALL ANY METHODS ON PENDING CHUNK IN THIS BLOCK - WILL DEADLOCK
 +            if (pendingChunk == null) {
 +                pending = new PendingChunk(x, z, key, gen, priority || isBlockingMain);
 +                pendingChunks.put(key, pending);
@@ -1000,11 +1024,12 @@ index 0000000000..1c592c7956
 +        }
 +        // Listen for when result is ready
 +        final CompletableFuture<Chunk> future = new CompletableFuture<>();
-+        pending.addListener(future, gen);
++        PendingChunkRequest request = pending.addListener(future, gen);
 +
 +        if (isBlockingMain && pending.hasFinished) {
 +            processChunkLoads();
-+            return pending.postChunk();
++            request.initialReturnChunk = pending.postChunk();
++            return request;
 +        }
 +
 +        if (isBlockingMain) {
@@ -1027,15 +1052,16 @@ index 0000000000..1c592c7956
 +                    processChunkLoads();
 +                }
 +                // We should be done AND posted into chunk map now, return it
-+                return future.join();
++                request.initialReturnChunk = future.join();
 +            }
 +        } else if (consumer == null) {
 +            // This is on another thread
-+            return future.join();
++            request.initialReturnChunk = future.join();
 +        } else {
 +            future.thenAccept((c) -> this.asyncHandler.postToMainThread(() -> consumer.accept(c)));
 +        }
-+        return null;
++
++        return request;
 +    }
 +
 +    @Override
@@ -1093,19 +1119,59 @@ index 0000000000..1c592c7956
 +        /**
 +         * Fully done with this request (may or may not of loaded)
 +         */
-+        DONE
++        DONE,
++        /**
++         * Chunk load was cancelled (no longer needed)
++         */
++        CANCELLED
++    }
++
++    public interface CancellableChunkRequest {
++        void cancel();
++        Chunk getChunk();
++    }
++
++    public static class PendingChunkRequest implements CancellableChunkRequest {
++        private final PendingChunk pending;
++        private final AtomicBoolean cancelled = new AtomicBoolean(false);
++        private volatile boolean generating;
++        private volatile Chunk initialReturnChunk;
++
++        private PendingChunkRequest(PendingChunk pending) {
++            this.pending = pending;
++            this.cancelled.set(true);
++        }
++
++        private PendingChunkRequest(PendingChunk pending, boolean gen) {
++            this.pending = pending;
++            this.generating = gen;
++        }
++
++        public void cancel() {
++            this.pending.cancel(this);
++        }
++
++        /**
++         * Will be null on asynchronous loads
++         */
++        @Override @Nullable
++        public Chunk getChunk() {
++            return initialReturnChunk;
++        }
 +    }
 +
 +    private class PendingChunk implements Runnable {
 +        private final int x;
 +        private final int z;
 +        private final long key;
-+        private final PriorityQueuedExecutor.PendingTask<Void> task;
-+        private final PriorityQueuedExecutor.PendingTask<Chunk> chunkGenTask;
 +        private final CompletableFuture<Chunk> loadOnly = new CompletableFuture<>();
 +        private final CompletableFuture<Chunk> generate = new CompletableFuture<>();
++        private final AtomicInteger requests = new AtomicInteger(0);
 +
 +        private volatile PendingStatus status = PendingStatus.STARTED;
++        private volatile PriorityQueuedExecutor.PendingTask<Void> loadTask;
++        private volatile PriorityQueuedExecutor.PendingTask<Chunk> genTask;
++        private volatile Priority taskPriority;
 +        private volatile boolean generating;
 +        private volatile boolean canGenerate;
 +        private volatile boolean isHighPriority;
@@ -1119,9 +1185,7 @@ index 0000000000..1c592c7956
 +            this.z = z;
 +            this.key = key;
 +            this.canGenerate = canGenerate;
-+            Priority taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
-+            this.chunkGenTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
-+            this.task = EXECUTOR.submitTask(this, taskPriority);
++            taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -1141,6 +1205,11 @@ index 0000000000..1c592c7956
 +        }
 +
 +        private Chunk generateChunk() {
++            synchronized (this) {
++                if (requests.get() <= 0) {
++                    return null;
++                }
++            }
 +            CompletableFuture<Chunk> pending = new CompletableFuture<>();
 +            batchScheduler.startBatch();
 +            batchScheduler.add(new ChunkCoordIntPair(x, z));
@@ -1178,8 +1247,11 @@ index 0000000000..1c592c7956
 +            loadOnly.complete(null);
 +
 +            synchronized (this) {
-+                if (!canGenerate) {
-+                    setStatus(PendingStatus.FAIL);
++                boolean cancelled = requests.get() <= 0;
++                if (!canGenerate || cancelled) {
++                    if (!cancelled) {
++                        setStatus(PendingStatus.FAIL);
++                    }
 +                    this.chunk = null;
 +                    this.hasFinished = true;
 +                    pendingChunks.remove(key);
@@ -1232,7 +1304,7 @@ index 0000000000..1c592c7956
 +                throw new IllegalStateException("Must post from main");
 +            }
 +            synchronized (this) {
-+                if (hasPosted) {
++                if (hasPosted || requests.get() <= 0) { // if pending is 0, all were cancelled
 +                    return chunk;
 +                }
 +                hasPosted = true;
@@ -1269,20 +1341,32 @@ index 0000000000..1c592c7956
 +            }
 +        }
 +
-+        synchronized void addListener(CompletableFuture<Chunk> future, boolean gen) {
++        synchronized PendingChunkRequest addListener(CompletableFuture<Chunk> future, boolean gen) {
 +            if (hasFinished) {
 +                future.complete(chunk);
++                return new PendingChunkRequest(this);
 +            } else if (gen) {
 +                canGenerate = true;
 +                generate.thenAccept(future::complete);
 +            } else {
 +                if (generating) {
 +                    future.complete(null);
++                    return new PendingChunkRequest(this);
 +                } else {
 +                    loadOnly.thenAccept(future::complete);
 +                }
 +            }
++
++            requests.incrementAndGet();
++            if (loadTask == null) {
++                // Take care of a race condition in that a request could be cancelled after the synchronize
++                // on pendingChunks, but before a listener is added, which would erase these pending tasks.
++                genTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
++                loadTask = EXECUTOR.submitTask(this, taskPriority);
++            }
++            return new PendingChunkRequest(this, gen);
 +        }
++
 +
 +        @Override
 +        public void run() {
@@ -1306,35 +1390,69 @@ index 0000000000..1c592c7956
 +                    mainThreadQueue.notify();
 +                }
 +            } else {
-+                generationExecutor.submitTask(chunkGenTask);
++                generationExecutor.submitTask(genTask);
 +            }
 +        }
 +
 +        void bumpPriority() {
-+            task.bumpPriority();
-+            chunkGenTask.bumpPriority();
++            this.taskPriority = Priority.HIGH;
++            PriorityQueuedExecutor.PendingTask<Void> loadTask = this.loadTask;
++            PriorityQueuedExecutor.PendingTask<Chunk> genTask = this.genTask;
++            if (loadTask != null) {
++                loadTask.bumpPriority();
++            }
++            if (genTask != null) {
++                genTask.bumpPriority();
++            }
++        }
++
++        public synchronized boolean isCancelled() {
++            return requests.get() <= 0;
++        }
++
++        public synchronized void cancel(PendingChunkRequest request) {
++            synchronized (pendingChunks) {
++                if (!request.cancelled.compareAndSet(false, true)) {
++                    return;
++                }
++
++                if (requests.decrementAndGet() > 0) {
++                    return;
++                }
++
++                boolean c1 = genTask.cancel();
++                boolean c2 = loadTask.cancel();
++                loadTask = null;
++                genTask = null;
++                pendingChunks.remove(key);
++                setStatus(PendingStatus.CANCELLED);
++            }
 +        }
 +    }
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2c7c8adf7c..04ad94e171 100644
+index 2c7c8adf7c..6d18cdeaf7 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -30,13 +30,42 @@ public class PlayerChunk {
+@@ -29,16 +29,62 @@ public class PlayerChunk {
+     // You know the drill, https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/browse
      // All may seem good at first, but there's deeper issues if you play for a bit
      boolean chunkExists; // Paper
-     private boolean loadInProgress = false;
+-    private boolean loadInProgress = false;
 -    private Runnable loadedRunnable = new Runnable() {
 -        public void run() {
 -            loadInProgress = false;
 -            PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(location.x, location.z, true, true);
 -            markChunkUsed(); // Paper - delay chunk unloads
--        }
++    private PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
 +    // Paper start
 +    private java.util.function.Consumer<Chunk> chunkLoadedConsumer = chunk -> {
-+        loadInProgress = false;
++        chunkRequest = null;
 +        PlayerChunk pChunk = PlayerChunk.this;
++        if (chunk == null) {
++            new Throwable().printStackTrace();
+         }
 +        pChunk.chunk = chunk;
 +        markChunkUsed(); // Paper - delay chunk unloads
      };
@@ -1353,6 +1471,16 @@ index 2c7c8adf7c..04ad94e171 100644
 +
 +        markedHigh = true;
 +        playerChunkMap.getWorld().getChunkProviderServer().bumpPriority(location);
++        if (chunkRequest == null) {
++            requestChunkIfNeeded(PlayerChunkMap.CAN_GEN_CHUNKS.test(player));
++        }
++    }
++    private void requestChunkIfNeeded(boolean flag) {
++        if (chunkRequest == null) {
++            chunkRequest = this.playerChunkMap.getWorld().getChunkProviderServer().requestChunk(this.location.x, this.location.z, flag, markedHigh, chunkLoadedConsumer);
++            this.chunk = chunkRequest.getChunk(); // Paper)
++            markChunkUsed(); // Paper - delay chunk unloads
++        }
 +    }
 +    private double getDistance(EntityPlayer player, int inFront) {
 +        final float yaw = MathHelper.normalizeYaw(player.yaw);
@@ -1369,8 +1497,14 @@ index 2c7c8adf7c..04ad94e171 100644
 +    // Paper end
      // Paper start - delay chunk unloads
      private void markChunkUsed() {
++        if (!chunkHasPlayers && chunkRequest != null) {
++            chunkRequest.cancel();
++            chunkRequest = null;
++        }
          if (chunk == null) {
-@@ -58,8 +87,8 @@ public class PlayerChunk {
+             return;
+         }
+@@ -58,8 +104,8 @@ public class PlayerChunk {
          ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProviderServer();
  
          chunkproviderserver.a(i, j);
@@ -1381,7 +1515,7 @@ index 2c7c8adf7c..04ad94e171 100644
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
-@@ -80,7 +109,7 @@ public class PlayerChunk {
+@@ -80,7 +126,7 @@ public class PlayerChunk {
              this.c.add(entityplayer);
              if (this.done) {
                  this.sendChunk(entityplayer);
@@ -1390,26 +1524,31 @@ index 2c7c8adf7c..04ad94e171 100644
  
          }
      }
-@@ -105,8 +134,13 @@ public class PlayerChunk {
+@@ -105,8 +151,9 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
          } else {
 -            this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag);
 -            markChunkUsed(); // Paper - delay chunk unloads
 +            // Paper start - async chunks
-+            if (!loadInProgress) {
-+                loadInProgress = true;
-+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag, markedHigh, chunkLoadedConsumer); // Paper)
-+                markChunkUsed(); // Paper - delay chunk unloads
-+            }
++            requestChunkIfNeeded(flag);
 +            // Paper end
              return this.chunk != null;
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index d1a443ca8d..6c54294d3f 100644
+index d1a443ca8d..1201a2758e 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -27,7 +27,7 @@ public class PlayerChunkMap {
+     };
+     private static final Predicate<EntityPlayer> b = (entityplayer) -> {
+         return entityplayer != null && (!entityplayer.isSpectator() || entityplayer.getWorldServer().getGameRules().getBoolean("spectatorsGenerateChunks"));
+-    };
++    }; static final Predicate<EntityPlayer> CAN_GEN_CHUNKS = b; // Paper - OBFHELPER
+     private final WorldServer world;
+     private final List<EntityPlayer> managedPlayers = Lists.newArrayList();
+     private final Long2ObjectMap<PlayerChunk> e = new Long2ObjectOpenHashMap(4096);
 @@ -349,7 +349,13 @@ public class PlayerChunkMap {
                              if (playerchunk != null) {
                                  playerchunk.b(entityplayer);
