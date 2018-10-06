@@ -1,4 +1,4 @@
-From c5afbbb654d50ae0d6706ed7a3bed749aa7f60c0 Mon Sep 17 00:00:00 2001
+From b704d57d14284281d3be51d0fca106762dbace06 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -599,7 +599,7 @@ index bdfc7d81ff..a5c4564d60 100644
      public IBlockData getType(int i, int j, int k) {
          return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 34019bd1b3..4ca977645f 100644
+index 34019bd1b3..d7b9ca3ee7 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -20,7 +20,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -607,7 +607,7 @@ index 34019bd1b3..4ca977645f 100644
      private final IChunkLoader e;
      private final IAsyncTaskHandler f;
 -    private final Long2ObjectMap<Scheduler.a> progressCache = new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error
-+    final Long2ObjectMap<Scheduler.a> progressCache = new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error // Paper - synchronize
++    final Long2ObjectMap<Scheduler.a> progressCache = new ExpiringMap<Scheduler.a>(8192, 5000) { // CraftBukkit - decompile error // Paper - protected
          protected boolean a(Scheduler.a scheduler_a) {
              ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
  
@@ -855,10 +855,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..7fb95330fa
+index 0000000000..1916bf372e
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,572 @@
+@@ -0,0 +1,567 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -908,9 +908,8 @@ index 0000000000..7fb95330fa
 +@SuppressWarnings("unused")
 +public class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
-+    private static final PriorityQueuedExecutor.RejectionHandler IGNORE_HANDLER = (run, executor) -> {};
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0, IGNORE_HANDLER);
-+    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0, IGNORE_HANDLER);
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0);
++    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
@@ -932,7 +931,7 @@ index 0000000000..7fb95330fa
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
 +        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported) || !PaperConfig.asyncChunkGeneration;
-+        this.generationExecutor = PaperConfig.asyncChunkGenThreadPerWorld ? new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1, IGNORE_HANDLER) : SINGLE_GEN_EXECUTOR;
++        this.generationExecutor = PaperConfig.asyncChunkGenThreadPerWorld ? new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1) : SINGLE_GEN_EXECUTOR;
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -949,12 +948,8 @@ index 0000000000..7fb95330fa
 +    }
 +
 +    static void stop(MinecraftServer server) {
-+        EXECUTOR.shutdownNow();
 +        for (WorldServer world : server.getWorlds()) {
-+            IChunkProvider chunkProvider = world.getChunkProvider();
-+            if (chunkProvider instanceof PaperAsyncChunkProvider) {
-+                ((PaperAsyncChunkProvider) chunkProvider).generationExecutor.shutdownNow();
-+            }
++            world.getPlayerChunkMap().shutdown();
 +        }
 +    }
 +
@@ -1432,7 +1427,7 @@ index 0000000000..7fb95330fa
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2c7c8adf7c..6d18cdeaf7 100644
+index 2c7c8adf7c..aabd107fe1 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -29,16 +29,62 @@ public class PlayerChunk {
@@ -1445,7 +1440,7 @@ index 2c7c8adf7c..6d18cdeaf7 100644
 -            loadInProgress = false;
 -            PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(location.x, location.z, true, true);
 -            markChunkUsed(); // Paper - delay chunk unloads
-+    private PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
++    PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
 +    // Paper start
 +    private java.util.function.Consumer<Chunk> chunkLoadedConsumer = chunk -> {
 +        chunkRequest = null;
@@ -1537,10 +1532,10 @@ index 2c7c8adf7c..6d18cdeaf7 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index d1a443ca8d..1201a2758e 100644
+index d1a443ca8d..1504bd113b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -27,7 +27,7 @@ public class PlayerChunkMap {
+@@ -27,10 +27,10 @@ public class PlayerChunkMap {
      };
      private static final Predicate<EntityPlayer> b = (entityplayer) -> {
          return entityplayer != null && (!entityplayer.isSpectator() || entityplayer.getWorldServer().getGameRules().getBoolean("spectatorsGenerateChunks"));
@@ -1548,7 +1543,11 @@ index d1a443ca8d..1201a2758e 100644
 +    }; static final Predicate<EntityPlayer> CAN_GEN_CHUNKS = b; // Paper - OBFHELPER
      private final WorldServer world;
      private final List<EntityPlayer> managedPlayers = Lists.newArrayList();
-     private final Long2ObjectMap<PlayerChunk> e = new Long2ObjectOpenHashMap(4096);
+-    private final Long2ObjectMap<PlayerChunk> e = new Long2ObjectOpenHashMap(4096);
++    private final Long2ObjectMap<PlayerChunk> e = new Long2ObjectOpenHashMap(4096); Long2ObjectMap<PlayerChunk> getChunks() { return e; } // Paper - OBFHELPER
+     private final Set<PlayerChunk> f = Sets.newHashSet();
+     private final List<PlayerChunk> g = Lists.newLinkedList();
+     private final List<PlayerChunk> h = Lists.newLinkedList();
 @@ -349,7 +349,13 @@ public class PlayerChunkMap {
                              if (playerchunk != null) {
                                  playerchunk.b(entityplayer);
@@ -1576,6 +1575,22 @@ index d1a443ca8d..1201a2758e 100644
                  }
                  // CraftBukkit end
              }
+@@ -432,6 +442,15 @@ public class PlayerChunkMap {
+             }
+         }
+     }
++
++    void shutdown() {
++        getChunks().values().forEach(pchunk -> {
++                PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest = pchunk.chunkRequest;
++                if (chunkRequest != null) {
++                    chunkRequest.cancel();
++                }
++        });
++    }
+     // Paper end
+ 
+     private void e() {
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 index 3c35c0f481..187ca2813a 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
