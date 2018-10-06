@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.ContainerAnvil;
 import net.minecraft.server.IInventory;
 import org.bukkit.Location;
@@ -70,5 +71,16 @@ public class CraftInventoryAnvil extends CraftInventory implements AnvilInventor
     @Override
     public void setRepairCost(int i) {
         container.levelCost = i;
+    }
+
+    @Override
+    public int getMaximumRepairCost() {
+        return container.maximumRepairCost;
+    }
+
+    @Override
+    public void setMaximumRepairCost(int levels) {
+        Preconditions.checkArgument(levels >= 0, "Maximum repair cost must be positive (or 0)");
+        container.maximumRepairCost = levels;
     }
 }
