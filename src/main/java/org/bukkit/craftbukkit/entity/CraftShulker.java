@@ -35,8 +35,6 @@ public class CraftShulker extends CraftGolem implements Shulker {
 
     @Override
     public void setColor(DyeColor color) {
-        Preconditions.checkArgument(color != null, "color");
-
-        getHandle().getDataWatcher().set(EntityShulker.COLOR, color.getWoolData());
+        getHandle().getDataWatcher().set(EntityShulker.COLOR, (color == null) ? 16 : color.getWoolData());
     }
 }
