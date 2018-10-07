@@ -17,15 +17,26 @@ index 42c1c47c58..3606c78843 100644
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
              bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index ee2cdb897c..a341f5de9a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     public boolean pvpMode;
+     public boolean keepSpawnInMemory = true;
+     public ChunkGenerator generator;
++    public static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
+ 
+     public boolean captureBlockStates = false;
+     public boolean captureTreeGeneration = false;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 27278078e4..f6becaae43 100644
+index 27278078e4..7eab55e7c1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
  
      // CraftBukkit start
      public final DimensionManager dimension;
-+    private static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
 +    private static Throwable getAddToWorldStackTrace(Entity entity) {
 +        return new Throwable(entity + " Added to world at " + new java.util.Date());
 +    }
@@ -51,9 +62,11 @@ index 27278078e4..f6becaae43 100644
                  } else {
                      if (!(entity instanceof EntityHuman)) {
 -                        WorldServer.a.error("Keeping entity {} that already exists with UUID {} - " + entity1, EntityTypes.getName(entity1.P()), uuid.toString()); // CraftBukkit // Paper
-+                        WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
-                         WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
+-                        WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
 +                        if (DEBUG_ENTITIES) {
++                            WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
++                            WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
++
 +                            if (entity1.addedToWorldStack != null) {
 +                                entity1.addedToWorldStack.printStackTrace();
 +                            }
