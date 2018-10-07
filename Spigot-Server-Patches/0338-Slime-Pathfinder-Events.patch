@@ -1,14 +1,29 @@
-From 0f6f16bc720dec704eeb9feff92d0b39245051c5 Mon Sep 17 00:00:00 2001
+From 6110250bffd564f51fada4f6be67f4475c670555 Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Fri, 24 Aug 2018 08:18:42 -0500
 Subject: [PATCH] Slime Pathfinder Events
 
 
 diff --git a/src/main/java/net/minecraft/server/EntitySlime.java b/src/main/java/net/minecraft/server/EntitySlime.java
-index 238f3c7926..586b9a3a66 100644
+index 238f3c792..2737a7d69 100644
 --- a/src/main/java/net/minecraft/server/EntitySlime.java
 +++ b/src/main/java/net/minecraft/server/EntitySlime.java
-@@ -57,6 +57,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -1,6 +1,14 @@
+ package net.minecraft.server;
+ 
+ import javax.annotation.Nullable;
++// Paper start
++import com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent;
++import com.destroystokyo.paper.event.entity.SlimeSwimEvent;
++import com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent;
++import com.destroystokyo.paper.event.entity.SlimeWanderEvent;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Slime;
++// Paper end
+ // CraftBukkit start
+ import org.bukkit.event.entity.SlimeSplitEvent;
+ // CraftBukkit end
+@@ -57,6 +65,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          super.b(nbttagcompound);
          nbttagcompound.setInt("Size", this.getSize() - 1);
          nbttagcompound.setBoolean("wasOnGround", this.bD);
@@ -16,7 +31,7 @@ index 238f3c7926..586b9a3a66 100644
      }
  
      public void a(NBTTagCompound nbttagcompound) {
-@@ -69,6 +70,11 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -69,6 +78,11 @@ public class EntitySlime extends EntityInsentient implements IMonster {
  
          this.setSize(i + 1, false);
          this.bD = nbttagcompound.getBoolean("wasOnGround");
@@ -28,25 +43,25 @@ index 238f3c7926..586b9a3a66 100644
      }
  
      public boolean dy() {
-@@ -308,7 +314,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -308,7 +322,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          }
  
          public boolean a() {
 -            return true;
-+            return this.a.canWander && new com.destroystokyo.paper.event.entity.SlimeWanderEvent((org.bukkit.entity.Slime) this.a.getBukkitEntity()).callEvent(); // Paper
++            return this.a.canWander && new SlimeWanderEvent((Slime) this.a.getBukkitEntity()).callEvent(); // Paper
          }
  
          public void e() {
-@@ -327,7 +333,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -327,7 +341,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          }
  
          public boolean a() {
 -            return this.a.isInWater() || this.a.ax();
-+            return (this.a.isInWater() || this.a.ax()) && this.a.canWander && new com.destroystokyo.paper.event.entity.SlimeSwimEvent((org.bukkit.entity.Slime) this.a.getBukkitEntity()).callEvent(); // Paper
++            return (this.a.isInWater() || this.a.ax()) && this.a.canWander && new SlimeSwimEvent((Slime) this.a.getBukkitEntity()).callEvent(); // Paper
          }
  
          public void e() {
-@@ -351,13 +357,17 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -351,13 +365,17 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          }
  
          public boolean a() {
@@ -59,50 +74,61 @@ index 238f3c7926..586b9a3a66 100644
                  this.c = 40 + this.a.getRandom().nextInt(60);
 -                this.b = (float) this.a.getRandom().nextInt(360);
 +                // Paper start
-+                com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent event = new com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent((org.bukkit.entity.Slime) this.a.getBukkitEntity(), (float) this.a.getRandom().nextInt(360));
++                SlimeChangeDirectionEvent event = new SlimeChangeDirectionEvent((Slime) this.a.getBukkitEntity(), (float) this.a.getRandom().nextInt(360));
 +                if (!this.a.canWander || !event.callEvent()) return;
 +                this.b = event.getNewYaw();
 +                // Paper end
              }
  
              ((EntitySlime.ControllerMoveSlime) this.a.getControllerMove()).a(this.b, false);
-@@ -377,7 +387,16 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -377,7 +395,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          public boolean a() {
              EntityLiving entityliving = this.a.getGoalTarget();
  
 -            return entityliving == null ? false : (!entityliving.isAlive() ? false : !(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.isInvulnerable);
 +            // Paper start
-+            if (entityliving != null && entityliving.isAlive() && (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.isInvulnerable)) {
-+                if (this.a.canWander && new com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent((org.bukkit.entity.Slime) this.a.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity()).callEvent()) {
-+                    return true;
-+                }
-+                this.b = 0;
-+                this.a.setGoalTarget(null);
++            if (entityliving == null || !entityliving.isAlive()) {
++                return false;
 +            }
-+            return false;
++            if (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable) {
++                return false;
++            }
++            return this.a.canWander && new SlimeTargetLivingEntityEvent((Slime) this.a.getBukkitEntity(), (LivingEntity) entityliving.getBukkitEntity()).callEvent();
 +            // Paper end
          }
  
          public void c() {
-@@ -388,7 +407,16 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+@@ -388,13 +414,28 @@ public class EntitySlime extends EntityInsentient implements IMonster {
          public boolean b() {
              EntityLiving entityliving = this.a.getGoalTarget();
  
 -            return entityliving == null ? false : (!entityliving.isAlive() ? false : (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable ? false : --this.b > 0));
 +            // Paper start
-+            if (entityliving != null && entityliving.isAlive() && (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.isInvulnerable)) {
-+                if (this.a.canWander && new com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent((org.bukkit.entity.Slime) this.a.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity()).callEvent()) {
-+                    return true;
-+                }
-+                this.b = 0;
-+                this.a.setGoalTarget(null);
++            if (entityliving == null || !entityliving.isAlive()) {
++                return false;
 +            }
-+            return false;
++            if (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.isInvulnerable) {
++                return false;
++            }
++            return --this.b > 0 && this.a.canWander && new SlimeTargetLivingEntityEvent((Slime) this.a.getBukkitEntity(), (LivingEntity) entityliving.getBukkitEntity()).callEvent();
 +            // Paper end
          }
  
          public void e() {
-@@ -452,4 +480,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+             this.a.a((Entity) this.a.getGoalTarget(), 10.0F, 10.0F);
+             ((EntitySlime.ControllerMoveSlime) this.a.getControllerMove()).a(this.a.yaw, this.a.dt());
+         }
++
++        // Paper start - clear timer and target when goal resets
++        public void d() {
++            this.b = 0;
++            this.a.setGoalTarget(null);
++        }
++        // Paper end
+     }
+ 
+     static class ControllerMoveSlime extends ControllerMove {
+@@ -452,4 +493,15 @@ public class EntitySlime extends EntityInsentient implements IMonster {
              }
          }
      }
@@ -119,7 +145,7 @@ index 238f3c7926..586b9a3a66 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
-index 18e7ef80ac..8403c1e01c 100644
+index 18e7ef80a..8403c1e01 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
 @@ -33,4 +33,14 @@ public class CraftSlime extends CraftMob implements Slime {
