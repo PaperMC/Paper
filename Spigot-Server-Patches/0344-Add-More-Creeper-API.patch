@@ -1,11 +1,11 @@
-From 7061fddd7e9ce6887914136c7ba44beaaf46f2f7 Mon Sep 17 00:00:00 2001
+From a57330ca2e6771b9d6b370650a108efb8de75c35 Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Fri, 24 Aug 2018 11:50:26 -0500
 Subject: [PATCH] Add More Creeper API
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityCreeper.java b/src/main/java/net/minecraft/server/EntityCreeper.java
-index 19022b6e24..e070e7b2d2 100644
+index 19022b6e2..72b4735d4 100644
 --- a/src/main/java/net/minecraft/server/EntityCreeper.java
 +++ b/src/main/java/net/minecraft/server/EntityCreeper.java
 @@ -14,7 +14,7 @@ public class EntityCreeper extends EntityMonster {
@@ -17,55 +17,7 @@ index 19022b6e24..e070e7b2d2 100644
      public int maxFuseTicks = 30;
      public int explosionRadius = 3;
      private int bG;
-@@ -92,9 +92,12 @@ public class EntityCreeper extends EntityMonster {
-     public void tick() {
-         if (this.isAlive()) {
-             this.bC = this.fuseTicks;
--            if (this.isIgnited()) {
--                this.a(1);
--            }
-+            // Paper start - This is no longer needed as the state is being set in setIgnited() now.
-+            //               Ensures the CreeperIgniteEvent is not spammed every tick
-+            //if (this.isIgnited()) {
-+            //    this.a(1);
-+            //}
-+            // Paper end
- 
-             int i = this.dz();
- 
-@@ -102,7 +105,7 @@ public class EntityCreeper extends EntityMonster {
-                 this.a(SoundEffects.ENTITY_CREEPER_PRIMED, 1.0F, 0.5F);
-             }
- 
--            this.fuseTicks += i;
-+            this.fuseTicks += this.isIgnited() ? 1 : i; // Paper - workaround now that we aren't letting it get re-set every tick - GH-1389
-             if (this.fuseTicks < 0) {
-                 this.fuseTicks = 0;
-             }
-@@ -151,12 +154,21 @@ public class EntityCreeper extends EntityMonster {
-         return LootTables.x;
-     }
- 
-+    public int getState() { return dz(); } // Paper - OBFHELPER
-     public int dz() {
-         return ((Integer) this.datawatcher.get(EntityCreeper.a)).intValue();
-     }
- 
-+    public void setState(int state) { a(state); } // Paper - OBFHELPER
-     public void a(int i) {
--        this.datawatcher.set(EntityCreeper.a, Integer.valueOf(i));
-+        // Paper start
-+        if (getState() != i) {
-+            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), i == 1);
-+            if (event.callEvent()) {
-+                this.datawatcher.set(EntityCreeper.a, event.isIgnited() ? 1 : -1);
-+            }
-+        }
-+        // Paper end
-     }
- 
-     public void onLightningStrike(EntityLightning entitylightning) {
-@@ -190,6 +202,7 @@ public class EntityCreeper extends EntityMonster {
+@@ -190,6 +190,7 @@ public class EntityCreeper extends EntityMonster {
          return super.a(entityhuman, enumhand);
      }
  
@@ -73,14 +25,18 @@ index 19022b6e24..e070e7b2d2 100644
      private void dE() {
          if (!this.world.isClientSide) {
              boolean flag = this.world.getGameRules().getBoolean("mobGriefing");
-@@ -241,8 +254,15 @@ public class EntityCreeper extends EntityMonster {
+@@ -241,8 +242,19 @@ public class EntityCreeper extends EntityMonster {
          return ((Boolean) this.datawatcher.get(EntityCreeper.c)).booleanValue();
      }
  
 +    // Paper start
 +    public void setIgnited(boolean ignited) {
-+        this.datawatcher.set(EntityCreeper.c, ignited);
-+        setState(ignited ? 1 : -1);
++        if (isIgnited() != ignited) {
++            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
++            if (event.callEvent()) {
++                this.datawatcher.set(EntityCreeper.c, event.isIgnited());
++            }
++        }
 +    }
 +
      public void dB() {
@@ -91,7 +47,7 @@ index 19022b6e24..e070e7b2d2 100644
  
      public boolean canCauseHeadDrop() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
-index ffebb54caa..ab2b20a0d4 100644
+index ffebb54ca..ab2b20a0d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
 @@ -76,4 +76,22 @@ public class CraftCreeper extends CraftMonster implements Creeper {
