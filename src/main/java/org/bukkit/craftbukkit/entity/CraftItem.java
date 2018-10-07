@@ -8,6 +8,11 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
+// Paper start
+import javax.annotation.Nullable;
+import java.util.UUID;
+// Paper end
+
 public class CraftItem extends CraftEntity implements Item {
     private final EntityItem item;
 
@@ -55,6 +60,28 @@ public class CraftItem extends CraftEntity implements Item {
 
     public void setCanMobPickup(boolean canMobPickup) {
         item.canMobPickup = canMobPickup;
+    }
+
+    @Nullable
+    @Override
+    public UUID getOwner() {
+        return item.getOwner();
+    }
+
+    @Override
+    public void setOwner(@Nullable UUID owner) {
+        item.setOwner(owner);
+    }
+
+    @Nullable
+    @Override
+    public UUID getThrower() {
+        return item.getThrower();
+    }
+
+    @Override
+    public void setThrower(@Nullable UUID thrower) {
+        item.setThrower(thrower);
     }
     // Paper End
 
