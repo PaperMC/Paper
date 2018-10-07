@@ -1,4 +1,4 @@
-From 06f6a8d9e4e27632a3122849abe57ff0e5966e7c Mon Sep 17 00:00:00 2001
+From 23a899902be4cf2fe569776330edac2e5dd52740 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
@@ -17,22 +17,33 @@ index 42c1c47c58..3606c78843 100644
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
              bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index ee2cdb897c..a341f5de9a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -115,6 +115,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     public boolean pvpMode;
+     public boolean keepSpawnInMemory = true;
+     public ChunkGenerator generator;
++    public static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
+ 
+     public boolean captureBlockStates = false;
+     public boolean captureTreeGeneration = false;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 27278078e4..f6becaae43 100644
+index 27278078e4..7eab55e7c1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -55,6 +55,10 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -55,6 +55,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
  
      // CraftBukkit start
      public final DimensionManager dimension;
-+    private static final boolean DEBUG_ENTITIES = Boolean.getBoolean("debug.entities"); // Paper
 +    private static Throwable getAddToWorldStackTrace(Entity entity) {
 +        return new Throwable(entity + " Added to world at " + new java.util.Date());
 +    }
  
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, PersistentCollection persistentcollection, WorldData worlddata, DimensionManager dimensionmanager, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-@@ -974,7 +978,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -974,7 +977,12 @@ public class WorldServer extends World implements IAsyncTaskHandler {
  
      private boolean j(Entity entity) {
          if (entity.dead) {
@@ -46,14 +57,16 @@ index 27278078e4..f6becaae43 100644
              return false;
          } else {
              UUID uuid = entity.getUniqueID();
-@@ -986,8 +995,14 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -986,8 +994,15 @@ public class WorldServer extends World implements IAsyncTaskHandler {
                      this.g.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
 -                        WorldServer.a.error("Keeping entity {} that already exists with UUID {} - " + entity1, EntityTypes.getName(entity1.P()), uuid.toString()); // CraftBukkit // Paper
-+                        WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
-                         WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
+-                        WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
 +                        if (DEBUG_ENTITIES) {
++                            WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
++                            WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
++
 +                            if (entity1.addedToWorldStack != null) {
 +                                entity1.addedToWorldStack.printStackTrace();
 +                            }

@@ -1,4 +1,4 @@
-From 24e97f8ee3dbd0f98ede75c2621e80107ecfe129 Mon Sep 17 00:00:00 2001
+From 9bfc6b4bd66887fbc5b2641994f87db64f1ed69a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 3 Aug 2018 22:47:46 -0400
 Subject: [PATCH] Entity add to world fixes
@@ -14,7 +14,7 @@ Fix this by differing entity add to world for all entities at the same time
 the original entity is dead, overwrite it as the logic does for unloaod queued entities.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index d5937e4378..dfc3047a84 100644
+index 0f79ad9588..a5f939f557 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -910,6 +910,7 @@ public class Chunk implements IChunkAccess {
@@ -25,7 +25,7 @@ index d5937e4378..dfc3047a84 100644
  
          for (int j = 0; j < i; ++j) {
              List entityslice = aentityslice[j]; // Spigot
-@@ -957,12 +958,11 @@ public class Chunk implements IChunkAccess {
+@@ -956,12 +957,11 @@ public class Chunk implements IChunkAccess {
                      thisChunk.put(entity.uniqueID, entity);
                  }
              }
@@ -37,15 +37,15 @@ index d5937e4378..dfc3047a84 100644
 +            toAdd.addAll(entityslice);
 +            // Paper end
          }
-+        this.world.addChunkEntities(toAdd.stream().filter((entity) -> !(entity instanceof EntityHuman))); // Paper - add all at same time to avoid entities adding to world modifying slice state
++        this.world.addChunkEntities(toAdd.stream().filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
  
          // CraftBukkit start
          org.bukkit.Server server = this.world.getServer();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index aa94e399af..85570e4a5d 100644
+index 4cc7f7af0d..2474b96382 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1102,6 +1102,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1103,6 +1103,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              }
  
              this.getChunkAt(i, j).a(entity);
@@ -53,7 +53,7 @@ index aa94e399af..85570e4a5d 100644
              this.entityList.add(entity);
              this.b(entity);
              return true;
-@@ -2507,9 +2508,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2508,9 +2509,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          return j;
      }
  
@@ -68,10 +68,10 @@ index aa94e399af..85570e4a5d 100644
              this.b(entity);
          });
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f7078ded5c..9cba1822bf 100644
+index 0e63a0b5cd..72c661ef2d 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -991,7 +991,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -990,7 +990,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              if (this.entitiesByUUID.containsKey(uuid)) {
                  Entity entity1 = (Entity) this.entitiesByUUID.get(uuid);
  

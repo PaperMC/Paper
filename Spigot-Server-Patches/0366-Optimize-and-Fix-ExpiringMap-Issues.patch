@@ -1,4 +1,4 @@
-From 4771b93f2593ee779005428247ca5f36869b20b1 Mon Sep 17 00:00:00 2001
+From 59333e20259c27501e5d9fef6bba91a0ee8ecfdd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 16 Sep 2018 00:00:16 -0400
 Subject: [PATCH] Optimize and Fix ExpiringMap Issues
@@ -14,10 +14,10 @@ manipulation, and instead to run clean
 once per tick per active expiring map.
 
 diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
-index 4006f5a69c..127de5c8df 100644
+index 4006f5a69c..795e735420 100644
 --- a/src/main/java/net/minecraft/server/ExpiringMap.java
 +++ b/src/main/java/net/minecraft/server/ExpiringMap.java
-@@ -2,38 +2,163 @@ package net.minecraft.server;
+@@ -2,38 +2,165 @@ package net.minecraft.server;
  
  import it.unimi.dsi.fastutil.longs.Long2LongLinkedOpenHashMap;
  import it.unimi.dsi.fastutil.longs.Long2LongMap;
@@ -35,6 +35,7 @@ index 4006f5a69c..127de5c8df 100644
      private final int a;
 -    private final Long2LongMap b = new Long2LongLinkedOpenHashMap();
 +    private final Long2LongMap ttl = new Long2LongLinkedOpenHashMap(); // Paper
++    private static final boolean DEBUG_EXPIRING_MAP = Boolean.getBoolean("debug.expiringmap");
  
      public ExpiringMap(int i, int j) {
 -        super(i);
@@ -149,7 +150,6 @@ index 4006f5a69c..127de5c8df 100644
 +    }
  
 +    private boolean registered = false;
-+    private boolean hasLeaked = false;
 +
 +    // Break clean to its own method to be ticked
 +    boolean clean() {
@@ -172,20 +172,22 @@ index 4006f5a69c..127de5c8df 100644
 +            int ttlSize = this.ttl.size();
 +            int thisSize = this.size();
 +            if (ttlSize < thisSize) {
-+                if (!hasLeaked) { // log once
-+                    hasLeaked = true;
-+                    MinecraftServer.LOGGER.warn("WARNING: ExpiringMap desync (" + ttlSize + ":" + thisSize + ")- Memory leak risk! We will recover from this, but this means there is still a bug. Please do not open an issue about this. Mention it in Discord (we don't need everyone reporting the same thing)");
++                if (DEBUG_EXPIRING_MAP) {
++                    MinecraftServer.LOGGER.warn("WARNING: ExpiringMap desync (ttl:" + ttlSize + " < actual:" + thisSize + ")");
 +                }
 +                try {
 +                    for (Entry<T> entry : this.long2ObjectEntrySet()) {
 +                        ttl.putIfAbsent(entry.getLongKey(), now);
 +                    }
-+                } catch (Exception e) {
++                } catch (Exception ignored) {
 +                } // Ignore any como's
 +            } else if (ttlSize > this.size()) {
++                if (DEBUG_EXPIRING_MAP) {
++                    MinecraftServer.LOGGER.warn("WARNING: ExpiringMap desync (ttl:" + ttlSize + " > actual:" + thisSize + ")");
++                }
 +                try {
 +                    this.ttl.long2LongEntrySet().removeIf(entry -> !this.containsKey(entry.getLongKey()));
-+                } catch (Exception e) {
++                } catch (Exception ignored) {
 +                } // Ignore any como's
 +            }
 +            if (isEmpty()) {
@@ -198,7 +200,7 @@ index 4006f5a69c..127de5c8df 100644
      }
  
      protected boolean a(T var1) {
-@@ -51,8 +176,13 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+@@ -51,8 +178,13 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
      }
  
      public T get(long i) {
