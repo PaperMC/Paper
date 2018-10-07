@@ -73,4 +73,21 @@ public interface Vex extends Monster {
      * @return true if the entity has limited life
      */
     boolean hasLimitedLife();
+    // Paper start
+
+    /**
+     * Get the Mob that summoned this vex
+     *
+     * @return Mob that summoned this vex
+     */
+    @Nullable
+    Mob getSummoner();
+
+    /**
+     * Set the summoner of this vex
+     *
+     * @param summoner New summoner
+     */
+    void setSummoner(@Nullable Mob summoner);
+    // Paper end
 }
