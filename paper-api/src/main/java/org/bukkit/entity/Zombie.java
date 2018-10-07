@@ -107,4 +107,60 @@ public interface Zombie extends Monster, Ageable {
      * @param flag Whether this zombie can break doors
      */
     void setCanBreakDoors(boolean flag);
+
+    // Paper start
+    /**
+     * Check if zombie is drowning
+     *
+     * @return True if zombie conversion process has begun
+     */
+    boolean isDrowning();
+
+    /**
+     * Make zombie start drowning
+     *
+     * @param drownedConversionTime Amount of time until zombie converts from drowning
+     *
+     * @deprecated See {@link #setConversionTime(int)}
+     */
+    @Deprecated
+    void startDrowning(int drownedConversionTime);
+
+    /**
+     * Stop a zombie from starting the drowning conversion process
+     */
+    void stopDrowning();
+
+    /**
+     * Set if zombie has its arms raised
+     *
+     * @param raised True to raise arms
+     * @deprecated use {{@link #setAggressive(boolean)}}
+     */
+    @Deprecated
+    void setArmsRaised(boolean raised);
+
+    /**
+     * Check if zombie has arms raised
+     *
+     * @return True if arms are raised
+     * @deprecated use {@link #isAggressive()}
+     */
+    @Deprecated
+    boolean isArmsRaised();
+
+    /**
+     * Check if this zombie will burn in the sunlight
+     *
+     * @return True if zombie will burn in sunlight
+     */
+    boolean shouldBurnInDay();
+
+    /**
+     * Set if this zombie should burn in the sunlight
+     *
+     * @param shouldBurnInDay True to burn in sunlight
+     */
+    void setShouldBurnInDay(boolean shouldBurnInDay);
+    // Paper end
 }
