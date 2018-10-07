@@ -53,15 +53,16 @@
      private static final ResourceLocation REINFORCEMENT_CALLER_CHARGE_ID = ResourceLocation.withDefaultNamespace("reinforcement_caller_charge");
      private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(ResourceLocation.withDefaultNamespace("reinforcement_callee_charge"), -0.05000000074505806D, AttributeModifier.Operation.ADD_VALUE);
      private static final ResourceLocation LEADER_ZOMBIE_BONUS_ID = ResourceLocation.withDefaultNamespace("leader_zombie_bonus");
-@@ -91,6 +98,7 @@
+@@ -91,6 +98,8 @@
      private boolean canBreakDoors;
      private int inWaterTime;
      public int conversionTime;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
      public Zombie(EntityType<? extends Zombie> type, Level world) {
          super(type, world);
-@@ -115,7 +123,7 @@
+@@ -115,7 +124,7 @@
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
          this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers(ZombifiedPiglin.class));
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -70,7 +71,7 @@
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
-@@ -178,9 +186,9 @@
+@@ -178,9 +187,9 @@
          if (this.level() != null && !this.level().isClientSide) {
              AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
  
@@ -82,7 +83,7 @@
              }
          }
  
-@@ -203,7 +211,10 @@
+@@ -203,7 +212,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
@@ -94,7 +95,7 @@
                  if (this.conversionTime < 0) {
                      this.doUnderWaterConversion();
                  }
-@@ -220,6 +231,7 @@
+@@ -220,6 +232,7 @@
          }
  
          super.tick();
@@ -102,15 +103,22 @@
      }
  
      @Override
-@@ -254,6 +266,7 @@
+@@ -253,7 +266,14 @@
+         super.aiStep();
      }
  
++    // Paper start - Add more Zombie API
++    public void stopDrowning() {
++        this.conversionTime = -1;
++        this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, false);
++    }
++    // Paper end - Add more Zombie API
      public void startUnderWaterConversion(int ticksUntilWaterConversion) {
 +        this.lastTick = MinecraftServer.currentTick; // CraftBukkit
          this.conversionTime = ticksUntilWaterConversion;
          this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -267,26 +280,39 @@
+@@ -267,31 +287,50 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
@@ -136,12 +144,10 @@
 -            entityzombievillager1.setVillagerXp(villager.getVillagerXp());
 -            if (!this.isSilent()) {
 -                world.levelEvent((Player) null, 1026, this.blockPosition(), 0);
--            }
 +        // CraftBukkit start
 +        return Zombie.convertVillagerToZombieVillager(world, villager, this.blockPosition(), this.isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.INFECTION) != null;
 +    }
- 
--        });
++
 +    public static ZombieVillager convertVillagerToZombieVillager(ServerLevel worldserver, Villager entityvillager, net.minecraft.core.BlockPos blockPosition, boolean silent, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
 +        ZombieVillager entityzombievillager = (ZombieVillager) entityvillager.convertTo(EntityType.ZOMBIE_VILLAGER, ConversionParams.single(entityvillager, true, true), (entityzombievillager1) -> {
@@ -153,17 +159,30 @@
 +            // CraftBukkit start
 +            if (!silent) {
 +                worldserver.levelEvent((Player) null, 1026, blockPosition, 0);
-+            }
+             }
+ 
+-        });
++        }, transformReason, spawnReason);
  
 -        return entityzombievillager != null;
-+        }, transformReason, spawnReason);
-+
 +        return entityzombievillager;
 +        // CraftBukkit end
      }
  
      public boolean isSunSensitive() {
-@@ -323,10 +349,10 @@
+-        return true;
++        return this.shouldBurnInDay; // Paper - Add more Zombie API
++    }
++
++    // Paper start - Add more Zombie API
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
+     }
++    // Paper end - Add more Zombie API
+ 
+     @Override
+     public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
+@@ -323,10 +362,10 @@
  
                      if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
@@ -177,7 +196,7 @@
                              AttributeInstance attributemodifiable = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
                              AttributeModifier attributemodifier = attributemodifiable.getModifier(Zombie.REINFORCEMENT_CALLER_CHARGE_ID);
                              double d0 = attributemodifier != null ? attributemodifier.amount() : 0.0D;
-@@ -352,7 +378,14 @@
+@@ -352,7 +391,14 @@
              float f = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
@@ -193,7 +212,7 @@
              }
          }
  
-@@ -385,7 +418,7 @@
+@@ -385,7 +431,7 @@
  
      @Override
      public EntityType<? extends Zombie> getType() {
@@ -202,7 +221,28 @@
      }
  
      protected boolean canSpawnInLiquids() {
-@@ -496,7 +529,7 @@
+@@ -414,6 +460,7 @@
+         nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
+         nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
+         nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
++        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API
+     }
+ 
+     @Override
+@@ -424,7 +471,12 @@
+         this.inWaterTime = nbt.getInt("InWaterTime");
+         if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
+             this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
++        }
++        // Paper start - Add more Zombie API
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
+         }
++        // Paper end - Add more Zombie API
+ 
+     }
+ 
+@@ -496,7 +548,7 @@
                              entitychicken1.finalizeSpawn(world, difficulty, EntitySpawnReason.JOCKEY, (SpawnGroupData) null);
                              entitychicken1.setChickenJockey(true);
                              this.startRiding(entitychicken1);

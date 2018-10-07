@@ -87,6 +87,42 @@ public class CraftZombie extends CraftMonster implements Zombie {
     @Override
     public void setAgeLock(boolean b) {
     }
+    // Paper start
+    @Override
+    public boolean isDrowning() {
+        return getHandle().isUnderWaterConverting();
+    }
+
+    @Override
+    public void startDrowning(int drownedConversionTime) {
+        getHandle().startUnderWaterConversion(drownedConversionTime);
+    }
+
+    @Override
+    public void stopDrowning() {
+        getHandle().stopDrowning();
+    }
+
+    @Override
+    public boolean shouldBurnInDay() {
+        return getHandle().isSunSensitive();
+    }
+
+    @Override
+    public boolean isArmsRaised() {
+        return getHandle().isAggressive();
+    }
+
+    @Override
+    public void setArmsRaised(final boolean raised) {
+        getHandle().setAggressive(raised);
+    }
+
+    @Override
+    public void setShouldBurnInDay(boolean shouldBurnInDay) {
+        getHandle().setShouldBurnInDay(shouldBurnInDay);
+    }
+    // Paper end
 
     @Override
     public boolean getAgeLock() {
