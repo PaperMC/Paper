@@ -1529,6 +1529,7 @@ public abstract class EntityInsentient extends EntityLiving {
 
     }
 
+    public boolean isInDaylight() { return this.eG(); } // Paper - OBFHELPER
     protected boolean eG() {
         if (this.world.isDay() && !this.world.isClientSide) {
             float f = this.aQ();
