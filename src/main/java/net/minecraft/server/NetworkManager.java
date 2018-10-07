@@ -340,6 +340,26 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                     this.j().a(new ChatMessage("multiplayer.disconnect.generic"));
                 }
                 this.packetQueue.clear(); // Free up packet queue.
+                // Paper start - Add PlayerConnectionCloseEvent
+                final PacketListener packetListener = this.j();
+                if (packetListener instanceof PlayerConnection) {
+                    /* Player was logged in */
+                    final PlayerConnection playerConnection = (PlayerConnection) packetListener;
+                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(playerConnection.player.uniqueID,
+                        playerConnection.player.getName(), ((java.net.InetSocketAddress)socketAddress).getAddress(), false).callEvent();
+                } else if (packetListener instanceof LoginListener) {
+                    /* Player is login stage */
+                    final LoginListener loginListener = (LoginListener) packetListener;
+                    switch (loginListener.getLoginState()) {
+                        case READY_TO_ACCEPT:
+                        case DELAY_ACCEPT:
+                        case ACCEPTED:
+                            final com.mojang.authlib.GameProfile profile = loginListener.getGameProfile(); /* Should be non-null at this stage */
+                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
+                                ((java.net.InetSocketAddress)socketAddress).getAddress(), false).callEvent();
+                    }
+                }
+                // Paper end
             }
 
         }
