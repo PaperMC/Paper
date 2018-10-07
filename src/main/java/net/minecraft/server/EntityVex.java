@@ -130,6 +130,7 @@ public class EntityVex extends EntityMonster {
         this.a(1, flag);
     }
 
+    public void setOwner(EntityInsentient entityinsentient) { a(entityinsentient); } // Paper - OBFHELPER
     public void a(EntityInsentient entityinsentient) {
         this.c = entityinsentient;
     }
