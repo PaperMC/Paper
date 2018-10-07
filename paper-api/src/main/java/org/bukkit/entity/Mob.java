@@ -20,6 +20,13 @@ public interface Mob extends LivingEntity, Lootable {
      */
     @NotNull
     com.destroystokyo.paper.entity.Pathfinder getPathfinder();
+
+    /**
+     * Check if this mob is exposed to daylight
+     *
+     * @return True if mob is exposed to daylight
+     */
+    boolean isInDaylight();
     // Paper end
     /**
      * Instructs this Mob to set the specified LivingEntity as its target.
