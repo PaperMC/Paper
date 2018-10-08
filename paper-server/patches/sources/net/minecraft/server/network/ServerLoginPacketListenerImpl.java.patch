@@ -56,7 +56,7 @@
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      final MinecraftServer server;
-@@ -57,9 +86,11 @@
+@@ -57,9 +86,12 @@
      @Nullable
      String requestedUsername;
      @Nullable
@@ -66,10 +66,11 @@
      private final boolean transferred;
 +    private ServerPlayer player; // CraftBukkit
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
++    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -72,10 +103,24 @@
+@@ -72,10 +104,24 @@
  
      @Override
      public void tick() {
@@ -94,7 +95,7 @@
          if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
-@@ -86,6 +131,13 @@
+@@ -86,6 +132,13 @@
  
      }
  
@@ -108,7 +109,7 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -120,7 +172,13 @@
+@@ -120,7 +173,13 @@
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
@@ -123,11 +124,21 @@
          this.requestedUsername = packet.name();
          GameProfile gameprofile = this.server.getSingleplayerProfile();
  
-@@ -131,7 +189,26 @@
+@@ -131,7 +190,36 @@
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
 -                this.startClientVerification(UUIDUtil.createOfflineProfile(this.requestedUsername));
++                // Paper start - Add Velocity IP Forwarding Support
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
++                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
++                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket.PlayerInfoChannelPayload(com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf));
++                    this.connection.send(packet1);
++                    return;
++                }
++                // Paper end - Add Velocity IP Forwarding Support
 +                // CraftBukkit start
 +                // Paper start - Cache authenticator threads
 +                authenticatorPool.execute(new Runnable() {
@@ -151,7 +162,7 @@
              }
  
          }
-@@ -144,10 +221,24 @@
+@@ -144,10 +232,24 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile profile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -179,7 +190,7 @@
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -155,12 +246,12 @@
+@@ -155,12 +257,12 @@
                  }));
              }
  
@@ -194,7 +205,7 @@
              }
          }
  
-@@ -195,7 +286,8 @@
+@@ -195,7 +297,8 @@
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -204,7 +215,7 @@
              public void run() {
                  String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
-@@ -205,11 +297,17 @@
+@@ -205,11 +308,17 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -223,7 +234,7 @@
                      } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", s1);
-@@ -217,11 +315,16 @@
+@@ -217,11 +326,16 @@
                  } catch (AuthenticationUnavailableException authenticationunavailableexception) {
                      if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
@@ -242,7 +253,7 @@
                  }
  
              }
-@@ -232,11 +335,54 @@
+@@ -232,23 +346,118 @@
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
@@ -255,6 +266,12 @@
 -        thread.start();
 +    // CraftBukkit start
 +    private GameProfile callPlayerPreLoginEvents(GameProfile gameprofile) throws Exception { // Paper - Add more fields to AsyncPlayerPreLoginEvent
++        // Paper start - Add Velocity IP Forwarding Support
++        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++            disconnect("This server requires you to connect with Velocity.");
++            return gameprofile;
++        }
++        // Paper end - Add Velocity IP Forwarding Support
 +        String playerName = gameprofile.getName();
 +        java.net.InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
 +        java.util.UUID uniqueId = gameprofile.getId();
@@ -300,7 +317,53 @@
  
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
-@@ -245,10 +391,11 @@
++        // Paper start - Add Velocity IP Forwarding Support
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.transactionId() == this.velocityLoginMessageId) {
++            ServerboundCustomQueryAnswerPacket.QueryAnswerPayload payload = (ServerboundCustomQueryAnswerPacket.QueryAnswerPayload)packet.payload();
++            if (payload == null) {
++                this.disconnect("This server requires you to connect with Velocity.");
++                return;
++            }
++
++            net.minecraft.network.FriendlyByteBuf buf = payload.buffer;
++
++            if (!com.destroystokyo.paper.proxy.VelocityProxy.checkIntegrity(buf)) {
++                this.disconnect("Unable to verify player details");
++                return;
++            }
++
++            int version = buf.readVarInt();
++            if (version > com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
++                throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted upto " + com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++            }
++
++            java.net.SocketAddress listening = this.connection.getRemoteAddress();
++            int port = 0;
++            if (listening instanceof java.net.InetSocketAddress) {
++                port = ((java.net.InetSocketAddress) listening).getPort();
++            }
++            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
++
++            this.authenticatedProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
++
++            //TODO Update handling for lazy sessions, might not even have to do anything?
++
++            // Proceed with login
++            authenticatorPool.execute(() -> {
++                try {
++                    final GameProfile gameprofile = this.callPlayerPreLoginEvents(this.authenticatedProfile);
++                    ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
++                    ServerLoginPacketListenerImpl.this.startClientVerification(gameprofile);
++                } catch (Exception ex) {
++                    disconnect("Failed to verify username!");
++                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + this.authenticatedProfile.getName(), ex);
++                }
++            });
++            return;
++        }
++        // Paper end - Add Velocity IP Forwarding Support
+         this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
+     }
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
@@ -313,7 +376,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +411,44 @@
+@@ -264,12 +473,44 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {

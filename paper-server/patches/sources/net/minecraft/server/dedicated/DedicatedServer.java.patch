@@ -232,7 +232,7 @@
          } catch (IOException ioexception) {
              DedicatedServer.LOGGER.warn("**** FAILED TO BIND TO PORT!");
              DedicatedServer.LOGGER.warn("The exception was: {}", ioexception.toString());
-@@ -156,21 +282,31 @@
+@@ -156,21 +282,38 @@
              return false;
          }
  
@@ -242,14 +242,21 @@
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
 +        // CraftBukkit end
 +
++        // Paper start - Add Velocity IP Forwarding Support
++        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
++        String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
++        String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
++        // Paper end - Add Velocity IP Forwarding Support
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
 -            DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
 +            // Spigot start
-+            if (org.spigotmc.SpigotConfig.bungee) {
-+                DedicatedServer.LOGGER.warn("Whilst this makes it possible to use BungeeCord, unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.");
-+                DedicatedServer.LOGGER.warn("Please see http://www.spigotmc.org/wiki/firewall-guide/ for further information.");
++            // Paper start - Add Velocity IP Forwarding Support
++            if (usingProxy) {
++                DedicatedServer.LOGGER.warn("Whilst this makes it possible to use " + proxyFlavor + ", unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.");
++                DedicatedServer.LOGGER.warn("Please see " + proxyLink + " for further information.");
++            // Paper end - Add Velocity IP Forwarding Support
 +            } else {
 +                DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
 +            }
@@ -269,7 +276,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +314,13 @@
+@@ -178,13 +321,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -285,7 +292,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -197,7 +333,7 @@
+@@ -197,7 +340,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -294,7 +301,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
  
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(DedicatedServer.LOGGER));
-@@ -215,6 +351,12 @@
+@@ -215,6 +358,12 @@
          }
      }
  
@@ -307,7 +314,7 @@
      @Override
      public boolean isSpawningMonsters() {
          return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
-@@ -227,7 +369,7 @@
+@@ -227,7 +376,7 @@
  
      @Override
      public void forceDifficulty() {
@@ -316,7 +323,7 @@
      }
  
      @Override
-@@ -286,13 +428,14 @@
+@@ -286,13 +435,14 @@
          }
  
          if (this.rconThread != null) {
@@ -333,7 +340,7 @@
      }
  
      @Override
-@@ -302,19 +445,29 @@
+@@ -302,19 +452,29 @@
      }
  
      @Override
@@ -369,7 +376,7 @@
          }
  
      }
-@@ -383,7 +536,7 @@
+@@ -383,7 +543,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -378,7 +385,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -453,7 +606,11 @@
+@@ -453,7 +613,11 @@
      public boolean enforceSecureProfile() {
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
  
@@ -391,7 +398,7 @@
      }
  
      @Override
-@@ -541,16 +698,52 @@
+@@ -541,16 +705,52 @@
  
      @Override
      public String getPluginNames() {
@@ -448,7 +455,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +853,15 @@
+@@ -660,4 +860,15 @@
              }
          }
      }
