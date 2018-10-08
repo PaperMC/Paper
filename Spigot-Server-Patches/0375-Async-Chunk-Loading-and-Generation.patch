@@ -1,4 +1,4 @@
-From a10d0f7e8c1c88b4cd66e8e6bddca04e69369ec1 Mon Sep 17 00:00:00 2001
+From be56cc5d2ee5ab579c019b798637538ff0544d52 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -599,10 +599,10 @@ index bdfc7d81ff..a5c4564d60 100644
      public IBlockData getType(int i, int j, int k) {
          return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 34019bd1b3..d7b9ca3ee7 100644
+index 34019bd1b3..fc9091c801 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-@@ -20,7 +20,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+@@ -20,13 +20,14 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
      private final ChunkGenerator<?> d;
      private final IChunkLoader e;
      private final IAsyncTaskHandler f;
@@ -611,15 +611,64 @@ index 34019bd1b3..d7b9ca3ee7 100644
          protected boolean a(Scheduler.a scheduler_a) {
              ProtoChunk protochunk = (ProtoChunk) scheduler_a.a();
  
-@@ -50,7 +50,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+             return !protochunk.ab_() /*&& !protochunk.h()*/; // Paper
+         }
+     };
++    private final Long2ObjectMap<java.util.concurrent.CompletableFuture<Scheduler.a>> pendingSchedulers = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(); // Paper
+ 
+     public ChunkTaskScheduler(int i, World world, ChunkGenerator<?> chunkgenerator, IChunkLoader ichunkloader, IAsyncTaskHandler iasynctaskhandler) {
+         super("WorldGen", i, ChunkStatus.FINALIZED, () -> {
+@@ -50,8 +51,28 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
      protected Scheduler.a a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
          IChunkLoader ichunkloader = this.e;
  
 -        synchronized (this.e) {
-+        synchronized (progressCache) { // Paper - synchronize on progress cache instead
-             return flag ? (Scheduler.a) this.progressCache.computeIfAbsent(chunkcoordintpair.a(), (i) -> {
+-            return flag ? (Scheduler.a) this.progressCache.computeIfAbsent(chunkcoordintpair.a(), (i) -> {
++        // Paper start - refactor a lot of this - avoid generating a chunk while holding lock on expiring map
++        java.util.concurrent.CompletableFuture<Scheduler.a> pending = null;
++        boolean created = false;
++        long key = chunkcoordintpair.a();
++        synchronized (pendingSchedulers) {
++            Scheduler.a existing = this.progressCache.get(key);
++            if (existing != null) {
++                return existing;
++            }
++            pending = this.pendingSchedulers.get(key);
++            if (pending == null) {
++                if (!flag) {
++                    return null;
++                }
++                created = true;
++                pending = new java.util.concurrent.CompletableFuture<>();
++                pendingSchedulers.put(key, pending);
++            }
++        }
++        if (created) {
++            java.util.function.Function<Long, Scheduler.a> get = (i) -> {
++                // Paper end
                  ProtoChunk protochunk;
  
+                 try {
+@@ -70,8 +91,18 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
+                 } else {
+                     return new Scheduler.a(chunkcoordintpair, new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.getWorld()), ChunkStatus.EMPTY); // Paper - Anti-Xray
+                 }
+-            }) : (Scheduler.a) this.progressCache.get(chunkcoordintpair.a());
++                // Paper start
++            };
++            Scheduler.a scheduler = get.apply(key);
++            progressCache.put(key, scheduler);
++            pending.complete(scheduler);
++            synchronized (pendingSchedulers) {
++                pendingSchedulers.remove(key);
++            }
++            return scheduler;
+         }
++        return pending.join();
++        // Paper end
+     }
+ 
+     protected ProtoChunk a(ChunkCoordIntPair chunkcoordintpair, ChunkStatus chunkstatus, Map<ChunkCoordIntPair, ProtoChunk> map) {
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 index 71a3636be6..ff0fe25417 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
