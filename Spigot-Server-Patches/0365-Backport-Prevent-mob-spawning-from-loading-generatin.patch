@@ -1,0 +1,33 @@
+From 58a667675d7fc52cb8a5502f3c75ec519df7b950 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 8 Oct 2018 17:51:52 +0100
+Subject: [PATCH] Backport: Prevent mob spawning from loading/generating chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 11e69a0547..c1d0ff1376 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -158,9 +158,9 @@ public final class SpawnerCreature {
+                             int i2 = blockposition1.getX();
+                             int j2 = blockposition1.getY();
+                             int k2 = blockposition1.getZ();
+-                            IBlockData iblockdata = worldserver.getType(blockposition1);
++                            IBlockData iblockdata = worldserver.getWorldBorder().isInBounds(blockposition1) ? worldserver.getType(blockposition1) : null; // Paper
+ 
+-                            if (!iblockdata.l()) {
++                            if (iblockdata != null && !iblockdata.l()) { // Paper
+                                 int l2 = 0;
+                                 int i3 = 0;
+ 
+@@ -184,6 +184,7 @@ public final class SpawnerCreature {
+                                                 float f = (float) j3 + 0.5F;
+                                                 float f1 = (float) l3 + 0.5F;
+ 
++                                                if (!worldserver.isChunkLoaded(j3, l3, true) || !worldserver.getWorldBorder().isInBounds(blockposition_mutableblockposition)) continue; // paper - Prevent mob spawning from loading/generating chunks
+                                                 if (!worldserver.isPlayerNearby((double) f, (double) k3, (double) f1, 24.0D) && blockposition.distanceSquared((double) f, (double) k3, (double) f1) >= 576.0D) {
+                                                     if (biomebase_biomemeta == null) {
+                                                         biomebase_biomemeta = worldserver.a(enumcreaturetype, (BlockPosition) blockposition_mutableblockposition);
+-- 
+2.19.1
+
