@@ -1,0 +1,67 @@
+From 47714f32a19249b6a14932b999938ac838beb9a8 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 22 Jun 2018 10:38:31 -0500
+Subject: [PATCH] Add config to disable ender dragon legacy check
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bd4cca26c7..85296e48db 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -433,4 +433,9 @@ public class PaperWorldConfig {
+     private void shieldBlockingDelay() {
+         shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
+     }
++
++    public boolean scanForLegacyEnderDragon = true;
++    private void scanForLegacyEnderDragon() {
++        scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 96e920ead8..e083ea483a 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -27,16 +27,21 @@ public class EnderDragonBattle {
+     private int h;
+     private int i;
+     private int j;
++    private void setDragonKilled(boolean dragonKilled) { this.k = dragonKilled; } // Paper - OBFHELPER
+     private boolean k;
+     private boolean l;
+     private UUID m;
+-    private boolean n = true;
++    private boolean n = true; private void setScanForLegacyFight(boolean scanForLegacyFight) { this.n = scanForLegacyFight; } private boolean scanForLegacyFight() { return this.n; } // Paper - OBFHELPER
+     private BlockPosition o;
+     private EnumDragonRespawn p;
+     private int q;
+     private List<EntityEnderCrystal> r;
+ 
+     public EnderDragonBattle(WorldServer worldserver, NBTTagCompound nbttagcompound) {
++        // Paper start
++        setScanForLegacyFight(worldserver.paperConfig.scanForLegacyEnderDragon);
++        if (!scanForLegacyFight()) setDragonKilled(true);
++        // Paper end
+         this.d = worldserver;
+         if (nbttagcompound.hasKeyOfType("DragonKilled", 99)) {
+             if (nbttagcompound.b("DragonUUID")) {
+@@ -286,14 +291,14 @@ public class EnderDragonBattle {
+     }
+ 
+     private void k() {
+-        HashSet hashset = Sets.newHashSet();
++        HashSet<EntityPlayer> hashset = Sets.newHashSet(); // Paper - decompile fix
+ 
+         for(EntityPlayer entityplayer : this.d.b(EntityPlayer.class, b)) {
+             this.c.addPlayer(entityplayer);
+             hashset.add(entityplayer);
+         }
+ 
+-        HashSet hashset1 = Sets.newHashSet(this.c.getPlayers());
++        HashSet<EntityPlayer> hashset1 = Sets.newHashSet(this.c.getPlayers()); // Paper - decompile fix
+         hashset1.removeAll(hashset);
+ 
+         for(EntityPlayer entityplayer1 : hashset1) {
+-- 
+2.19.0
+

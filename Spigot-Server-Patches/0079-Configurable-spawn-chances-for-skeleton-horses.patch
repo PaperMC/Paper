@@ -1,0 +1,39 @@
+From 78959508ddb0744bf1e6faed38c6b79c0a07775b Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 22 Mar 2016 12:04:28 -0500
+Subject: [PATCH] Configurable spawn chances for skeleton horses
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 795545245a..0faef7cf28 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -220,4 +220,12 @@ public class PaperWorldConfig {
+         log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
+         log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
+     }
++
++    public double skeleHorseSpawnChance;
++    private void skeleHorseSpawnChance() {
++        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D);
++        if (skeleHorseSpawnChance < 0) {
++            skeleHorseSpawnChance = 0.01D; // Vanilla value
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 2341ce3f93..a7cc053dc8 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -497,7 +497,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+                     blockposition = this.a(new BlockPosition(j + (l & 15), 0, k + (l >> 8 & 15)));
+                     if (this.isRainingAt(blockposition)) {
+                         DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
+-                        boolean flag2 = this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * 0.01D;
++                        boolean flag2 = this.getGameRules().getBoolean("doMobSpawning") && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
+ 
+                         if (flag2) {
+                             EntityHorseSkeleton entityhorseskeleton = new EntityHorseSkeleton(this);
+-- 
+2.19.0
+

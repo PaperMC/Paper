@@ -1,0 +1,62 @@
+From a0af0ad881fb9d995344062b85a00144cef634db Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 19:55:45 -0400
+Subject: [PATCH] Option to disable BlockPhysicsEvent for Redstone
+
+Not sure of any reason a plugin would need to act on a Physics event
+for redstone. There is a BlockRedstoneEvent that plugins can also use
+for accessing redstone activity.
+
+Defaulting this to false will provide substantial performance improvement
+by saving millions of event calls on redstone heavy servers.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0faef7cf28..deb4ec2543 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -228,4 +228,9 @@ public class PaperWorldConfig {
+             skeleHorseSpawnChance = 0.01D; // Vanilla value
+         }
+     }
++
++    public boolean firePhysicsEventForRedstone = false;
++    private void firePhysicsEventForRedstone() {
++        firePhysicsEventForRedstone = getBoolean("fire-physics-event-for-redstone", firePhysicsEventForRedstone);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index cad60e4f8b..22f0673743 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -620,7 +620,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+             try {
+                 // CraftBukkit start
+                 CraftWorld world = ((WorldServer) this).getWorld();
+-                if (world != null) {
++                if (world != null && !((WorldServer)this).stopPhysicsEvent) { // Paper
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
+                     this.getServer().getPluginManager().callEvent(event);
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index a7cc053dc8..c5201697d5 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -37,6 +37,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
+ public class WorldServer extends World implements IAsyncTaskHandler {
+ 
+     private static final Logger a = LogManager.getLogger();
++    boolean stopPhysicsEvent = false; // Paper
+     private final MinecraftServer server;
+     public EntityTracker tracker;
+     private final PlayerChunkMap manager;
+@@ -676,6 +677,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         IBlockData iblockdata = this.getType(nextticklistentry.a);
+ 
+         if (iblockdata.getBlock() == nextticklistentry.a()) {
++            stopPhysicsEvent = !paperConfig.firePhysicsEventForRedstone && (iblockdata.getBlock() instanceof BlockDiodeAbstract || iblockdata.getBlock() instanceof BlockRedstoneTorch); // Paper
+             iblockdata.a((World) this, nextticklistentry.a, this.random);
+         }
+ 
+-- 
+2.19.0
+

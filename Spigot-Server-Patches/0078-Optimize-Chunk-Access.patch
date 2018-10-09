@@ -1,0 +1,90 @@
+From 14e26ad623fc54b7f4e0c647f40b9cdcca79a88f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 27 Aug 2015 01:15:02 -0400
+Subject: [PATCH] Optimize Chunk Access
+
+getting a loaded chunk is one of the most hottest pieces of code in the game.
+getChunkAt is called for the same chunk multiple times in a row, often from getType();
+
+Optimize this look up by using a Last Access cache.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index 4b8b77710b..df967ff07d 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -15,6 +15,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+ 
+     public Chunk a(long i, Chunk chunk) {
+         chunk.world.timings.syncChunkLoadPostTimer.startTiming(); // Paper
++        lastChunkByPos = chunk; // Paper
+         Chunk chunk1 = (Chunk) super.put(i, chunk);
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
+ 
+@@ -73,8 +74,22 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+             }
+         }
+ 
++        // Paper start
++        if (lastChunkByPos != null && i == lastChunkByPos.chunkKey) {
++            lastChunkByPos = null;
++        }
+         return chunk;
+     }
++    private Chunk lastChunkByPos = null;
++
++    @Override
++    public Chunk get(long l) {
++        if (lastChunkByPos != null && l == lastChunkByPos.chunkKey) {
++            return lastChunkByPos;
++        }
++        return lastChunkByPos = super.get(l);
++    }
++    // Paper end
+ 
+     public Chunk a(Object object) {
+         return this.a(((Long) object).longValue());
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index d16fc452e3..2d10f4aa37 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -78,15 +78,16 @@ public class ChunkProviderServer implements IChunkProvider {
+         Chunk chunk;
+ 
+         synchronized (this.chunkLoader) {
+-            if (this.lastChunk != null && this.lastChunk.getPos().x == i && this.lastChunk.getPos().z == j) {
++            // Paper start - remove vanilla lastChunk, we do it more accurately
++            /* if (this.lastChunk != null && this.lastChunk.locX == i && this.lastChunk.locZ == j) {
+                 return this.lastChunk;
+-            }
++            }*/ // Paper end
+ 
+             long k = ChunkCoordIntPair.a(i, j);
+ 
+             chunk = (Chunk) this.chunks.get(k);
+             if (chunk != null) {
+-                this.lastChunk = chunk;
++                //this.lastChunk = chunk; // Paper remove vanilla lastChunk
+                 return chunk;
+             }
+ 
+@@ -198,7 +199,7 @@ public class ChunkProviderServer implements IChunkProvider {
+             }
+ 
+             this.chunks.put(k, chunk);
+-            this.lastChunk = chunk;
++            //this.lastChunk = chunk; // Paper
+         }
+ 
+         this.asyncTaskHandler.postToMainThread(chunk::addEntities);
+@@ -343,7 +344,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                 this.saveChunk(chunk, true); // Spigot
+             }
+             this.chunks.remove(chunk.chunkKey);
+-            this.lastChunk = null;
++            // this.lastChunk = null; // Paper
+         }
+         return true;
+     }
+-- 
+2.19.0
+

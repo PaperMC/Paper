@@ -1,0 +1,48 @@
+From b6c35d12e0d314f517e7ae851c1dac7608bf1e34 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 5 Oct 2016 16:27:36 -0500
+Subject: [PATCH] Option to remove corrupt tile entities
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c43152f456..0d456bcbac 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -326,4 +326,9 @@ public class PaperWorldConfig {
+     private void maxAutoSaveChunksPerTick() {
+         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+     }
++
++    public boolean removeCorruptTEs = false;
++    private void removeCorruptTEs() {
++        removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index a79b0b59d7..91b80ca0bc 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -838,6 +838,12 @@ public class Chunk implements IChunkAccess {
+                             "Chunk coordinates: " + (this.locX * 16) + "," + (this.locZ * 16));
+             e.printStackTrace();
+             ServerInternalException.reportInternalException(e);
++
++            if (this.world.paperConfig.removeCorruptTEs) {
++                this.removeTileEntity(tileentity.getPosition());
++                this.markDirty();
++                org.bukkit.Bukkit.getLogger().info("Removing corrupt tile entity");
++            }
+             // Paper end
+             // CraftBukkit end
+         }
+@@ -847,6 +853,7 @@ public class Chunk implements IChunkAccess {
+         this.h.put(new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z")), nbttagcompound);
+     }
+ 
++    public void removeTileEntity(BlockPosition blockposition) { this.d(blockposition); } // Paper - OBFHELPER
+     public void d(BlockPosition blockposition) {
+         if (this.i) {
+             TileEntity tileentity = (TileEntity) this.tileEntities.remove(blockposition);
+-- 
+2.19.0
+
