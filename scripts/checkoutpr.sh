@@ -3,7 +3,8 @@ if [ -z "$1" ]; then
 	echo "$0 <prID>"
 	exit 1;
 fi
-data=$(curl -q https://api.github.com/repos/PaperMC/Paper/pulls/$1 2>/dev/null)
+repo=$(git remote get-url origin | sed -E 's/github.com(:|\/)//g')
+data=$(curl -q https://api.github.com/repos/$repo/pulls/$1 2>/dev/null)
 url=$(echo -e "$data" | grep --color=none ssh_url | head -n 1 |awk '{print $2}' | sed 's/"//g' | sed 's/,//g')
 ref=$(echo -e "$data" | grep --color=none '"head":' -A 3 | grep ref | head -n 1 |awk '{print $2}' | sed 's/"//g' | sed 's/,//g')
 prevbranch=$(\git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
