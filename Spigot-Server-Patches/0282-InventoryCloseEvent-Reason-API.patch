@@ -1,0 +1,197 @@
+From c166722f225ded601fa993cfaa6f1f03f405587a Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 3 Jul 2018 21:56:23 -0400
+Subject: [PATCH] InventoryCloseEvent Reason API
+
+Allows you to determine why an inventory was closed, enabling plugin developers
+to "confirm" things based on if it was player triggered close or not.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 91b80ca0bc..8b00bf26c9 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -930,7 +930,7 @@ public class Chunk implements IChunkAccess {
+                 {
+                     if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
+                     {
+-                       ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory();
++                       ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
+                     }
+                 }
+             }
+@@ -955,7 +955,7 @@ public class Chunk implements IChunkAccess {
+                     {
+                         if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
+                         {
+-                           ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory();
++                           ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
+                         }
+                     }
+                 }
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 5e13cb0640..c7dc6fe0ef 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -162,7 +162,7 @@ public abstract class EntityHuman extends EntityLiving {
+         this.dg();
+         super.tick();
+         if (!this.world.isClientSide && this.activeContainer != null && !this.activeContainer.canUse(this)) {
+-            this.closeInventory();
++            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
+             this.activeContainer = this.defaultContainer;
+         }
+ 
+@@ -364,6 +364,13 @@ public abstract class EntityHuman extends EntityLiving {
+         return this.getHealth() <= 0.0F || this.isSleeping();
+     }
+ 
++    // Paper start - unused code, but to keep signatures aligned
++    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        closeInventory();
++        this.activeContainer = this.defaultContainer;
++    }
++    // Paper end
++
+     public void closeInventory() {
+         this.activeContainer = this.defaultContainer;
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 3644fde3bb..68f5842cfe 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -346,7 +346,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         }
+         // Paper end
+         if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
+-            this.closeInventory();
++            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
+             this.activeContainer = this.defaultContainer;
+         }
+ 
+@@ -552,7 +552,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.inventory.clear();
+         }
+ 
+-        this.closeInventory();
++        this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper
+         this.setSpectatorTarget(this); // Remove spectated target
+         // CraftBukkit end
+ 
+@@ -864,7 +864,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).a(EnumChatFormat.RED), true);
+         } else {
+             if (this.activeContainer != this.defaultContainer) {
+-                this.closeInventory();
++                this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
+             }
+ 
+             if (iinventory instanceof ITileInventory) {
+@@ -930,7 +930,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         }
+         // CraftBukkit end
+         if (this.activeContainer != this.defaultContainer) {
+-            this.closeInventory();
++            this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
+         }
+ 
+         this.nextContainerCounter();
+@@ -995,7 +995,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     public void closeInventory() {
+-        CraftEventFactory.handleInventoryCloseEvent(this); // CraftBukkit
++        // Paper start
++        closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
++    }
++    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
++        // Paper end
+         this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
+         this.m();
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index da32ed7a01..9819bc0576 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2031,7 +2031,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.getWorldServer());
+ 
+         if (this.player.isFrozen()) return; // CraftBukkit
+-        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
++        CraftEventFactory.handleInventoryCloseEvent(this.player, org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLAYER); // CraftBukkit // Paper
+ 
+         this.player.m();
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 6bdeb2cc90..a9b468facd 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -423,7 +423,7 @@ public abstract class PlayerList {
+         entityplayer.a(StatisticList.LEAVE_GAME);
+ 
+         // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
+-        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer, org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
+ 
+         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
+         cserver.getPluginManager().callEvent(playerQuitEvent);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 32fcba1d1a..3c23d40b1d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -417,8 +417,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     }
+ 
+     public void closeInventory() {
+-        getHandle().closeInventory();
++        // Paper start
++        getHandle().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
+     }
++    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        getHandle().closeInventory(reason);
++    }
++    // Paper end
+ 
+     public boolean isBlocking() {
+         return getHandle().isBlocking();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 898371e5f4..912b2e6284 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -740,7 +740,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         // Close any foreign inventory
+         if (getHandle().activeContainer != getHandle().defaultContainer) {
+-            getHandle().closeInventory();
++            getHandle().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper
+         }
+ 
+         // Check if the fromWorld and toWorld are the same.
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 66b1293bf9..f04fb045eb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -930,8 +930,19 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start
++
++    /**
++     * Incase plugins hooked into this or Spigot adds a new inventory close event. Prefer to pass a reason
++     * @param human
++     */
++    @Deprecated
+     public static void handleInventoryCloseEvent(EntityHuman human) {
+-        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
++        handleInventoryCloseEvent(human, org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
++    }
++    public static void handleInventoryCloseEvent(EntityHuman human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView(), reason);
++        // Paper end
+         human.world.getServer().getPluginManager().callEvent(event);
+         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
+     }
+-- 
+2.19.0
+

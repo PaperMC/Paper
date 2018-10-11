@@ -1,0 +1,45 @@
+From 364f74a31e5d72d9a339f77282f85c27db8f59a8 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:24:46 -0500
+Subject: [PATCH] Provide E/TE/Chunk count stat methods
+
+Provides counts without the ineffeciency of using .getEntities().size()
+which creates copy of the collections.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 3536433d14..f83a28dfda 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -82,6 +82,29 @@ public class CraftWorld implements World {
+     private int chunkLoadCount = 0;
+     private int chunkGCTickCount;
+ 
++    // Paper start - Provide fast information methods
++    public int getEntityCount() {
++        return world.entityList.size();
++    }
++    public int getTileEntityCount() {
++        // We don't use the full world tile entity list, so we must iterate chunks
++        int size = 0;
++        for (net.minecraft.server.Chunk chunk : ((ChunkProviderServer) world.getChunkProvider()).chunks.values()) {
++            size += chunk.tileEntities.size();
++        }
++        return size;
++    }
++    public int getTickableTileEntityCount() {
++        return world.tileEntityListTick.size();
++    }
++    public int getChunkCount() {
++        return world.getChunkProviderServer().chunks.size();
++    }
++    public int getPlayerCount() {
++        return world.players.size();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(WorldServer world, ChunkGenerator gen, Environment env) {
+-- 
+2.19.0
+
