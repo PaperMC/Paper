@@ -597,4 +597,9 @@ public class CraftBlock implements Block {
     public void removeMetadata(String metadataKey, Plugin owningPlugin) {
         getCraftWorld().getBlockMetadata().removeMetadata(this, metadataKey, owningPlugin);
     }
+
+    @Override
+    public boolean isPassable() {
+        return this.getData0().h(world, position).b(); // PAIL getCollisionShape, isEmpty
+    }
 }
