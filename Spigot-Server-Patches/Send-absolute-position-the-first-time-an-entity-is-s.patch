@@ -5,7 +5,7 @@ Subject: [PATCH] Send absolute position the first time an entity is seen
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 0410f9cf3..6ae576a2e 100644
+index 5dbd493f41..a049b8d68e 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -0,0 +0,0 @@ public class EntityTrackerEntry {
@@ -18,6 +18,13 @@ index 0410f9cf3..6ae576a2e 100644
 +    // their first update (which is forced to have absolute coordinates), false afterward.
 +    public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<EntityPlayer, Boolean>();
 +    public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
++
++    /**
++     * Requested in https://github.com/PaperMC/Paper/issues/1537 to allow intercepting packets
++     */
++    public void sendPlayerPacket(EntityPlayer player, Packet packet) {
++        player.playerConnection.sendPacket(packet);
++    }
 +    // Paper end
  
      public EntityTrackerEntry(Entity entity, int i, int j, int k, boolean flag) {
@@ -56,9 +63,9 @@ index 0410f9cf3..6ae576a2e 100644
 +                                if (teleportPacket == null) {
 +                                    teleportPacket = new PacketPlayOutEntityTeleport(this.tracker);
 +                                }
-+                                viewer.getKey().playerConnection.sendPacket(teleportPacket);
++                                sendPlayerPacket(viewer.getKey(), teleportPacket);
 +                            } else {
-+                                viewer.getKey().playerConnection.sendPacket((Packet) object);
++                                sendPlayerPacket(viewer.getKey(), (Packet) object);
 +                            }
 +                        }
 +                    }
