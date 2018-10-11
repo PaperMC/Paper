@@ -1,4 +1,4 @@
-From f7cdbb488e556812e697024408c1ac7e9c57a18b Mon Sep 17 00:00:00 2001
+From 1248921187e1c418988fe86a9e28b2ae810a092f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -904,10 +904,10 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..2dfa59b204
+index 0000000000..4fc5fad09e
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,568 @@
+@@ -0,0 +1,593 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -965,6 +965,8 @@ index 0000000000..2dfa59b204
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 +    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
++    private final ThreadLocal<Boolean> isChunkThread = ThreadLocal.withInitial(() -> false);
++    private final ThreadLocal<Boolean> isChunkGenThread = ThreadLocal.withInitial(() -> false);
 +
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
@@ -1069,6 +1071,9 @@ index 0000000000..2dfa59b204
 +        // Listen for when result is ready
 +        final CompletableFuture<Chunk> future = new CompletableFuture<>();
 +        PendingChunkRequest request = pending.addListener(future, gen);
++        if (isChunkThread.get()) {
++            pending.loadTask.run();
++        }
 +
 +        if (isBlockingMain && pending.hasFinished) {
 +            processChunkLoads();
@@ -1248,6 +1253,11 @@ index 0000000000..2dfa59b204
 +            }
 +        }
 +
++        private Chunk generateChunkExecutor() {
++            isChunkThread.set(true);
++            isChunkGenThread.set(true);
++            return generateChunk();
++        }
 +        private Chunk generateChunk() {
 +            synchronized (this) {
 +                if (requests.get() <= 0) {
@@ -1405,8 +1415,16 @@ index 0000000000..2dfa59b204
 +            if (loadTask == null) {
 +                // Take care of a race condition in that a request could be cancelled after the synchronize
 +                // on pendingChunks, but before a listener is added, which would erase these pending tasks.
-+                genTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
-+                loadTask = EXECUTOR.submitTask(this, taskPriority);
++                if (shouldGenSync) {
++                    genTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
++                } else {
++                    genTask = generationExecutor.createPendingTask(this::generateChunkExecutor, taskPriority);
++                }
++                loadTask = EXECUTOR.createPendingTask(this, taskPriority);
++                if (!isChunkThread.get()) {
++                    // We will execute it outside of the synchronized context immediately after
++                    EXECUTOR.submitTask(loadTask);
++                }
 +            }
 +            return new PendingChunkRequest(this, gen);
 +        }
@@ -1414,6 +1432,7 @@ index 0000000000..2dfa59b204
 +
 +        @Override
 +        public void run() {
++            isChunkThread.set(true);
 +            try {
 +                if (!loadFinished(loadChunk(x, z))) {
 +                    return;
@@ -1435,7 +1454,13 @@ index 0000000000..2dfa59b204
 +                    mainThreadQueue.notify();
 +                }
 +            } else {
-+                generationExecutor.submitTask(genTask);
++                if (isChunkGenThread.get()) {
++                    // ideally we should never run into 1 chunk generating another chunk...
++                    // but if we do, let's apply same solution
++                    genTask.run();
++                } else {
++                    generationExecutor.submitTask(genTask);
++                }
 +            }
 +        }
 +
