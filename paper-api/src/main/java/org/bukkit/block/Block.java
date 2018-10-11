@@ -356,4 +356,17 @@ public interface Block extends Metadatable {
      */
     Collection<ItemStack> getDrops(ItemStack tool);
 
+    /**
+     * Checks if this block is passable.
+     * <p>
+     * A block is passable if it has no colliding parts that would prevent
+     * players from moving through it.
+     * <p>
+     * Examples: Tall grass, flowers, signs, etc. are passable, but open doors,
+     * fence gates, trap doors, etc. are not because they still have parts that
+     * can be collided with.
+     *
+     * @return <code>true</code> if passable
+     */
+    boolean isPassable();
 }
