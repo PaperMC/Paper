@@ -14,9 +14,9 @@ function cleanupPatches {
     for patch in *.patch; do
         echo "$patch"
         gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
-        diffs=$($gitcmd diff --staged "$patch" | grep -E "^(\+|\-)" | grep -Ev "(From [a-z0-9]{32,}|\-\-\- a|\+\+\+ b|.index)")
+        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(From [a-z0-9]{32,}|\-\-\- a|\+\+\+ b|^.index)")
 
-        testver=$(echo "$diffs" | tail -n 2 | grep -ve "^$" | tail -n 1 | grep "$gitver")
+        testver=$(echo "$diffs" | tail -n 2 | grep --color=none -ve "^$" | tail -n 1 | grep --color=none "$gitver")
         if [ "x$testver" != "x" ]; then
             diffs=$(echo "$diffs" | sed 'N;$!P;$!D;$d')
         fi
