@@ -1,4 +1,4 @@
-From 14f3b79eeeb01949a87e9f9aa252de8d471ca5c1 Mon Sep 17 00:00:00 2001
+From 56d73274d938d16968b54d62069ba376b53d818e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 00:49:20 -0400
 Subject: [PATCH] Detect and repair corrupt Region Files
@@ -11,31 +11,112 @@ I don't know why mojang only checks for 4096, when anything less than 8192 is a 
 But to be safe, it will attempt to back up the file.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 5d2853b9ce..c35974aa7c 100644
+index 5d2853b9ce..5c0d4f912a 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -40,7 +40,20 @@ public class RegionFile {
+@@ -22,10 +22,10 @@ import javax.annotation.Nullable;
+ 
+ public class RegionFile {
+     private static final byte[] a = new byte[4096];
+-    private final File b;
+-    private RandomAccessFile c;
+-    private final int[] d = new int[1024];
+-    private final int[] e = new int[1024];
++    private final File b;private File getFile() { return b; } // Paper - OBFHELPER
++    private RandomAccessFile c;private RandomAccessFile getDataFile() { return c; } // Paper - OBFHELPER
++    private final int[] d = new int[1024];private int[] offsets = d; // Paper - OBFHELPER
++    private final int[] e = new int[1024];private int[] timestamps = e; // Paper - OBFHELPER
+     private List<Boolean> f;
+     private int g;
+     private long h;
+@@ -40,7 +40,7 @@ public class RegionFile {
              }
  
              this.c = new RandomAccessFile(file1, "rw");
 -            if (this.c.length() < 4096L) {
-+            // Paper start - detect and fix incomplete headers
-+            long length = this.c.length();
-+            if (length < 8192 && length > 0) {
-+                File corrupt = new File(file1.getParentFile(), file1.getName() + ".bak");
-+                org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger();
-+                logger.error("Region file " + file1 + " was incomplete. Backing up to " + corrupt + " and repairing");
-+                try {
-+                    java.nio.file.Files.copy(file1.toPath(), corrupt.toPath());
-+                } catch (IOException e) {
-+                    logger.error("Error backing up corrupt file", e);
-+                }
-+            }
-+            if (length < 8192L) {
-+                // Paper end
++            if (this.c.length() < 8192L) { // Paper - headers should be 8192
                  this.c.write(a);
                  this.c.write(a);
                  this.g += 8192;
+@@ -74,16 +74,16 @@ public class RegionFile {
+             for(int j1 = 0; j1 < 1024; ++j1) {
+                 int k = headerAsInts.get(); // Paper
+                 this.d[j1] = k;
+-                if (k != 0 && (k >> 8) + (k & 255) <= this.f.size()) {
++                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
+                     for(int l = 0; l < (k & 255); ++l) {
+                         this.f.set((k >> 8) + l, false);
+                     }
+-                }
++                } else if (k != 0) deleteChunk(j1); // Paper
+             }
+ 
+             for(int k1 = 0; k1 < 1024; ++k1) {
+                 int l1 = headerAsInts.get(); // Paper
+-                this.e[k1] = l1;
++                if (offsets[k1] != 0) this.timestamps[k1] = l1; // Paper - don't set timestamp if it got 0'd above due to corruption
+             }
+         } catch (IOException ioexception) {
+             ioexception.printStackTrace();
+@@ -276,6 +276,58 @@ public class RegionFile {
+ 
+     }
+ 
++    // Paper start
++    public void deleteChunk(int x, int z) {
++        deleteChunk(x + z * 32);
++    }
++    public synchronized void deleteChunk(int j1) {
++        backup();
++        int k = offsets[j1];
++        int x = j1 & 1024;
++        int z = j1 >> 2;
++        int offset = (k >> 8);
++        int len = (k & 255);
++        org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger();
++        String debug = "idx:" + + j1 + " - " + x + "," + z + " - offset: " + offset + " - len: " + len;
++        try {
++            RandomAccessFile file = getDataFile();
++            file.seek(j1 * 4);
++            file.writeInt(0);
++            // clear the timestamp
++            file.seek(4096 + j1 * 4);
++            file.writeInt(0);
++            timestamps[j1] = 0;
++            offsets[j1] = 0;
++            logger.error("Deleted corrupt chunk (" + debug + ") " + getFile().getAbsolutePath(), e);
++        } catch (IOException e) {
++
++            logger.error("Error deleting corrupt chunk (" + debug + ") " + getFile().getAbsolutePath(), e);
++        }
++    }
++    private boolean backedUp = false;
++    private synchronized void backup() {
++        if (backedUp) {
++            return;
++        }
++        backedUp = true;
++        File file = this.getFile();
++        java.text.DateFormat formatter = new java.text.SimpleDateFormat("yyyy-MM-dd");
++        java.util.Date today = new java.util.Date();
++        File corrupt = new File(file.getParentFile(), file.getName() + "." + formatter.format(today) + ".corrupt");
++        if (corrupt.exists()) {
++            return;
++        }
++        org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger();
++        logger.error("Region file " + file.getAbsolutePath() + " was corrupt. Backing up to " + corrupt.getAbsolutePath() + " and repairing");
++        try {
++            java.nio.file.Files.copy(file.toPath(), corrupt.toPath());
++
++        } catch (IOException e) {
++            logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
++        }
++    }
++    // Paper end
++
+     class ChunkBuffer extends ByteArrayOutputStream {
+         private final int b;
+         private final int c;
 -- 
-2.19.0
+2.19.1
 
