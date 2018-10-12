@@ -1,4 +1,4 @@
-From ab1a408584e0f6e7e28319956b32047f552bf668 Mon Sep 17 00:00:00 2001
+From 296dfee228fa6471e26b9d4d697ba514cf5db998 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 3 Sep 2018 22:18:38 -0400
 Subject: [PATCH] Fix concurrency and performance issues in DataFixers
@@ -75,52 +75,38 @@ index 2c259d74e9..17481fb6e6 100644
                          return Either.right(new Type.FieldNotFoundException(String.format("Type error for choice type \"%s\": expected type: %s, actual type: %s)", name, targetType, elementType)));
                      }
 diff --git a/src/main/java/com/mojang/datafixers/functions/PointFree.java b/src/main/java/com/mojang/datafixers/functions/PointFree.java
-index 0d88490f77..028942b8ea 100644
+index 0d88490f77..4d2af956a0 100644
 --- a/src/main/java/com/mojang/datafixers/functions/PointFree.java
 +++ b/src/main/java/com/mojang/datafixers/functions/PointFree.java
-@@ -14,7 +14,7 @@ public abstract class PointFree<T> {
+@@ -9,15 +9,19 @@ import java.util.Optional;
+ import java.util.function.Function;
+ 
+ public abstract class PointFree<T> {
+-    private boolean initialized;
++    private volatile boolean initialized;
+     @Nullable
      private Function<DynamicOps<?>, T> value;
  
      @SuppressWarnings("ConstantConditions")
--    public Function<DynamicOps<?>, T> evalCached() {
-+    public synchronized Function<DynamicOps<?>, T> evalCached() { // Paper
+     public Function<DynamicOps<?>, T> evalCached() {
          if (!initialized) {
-             initialized = true;
-             value = eval();
+-            initialized = true;
+-            value = eval();
++            synchronized (this) {
++                if (!initialized) {
++                    value = eval();
++                    initialized = true;
++                }
++            }
+         }
+         return value;
+     }
 diff --git a/src/main/java/com/mojang/datafixers/schemas/Schema.java b/src/main/java/com/mojang/datafixers/schemas/Schema.java
-index 7c67d989e0..7faca88a88 100644
+index 7c67d989e0..d81e8d1a1a 100644
 --- a/src/main/java/com/mojang/datafixers/schemas/Schema.java
 +++ b/src/main/java/com/mojang/datafixers/schemas/Schema.java
-@@ -20,8 +20,8 @@ import java.util.function.Function;
- import java.util.function.Supplier;
+@@ -50,8 +50,11 @@ public class Schema {
  
- public class Schema {
--    protected final Object2IntMap<String> RECURSIVE_TYPES = new Object2IntOpenHashMap<>();
--    private final Map<String, Supplier<TypeTemplate>> TYPE_TEMPLATES = Maps.newHashMap();
-+    protected final Object2IntMap<String> RECURSIVE_TYPES = it.unimi.dsi.fastutil.objects.Object2IntMaps.synchronize(new Object2IntOpenHashMap<>()); // Paper
-+    private final Map<String, Supplier<TypeTemplate>> TYPE_TEMPLATES = Maps.newConcurrentMap(); // Paper
-     private final Map<String, Type<?>> TYPES;
-     private final int versionKey;
-     private final String name;
-@@ -37,26 +37,31 @@ public class Schema {
-     }
- 
-     protected Map<String, Type<?>> buildTypes() {
--        final Map<String, Type<?>> types = Maps.newHashMap();
-+        final Map<String, Type<?>> types = Maps.newConcurrentMap(); // Paper
- 
-         final List<TypeTemplate> templates = Lists.newArrayList();
- 
-+        synchronized (RECURSIVE_TYPES) { // Paper
-         for (final Object2IntMap.Entry<String> entry : RECURSIVE_TYPES.object2IntEntrySet()) {
-             templates.add(DSL.check(entry.getKey(), entry.getIntValue(), getTemplate(entry.getKey())));
--        }
-+        } } // Paper
- 
-         final TypeTemplate choice = templates.stream().reduce(DSL::or).get();
-         final TypeFamily family = new RecursiveTypeFamily(name, choice);
- 
-+        synchronized (TYPE_TEMPLATES) { // Paper
          for (final String name : TYPE_TEMPLATES.keySet()) {
              final Type<?> type;
 -            if (RECURSIVE_TYPES.containsKey(name)) {
@@ -133,13 +119,7 @@ index 7c67d989e0..7faca88a88 100644
              } else {
                  type = getTemplate(name).apply(family).apply(-1);
              }
-             types.put(name, type);
--        }
-+        } } // Paper
-         return types;
-     }
- 
-@@ -89,8 +94,11 @@ public class Schema {
+@@ -89,8 +92,11 @@ public class Schema {
      }
  
      public TypeTemplate id(final String name) {
@@ -153,18 +133,6 @@ index 7c67d989e0..7faca88a88 100644
          }
          return getTemplate(name);
      }
-@@ -138,9 +146,10 @@ public class Schema {
-     public void registerType(final boolean recursive, final DSL.TypeReference type, final Supplier<TypeTemplate> template) {
-         TYPE_TEMPLATES.put(type.typeName(), template);
-         // TODO: calculate recursiveness instead of hardcoding
-+        synchronized (RECURSIVE_TYPES) { // Paper
-         if (recursive && !RECURSIVE_TYPES.containsKey(type.typeName())) {
-             RECURSIVE_TYPES.put(type.typeName(), RECURSIVE_TYPES.size());
--        }
-+        } } // Paper
-     }
- 
-     public int getVersionKey() {
 diff --git a/src/main/java/com/mojang/datafixers/types/DynamicOps.java b/src/main/java/com/mojang/datafixers/types/DynamicOps.java
 index 3c76929f24..f21531b3cd 100644
 --- a/src/main/java/com/mojang/datafixers/types/DynamicOps.java
@@ -321,5 +289,5 @@ index e6dd31233a..77d64362b1 100644
          }
  
 -- 
-2.19.0
+2.19.1
 
