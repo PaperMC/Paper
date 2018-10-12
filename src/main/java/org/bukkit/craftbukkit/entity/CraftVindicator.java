@@ -25,4 +25,14 @@ public class CraftVindicator extends CraftIllager implements Vindicator {
     public EntityType getType() {
         return EntityType.VINDICATOR;
     }
+
+    // Paper start
+    public boolean isJohnny() {
+        return getHandle().isJohnny();
+    }
+
+    public void setJohnny(boolean johnny) {
+        getHandle().setJohnny(johnny);
+    }
+    // Paper end
 }

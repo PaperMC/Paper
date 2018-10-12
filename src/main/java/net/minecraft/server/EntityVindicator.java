@@ -11,7 +11,7 @@ public class EntityVindicator extends EntityIllagerAbstract {
     private static final Predicate<EnumDifficulty> b = (enumdifficulty) -> {
         return enumdifficulty == EnumDifficulty.NORMAL || enumdifficulty == EnumDifficulty.HARD;
     };
-    private boolean bo;
+    private boolean bo; public boolean isJohnny() { return bo; } public void setJohnny(boolean johnny) { bo = johnny; } // Paper - OBFHELPER
 
     public EntityVindicator(EntityTypes<? extends EntityVindicator> entitytypes, World world) {
         super(entitytypes, world);
