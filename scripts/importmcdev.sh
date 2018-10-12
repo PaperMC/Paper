@@ -104,6 +104,7 @@ done
 #             # group    # lib          # prefix               # many files
 importLibrary com.mojang datafixerupper com/mojang/datafixers \
     schemas/Schema.java \
+    DataFixerBuilder.java \
     DataFixerUpper.java \
     NamedChoiceFinder.java \
     functions/PointFree.java \
