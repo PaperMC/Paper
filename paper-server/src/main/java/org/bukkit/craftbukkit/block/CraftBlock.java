@@ -134,6 +134,7 @@ public class CraftBlock implements Block {
 
     @Override
     public void setType(Material type, boolean applyPhysics) {
+        Preconditions.checkArgument(type != null, "Material cannot be null");
         setBlockData(type.createBlockData(), applyPhysics);
     }
 
@@ -144,6 +145,7 @@ public class CraftBlock implements Block {
 
     @Override
     public void setBlockData(BlockData data, boolean applyPhysics) {
+        Preconditions.checkArgument(data != null, "BlockData cannot be null");
         setTypeAndData(((CraftBlockData) data).getState(), applyPhysics);
     }
 

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -98,6 +99,7 @@ public class CraftBlockState implements BlockState {
 
     @Override
     public void setBlockData(BlockData data) {
+        Preconditions.checkArgument(data != null, "BlockData cannot be null");
         this.data = ((CraftBlockData) data).getState();
     }
 
@@ -121,6 +123,7 @@ public class CraftBlockState implements BlockState {
     }
 
     public void setType(final Material type) {
+        Preconditions.checkArgument(type != null, "Material cannot be null");
         if (this.getType() != type) {
             this.data = CraftMagicNumbers.getBlock(type).getBlockData();
         }
