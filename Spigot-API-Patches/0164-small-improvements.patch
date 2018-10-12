@@ -1,0 +1,148 @@
+From 1694e2ab433eae0411d0e1f3bcc9edfd2486e7dc Mon Sep 17 00:00:00 2001
+From: wherkamp <wherkamp@kingtux.me>
+Date: Fri, 12 Oct 2018 19:47:26 -0400
+Subject: [PATCH] small improvements
+
+
+diff --git a/src/main/java/org/bukkit/ChatColor.java b/src/main/java/org/bukkit/ChatColor.java
+index adbae51a..ed33077c 100644
+--- a/src/main/java/org/bukkit/ChatColor.java
++++ b/src/main/java/org/bukkit/ChatColor.java
+@@ -215,6 +215,9 @@ public enum ChatColor{
+      * you need to dynamically convert colour codes from your custom format.
+      */
+     public static final char COLOR_CHAR = '\u00A7';
++    //Paper Start
++    public static final char DEFAULT_COLOR_CODE = '&';
++    //Paper End
+     private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf(COLOR_CHAR) + "[0-9A-FK-OR]");
+ 
+     private final int intCode;
+@@ -330,6 +333,18 @@ public enum ChatColor{
+         }
+         return new String(b);
+     }
++    /**
++     * Translates a string using an alternate color code character into a
++     * string that uses the internal ChatColor.COLOR_CODE color code
++     * character. The alternate color code character will only be replaced if
++     * it is immediately followed by 0-9, A-F, a-f, K-O, k-o, R or r.
++     *
++     * @param textToTranslate Text containing the alternate color code character.
++     * @return Text containing the ChatColor.COLOR_CODE color code character.
++     */
++    public static String translateAlternateColorCodes(String textToTranslate) {
++        return translateAlternateColorCodes(DEFAULT_COLOR_CODE, textToTranslate);
++    }
+ 
+     /**
+      * Gets the ChatColors used at the end of the given input string.
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index ab79b71b..12aaf13a 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -1,30 +1,33 @@
+ package org.bukkit.plugin.java;
+ 
+ import com.google.common.io.ByteStreams;
++import org.apache.commons.lang.Validate;
++import org.bukkit.plugin.InvalidPluginException;
++import org.bukkit.plugin.PluginDescriptionFile;
++
+ import java.io.File;
+ import java.io.IOException;
+ import java.io.InputStream;
++import java.lang.reflect.InvocationTargetException;
+ import java.net.MalformedURLException;
+ import java.net.URL;
+ import java.net.URLClassLoader;
+ import java.security.CodeSigner;
+ import java.security.CodeSource;
+-import java.util.HashMap;
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.jar.JarEntry;
+ import java.util.jar.JarFile;
+ import java.util.jar.Manifest;
+ 
+-import org.apache.commons.lang.Validate;
+-import org.bukkit.plugin.InvalidPluginException;
+-import org.bukkit.plugin.PluginDescriptionFile;
+-
+ /**
+  * A ClassLoader for plugins, to allow shared classes across multiple plugins
+  */
+ public final class PluginClassLoader extends URLClassLoader { // Spigot
+-    public JavaPlugin getPlugin() { return plugin; } // Spigot
++    public JavaPlugin getPlugin() {
++        return plugin;
++    } // Spigot
++
+     private final JavaPluginLoader loader;
+     private final Map<String, Class<?>> classes = new java.util.concurrent.ConcurrentHashMap<String, Class<?>>(); // Spigot
+     private final PluginDescriptionFile description;
+@@ -39,31 +42,26 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+     private java.util.logging.Logger logger; // Paper - add field
+ 
+     // Spigot Start
+-    static
+-    {
+-        try
+-        {
+-            java.lang.reflect.Method method = ClassLoader.class.getDeclaredMethod( "registerAsParallelCapable" );
+-            if ( method != null )
+-            {
++    static {
++        try {
++            java.lang.reflect.Method method = ClassLoader.class.getDeclaredMethod("registerAsParallelCapable");
++            if (method != null) {
+                 boolean oldAccessible = method.isAccessible();
+-                method.setAccessible( true );
+-                method.invoke( null );
+-                method.setAccessible( oldAccessible );
+-                org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.INFO, "Set PluginClassLoader as parallel capable" );
++                method.setAccessible(true);
++                method.invoke(null);
++                method.setAccessible(oldAccessible);
++                org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.INFO, "Set PluginClassLoader as parallel capable");
+             }
+-        } catch ( NoSuchMethodException ex )
+-        {
++        } catch (NoSuchMethodException ex) {
+             // Ignore
+-        } catch ( Exception ex )
+-        {
+-            org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Error setting PluginClassLoader as parallel capable", ex );
++        } catch (Exception ex) {
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Error setting PluginClassLoader as parallel capable", ex);
+         }
+     }
+     // Spigot End
+ 
+     PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws IOException, InvalidPluginException, MalformedURLException {
+-        super(new URL[] {file.toURI().toURL()}, parent);
++        super(new URL[]{file.toURI().toURL()}, parent);
+         Validate.notNull(loader, "Loader cannot be null");
+ 
+         this.loader = loader;
+@@ -91,12 +89,14 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+                 throw new InvalidPluginException("main class `" + description.getMain() + "' does not extend JavaPlugin", ex);
+             }
+ 
+-            plugin = pluginClass.newInstance();
+-        } catch (IllegalAccessException ex) {
++            //Paper Start
++            plugin = pluginClass.getDeclaredConstructor().newInstance();
++        } catch (IllegalAccessException | NoSuchMethodException ex) {
+             throw new InvalidPluginException("No public constructor", ex);
+-        } catch (InstantiationException ex) {
++        } catch (InstantiationException | InvocationTargetException ex) {
+             throw new InvalidPluginException("Abnormal plugin type", ex);
+         }
++        //Paper End
+     }
+ 
+     @Override
+-- 
+2.17.1
+
