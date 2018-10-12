@@ -1,4 +1,4 @@
-From 2fd84bb4152e70a21453a5deb49b2938207764b8 Mon Sep 17 00:00:00 2001
+From 303049b123b3adb9aea02f550750a9afc8a45887 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 5 Jun 2018 00:32:22 -0400
 Subject: [PATCH] Configurable Villages loading chunks for door checks
@@ -45,19 +45,49 @@ index d14a9e3a3e..0be1bf0d99 100644
  
      public void a(NBTTagCompound nbttagcompound) {
 diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
-index bda67faefe..0414f003a5 100644
+index bda67faefe..5b56ae1818 100644
 --- a/src/main/java/net/minecraft/server/Village.java
 +++ b/src/main/java/net/minecraft/server/Village.java
-@@ -297,7 +297,7 @@ public class Village {
-                 villagedoor.a();
-             }
+@@ -11,10 +11,10 @@ import javax.annotation.Nullable;
  
--            if (!this.g(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
-+            if ((!this.g(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) && this.a.isLoaded(villagedoor.d())) { // Paper - don't expire doors unless the chunk is loaded, use same param as the first conditional and the one below checks
-                 this.c = this.c.b(villagedoor.d());
-                 flag = true;
-                 villagedoor.a(true);
-@@ -312,7 +312,9 @@ public class Village {
+ public class Village {
+ 
+-    private World a;
++    private World a; private World getWorld() { return a; } // Paper - OBFHELPER
+     private final List<VillageDoor> b = Lists.newArrayList();
+     private BlockPosition c;
+-    private BlockPosition d;
++    private BlockPosition d;private BlockPosition getCenter() { return d; } // Paper - OBFHELPER
+     private int e;
+     private int f;
+     private int g;
+@@ -44,6 +44,12 @@ public class Village {
+     }
+ 
+     public void a(int i) {
++        // Paper - don't tick village if chunk isn't loaded
++        Chunk chunk = getWorld().getChunkIfLoaded(getCenter());
++        if (chunk == null || !chunk.areNeighborsLoaded(1)) {
++            return;
++        }
++        // Paper end
+         this.g = i;
+         this.m();
+         this.l();
+@@ -292,6 +298,12 @@ public class Village {
+ 
+         while (iterator.hasNext()) {
+             VillageDoor villagedoor = (VillageDoor) iterator.next();
++            // Paper start - don't remove doors from unloaded chunks
++            if (!getWorld().isLoaded(villagedoor.getPosition())) {
++                villagedoor.setLastSeen(villagedoor.getLastSeen());
++                continue;
++            }
++            // Paper end
+ 
+             if (flag1) {
+                 villagedoor.a();
+@@ -312,7 +324,9 @@ public class Village {
      }
  
      private boolean g(BlockPosition blockposition) {
@@ -68,6 +98,31 @@ index bda67faefe..0414f003a5 100644
          Block block = iblockdata.getBlock();
  
          return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
+diff --git a/src/main/java/net/minecraft/server/VillageDoor.java b/src/main/java/net/minecraft/server/VillageDoor.java
+index 62771547f6..74ac3c1ba6 100644
+--- a/src/main/java/net/minecraft/server/VillageDoor.java
++++ b/src/main/java/net/minecraft/server/VillageDoor.java
+@@ -59,6 +59,7 @@ public class VillageDoor {
+         return this.f;
+     }
+ 
++    public BlockPosition getPosition() { return d(); } // Paper - OBFHELPER
+     public BlockPosition d() {
+         return this.a;
+     }
+@@ -75,10 +76,12 @@ public class VillageDoor {
+         return this.c.getAdjacentZ() * 2;
+     }
+ 
++    public int getLastSeen() { return h(); } // Paper - OBFHELPER
+     public int h() {
+         return this.d;
+     }
+ 
++    public void setLastSeen(int i) { a(i); } // Paper - OBFHELPER
+     public void a(int i) {
+         this.d = i;
+     }
 -- 
-2.19.0
+2.19.1
 
