@@ -1,4 +1,4 @@
-From 1248921187e1c418988fe86a9e28b2ae810a092f Mon Sep 17 00:00:00 2001
+From 662563828cc23dfd798fb73fac09c21be18cce82 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -904,7 +904,7 @@ index 98d182fdb8..487d98eb1b 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..4fc5fad09e
+index 0000000000..5823917a65
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 @@ -0,0 +1,593 @@
@@ -959,14 +959,14 @@ index 0000000000..4fc5fad09e
 +
 +    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0);
 +    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0);
++    private static final ConcurrentLinkedQueue<Runnable> MAIN_THREAD_QUEUE = new ConcurrentLinkedQueue<>();
++    private static final ThreadLocal<Boolean> IS_CHUNK_THREAD = ThreadLocal.withInitial(() -> false);
++    private static final ThreadLocal<Boolean> IS_CHUNK_GEN_THREAD = ThreadLocal.withInitial(() -> false);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
 +    private final Long2ObjectMap<PendingChunk> pendingChunks = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
-+    private final ConcurrentLinkedQueue<Runnable> mainThreadQueue = new ConcurrentLinkedQueue<>();
 +    private final IAsyncTaskHandler asyncHandler;
-+    private final ThreadLocal<Boolean> isChunkThread = ThreadLocal.withInitial(() -> false);
-+    private final ThreadLocal<Boolean> isChunkGenThread = ThreadLocal.withInitial(() -> false);
 +
 +    private final WorldServer world;
 +    private final IChunkLoader chunkLoader;
@@ -1007,7 +1007,7 @@ index 0000000000..4fc5fad09e
 +    private boolean processChunkLoads() {
 +        Runnable run;
 +        boolean hadLoad = false;
-+        while ((run = mainThreadQueue.poll()) != null) {
++        while ((run = MAIN_THREAD_QUEUE.poll()) != null) {
 +            run.run();
 +            hadLoad = true;
 +        }
@@ -1071,7 +1071,7 @@ index 0000000000..4fc5fad09e
 +        // Listen for when result is ready
 +        final CompletableFuture<Chunk> future = new CompletableFuture<>();
 +        PendingChunkRequest request = pending.addListener(future, gen);
-+        if (isChunkThread.get()) {
++        if (IS_CHUNK_THREAD.get()) {
 +            pending.loadTask.run();
 +        }
 +
@@ -1085,7 +1085,7 @@ index 0000000000..4fc5fad09e
 +            try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) {
 +                while (!future.isDone()) {
 +                    // We aren't done, obtain lock on queue
-+                    synchronized (mainThreadQueue) {
++                    synchronized (MAIN_THREAD_QUEUE) {
 +                        // We may of received our request now, check it
 +                        if (processChunkLoads()) {
 +                            // If we processed SOMETHING, don't wait
@@ -1093,7 +1093,7 @@ index 0000000000..4fc5fad09e
 +                        }
 +                        try {
 +                            // We got nothing from the queue, wait until something has been added
-+                            mainThreadQueue.wait(1);
++                            MAIN_THREAD_QUEUE.wait(1);
 +                        } catch (InterruptedException ignored) {
 +                        }
 +                    }
@@ -1254,8 +1254,8 @@ index 0000000000..4fc5fad09e
 +        }
 +
 +        private Chunk generateChunkExecutor() {
-+            isChunkThread.set(true);
-+            isChunkGenThread.set(true);
++            IS_CHUNK_THREAD.set(true);
++            IS_CHUNK_GEN_THREAD.set(true);
 +            return generateChunk();
 +        }
 +        private Chunk generateChunk() {
@@ -1347,9 +1347,9 @@ index 0000000000..4fc5fad09e
 +
 +            // Don't post here, even if on main, it must enter the queue so we can exit any open batch
 +            // schedulers, as post stage may trigger a new generation and cause errors
-+            synchronized (mainThreadQueue) {
-+                mainThreadQueue.add(this::postChunk);
-+                mainThreadQueue.notify();
++            synchronized (MAIN_THREAD_QUEUE) {
++                MAIN_THREAD_QUEUE.add(this::postChunk);
++                MAIN_THREAD_QUEUE.notify();
 +            }
 +        }
 +
@@ -1421,7 +1421,7 @@ index 0000000000..4fc5fad09e
 +                    genTask = generationExecutor.createPendingTask(this::generateChunkExecutor, taskPriority);
 +                }
 +                loadTask = EXECUTOR.createPendingTask(this, taskPriority);
-+                if (!isChunkThread.get()) {
++                if (!IS_CHUNK_THREAD.get()) {
 +                    // We will execute it outside of the synchronized context immediately after
 +                    EXECUTOR.submitTask(loadTask);
 +                }
@@ -1432,7 +1432,7 @@ index 0000000000..4fc5fad09e
 +
 +        @Override
 +        public void run() {
-+            isChunkThread.set(true);
++            IS_CHUNK_THREAD.set(true);
 +            try {
 +                if (!loadFinished(loadChunk(x, z))) {
 +                    return;
@@ -1448,13 +1448,13 @@ index 0000000000..4fc5fad09e
 +            if (shouldGenSync) {
 +                synchronized (this) {
 +                    setStatus(PendingStatus.GENERATION_PENDING);
-+                    mainThreadQueue.add(() -> generateFinished(this.generateChunk()));
++                    MAIN_THREAD_QUEUE.add(() -> generateFinished(this.generateChunk()));
 +                }
-+                synchronized (mainThreadQueue) {
-+                    mainThreadQueue.notify();
++                synchronized (MAIN_THREAD_QUEUE) {
++                    MAIN_THREAD_QUEUE.notify();
 +                }
 +            } else {
-+                if (isChunkGenThread.get()) {
++                if (IS_CHUNK_GEN_THREAD.get()) {
 +                    // ideally we should never run into 1 chunk generating another chunk...
 +                    // but if we do, let's apply same solution
 +                    genTask.run();
