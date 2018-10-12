@@ -116,6 +116,7 @@ import StructurePiece
 import StructureStart
 import TileEntityEnderChest
 import TileEntityLootable
+import VillageDoor
 import WorldGenStronghold
 import WorldProvider
 

@@ -1,22 +1,62 @@
-From 9542aadf8d5db8a0f3937f5a311338fca70fc581 Mon Sep 17 00:00:00 2001
+From d4d9b90ec44df0777e139ace23b70438a000c800 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 29 Sep 2018 12:13:23 -0400
 Subject: [PATCH] Backport Village Door fix from 1.13
 
 
 diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
-index 9f1867ddd3..af09551f4e 100644
+index 9f1867ddd3..d48487cc15 100644
 --- a/src/main/java/net/minecraft/server/Village.java
 +++ b/src/main/java/net/minecraft/server/Village.java
-@@ -312,7 +312,7 @@ public class Village {
-                 villagedoor.a();
+@@ -14,7 +14,7 @@ public class Village {
+     private World a;
+     private final List<VillageDoor> b = Lists.newArrayList();
+     private BlockPosition c;
+-    private BlockPosition d;
++    private BlockPosition d; private BlockPosition getCenter() { return d; } // Paper - OBFHELPER
+     private int e;
+     private int f;
+     private int g;
+@@ -44,6 +44,12 @@ public class Village {
+     }
+ 
+     public void a(int i) {
++        // Paper - don't tick village if chunk isn't loaded
++        Chunk chunk = this.a.getChunkIfLoaded(getCenter());
++        if (chunk == null || !chunk.areNeighborsLoaded(1)) {
++            return;
++        }
++        // Paper end
+         this.g = i;
+         this.m();
+         this.l();
+@@ -313,6 +319,14 @@ public class Village {
              }
  
--            if (!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
-+            if ((!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) && this.a.isLoaded(villagedoor.d())) { // Paper - don't remove doors from unloaded chunks
+             if (!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
++                // Paper start- don't remove doors from unloaded chunks
++                if (!this.a.isLoaded(villagedoor.d())) {
++                    villagedoor.inactiveDoorTicks = 0;
++                    continue;
++                } else if (++villagedoor.inactiveDoorTicks < 1200) {
++                    continue;
++                }
++                // Paper end
                  this.c = this.c.b(villagedoor.d());
                  flag = true;
                  villagedoor.a(true);
+diff --git a/src/main/java/net/minecraft/server/VillageDoor.java b/src/main/java/net/minecraft/server/VillageDoor.java
+index 43de227738..1a7e3e8745 100644
+--- a/src/main/java/net/minecraft/server/VillageDoor.java
++++ b/src/main/java/net/minecraft/server/VillageDoor.java
+@@ -2,6 +2,7 @@ package net.minecraft.server;
+ 
+ public class VillageDoor {
+ 
++    public int inactiveDoorTicks = 0; // Paper
+     private final BlockPosition a;
+     private final BlockPosition b;
+     private final EnumDirection c;
 -- 
-2.19.0
+2.19.1
 
