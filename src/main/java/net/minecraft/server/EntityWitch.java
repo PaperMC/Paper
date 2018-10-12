@@ -1,5 +1,11 @@
 package net.minecraft.server;
 
+// Paper start
+import com.destroystokyo.paper.event.entity.WitchReadyPotionEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.Witch;
+// Paper end
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -10,7 +16,7 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
     private static final UUID b = UUID.fromString("5CD17E52-A79A-43D3-A529-90FDE04B181E");
     private static final AttributeModifier bo = new AttributeModifier(EntityWitch.b, "Drinking speed penalty", -0.25D, AttributeModifier.Operation.ADDITION);
     private static final DataWatcherObject<Boolean> bp = DataWatcher.a(EntityWitch.class, DataWatcherRegistry.i);
-    private int bq;
+    private int bq; public int getPotionUseTimeLeft() { return bq; } public void setPotionUseTimeLeft(int timeLeft) { bq = timeLeft; } // Paper - OBFHELPER
     private PathfinderGoalNearestHealableRaider<EntityRaider> br;
     private PathfinderGoalNearestAttackableTargetWitch<EntityHuman> bs;
 
@@ -56,10 +62,12 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
         return SoundEffects.ENTITY_WITCH_DEATH;
     }
 
+    public void setDrinkingPotion(boolean drinkingPotion) { v(drinkingPotion); } // Paper - OBFHELPER
     public void v(boolean flag) {
         this.getDataWatcher().set(EntityWitch.bp, flag);
     }
 
+    public boolean isDrinkingPotion() { return m(); } // Paper - OBFHELPER
     public boolean m() {
         return (Boolean) this.getDataWatcher().get(EntityWitch.bp);
     }
@@ -118,21 +126,24 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
                 }
 
                 if (potionregistry != null) {
-                    // Paper start
                     ItemStack potion = PotionUtil.a(new ItemStack(Items.POTION), potionregistry);
-                    org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
-                    this.setSlot(EnumItemSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
+                    // Paper start - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
+                    this.setDrinkingPotion(potion);
+//                    org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
+//                    this.setSlot(EnumItemSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
+//                    // Paper end
+//                    this.bq = this.getItemInMainHand().k();
+//                    this.v(true);
+//                    if (!this.isSilent()) {
+//                        this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_WITCH_DRINK, this.getSoundCategory(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+//                    }
+//
+//                    AttributeModifiable attributemodifiable = this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED);
+//
+//                    attributemodifiable.removeModifier(EntityWitch.bo);
+//                    attributemodifiable.b(EntityWitch.bo);
                     // Paper end
-                    this.bq = this.getItemInMainHand().k();
-                    this.v(true);
-                    if (!this.isSilent()) {
-                        this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_WITCH_DRINK, this.getSoundCategory(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
-                    }
 
-                    AttributeModifiable attributemodifiable = this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED);
-
-                    attributemodifiable.removeModifier(EntityWitch.bo);
-                    attributemodifiable.b(EntityWitch.bo);
                 }
             }
 
@@ -143,6 +154,24 @@ public class EntityWitch extends EntityRaider implements IRangedEntity {
 
         super.movementTick();
     }
+
+    // Paper start - moved to its own method
+    public void setDrinkingPotion(ItemStack potion) {
+        org.bukkit.inventory.ItemStack bukkitStack = com.destroystokyo.paper.event.entity.WitchReadyPotionEvent.process((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
+        this.setSlot(EnumItemSlot.MAINHAND, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitStack));
+        // Paper end
+        this.bq = this.getItemInMainHand().k();
+        this.v(true);
+        if (!this.isSilent()) {
+            this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_WITCH_DRINK, this.getSoundCategory(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+        }
+
+        AttributeModifiable attributemodifiable = this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED);
+
+        attributemodifiable.removeModifier(EntityWitch.bo);
+        attributemodifiable.b(EntityWitch.bo);
+    }
+    // Paper end
 
     @Override
     public SoundEffect eL() {
