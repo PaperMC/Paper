@@ -1,11 +1,11 @@
-From d4d9b90ec44df0777e139ace23b70438a000c800 Mon Sep 17 00:00:00 2001
+From 4b72bfde9db5ffb7b5ab8f252588c22e6a4b41d3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 29 Sep 2018 12:13:23 -0400
 Subject: [PATCH] Backport Village Door fix from 1.13
 
 
 diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
-index 9f1867ddd3..d48487cc15 100644
+index 9f1867ddd3..6536e5fb84 100644
 --- a/src/main/java/net/minecraft/server/Village.java
 +++ b/src/main/java/net/minecraft/server/Village.java
 @@ -14,7 +14,7 @@ public class Village {
@@ -30,33 +30,19 @@ index 9f1867ddd3..d48487cc15 100644
          this.g = i;
          this.m();
          this.l();
-@@ -313,6 +319,14 @@ public class Village {
-             }
+@@ -307,6 +313,12 @@ public class Village {
  
-             if (!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
-+                // Paper start- don't remove doors from unloaded chunks
-+                if (!this.a.isLoaded(villagedoor.d())) {
-+                    villagedoor.inactiveDoorTicks = 0;
-+                    continue;
-+                } else if (++villagedoor.inactiveDoorTicks < 1200) {
-+                    continue;
-+                }
-+                // Paper end
-                 this.c = this.c.b(villagedoor.d());
-                 flag = true;
-                 villagedoor.a(true);
-diff --git a/src/main/java/net/minecraft/server/VillageDoor.java b/src/main/java/net/minecraft/server/VillageDoor.java
-index 43de227738..1a7e3e8745 100644
---- a/src/main/java/net/minecraft/server/VillageDoor.java
-+++ b/src/main/java/net/minecraft/server/VillageDoor.java
-@@ -2,6 +2,7 @@ package net.minecraft.server;
+         while (iterator.hasNext()) {
+             VillageDoor villagedoor = (VillageDoor) iterator.next();
++            // Paper start- don't remove doors from unloaded chunks
++            if (!this.a.isLoaded(villagedoor.d())) {
++                villagedoor.a(villagedoor.h() + 1);
++                continue;
++            }
++            // Paper end
  
- public class VillageDoor {
- 
-+    public int inactiveDoorTicks = 0; // Paper
-     private final BlockPosition a;
-     private final BlockPosition b;
-     private final EnumDirection c;
+             if (flag1) {
+                 villagedoor.a();
 -- 
 2.19.1
 
