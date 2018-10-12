@@ -1,0 +1,141 @@
+From 5b3ffc36196c2757755d3bf71af76ba9c056bdf1 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 12 Oct 2018 06:15:11 -0500
+Subject: [PATCH] Add more Llama API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
+index 26184f463..5c4a21222 100644
+--- a/src/main/java/net/minecraft/server/EntityLlama.java
++++ b/src/main/java/net/minecraft/server/EntityLlama.java
+@@ -1,5 +1,11 @@
+ package net.minecraft.server;
+ 
++// Paper start
++import com.destroystokyo.paper.event.entity.LlamaJoinCaravanEvent;
++import com.destroystokyo.paper.event.entity.LlamaLeaveCaravanEvent;
++import org.bukkit.entity.Llama;
++// Paper end
++
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ 
+@@ -11,7 +17,8 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+     @Nullable
+     private EntityLlama bQ;
+     @Nullable
+-    private EntityLlama bR;
++    private EntityLlama bR; @Nullable public EntityLlama getCaravanTail() { return bR; } // Paper - OBFHELPER
++    public boolean shouldJoinCaravan = true; // Paper
+ 
+     public EntityLlama(World world) {
+         super(EntityTypes.LLAMA, world);
+@@ -323,8 +330,10 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+         }
+     }
+ 
++    public void leaveCaravan() { ek(); } // Paper - OBFHELPER
+     public void ek() {
+         if (this.bQ != null) {
++            new LlamaLeaveCaravanEvent((Llama) getBukkitEntity()).callEvent(); // Paper
+             this.bQ.bR = null;
+         }
+ 
+@@ -332,10 +341,12 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+     }
+ 
+     public void a(EntityLlama entityllama1) {
++        if (!shouldJoinCaravan || !new LlamaJoinCaravanEvent((Llama) getBukkitEntity(), (Llama) entityllama1.getBukkitEntity()).callEvent()) return; // Paper
+         this.bQ = entityllama1;
+         this.bQ.bR = this;
+     }
+ 
++    public boolean hasCaravanTail() { return el(); } // Paper - OBFHELPER
+     public boolean el() {
+         return this.bR != null;
+     }
+@@ -346,7 +357,7 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+     }
+ 
+     @Nullable
+-    public EntityLlama en() {
++    public EntityLlama getCaravanHead() { return en(); } @Nullable public EntityLlama en() { // Paper - OBFHELPER
+         return this.bQ;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalLlamaFollow.java b/src/main/java/net/minecraft/server/PathfinderGoalLlamaFollow.java
+index 852140c9b..f1d28572b 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalLlamaFollow.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalLlamaFollow.java
+@@ -14,8 +14,9 @@ public class PathfinderGoalLlamaFollow extends PathfinderGoal {
+     }
+ 
+     public boolean a() {
++        if (!this.a.shouldJoinCaravan) return false; // Paper
+         if (!this.a.isLeashed() && !this.a.em()) {
+-            List list = this.a.world.a(this.a.getClass(), this.a.getBoundingBox().grow(9.0D, 4.0D, 9.0D));
++            List<EntityLlama> list = this.a.world.a(this.a.getClass(), this.a.getBoundingBox().grow(9.0D, 4.0D, 9.0D)); // Paper - decompile error
+             EntityLlama entityllama = null;
+             double d0 = Double.MAX_VALUE;
+ 
+@@ -57,6 +58,7 @@ public class PathfinderGoalLlamaFollow extends PathfinderGoal {
+     }
+ 
+     public boolean b() {
++        if (!this.a.shouldJoinCaravan) return false; // Paper
+         if (this.a.em() && this.a.en().isAlive() && this.a(this.a, 0)) {
+             double d0 = this.a.h(this.a.en());
+             if (d0 > 676.0D) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+index 3f94c5a92..11429a123 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+@@ -10,6 +10,8 @@ import org.bukkit.entity.Horse;
+ import org.bukkit.entity.Llama;
+ import org.bukkit.inventory.LlamaInventory;
+ 
++import javax.annotation.Nullable; // Paper
++
+ public class CraftLlama extends CraftChestedHorse implements Llama, CraftRangedEntity<EntityLlama> { // Paper
+ 
+     public CraftLlama(CraftServer server, EntityLlama entity) {
+@@ -65,4 +67,36 @@ public class CraftLlama extends CraftChestedHorse implements Llama, CraftRangedE
+     public EntityType getType() {
+         return EntityType.LLAMA;
+     }
++
++    // Paper start
++    public boolean shouldJoinCaravan() {
++        return getHandle().shouldJoinCaravan;
++    }
++
++    public void setShouldJoinCaravan(boolean shouldJoinCaravan) {
++        getHandle().shouldJoinCaravan = shouldJoinCaravan;
++    }
++
++    public boolean inCaravan() {
++        return getHandle().inCaravan();
++    }
++
++    public void leaveCaravan() {
++        getHandle().leaveCaravan();
++    }
++
++    public boolean hasCaravanTail() {
++        return getHandle().hasCaravanTail();
++    }
++
++    @Nullable
++    public Llama getCaravanHead() {
++        return getHandle().getCaravanHead() == null ? null : (Llama) getHandle().getCaravanHead().getBukkitEntity();
++    }
++
++    @Nullable
++    public Llama getCaravanTail() {
++        return getHandle().getCaravanTail() == null ? null : (Llama) getHandle().getCaravanTail().getBukkitEntity();
++    }
++    // Paper end
+ }
+-- 
+2.19.1
+
