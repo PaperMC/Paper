@@ -1,0 +1,46 @@
+From a8af5f9ea6bee2dc73c358424cc486f28d6d0bac Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 14 Oct 2018 18:32:51 -0500
+Subject: [PATCH] Keep trying keepalive ping
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 1e5ac7185..3751ca95d 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -74,6 +74,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private long f = SystemUtils.b(); private void setLastPing(long lastPing) { this.f = lastPing;}; private long getLastPing() { return this.f;}; // Paper - OBFHELPER - set ping to delay initial
+     private boolean g; private void setPendingPing(boolean isPending) { this.g = isPending;}; private boolean isPendingPing() { return this.g;}; // Paper - OBFHELPER
+     private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
++    private int lastPingAttempt; // Paper - number of ticks since last keepalive ping attempt
+     // CraftBukkit start - multithreaded fields
+     private volatile int chatThrottle;
+     private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
+@@ -188,15 +189,21 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         long elapsedTime = currentTime - this.getLastPing();
+ 
+         if (this.isPendingPing()) {
+-            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
+-                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
+-                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
++            if (!this.processedDisconnect) { // don't fire if already disconnected
++                if (elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit
++                    PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
++                    this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
++                } else if (++lastPingAttempt > 20) { // keep trying every 20 ticks instead of relying on a single packet
++                    lastPingAttempt = 0;
++                    sendPacket(new PacketPlayOutKeepAlive(getKeepAliveID()));
++                }
+             }
+         } else {
+             if (elapsedTime >= 15000L) { // 15 seconds
+                 this.setPendingPing(true);
+                 this.setLastPing(currentTime);
+                 this.setKeepAliveID(currentTime);
++                lastPingAttempt = 0;
+                 this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
+ 
+             }
+-- 
+2.19.1
+
