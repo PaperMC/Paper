@@ -1,4 +1,4 @@
-From 0f84772d12001f9a418d759b76e6efe0ac974bc7 Mon Sep 17 00:00:00 2001
+From f41fa6cd07b37f00667cff861b0994d84c618504 Mon Sep 17 00:00:00 2001
 From: MiniDigger <admin@minidigger.me>
 Date: Fri, 28 Sep 2018 08:08:15 +0000
 Subject: [PATCH] Textual Chat Format
@@ -39,8 +39,8 @@ index e7c389c0..a9eb3b17 100644
          boolean hasConsole = false;
          for (CommandSender sender : this.senders) {
 diff --git a/src/main/java/com/destroystokyo/paper/ChatParser.java b/src/main/java/com/destroystokyo/paper/ChatParser.java
-new file mode 100644
-index 00000000..ad644e6b
+new file mode 100755
+index 00000000..8178833f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ChatParser.java
 @@ -0,0 +1,312 @@
@@ -63,8 +63,8 @@ index 00000000..ad644e6b
 +
 +public class ChatParser {
 +
-+    private static Pattern pattern = Pattern
-+        .compile("((?<start>\\{)(?<token>([^{}]+)|([^{}]+\"(?<inner>[^\"]+)\"))(?<end>\\}))+?");
++    // https://regex101.com/r/8VZ7uA/5
++    private static Pattern pattern = Pattern.compile("((?<start><)(?<token>([^<>]+)|([^<>]+\"(?<inner>[^\"]+)\"))(?<end>>))+?");
 +
 +    @Nonnull
 +    public static String escapeTokens(@Nonnull String richMessage) {
@@ -76,7 +76,7 @@ index 00000000..ad644e6b
 +            int endIndex = matcher.end();
 +
 +            if (startIndex > lastEnd) {
-+                sb.append(richMessage.substring(lastEnd, startIndex));
++                sb.append(richMessage, lastEnd, startIndex);
 +            }
 +            lastEnd = endIndex;
 +
@@ -94,7 +94,7 @@ index 00000000..ad644e6b
 +        }
 +
 +        if (richMessage.length() > lastEnd) {
-+            sb.append(richMessage.substring(lastEnd, richMessage.length()));
++            sb.append(richMessage.substring(lastEnd));
 +        }
 +
 +        return sb.toString();
@@ -110,13 +110,13 @@ index 00000000..ad644e6b
 +            int endIndex = matcher.end();
 +
 +            if (startIndex > lastEnd) {
-+                sb.append(richMessage.substring(lastEnd, startIndex));
++                sb.append(richMessage, lastEnd, startIndex);
 +            }
 +            lastEnd = endIndex;
 +        }
 +
 +        if (richMessage.length() > lastEnd) {
-+            sb.append(richMessage.substring(lastEnd, richMessage.length()));
++            sb.append(richMessage.substring(lastEnd));
 +        }
 +
 +        return sb.toString();
@@ -129,7 +129,7 @@ index 00000000..ad644e6b
 +                "Invalid number placeholders defined, usage: parseFormat(format, key, value, key, value...)");
 +        }
 +        for (int i = 0; i < placeholders.length; i += 2) {
-+            richMessage = richMessage.replace("{" + placeholders[i] + "}", placeholders[i + 1]);
++            richMessage = richMessage.replace("<" + placeholders[i] + ">", placeholders[i + 1]);
 +        }
 +        return richMessage;
 +    }
@@ -137,7 +137,7 @@ index 00000000..ad644e6b
 +    @Nonnull
 +    public static String handlePlaceholders(@Nonnull String richMessage, @Nonnull Map<String, String> placeholders) {
 +        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-+            richMessage = richMessage.replace(entry.getKey(), entry.getValue());
++            richMessage = richMessage.replace("<" + entry.getKey() + ">", entry.getValue());
 +        }
 +        return richMessage;
 +    }
@@ -357,8 +357,8 @@ index 00000000..ad644e6b
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/ChatSerializer.java b/src/main/java/com/destroystokyo/paper/ChatSerializer.java
-new file mode 100644
-index 00000000..95481004
+new file mode 100755
+index 00000000..e44cc4c6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ChatSerializer.java
 @@ -0,0 +1,151 @@
@@ -506,11 +506,11 @@ index 00000000..95481004
 +    }
 +
 +    private static String startTag(String content) {
-+        return String.format("{%s}", content);
++        return String.format("<%s>", content);
 +    }
 +
 +    private static String endTag(String content) {
-+        return String.format("{/%s}", content);
++        return String.format("</%s>", content);
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
@@ -618,8 +618,8 @@ index 5527e7c8..9f5cb5b5 100644
      default Server getServer() {
          return Bukkit.getServer();
 diff --git a/src/test/java/com/destroystokyo/paper/ChatParserTest.java b/src/test/java/com/destroystokyo/paper/ChatParserTest.java
-new file mode 100644
-index 00000000..b2d2c3d6
+new file mode 100755
+index 00000000..28b82523
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/ChatParserTest.java
 @@ -0,0 +1,146 @@
@@ -636,8 +636,8 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void test() {
-+        String input1 = "{yellow}TEST{green} nested{/green}Test";
-+        String input2 = "{yellow}TEST{green} nested{yellow}Test";
++        String input1 = "<yellow>TEST<green> nested</green>Test";
++        String input2 = "<yellow>TEST<green> nested<yellow>Test";
 +        String out1 = ComponentSerializer.toString(ChatParser.parseFormat(input1));
 +        String out2 = ComponentSerializer.toString(ChatParser.parseFormat(input2));
 +        System.out.println(out1);
@@ -646,50 +646,50 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testStripSimple() {
-+        String input = "{yellow}TEST{green} nested{/green}Test";
++        String input = "<yellow>TEST<green> nested</green>Test";
 +        String expected = "TEST nestedTest";
 +        assertEquals(expected, ChatParser.stripTokens(input));
 +    }
 +
 +    @Test
 +    public void testStripComplex() {
-+        String input = "{yellow}{test} random {bold}stranger{/bold}{click:run_command:test command}{underlined}{red}click here{/click}{blue} to {bold}FEEL{/underlined} it";
++        String input = "<yellow><test> random <bold>stranger</bold><click:run_command:test command><underlined><red>click here</click><blue> to <bold>FEEL</underlined> it";
 +        String expected = " random strangerclick here to FEEL it";
 +        assertEquals(expected, ChatParser.stripTokens(input));
 +    }
 +
 +    @Test
 +    public void testStripInner() {
-+        String input = "{hover:show_text:\"{red}test:TEST\"}TEST";
++        String input = "<hover:show_text:\"<red>test:TEST\">TEST";
 +        String expected = "TEST";
 +        assertEquals(expected, ChatParser.stripTokens(input));
 +    }
 +
 +    @Test
 +    public void testEscapeSimple() {
-+        String input = "{yellow}TEST{green} nested{/green}Test";
-+        String expected = "\\{yellow\\}TEST\\{green\\} nested\\{/green\\}Test";
++        String input = "<yellow>TEST<green> nested</green>Test";
++        String expected = "\\<yellow\\>TEST\\<green\\> nested\\</green\\>Test";
 +        assertEquals(expected, ChatParser.escapeTokens(input));
 +    }
 +
 +    @Test
 +    public void testEscapeComplex() {
-+        String input = "{yellow}{test} random {bold}stranger{/bold}{click:run_command:test command}{underlined}{red}click here{/click}{blue} to {bold}FEEL{/underlined} it";
-+        String expected = "\\{yellow\\}\\{test\\} random \\{bold\\}stranger\\{/bold\\}\\{click:run_command:test command\\}\\{underlined\\}\\{red\\}click here\\{/click\\}\\{blue\\} to \\{bold\\}FEEL\\{/underlined\\} it";
++        String input = "<yellow><test> random <bold>stranger</bold><click:run_command:test command><underlined><red>click here</click><blue> to <bold>FEEL</underlined> it";
++        String expected = "\\<yellow\\>\\<test\\> random \\<bold\\>stranger\\</bold\\>\\<click:run_command:test command\\>\\<underlined\\>\\<red\\>click here\\</click\\>\\<blue\\> to \\<bold\\>FEEL\\</underlined\\> it";
 +        assertEquals(expected, ChatParser.escapeTokens(input));
 +    }
 +
 +    @Test
 +    public void testEscapeInner() {
-+        String input = "{hover:show_text:\"{red}test:TEST\"}TEST";
-+        String expected = "\\{hover:show_text:\"\\{red\\}test:TEST\"\\}TEST";
++        String input = "<hover:show_text:\"<red>test:TEST\">TEST";
++        String expected = "\\<hover:show_text:\"\\<red\\>test:TEST\"\\>TEST";
 +        assertEquals(expected, ChatParser.escapeTokens(input));
 +    }
 +
 +
 +    @Test
 +    public void checkPlaceholder() {
-+        String input = "{test}";
++        String input = "<test>";
 +        String expected = "{\"text\":\"Hello!\"}";
 +        BaseComponent[] comp = ChatParser.parseFormat(input, "test", "Hello!");
 +
@@ -698,7 +698,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testNiceMix() {
-+        String input = "{yellow}{test} random {bold}stranger{/bold}{click:run_command:test command}{underlined}{red}click here{/click}{blue} to {bold}FEEL{/underlined} it";
++        String input = "<yellow><test> random <bold>stranger</bold><click:run_command:test command><underlined><red>click here</click><blue> to <bold>FEEL</underlined> it";
 +        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"Hello! random \"},{\"color\":\"yellow\",\"bold\":true,\"text\":\"stranger\"},{\"color\":\"red\",\"underlined\":true,\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test command\"},\"text\":\"click here\"},{\"color\":\"blue\",\"underlined\":true,\"text\":\" to \"},{\"color\":\"blue\",\"bold\":true,\"underlined\":true,\"text\":\"FEEL\"},{\"color\":\"blue\",\"bold\":true,\"text\":\" it\"}],\"text\":\"\"}";
 +        BaseComponent[] comp = ChatParser.parseFormat(input, "test", "Hello!");
 +
@@ -707,7 +707,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testColorSimple() {
-+        String input = "{yellow}TEST";
++        String input = "<yellow>TEST";
 +        String expected = "{\"color\":\"yellow\",\"text\":\"TEST\"}";
 +
 +        test(input, expected);
@@ -715,7 +715,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testColorNested() {
-+        String input = "{yellow}TEST{green}nested{/green}Test";
++        String input = "<yellow>TEST<green>nested</green>Test";
 +        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"TEST\"},{\"color\":\"green\",\"text\":\"nested\"},{\"color\":\"yellow\",\"text\":\"Test\"}],\"text\":\"\"}";
 +
 +        test(input, expected);
@@ -723,7 +723,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testColorNotNested() {
-+        String input = "{yellow}TEST{/yellow}{green}nested{/green}Test";
++        String input = "<yellow>TEST</yellow><green>nested</green>Test";
 +        String expected = "{\"extra\":[{\"color\":\"yellow\",\"text\":\"TEST\"},{\"color\":\"green\",\"text\":\"nested\"},{\"text\":\"Test\"}],\"text\":\"\"}";
 +
 +        test(input, expected);
@@ -731,7 +731,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testHover() {
-+        String input = "{hover:show_text:\"{red}test\"}TEST";
++        String input = "<hover:show_text:\"<red>test\">TEST";
 +        String expected = "{\"hoverEvent\":{\"action\":\"show_text\",\"value\":[{\"color\":\"red\",\"text\":\"test\"}]},\"text\":\"TEST\"}";
 +
 +        test(input, expected);
@@ -739,7 +739,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testHoverWithColon() {
-+        String input = "{hover:show_text:\"{red}test:TEST\"}TEST";
++        String input = "<hover:show_text:\"<red>test:TEST\">TEST";
 +        String expected = "{\"hoverEvent\":{\"action\":\"show_text\",\"value\":[{\"color\":\"red\",\"text\":\"test:TEST\"}]},\"text\":\"TEST\"}";
 +
 +        test(input, expected);
@@ -747,7 +747,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testClick() {
-+        String input = "{click:run_command:test}TEST";
++        String input = "<click:run_command:test>TEST";
 +        String expected = "{\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test\"},\"text\":\"TEST\"}";
 +
 +        test(input, expected);
@@ -755,7 +755,7 @@ index 00000000..b2d2c3d6
 +
 +    @Test
 +    public void testClickExtendedCommand() {
-+        String input = "{click:run_command:test command}TEST";
++        String input = "<click:run_command:test command>TEST";
 +        String expected = "{\"clickEvent\":{\"action\":\"run_command\",\"value\":\"test command\"},\"text\":\"TEST\"}";
 +
 +        test(input, expected);
@@ -770,8 +770,8 @@ index 00000000..b2d2c3d6
 +    }
 +}
 diff --git a/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
-new file mode 100644
-index 00000000..3862462c
+new file mode 100755
+index 00000000..9b9e1807
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/ChatSerializerTest.java
 @@ -0,0 +1,122 @@
@@ -792,7 +792,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testColor() {
-+        String expected = "{red}This is a test";
++        String expected = "<red>This is a test";
 +
 +        ComponentBuilder builder = new ComponentBuilder("This is a test");
 +        builder.color(ChatColor.RED);
@@ -802,7 +802,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testColorClosing() {
-+        String expected = "{red}This is a {/red}test";
++        String expected = "<red>This is a </red>test";
 +
 +        ComponentBuilder builder = new ComponentBuilder("This is a ");
 +        builder.color(ChatColor.RED);
@@ -813,7 +813,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testNestedColor() {
-+        String expected = "{red}This is a {blue}blue {red}test";
++        String expected = "<red>This is a <blue>blue <red>test";
 +
 +        ComponentBuilder builder = new ComponentBuilder("This is a ").color(ChatColor.RED)//
 +            .append("blue ", FormatRetention.NONE).color(ChatColor.BLUE)//
@@ -824,7 +824,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testDecoration() {
-+        String expected = "{underlined}This is {bold}underlined{/underlined}, this{/bold} isn't";
++        String expected = "<underlined>This is <bold>underlined</underlined>, this</bold> isn't";
 +
 +        ComponentBuilder builder = new ComponentBuilder("This is ").underlined(true)//
 +            .append("underlined", FormatRetention.NONE).bold(true).underlined(true)//
@@ -836,7 +836,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testHover() {
-+        String expected = "{hover:show_text:\"---\"}Some hover{/hover} that ends here";
++        String expected = "<hover:show_text:\"---\">Some hover</hover> that ends here";
 +
 +        ComponentBuilder builder = new ComponentBuilder("Some hover")
 +            .event(new HoverEvent(Action.SHOW_TEXT, new ComponentBuilder("---").create()))//
@@ -847,7 +847,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testHoverWithNested() {
-+        String expected = "{hover:show_text:\"{red}---{blue}{bold}-\"}Some hover{/hover} that ends here";
++        String expected = "<hover:show_text:\"<red>---<blue><bold>-\">Some hover</hover> that ends here";
 +
 +        ComponentBuilder builder = new ComponentBuilder("Some hover").event(new HoverEvent(Action.SHOW_TEXT, //
 +            new ComponentBuilder("---").color(ChatColor.RED)//
@@ -859,7 +859,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testClick() {
-+        String expected = "{click:run_command:\"test\"}Some click{/click} that ends here";
++        String expected = "<click:run_command:\"test\">Some click</click> that ends here";
 +
 +        ComponentBuilder builder = new ComponentBuilder("Some click")
 +            .event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "test"))//
@@ -870,7 +870,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testContinuedClick() {
-+        String expected = "{click:run_command:\"test\"}Some click{red} that doesn't ends here";
++        String expected = "<click:run_command:\"test\">Some click<red> that doesn't ends here";
 +
 +        ComponentBuilder builder = new ComponentBuilder("Some click")
 +            .event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "test"))//
@@ -881,7 +881,7 @@ index 00000000..3862462c
 +
 +    @Test
 +    public void testContinuedClick2() {
-+        String expected = "{click:run_command:\"test\"}Some click{red} that doesn't ends here";
++        String expected = "<click:run_command:\"test\">Some click<red> that doesn't ends here";
 +
 +        ComponentBuilder builder = new ComponentBuilder("Some click")
 +            .event(new ClickEvent(net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND, "test"))//
