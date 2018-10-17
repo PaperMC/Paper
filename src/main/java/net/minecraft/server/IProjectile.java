@@ -29,7 +29,18 @@ public abstract class IProjectile extends Entity {
 
     @Nullable
     public Entity getShooter() {
-        return this.shooter != null && this.world instanceof WorldServer ? ((WorldServer) this.world).getEntity(this.shooter) : (this.c != 0 ? this.world.getEntity(this.c) : null);
+        // Paper start - MC-50319 - shooter might be in another world (arrows through portals)
+        Entity entity = this.shooter != null && this.world instanceof WorldServer ? ((WorldServer) this.world).getEntity(this.shooter) : (this.c != 0 ? this.world.getEntity(this.c) : null);
+        if (entity == null) {
+            for (WorldServer world : world.getMinecraftServer().getWorlds()) {
+                entity = world.getEntity(this.shooter);
+                if (entity != null) {
+                    break;
+                }
+            }
+        }
+        return entity;
+        // Paper end
     }
 
     @Override
