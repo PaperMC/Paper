@@ -25,11 +25,8 @@ versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
 if [ ! -f "$versionjson" ]; then
     echo "Downloading $minecraftversion JSON Data"
     verescaped=$(echo ${minecraftversion} | sed 's/\./\\./g')
-    echo $verescaped
     verentry=$(curl -s "https://launchermeta.mojang.com/mc/game/version_manifest.json" | grep -oE "{\"id\": \"${verescaped}\".*?\.json")
-    echo $verentry
     jsonurl=$(echo $verentry | grep -oE https:\/\/.*?\.json)
-    echo $jsonurl
     curl -o "$versionjson" "$jsonurl"
     echo "$versionjson - $jsonurl"
 fi
