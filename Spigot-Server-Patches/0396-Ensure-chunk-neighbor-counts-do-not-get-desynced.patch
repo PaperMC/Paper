@@ -1,0 +1,54 @@
+From 5d6a6cd178b5baef11c1a52c7f91bf71ef789da4 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 17 Oct 2018 22:31:54 -0400
+Subject: [PATCH] Ensure chunk neighbor counts do not get desynced
+
+Mojang was not checking that the chunk did not overwrite, or
+was successfully removed.
+
+We're seeing odd reports in #1561 that indicates issues around
+this are having problems.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index 39ac032b0b..1fb0770015 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -17,6 +17,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+         chunk.world.timings.syncChunkLoadPostTimer.startTiming(); // Paper
+         lastChunkByPos = chunk; // Paper
+         Chunk chunk1 = (Chunk) super.put(i, chunk);
++        if (chunk1 == null) { // Paper - we should never be overwriting chunks
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
+ 
+         for (int j = chunkcoordintpair.x - 1; j <= chunkcoordintpair.x + 1; ++j) {
+@@ -47,7 +48,11 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                     chunk.setNeighborLoaded(x, z);
+                 }
+             }
++            // Paper start
++        } } else {
++            a.error("Overwrote existing chunk! (" + chunk.world.getWorld().getName() + ":" + chunk.locX+"," + chunk.locZ + ")", new IllegalStateException());
+         }
++        // Paper end
+         // Paper start - if this is a spare chunk (not part of any players view distance), go ahead and queue it for unload.
+         if (!((WorldServer)chunk.world).getPlayerChunkMap().isChunkInUse(chunk.locX, chunk.locZ)) {
+             if (chunk.world.paperConfig.delayChunkUnloadsBy > 0) {
+@@ -69,6 +74,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+ 
+     public Chunk a(long i) {
+         Chunk chunk = (Chunk) super.remove(i);
++        if (chunk != null) { // Paper - don't decrement if we didn't remove anything
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
+ 
+         for (int j = chunkcoordintpair.x - 1; j <= chunkcoordintpair.x + 1; ++j) {
+@@ -84,6 +90,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+         }
+ 
+         // Paper start
++        } // close if (chunk != null)
+         if (lastChunkByPos != null && i == lastChunkByPos.chunkKey) {
+             lastChunkByPos = null;
+         }
+-- 
+2.19.1
+

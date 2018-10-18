@@ -1,4 +1,4 @@
-From 14e26ad623fc54b7f4e0c647f40b9cdcca79a88f Mon Sep 17 00:00:00 2001
+From eb8942dae2dd6dbc8a32b05c0a502a4a507d7233 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 27 Aug 2015 01:15:02 -0400
 Subject: [PATCH] Optimize Chunk Access
@@ -9,7 +9,7 @@ getChunkAt is called for the same chunk multiple times in a row, often from getT
 Optimize this look up by using a Last Access cache.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 4b8b77710b..df967ff07d 100644
+index 4b8b77710b..71ddaf591e 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -15,6 +15,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -20,6 +20,33 @@ index 4b8b77710b..df967ff07d 100644
          Chunk chunk1 = (Chunk) super.put(i, chunk);
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
  
+@@ -22,7 +23,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+             for (int k = chunkcoordintpair.z - 1; k <= chunkcoordintpair.z + 1; ++k) {
+                 if (j != chunkcoordintpair.x || k != chunkcoordintpair.z) {
+                     long l = ChunkCoordIntPair.a(j, k);
+-                    Chunk chunk2 = (Chunk) this.get(l);
++                    Chunk chunk2 = (Chunk) super.get(l);  // Paper - use super to avoid polluting last access cache
+ 
+                     if (chunk2 != null) {
+                         chunk.H();
+@@ -40,7 +41,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+                     continue;
+                 }
+ 
+-                Chunk neighbor = this.get(ChunkCoordIntPair.a(chunkcoordintpair.x + x, chunkcoordintpair.z + z));
++                Chunk neighbor = super.get(ChunkCoordIntPair.a(chunkcoordintpair.x + x, chunkcoordintpair.z + z)); // Paper - use super to avoid polluting last access cache
+                 if (neighbor != null) {
+                     neighbor.setNeighborLoaded(-x, -z);
+                     chunk.setNeighborLoaded(x, z);
+@@ -64,7 +65,7 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
+         for (int j = chunkcoordintpair.x - 1; j <= chunkcoordintpair.x + 1; ++j) {
+             for (int k = chunkcoordintpair.z - 1; k <= chunkcoordintpair.z + 1; ++k) {
+                 if (j != chunkcoordintpair.x || k != chunkcoordintpair.z) {
+-                    Chunk chunk1 = (Chunk) this.get(ChunkCoordIntPair.a(j, k));
++                    Chunk chunk1 = (Chunk) super.get(ChunkCoordIntPair.a(j, k)); // Paper - use super to avoid polluting last access cache
+ 
+                     if (chunk1 != null) {
+                         chunk1.I();
 @@ -73,8 +74,22 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
              }
          }
@@ -86,5 +113,5 @@ index d16fc452e3..2d10f4aa37 100644
          return true;
      }
 -- 
-2.19.0
+2.19.1
 
