@@ -1,0 +1,59 @@
+From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From: Caleb Bassham <caleb.bassham@gmail.com>
+Date: Fri, 28 Sep 2018 02:32:19 -0500
+Subject: [PATCH] Call player spectator target events
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -62,7 +62,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private EntityHuman.EnumChatVisibility cs;
+     private boolean ct = true;
+     private long cu = SystemUtils.b();
+-    private Entity cv;
++    private Entity cv; private void setSpectatorTargetField(Entity e) { this.cv = e; } // Paper - OBFHELPER
+     public boolean worldChangeInvuln;
+     private boolean cx; private void setHasSeenCredits(boolean has) { this.cx = has; } // Paper - OBFHELPER
+     private final RecipeBookServer cy;
+@@ -1373,15 +1373,33 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return (Entity) (this.cv == null ? this : this.cv);
+     }
+ 
+-    public void setSpectatorTarget(Entity entity) {
++    public void setSpectatorTarget(Entity newSpectatorTarget) {
+         Entity entity1 = this.getSpecatorTarget();
+ 
+-        this.cv = (Entity) (entity == null ? this : entity);
+-        if (entity1 != this.cv) {
++        if (newSpectatorTarget == null) {
++            newSpectatorTarget = this;
++        }
++
++        if (entity1 != newSpectatorTarget) {
++            if (newSpectatorTarget == this) {
++                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
++
++                if (!playerStopSpectatingEntityEvent.callEvent()) {
++                    return;
++                }
++            } else {
++                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), newSpectatorTarget.getBukkitEntity());
++
++                if (!playerStartSpectatingEntityEvent.callEvent()) {
++                    return;
++                }
++            }
++
+             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
+             this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+         }
+ 
++        setSpectatorTargetField(newSpectatorTarget);
+     }
+ 
+     protected void E() {
+-- 
+2.19.1
+
