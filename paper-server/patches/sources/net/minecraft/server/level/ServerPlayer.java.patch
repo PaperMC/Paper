@@ -446,19 +446,19 @@
                  this.lastSentHealth = this.getHealth();
                  this.lastSentFood = this.foodData.getFoodLevel();
                  this.lastFoodSaturationZero = this.foodData.getSaturationLevel() == 0.0F;
-@@ -850,6 +1031,12 @@
-                 this.lastRecordedExperience = this.totalExperience;
+@@ -851,6 +1032,12 @@
                  this.updateScoreForCriteria(ObjectiveCriteria.EXPERIENCE, Mth.ceil((float) this.lastRecordedExperience));
              }
-+
+ 
 +            // CraftBukkit start - Force max health updates
 +            if (this.maxHealthCache != this.getMaxHealth()) {
 +                this.getBukkitEntity().updateScaledHealth();
 +            }
 +            // CraftBukkit end
- 
++
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
+                 this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
 @@ -865,6 +1052,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
              }
@@ -833,7 +833,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,12 +1549,30 @@
+@@ -1215,10 +1549,28 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -844,26 +844,24 @@
 +                // CraftBukkit end
                  return this;
              }
-         }
-     }
- 
++        }
++    }
++
 +    // CraftBukkit start
-     @Override
++    @Override
 +    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, TeleportCause cause, int searchRadius, int creationRadius) {
 +        Location enter = this.getBukkitEntity().getLocation();
 +        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
-+        }
+         }
 +        return new CraftPortalEvent(event);
-+    }
-+    // CraftBukkit end
-+
-+    @Override
-     public void forceSetRotation(float yaw, float pitch) {
-         this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
      }
++    // CraftBukkit end
+ 
+     @Override
+     public void forceSetRotation(float yaw, float pitch) {
 @@ -1228,13 +1580,21 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
@@ -1432,7 +1430,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2375,16 +2906,160 @@
+@@ -2375,10 +2906,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1448,11 +1446,10 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
- 
+@@ -2387,4 +2920,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-+        }
-+    }
+         }
+     }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1487,8 +1484,8 @@
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0));
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
-         }
-     }
++        }
++    }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;
@@ -1565,6 +1562,7 @@
 +
 +        this.setHealth(this.getMaxHealth());
 +        this.stopUsingItem(); // CraftBukkit - SPIGOT-6682: Clear active item on reset
++        this.setAirSupply(this.getMaxAirSupply()); // Paper - Reset players airTicks on respawn
 +        this.setRemainingFireTicks(0);
 +        this.fallDistance = 0;
 +        this.foodData = new FoodData();
