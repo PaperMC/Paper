@@ -1997,6 +1997,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.setHealth(this.getMaxHealth());
+        this.setAirTicks(this.getMaxAirTicks()); // Paper
         this.fireTicks = 0;
         this.fallDistance = 0;
         this.foodData = new FoodMetaData(this);
