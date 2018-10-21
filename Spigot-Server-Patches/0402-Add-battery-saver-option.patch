@@ -1,0 +1,62 @@
+From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <demonwav@gmail.com>
+Date: Sat, 20 Oct 2018 21:42:52 -0500
+Subject: [PATCH] Add battery saver option
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -458,4 +458,9 @@ public class PaperConfig {
+             velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
+         }
+     }
++
++    public static double batterySavingAmount;
++    private static void batterySavingAmount() {
++        batterySavingAmount = getDouble("settings.battery-saving-amount", 0);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -158,13 +158,31 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     public List<ExpiringMap> expiringMaps = java.util.Collections.synchronizedList(new java.util.ArrayList<>()); // PAper
+     // CraftBukkit end
+     // Spigot start
+-    public static final int TPS = 20;
+-    public static final int TICK_TIME = 1000000000 / TPS;
+-    private static final int SAMPLE_INTERVAL = 20; // Paper
++    public static int TPS = 20; // Paper battery saver
++    public static final int TICK_TIME; // Paper battery saver
++    private static final int SAMPLE_INTERVAL; // Paper
+     public final double[] recentTps = new double[ 3 ];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
+ 
++    // Paper start - battery saver
++    static {
++        double amount = com.destroystokyo.paper.PaperConfig.batterySavingAmount;
++        if (amount >= 100) {
++            System.out.println("Saving all of the battery...");
++            System.exit(0);
++        }
++        if (amount < 0) {
++            amount = Math.abs(amount);
++            System.err.println("Accelerating server by " + amount + "%");
++            amount += 100;
++        }
++        TPS = (int) (((double) TPS) * (amount / 100.0));
++        TICK_TIME = 1000000000 / TPS;
++        SAMPLE_INTERVAL = TPS;
++    }
++    // Paper end - battery saver
++
+     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+         SERVER = this; // Paper - better singleton
+         this.commandDispatcher = commanddispatcher; // CraftBukkit
+-- 
+2.19.1
+
