@@ -23,34 +23,39 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
 -    public void setSpectatorTarget(Entity entity) {
 +    public void setSpectatorTarget(Entity newSpectatorTarget) {
++        // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity Event
          Entity entity1 = this.getSpecatorTarget();
  
 -        this.cv = (Entity) (entity == null ? this : entity);
 -        if (entity1 != this.cv) {
+-            this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
+-            this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
 +        if (newSpectatorTarget == null) {
 +            newSpectatorTarget = this;
-+        }
-+
-+        if (entity1 != newSpectatorTarget) {
-+            if (newSpectatorTarget == this) {
-+                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
-+
-+                if (!playerStopSpectatingEntityEvent.callEvent()) {
-+                    return;
-+                }
-+            } else {
-+                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), newSpectatorTarget.getBukkitEntity());
-+
-+                if (!playerStartSpectatingEntityEvent.callEvent()) {
-+                    return;
-+                }
-+            }
-+
-             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
-             this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
          }
  
++        if (entity1 == newSpectatorTarget) return; // new spec target is the current spec target
++
++        if (newSpectatorTarget == this) {
++            com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
++
++            if (!playerStopSpectatingEntityEvent.callEvent()) {
++                return;
++            }
++        } else {
++            com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), newSpectatorTarget.getBukkitEntity());
++
++            if (!playerStartSpectatingEntityEvent.callEvent()) {
++                return;
++            }
++        }
++
 +        setSpectatorTargetField(newSpectatorTarget);
++
++        this.playerConnection.sendPacket(new PacketPlayOutCamera(newSpectatorTarget));
++        // Paper end
++
++        this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
      }
  
      protected void E() {
