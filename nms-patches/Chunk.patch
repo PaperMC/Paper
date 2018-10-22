@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Chunk.java
 +++ b/net/minecraft/server/Chunk.java
-@@ -23,6 +23,8 @@
+@@ -22,6 +22,8 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -10,8 +10,8 @@
  
      private static final Logger d = LogManager.getLogger();
 @@ -57,6 +59,35 @@
-     private int D;
      private final AtomicInteger E;
+     private final ChunkCoordIntPair F;
  
 +    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
 +    private int neighbors = 0x1 << 12;
@@ -45,7 +45,7 @@
      public Chunk(World world, int i, int j, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long k) {
          this.sections = new ChunkSection[16];
          this.g = new boolean[256];
-@@ -94,8 +125,16 @@
+@@ -95,8 +126,16 @@
          this.s = ticklist;
          this.t = ticklist1;
          this.z = k;
@@ -62,7 +62,7 @@
      public Chunk(World world, ProtoChunk protochunk, int i, int j) {
          this(world, i, j, protochunk.getBiomeIndex(), protochunk.v(), protochunk.n(), protochunk.o(), protochunk.m());
  
-@@ -135,14 +174,15 @@
+@@ -136,14 +175,15 @@
              HeightMap.Type heightmap_type = (HeightMap.Type) iterator.next();
  
              if (heightmap_type.c() == HeightMap.Use.LIVE_WORLD) {
@@ -80,23 +80,23 @@
      }
  
      public Set<BlockPosition> t() {
-@@ -412,8 +452,15 @@
+@@ -413,8 +453,15 @@
          }
      }
  
 +    // CraftBukkit start
      @Nullable
-     public IBlockData a(BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
-+        return this.a(blockposition, iblockdata, flag, true);
+     public IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
++        return this.setType(blockposition, iblockdata, flag, true);
 +    }
 +
 +    @Nullable
-+    public IBlockData a(BlockPosition blockposition, IBlockData iblockdata, boolean flag, boolean doPlace) {
++    public IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag, boolean doPlace) {
 +        // CraftBukkit end
          int i = blockposition.getX() & 15;
          int j = blockposition.getY();
          int k = blockposition.getZ() & 15;
-@@ -473,7 +520,8 @@
+@@ -474,7 +521,8 @@
                      }
                  }
  
@@ -106,7 +106,7 @@
                      iblockdata.onPlace(this.world, blockposition, iblockdata1);
                  }
  
-@@ -653,7 +701,19 @@
+@@ -654,7 +702,12 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -116,33 +116,14 @@
 +        if (tileentity == null) {
 +            tileentity = (TileEntity) this.tileEntities.get(blockposition);
 +        }
-+        if (tileentity == null) {
-+            NBTTagCompound pending = this.h.remove(blockposition);
-+            if (pending != null) {
-+                this.processQueuedTile(blockposition, pending);
-+                return this.a(blockposition, chunk_enumtileentitystate);
-+            }
-+        }
 +        // CraftBukkit end
  
          if (tileentity == null) {
-             if (chunk_enumtileentitystate == Chunk.EnumTileEntityState.IMMEDIATE) {
-@@ -679,6 +739,11 @@
-     }
- 
-     public void a(BlockPosition blockposition, TileEntity tileentity) {
-+        // CraftBukkit start
-+        if (blockposition instanceof BlockPosition.MutableBlockPosition) {
-+            blockposition = new BlockPosition(blockposition);
-+        }
-+        // CraftBukkit end
-         tileentity.setWorld(this.world);
-         tileentity.setPosition(blockposition);
-         if (this.getType(blockposition).getBlock() instanceof ITileEntity) {
-@@ -688,6 +753,13 @@
+             NBTTagCompound nbttagcompound = (NBTTagCompound) this.h.remove(blockposition);
+@@ -701,6 +754,13 @@
  
              tileentity.z();
-             this.tileEntities.put(blockposition, tileentity);
+             this.tileEntities.put(blockposition.h(), tileentity);
 +            // CraftBukkit start
 +        } else {
 +            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
@@ -153,7 +134,7 @@
          }
      }
  
-@@ -720,6 +792,40 @@
+@@ -733,6 +793,40 @@
              }));
          }
  
@@ -194,7 +175,7 @@
      }
  
      public void removeEntities() {
-@@ -736,9 +842,21 @@
+@@ -749,9 +843,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -204,21 +185,21 @@
 +            java.util.Iterator<Entity> iter = newList.iterator();
 +            while (iter.hasNext()) {
 +                Entity entity = iter.next();
- 
--            this.world.b((Collection) entityslice);
++
 +                // Do not pass along players, as doing so can get them stuck outside of time.
 +                // (which for example disables inventory icon updates and prevents block breaking)
 +                if (entity instanceof EntityPlayer) {
 +                    iter.remove();
 +                }
 +            }
-+
+ 
+-            this.world.b((Collection) entityslice);
 +            this.world.b((Collection) newList);
 +            // CraftBukkit end
          }
  
      }
-@@ -800,8 +918,8 @@
+@@ -813,8 +919,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -229,7 +210,7 @@
                  }
              }
          }
-@@ -1007,13 +1125,13 @@
+@@ -1020,13 +1126,13 @@
  
      @Nullable
      public LongSet b(String s) {
@@ -245,7 +226,7 @@
              return new LongOpenHashSet();
          })).add(i);
      }
-@@ -1061,18 +1179,18 @@
+@@ -1074,14 +1180,14 @@
              }
  
              if (this.s instanceof ProtoChunkTickList) {
@@ -264,59 +245,3 @@
                  });
              }
  
--            Iterator iterator = this.h.entrySet().iterator();
-+            Iterator iterator = Maps.newHashMap(this.h).entrySet().iterator(); // CraftBukkit
- 
-             while (iterator.hasNext()) {
-                 Entry entry = (Entry) iterator.next();
-@@ -1080,6 +1198,8 @@
-                 NBTTagCompound nbttagcompound = (NBTTagCompound) entry.getValue();
- 
-                 if (this.getTileEntity(blockposition1) == null) {
-+                    // CraftBukkit start
-+                    /*
-                     TileEntity tileentity;
- 
-                     if ("DUMMY".equals(nbttagcompound.getString("id"))) {
-@@ -1101,6 +1221,8 @@
-                     } else {
-                         Chunk.d.warn("Tried to load a block entity for block {} but failed at location {}", this.getType(blockposition1), blockposition1);
-                     }
-+                     */
-+                    // CraftBukkit end
-                 }
-             }
- 
-@@ -1110,6 +1232,32 @@
-         }
-     }
- 
-+    // CraftBukkit start
-+    private void processQueuedTile(BlockPosition blockposition1, NBTTagCompound nbttagcompound) {
-+        TileEntity tileentity;
-+
-+        if ("DUMMY".equals(nbttagcompound.getString("id"))) {
-+            Block block = this.getType(blockposition1).getBlock();
-+
-+            if (block instanceof ITileEntity) {
-+                tileentity = ((ITileEntity) block).a(this.world);
-+            } else {
-+                tileentity = null;
-+                Chunk.d.warn("Tried to load a DUMMY block entity @ {} but found not tile entity block {} at location", blockposition1, this.getType(blockposition1));
-+            }
-+        } else {
-+            tileentity = TileEntity.create(nbttagcompound);
-+        }
-+
-+        if (tileentity != null) {
-+            tileentity.setPosition(blockposition1);
-+            this.a(tileentity);
-+        } else {
-+            Chunk.d.warn("Tried to load a block entity for block {} but failed at location {}", this.getType(blockposition1), blockposition1);
-+        }
-+    }
-+    // CraftBukkit end
-+
-     public ChunkConverter F() {
-         return this.m;
-     }

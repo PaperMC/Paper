@@ -22,7 +22,7 @@ public class StructureTypeTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkit() {
-        for (String key : WorldGenFactory.b.keySet()) { // PAIL rename structureStartMap
+        for (String key : WorldGenFactory.structureStartMap.keySet()) {
             Assert.assertNotNull(structures.get(key));
         }
     }
@@ -38,8 +38,8 @@ public class StructureTypeTest extends AbstractTestingBase {
     @Test
     public void testBukkitToMinecraft() {
         for (Map.Entry<String, StructureType> entry : structures.entrySet()) {
-            Assert.assertNotNull(WorldGenFactory.b.get(entry.getKey()));
-            Assert.assertNotNull(WorldGenFactory.b.get(entry.getValue().getName()));
+            Assert.assertNotNull(WorldGenFactory.structureStartMap.get(entry.getKey()));
+            Assert.assertNotNull(WorldGenFactory.structureStartMap.get(entry.getValue().getName()));
         }
     }
 }

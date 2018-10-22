@@ -256,7 +256,7 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkInUse(int x, int z) {
-        return world.getPlayerChunkMap().isChunkInUse(x, z) || world.f(x, z);
+        return world.getPlayerChunkMap().isChunkInUse(x, z) || world.isForceLoaded(x, z);
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {

@@ -467,7 +467,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public int discoverRecipes(Collection<NamespacedKey> recipes) {
-        return getHandle().a(bukkitKeysToMinecraftRecipes(recipes)); // PAIL rename discoverRecipes
+        return getHandle().discoverRecipes(bukkitKeysToMinecraftRecipes(recipes));
     }
 
     @Override
@@ -477,7 +477,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public int undiscoverRecipes(Collection<NamespacedKey> recipes) {
-        return getHandle().b(bukkitKeysToMinecraftRecipes(recipes)); // PAIL rename undiscoverRecipes
+        return getHandle().undiscoverRecipes(bukkitKeysToMinecraftRecipes(recipes));
     }
 
     private Collection<IRecipe> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {

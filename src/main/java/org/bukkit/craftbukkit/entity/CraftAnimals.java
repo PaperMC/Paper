@@ -23,11 +23,11 @@ public class CraftAnimals extends CraftAgeable implements Animals {
 
     @Override
     public UUID getBreedCause() {
-        return getHandle().bD;
+        return getHandle().breedCause;
     }
 
     @Override
     public void setBreedCause(UUID uuid) {
-        getHandle().bD = uuid;
+        getHandle().breedCause = uuid;
     }
 }

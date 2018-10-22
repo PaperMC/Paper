@@ -70,7 +70,7 @@ public class CraftVillager extends CraftAgeable implements Villager, InventoryHo
 
         if (resetTrades) {
             getHandle().trades = null;
-            getHandle().bQ = 0; // SPIGOT-4310
+            getHandle().careerLevel = 0; // SPIGOT-4310
             getHandle().populateTrades();
         }
     }

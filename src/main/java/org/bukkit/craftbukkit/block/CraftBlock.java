@@ -600,6 +600,6 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isPassable() {
-        return this.getData0().h(world, position).b(); // PAIL getCollisionShape, isEmpty
+        return this.getData0().getCollisionShape(world, position).isEmpty();
     }
 }
