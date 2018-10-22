@@ -1273,10 +1273,10 @@ public final class CraftServer implements Server {
         BlockPosition structurePosition = new BlockPosition(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
 
         // Create map with trackPlayer = true, unlimitedTracking = true
-        net.minecraft.server.ItemStack stack = ItemWorldMap.a(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true); //PAIL rename setFilledMapView
-        ItemWorldMap.a(worldServer, stack); // PAIL rename sepiaMapFilter
+        net.minecraft.server.ItemStack stack = ItemWorldMap.createFilledMapView(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        ItemWorldMap.applySepiaFilter(worldServer, stack);
         // "+" map ID taken from EntityVillager
-        ItemWorldMap.getSavedMap(stack, worldServer).a(stack, structurePosition, "+", MapIcon.Type.a(structureType.getMapIcon().getValue())); // PAIL rename decorateMap
+        ItemWorldMap.getSavedMap(stack, worldServer).decorateMap(stack, structurePosition, "+", MapIcon.Type.a(structureType.getMapIcon().getValue()));
 
         return CraftItemStack.asBukkitCopy(stack);
     }

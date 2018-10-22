@@ -273,9 +273,9 @@
                  }
  
 @@ -706,6 +884,7 @@
-         this.locX = (axisalignedbb.a + axisalignedbb.d) / 2.0D;
-         this.locY = axisalignedbb.b;
-         this.locZ = (axisalignedbb.c + axisalignedbb.f) / 2.0D;
+         this.locX = (axisalignedbb.minX + axisalignedbb.maxX) / 2.0D;
+         this.locY = axisalignedbb.minY;
+         this.locZ = (axisalignedbb.minZ + axisalignedbb.maxZ) / 2.0D;
 +        if (valid) world.entityJoinedWorld(this, false); // CraftBukkit
      }
  
@@ -453,8 +453,8 @@
              }
  
              this.vehicle = entity;
--            this.vehicle.o(this);
-+            if (!this.vehicle.o(this)) this.vehicle = null; // CraftBukkit
+-            this.vehicle.addPassenger(this);
++            if (!this.vehicle.addPassenger(this)) this.vehicle = null; // CraftBukkit
              return true;
          }
      }
@@ -468,8 +468,8 @@
  
      }
  
--    protected void o(Entity entity) {
-+    protected boolean o(Entity entity) { // CraftBukkit
+-    protected void addPassenger(Entity entity) {
++    protected boolean addPassenger(Entity entity) { // CraftBukkit
          if (entity.getVehicle() != this) {
              throw new IllegalStateException("Use x.startRiding(y), not y.addPassenger(x)");
          } else {
@@ -733,24 +733,24 @@
      public void a(AxisAlignedBB axisalignedbb) {
 -        this.boundingBox = axisalignedbb;
 +        // CraftBukkit start - block invalid bounding boxes
-+        double a = axisalignedbb.a,
-+                b = axisalignedbb.b,
-+                c = axisalignedbb.c,
-+                d = axisalignedbb.d,
-+                e = axisalignedbb.e,
-+                f = axisalignedbb.f;
-+        double len = axisalignedbb.d - axisalignedbb.a;
-+        if (len < 0) d = a;
-+        if (len > 64) d = a + 64.0;
++        double minX = axisalignedbb.minX,
++                minY = axisalignedbb.minY,
++                minZ = axisalignedbb.minZ,
++                maxX = axisalignedbb.maxX,
++                maxY = axisalignedbb.maxY,
++                maxZ = axisalignedbb.maxZ;
++        double len = axisalignedbb.maxX - axisalignedbb.minX;
++        if (len < 0) maxX = minX;
++        if (len > 64) maxX = minX + 64.0;
 +
-+        len = axisalignedbb.e - axisalignedbb.b;
-+        if (len < 0) e = b;
-+        if (len > 64) e = b + 64.0;
++        len = axisalignedbb.maxY - axisalignedbb.minY;
++        if (len < 0) maxY = minY;
++        if (len > 64) maxY = minY + 64.0;
 +
-+        len = axisalignedbb.f - axisalignedbb.c;
-+        if (len < 0) f = c;
-+        if (len > 64) f = c + 64.0;
-+        this.boundingBox = new AxisAlignedBB(a, b, c, d, e, f);
++        len = axisalignedbb.maxZ - axisalignedbb.minZ;
++        if (len < 0) maxZ = minZ;
++        if (len > 64) maxZ = minZ + 64.0;
++        this.boundingBox = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
 +        // CraftBukkit end
      }
  

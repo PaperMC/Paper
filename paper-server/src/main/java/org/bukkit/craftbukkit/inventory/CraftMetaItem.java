@@ -634,7 +634,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             if (entry.getValue().getSlot() != null) {
                 EnumItemSlot slot = CraftEquipmentSlot.getNMS(entry.getValue().getSlot());
                 if (slot != null) {
-                    sub.setString(ATTRIBUTES_SLOT.NBT, slot.d()); // PAIL rename getSlotName, getName
+                    sub.setString(ATTRIBUTES_SLOT.NBT, slot.getSlotName());
                 }
             }
             list.add(sub);

@@ -157,6 +157,17 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
+        Player who = (itemactioncontext.getEntity() == null) ? null : (Player) itemactioncontext.getEntity().getBukkitEntity();
+        org.bukkit.block.Block blockClicked = CraftBlock.at(itemactioncontext.getWorld(), itemactioncontext.getClickPosition());
+        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(itemactioncontext.getClickedFace());
+
+        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace);
+        entity.world.getServer().getPluginManager().callEvent(event);
+
+        return event;
+    }
+
     /**
      * Bucket methods
      */
