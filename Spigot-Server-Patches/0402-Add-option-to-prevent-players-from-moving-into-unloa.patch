@@ -1,0 +1,56 @@
+From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Mon, 22 Oct 2018 17:34:10 +0200
+Subject: [PATCH] Add option to prevent players from moving into unloaded
+ chunks #1551
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -458,4 +458,9 @@ public class PaperConfig {
+             velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
+         }
+     }
++
++    public static boolean preventMovingIntoUnloadedChunks = false;
++    public static void preventMovingIntoUnloadedChunks() {
++        preventMovingIntoUnloadedChunks = getBoolean("settings.prevent-moving-into-unloaded-chunks", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -342,6 +342,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+                 speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
+ 
++                // Paper start - Prevent moving into unloaded chunks
++                if(com.destroystokyo.paper.PaperConfig.preventMovingIntoUnloadedChunks && !worldserver.isChunkLoaded((int) Math.floor(d4) >> 4, (int) Math.floor(d6) >> 4, false)) {
++                    this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
++                    return;
++                }
++                // Paper end
++
+                 if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && (!this.minecraftServer.H() || !this.minecraftServer.G().equals(entity.getDisplayName().getString()))) {
+                 // CraftBukkit end
+                     PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getDisplayName().getString(), this.player.getDisplayName().getString(), Double.valueOf(d6), Double.valueOf(d7), Double.valueOf(d8));
+@@ -893,6 +900,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
+ 
++                            // Paper start - Prevent moving into unloaded chunks
++                            if(com.destroystokyo.paper.PaperConfig.preventMovingIntoUnloadedChunks && !worldserver.isChunkLoaded((int) Math.floor(d4) >> 4, (int) Math.floor(d6) >> 4, false)) {
++                                this.internalTeleport(this.player.locX, this.player.locY, this.player.locZ, this.player.yaw, this.player.pitch, Collections.emptySet());
++                                return;
++                            }
++                            // Paper end
++
+                             if (!this.player.H() && (!this.player.getWorldServer().getGameRules().getBoolean("disableElytraMovementCheck") || !this.player.dc())) {
+                                 float f2 = this.player.dc() ? 300.0F : 100.0F;
+ 
+-- 
+2.18.0.windows.1
+
