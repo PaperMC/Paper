@@ -389,4 +389,9 @@ public class PaperWorldConfig {
         waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
         log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
     }
+
+    public boolean preventMovingIntoUnloadedChunks = false;
+    private void preventMovingIntoUnloadedChunks() {
+        preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
+    }
 }
