@@ -102,17 +102,6 @@ done
 # These must always be mapped manually, no automatic stuff
 #
 #             # group    # lib          # prefix               # many files
-importLibrary com.mojang datafixerupper com/mojang/datafixers \
-    schemas/Schema.java \
-    DataFixerBuilder.java \
-    DataFixerUpper.java \
-    NamedChoiceFinder.java \
-    functions/PointFree.java \
-    types/Type.java \
-    types/DynamicOps.java \
-    types/templates/Tag.java \
-    types/templates/TaggedChoice.java \
-    types/families/RecursiveTypeFamily.java
 
 # dont forget \ at end of each line but last
 
