@@ -9,7 +9,8 @@ gitcmd="git -c commit.gpgsign=false"
 
 function update {
     cd "$workdir/$1"
-    $gitcmd fetch && $gitcmd reset --hard origin/master
+    echo "$1"
+    $gitcmd fetch && $gitcmd reset --hard origin/version/1.12.2
     cd ../
     $gitcmd add $1
 }
@@ -19,7 +20,8 @@ update CraftBukkit
 update Spigot
 
 if [[ "$2" = "all" || "$2" = "a" ]] ; then
-	update BuildData
-	update Paperclip
+	#update BuildData
+	#update Paperclip
+    echo "Cannot update BuildData or Paperclip any further!"
 fi
 )
