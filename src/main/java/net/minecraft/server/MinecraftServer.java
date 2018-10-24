@@ -175,6 +175,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         S s0 = function.apply(thread); // CraftBukkit - decompile error
 
         atomicreference.set(s0);
+        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
         thread.start();
         return s0;
     }

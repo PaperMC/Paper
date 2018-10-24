@@ -48,8 +48,8 @@ import org.apache.logging.log4j.Logger;
 public class SystemUtils {
 
     private static final AtomicInteger c = new AtomicInteger(1);
-    private static final ExecutorService d = a("Bootstrap");
-    private static final ExecutorService e = a("Main");
+    private static final ExecutorService d = a("Bootstrap", -2); // Paper - add -2 priority
+    private static final ExecutorService e = a("Main", -1); // Paper - add -1 priority
     private static final ExecutorService f = n();
     public static LongSupplier a = System::nanoTime;
     public static final UUID b = new UUID(0L, 0L); public static final UUID getNullUUID() {return b;} // Paper OBFHELPER
@@ -79,15 +79,18 @@ public class SystemUtils {
         return Instant.now().toEpochMilli();
     }
 
-    private static ExecutorService a(String s) {
-        int i = MathHelper.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
-        Object object;
+    private static ExecutorService a(String s, int priorityModifier) { // Paper - add priority
+        // Paper start - use simpler thread pool that allows 1 thread
+        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
+        i = Integer.getInteger("Paper.WorkerThreadCount", i);
+        ExecutorService object;
 
         if (i <= 0) {
             object = MoreExecutors.newDirectExecutorService();
         } else {
-            object = new ForkJoinPool(i, (forkjoinpool) -> {
-                ForkJoinWorkerThread forkjoinworkerthread = new ForkJoinWorkerThread(forkjoinpool) {
+            object = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new ServerWorkerThread(target, s, priorityModifier));
+        }
+        /*
                     protected void onTermination(Throwable throwable) {
                         if (throwable != null) {
                             SystemUtils.LOGGER.warn("{} died", this.getName(), throwable);
@@ -103,6 +106,7 @@ public class SystemUtils {
                 return forkjoinworkerthread;
             }, SystemUtils::a, true);
         }
+        }*/ // Paper end
 
         return (ExecutorService) object;
     }
@@ -151,6 +155,7 @@ public class SystemUtils {
         });
     }
 
+    public static void onThreadError(Thread thread, Throwable throwable) { a(thread, throwable); } // Paper - OBFHELPER
     private static void a(Thread thread, Throwable throwable) {
         c(throwable);
         if (throwable instanceof CompletionException) {
