@@ -43,6 +43,7 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
         }
 
         final int page = 0;
+        boolean hasRequested = false; // Paper
 
         for (final List<String> request : Iterables.partition(criteria, ENTRIES_PER_PAGE)) {
             int failCount = 0;
@@ -68,6 +69,12 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
                         LOGGER.debug("Couldn't find profile {}", name);
                         callback.onProfileLookupFailed(new GameProfile(null, name), new ProfileNotFoundException("Server did not find the requested profile"));
                     }
+                    // Paper start
+                    if (!hasRequested) {
+                        hasRequested = true;
+                        continue;
+                    }
+                    // Paper end
 
                     try {
                         Thread.sleep(DELAY_BETWEEN_PAGES);
