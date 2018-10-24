@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 gitcmd="git -c commit.gpgsign=false"
 
