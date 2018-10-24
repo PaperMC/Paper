@@ -104,6 +104,7 @@ done
 #             # group    # lib          # prefix               # many files
 
 # dont forget \ at end of each line but last
+importLibrary com.mojang authlib com/mojang/authlib yggdrasil/YggdrasilGameProfileRepository.java
 
 ########################################################
 ########################################################

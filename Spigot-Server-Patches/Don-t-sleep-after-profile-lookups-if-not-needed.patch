@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 23 Oct 2018 20:25:05 -0400
+Subject: [PATCH] Don't sleep after profile lookups if not needed
+
+Mojang was sleeping even if we had no more requests to go after
+the current one finished, resulting in 100ms lost per profile lookup
+
+diff --git a/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java b/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+index 7ac07ac07ac0..7ac07ac07ac0 100644
+--- a/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
++++ b/src/main/java/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+@@ -0,0 +0,0 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+         }
+ 
+         final int page = 0;
++        boolean hasRequested = false; // Paper
+ 
+         for (final List<String> request : Iterables.partition(criteria, ENTRIES_PER_PAGE)) {
+             int failCount = 0;
+@@ -0,0 +0,0 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+                         LOGGER.debug("Couldn't find profile {}", name);
+                         callback.onProfileLookupFailed(new GameProfile(null, name), new ProfileNotFoundException("Server did not find the requested profile"));
+                     }
++                    // Paper start
++                    if (!hasRequested) {
++                        hasRequested = true;
++                        continue;
++                    }
++                    // Paper end
+ 
+                     try {
+                         Thread.sleep(DELAY_BETWEEN_PAGES);
+--
