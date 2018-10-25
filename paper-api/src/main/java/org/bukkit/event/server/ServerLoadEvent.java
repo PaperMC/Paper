@@ -1,15 +1,10 @@
 package org.bukkit.event.server;
 
-import org.bukkit.Warning;
 import org.bukkit.event.HandlerList;
 
 /**
  * This event is called when either the server startup or reload has completed.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class ServerLoadEvent extends ServerEvent {
 
     /**

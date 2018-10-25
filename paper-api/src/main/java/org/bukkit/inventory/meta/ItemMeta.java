@@ -18,8 +18,6 @@ import org.bukkit.inventory.ItemFlag;
  * <p>
  * An implementation will handle the creation and application for ItemMeta.
  * This class should not be implemented by a plugin in a live environment.
- * <p>
- * <b>Attribute related APIs are draft API</b>
  */
 public interface ItemMeta extends Cloneable, ConfigurationSerializable {
 
