@@ -27,6 +27,9 @@ public interface Messenger {
 
     /**
      * Checks if the specified channel is a reserved name.
+     * <br>
+     * All channels within the "minecraft" namespace except for
+     * "minecraft:brand" are reserved.
      *
      * @param channel Channel name to check.
      * @return True if the channel is reserved, otherwise false.

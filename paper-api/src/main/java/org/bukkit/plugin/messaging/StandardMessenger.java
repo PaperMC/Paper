@@ -170,7 +170,7 @@ public class StandardMessenger implements Messenger {
     public boolean isReservedChannel(String channel) {
         channel = validateAndCorrectChannel(channel);
 
-        return channel.contains("minecraft");
+        return channel.contains("minecraft") && !channel.equals("minecraft:brand");
     }
 
     public void registerOutgoingPluginChannel(Plugin plugin, String channel) {
