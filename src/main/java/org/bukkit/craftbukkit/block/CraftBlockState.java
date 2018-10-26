@@ -124,6 +124,8 @@ public class CraftBlockState implements BlockState {
 
     public void setType(final Material type) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
+        Preconditions.checkArgument(type.isBlock(), "Material must be a block!");
+
         if (this.getType() != type) {
             this.data = CraftMagicNumbers.getBlock(type).getBlockData();
         }
