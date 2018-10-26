@@ -28,6 +28,7 @@ import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -271,6 +272,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public double getWidth() {
         return getHandle().width;
+    }
+
+    @Override
+    public BoundingBox getBoundingBox() {
+        AxisAlignedBB bb = getHandle().getBoundingBox();
+        return new BoundingBox(bb.minX, bb.minY, bb.minZ, bb.maxX, bb.maxY, bb.maxZ);
     }
 
     public boolean isOnGround() {
