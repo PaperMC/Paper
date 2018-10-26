@@ -46,6 +46,27 @@ public interface Scoreboard {
     Objective registerNewObjective(String name, String criteria, String displayName) throws IllegalArgumentException;
 
     /**
+     * Registers an Objective on this Scoreboard
+     *
+     * @param name Name of the Objective
+     * @param criteria Criteria for the Objective
+     * @param displayName Name displayed to players for the Objective.
+     * @param renderType Manner of rendering the Objective
+     * @return The registered Objective
+     * @throws IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if name is longer than 16
+     *     characters.
+     * @throws IllegalArgumentException if criteria is null
+     * @throws IllegalArgumentException if displayName is null
+     * @throws IllegalArgumentException if displayName is longer than 128
+     *     characters.
+     * @throws IllegalArgumentException if renderType is null
+     * @throws IllegalArgumentException if an objective by that name already
+     *     exists
+     */
+    Objective registerNewObjective(String name, String criteria, String displayName, RenderType renderType) throws IllegalArgumentException;
+
+    /**
      * Gets an Objective on this Scoreboard by name
      *
      * @param name Name of the Objective
