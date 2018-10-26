@@ -12,6 +12,8 @@ import org.bukkit.SkullType;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 
@@ -106,13 +108,18 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public BlockFace getRotation() {
-        return ((Rotatable) getBlockData()).getRotation();
+        BlockData blockData = getBlockData();
+        return (blockData instanceof Rotatable) ? ((Rotatable) blockData).getRotation() : ((Directional) blockData).getFacing();
     }
 
     @Override
     public void setRotation(BlockFace rotation) {
-        Rotatable blockData = (Rotatable) getBlockData();
-        blockData.setRotation(rotation);
+        BlockData blockData = getBlockData();
+        if (blockData instanceof Rotatable) {
+            ((Rotatable) blockData).setRotation(rotation);
+        } else {
+            ((Directional) blockData).setFacing(rotation);
+        }
         setBlockData(blockData);
     }
 
