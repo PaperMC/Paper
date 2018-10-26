@@ -2,13 +2,13 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import net.minecraft.server.Scoreboard;
 import net.minecraft.server.ScoreboardObjective;
-import net.minecraft.server.ScoreboardServer;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 
 final class CraftObjective extends CraftScoreboardComponent implements Objective {
@@ -86,6 +86,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         return null;
     }
 
+    @Override
+    public void setRenderType(RenderType renderType) throws IllegalStateException {
+        Validate.notNull(renderType, "RenderType cannot be null");
+        CraftScoreboard scoreboard = checkState();
+
+        this.objective.a(CraftScoreboardTranslations.fromBukkitRender(renderType));
+    }
+
+    @Override
+    public RenderType getRenderType() throws IllegalStateException {
+        CraftScoreboard scoreboard = checkState();
+
+        return CraftScoreboardTranslations.toBukkitRender(this.objective.f());
+    }
+
     public Score getScore(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
         Validate.notNull(player, "Player cannot be null");
         CraftScoreboard scoreboard = checkState();
@@ -112,7 +127,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         if (getScoreboard().board.getObjective(objective.getName()) == null) {
             throw new IllegalStateException("Unregistered scoreboard component");
         }
-        
+
         return getScoreboard();
     }
 

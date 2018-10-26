@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.scoreboard;
 
+import net.minecraft.server.IScoreboardCriteria;
 import net.minecraft.server.Scoreboard;
 
 import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.RenderType;
 
 import com.google.common.collect.ImmutableBiMap;
 
@@ -23,4 +25,11 @@ class CraftScoreboardTranslations {
         return Scoreboard.getSlotForName(SLOTS.get(slot));
     }
 
+    static RenderType toBukkitRender(IScoreboardCriteria.EnumScoreboardHealthDisplay display) {
+        return RenderType.valueOf(display.name());
+    }
+
+    static IScoreboardCriteria.EnumScoreboardHealthDisplay fromBukkitRender(RenderType render) {
+        return IScoreboardCriteria.EnumScoreboardHealthDisplay.valueOf(render.name());
+    }
 }
