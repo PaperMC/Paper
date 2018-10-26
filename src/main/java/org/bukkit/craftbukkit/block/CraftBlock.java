@@ -8,7 +8,9 @@ import java.util.List;
 
 import net.minecraft.server.*;
 
+import org.apache.commons.lang.Validate;
 import org.bukkit.Chunk;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -18,15 +20,18 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.CraftFluidCollisionMode;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BlockVector;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 public class CraftBlock implements Block {
     private final net.minecraft.server.GeneratorAccess world;
@@ -601,5 +606,46 @@ public class CraftBlock implements Block {
     @Override
     public boolean isPassable() {
         return this.getData0().getCollisionShape(world, position).isEmpty();
+    }
+
+    @Override
+    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
+        Validate.notNull(start, "Start location is null!");
+        Validate.isTrue(this.getWorld().equals(start.getWorld()), "Start location is from different world!");
+        start.checkFinite();
+
+        Validate.notNull(direction, "Direction is null!");
+        direction.checkFinite();
+        Validate.isTrue(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
+
+        Validate.notNull(fluidCollisionMode, "Fluid collision mode is null!");
+        if (maxDistance < 0.0D) {
+            return null;
+        }
+
+        Vector dir = direction.clone().normalize().multiply(maxDistance);
+        Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
+        Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+
+        // Similar to to nms.World#rayTrace:
+        IBlockData blockData = world.getType(position);
+        Fluid fluid = world.b(position); // PAIL getFluid
+        boolean collidableBlock = blockData.getBlock().d(blockData); // PAIL isCollidable
+        boolean collideWithFluid = CraftFluidCollisionMode.toNMS(fluidCollisionMode).d.test(fluid); // PAIL predicate
+
+        if (!collidableBlock && !collideWithFluid) {
+            return null;
+        }
+
+        MovingObjectPosition nmsHitResult = null;
+        if (collidableBlock) {
+            nmsHitResult = net.minecraft.server.Block.a(blockData, world.getMinecraftWorld(), position, startPos, endPos); // PAIL rayTrace
+        }
+
+        if (nmsHitResult == null && collideWithFluid) {
+            nmsHitResult = VoxelShapes.a(0.0D, 0.0D, 0.0D, 1.0D, (double) fluid.f(), 1.0D).a(startPos, endPos, position); // PAIL create, getHeight, rayTrace
+        }
+
+        return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);
     }
 }

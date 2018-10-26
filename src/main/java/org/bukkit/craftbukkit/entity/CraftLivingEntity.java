@@ -36,6 +36,7 @@ import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
 
 import org.apache.commons.lang.Validate;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -78,6 +79,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -168,6 +170,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
         return getLineOfSight(transparent, maxDistance, 2);
+    }
+
+    @Override
+    public Block getTargetBlockExact(int maxDistance) {
+        return this.getTargetBlockExact(maxDistance, FluidCollisionMode.NEVER);
+    }
+
+    @Override
+    public Block getTargetBlockExact(int maxDistance, FluidCollisionMode fluidCollisionMode) {
+        RayTraceResult hitResult = this.rayTraceBlocks(maxDistance, fluidCollisionMode);
+        return (hitResult != null ? hitResult.getHitBlock() : null);
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(double maxDistance) {
+        return this.rayTraceBlocks(maxDistance, FluidCollisionMode.NEVER);
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(double maxDistance, FluidCollisionMode fluidCollisionMode) {
+        Location eyeLocation = this.getEyeLocation();
+        Vector direction = eyeLocation.getDirection();
+        return this.getWorld().rayTraceBlocks(eyeLocation, direction, maxDistance, fluidCollisionMode, false);
     }
 
     public int getRemainingAir() {

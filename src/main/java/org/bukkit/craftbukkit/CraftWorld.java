@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import net.minecraft.server.*;
 
@@ -22,6 +23,7 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -43,6 +45,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.CommandMinecart;
@@ -62,7 +65,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Consumer;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 public class CraftWorld implements World {
@@ -691,17 +696,160 @@ public class CraftWorld implements World {
 
     @Override
     public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z) {
-        if (location == null || !location.getWorld().equals(this)) {
-            return Collections.emptyList();
-        }
+        return this.getNearbyEntities(location, x, y, z, null);
+    }
 
-        AxisAlignedBB bb = new AxisAlignedBB(location.getX() - x, location.getY() - y, location.getZ() - z, location.getX() + x, location.getY() + y, location.getZ() + z);
+    @Override
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z, Predicate<Entity> filter) {
+        Validate.notNull(location, "Location is null!");
+        Validate.isTrue(this.equals(location.getWorld()), "Location is from different world!");
+
+        BoundingBox aabb = BoundingBox.of(location, x, y, z);
+        return this.getNearbyEntities(aabb, filter);
+    }
+
+    @Override
+    public Collection<Entity> getNearbyEntities(BoundingBox boundingBox) {
+        return this.getNearbyEntities(boundingBox, null);
+    }
+
+    @Override
+    public Collection<Entity> getNearbyEntities(BoundingBox boundingBox, Predicate<Entity> filter) {
+        Validate.notNull(boundingBox, "Bounding box is null!");
+
+        AxisAlignedBB bb = new AxisAlignedBB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
         List<net.minecraft.server.Entity> entityList = getHandle().getEntities((net.minecraft.server.Entity) null, bb, null);
         List<Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(entityList.size());
-        for (Object entity : entityList) {
-            bukkitEntityList.add(((net.minecraft.server.Entity) entity).getBukkitEntity());
+
+        for (net.minecraft.server.Entity entity : entityList) {
+            Entity bukkitEntity = entity.getBukkitEntity();
+            if (filter == null || filter.test(bukkitEntity)) {
+                bukkitEntityList.add(bukkitEntity);
+            }
         }
+
         return bukkitEntityList;
+    }
+
+    @Override
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance) {
+        return this.rayTraceEntities(start, direction, maxDistance, null);
+    }
+
+    @Override
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize) {
+        return this.rayTraceEntities(start, direction, maxDistance, raySize, null);
+    }
+
+    @Override
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, Predicate<Entity> filter) {
+        return this.rayTraceEntities(start, direction, maxDistance, 0.0D, filter);
+    }
+
+    @Override
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<Entity> filter) {
+        Validate.notNull(start, "Start location is null!");
+        Validate.isTrue(this.equals(start.getWorld()), "Start location is from different world!");
+        start.checkFinite();
+
+        Validate.notNull(direction, "Direction is null!");
+        direction.checkFinite();
+
+        Validate.isTrue(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
+
+        if (maxDistance < 0.0D) {
+            return null;
+        }
+
+        Vector startPos = start.toVector();
+        Vector dir = direction.clone().normalize().multiply(maxDistance);
+        BoundingBox aabb = BoundingBox.of(startPos, startPos).expandDirectional(dir).expand(raySize);
+        Collection<Entity> entities = this.getNearbyEntities(aabb, filter);
+
+        Entity nearestHitEntity = null;
+        RayTraceResult nearestHitResult = null;
+        double nearestDistanceSq = Double.MAX_VALUE;
+
+        for (Entity entity : entities) {
+            BoundingBox boundingBox = entity.getBoundingBox().expand(raySize);
+            RayTraceResult hitResult = boundingBox.rayTrace(startPos, direction, maxDistance);
+
+            if (hitResult != null) {
+                double distanceSq = startPos.distanceSquared(hitResult.getHitPosition());
+
+                if (distanceSq < nearestDistanceSq) {
+                    nearestHitEntity = entity;
+                    nearestHitResult = hitResult;
+                    nearestDistanceSq = distanceSq;
+                }
+            }
+        }
+
+        return (nearestHitEntity == null) ? null : new RayTraceResult(nearestHitResult.getHitPosition(), nearestHitEntity, nearestHitResult.getHitBlockFace());
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance) {
+        return this.rayTraceBlocks(start, direction, maxDistance, FluidCollisionMode.NEVER, false);
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
+        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, false);
+    }
+
+    @Override
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
+        Validate.notNull(start, "Start location is null!");
+        Validate.isTrue(this.equals(start.getWorld()), "Start location is from different world!");
+        start.checkFinite();
+
+        Validate.notNull(direction, "Direction is null!");
+        direction.checkFinite();
+
+        Validate.isTrue(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
+        Validate.notNull(fluidCollisionMode, "Fluid collision mode is null!");
+
+        if (maxDistance < 0.0D) {
+            return null;
+        }
+
+        Vector dir = direction.clone().normalize().multiply(maxDistance);
+        Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
+        Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+        MovingObjectPosition nmsHitResult = this.getHandle().rayTrace(startPos, endPos, CraftFluidCollisionMode.toNMS(fluidCollisionMode), ignorePassableBlocks, false);
+
+        return CraftRayTraceResult.fromNMS(this, nmsHitResult);
+    }
+
+    @Override
+    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter) {
+        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
+        Vector startVec = null;
+        double blockHitDistance = maxDistance;
+
+        // limiting the entity search range if we found a block hit:
+        if (blockHit != null) {
+            startVec = start.toVector();
+            blockHitDistance = startVec.distance(blockHit.getHitPosition());
+        }
+
+        RayTraceResult entityHit = this.rayTraceEntities(start, direction, blockHitDistance, raySize, filter);
+        if (blockHit == null) {
+            return entityHit;
+        }
+
+        if (entityHit == null) {
+            return blockHit;
+        }
+
+        // Cannot be null as blockHit == null returns above
+        double entityHitDistanceSquared = startVec.distanceSquared(entityHit.getHitPosition());
+        if (entityHitDistanceSquared < (blockHitDistance * blockHitDistance)) {
+            return entityHit;
+        }
+
+        return blockHit;
     }
 
     public List<Player> getPlayers() {
