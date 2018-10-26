@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 
 @RunWith(Parameterized.class)
 public class LocationTest {
-    private static final double δ = 1.0 / 1000000;
+    private static final double delta = 1.0 / 1000000;
     /**
      * <pre>
      * a² + b² = c², a = b
@@ -166,17 +166,17 @@ public class LocationTest {
     public void testExpectedPitchYaw() {
         Location location = getEmptyLocation().setDirection(getVector());
 
-        assertThat((double) location.getYaw(), is(closeTo(yaw, δ)));
-        assertThat((double) location.getPitch(), is(closeTo(pitch, δ)));
+        assertThat((double) location.getYaw(), is(closeTo(yaw, delta)));
+        assertThat((double) location.getPitch(), is(closeTo(pitch, delta)));
     }
 
     @Test
     public void testExpectedXYZ() {
         Vector vector = getLocation().getDirection();
 
-        assertThat(vector.getX(), is(closeTo(x, δ)));
-        assertThat(vector.getY(), is(closeTo(y, δ)));
-        assertThat(vector.getZ(), is(closeTo(z, δ)));
+        assertThat(vector.getX(), is(closeTo(x, delta)));
+        assertThat(vector.getY(), is(closeTo(y, delta)));
+        assertThat(vector.getZ(), is(closeTo(z, delta)));
     }
 
     private Vector getVector() {

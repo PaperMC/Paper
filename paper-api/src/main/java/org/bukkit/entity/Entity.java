@@ -9,6 +9,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.material.Directional;
 import org.bukkit.metadata.Metadatable;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -68,6 +69,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @return width of entity
      */
     public double getWidth();
+
+    /**
+     * Gets the entity's current bounding box.
+     * <p>
+     * The returned bounding box reflects the entity's current location and
+     * size.
+     *
+     * @return the entity's current bounding box
+     */
+    public BoundingBox getBoundingBox();
 
     /**
      * Returns true if the entity is supported by a block. This value is a

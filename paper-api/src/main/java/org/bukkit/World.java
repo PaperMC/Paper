@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -17,7 +18,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Consumer;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 /**
@@ -425,17 +428,231 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public List<Player> getPlayers();
 
     /**
-     * Returns a list of entities within a bounding box centered around a Location.
-     *
-     * Some implementations may impose artificial restrictions on the size of the search bounding box.
+     * Returns a list of entities within a bounding box centered around a
+     * Location.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the size of the
+     * search bounding box.
      *
      * @param location The center of the bounding box
      * @param x 1/2 the size of the box along x axis
      * @param y 1/2 the size of the box along y axis
      * @param z 1/2 the size of the box along z axis
-     * @return the collection of entities near location. This will always be a non-null collection.
+     * @return the collection of entities near location. This will always be a
+     *      non-null collection.
      */
     public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z);
+
+    /**
+     * Returns a list of entities within a bounding box centered around a
+     * Location.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the size of the
+     * search bounding box.
+     *
+     * @param location The center of the bounding box
+     * @param x 1/2 the size of the box along x axis
+     * @param y 1/2 the size of the box along y axis
+     * @param z 1/2 the size of the box along z axis
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the collection of entities near location. This will always be a
+     *     non-null collection.
+     */
+    public Collection<Entity> getNearbyEntities(Location location, double x, double y, double z, Predicate<Entity> filter);
+
+    /**
+     * Returns a list of entities within the given bounding box.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the size of the
+     * search bounding box.
+     *
+     * @param boundingBox the bounding box
+     * @return the collection of entities within the bounding box, will always
+     *     be a non-null collection
+     */
+    public Collection<Entity> getNearbyEntities(BoundingBox boundingBox);
+
+    /**
+     * Returns a list of entities within the given bounding box.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the size of the
+     * search bounding box.
+     *
+     * @param boundingBox the bounding box
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the collection of entities within the bounding box, will always
+     *     be a non-null collection
+     */
+    public Collection<Entity> getNearbyEntities(BoundingBox boundingBox, Predicate<Entity> filter);
+
+    /**
+     * Performs a ray trace that checks for entity collisions.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the maximum
+     * distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @return the closest ray trace hit result, or <code>null</code> if there
+     *     is no hit
+     * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
+     */
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance);
+
+    /**
+     * Performs a ray trace that checks for entity collisions.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the maximum
+     * distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param raySize entity bounding boxes will be uniformly expanded (or
+     *     shrinked) by this value before doing collision checks
+     * @return the closest ray trace hit result, or <code>null</code> if there
+     *     is no hit
+     * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
+     */
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize);
+
+    /**
+     * Performs a ray trace that checks for entity collisions.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the maximum
+     * distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the closest ray trace hit result, or <code>null</code> if there
+     *     is no hit
+     * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
+     */
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, Predicate<Entity> filter);
+
+    /**
+     * Performs a ray trace that checks for entity collisions.
+     * <p>
+     * This may not consider entities in currently unloaded chunks. Some
+     * implementations may impose artificial restrictions on the maximum
+     * distance.
+     *
+     * @param start the start position
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param raySize entity bounding boxes will be uniformly expanded (or
+     *     shrinked) by this value before doing collision checks
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the closest ray trace hit result, or <code>null</code> if there
+     *     is no hit
+     */
+    public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<Entity> filter);
+
+    /**
+     * Performs a ray trace that checks for block collisions using the blocks'
+     * precise collision shapes.
+     * <p>
+     * This takes collisions with passable blocks into account, but ignores
+     * fluids.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start location
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @return the ray trace hit result, or <code>null</code> if there is no hit
+     * @see #rayTraceBlocks(Location, Vector, double, FluidCollisionMode, boolean)
+     */
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance);
+
+    /**
+     * Performs a ray trace that checks for block collisions using the blocks'
+     * precise collision shapes.
+     * <p>
+     * This takes collisions with passable blocks into account.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start location
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @return the ray trace hit result, or <code>null</code> if there is no hit
+     * @see #rayTraceBlocks(Location, Vector, double, FluidCollisionMode, boolean)
+     */
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode);
+
+    /**
+     * Performs a ray trace that checks for block collisions using the blocks'
+     * precise collision shapes.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
+     * <p>
+     * Portal blocks are only considered passable if the ray starts within
+     * them. Apart from that collisions with portal blocks will be considered
+     * even if collisions with passable blocks are otherwise ignored.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start location
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @param ignorePassableBlocks whether to ignore passable but collidable
+     *     blocks (ex. tall grass, signs, fluids, ..)
+     * @return the ray trace hit result, or <code>null</code> if there is no hit
+     */
+    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
+
+    /**
+     * Performs a ray trace that checks for both block and entity collisions.
+     * <p>
+     * Block collisions use the blocks' precise collision shapes. The
+     * <code>raySize</code> parameter is only taken into account for entity
+     * collision checks.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
+     * <p>
+     * Portal blocks are only considered passable if the ray starts within them.
+     * Apart from that collisions with portal blocks will be considered even if
+     * collisions with passable blocks are otherwise ignored.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param start the start location
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @param ignorePassableBlocks whether to ignore passable but collidable
+     *     blocks (ex. tall grass, signs, fluids, ..)
+     * @param raySize entity bounding boxes will be uniformly expanded (or
+     *     shrinked) by this value before doing collision checks
+     * @param filter only entities that fulfill this predicate are considered,
+     *     or <code>null</code> to consider all entities
+     * @return the closest ray trace hit result with either a block or an
+     *     entity, or <code>null</code> if there is no hit
+     */
+    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter);
 
     /**
      * Gets the unique name of this world

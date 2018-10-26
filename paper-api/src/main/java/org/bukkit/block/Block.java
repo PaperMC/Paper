@@ -3,12 +3,15 @@ package org.bukkit.block;
 import java.util.Collection;
 
 import org.bukkit.Chunk;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 /**
  * Represents a block. This is a live object, and only one Block may exist for
@@ -369,4 +372,16 @@ public interface Block extends Metadatable {
      * @return <code>true</code> if passable
      */
     boolean isPassable();
+
+    /**
+     * Performs a ray trace that checks for collision with this specific block
+     * in its current state using its precise collision shape.
+     *
+     * @param start the start location
+     * @param direction the ray direction
+     * @param maxDistance the maximum distance
+     * @param fluidCollisionMode the fluid collision mode
+     * @return the ray trace hit result, or <code>null</code> if there is no hit
+     */
+    RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode);
 }

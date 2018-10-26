@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.bukkit.util.Vector;
+
 /**
  * Represents the face of a block
  */
@@ -65,6 +67,19 @@ public enum BlockFace {
      */
     public int getModZ() {
         return modZ;
+    }
+
+    /**
+     * Gets the normal vector corresponding to this block face.
+     *
+     * @return the normal vector
+     */
+    public Vector getDirection() {
+        Vector direction = new Vector(modX, modY, modZ);
+        if (modX != 0 || modY != 0 || modZ != 0) {
+            direction.normalize();
+        }
+        return direction;
     }
 
     public BlockFace getOppositeFace() {
