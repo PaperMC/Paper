@@ -56,7 +56,8 @@ public interface Skull extends BlockState {
     public void setOwningPlayer(OfflinePlayer player);
 
     /**
-     * Gets the rotation of the skull in the world
+     * Gets the rotation of the skull in the world (or facing direction if this
+     * is a wall mounted skull).
      *
      * @return the rotation of the skull
      * @deprecated use {@link BlockData}
@@ -65,7 +66,8 @@ public interface Skull extends BlockState {
     public BlockFace getRotation();
 
     /**
-     * Sets the rotation of the skull in the world
+     * Sets the rotation of the skull in the world (or facing direction if this
+     * is a wall mounted skull).
      *
      * @param rotation the rotation of the skull
      * @deprecated use {@link BlockData}
