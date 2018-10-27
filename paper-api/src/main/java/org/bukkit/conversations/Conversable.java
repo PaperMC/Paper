@@ -1,7 +1,5 @@
 package org.bukkit.conversations;
 
-import org.bukkit.command.CommandSender;
-
 /**
  * The Conversable interface is used to indicate objects that can have
  * conversations.

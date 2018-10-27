@@ -1,9 +1,8 @@
 package org.bukkit.entity.minecart;
 
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Minecart;
 
-public interface CommandMinecart extends Minecart, CommandSender {
+public interface CommandMinecart extends Minecart {
 
     /**
      * Gets the command that this CommandMinecart will run when activated.

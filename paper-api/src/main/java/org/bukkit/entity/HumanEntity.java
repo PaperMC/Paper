@@ -12,12 +12,11 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.permissions.Permissible;
 
 /**
  * Represents a human entity, such as an NPC or a player
  */
-public interface HumanEntity extends LivingEntity, AnimalTamer, Permissible, InventoryHolder {
+public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
 
     /**
      * Returns the name of this player

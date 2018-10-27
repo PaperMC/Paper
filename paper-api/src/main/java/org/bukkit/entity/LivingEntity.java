@@ -1,7 +1,6 @@
 package org.bukkit.entity;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +20,7 @@ import org.bukkit.util.Vector;
 /**
  * Represents a living entity, such as a monster or player
  */
-public interface LivingEntity extends Attributable, Entity, Damageable, ProjectileSource {
+public interface LivingEntity extends Attributable, Damageable, ProjectileSource {
 
     /**
      * Gets the height of the living entity's eyes above its Location.

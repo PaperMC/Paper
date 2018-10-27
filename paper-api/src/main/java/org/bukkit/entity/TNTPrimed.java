@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.Location;
+
 /**
  * Represents a Primed TNT.
  */

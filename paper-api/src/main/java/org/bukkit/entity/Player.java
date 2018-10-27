@@ -19,7 +19,6 @@ import org.bukkit.WeatherType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.map.MapView;
@@ -30,7 +29,7 @@ import org.bukkit.scoreboard.Scoreboard;
 /**
  * Represents a player, connected or not
  */
-public interface Player extends HumanEntity, Conversable, CommandSender, OfflinePlayer, PluginMessageRecipient {
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient {
 
     /**
      * Gets the "friendly" name to display of this player. This may include

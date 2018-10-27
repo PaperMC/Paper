@@ -1,13 +1,12 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Waterlogged;
 
 /**
  * 'type' represents what state the slab is in - either top, bottom, or a double
  * slab occupying the full block.
  */
-public interface Slab extends BlockData, Waterlogged {
+public interface Slab extends Waterlogged {
 
     /**
      * Gets the value of the 'type' property.

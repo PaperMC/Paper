@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -389,14 +390,14 @@ public abstract class Command {
         if (source instanceof BlockCommandSender) {
             BlockCommandSender blockCommandSender = (BlockCommandSender) source;
 
-            if (blockCommandSender.getBlock().getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
+            if (!blockCommandSender.getBlock().getWorld().getGameRuleValue(GameRule.COMMAND_BLOCK_OUTPUT)) {
                 Bukkit.getConsoleSender().sendMessage(result);
                 return;
             }
         } else if (source instanceof CommandMinecart) {
             CommandMinecart commandMinecart = (CommandMinecart) source;
 
-            if (commandMinecart.getWorld().getGameRuleValue("commandBlockOutput").equalsIgnoreCase("false")) {
+            if (!commandMinecart.getWorld().getGameRuleValue(GameRule.COMMAND_BLOCK_OUTPUT)) {
                 Bukkit.getConsoleSender().sendMessage(result);
                 return;
             }

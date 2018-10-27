@@ -9,7 +9,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.util.NumberConversions;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;

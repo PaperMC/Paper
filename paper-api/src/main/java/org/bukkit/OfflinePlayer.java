@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import java.util.Date;
 import java.util.UUID;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;

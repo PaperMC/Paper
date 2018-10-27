@@ -1,7 +1,6 @@
 package org.bukkit.conversations;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
 /**
