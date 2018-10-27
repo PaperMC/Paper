@@ -12,10 +12,7 @@ echo "Rebuilding patch files from current fork state..."
 function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
-        sed -Ei.bak 's/index [a-f0-9]+\.\.[a-f0-9]+/index 7ac07ac07ac0..7ac07ac07ac0/g' "$patch"
-        sed -Ei.bak 's/^From [a-f0-9]{32,}/From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0/g' "$patch"
-        rm "$patch.bak"
-        $gitcmd add -A $patch
+        echo "$patch"
         gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
         diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(From [a-f0-9]{32,}|\-\-\- a|\+\+\+ b|^.index)")
 
