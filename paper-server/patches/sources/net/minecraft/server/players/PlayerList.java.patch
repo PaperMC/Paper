@@ -557,7 +557,7 @@
  
          if (entityplayer1 != null) {
              set.add(entityplayer1);
-@@ -431,30 +654,50 @@
+@@ -431,72 +654,160 @@
          Iterator iterator1 = set.iterator();
  
          while (iterator1.hasNext()) {
@@ -571,6 +571,11 @@
 +        */
 +        return player == null;
 +        // CraftBukkit end
++    }
++
++    // CraftBukkit start
++    public ServerPlayer respawn(ServerPlayer entityplayer, boolean flag, Entity.RemovalReason entity_removalreason, RespawnReason reason) {
++        return this.respawn(entityplayer, flag, entity_removalreason, reason, null);
      }
  
 -    public ServerPlayer respawn(ServerPlayer player, boolean alive, Entity.RemovalReason removalReason) {
@@ -579,15 +584,6 @@
 -        TeleportTransition teleporttransition = player.findRespawnPositionAndUseSpawnBlock(!alive, TeleportTransition.DO_NOTHING);
 -        ServerLevel worldserver = teleporttransition.newLevel();
 -        ServerPlayer entityplayer1 = new ServerPlayer(this.server, worldserver, player.getGameProfile(), player.clientInformation());
-+    // CraftBukkit start
-+    public ServerPlayer respawn(ServerPlayer entityplayer, boolean flag, Entity.RemovalReason entity_removalreason, RespawnReason reason) {
-+        return this.respawn(entityplayer, flag, entity_removalreason, reason, null);
-+    }
- 
--        entityplayer1.connection = player.connection;
--        entityplayer1.restoreFrom(player, alive);
--        entityplayer1.setId(player.getId());
--        entityplayer1.setMainArm(player.getMainArm());
 +    public ServerPlayer respawn(ServerPlayer entityplayer, boolean flag, Entity.RemovalReason entity_removalreason, RespawnReason reason, Location location) {
 +        entityplayer.stopRiding(); // CraftBukkit
 +        this.players.remove(entityplayer);
@@ -602,7 +598,11 @@
 +        Level fromWorld = entityplayer.level();
 +        entityplayer.wonGame = false;
 +        // CraftBukkit end
-+
+ 
+-        entityplayer1.connection = player.connection;
+-        entityplayer1.restoreFrom(player, alive);
+-        entityplayer1.setId(player.getId());
+-        entityplayer1.setMainArm(player.getMainArm());
 +        entityplayer1.connection = entityplayer.connection;
 +        entityplayer1.restoreFrom(entityplayer, flag);
 +        entityplayer1.setId(entityplayer.getId());
@@ -621,9 +621,13 @@
  
          while (iterator.hasNext()) {
              String s = (String) iterator.next();
-@@ -462,41 +705,88 @@
+ 
              entityplayer1.addTag(s);
          }
++        // Paper start - Add PlayerPostRespawnEvent
++        boolean isBedSpawn = false;
++        boolean isRespawn = false;
++        // Paper end - Add PlayerPostRespawnEvent
  
 +        // CraftBukkit start - fire PlayerRespawnEvent
 +        TeleportTransition teleporttransition;
@@ -631,11 +635,16 @@
 +            teleporttransition = entityplayer.findRespawnPositionAndUseSpawnBlock(!flag, TeleportTransition.DO_NOTHING, reason);
 +
 +            if (!flag) entityplayer.reset(); // SPIGOT-4785
++           // Paper start - Add PlayerPostRespawnEvent
++           if (teleporttransition == null) return entityplayer; // Early exit, mirrors belows early return for disconnected players in respawn event
++           isRespawn = true;
++           location = CraftLocation.toBukkit(teleporttransition.position(), teleporttransition.newLevel().getWorld(), teleporttransition.yRot(), teleporttransition.xRot());
++           // Paper end - Add PlayerPostRespawnEvent
 +        } else {
 +            teleporttransition = new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
 +        }
 +        // Spigot Start
-+        if (teleporttransition == null) {
++        if (teleporttransition == null) { // Paper - Add PlayerPostRespawnEvent - diff on change - spigot early returns if respawn pos is null, that is how they handle disconnected player in respawn event
 +            return entityplayer;
 +        }
 +        // Spigot End
@@ -692,6 +701,11 @@
              if (iblockdata.is(Blocks.RESPAWN_ANCHOR)) {
                  entityplayer1.connection.send(new ClientboundSoundPacket(SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundSource.BLOCKS, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), 1.0F, 1.0F, worldserver.getRandom().nextLong()));
              }
++            // Paper start - Add PlayerPostRespawnEvent
++            if (iblockdata.is(net.minecraft.tags.BlockTags.BEDS) && !teleporttransition.missingRespawnBlock()) {
++                isBedSpawn = true;
++            }
++            // Paper end - Add PlayerPostRespawnEvent
          }
 +        // Added from changeDimension
 +        this.sendAllPlayerInfo(entityplayer); // Update health, etc...
@@ -713,12 +727,19 @@
 +        if (entityplayer.connection.isDisconnected()) {
 +            this.save(entityplayer);
 +        }
++
++        // Paper start - Add PlayerPostRespawnEvent
++        if (isRespawn) {
++            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn));
++        }
++        // Paper end - Add PlayerPostRespawnEvent
++
 +        // CraftBukkit end
 +
          return entityplayer1;
      }
  
-@@ -516,15 +806,32 @@
+@@ -516,15 +827,32 @@
      }
  
      public void sendPlayerPermissionLevel(ServerPlayer player) {
@@ -753,7 +774,7 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -541,6 +848,25 @@
+@@ -541,6 +869,25 @@
  
      }
  
@@ -779,7 +800,7 @@
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
  
-@@ -554,7 +880,7 @@
+@@ -554,7 +901,7 @@
  
      }
  
@@ -788,7 +809,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +899,7 @@
+@@ -573,7 +920,7 @@
          }
      }
  
@@ -797,7 +818,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +945,7 @@
+@@ -619,7 +966,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -806,7 +827,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,36 +969,51 @@
+@@ -643,36 +990,51 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -871,7 +892,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -687,10 +1028,12 @@
+@@ -687,10 +1049,12 @@
      }
  
      public void saveAll() {
@@ -884,7 +905,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1055,19 @@
+@@ -712,15 +1076,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -908,7 +929,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1076,16 @@
+@@ -729,8 +1097,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -926,7 +947,7 @@
      }
  
      public int getPlayerCount() {
-@@ -746,6 +1101,7 @@
+@@ -746,6 +1122,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -934,7 +955,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -786,11 +1142,35 @@
+@@ -786,12 +1163,36 @@
      }
  
      public void removeAll() {
@@ -960,19 +981,20 @@
 +            if (team != null) scoreboard.removePlayerTeam(team);
 +        }
 +        // Paper end - Configurable player collision
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public void broadcastMessage(Component[] iChatBaseComponents) {
 +        for (Component component : iChatBaseComponents) {
 +            this.broadcastSystemMessage(component, false);
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
-@@ -819,24 +1199,43 @@
+             return message;
+@@ -819,24 +1220,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -1019,7 +1041,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1244,27 @@
+@@ -845,20 +1265,27 @@
  
      }
  
@@ -1052,7 +1074,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1273,7 @@
+@@ -867,7 +1294,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1061,7 +1083,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1281,13 @@
+@@ -875,13 +1302,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1077,7 +1099,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1338,28 @@
+@@ -932,15 +1359,28 @@
      }
  
      public void reloadResources() {
