@@ -8,6 +8,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player respawns.
+ * <p>
+ * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
+ * because the player is "reset" between this event and that event and some changes won't persist.
  */
 public class PlayerRespawnEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
