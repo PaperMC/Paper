@@ -668,9 +668,14 @@ public abstract class PlayerList {
         // this.a(entityplayer1, entityplayer, worldserver1); // CraftBukkit - removed
         boolean flag2 = false;
 
+        // Paper start
+        boolean isBedSpawn = false;
+        boolean isRespawn = false;
+        // Paper end
+
         // CraftBukkit start - fire PlayerRespawnEvent
         if (location == null) {
-            boolean isBedSpawn = false;
+            // boolean isBedSpawn = false; // Paper - moved up
             WorldServer worldserver1 = this.server.getWorldServer(entityplayer.getSpawnDimension());
             if (worldserver1 != null) {
                 Optional optional;
@@ -721,6 +726,7 @@ public abstract class PlayerList {
 
             location = respawnEvent.getRespawnLocation();
             if (!flag) entityplayer.reset(); // SPIGOT-4785
+            isRespawn = true; // Paper
         } else {
             location.setWorld(worldserver.getWorld());
         }
@@ -778,6 +784,13 @@ public abstract class PlayerList {
         if (entityplayer.playerConnection.isDisconnected()) {
             this.savePlayerFile(entityplayer);
         }
+
+        // Paper start
+        if (isRespawn) {
+            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn));
+        }
+        // Paper end
+
         // CraftBukkit end
         return entityplayer1;
     }
