@@ -67,7 +67,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Material getType(int x, int y, int z) {
-        return getTypeAndData(x, y, z).getItemType();
+        return CraftMagicNumbers.getMaterial(getTypeId(x, y, z).getBlock());
     }
 
     @Override

@@ -13,7 +13,7 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     private boolean testSetBlock(CraftChunkData data, int x, int y, int z, BlockData type, BlockData expected) {
         data.setBlock(x, y, z, type);
-        return expected.equals(data.getBlockData(x, y, z));
+        return expected.equals(data.getBlockData(x, y, z)) && expected.getMaterial().equals(data.getType(x, y, z));
     }
 
     private void testSetRegion(CraftChunkData data, int minx, int miny, int minz, int maxx, int maxy, int maxz, BlockData type) {
