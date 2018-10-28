@@ -1,4 +1,4 @@
-From 54cdcb2e434baa254f727db260c6bb57fed41bcd Mon Sep 17 00:00:00 2001
+From e2720237c9d98f6fe17d5578784cbea7e826a1da Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -106,10 +106,10 @@ index b703e0848..77d35ac99 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 000000000..5c77b6e8e
+index 000000000..e589aa356
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,298 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -136,6 +136,7 @@ index 000000000..5c77b6e8e
 + */
 +@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 +public class PriorityQueuedExecutor extends AbstractExecutorService {
++    private final ConcurrentLinkedQueue<Runnable> urgent = new ConcurrentLinkedQueue<>();
 +    private final ConcurrentLinkedQueue<Runnable> high = new ConcurrentLinkedQueue<>();
 +    private final ConcurrentLinkedQueue<Runnable> normal = new ConcurrentLinkedQueue<>();
 +    private final RejectionHandler handler;
@@ -264,7 +265,11 @@ index 000000000..5c77b6e8e
 +    }
 +
 +    private Runnable getTask() {
-+        Runnable run = high.poll();
++        Runnable run = urgent.poll();
++        if (run != null) {
++            return run;
++        }
++        run = high.poll();
 +        if (run != null) {
 +            return run;
 +        }
@@ -300,7 +305,7 @@ index 000000000..5c77b6e8e
 +    }
 +
 +    public enum Priority {
-+        NORMAL, HIGH
++        NORMAL, HIGH, URGENT
 +    }
 +
 +    public class PendingTask <T> implements Runnable {
@@ -339,8 +344,18 @@ index 000000000..5c77b6e8e
 +        }
 +
 +        public void bumpPriority() {
-+            if (!priority.compareAndSet(Priority.NORMAL.ordinal(), Priority.HIGH.ordinal())) {
-+                return;
++            bumpPriority(Priority.HIGH);
++        }
++
++        public void bumpPriority(Priority newPriority) {
++            for (;;) {
++                int current = this.priority.get();
++                if (current >= newPriority.ordinal()) {
++                    return;
++                }
++                if (priority.compareAndSet(current, newPriority.ordinal())) {
++                    break;
++                }
 +            }
 +
 +            if (this.executor == null) {
@@ -362,7 +377,9 @@ index 000000000..5c77b6e8e
 +                    return;
 +                }
 +                if (this.submitted.compareAndSet(submitted, priority)) {
-+                    if (priority == Priority.HIGH.ordinal()) {
++                    if (priority == Priority.URGENT.ordinal()) {
++                        urgent.add(this);
++                    } else if (priority == Priority.HIGH.ordinal()) {
 +                        high.add(this);
 +                    } else {
 +                        normal.add(this);
@@ -1014,10 +1031,10 @@ index 763130b03..67722440f 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 000000000..5823917a6
+index 000000000..c334462f2
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,593 @@
+@@ -0,0 +1,619 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1114,6 +1131,18 @@ index 000000000..5823917a6
 +        }
 +    }
 +
++    private static Priority calculatePriority(boolean isBlockingMain, boolean priority) {
++        if (isBlockingMain) {
++            return Priority.URGENT;
++        }
++
++        if (priority) {
++            return Priority.HIGH;
++        }
++
++        return Priority.NORMAL;
++    }
++
 +    private boolean processChunkLoads() {
 +        Runnable run;
 +        boolean hadLoad = false;
@@ -1128,7 +1157,7 @@ index 000000000..5823917a6
 +    public void bumpPriority(ChunkCoordIntPair coords) {
 +        PendingChunk pending = pendingChunks.get(coords.asLong());
 +        if (pending != null) {
-+            pending.bumpPriority();
++            pending.bumpPriority(Priority.HIGH);
 +        }
 +    }
 +
@@ -1165,16 +1194,18 @@ index 000000000..5823917a6
 +        synchronized (pendingChunks) {
 +            PendingChunk pendingChunk = pendingChunks.get(key);
 +            if (pendingChunk == null) {
-+                pending = new PendingChunk(x, z, key, gen, priority || isBlockingMain);
++                pending = new PendingChunk(x, z, key, gen, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
 +                // need to overwrite the old
-+                pending = new PendingChunk(x, z, key, true, priority || isBlockingMain);
++                pending = new PendingChunk(x, z, key, true, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else {
 +                pending = pendingChunk;
-+                if (priority || isBlockingMain) {
-+                    pending.bumpPriority();
++
++                Priority newPriority = calculatePriority(isBlockingMain, priority);
++                if (pending.taskPriority != newPriority) {
++                    pending.bumpPriority(newPriority);
 +                }
 +            }
 +        }
@@ -1345,6 +1376,14 @@ index 000000000..5823917a6
 +            this.key = key;
 +            this.canGenerate = canGenerate;
 +            taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
++        }
++
++        PendingChunk(int x, int z, long key, boolean canGenerate, Priority taskPriority) {
++            this.x = x;
++            this.z = z;
++            this.key = key;
++            this.canGenerate = canGenerate;
++            this.taskPriority = taskPriority;
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -1575,14 +1614,18 @@ index 000000000..5823917a6
 +        }
 +
 +        void bumpPriority() {
-+            this.taskPriority = Priority.HIGH;
++            bumpPriority(Priority.HIGH);
++        }
++
++        void bumpPriority(Priority newPriority) {
++            this.taskPriority = newPriority;
 +            PriorityQueuedExecutor.PendingTask<Void> loadTask = this.loadTask;
 +            PriorityQueuedExecutor.PendingTask<Chunk> genTask = this.genTask;
 +            if (loadTask != null) {
-+                loadTask.bumpPriority();
++                loadTask.bumpPriority(newPriority);
 +            }
 +            if (genTask != null) {
-+                genTask.bumpPriority();
++                genTask.bumpPriority(newPriority);
 +            }
 +        }
 +
