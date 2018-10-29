@@ -1,4 +1,4 @@
-From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From e2720237c9d98f6fe17d5578784cbea7e826a1da Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,7 +43,7 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index b703e0848..77d35ac99 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -385,4 +385,57 @@ public class PaperConfig {
@@ -106,10 +106,10 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 7ac07ac07ac0..7ac07ac07ac0
+index 000000000..e589aa356
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,298 @@
 +package com.destroystokyo.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -136,6 +136,7 @@ index 7ac07ac07ac0..7ac07ac07ac0
 + */
 +@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 +public class PriorityQueuedExecutor extends AbstractExecutorService {
++    private final ConcurrentLinkedQueue<Runnable> urgent = new ConcurrentLinkedQueue<>();
 +    private final ConcurrentLinkedQueue<Runnable> high = new ConcurrentLinkedQueue<>();
 +    private final ConcurrentLinkedQueue<Runnable> normal = new ConcurrentLinkedQueue<>();
 +    private final RejectionHandler handler;
@@ -264,7 +265,11 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +    }
 +
 +    private Runnable getTask() {
-+        Runnable run = high.poll();
++        Runnable run = urgent.poll();
++        if (run != null) {
++            return run;
++        }
++        run = high.poll();
 +        if (run != null) {
 +            return run;
 +        }
@@ -300,7 +305,7 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +    }
 +
 +    public enum Priority {
-+        NORMAL, HIGH
++        NORMAL, HIGH, URGENT
 +    }
 +
 +    public class PendingTask <T> implements Runnable {
@@ -339,8 +344,18 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +        }
 +
 +        public void bumpPriority() {
-+            if (!priority.compareAndSet(Priority.NORMAL.ordinal(), Priority.HIGH.ordinal())) {
-+                return;
++            bumpPriority(Priority.HIGH);
++        }
++
++        public void bumpPriority(Priority newPriority) {
++            for (;;) {
++                int current = this.priority.get();
++                if (current >= newPriority.ordinal()) {
++                    return;
++                }
++                if (priority.compareAndSet(current, newPriority.ordinal())) {
++                    break;
++                }
 +            }
 +
 +            if (this.executor == null) {
@@ -362,7 +377,9 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +                    return;
 +                }
 +                if (this.submitted.compareAndSet(submitted, priority)) {
-+                    if (priority == Priority.HIGH.ordinal()) {
++                    if (priority == Priority.URGENT.ordinal()) {
++                        urgent.add(this);
++                    } else if (priority == Priority.HIGH.ordinal()) {
 +                        high.add(this);
 +                    } else {
 +                        normal.add(this);
@@ -392,7 +409,7 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 246e3bf8b..a08f9e7c2 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -184,6 +184,7 @@ public class Chunk implements IChunkAccess {
@@ -404,7 +421,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
          Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 39ac032b0..1662e4eba 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -14,9 +14,17 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -510,7 +527,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
      public Chunk remove(Object object) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index e64cb8051..7a1f84886 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -35,12 +35,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -660,7 +677,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 9b4bc3ff6..4c22f6d75 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -120,7 +120,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -687,7 +704,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
                  completion = new Supplier<NBTTagCompound>() {
                      public NBTTagCompound get() {
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index bdfc7d81f..a5c4564d6 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -24,7 +24,17 @@ public class ChunkSection {
@@ -709,7 +726,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      public IBlockData getType(int i, int j, int k) {
          return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 34019bd1b..fc9091c80 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -20,13 +20,14 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -780,7 +797,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
      protected ProtoChunk a(ChunkCoordIntPair chunkcoordintpair, ChunkStatus chunkstatus, Map<ChunkCoordIntPair, ProtoChunk> map) {
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 71a3636be..ff0fe2541 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -3,7 +3,7 @@ package net.minecraft.server;
@@ -865,7 +882,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
      // Paper start - Anti-Xray - Support default methods
 diff --git a/src/main/java/net/minecraft/server/DefinedStructureManager.java b/src/main/java/net/minecraft/server/DefinedStructureManager.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 271dc41d4..bd15534c2 100644
 --- a/src/main/java/net/minecraft/server/DefinedStructureManager.java
 +++ b/src/main/java/net/minecraft/server/DefinedStructureManager.java
 @@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
@@ -878,7 +895,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 13c0c7ee8..552be8cd8 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -891,7 +908,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          this.aJ = Sets.newHashSet();
          this.aL = new double[] { 0.0D, 0.0D, 0.0D};
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 4698ee99f..dfb45cc4e 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -6,6 +6,8 @@ import javax.annotation.Nullable;
@@ -904,7 +921,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
 diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 49fba0979..9ad646f8d 100644
 --- a/src/main/java/net/minecraft/server/MathHelper.java
 +++ b/src/main/java/net/minecraft/server/MathHelper.java
 @@ -142,6 +142,7 @@ public class MathHelper {
@@ -916,7 +933,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 763130b03..67722440f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -1014,10 +1031,10 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 7ac07ac07ac0..7ac07ac07ac0
+index 000000000..c334462f2
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,593 @@
+@@ -0,0 +1,619 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1114,6 +1131,18 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +        }
 +    }
 +
++    private static Priority calculatePriority(boolean isBlockingMain, boolean priority) {
++        if (isBlockingMain) {
++            return Priority.URGENT;
++        }
++
++        if (priority) {
++            return Priority.HIGH;
++        }
++
++        return Priority.NORMAL;
++    }
++
 +    private boolean processChunkLoads() {
 +        Runnable run;
 +        boolean hadLoad = false;
@@ -1128,7 +1157,7 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +    public void bumpPriority(ChunkCoordIntPair coords) {
 +        PendingChunk pending = pendingChunks.get(coords.asLong());
 +        if (pending != null) {
-+            pending.bumpPriority();
++            pending.bumpPriority(Priority.HIGH);
 +        }
 +    }
 +
@@ -1165,16 +1194,18 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +        synchronized (pendingChunks) {
 +            PendingChunk pendingChunk = pendingChunks.get(key);
 +            if (pendingChunk == null) {
-+                pending = new PendingChunk(x, z, key, gen, priority || isBlockingMain);
++                pending = new PendingChunk(x, z, key, gen, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
 +                // need to overwrite the old
-+                pending = new PendingChunk(x, z, key, true, priority || isBlockingMain);
++                pending = new PendingChunk(x, z, key, true, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else {
 +                pending = pendingChunk;
-+                if (priority || isBlockingMain) {
-+                    pending.bumpPriority();
++
++                Priority newPriority = calculatePriority(isBlockingMain, priority);
++                if (pending.taskPriority != newPriority) {
++                    pending.bumpPriority(newPriority);
 +                }
 +            }
 +        }
@@ -1345,6 +1376,14 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +            this.key = key;
 +            this.canGenerate = canGenerate;
 +            taskPriority = priority ? Priority.HIGH : Priority.NORMAL;
++        }
++
++        PendingChunk(int x, int z, long key, boolean canGenerate, Priority taskPriority) {
++            this.x = x;
++            this.z = z;
++            this.key = key;
++            this.canGenerate = canGenerate;
++            this.taskPriority = taskPriority;
 +        }
 +
 +        private synchronized void setStatus(PendingStatus status) {
@@ -1575,14 +1614,18 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +        }
 +
 +        void bumpPriority() {
-+            this.taskPriority = Priority.HIGH;
++            bumpPriority(Priority.HIGH);
++        }
++
++        void bumpPriority(Priority newPriority) {
++            this.taskPriority = newPriority;
 +            PriorityQueuedExecutor.PendingTask<Void> loadTask = this.loadTask;
 +            PriorityQueuedExecutor.PendingTask<Chunk> genTask = this.genTask;
 +            if (loadTask != null) {
-+                loadTask.bumpPriority();
++                loadTask.bumpPriority(newPriority);
 +            }
 +            if (genTask != null) {
-+                genTask.bumpPriority();
++                genTask.bumpPriority(newPriority);
 +            }
 +        }
 +
@@ -1612,7 +1655,7 @@ index 7ac07ac07ac0..7ac07ac07ac0
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 2c7c8adf7..62c524ef3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -29,16 +29,59 @@ public class PlayerChunk {
@@ -1714,7 +1757,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 95baa1dc8..9f6028586 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -27,10 +27,10 @@ public class PlayerChunkMap {
@@ -1774,7 +1817,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
      private void e() {
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 9c34319b6..7149b1472 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 @@ -35,7 +35,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
@@ -1787,7 +1830,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          this.m = world.getChunkProvider().getChunkGenerator().getSettings();
          this.i = world.getSeaLevel();
 diff --git a/src/main/java/net/minecraft/server/SchedulerBatch.java b/src/main/java/net/minecraft/server/SchedulerBatch.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index d868149d1..0d45d933e 100644
 --- a/src/main/java/net/minecraft/server/SchedulerBatch.java
 +++ b/src/main/java/net/minecraft/server/SchedulerBatch.java
 @@ -9,6 +9,7 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
@@ -1842,7 +1885,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index a5cf017da..def8730b8 100644
 --- a/src/main/java/net/minecraft/server/StructurePiece.java
 +++ b/src/main/java/net/minecraft/server/StructurePiece.java
 @@ -14,7 +14,7 @@ public abstract class StructurePiece {
@@ -1869,7 +1912,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          return null;
      }
 diff --git a/src/main/java/net/minecraft/server/StructureStart.java b/src/main/java/net/minecraft/server/StructureStart.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 1926c902a..1117e4ae2 100644
 --- a/src/main/java/net/minecraft/server/StructureStart.java
 +++ b/src/main/java/net/minecraft/server/StructureStart.java
 @@ -6,7 +6,7 @@ import java.util.List;
@@ -1918,7 +1961,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 016d50d3c..f1495d30c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2015,7 +2058,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index fa99fe014..4f49786aa 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
 +++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
 @@ -9,24 +9,29 @@ import java.util.Random;
@@ -2162,7 +2205,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 6e54b71e8..a54ea5a69 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -731,7 +731,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -2175,7 +2218,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 6d72db7bd..32bf4e589 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1014,8 +1014,12 @@ public final class CraftServer implements Server {
@@ -2203,10 +2246,10 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 604d1dbb3..fd494e9fc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -157,6 +157,16 @@ public class CraftWorld implements World {
+@@ -162,6 +162,16 @@ public class CraftWorld implements World {
          }
      }
  
@@ -2223,7 +2266,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      public Chunk getChunkAt(int x, int z) {
          return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
      }
-@@ -1333,10 +1343,13 @@ public class CraftWorld implements World {
+@@ -1481,10 +1491,13 @@ public class CraftWorld implements World {
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
          int radius = world.paperConfig.keepLoadedRange / 16; // Paper
@@ -2241,7 +2284,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
                      if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
                          unloadChunk(chunkCoordX + x, chunkCoordZ + z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index d6bf1e39b..e5822c83e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -78,6 +78,7 @@ public class CraftEventFactory {
@@ -2303,7 +2346,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
          if (!event.isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 9c2adb235..62c197b80 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
