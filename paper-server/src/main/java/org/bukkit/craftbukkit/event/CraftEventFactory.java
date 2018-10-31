@@ -157,6 +157,13 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static BlockDropItemEvent callBlockDropItemEvent(Block block, BlockState state, EntityPlayer player, EntityItem item) {
+        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity());
+        Bukkit.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
     public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
         Player who = (itemactioncontext.getEntity() == null) ? null : (Player) itemactioncontext.getEntity().getBukkitEntity();
         org.bukkit.block.Block blockClicked = CraftBlock.at(itemactioncontext.getWorld(), itemactioncontext.getClickPosition());

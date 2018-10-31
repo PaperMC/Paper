@@ -1,10 +1,11 @@
 --- a/net/minecraft/server/PlayerInteractManager.java
 +++ b/net/minecraft/server/PlayerInteractManager.java
-@@ -1,5 +1,14 @@
+@@ -1,5 +1,15 @@
  package net.minecraft.server;
  
 +// CraftBukkit start
 +import java.util.ArrayList;
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.event.block.BlockBreakEvent;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.Event;
@@ -15,7 +16,7 @@
  public class PlayerInteractManager {
  
      public World world;
-@@ -26,7 +35,7 @@
+@@ -26,7 +36,7 @@
          this.gamemode = enumgamemode;
          enumgamemode.a(this.player.abilities);
          this.player.updateAbilities();
@@ -24,7 +25,7 @@
          this.world.everyoneSleeping();
      }
  
-@@ -51,7 +60,7 @@
+@@ -51,7 +61,7 @@
      }
  
      public void a() {
@@ -33,7 +34,7 @@
          float f;
          int i;
  
-@@ -96,6 +105,19 @@
+@@ -96,6 +106,19 @@
      }
  
      public void a(BlockPosition blockposition, EnumDirection enumdirection) {
@@ -53,7 +54,7 @@
          if (this.isCreative()) {
              if (!this.world.douseFire((EntityHuman) null, blockposition, enumdirection)) {
                  this.breakBlock(blockposition);
-@@ -122,16 +144,50 @@
+@@ -122,16 +145,50 @@
                  }
              }
  
@@ -106,7 +107,7 @@
              if (!iblockdata.isAir() && f >= 1.0F) {
                  this.breakBlock(blockposition);
              } else {
-@@ -149,6 +205,7 @@
+@@ -149,6 +206,7 @@
  
      public void a(BlockPosition blockposition) {
          if (blockposition.equals(this.f)) {
@@ -114,7 +115,7 @@
              int i = this.currentTick - this.lastDigTick;
              IBlockData iblockdata = this.world.getType(blockposition);
  
-@@ -166,6 +223,10 @@
+@@ -166,6 +224,10 @@
                      this.j = this.lastDigTick;
                  }
              }
@@ -125,16 +126,15 @@
          }
  
      }
-@@ -190,13 +251,89 @@
+@@ -190,13 +252,88 @@
  
      public boolean breakBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.world.getType(blockposition);
 +        // CraftBukkit start - fire BlockBreakEvent
++        org.bukkit.block.Block bblock = CraftBlock.at(world, blockposition);
 +        BlockBreakEvent event = null;
 +
 +        if (this.player instanceof EntityPlayer) {
-+            org.bukkit.block.Block block = this.world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+
 +            // Sword + Creative mode pre-cancel
 +            boolean isSwordNoBreak = !this.player.getItemInMainHand().getItem().a(iblockdata, this.world, blockposition, (EntityHuman) this.player);
 +
@@ -146,7 +146,7 @@
 +                ((EntityPlayer) this.player).playerConnection.sendPacket(packet);
 +            }
 +
-+            event = new BlockBreakEvent(block, this.player.getBukkitEntity());
++            event = new BlockBreakEvent(bblock, this.player.getBukkitEntity());
 +
 +            // Sword + Creative mode pre-cancel
 +            event.setCancelled(isSwordNoBreak);
@@ -168,8 +168,7 @@
 +            }
 +
 +            this.world.getServer().getPluginManager().callEvent(event);
- 
--        if (!this.player.getItemInMainHand().getItem().a(iblockdata, this.world, blockposition, (EntityHuman) this.player)) {
++
 +            if (event.isCancelled()) {
 +                if (isSwordNoBreak) {
 +                    return false;
@@ -191,7 +190,8 @@
 +            }
 +        }
 +        // CraftBukkit end
-+
+ 
+-        if (!this.player.getItemInMainHand().getItem().a(iblockdata, this.world, blockposition, (EntityHuman) this.player)) {
 +        if (false && !this.player.getItemInMainHand().getItem().a(iblockdata, this.world, blockposition, (EntityHuman) this.player)) { // CraftBukkit - false
              return false;
          } else {
@@ -216,23 +216,18 @@
              if ((block instanceof BlockCommand || block instanceof BlockStructure) && !this.player.isCreativeAndOp()) {
                  this.world.notify(blockposition, iblockdata, iblockdata, 3);
                  return false;
-@@ -221,19 +358,36 @@
+@@ -221,6 +358,10 @@
                      }
                  }
  
 +                // CraftBukkit start
++                org.bukkit.block.BlockState state = bblock.getState();
 +                world.captureDrops = new ArrayList<>();
-                 boolean flag = this.c(blockposition);
-+                if (event.isDropItems()) {
-+                    for (EntityItem item : world.captureDrops) {
-+                        world.addEntity(item);
-+                    }
-+                }
-+                world.captureDrops = null;
 +                // CraftBukkit end
+                 boolean flag = this.c(blockposition);
  
                  if (!this.isCreative()) {
-                     ItemStack itemstack1 = this.player.getItemInMainHand();
+@@ -228,13 +369,31 @@
                      boolean flag1 = this.player.hasBlock(iblockdata);
  
                      itemstack1.a(this.world, iblockdata, blockposition, this.player);
@@ -244,17 +239,28 @@
                          iblockdata.getBlock().a(this.world, this.player, blockposition, iblockdata, tileentity, itemstack2);
                      }
 +                    // CraftBukkit end
+                 }
+ 
++                if (event.isDropItems()) {
++                    for (EntityItem item : world.captureDrops) {
++                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropItemEvent(bblock, state, this.player, item).isCancelled()) {
++                            world.addEntity(item);
++                        }
++                    }
 +                }
++                world.captureDrops = null;
++                // CraftBukkit end
 +
 +                // CraftBukkit start - Drop event experience
 +                if (flag && event != null) {
 +                    iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop());
-                 }
++                }
 +                // CraftBukkit end
- 
++
                  return flag;
              }
-@@ -277,11 +431,40 @@
+         }
+@@ -277,11 +436,40 @@
          }
      }
  
@@ -295,7 +301,7 @@
  
              if (tileentity instanceof ITileInventory) {
                  Block block = iblockdata.getBlock();
-@@ -305,24 +488,26 @@
+@@ -305,24 +493,26 @@
              boolean flag = !entityhuman.getItemInMainHand().isEmpty() || !entityhuman.getItemInOffHand().isEmpty();
              boolean flag1 = entityhuman.isSneaking() && flag;
  
