@@ -190,8 +190,6 @@ public class Main {
                     }
                 }
 
-                System.err.println("*** WARNING: This is a development build. It is not meant for production server usage! Please keep backups and update frequently.");
-
                 System.out.println("Loading libraries, please wait...");
                 MinecraftServer.main(options);
             } catch (Throwable t) {
