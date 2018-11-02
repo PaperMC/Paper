@@ -1615,6 +1615,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public int getClientViewDistance() {
+        return (getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : getHandle().clientViewDistance;
+    }
+
+    @Override
     public String getLocale() {
         return getHandle().locale;
     }
