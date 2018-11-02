@@ -1,4 +1,4 @@
-From d4f886d5ed2fb5a41d1f0496df0ec473f9f61cf6 Mon Sep 17 00:00:00 2001
+From 7f80524406fbc47888a8909fb32ea6e0545bc294 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,7 +43,7 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index b703e08486..77d35ac99d 100644
+index b703e0848..77d35ac99 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -385,4 +385,57 @@ public class PaperConfig {
@@ -70,7 +70,7 @@ index b703e08486..77d35ac99d 100644
 +        asyncChunkGenThreadPerWorld = getBoolean("settings.async-chunks.thread-per-world-generation", true);
 +        asyncChunkLoadThreads = getInt("settings.async-chunks.load-threads", -1);
 +        if (asyncChunkLoadThreads <= 0) {
-+            asyncChunkLoadThreads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
++            asyncChunkLoadThreads = (int) Math.min(Integer.getInteger("paper.maxchunkthreads", 8), Runtime.getRuntime().availableProcessors() * 1.5);
 +        }
 +
 +        // Let Shared Host set some limits
@@ -106,11 +106,14 @@ index b703e08486..77d35ac99d 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
 new file mode 100644
-index 0000000000..a796af2921
+index 000000000..e589aa356
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PriorityQueuedExecutor.java
-@@ -0,0 +1,319 @@
+@@ -0,0 +1,298 @@
 +package com.destroystokyo.paper.util;
++
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import net.minecraft.server.NamedIncrementingThreadFactory;
 +
 +import javax.annotation.Nonnull;
 +import java.util.ArrayList;
@@ -119,6 +122,7 @@ index 0000000000..a796af2921
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.RejectedExecutionException;
++import java.util.concurrent.ThreadFactory;
 +import java.util.concurrent.TimeUnit;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.concurrent.atomic.AtomicInteger;
@@ -149,19 +153,12 @@ index 0000000000..a796af2921
 +    }
 +
 +    public PriorityQueuedExecutor(String name, int threads, RejectionHandler handler) {
-+        this(name, threads, handler, Thread.NORM_PRIORITY);
-+    }
-+
-+    public PriorityQueuedExecutor(String name, int threads, int threadPriority) {
-+        this(name, threads, null, threadPriority);
-+    }
-+
-+    public PriorityQueuedExecutor(String name, int threads, RejectionHandler handler, int threadPriority) {
++        ThreadFactory factory = new ThreadFactoryBuilder()
++            .setThreadFactory(new NamedIncrementingThreadFactory(name))
++            .setDaemon(true)
++            .build();
 +        for (int i = 0; i < threads; i++) {
-+            ExecutorThread thread = new ExecutorThread(this::processQueues);
-+            thread.setDaemon(true);
-+            thread.setName(threads == 1 ? name  : name + "-" + (i + 1));
-+            thread.setPriority(threadPriority);
++            final Thread thread = factory.newThread(this::processQueues);
 +            thread.start();
 +            this.threads.add(thread);
 +        }
@@ -238,20 +235,28 @@ index 0000000000..a796af2921
 +    }
 +
 +    public PendingTask<Void> submitTask(Runnable run) {
-+        return createPendingTask(run).submit();
++        return submitTask(createPendingTask(run));
 +    }
 +
 +    public PendingTask<Void> submitTask(Runnable run, Priority priority) {
-+        return createPendingTask(run, priority).submit();
++        return submitTask(createPendingTask(run, priority));
 +    }
 +
 +    public <T> PendingTask<T> submitTask(Supplier<T> run) {
-+        return createPendingTask(run).submit();
++        return submitTask(createPendingTask(run));
 +    }
 +
 +    public <T> PendingTask<T> submitTask(Supplier<T> run, Priority priority) {
-+        PendingTask<T> task = createPendingTask(run, priority);
-+        return task.submit();
++        return submitTask(createPendingTask(run, priority));
++    }
++
++    public <T> PendingTask<T> submitTask(PendingTask<T> task) {
++        if (shuttingDown) {
++            handler.onRejection(task, this);
++            return task;
++        }
++        task.submit(this);
++        return task;
 +    }
 +
 +    @Override
@@ -259,19 +264,7 @@ index 0000000000..a796af2921
 +        submitTask(command);
 +    }
 +
-+    public boolean isCurrentThread() {
-+        final Thread thread = Thread.currentThread();
-+        if (!(thread instanceof ExecutorThread)) {
-+            return false;
-+        }
-+        return ((ExecutorThread) thread).getExecutor() == this;
-+    }
-+
-+    public Runnable getUrgentTask() {
-+        return urgent.poll();
-+    }
-+
-+    public Runnable getTask() {
++    private Runnable getTask() {
 +        Runnable run = urgent.poll();
 +        if (run != null) {
 +            return run;
@@ -313,16 +306,6 @@ index 0000000000..a796af2921
 +
 +    public enum Priority {
 +        NORMAL, HIGH, URGENT
-+    }
-+
-+    public class ExecutorThread extends Thread {
-+        public ExecutorThread(Runnable runnable) {
-+            super(runnable);
-+        }
-+
-+        public PriorityQueuedExecutor getExecutor() {
-+            return PriorityQueuedExecutor.this;
-+        }
 +    }
 +
 +    public class PendingTask <T> implements Runnable {
@@ -367,35 +350,31 @@ index 0000000000..a796af2921
 +        public void bumpPriority(Priority newPriority) {
 +            for (;;) {
 +                int current = this.priority.get();
-+                int ordinal = newPriority.ordinal();
-+                if (current >= ordinal || priority.compareAndSet(current, ordinal)) {
++                if (current >= newPriority.ordinal()) {
++                    return;
++                }
++                if (priority.compareAndSet(current, newPriority.ordinal())) {
 +                    break;
 +                }
 +            }
 +
-+
-+            if (this.submitted.get() == -1 || this.hasRan.get()) {
++            if (this.executor == null) {
 +                return;
 +            }
-+
-+            // Only resubmit if it hasnt ran yet and has been submitted
-+            submit();
++            // If we have already been submitted, resubmit with new priority
++            submit(this.executor);
 +        }
 +
 +        public CompletableFuture<T> onDone() {
 +            return future;
 +        }
 +
-+        public PendingTask<T> submit() {
-+            if (shuttingDown) {
-+                handler.onRejection(this, PriorityQueuedExecutor.this);
-+                return this;
-+            }
++        public void submit(PriorityQueuedExecutor executor) {
 +            for (;;) {
 +                final int submitted = this.submitted.get();
 +                final int priority = this.priority.get();
 +                if (submitted == priority) {
-+                    return this;
++                    return;
 +                }
 +                if (this.submitted.compareAndSet(submitted, priority)) {
 +                    if (priority == Priority.URGENT.ordinal()) {
@@ -410,11 +389,11 @@ index 0000000000..a796af2921
 +                }
 +            }
 +
-+            synchronized (PriorityQueuedExecutor.this) {
++            //noinspection SynchronizationOnLocalVariableOrMethodParameter
++            synchronized (executor) {
 +                // Wake up a thread to take this work
-+                PriorityQueuedExecutor.this.notify();
++                executor.notify();
 +            }
-+            return this;
 +        }
 +    }
 +    public interface RejectionHandler {
@@ -430,7 +409,7 @@ index 0000000000..a796af2921
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 479a84a250..340b756bb4 100644
+index 479a84a25..340b756bb 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -184,6 +184,7 @@ public class Chunk implements IChunkAccess {
@@ -442,7 +421,7 @@ index 479a84a250..340b756bb4 100644
  
          Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 39ac032b0b..1662e4eba5 100644
+index 39ac032b0..1662e4eba 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -14,9 +14,17 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -548,7 +527,7 @@ index 39ac032b0b..1662e4eba5 100644
  
      public Chunk remove(Object object) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e64cb80514..7a1f848863 100644
+index e64cb8051..7a1f84886 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -35,12 +35,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -698,7 +677,7 @@ index e64cb80514..7a1f848863 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 9b4bc3ff68..4c22f6d756 100644
+index 9b4bc3ff6..4c22f6d75 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -120,7 +120,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -725,7 +704,7 @@ index 9b4bc3ff68..4c22f6d756 100644
                  completion = new Supplier<NBTTagCompound>() {
                      public NBTTagCompound get() {
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index bdfc7d81ff..a5c4564d60 100644
+index bdfc7d81f..a5c4564d6 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -24,7 +24,17 @@ public class ChunkSection {
@@ -747,7 +726,7 @@ index bdfc7d81ff..a5c4564d60 100644
      public IBlockData getType(int i, int j, int k) {
          return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 34019bd1b3..fc9091c801 100644
+index 34019bd1b..fc9091c80 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -20,13 +20,14 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -818,7 +797,7 @@ index 34019bd1b3..fc9091c801 100644
  
      protected ProtoChunk a(ChunkCoordIntPair chunkcoordintpair, ChunkStatus chunkstatus, Map<ChunkCoordIntPair, ProtoChunk> map) {
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 71a3636be6..ff0fe25417 100644
+index 71a3636be..ff0fe2541 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -3,7 +3,7 @@ package net.minecraft.server;
@@ -903,7 +882,7 @@ index 71a3636be6..ff0fe25417 100644
  
      // Paper start - Anti-Xray - Support default methods
 diff --git a/src/main/java/net/minecraft/server/DefinedStructureManager.java b/src/main/java/net/minecraft/server/DefinedStructureManager.java
-index 271dc41d45..bd15534c23 100644
+index 271dc41d4..bd15534c2 100644
 --- a/src/main/java/net/minecraft/server/DefinedStructureManager.java
 +++ b/src/main/java/net/minecraft/server/DefinedStructureManager.java
 @@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
@@ -916,7 +895,7 @@ index 271dc41d45..bd15534c23 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 13c0c7ee89..552be8cd88 100644
+index 13c0c7ee8..552be8cd8 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -929,7 +908,7 @@ index 13c0c7ee89..552be8cd88 100644
          this.aJ = Sets.newHashSet();
          this.aL = new double[] { 0.0D, 0.0D, 0.0D};
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 4698ee99f8..dfb45cc4ea 100644
+index 4698ee99f..dfb45cc4e 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -6,6 +6,8 @@ import javax.annotation.Nullable;
@@ -942,7 +921,7 @@ index 4698ee99f8..dfb45cc4ea 100644
      Chunk a(GeneratorAccess generatoraccess, int i, int j, Consumer<Chunk> consumer) throws IOException;
  
 diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
-index 49fba0979e..9ad646f8d4 100644
+index 49fba0979..9ad646f8d 100644
 --- a/src/main/java/net/minecraft/server/MathHelper.java
 +++ b/src/main/java/net/minecraft/server/MathHelper.java
 @@ -142,6 +142,7 @@ public class MathHelper {
@@ -954,7 +933,7 @@ index 49fba0979e..9ad646f8d4 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 763130b036..67722440fd 100644
+index 763130b03..67722440f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -1052,10 +1031,10 @@ index 763130b036..67722440fd 100644
  
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 0000000000..cb2aa9c493
+index 000000000..c334462f2
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,641 @@
+@@ -0,0 +1,619 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1083,7 +1062,6 @@ index 0000000000..cb2aa9c493
 +
 +import com.destroystokyo.paper.PaperConfig;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor;
-+import com.destroystokyo.paper.util.PriorityQueuedExecutor.ExecutorThread;
 +import com.destroystokyo.paper.util.PriorityQueuedExecutor.Priority;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
@@ -1098,7 +1076,6 @@ index 0000000000..cb2aa9c493
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
-+import java.util.concurrent.ConcurrentLinkedDeque;
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.concurrent.atomic.AtomicInteger;
@@ -1107,11 +1084,11 @@ index 0000000000..cb2aa9c493
 +@SuppressWarnings("unused")
 +public class PaperAsyncChunkProvider extends ChunkProviderServer {
 +
-+    private static final int GEN_THREAD_PRIORITY = Integer.getInteger("paper.genThreadPriority", 3);
-+    private static final int LOAD_THREAD_PRIORITY = Integer.getInteger("paper.loadThreadPriority", 4);
-+    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0, LOAD_THREAD_PRIORITY);
-+    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0, GEN_THREAD_PRIORITY);
-+    private static final ConcurrentLinkedDeque<Runnable> MAIN_THREAD_QUEUE = new ConcurrentLinkedDeque<>();
++    private static final PriorityQueuedExecutor EXECUTOR = new PriorityQueuedExecutor("PaperChunkLoader", PaperConfig.asyncChunks ? PaperConfig.asyncChunkLoadThreads : 0);
++    private static final PriorityQueuedExecutor SINGLE_GEN_EXECUTOR = new PriorityQueuedExecutor("PaperChunkGenerator", PaperConfig.asyncChunks && PaperConfig.asyncChunkGeneration && !PaperConfig.asyncChunkGenThreadPerWorld ? 1 : 0);
++    private static final ConcurrentLinkedQueue<Runnable> MAIN_THREAD_QUEUE = new ConcurrentLinkedQueue<>();
++    private static final ThreadLocal<Boolean> IS_CHUNK_THREAD = ThreadLocal.withInitial(() -> false);
++    private static final ThreadLocal<Boolean> IS_CHUNK_GEN_THREAD = ThreadLocal.withInitial(() -> false);
 +
 +    private final PriorityQueuedExecutor generationExecutor;
 +    //private static final PriorityQueuedExecutor generationExecutor = new PriorityQueuedExecutor("PaperChunkGen", 1);
@@ -1132,7 +1109,7 @@ index 0000000000..cb2aa9c493
 +        this.chunkLoader = chunkLoader;
 +        String worldName = this.world.getWorld().getName();
 +        this.shouldGenSync = generator instanceof CustomChunkGenerator && !(((CustomChunkGenerator) generator).asyncSupported) || !PaperConfig.asyncChunkGeneration;
-+        this.generationExecutor = PaperConfig.asyncChunkGenThreadPerWorld ? new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1, GEN_THREAD_PRIORITY) : SINGLE_GEN_EXECUTOR;
++        this.generationExecutor = PaperConfig.asyncChunkGenThreadPerWorld ? new PriorityQueuedExecutor("PaperChunkGen-" + worldName, shouldGenSync ? 0 : 1) : SINGLE_GEN_EXECUTOR;
 +    }
 +
 +    static void processChunkLoads(MinecraftServer server) {
@@ -1167,17 +1144,11 @@ index 0000000000..cb2aa9c493
 +    }
 +
 +    private boolean processChunkLoads() {
-+        return processChunkLoads((CompletableFuture<Chunk>) null);
-+    }
-+    private boolean processChunkLoads(CompletableFuture<Chunk> pendingRequest) {
 +        Runnable run;
 +        boolean hadLoad = false;
 +        while ((run = MAIN_THREAD_QUEUE.poll()) != null) {
 +            run.run();
 +            hadLoad = true;
-+            if (pendingRequest != null && pendingRequest.isDone()) {
-+                break;
-+            }
 +        }
 +        return hadLoad;
 +    }
@@ -1220,36 +1191,35 @@ index 0000000000..cb2aa9c493
 +        // Obtain a PendingChunk
 +        final PendingChunk pending;
 +        final boolean isBlockingMain = consumer == null && server.isMainThread();
-+        final Priority taskPriority = calculatePriority(isBlockingMain, priority);
 +        synchronized (pendingChunks) {
 +            PendingChunk pendingChunk = pendingChunks.get(key);
 +            if (pendingChunk == null) {
-+                pending = new PendingChunk(x, z, key, gen, taskPriority);
++                pending = new PendingChunk(x, z, key, gen, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else if (pendingChunk.hasFinished && gen && !pendingChunk.canGenerate && pendingChunk.chunk == null) {
 +                // need to overwrite the old
-+                pending = new PendingChunk(x, z, key, true, taskPriority);
++                pending = new PendingChunk(x, z, key, true, calculatePriority(isBlockingMain, priority));
 +                pendingChunks.put(key, pending);
 +            } else {
 +                pending = pendingChunk;
-+                if (pending.taskPriority != taskPriority) {
-+                    pending.bumpPriority(taskPriority);
++
++                Priority newPriority = calculatePriority(isBlockingMain, priority);
++                if (pending.taskPriority != newPriority) {
++                    pending.bumpPriority(newPriority);
 +                }
 +            }
 +        }
-+
 +        // Listen for when result is ready
 +        final CompletableFuture<Chunk> future = new CompletableFuture<>();
 +        PendingChunkRequest request = pending.addListener(future, gen);
-+        if (taskPriority != Priority.URGENT && Thread.currentThread() instanceof ExecutorThread) {
-+            PriorityQueuedExecutor executor = ((ExecutorThread) Thread.currentThread()).getExecutor();
-+            Runnable run;
-+            while ((run = executor.getUrgentTask()) != null) {
-+                run.run();
-+            }
-+        }
-+        if (isBlockingMain || isChunkThread()) {
++        if (IS_CHUNK_THREAD.get()) {
 +            pending.loadTask.run();
++        }
++
++        if (isBlockingMain && pending.hasFinished) {
++            processChunkLoads();
++            request.initialReturnChunk = pending.postChunk();
++            return request;
 +        }
 +
 +        if (isBlockingMain) {
@@ -1258,7 +1228,7 @@ index 0000000000..cb2aa9c493
 +                    // We aren't done, obtain lock on queue
 +                    synchronized (MAIN_THREAD_QUEUE) {
 +                        // We may of received our request now, check it
-+                        if (processChunkLoads(future)) {
++                        if (processChunkLoads()) {
 +                            // If we processed SOMETHING, don't wait
 +                            continue;
 +                        }
@@ -1269,7 +1239,7 @@ index 0000000000..cb2aa9c493
 +                        }
 +                    }
 +                    // Queue has been notified or timed out, process it
-+                    processChunkLoads(future);
++                    processChunkLoads();
 +                }
 +                // We should be done AND posted into chunk map now, return it
 +                request.initialReturnChunk = future.join();
@@ -1380,17 +1350,6 @@ index 0000000000..cb2aa9c493
 +        }
 +    }
 +
-+    private boolean isLoadThread() {
-+        return EXECUTOR.isCurrentThread();
-+    }
-+
-+    private boolean isGenThread() {
-+        return generationExecutor.isCurrentThread();
-+    }
-+    private boolean isChunkThread() {
-+        return isLoadThread() || isGenThread();
-+    }
-+
 +    private class PendingChunk implements Runnable {
 +        private final int x;
 +        private final int z;
@@ -1443,6 +1402,11 @@ index 0000000000..cb2aa9c493
 +            }
 +        }
 +
++        private Chunk generateChunkExecutor() {
++            IS_CHUNK_THREAD.set(true);
++            IS_CHUNK_GEN_THREAD.set(true);
++            return generateChunk();
++        }
 +        private Chunk generateChunk() {
 +            synchronized (this) {
 +                if (requests.get() <= 0) {
@@ -1533,11 +1497,7 @@ index 0000000000..cb2aa9c493
 +            // Don't post here, even if on main, it must enter the queue so we can exit any open batch
 +            // schedulers, as post stage may trigger a new generation and cause errors
 +            synchronized (MAIN_THREAD_QUEUE) {
-+                if (this.taskPriority == Priority.URGENT) {
-+                    MAIN_THREAD_QUEUE.addFirst(this::postChunk);
-+                } else {
-+                    MAIN_THREAD_QUEUE.addLast(this::postChunk);
-+                }
++                MAIN_THREAD_QUEUE.add(this::postChunk);
 +                MAIN_THREAD_QUEUE.notify();
 +            }
 +        }
@@ -1604,18 +1564,24 @@ index 0000000000..cb2aa9c493
 +            if (loadTask == null) {
 +                // Take care of a race condition in that a request could be cancelled after the synchronize
 +                // on pendingChunks, but before a listener is added, which would erase these pending tasks.
-+                genTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
++                if (shouldGenSync) {
++                    genTask = generationExecutor.createPendingTask(this::generateChunk, taskPriority);
++                } else {
++                    genTask = generationExecutor.createPendingTask(this::generateChunkExecutor, taskPriority);
++                }
 +                loadTask = EXECUTOR.createPendingTask(this, taskPriority);
-+                if (!isChunkThread()) {
++                if (!IS_CHUNK_THREAD.get()) {
 +                    // We will execute it outside of the synchronized context immediately after
-+                    loadTask.submit();
++                    EXECUTOR.submitTask(loadTask);
 +                }
 +            }
 +            return new PendingChunkRequest(this, gen);
 +        }
 +
++
 +        @Override
 +        public void run() {
++            IS_CHUNK_THREAD.set(true);
 +            try {
 +                if (!loadFinished(loadChunk(x, z))) {
 +                    return;
@@ -1631,23 +1597,18 @@ index 0000000000..cb2aa9c493
 +            if (shouldGenSync) {
 +                synchronized (this) {
 +                    setStatus(PendingStatus.GENERATION_PENDING);
-+                    if (this.taskPriority == Priority.URGENT) {
-+                        MAIN_THREAD_QUEUE.addFirst(() -> generateFinished(this.generateChunk()));
-+                    } else {
-+                        MAIN_THREAD_QUEUE.addLast(() -> generateFinished(this.generateChunk()));
-+                    }
-+
++                    MAIN_THREAD_QUEUE.add(() -> generateFinished(this.generateChunk()));
 +                }
 +                synchronized (MAIN_THREAD_QUEUE) {
 +                    MAIN_THREAD_QUEUE.notify();
 +                }
 +            } else {
-+                if (isGenThread()) {
++                if (IS_CHUNK_GEN_THREAD.get()) {
 +                    // ideally we should never run into 1 chunk generating another chunk...
 +                    // but if we do, let's apply same solution
 +                    genTask.run();
 +                } else {
-+                    genTask.submit();
++                    generationExecutor.submitTask(genTask);
 +                }
 +            }
 +        }
@@ -1657,10 +1618,6 @@ index 0000000000..cb2aa9c493
 +        }
 +
 +        void bumpPriority(Priority newPriority) {
-+            if (taskPriority.ordinal() >= newPriority.ordinal()) {
-+                return;
-+            }
-+
 +            this.taskPriority = newPriority;
 +            PriorityQueuedExecutor.PendingTask<Void> loadTask = this.loadTask;
 +            PriorityQueuedExecutor.PendingTask<Chunk> genTask = this.genTask;
@@ -1698,7 +1655,7 @@ index 0000000000..cb2aa9c493
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2c7c8adf7c..62c524ef35 100644
+index 2c7c8adf7..62c524ef3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -29,16 +29,59 @@ public class PlayerChunk {
@@ -1800,7 +1757,7 @@ index 2c7c8adf7c..62c524ef35 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95baa1dc8b..9f60285868 100644
+index 95baa1dc8..9f6028586 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -27,10 +27,10 @@ public class PlayerChunkMap {
@@ -1860,7 +1817,7 @@ index 95baa1dc8b..9f60285868 100644
  
      private void e() {
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index 9c34319b6e..7149b1472b 100644
+index 9c34319b6..7149b1472 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 @@ -35,7 +35,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
@@ -1873,7 +1830,7 @@ index 9c34319b6e..7149b1472b 100644
          this.m = world.getChunkProvider().getChunkGenerator().getSettings();
          this.i = world.getSeaLevel();
 diff --git a/src/main/java/net/minecraft/server/SchedulerBatch.java b/src/main/java/net/minecraft/server/SchedulerBatch.java
-index d868149d1a..0d45d933ee 100644
+index d868149d1..0d45d933e 100644
 --- a/src/main/java/net/minecraft/server/SchedulerBatch.java
 +++ b/src/main/java/net/minecraft/server/SchedulerBatch.java
 @@ -9,6 +9,7 @@ public class SchedulerBatch<K, T extends SchedulerTask<K, T>, R> {
@@ -1928,7 +1885,7 @@ index d868149d1a..0d45d933ee 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
-index a5cf017da1..def8730b86 100644
+index a5cf017da..def8730b8 100644
 --- a/src/main/java/net/minecraft/server/StructurePiece.java
 +++ b/src/main/java/net/minecraft/server/StructurePiece.java
 @@ -14,7 +14,7 @@ public abstract class StructurePiece {
@@ -1955,7 +1912,7 @@ index a5cf017da1..def8730b86 100644
          return null;
      }
 diff --git a/src/main/java/net/minecraft/server/StructureStart.java b/src/main/java/net/minecraft/server/StructureStart.java
-index 1926c902ad..1117e4ae27 100644
+index 1926c902a..1117e4ae2 100644
 --- a/src/main/java/net/minecraft/server/StructureStart.java
 +++ b/src/main/java/net/minecraft/server/StructureStart.java
 @@ -6,7 +6,7 @@ import java.util.List;
@@ -2004,7 +1961,7 @@ index 1926c902ad..1117e4ae27 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 016d50d3cb..f1495d30cb 100644
+index 016d50d3c..f1495d30c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2101,7 +2058,7 @@ index 016d50d3cb..f1495d30cb 100644
          if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-index fa99fe0146..4f49786aa3 100644
+index fa99fe014..4f49786aa 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
 +++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
 @@ -9,24 +9,29 @@ import java.util.Random;
@@ -2248,7 +2205,7 @@ index fa99fe0146..4f49786aa3 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 6e54b71e88..a54ea5a69c 100644
+index 6e54b71e8..a54ea5a69 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -731,7 +731,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -2261,7 +2218,7 @@ index 6e54b71e88..a54ea5a69c 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6d72db7bd3..32bf4e589c 100644
+index 6d72db7bd..32bf4e589 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1014,8 +1014,12 @@ public final class CraftServer implements Server {
@@ -2289,7 +2246,7 @@ index 6d72db7bd3..32bf4e589c 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9c266b4502..f3a9649ef6 100644
+index 9c266b450..f3a9649ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -162,6 +162,16 @@ public class CraftWorld implements World {
@@ -2327,7 +2284,7 @@ index 9c266b4502..f3a9649ef6 100644
                      if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
                          unloadChunk(chunkCoordX + x, chunkCoordZ + z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 439bf2c247..12e6a4ea35 100644
+index 439bf2c24..12e6a4ea3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -78,6 +78,7 @@ public class CraftEventFactory {
@@ -2389,7 +2346,7 @@ index 439bf2c247..12e6a4ea35 100644
  
          if (!event.isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 9c2adb2351..62c197b80d 100644
+index 9c2adb235..62c197b80 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
