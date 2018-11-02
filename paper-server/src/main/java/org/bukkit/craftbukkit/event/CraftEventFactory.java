@@ -52,6 +52,7 @@ import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.Event.Result;
 import org.bukkit.event.block.*;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.entity.*;
@@ -63,6 +64,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerBedEnterEvent.BedEnterResult;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
@@ -97,6 +99,44 @@ public class CraftEventFactory {
     public static <T extends Event> T callEvent(T event) {
         Bukkit.getServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    /**
+     * PlayerBedEnterEvent
+     */
+    public static EntityHuman.EnumBedResult callPlayerBedEnterEvent(EntityHuman player, BlockPosition bed, EntityHuman.EnumBedResult nmsBedResult) {
+        BedEnterResult bedEnterResult;
+        switch (nmsBedResult) {
+            case OK:
+                bedEnterResult = BedEnterResult.OK;
+                break;
+            case NOT_POSSIBLE_HERE:
+                bedEnterResult = BedEnterResult.NOT_POSSIBLE_HERE;
+                break;
+            case NOT_POSSIBLE_NOW:
+                bedEnterResult = BedEnterResult.NOT_POSSIBLE_NOW;
+                break;
+            case TOO_FAR_AWAY:
+                bedEnterResult = BedEnterResult.TOO_FAR_AWAY;
+                break;
+            case NOT_SAFE:
+                bedEnterResult = BedEnterResult.NOT_SAFE;
+                break;
+            default:
+                bedEnterResult = BedEnterResult.OTHER_PROBLEM;
+        }
+
+        PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.world, bed), bedEnterResult);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+
+        Result result = event.useBed();
+        if (result == Result.ALLOW) {
+            return EntityHuman.EnumBedResult.OK;
+        } else if (result == Result.DENY) {
+            return EntityHuman.EnumBedResult.OTHER_PROBLEM;
+        }
+
+        return nmsBedResult;
     }
 
     /**
