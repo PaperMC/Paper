@@ -1462,6 +1462,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public AdvancementProgress getAdvancementProgress(Advancement advancement);
 
     /**
+     * Get the player's current client side view distance.
+     * <br>
+     * Will default to the server view distance if the client has not yet
+     * communicated this information,
+     *
+     * @return client view distance as above
+     * @deprecated draft API
+     */
+    @Deprecated
+    public int getClientViewDistance();
+
+    /**
      * Gets the player's current locale.
      *
      * The value of the locale String is not defined properly.
