@@ -1,0 +1,114 @@
+From eb001bde1cff971c9a4e667ed42fb1bee8dc491c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 1 Nov 2018 19:45:51 -0400
+Subject: [PATCH] Optimize Small Entity Movement
+
+Optimizes small movements by entities by merging the movement
+into the entities next larger movement, until enough movement
+velocity has been hit.
+
+This reduces collision detection and able to reduce movement
+cpu cost by 5-7%.
+
+The default option of 0.75 seems to provide all the gains without
+any noticable behavior change to entity movement.
+
+We have to exclude slimes due to weird jumping animation bugs.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index eabb2c1bad..f6d4c476bc 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -569,4 +569,10 @@ public class PaperWorldConfig {
+     private void preventMovingIntoUnloadedChunks() {
+         preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
+     }
++
++    public double mergeEntityMovement = 0.075D;
++    private void mergeEntityMovement() {
++        mergeEntityMovement = getDouble("merge-entity-movement", mergeEntityMovement);
++    }
++
+ }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 32b90f30d9..6023824e3d 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -558,6 +558,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+ 
+     }
+ 
++    // Paper start
++    protected double pendingX = 0D;
++    protected double pendingY = 0D;
++    protected double pendingZ = 0D;
++    public boolean shouldMergeMovement(int mergeMin, double d0, double d1, double d2) {
++        return d0 * d0 < mergeMin && d1 * d1 < mergeMin && d2 * d2 < mergeMin;
++    }
++    // Paper end
++
+     public void extinguish() {
+         this.fireTicks = 0;
+     }
+@@ -580,6 +589,23 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             this.a(this.getBoundingBox().d(d0, d1, d2));
+             this.recalcPosition();
+         } else {
++            // Paper start
++            final double mergeMin = this.world.paperConfig.mergeEntityMovement;
++            if (mergeMin > 0 && enummovetype == EnumMoveType.SELF) {
++                if (pendingX != 0D) {
++                    d0 += pendingX;
++                    pendingX = 0D;
++                }
++                if (pendingY != 0D) {
++                    d1 += pendingY;
++                    pendingY = 0D;
++                }
++                if (pendingZ != 0D) {
++                    d2 += pendingZ;
++                    pendingZ = 0D;
++                }
++            }
++            // Paper end
+             if (enummovetype == EnumMoveType.PISTON) {
+                 this.activatedTick = MinecraftServer.currentTick + 20; // Paper
+                 long i = this.world.getTime();
+@@ -683,6 +709,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 }
+             }
+ 
++            // Paper start
++            if (mergeMin > 0 && enummovetype == EnumMoveType.SELF && shouldMergeMovement(mergeMin, d0, d1, d2)) {
++                pendingX = d0;
++                pendingY = d1;
++                pendingZ = d2;
++                d0 = d7 = 0;
++                d1 = d8 = 0;
++                d2 = d9 = 0;
++            }
++            // Paper end
++
+             AxisAlignedBB axisalignedbb = this.getBoundingBox();
+ 
+             if (d0 != 0.0D || d1 != 0.0D || d2 != 0.0D) {
+diff --git a/src/main/java/net/minecraft/server/EntitySlime.java b/src/main/java/net/minecraft/server/EntitySlime.java
+index e63f4afa9b..1941faaebd 100644
+--- a/src/main/java/net/minecraft/server/EntitySlime.java
++++ b/src/main/java/net/minecraft/server/EntitySlime.java
+@@ -495,6 +495,12 @@ public class EntitySlime extends EntityInsentient implements IMonster {
+     }
+ 
+     // Paper start
++    @Override
++    public boolean shouldMergeMovement(int mergeMin, double d0, double d1, double d2) {
++        // Slimes have weird movement bugs when a move is skipped, ideally we can fix this and fix that state
++        return false;
++    }
++
+     private boolean canWander = true;
+     public boolean canWander() {
+         return canWander;
+-- 
+2.19.1
+
