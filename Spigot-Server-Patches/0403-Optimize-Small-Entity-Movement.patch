@@ -1,4 +1,4 @@
-From eb001bde1cff971c9a4e667ed42fb1bee8dc491c Mon Sep 17 00:00:00 2001
+From ce3b80309494df7c3a3f9c288d3cfe5d07fd8fb3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 1 Nov 2018 19:45:51 -0400
 Subject: [PATCH] Optimize Small Entity Movement
@@ -31,7 +31,7 @@ index eabb2c1bad..f6d4c476bc 100644
 +
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 32b90f30d9..6023824e3d 100644
+index 32b90f30d9..5031e4737d 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -558,6 +558,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -92,8 +92,46 @@ index 32b90f30d9..6023824e3d 100644
              AxisAlignedBB axisalignedbb = this.getBoundingBox();
  
              if (d0 != 0.0D || d1 != 0.0D || d2 != 0.0D) {
+diff --git a/src/main/java/net/minecraft/server/EntityOcelot.java b/src/main/java/net/minecraft/server/EntityOcelot.java
+index 90a7e00a05..630e2407b3 100644
+--- a/src/main/java/net/minecraft/server/EntityOcelot.java
++++ b/src/main/java/net/minecraft/server/EntityOcelot.java
+@@ -64,6 +64,14 @@ public class EntityOcelot extends EntityTameableAnimal {
+         return !this.isTamed() && !this.hasCustomName() && !this.isLeashed() /*&& this.ticksLived > 2400*/; // CraftBukkit - Paper (honor name and leash)
+     }
+ 
++    // Paper start
++    @Override
++    public boolean shouldMergeMovement(double mergeMin, double d0, double d1, double d2) {
++        // Cats have weird movement bugs when a move is skipped, ideally we can fix this and fix that state
++        return false;
++    }
++    // Paper end
++
+     protected void initAttributes() {
+         super.initAttributes();
+         this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
+diff --git a/src/main/java/net/minecraft/server/EntityParrot.java b/src/main/java/net/minecraft/server/EntityParrot.java
+index 86488e9709..e6348a2931 100644
+--- a/src/main/java/net/minecraft/server/EntityParrot.java
++++ b/src/main/java/net/minecraft/server/EntityParrot.java
+@@ -91,6 +91,14 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
+         this.goalSelector.a(3, new PathfinderGoalFollowEntity(this, 1.0D, 3.0F, 7.0F));
+     }
+ 
++    // Paper start
++    @Override
++    public boolean shouldMergeMovement(double mergeMin, double d0, double d1, double d2) {
++        // Parrots have weird movement bugs when a move is skipped, ideally we can fix this and fix that state
++        return false;
++    }
++    // Paper end
++
+     protected void initAttributes() {
+         super.initAttributes();
+         this.getAttributeMap().b(GenericAttributes.e);
 diff --git a/src/main/java/net/minecraft/server/EntitySlime.java b/src/main/java/net/minecraft/server/EntitySlime.java
-index e63f4afa9b..1941faaebd 100644
+index e63f4afa9b..f1266c0ce1 100644
 --- a/src/main/java/net/minecraft/server/EntitySlime.java
 +++ b/src/main/java/net/minecraft/server/EntitySlime.java
 @@ -495,6 +495,12 @@ public class EntitySlime extends EntityInsentient implements IMonster {
@@ -109,6 +147,25 @@ index e63f4afa9b..1941faaebd 100644
      private boolean canWander = true;
      public boolean canWander() {
          return canWander;
+diff --git a/src/main/java/net/minecraft/server/EntityWolf.java b/src/main/java/net/minecraft/server/EntityWolf.java
+index 68db6af622..8ba3438f77 100644
+--- a/src/main/java/net/minecraft/server/EntityWolf.java
++++ b/src/main/java/net/minecraft/server/EntityWolf.java
+@@ -342,6 +342,14 @@ public class EntityWolf extends EntityTameableAnimal {
+         this.datawatcher.set(EntityWolf.bI, Integer.valueOf(enumcolor.getColorIndex()));
+     }
+ 
++    // Paper start
++    @Override
++    public boolean shouldMergeMovement(double mergeMin, double d0, double d1, double d2) {
++        // Wolf have weird movement bugs when a move is skipped, ideally we can fix this and fix that state
++        return false;
++    }
++    // Paper end
++
+     public EntityWolf b(EntityAgeable entityageable) {
+         EntityWolf entitywolf = EntityTypes.WOLF.create(world); // Paper
+         UUID uuid = this.getOwnerUUID();
 -- 
 2.19.1
 
