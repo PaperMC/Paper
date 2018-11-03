@@ -17,10 +17,12 @@ public interface Wolf extends Animals, Tameable, Sittable {
     /**
      * Sets the anger of this wolf.
      * <p>
-     * An angry wolf can not be fed or tamed, and will actively look for
-     * targets to attack.
+     * An angry wolf can not be fed or tamed, and must have a target to attack.
+     * If a target is not set the wolf will quickly revert to its non-angry
+     * state.
      *
      * @param angry true if angry
+     * @see #setTarget(org.bukkit.entity.LivingEntity)
      */
     public void setAngry(boolean angry);
 
