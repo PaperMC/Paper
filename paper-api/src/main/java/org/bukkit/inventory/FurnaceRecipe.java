@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import java.util.Collections;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -12,7 +13,7 @@ import org.bukkit.material.MaterialData;
 public class FurnaceRecipe implements Recipe, Keyed {
     private final NamespacedKey key;
     private ItemStack output;
-    private ItemStack ingredient;
+    private RecipeChoice ingredient;
     private float experience;
     private int cookingTime;
     private String group = "";
@@ -52,9 +53,22 @@ public class FurnaceRecipe implements Recipe, Keyed {
 
     @Deprecated
     public FurnaceRecipe(NamespacedKey key, ItemStack result, Material source, int data, float experience, int cookingTime) {
+        this(key, result, new RecipeChoice.MaterialChoice(Collections.singletonList(source)), experience, cookingTime);
+    }
+
+    /**
+     * Create a furnace recipe to craft the specified ItemStack.
+     *
+     * @param key The unique recipe key
+     * @param result The item you want the recipe to create.
+     * @param input The input choices.
+     * @param experience The experience given by this recipe
+     * @param cookingTime The cooking time (in ticks)
+     */
+    public FurnaceRecipe(NamespacedKey key, ItemStack result, RecipeChoice input, float experience, int cookingTime) {
         this.key = key;
         this.output = new ItemStack(result);
-        this.ingredient = new ItemStack(source, 1, (short) data);
+        this.ingredient = input;
         this.experience = experience;
         this.cookingTime = cookingTime;
     }
@@ -90,7 +104,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      */
     @Deprecated
     public FurnaceRecipe setInput(Material input, int data) {
-        this.ingredient = new ItemStack(input, 1, (short) data);
+        this.ingredient = new RecipeChoice.MaterialChoice(Collections.singletonList(input));
         return this;
     }
 
@@ -100,6 +114,30 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @return The input material.
      */
     public ItemStack getInput() {
+        return this.ingredient.getItemStack();
+    }
+
+    /**
+     * Sets the input of this furnace recipe.
+     *
+     * @param input The input choice.
+     * @return The changed recipe, so you can chain calls.
+     * @deprecated draft API
+     */
+    @Deprecated
+    public FurnaceRecipe setInputChoice(RecipeChoice input) {
+        this.ingredient = input;
+        return this;
+    }
+
+    /**
+     * Get the input choice.
+     *
+     * @return The input choice.
+     * @deprecated draft API
+     */
+    @Deprecated
+    public RecipeChoice getInputChoice() {
         return this.ingredient.clone();
     }
 
