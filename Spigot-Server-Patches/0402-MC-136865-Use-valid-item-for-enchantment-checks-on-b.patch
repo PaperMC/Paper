@@ -1,4 +1,4 @@
-From 1e51c493238f91608639b9fb04b67737ff5b93e5 Mon Sep 17 00:00:00 2001
+From a101ae9254d474be1b9817bb5970ca62414fcdcc Mon Sep 17 00:00:00 2001
 From: MisterVector <whizkid3000@hotmail.com>
 Date: Thu, 1 Nov 2018 14:50:05 -0700
 Subject: [PATCH] MC-136865: Use valid item for enchantment checks on block
@@ -13,24 +13,22 @@ keep the clone of the item used to a non empty value so it represents
 the item used.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 23fc4d8e14..dbbd1f3341 100644
+index 23fc4d8e14..599bdf054f 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-@@ -378,8 +378,13 @@ public class PlayerInteractManager {
+@@ -375,10 +375,11 @@ public class PlayerInteractManager {
+                     ItemStack itemstack1 = this.player.getItemInMainHand();
+                     boolean flag1 = this.player.hasBlock(iblockdata);
+ 
++                    ItemStack itemstack2 = flag && flag1 && event.isDropItems() && !itemstack1.isEmpty() ? itemstack1.cloneItemStack() : null; // Paper - MC-136865 - clone before use
                      itemstack1.a(this.world, iblockdata, blockposition, this.player);
                      // CraftBukkit start - Check if block should drop items
                      if (flag && flag1 && event.isDropItems()) {
 -                        ItemStack itemstack2 = itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack();
-+                        // Paper start - fixes MC-136865
-+                        ItemStack itemstack2 = itemstack1.cloneItemStack(true);
++                        //ItemStack itemstack2 = itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack(); // Paper - MC-136865 - move up
  
-+                        if (itemstack2.isEmpty()) {
-+                            itemstack2.add(1);
-+                        }
-+                        // Paper end
                          iblockdata.getBlock().a(this.world, this.player, blockposition, iblockdata, tileentity, itemstack2);
                      }
-                     // CraftBukkit end
 -- 
 2.19.1
 
