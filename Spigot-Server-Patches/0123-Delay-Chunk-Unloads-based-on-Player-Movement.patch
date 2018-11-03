@@ -1,4 +1,4 @@
-From b0efda0569a3f5e6285e5fb2abd2bb310d5a1565 Mon Sep 17 00:00:00 2001
+From f74f5f78131c69430ee9281954378ee943a085a2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -20,7 +20,7 @@ This also makes the Chunk GC System useless, by auto scheduling unload as soon a
 a spare chunk is added to the server thats outside of view distance.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ff1a2046f..0cd15c17e 100644
+index ff1a2046f6..0cd15c17e8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -296,4 +296,18 @@ public class PaperWorldConfig {
@@ -43,7 +43,7 @@ index ff1a2046f..0cd15c17e 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 28ec8628d..234c9eb1c 100644
+index 28ec8628dc..234c9eb1c3 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -36,6 +36,7 @@ public class Chunk implements IChunkAccess {
@@ -55,7 +55,7 @@ index 28ec8628d..234c9eb1c 100644
      public final int locZ;
      private boolean l;
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 71ddaf591..39ac032b0 100644
+index 71ddaf591e..39ac032b0b 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -48,6 +48,15 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -75,7 +75,7 @@ index 71ddaf591..39ac032b0 100644
          // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 42d0731f0..e32c9f9a6 100644
+index 42d0731f0a..e32c9f9a62 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -306,6 +306,19 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -99,7 +99,7 @@ index 42d0731f0..e32c9f9a6 100644
              this.chunkScheduler.a(booleansupplier);
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ac0e90eec..2fd8fa30e 100644
+index ac0e90eeca..2fd8fa30ee 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -33,8 +33,22 @@ public class PlayerChunk {
@@ -160,7 +160,7 @@ index ac0e90eec..2fd8fa30e 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 1318ddd99..bc67565bf 100644
+index 1318ddd997..bc67565bf0 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -460,7 +460,13 @@ public class PlayerChunkMap {
@@ -179,7 +179,7 @@ index 1318ddd99..bc67565bf 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 8aa4138a2..225f7574d 100644
+index 8aa4138a2e..225f7574d2 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1342,7 +1342,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -198,10 +198,10 @@ index 8aa4138a2..225f7574d 100644
                          this.methodProfiler.a(() -> {
                              return String.valueOf(TileEntityTypes.a(tileentity.C()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5d8e85a0a..178f462c4 100644
+index 24e504c279..f0e974dffc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1756,7 +1756,7 @@ public class CraftWorld implements World {
+@@ -1757,7 +1757,7 @@ public class CraftWorld implements World {
          ChunkProviderServer cps = world.getChunkProviderServer();
          for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
              // If in use, skip it
@@ -211,7 +211,7 @@ index 5d8e85a0a..178f462c4 100644
              }
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index dfa59bbdd..8f0a999b0 100644
+index dfa59bbddc..8f0a999b0c 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -319,6 +319,11 @@ public class ActivationRange
