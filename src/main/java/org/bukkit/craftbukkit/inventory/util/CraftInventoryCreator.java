@@ -40,10 +40,20 @@ public final class CraftInventoryCreator {
     }
 
     public Inventory createInventory(InventoryHolder holder, InventoryType type) {
+        // Paper start
+        if (holder != null) {
+            return DEFAULT_CONVERTER.createInventory(holder, type);
+        }
+        //noinspection ConstantConditions // Paper end
         return converterMap.get(type).createInventory(holder, type);
     }
 
     public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
+        // Paper start
+        if (holder != null) {
+            return DEFAULT_CONVERTER.createInventory(holder, type, title);
+        }
+        //noinspection ConstantConditions // Paper end
         return converterMap.get(type).createInventory(holder, type, title);
     }
 
