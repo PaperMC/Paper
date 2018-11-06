@@ -43,4 +43,24 @@ public interface EndGateway extends BlockState {
      * @param exact whether to teleport to the exact location
      */
     void setExactTeleport(boolean exact);
+
+    /**
+     * Gets the age in ticks of the gateway.
+     * <br>
+     * If the age is less than 200 ticks a magenta beam will be emitted, whilst
+     * if it is a multiple of 2400 ticks a purple beam will be emitted.
+     *
+     * @return age in ticks
+     */
+    long getAge();
+
+    /**
+     * Sets the age in ticks of the gateway.
+     * <br>
+     * If the age is less than 200 ticks a magenta beam will be emitted, whilst
+     * if it is a multiple of 2400 ticks a purple beam will be emitted.
+     *
+     * @param age new age in ticks
+     */
+    void setAge(long age);
 }
