@@ -1,0 +1,36 @@
+From 4bca90c7e6140df3eedf5527f28d9081ea048508 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 5 Nov 2018 21:50:13 -0500
+Subject: [PATCH] Fix server icon encoding to show properly on 1.13 clients as
+ well
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index e0546e3dd..3b982f990 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -735,7 +735,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IAs
+                 ImageIO.write(bufferedimage, "PNG", new ByteBufOutputStream(bytebuf));
+                 /*ByteBuf */ bytebuf1 = Base64.encode(bytebuf); // Paper - cleanup favicon bytebuf
+ 
+-                serverping.setFavicon("data:image/png;base64," + bytebuf1.toString(StandardCharsets.UTF_8));
++                serverping.setFavicon("data:image/png;base64," + bytebuf1.toString(StandardCharsets.UTF_8).replace("\n", "")); // Paper - Fix encoding for 1.13+ clients, still compat w/ 1.12 clients
+             } catch (Exception exception) {
+                 MinecraftServer.LOGGER.error("Couldn\'t load server icon", exception);
+             } finally {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 9fe555986..7c82e18b9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1778,7 +1778,7 @@ public final class CraftServer implements Server {
+         ImageIO.write(image, "PNG", new ByteBufOutputStream(bytebuf));
+         ByteBuf bytebuf1 = Base64.encode(bytebuf);
+ 
+-        return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8));
++        return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8).replace("\n", "")); // Paper - Fix encoding for 1.13+ clients, still compat w/ 1.12 clients
+     }
+ 
+     @Override
+-- 
+2.19.1
+
