@@ -1,4 +1,4 @@
-From f63c14ecabe179632247452f7f7e8e97c141dfc7 Mon Sep 17 00:00:00 2001
+From 3c048e89df0608e4a5187df2ddc1c36956b11df5 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Thu, 8 Nov 2018 04:53:00 +0000
 Subject: [PATCH] Extend BlockStateListPopulator
@@ -36,10 +36,65 @@ index 987af9c3de..6e52d46952 100644
                  world.setTypeAndData(blockposition2, block.getHandle(), block.getFlag());
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/BlockStateListPopulator.java b/src/main/java/org/bukkit/craftbukkit/util/BlockStateListPopulator.java
-index 165843ddfe..c5612b2f43 100644
+index 165843ddfe..8482abd054 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/BlockStateListPopulator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/BlockStateListPopulator.java
-@@ -45,4 +45,16 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
+@@ -4,8 +4,12 @@ import java.util.ArrayList;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+ 
++import net.minecraft.server.Block;
+ import net.minecraft.server.BlockPosition;
++import net.minecraft.server.FluidType;
+ import net.minecraft.server.IBlockData;
++import net.minecraft.server.TickList;
++import net.minecraft.server.TickListPriority;
+ import net.minecraft.server.World;
+ 
+ import org.bukkit.block.BlockState;
+@@ -14,6 +18,41 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
+ public class BlockStateListPopulator extends DummyGeneratorAccess {
+     private final World world;
+     private final LinkedHashMap<BlockPosition, CraftBlockState> list;
++    // Paper start
++    private final TickList<FluidType> fluidTickList = new TickList<FluidType>() {
++        @Override
++        public boolean a(BlockPosition var1, FluidType var2) {
++            return BlockStateListPopulator.super.I().a(var1, var2);
++        }
++
++        @Override
++        public void a(BlockPosition var1, FluidType var2, int var3, TickListPriority var4) {
++
++        }
++
++        @Override
++        public boolean b(BlockPosition var1, FluidType var2) {
++            return false;
++        }
++    };
++
++    private TickList<Block> blockTickList = new TickList<Block>() {
++        @Override
++        public boolean a(BlockPosition var1, Block var2) {
++            return BlockStateListPopulator.super.J().a(var1, var2);
++        }
++
++        @Override
++        public void a(BlockPosition var1, Block var2, int var3, TickListPriority var4) {
++
++        }
++
++        @Override
++        public boolean b(BlockPosition var1, Block var2) {
++            return false;
++        }
++    };
++    // Paper end
+ 
+     public BlockStateListPopulator(World world) {
+         this(world, new LinkedHashMap<>());
+@@ -45,4 +84,34 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
      public World getWorld() {
          return world;
      }
@@ -54,6 +109,24 @@ index 165843ddfe..c5612b2f43 100644
 +            return world.getType(bp);
 +        }
 +    }
++
++    // Do nothing, this will be ran when the block is actually placed into the world
++    @Override
++    public void update(BlockPosition bp, Block block) {}
++
++    // Dumb tick lists, we rely upon block placement into the world updating this info
++    // no obfhelpers intentional, design of these classes do not favor them, and easier
++    // to just rework on upgrade...
++    @Override
++    public TickList<FluidType> I() {
++        return fluidTickList;
++    }
++
++    @Override
++    public TickList<Block> J() {
++        return blockTickList;
++    }
++
 +    // paper end
  }
 -- 
