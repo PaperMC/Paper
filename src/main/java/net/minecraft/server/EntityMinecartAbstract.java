@@ -62,9 +62,9 @@ public abstract class EntityMinecartAbstract extends Entity {
     private double derailedX = 0.5;
     private double derailedY = 0.5;
     private double derailedZ = 0.5;
-    private double flyingX = 0.95;
-    private double flyingY = 0.95;
-    private double flyingZ = 0.95;
+    private double flyingX = 0.949999988079071D; // Paper - restore vanilla precision
+    private double flyingY = 0.949999988079071D; // Paper - restore vanilla precision
+    private double flyingZ = 0.949999988079071D; // Paper - restore vanilla precision
     public double maxSpeed = 0.4D;
     // CraftBukkit end
 
