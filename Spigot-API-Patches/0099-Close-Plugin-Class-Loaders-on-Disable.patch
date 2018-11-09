@@ -1,4 +1,4 @@
-From 9e6d679a2e1a3956d445cf4a45b317dafd5ab8b0 Mon Sep 17 00:00:00 2001
+From 58698c7b920454d0f0171be3ff53e4df1471dc44 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -7,7 +7,7 @@ This should close more memory leaks from /reload and disabling plugins,
 by closing the class loader and the jar file.
 
 diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
-index e7981a1d..d34756f1 100644
+index e7981a1d9..d34756f15 100644
 --- a/src/main/java/org/bukkit/plugin/PluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
 @@ -73,4 +73,19 @@ public interface PluginLoader {
@@ -31,7 +31,7 @@ index e7981a1d..d34756f1 100644
 +    // Paper end - close Classloader on disable
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
-index e5638d56..b72d5a9b 100644
+index e5638d560..b72d5a9bc 100644
 --- a/src/main/java/org/bukkit/plugin/PluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/PluginManager.java
 @@ -154,6 +154,18 @@ public interface PluginManager {
@@ -54,7 +54,7 @@ index e5638d56..b72d5a9b 100644
       * Gets a {@link Permission} from its fully qualified name
       *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index bd0588a2..cb2b0b9c 100644
+index bd0588a20..cb2b0b9cb 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -412,17 +412,29 @@ public final class SimplePluginManager implements PluginManager {
@@ -100,7 +100,7 @@ index bd0588a2..cb2b0b9c 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 72d506d1..3cff01b6 100644
+index 72d506d1f..3411a365c 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -319,7 +319,7 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -108,7 +108,7 @@ index 72d506d1..3cff01b6 100644
                  server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
                  // Paper start - Disable plugins that fail to load
 -                disablePlugin(jPlugin);
-+                disablePlugin(jPlugin, true); // Paper - close Classloader on disable - She's dead jim
++                server.getPluginManager().disablePlugin(jPlugin, true); // Paper - close Classloader on disable - She's dead jim
                  return;
                  // Paper end
              }
@@ -144,5 +144,5 @@ index 72d506d1..3cff01b6 100644
          }
      }
 -- 
-2.18.0
+2.19.1
 
