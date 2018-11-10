@@ -9,14 +9,23 @@ import net.minecraft.server.DragonControllerPhase;
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityEnderDragon;
 
+import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 
 public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderDragon {
+
+    private BossBar bossBar;
+
     public CraftEnderDragon(CraftServer server, EntityEnderDragon entity) {
         super(server, entity);
+
+        if (entity.ds() != null) {
+            this.bossBar = new CraftBossBar(entity.ds().c); // PAIL rename getEnderDragonBattle
+        }
     }
 
     public Set<ComplexEntityPart> getParts() {
@@ -59,5 +68,10 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
     
     public static DragonControllerPhase getMinecraftPhase(Phase phase) {
         return DragonControllerPhase.getById(phase.ordinal());
+    }
+
+    @Override
+    public BossBar getBossBar() {
+        return bossBar;
     }
 }

@@ -44,6 +44,7 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
@@ -55,6 +56,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
+import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.generator.CraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
@@ -153,6 +155,7 @@ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.inventory.util.CraftInventoryCreator;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.server.TabCompleteEvent;
@@ -1730,6 +1733,53 @@ public final class CraftServer implements Server {
     @Override
     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         return new CraftBossBar(title, color, style, flags);
+    }
+
+    @Override
+    public KeyedBossBar createBossBar(NamespacedKey key, String title, BarColor barColor, BarStyle barStyle, BarFlag... barFlags) {
+        Preconditions.checkArgument(key != null, "key");
+
+        BossBattleCustom bossBattleCustom = getServer().aP().a(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
+        CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
+        craftKeyedBossbar.setColor(barColor);
+        craftKeyedBossbar.setStyle(barStyle);
+        for (BarFlag flag : barFlags) {
+            craftKeyedBossbar.addFlag(flag);
+        }
+
+        return craftKeyedBossbar;
+    }
+
+    @Override
+    public Iterator<KeyedBossBar> getBossBars() {
+        return Iterators.unmodifiableIterator(Iterators.transform(getServer().aP().b().iterator(), new Function<BossBattleCustom, org.bukkit.boss.KeyedBossBar>() { // PAIL: rename
+            @Override
+            public org.bukkit.boss.KeyedBossBar apply(BossBattleCustom bossBattleCustom) {
+                return bossBattleCustom.getBukkitEntity();
+            }
+        }));
+    }
+
+    @Override
+    public KeyedBossBar getBossBar(NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "key");
+        net.minecraft.server.BossBattleCustom bossBattleCustom = getServer().aP().a(CraftNamespacedKey.toMinecraft(key));
+
+        return (bossBattleCustom == null) ? null : bossBattleCustom.getBukkitEntity();
+    }
+
+    @Override
+    public boolean removeBossBar(NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "key");
+        net.minecraft.server.BossBattleCustomData bossBattleCustomData = getServer().aP();
+        net.minecraft.server.BossBattleCustom bossBattleCustom = bossBattleCustomData.a(CraftNamespacedKey.toMinecraft(key));
+
+        if (bossBattleCustom != null) {
+            bossBattleCustomData.a(bossBattleCustom);
+            return true;
+        }
+
+        return false;
     }
 
     @Override

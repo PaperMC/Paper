@@ -1,13 +1,22 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityWither;
+import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Wither;
+import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Wither;
 
 public class CraftWither extends CraftMonster implements Wither {
+
+    private BossBar bossBar;
+
     public CraftWither(CraftServer server, EntityWither entity) {
         super(server, entity);
+
+        if (entity.bL != null) {
+            this.bossBar = new CraftBossBar(entity.bL);
+        }
     }
 
     @Override
@@ -22,5 +31,10 @@ public class CraftWither extends CraftMonster implements Wither {
 
     public EntityType getType() {
         return EntityType.WITHER;
+    }
+
+    @Override
+    public BossBar getBossBar() {
+        return bossBar;
     }
 }
