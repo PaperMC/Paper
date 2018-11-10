@@ -6,7 +6,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
 /**
- * Stores details for players attempting to log in
+ * Stores details for players attempting to log in.
+ * <br>
+ * Note that this event is called <i>early</i> in the player initialization
+ * process. It is recommended that most options involving the Player
+ * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
  */
 public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
