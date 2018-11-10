@@ -189,6 +189,7 @@ public class Block extends BlockBase implements IMaterial {
 
     }
 
+    public static void dropNaturally(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, @Nullable TileEntity tileentity) { a(iblockdata, generatoraccess, blockposition, tileentity); }
     public static void a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, @Nullable TileEntity tileentity) {
         if (generatoraccess instanceof WorldServer) {
             a(iblockdata, (WorldServer) generatoraccess, blockposition, tileentity).forEach((itemstack) -> {

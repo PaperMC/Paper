@@ -115,8 +115,11 @@ public class BlockSponge extends Block {
                         // NOP
                     } else if (material == Material.WATER_PLANT || material == Material.REPLACEABLE_WATER_PLANT) {
                         TileEntity tileentity = iblockdata.getBlock().isTileEntity() ? world.getTileEntity(blockposition2) : null;
-
-                        a(iblockdata, world, blockposition2, tileentity);
+                        // Paper start
+                        if (block.getHandle().getMaterial() == Material.AIR) {
+                            dropNaturally(iblockdata, world, blockposition2, tileentity);
+                        }
+                        // Paper end
                     }
                 }
                 world.setTypeAndData(blockposition2, block.getHandle(), block.getFlag());
