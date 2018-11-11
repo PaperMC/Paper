@@ -1292,6 +1292,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
             case START_DESTROY_BLOCK:
             case ABORT_DESTROY_BLOCK:
             case STOP_DESTROY_BLOCK:
+                // Paper start - Don't allow digging in unloaded chunks
+                if (this.player.world.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
+                    return;
+                }
+                // Paper end - Don't allow digging in unloaded chunks
                 this.player.playerInteractManager.a(blockposition, packetplayinblockdig_enumplayerdigtype, packetplayinblockdig.c(), this.minecraftServer.getMaxBuildHeight());
                 return;
             default:

@@ -80,8 +80,8 @@ public class PlayerInteractManager {
         IBlockData iblockdata;
 
         if (this.j) {
-            iblockdata = this.world.getType(this.k);
-            if (iblockdata.isAir()) {
+            iblockdata = this.world.getTypeIfLoaded(this.k); // Paper
+            if (iblockdata == null || iblockdata.isAir()) { // Paper
                 this.j = false;
             } else {
                 float f = this.a(iblockdata, this.k, this.l);
@@ -92,7 +92,13 @@ public class PlayerInteractManager {
                 }
             }
         } else if (this.f) {
-            iblockdata = this.world.getType(this.h);
+            // Paper start - don't want to do same logic as above, return instead
+            iblockdata = this.world.getTypeIfLoaded(this.h);
+            if (iblockdata == null) {
+                this.f = false;
+                return;
+            }
+            // Paper end
             if (iblockdata.isAir()) {
                 this.world.a(this.player.getId(), this.h, -1);
                 this.m = -1;
@@ -256,10 +262,12 @@ public class PlayerInteractManager {
                 this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true, "stopped destroying"));
             } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
                 this.f = false;
-                if (!Objects.equals(this.h, blockposition)) {
+                if (!Objects.equals(this.h, blockposition) && !BlockPosition.ZERO.equals(this.h)) {
                     PlayerInteractManager.LOGGER.debug("Mismatch in destroy block pos: " + this.h + " " + blockposition); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
-                    this.world.a(this.player.getId(), this.h, -1);
-                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(this.h, this.world.getType(this.h), packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying"));
+                    IBlockData type = this.world.getTypeIfLoaded(this.h); // Paper - don't load unloaded chunks for stale records here
+                    if (type != null) this.world.a(this.player.getId(), this.h, -1); // Paper
+                    if (type != null) this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(this.h, type, packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying")); // Paper
+                    this.h = BlockPosition.ZERO; // Paper
                 }
 
                 this.world.a(this.player.getId(), blockposition, -1);
