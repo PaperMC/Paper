@@ -1,11 +1,11 @@
-From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From 9007c1a310edb90546c5a3ff3c7bced3f4fd6f54 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:56:36 -0400
 Subject: [PATCH] Prevent Mob AI Rules from Loading Chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 4e8eb137a..479a84a25 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -481,6 +481,7 @@ public class Chunk implements IChunkAccess {
@@ -17,10 +17,10 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          return this.b(blockposition.getX(), blockposition.getY(), blockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 9c72848f1..d007d0387 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
-@@ -7,11 +7,13 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+@@ -12,11 +12,13 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
      private final Block f;
      private final EntityInsentient g;
      private int h;
@@ -34,7 +34,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  
      public boolean a() {
-@@ -89,13 +91,15 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+@@ -99,7 +101,9 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
  
      @Nullable
      private BlockPosition a(BlockPosition blockposition, IBlockAccess iblockaccess) {
@@ -44,26 +44,28 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
 +        if (block == this.f) { // Paper
              return blockposition;
          } else {
-             BlockPosition[] ablockposition = new BlockPosition[]{blockposition.down(), blockposition.west(), blockposition.east(), blockposition.north(), blockposition.south(), blockposition.down().down()};
+             BlockPosition[] ablockposition = new BlockPosition[] { blockposition.down(), blockposition.west(), blockposition.east(), blockposition.north(), blockposition.south(), blockposition.down().down()};
+@@ -109,7 +113,7 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+             for (int j = 0; j < i; ++j) {
+                 BlockPosition blockposition1 = ablockposition1[j];
  
-             for(BlockPosition blockposition1 : ablockposition) {
 -                if (iblockaccess.getType(blockposition1).getBlock() == this.f) {
 +                if (world.getBlockIfLoaded(blockposition1) == this.f) { // Paper
                      return blockposition1;
                  }
              }
-@@ -105,7 +109,8 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+@@ -119,7 +123,8 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
      }
  
      protected boolean a(IWorldReader iworldreader, BlockPosition blockposition) {
 -        Block block = iworldreader.getType(blockposition).getBlock();
 +        Block block = world.getBlockIfLoaded(blockposition); // Paper
 +        if (block == null) return false; // Paper
+ 
          return block == this.f && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
      }
- }
 diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 800e0046a..bfa6c2eef 100644
 --- a/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 +++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 @@ -78,6 +78,7 @@ public class RandomPositionGenerator {
@@ -84,7 +86,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index a5c655155..016d50d3c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -763,6 +763,18 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
