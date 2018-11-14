@@ -301,6 +301,16 @@ public class CraftEventFactory {
     }
 
     /**
+     * EntityTransformEvent
+     */
+    public static EntityTransformEvent callEntityTransformEvent(EntityLiving original, EntityLiving converted, EntityTransformEvent.TransformReason convertType) {
+        EntityTransformEvent event = new EntityTransformEvent(original.getBukkitEntity(), converted.getBukkitEntity(), convertType);
+        Bukkit.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
+    /**
      * EntityShootBowEvent
      */
     public static EntityShootBowEvent callEntityShootBowEvent(EntityLiving who, ItemStack itemstack, EntityArrow entityArrow, float force) {
