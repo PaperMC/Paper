@@ -174,6 +174,10 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         DROWNED,
         /**
+         * When an cow is spawned by shearing a mushroom cow
+         */
+        SHEARED,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
