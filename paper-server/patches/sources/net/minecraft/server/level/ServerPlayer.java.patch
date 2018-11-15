@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +293,30 @@
+@@ -258,7 +293,31 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -123,7 +123,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
-+
+ 
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -142,9 +142,10 @@
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
- 
++
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +325,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -379,10 +380,12 @@
                              Logger logger = ServerPlayer.LOGGER;
  
                              Objects.requireNonNull(logger);
-@@ -686,6 +835,29 @@
+@@ -684,7 +833,30 @@
+             }
+         }
  
-     }
- 
++    }
++
 +    // CraftBukkit start - World fallback code, either respawn location or global spawn
 +    public void spawnIn(Level world) {
 +        this.setLevel(world);
@@ -403,12 +406,11 @@
 +            this.setPos(position);
 +        }
 +        this.gameMode.setLevel((ServerLevel) world);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void setExperiencePoints(int points) {
          float f = (float) this.getXpNeededForNextLevel();
-         float f1 = (f - 1.0F) / f;
 @@ -744,6 +916,11 @@
  
      @Override
@@ -524,7 +526,7 @@
 +        // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
 +        this.dropFromLootTable(this.serverLevel(), damageSource, this.lastHurtByPlayerTime > 0);
 +        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
-+
+ 
 +        loot.addAll(this.drops);
 +        this.drops.clear(); // SPIGOT-5188: make sure to clear
 +
@@ -548,7 +550,7 @@
 +        if (this.containerMenu != this.inventoryMenu) {
 +            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
 +        }
- 
++
 +        net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
 +
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
@@ -844,7 +846,7 @@
 +                // CraftBukkit end
                  return this;
              }
-+        }
+         }
 +    }
 +
 +    // CraftBukkit start
@@ -855,7 +857,7 @@
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
-         }
++        }
 +        return new CraftPortalEvent(event);
      }
 +    // CraftBukkit end
@@ -1430,7 +1432,24 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2375,10 +2906,12 @@
+@@ -2275,9 +2806,15 @@
+ 
+     @Override
+     public void stopRiding() {
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
++        // Paper end - Force entity dismount during teleportation
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
+         if (entity instanceof LivingEntity entityliving) {
+             Iterator iterator = entityliving.getActiveEffects().iterator();
+ 
+@@ -2375,16 +2912,161 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1446,10 +1465,11 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +2920,147 @@
+             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
+ 
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-         }
-     }
++        }
++    }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1462,8 +1482,8 @@
 +        } else {
 +            // Adds timeOffset to the beginning of this day.
 +            return this.level().getDayTime() - (this.level().getDayTime() % 24000) + this.timeOffset;
-+        }
-+    }
+         }
+     }
 +
 +    public WeatherType weather = null;
 +

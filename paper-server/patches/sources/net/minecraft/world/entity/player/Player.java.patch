@@ -35,12 +35,12 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -188,6 +198,17 @@
+@@ -188,7 +198,18 @@
      public Entity currentExplosionCause;
      private boolean ignoreFallDamageFromCurrentImpulse;
      private int currentImpulseContextResetGraceTime;
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
-+
+ 
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
 +    public int oldLevel = -1;
@@ -50,9 +50,10 @@
 +        return (CraftHumanEntity) super.getBukkitEntity();
 +    }
 +    // CraftBukkit end
- 
++
      public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
          super(EntityType.PLAYER, world);
+         this.lastItemInMainHand = ItemStack.EMPTY;
 @@ -261,7 +282,7 @@
          this.updateIsUnderwater();
          super.tick();
@@ -71,21 +72,20 @@
      }
  
      private boolean isEquipped(Item item) {
-@@ -511,7 +532,14 @@
-             super.handleEntityEvent(status);
-         }
+@@ -513,6 +534,13 @@
  
-+    }
-+
+     }
+ 
 +    // Paper start - Inventory close reason; unused code, but to keep signatures aligned
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        closeContainer();
 +        this.containerMenu = this.inventoryMenu;
-     }
++    }
 +    // Paper end - Inventory close reason
- 
++
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
+     }
 @@ -523,8 +551,14 @@
      public void rideTick() {
          if (!this.level().isClientSide && this.wantsToStopRiding() && this.isPassenger()) {
@@ -268,7 +268,22 @@
      }
  
      public boolean isTextFilteringEnabled() {
-@@ -1144,10 +1217,15 @@
+@@ -1061,7 +1134,13 @@
+ 
+     @Override
+     public void removeVehicle() {
+-        super.removeVehicle();
++        // Paper start - Force entity dismount during teleportation
++        this.removeVehicle(false);
++    }
++    @Override
++    public void removeVehicle(boolean suppressCancellation) {
++        super.removeVehicle(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+         this.boardingCooldown = 0;
+     }
+ 
+@@ -1144,10 +1223,15 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -285,7 +300,7 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
-@@ -1159,7 +1237,7 @@
+@@ -1159,7 +1243,7 @@
                      boolean flag1;
  
                      if (this.isSprinting() && flag) {
@@ -294,7 +309,7 @@
                          flag1 = true;
                      } else {
                          flag1 = false;
-@@ -1168,6 +1246,7 @@
+@@ -1168,6 +1252,7 @@
                      f += itemstack.getItem().getAttackDamageBonus(target, f, damagesource);
                      boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting();
  
@@ -302,7 +317,7 @@
                      if (flag2) {
                          f *= 1.5F;
                      }
-@@ -1202,13 +1281,17 @@
+@@ -1202,13 +1287,17 @@
                              if (target instanceof LivingEntity) {
                                  LivingEntity entityliving1 = (LivingEntity) target;
  
@@ -322,7 +337,7 @@
                          }
  
                          LivingEntity entityliving2;
-@@ -1223,8 +1306,13 @@
+@@ -1223,8 +1312,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
@@ -338,7 +353,7 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1235,26 +1323,43 @@
+@@ -1235,26 +1329,43 @@
                                  }
                              }
  
@@ -386,7 +401,7 @@
                              }
                          }
  
-@@ -1308,9 +1413,14 @@
+@@ -1308,9 +1419,14 @@
                              }
                          }
  
@@ -403,7 +418,7 @@
                      }
                  }
  
-@@ -1351,7 +1461,14 @@
+@@ -1351,7 +1467,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -419,7 +434,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1508,13 @@
+@@ -1391,7 +1514,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -434,7 +449,7 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1545,12 +1668,24 @@
+@@ -1545,12 +1674,24 @@
      }
  
      public void startFallFlying() {
@@ -460,7 +475,7 @@
      }
  
      @Override
-@@ -1664,11 +1799,30 @@
+@@ -1664,11 +1805,30 @@
      public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
@@ -492,7 +507,7 @@
              }
  
          }
-@@ -1748,13 +1902,20 @@
+@@ -1748,13 +1908,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -520,7 +535,7 @@
          }
  
      }
-@@ -1798,26 +1959,55 @@
+@@ -1798,26 +1965,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -583,12 +598,10 @@
      }
  
      @Override
-@@ -2003,20 +2193,31 @@
-     @Override
-     public ImmutableList<Pose> getDismountPoses() {
+@@ -2005,18 +2201,29 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
-+    }
-+
+     }
+ 
 +    // Paper start - PlayerReadyArrowEvent
 +    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
 +        return !(this instanceof ServerPlayer) ||
@@ -597,9 +610,9 @@
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
 +                ).callEvent();
-     }
++    }
 +    // Paper end - PlayerReadyArrowEvent
- 
++
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
