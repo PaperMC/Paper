@@ -942,9 +942,11 @@ public abstract class EntityHuman extends EntityLiving {
         return -0.35D;
     }
 
-    @Override
-    public void be() {
-        super.be();
+    // Paper start
+    @Override public void be() { stopRiding(false); }
+    @Override public void stopRiding(boolean suppressCancellation) {
+        // Paper end
+        super.stopRiding(suppressCancellation); // Paper - suppress
         this.j = 0;
     }
 
