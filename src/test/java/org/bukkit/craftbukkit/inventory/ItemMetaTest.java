@@ -175,21 +175,23 @@ public class ItemMetaTest extends AbstractTestingBase {
 
         for (Block block : queue) {
             if (block != null) {
+                ItemStack stack = CraftItemStack.asNewCraftStack(Item.getItemOf(block));
+
+                // Command blocks aren't unit testable atm
+                if (stack.getType() == Material.COMMAND_BLOCK || stack.getType() == Material.CHAIN_COMMAND_BLOCK || stack.getType() == Material.REPEATING_COMMAND_BLOCK) {
+                    return;
+                }
+
+                ItemMeta meta = stack.getItemMeta();
                 if (block instanceof ITileEntity) {
-                    ItemStack stack = CraftItemStack.asNewCraftStack(Item.getItemOf(block));
-
-                    // Command blocks aren't unit testable atm
-                    if (stack.getType() == Material.COMMAND_BLOCK || stack.getType() == Material.CHAIN_COMMAND_BLOCK || stack.getType() == Material.REPEATING_COMMAND_BLOCK) {
-                        return;
-                    }
-
-                    ItemMeta meta = stack.getItemMeta();
                     assertTrue(stack + " has meta of type " + meta + " expected BlockStateMeta", meta instanceof BlockStateMeta);
 
                     BlockStateMeta blockState = (BlockStateMeta) meta;
                     assertNotNull(stack + " has null block state", blockState.getBlockState());
 
                     blockState.setBlockState(blockState.getBlockState());
+                } else {
+                    assertTrue(stack + " has unexpected meta of type BlockStateMeta (but is not a tile)", !(meta instanceof BlockStateMeta));
                 }
             }
         }
