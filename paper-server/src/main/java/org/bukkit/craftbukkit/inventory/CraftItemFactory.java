@@ -199,7 +199,6 @@ public final class CraftItemFactory implements ItemFactory {
         case DROPPER:
         case SIGN:
         case SPAWNER:
-        case NOTE_BLOCK:
         case BREWING_STAND:
         case ENCHANTING_TABLE:
         case COMMAND_BLOCK:

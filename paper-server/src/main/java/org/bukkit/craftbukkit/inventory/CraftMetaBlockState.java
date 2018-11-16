@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.server.BlockJukeBox;
 import net.minecraft.server.EnumColor;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
@@ -175,7 +174,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case DROPPER:
             case SIGN:
             case SPAWNER:
-            case NOTE_BLOCK:
             case BREWING_STAND:
             case ENCHANTING_TABLE:
             case COMMAND_BLOCK:
