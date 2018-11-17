@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -809,6 +810,42 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
     @Override
     public void a(PacketPlayInBEdit packetplayinbedit) {
+        // Paper start
+        ItemStack testStack = packetplayinbedit.b();
+        if (!server.isPrimaryThread() && !testStack.isEmpty() && testStack.getTag() != null) {
+            NBTTagList pageList = testStack.getTag().getList("pages", 8);
+            long byteTotal = 0;
+            int maxBookPageSize = com.destroystokyo.paper.PaperConfig.maxBookPageSize;
+            double multiplier = Math.max(0.3D, Math.min(1D, com.destroystokyo.paper.PaperConfig.maxBookTotalSizeMultiplier));
+            long byteAllowed = maxBookPageSize;
+            for (int i = 0; i < pageList.size(); ++i) {
+                String testString = pageList.getString(i);
+                int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+                byteTotal += byteLength;
+                int length = testString.length();
+                int multibytes = 0;
+                if (byteLength != length) {
+                    for (char c : testString.toCharArray()) {
+                        if (c > 127) {
+                            multibytes++;
+                        }
+                    }
+                }
+                byteAllowed += (maxBookPageSize * Math.min(1, Math.max(0.1D, (double) length / 255D))) * multiplier;
+
+                if (multibytes > 1) {
+                    // penalize MB
+                    byteAllowed -= multibytes;
+                }
+            }
+
+            if (byteTotal > byteAllowed) {
+                PlayerConnection.LOGGER.warn(this.player.getName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
+                minecraftServer.scheduleOnMain(() -> this.disconnect("Book too large!"));
+                return;
+            }
+        }
+        // Paper end
         PlayerConnectionUtils.ensureMainThread(packetplayinbedit, this, this.player.getWorldServer());
         // CraftBukkit start
         if (this.lastBookTick + 20 > MinecraftServer.currentTick) {

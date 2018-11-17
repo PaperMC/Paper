@@ -334,4 +334,11 @@ public class PaperConfig {
             velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
         }
     }
+
+    public static int maxBookPageSize = 2560;
+    public static double maxBookTotalSizeMultiplier = 0.98D;
+    private static void maxBookSize() {
+        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
+        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
+    }
 }
