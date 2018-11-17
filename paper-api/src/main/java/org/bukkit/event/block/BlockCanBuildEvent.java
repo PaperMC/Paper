@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -21,17 +22,25 @@ public class BlockCanBuildEvent extends BlockEvent {
     protected boolean buildable;
 
     protected BlockData blockData;
+    private final Player player;
+
+    @Deprecated
+    public BlockCanBuildEvent(final Block block, final BlockData type, final boolean canBuild) {
+        this(block, null, type, canBuild);
+    }
 
     /**
      *
      * @param block the block involved in this event
+     * @param player the player placing the block
      * @param type the id of the block to place
-     * @param canBuild whether we can build 
+     * @param canBuild whether we can build
      */
-    public BlockCanBuildEvent(final Block block, final BlockData type, final boolean canBuild) {
+    public BlockCanBuildEvent(final Block block, final Player player, final BlockData type, final boolean canBuild) {
         super(block);
-        buildable = canBuild;
-        blockData = type;
+        this.player = player;
+        this.buildable = canBuild;
+        this.blockData = type;
     }
 
     /**
@@ -72,6 +81,17 @@ public class BlockCanBuildEvent extends BlockEvent {
      */
     public BlockData getBlockData() {
         return blockData;
+    }
+
+    /**
+     * Gets the player who placed the block involved in this event.
+     * <br>
+     * May be null for legacy calls of the event.
+     *
+     * @return The Player who placed the block involved in this event
+     */
+    public Player getPlayer() {
+        return player;
     }
 
     @Override
