@@ -6,7 +6,7 @@ Subject: [PATCH] Book Size Limits
 Puts some limits on the size of books.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index bc74ea2f09..ea18ba5880 100644
+index bc74ea2f09..beec4e33c6 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -14,15 +14,15 @@ index bc74ea2f09..ea18ba5880 100644
          }
      }
 +
-+    public static int maxBookPageSize = 640;
-+    public static double maxBookTotalSizeMultiplier = 0.9D;
++    public static int maxBookPageSize = 2560;
++    public static double maxBookTotalSizeMultiplier = 0.98D;
 +    private static void maxBookSize() {
 +        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
 +        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 3427e95e60..c4136640d2 100644
+index 3427e95e60..462ab49762 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -46,8 +46,18 @@ index 3427e95e60..c4136640d2 100644
 +                    minecraftServer.postToMainThread(() -> this.disconnect("Book too large!"));
 +                    return;
 +                }
-+                byteAllowed += (maxBookPageSize * multiplier);
++                int length = testString.length();
++                int multibytes = byteLength == length ? byteLength : (int) Math.round((double) byteLength / (double) length);
++                for (int x = 1; x < multibytes; x++) {
++                    multiplier *= multiplier;
++                }
++                byteAllowed += (maxBookPageSize * Math.min(1, Math.max(0.1D, (double) length / 255D))) * multiplier;
 +                multiplier *= multiplier;
++
++                if (multibytes > 1) {
++                    // penalize MB some more
++                    byteAllowed -= length;
++                }
 +            }
 +        }
 +        // Paper end
