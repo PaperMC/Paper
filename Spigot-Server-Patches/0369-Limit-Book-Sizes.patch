@@ -1,0 +1,86 @@
+From b037f9c518d26ee6c566647b9df1d2ceed356fda Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Nov 2018 00:08:54 -0500
+Subject: [PATCH] Limit Book Sizes
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 332e90f86b..0ac61f4de0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -320,4 +320,12 @@ public class PaperConfig {
+         tabSpamIncrement = getInt("settings.spam-limiter.tab-spam-increment", tabSpamIncrement);
+         tabSpamLimit = getInt("settings.spam-limiter.tab-spam-limit", tabSpamLimit);
+     }
++
++
++    public static int maxBookPageSize = 1024;
++    public static double maxBookTotalSizeMultiplier = 0.90D;
++    private static void maxBookSize() {
++        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
++        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index edd7ba353d..4c35132892 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2329,6 +2329,39 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         this.player.a(packetplayinsettings);
+     }
+ 
++    // Paper start
++    private boolean validateBook(ItemStack testStack) {
++        NBTTagList pageList = testStack.getTag().getList("pages", 8);
++        long byteTotal = 0;
++        int maxBookPageSize = com.destroystokyo.paper.PaperConfig.maxBookPageSize;
++        double multiplier = Math.max(0.3D, Math.min(1D, com.destroystokyo.paper.PaperConfig.maxBookTotalSizeMultiplier));
++        long byteAllowed = maxBookPageSize;
++        for (int i = 0; i < pageList.size(); ++i) {
++            String testString = pageList.getString(i);
++            int byteLength = testString.getBytes().length;
++            byteTotal += byteLength;
++            if (byteTotal > byteAllowed) {
++                PlayerConnection.LOGGER.warn(this.player.getName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
++                minecraftServer.postToMainThread(() -> this.disconnect("Book too large!"));
++                return false;
++            }
++            int length = testString.length();
++            int multibytes = byteLength == length ? byteLength : (int) Math.round((double) byteLength / (double) length);
++            for (int x = 1; x < multibytes; x++) {
++                multiplier *= multiplier;
++            }
++            byteAllowed += (maxBookPageSize * Math.min(1, Math.max(0.1D, (double) length / 255D))) * multiplier;
++            multiplier *= multiplier;
++
++            if (multibytes > 1) {
++                // penalize MB some more
++                byteAllowed -= length;
++            }
++        }
++        return true;
++    }
++    // Paper end
++
+     public void a(PacketPlayInCustomPayload packetplayincustompayload) {
+         PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.x());
+         String s = packetplayincustompayload.a();
+@@ -2362,6 +2395,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+ 
+                 if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
++                    if (!validateBook(itemstack)) return; // Paper
+                     itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
+                     CraftEventFactory.handleEditBookEvent(player, itemstack1); // CraftBukkit
+                 }
+@@ -2397,6 +2431,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                     }
+ 
+                     if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack1.getItem() == Items.WRITABLE_BOOK) {
++                        if (!validateBook(itemstack)) return; // Paper
+                         ItemStack itemstack2 = new ItemStack(Items.WRITTEN_BOOK);
+ 
+                         itemstack2.a("author", (NBTBase) (new NBTTagString(this.player.getName())));
+-- 
+2.19.1
+
