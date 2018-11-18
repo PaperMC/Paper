@@ -2901,6 +2901,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public String getPermissionMessage() {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().serialize(io.papermc.paper.configuration.GlobalConfiguration.get().messages.noPermission);
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component permissionMessage() {
+        return io.papermc.paper.configuration.GlobalConfiguration.get().messages.noPermission;
+    }
+
+    @Override
     public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
         return createProfile(uuid, null);
     }

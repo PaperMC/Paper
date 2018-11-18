@@ -73,7 +73,7 @@ public final class PaperCommand extends Command {
         if (sender.hasPermission(BASE_PERM + permission) || sender.hasPermission("bukkit.command.paper")) {
             return true;
         }
-        sender.sendMessage(text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", RED));
+        sender.sendMessage(Bukkit.permissionMessage());
         return false;
     }
 
