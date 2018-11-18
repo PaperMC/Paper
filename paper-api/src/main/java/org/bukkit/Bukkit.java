@@ -2446,6 +2446,28 @@ public final class Bukkit {
     }
 
     /**
+     * Gets the default no permission message used on the server
+     *
+     * @return the default message
+     * @deprecated use {@link #permissionMessage()}
+     */
+    @NotNull
+    @Deprecated
+    public static String getPermissionMessage() {
+        return server.getPermissionMessage();
+    }
+
+    /**
+     * Gets the default no permission message used on the server
+     *
+     * @return the default message
+     */
+    @NotNull
+    public static net.kyori.adventure.text.Component permissionMessage() {
+        return server.permissionMessage();
+    }
+
+    /**
      * Creates a PlayerProfile for the specified uuid, with name as null.
      *
      * If a player with the passed uuid exists on the server at the time of creation, the returned player profile will

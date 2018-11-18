@@ -192,10 +192,9 @@ public abstract class Command {
             return true;
         }
 
-        if (permissionMessage == null) {
-            target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
             // Paper start - use components for permissionMessage
-        } else if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
+        net.kyori.adventure.text.Component permissionMessage = this.permissionMessage != null ? this.permissionMessage : Bukkit.permissionMessage();
+        if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
             target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
             // Paper end
         }
