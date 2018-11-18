@@ -5,7 +5,7 @@ Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e0cd7bd8..801c3fb8 100644
+index e0cd7bd857..801c3fb8e0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -18,7 +18,7 @@ index e0cd7bd8..801c3fb8 100644
      protected int k;
      private Entity vehicle;
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index 1cecccef..c77d7c16 100644
+index 85d364b8f4..ff6c8e2b55 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
 @@ -0,0 +0,0 @@ public class ItemBlock extends Item {
@@ -28,11 +28,11 @@ index 1cecccef..c77d7c16 100644
 -        boolean defaultReturn = iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition());
 +        final World world = blockactioncontext.getWorld(); // Paper
 +        boolean defaultReturn = iblockdata.canPlace(world, blockactioncontext.getClickPosition()) && world.a(iblockdata, blockactioncontext.getClickPosition()) && world.checkNoVisiblePlayerCollisions(blockactioncontext.getEntity(), iblockdata.getCollisionShape(world, blockactioncontext.getClickPosition())); // Paper - Use our entity search
+         org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
  
-         BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), CraftBlockData.fromData(iblockdata), defaultReturn);
-         blockactioncontext.getWorld().getServer().getPluginManager().callEvent(event);
+         BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
 diff --git a/src/main/java/net/minecraft/server/VoxelShape.java b/src/main/java/net/minecraft/server/VoxelShape.java
-index 1ea8464a..35b08a5f 100644
+index 1ea8464aeb..35b08a5f99 100644
 --- a/src/main/java/net/minecraft/server/VoxelShape.java
 +++ b/src/main/java/net/minecraft/server/VoxelShape.java
 @@ -0,0 +0,0 @@ public abstract class VoxelShape {
@@ -44,7 +44,7 @@ index 1ea8464a..35b08a5f 100644
          if (this.isEmpty()) {
              throw new UnsupportedOperationException("No bounds for empty shape.");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fa94e41f..ad1011a2 100644
+index fa94e41f0f..ad1011a22a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -86,7 +86,7 @@ index fa94e41f..ad1011a2 100644
          if (voxelshape.isEmpty()) {
              return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 630a43bc..da779ecb 100644
+index 630a43bc41..da779ecb3a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
