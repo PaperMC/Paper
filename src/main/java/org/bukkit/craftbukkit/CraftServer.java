@@ -2272,6 +2272,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public String getPermissionMessage() {
+        return com.destroystokyo.paper.PaperConfig.noPermissionMessage;
+    }
+
+    @Override
     public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
         return createProfile(uuid, null);
     }

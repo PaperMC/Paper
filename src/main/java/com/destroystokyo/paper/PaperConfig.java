@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import com.google.common.collect.Lists;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -277,6 +278,11 @@ public class PaperConfig {
     public static String connectionThrottleKickMessage = "Connection throttled! Please wait before reconnecting.";
     private static void connectionThrottleKickMessage() {
         connectionThrottleKickMessage = getString("messages.kick.connection-throttle", connectionThrottleKickMessage);
+    }
+
+    public static String noPermissionMessage = "&cI'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.";
+    private static void noPermissionMessage() {
+        noPermissionMessage = ChatColor.translateAlternateColorCodes('&', getString("messages.no-permission", noPermissionMessage));
     }
 
     public static boolean savePlayerData = true;
