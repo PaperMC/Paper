@@ -1,4 +1,4 @@
-From b8f8ff8c81c3a92ae48adb86b8decabe0d11a702 Mon Sep 17 00:00:00 2001
+From 0e1052315579d6638c1e893e288cf325ab05d1c7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -11,7 +11,7 @@ Subject: [PATCH] Optimize Hoppers
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 31b2c71960..d818d39039 100644
+index 95fc2d8ed..ac07bcc75 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -415,6 +415,15 @@ public class PaperWorldConfig {
@@ -31,7 +31,7 @@ index 31b2c71960..d818d39039 100644
      private void disableSprintInterruptionOnAttack() {
          disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 9326eaa2a9..4641113f9d 100644
+index 36c8644e2..eea6d9419 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -459,8 +459,9 @@ public final class ItemStack {
@@ -47,7 +47,7 @@ index 9326eaa2a9..4641113f9d 100644
          itemstack.d(this.B());
          if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6fa54386e8..eb3fc836fb 100644
+index 116620984..d83e85dbf 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1050,7 +1050,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -61,7 +61,7 @@ index 6fa54386e8..eb3fc836fb 100644
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 29fe031d85..d67fd92d9d 100644
+index 29fe031d8..d67fd92d9 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -52,6 +52,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -81,7 +81,7 @@ index 29fe031d85..d67fd92d9d 100644
              this.world.b(this.position, this);
              if (!this.f.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 5ba009c7cf..a8cf160fe4 100644
+index b36ec46bf..10e18bf34 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -190,6 +190,154 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -247,7 +247,7 @@ index 5ba009c7cf..a8cf160fe4 100644
                  for (int i = 0; i < this.getSize(); ++i) {
                      if (!this.getItem(i).isEmpty()) {
                          ItemStack itemstack = this.getItem(i).cloneItemStack();
-@@ -242,7 +391,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -238,7 +387,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
                      }
                  }
  
@@ -256,7 +256,7 @@ index 5ba009c7cf..a8cf160fe4 100644
              }
          }
      }
-@@ -313,6 +462,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -309,6 +458,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              if (b(iinventory, enumdirection)) {
                  return false;
              }
@@ -264,7 +264,7 @@ index 5ba009c7cf..a8cf160fe4 100644
  
              if (iinventory instanceof IWorldInventory) {
                  IWorldInventory iworldinventory = (IWorldInventory) iinventory;
-@@ -355,6 +505,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -351,6 +501,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          ItemStack itemstack = iinventory.getItem(i);
  
          if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
@@ -272,7 +272,7 @@ index 5ba009c7cf..a8cf160fe4 100644
              ItemStack itemstack1 = itemstack.cloneItemStack();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
-@@ -395,7 +546,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -387,7 +538,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              }
  
              itemstack1.subtract(origCount - itemstack2.getCount()); // Spigot
@@ -281,7 +281,7 @@ index 5ba009c7cf..a8cf160fe4 100644
          }
  
          return false;
-@@ -404,7 +555,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -396,7 +547,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      public static boolean a(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
          // CraftBukkit start
@@ -290,7 +290,7 @@ index 5ba009c7cf..a8cf160fe4 100644
          entityitem.world.getServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -458,7 +609,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -450,7 +601,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              boolean flag1 = iinventory1.P_();
  
              if (itemstack1.isEmpty()) {
@@ -301,5 +301,5 @@ index 5ba009c7cf..a8cf160fe4 100644
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
 -- 
-2.19.0
+2.19.1
 
