@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -23,7 +24,8 @@ class CraftTask implements BukkitTask, Runnable {
      */
     private volatile long period;
     private long nextRun;
-    private final Runnable task;
+    private final Runnable rTask;
+    private final Consumer<BukkitTask> cTask;
     private final Plugin plugin;
     private final int id;
 
@@ -31,31 +33,51 @@ class CraftTask implements BukkitTask, Runnable {
         this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
     }
 
-    CraftTask(final Runnable task) {
+    CraftTask(final Object task) {
         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
     }
 
-    CraftTask(final Plugin plugin, final Runnable task, final int id, final long period) {
+    CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
         this.plugin = plugin;
-        this.task = task;
+        if (task instanceof Runnable) {
+            this.rTask = (Runnable) task;
+            this.cTask = null;
+        } else if (task instanceof Consumer) {
+            this.cTask = (Consumer<BukkitTask>) task;
+            this.rTask = null;
+        } else if (task == null) {
+            // Head task
+            this.rTask = null;
+            this.cTask = null;
+        } else {
+            throw new AssertionError("Illegal task class " + task);
+        }
         this.id = id;
         this.period = period;
     }
 
+    @Override
     public final int getTaskId() {
         return id;
     }
 
+    @Override
     public final Plugin getOwner() {
         return plugin;
     }
 
+    @Override
     public boolean isSync() {
         return true;
     }
 
+    @Override
     public void run() {
-        task.run();
+        if (rTask != null) {
+            rTask.run();
+        } else {
+            cTask.accept(this);
+        }
     }
 
     long getPeriod() {
@@ -82,8 +104,8 @@ class CraftTask implements BukkitTask, Runnable {
         this.next = next;
     }
 
-    Class<? extends Runnable> getTaskClass() {
-        return task.getClass();
+    Class<?> getTaskClass() {
+        return (rTask != null) ? rTask.getClass() : cTask.getClass();
     }
 
     @Override
@@ -91,6 +113,7 @@ class CraftTask implements BukkitTask, Runnable {
         return (period == CraftTask.CANCEL);
     }
 
+    @Override
     public void cancel() {
         Bukkit.getScheduler().cancelTask(id);
     }

@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import org.apache.commons.lang.Validate;
@@ -88,45 +89,89 @@ public class CraftScheduler implements BukkitScheduler {
         RECENT_TICKS = 30;
     }
 
+    @Override
     public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task) {
         return this.scheduleSyncDelayedTask(plugin, task, 0L);
     }
 
+    @Override
     public BukkitTask runTask(Plugin plugin, Runnable runnable) {
         return runTaskLater(plugin, runnable, 0L);
     }
 
+    @Override
+    public void runTask(Plugin plugin, Consumer<BukkitTask> task) throws IllegalArgumentException {
+        runTaskLater(plugin, task, 0L);
+    }
+
     @Deprecated
+    @Override
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task) {
         return this.scheduleAsyncDelayedTask(plugin, task, 0L);
     }
 
+    @Override
     public BukkitTask runTaskAsynchronously(Plugin plugin, Runnable runnable) {
         return runTaskLaterAsynchronously(plugin, runnable, 0L);
     }
 
+    @Override
+    public void runTaskAsynchronously(Plugin plugin, Consumer<BukkitTask> task) throws IllegalArgumentException {
+        runTaskLaterAsynchronously(plugin, task, 0L);
+    }
+
+    @Override
     public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
         return this.scheduleSyncRepeatingTask(plugin, task, delay, CraftTask.NO_REPEATING);
     }
 
+    @Override
     public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, long delay) {
         return runTaskTimer(plugin, runnable, delay, CraftTask.NO_REPEATING);
     }
 
+    @Override
+    public void runTaskLater(Plugin plugin, Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+        runTaskTimer(plugin, task, delay, CraftTask.NO_REPEATING);
+    }
+
     @Deprecated
+    @Override
     public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
         return this.scheduleAsyncRepeatingTask(plugin, task, delay, CraftTask.NO_REPEATING);
     }
 
+    @Override
     public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
         return runTaskTimerAsynchronously(plugin, runnable, delay, CraftTask.NO_REPEATING);
     }
 
+    @Override
+    public void runTaskLaterAsynchronously(Plugin plugin, Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+        runTaskTimerAsynchronously(plugin, task, delay, CraftTask.NO_REPEATING);
+    }
+
+    @Override
+    public void runTaskTimerAsynchronously(Plugin plugin, Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+        runTaskTimerAsynchronously(plugin, (Object) task, delay, CraftTask.NO_REPEATING);
+    }
+
+    @Override
     public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
         return runTaskTimer(plugin, runnable, delay, period).getTaskId();
     }
 
+    @Override
     public BukkitTask runTaskTimer(Plugin plugin, Runnable runnable, long delay, long period) {
+        return runTaskTimer(plugin, (Object) runnable, delay, period);
+    }
+
+    @Override
+    public void runTaskTimer(Plugin plugin, Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+        runTaskTimer(plugin, (Object) task, delay, period);
+    }
+
+    public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
         validate(plugin, runnable);
         if (delay < 0L) {
             delay = 0;
@@ -140,11 +185,17 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Deprecated
+    @Override
     public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
         return runTaskTimerAsynchronously(plugin, runnable, delay, period).getTaskId();
     }
 
+    @Override
     public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, long delay, long period) {
+        return runTaskTimerAsynchronously(plugin, (Object) runnable, delay, period);
+    }
+
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Object runnable, long delay, long period) {
         validate(plugin, runnable);
         if (delay < 0L) {
             delay = 0;
@@ -157,6 +208,7 @@ public class CraftScheduler implements BukkitScheduler {
         return handle(new CraftAsyncTask(runners, plugin, runnable, nextId(), period), delay);
     }
 
+    @Override
     public <T> Future<T> callSyncMethod(final Plugin plugin, final Callable<T> task) {
         validate(plugin, task);
         final CraftFuture<T> future = new CraftFuture<T>(task, plugin, nextId());
@@ -164,6 +216,7 @@ public class CraftScheduler implements BukkitScheduler {
         return future;
     }
 
+    @Override
     public void cancelTask(final int taskId) {
         if (taskId <= 0) {
             return;
@@ -205,6 +258,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
     }
 
+    @Override
     public void cancelTasks(final Plugin plugin) {
         Validate.notNull(plugin, "Cannot cancel tasks of null plugin");
         final CraftTask task = new CraftTask(
@@ -243,34 +297,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
     }
 
-    public void cancelAllTasks() {
-        final CraftTask task = new CraftTask(
-                new Runnable() {
-                    public void run() {
-                        Iterator<CraftTask> it = CraftScheduler.this.runners.values().iterator();
-                        while (it.hasNext()) {
-                            CraftTask task = it.next();
-                            task.cancel0();
-                            if (task.isSync()) {
-                                it.remove();
-                            }
-                        }
-                        CraftScheduler.this.pending.clear();
-                        CraftScheduler.this.temp.clear();
-                    }
-                });
-        handle(task, 0L);
-        for (CraftTask taskPending = head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
-            if (taskPending == task) {
-                break;
-            }
-            taskPending.cancel0();
-        }
-        for (CraftTask runner : runners.values()) {
-            runner.cancel0();
-        }
-    }
-
+    @Override
     public boolean isCurrentlyRunning(final int taskId) {
         final CraftTask task = runners.get(taskId);
         if (task == null) {
@@ -285,6 +312,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
     }
 
+    @Override
     public boolean isQueued(final int taskId) {
         if (taskId <= 0) {
             return false;
@@ -298,6 +326,7 @@ public class CraftScheduler implements BukkitScheduler {
         return task != null && task.getPeriod() >= CraftTask.NO_REPEATING;
     }
 
+    @Override
     public List<BukkitWorker> getActiveWorkers() {
         final ArrayList<BukkitWorker> workers = new ArrayList<BukkitWorker>();
         for (final CraftTask taskObj : runners.values()) {
@@ -314,6 +343,7 @@ public class CraftScheduler implements BukkitScheduler {
         return workers;
     }
 
+    @Override
     public List<BukkitTask> getPendingTasks() {
         final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
         for (CraftTask task = head.getNext(); task != null; task = task.getNext()) {
@@ -407,6 +437,7 @@ public class CraftScheduler implements BukkitScheduler {
     private static void validate(final Plugin plugin, final Object task) {
         Validate.notNull(plugin, "Plugin cannot be null");
         Validate.notNull(task, "Task cannot be null");
+        Validate.isTrue(task instanceof Runnable || task instanceof Consumer, "Task must be Runnable or Consumer");
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
         }
