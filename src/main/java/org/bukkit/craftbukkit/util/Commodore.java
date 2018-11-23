@@ -199,6 +199,14 @@ public class Commodore
                     @Override
                     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf)
                     {
+                        // SPIGOT-4496
+                        if ( owner.equals( "org/bukkit/map/MapView" ) && name.equals( "getId" ) && desc.equals( "()S" ) )
+                        {
+                            // Should be same size on stack so just call other method
+                            super.visitMethodInsn( opcode, owner, name, "()I", itf );
+                            return;
+                        }
+
                         if ( modern )
                         {
                             if ( owner.equals( "org/bukkit/Material" ) )

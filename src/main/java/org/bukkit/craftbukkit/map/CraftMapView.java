@@ -31,11 +31,12 @@ public final class CraftMapView implements MapView {
         addRenderer(new CraftMapRenderer(this, worldMap));
     }
 
-    public short getId() {
+    @Override
+    public int getId() {
         String text = worldMap.getId();
         if (text.startsWith("map_")) {
             try {
-                return Short.parseShort(text.substring("map_".length()));
+                return Integer.parseInt(text.substring("map_".length()));
             }
             catch (NumberFormatException ex) {
                 throw new IllegalStateException("Map has non-numeric ID");
