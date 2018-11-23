@@ -13,7 +13,7 @@ class CraftAsyncTask extends CraftTask {
     private final LinkedList<BukkitWorker> workers = new LinkedList<BukkitWorker>();
     private final Map<Integer, CraftTask> runners;
 
-    CraftAsyncTask(final Map<Integer, CraftTask> runners, final Plugin plugin, final Runnable task, final int id, final long delay) {
+    CraftAsyncTask(final Map<Integer, CraftTask> runners, final Plugin plugin, final Object task, final int id, final long delay) {
         super(plugin, task, id, delay);
         this.runners = runners;
     }
