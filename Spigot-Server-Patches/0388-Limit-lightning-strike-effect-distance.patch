@@ -1,27 +1,25 @@
-From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From aa465a00b42e0ce2a01128f6259dc8b5ae402186 Mon Sep 17 00:00:00 2001
 From: Trigary <trigary0@gmail.com>
 Date: Fri, 14 Sep 2018 17:42:08 +0200
 Subject: [PATCH] Limit lightning strike effect distance
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 93bf8c6d..f94fa5df 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -237,6 +237,30 @@ public class PaperWorldConfig {
+@@ -237,6 +237,28 @@ public class PaperWorldConfig {
              skeleHorseSpawnChance = 0.01D; // Vanilla value
          }
      }
 +    
-+    public double sqrMaxLightningSoundDistance;
++    public double sqrMaxThunderDistance;
 +    public double sqrMaxLightningImpactSoundDistance;
 +    public double maxLightningFlashDistance;
 +    private void lightningStrikeDistanceLimit() {
-+        sqrMaxLightningSoundDistance = getInt("lightning-strike-distance-limit.sound", -1);
-+        if (sqrMaxLightningSoundDistance < 0) {
-+            sqrMaxLightningSoundDistance = Double.MAX_VALUE;
-+        } else {
-+            sqrMaxLightningSoundDistance *= sqrMaxLightningSoundDistance;
++        sqrMaxThunderDistance = getInt("lightning-strike-distance-limit.sound", -1);
++        if (sqrMaxThunderDistance > 0) {
++            sqrMaxThunderDistance *= sqrMaxThunderDistance;
 +        }
 +
 +        sqrMaxLightningImpactSoundDistance = getInt("lightning-strike-distance-limit.impact-sound", -1);
@@ -40,10 +38,10 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      public boolean firePhysicsEventForRedstone = false;
      private void firePhysicsEventForRedstone() {
 diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index afbe43dd..d732be52 100644
 --- a/src/main/java/net/minecraft/server/EntityLightning.java
 +++ b/src/main/java/net/minecraft/server/EntityLightning.java
-@@ -60,6 +60,14 @@ public class EntityLightning extends EntityWeather {
+@@ -60,6 +60,17 @@ public class EntityLightning extends EntityWeather {
                  double deltaX = this.locX - player.locX;
                  double deltaZ = this.locZ - player.locZ;
                  double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
@@ -51,14 +49,17 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
 +                if (distanceSquared <= this.world.paperConfig.sqrMaxLightningImpactSoundDistance) {
 +                    player.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT,
 +                            SoundCategory.WEATHER, this.locX, this.locY, this.locZ, 2.0f, 0.5F + this.random.nextFloat() * 0.2F));
-+                } else {
++                }
++
++                if (world.paperConfig.sqrMaxThunderDistance != -1 && distanceSquared >= world.paperConfig.sqrMaxThunderDistance) {
 +                    continue;
 +                }
++
 +                // Paper end
                  if (distanceSquared > viewDistance * viewDistance) {
                      double deltaLength = Math.sqrt(distanceSquared);
                      double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
-@@ -70,7 +78,7 @@ public class EntityLightning extends EntityWeather {
+@@ -70,7 +81,7 @@ public class EntityLightning extends EntityWeather {
                  }
              }
              // CraftBukkit end
@@ -68,7 +69,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
          --this.lifeTicks;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index a54ea5a6..818e4c37 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1087,7 +1087,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
