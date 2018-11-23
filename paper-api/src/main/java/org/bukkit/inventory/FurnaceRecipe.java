@@ -122,9 +122,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      *
      * @param input The input choice.
      * @return The changed recipe, so you can chain calls.
-     * @deprecated draft API
      */
-    @Deprecated
     public FurnaceRecipe setInputChoice(RecipeChoice input) {
         this.ingredient = input;
         return this;
@@ -134,9 +132,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * Get the input choice.
      *
      * @return The input choice.
-     * @deprecated draft API
      */
-    @Deprecated
     public RecipeChoice getInputChoice() {
         return this.ingredient.clone();
     }

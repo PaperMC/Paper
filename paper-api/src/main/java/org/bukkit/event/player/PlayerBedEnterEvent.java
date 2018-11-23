@@ -12,9 +12,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Represents the default possible outcomes of this event.
-     * @deprecated draft API
      */
-    @Deprecated
     public enum BedEnterResult {
         /**
          * The player will enter the bed.

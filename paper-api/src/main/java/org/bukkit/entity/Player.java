@@ -1468,9 +1468,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * communicated this information,
      *
      * @return client view distance as above
-     * @deprecated draft API
      */
-    @Deprecated
     public int getClientViewDistance();
 
     /**
