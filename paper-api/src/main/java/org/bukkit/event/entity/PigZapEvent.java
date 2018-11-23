@@ -9,14 +9,14 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores data for pigs being zapped
  */
-public class PigZapEvent extends EntityEvent implements Cancellable {
+public class PigZapEvent extends EntityTransformEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean canceled;
     private final PigZombie pigzombie;
     private final LightningStrike bolt;
 
     public PigZapEvent(final Pig pig, final LightningStrike bolt, final PigZombie pigzombie) {
-        super(pig);
+        super(pig, pigzombie, TransformReason.LIGHTNING);
         this.bolt = bolt;
         this.pigzombie = pigzombie;
     }
@@ -48,7 +48,9 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
      * not cancelled first.
      *
      * @return resulting entity
+     * @deprecated use {@link EntityTransformEvent#getTransformedEntity()}
      */
+    @Deprecated
     public PigZombie getPigZombie() {
         return pigzombie;
     }
