@@ -105,7 +105,7 @@ class CraftTask implements BukkitTask, Runnable {
     }
 
     Class<?> getTaskClass() {
-        return (rTask != null) ? rTask.getClass() : cTask.getClass();
+        return (rTask != null) ? rTask.getClass() : ((cTask != null) ? cTask.getClass() : null);
     }
 
     @Override
