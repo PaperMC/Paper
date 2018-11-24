@@ -1,4 +1,4 @@
-From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From 92edd7342e31fb32f8cb5249c30aefb8570cd12b Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Wed, 8 Aug 2018 15:30:52 -0400
 Subject: [PATCH] Add Early Warning Feature to WatchDog
@@ -9,7 +9,7 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index fad2f8f822..4061073b22 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -25,6 +25,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
@@ -36,7 +36,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      public static int tabSpamLimit = 500;
      private static void tabSpamLimiters() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 498a0c4504..1166209840 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -796,6 +796,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -48,7 +48,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
                  long start = System.nanoTime(), curTime, wait, tickSection = start; // Paper - Further improve server tick loop
                  lastTick = start - TICK_TIME; // Paper
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index eed96c60c5..496c5cbdff 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -226,7 +226,7 @@ public class SpigotConfig
@@ -61,7 +61,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index ed5f46bf6f..9dba9510f5 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -5,6 +5,7 @@ import java.lang.management.MonitorInfo;
@@ -91,30 +91,29 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
 +        earlyWarningDelay = Math.min(PaperConfig.watchdogPrintEarlyWarningDelay, timeoutTime); // Paper
      }
  
-     public static void doStart(int timeoutTime, boolean restart)
-@@ -51,10 +58,19 @@ public class WatchdogThread extends Thread
+     private static long monotonicMillis()
+@@ -56,10 +63,17 @@ public class WatchdogThread extends Thread
      {
          while ( !stopping )
          {
 -            //
--            if ( lastTick != 0 && System.currentTimeMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
+-            if ( lastTick != 0 && monotonicMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            // Paper start
-+            long currentTime = System.currentTimeMillis();
++            Logger log = Bukkit.getServer().getLogger();
++            long currentTime = monotonicMillis();
 +            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
              {
+-                Logger log = Bukkit.getServer().getLogger();
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                // Don't spam early warning dumps
 +                if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
 +                lastEarlyWarning = currentTime;
++                if (isLongTimeout) {
 +                // Paper end
-                 Logger log = Bukkit.getServer().getLogger();
-+                // Paper start - Different message when it's a short timeout
-+                if ( isLongTimeout )
-+                {
-                 log.log( Level.SEVERE, "The server has stopped responding!" );
-                 log.log( Level.SEVERE, "Please report this to https://github.com/PaperMC/Paper/issues" );
-                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
-@@ -79,29 +95,46 @@ public class WatchdogThread extends Thread
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
+                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
+@@ -89,29 +103,46 @@ public class WatchdogThread extends Thread
                      }
                  }
                  // Paper end
