@@ -46,7 +46,7 @@ class CraftTask implements BukkitTask, Runnable {
             this.cTask = (Consumer<BukkitTask>) task;
             this.rTask = null;
         } else if (task == null) {
-            // Head task
+            // Head or Future task
             this.rTask = null;
             this.cTask = null;
         } else {
