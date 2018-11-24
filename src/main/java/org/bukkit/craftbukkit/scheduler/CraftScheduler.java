@@ -437,7 +437,7 @@ public class CraftScheduler implements BukkitScheduler {
     private static void validate(final Plugin plugin, final Object task) {
         Validate.notNull(plugin, "Plugin cannot be null");
         Validate.notNull(task, "Task cannot be null");
-        Validate.isTrue(task instanceof Runnable || task instanceof Consumer, "Task must be Runnable or Consumer");
+        Validate.isTrue(task instanceof Runnable || task instanceof Consumer || task instanceof Callable, "Task must be Runnable, Consumer, or Callable");
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
         }
