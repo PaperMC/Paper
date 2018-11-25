@@ -1,11 +1,18 @@
-From 5cc44c28c0d182313770f065b72b9800d49c497b Mon Sep 17 00:00:00 2001
+From a986d2e4dd309345b2371b063c7c8261521d0731 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Wed, 6 Apr 2016 01:04:23 -0500
 Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
 
+This change is basically a bandaid to fix CB's complete and utter lack
+of support for vanilla scoreboard name modifications.
+
+In the future, finding a way to merge the vanilla expectations in with
+bukkit's concept of a display name would be preferable. There was a PR
+for this on CB at one point but I can't find it. We may need to do this
+ourselves at some point in the future.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6fe3c0ea8a..cf523a3e48 100644
+index 6fe3c0ea8..cf523a3e4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -250,4 +250,9 @@ public class PaperWorldConfig {
@@ -19,7 +26,7 @@ index 6fe3c0ea8a..cf523a3e48 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e44d8372d8..4c5dc39e3a 100644
+index e44d8372d..4c5dc39e3 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2259,6 +2259,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -31,10 +38,10 @@ index e44d8372d8..4c5dc39e3a 100644
      public ScoreboardTeamBase be() {
          if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 085fa8cd49..66de10ada5 100644
+index 3768c4779..07b5636f0 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -1638,7 +1638,15 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -1638,7 +1638,16 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                      return;
                  }
  
@@ -42,8 +49,9 @@ index 085fa8cd49..66de10ada5 100644
 +                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
 +                String displayName = event.getPlayer().getDisplayName();
 +                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
++                    IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getTeam(),((CraftPlayer) player).getHandle().getDisplayName());
 +                    // Explicitly add a RESET here, vanilla uses components for this now...
-+                    displayName = CraftChatMessage.fromComponent(ScoreboardTeam.a(this.player.getTeam(),((CraftPlayer) player).getHandle().getDisplayName())) + org.bukkit.ChatColor.RESET;
++                    displayName = CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET;
 +                }
 +
 +                s = String.format(event.getFormat(), displayName, event.getMessage());
@@ -51,6 +59,19 @@ index 085fa8cd49..66de10ada5 100644
                  minecraftServer.console.sendMessage(s);
                  if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                      for (Object recipient : minecraftServer.getPlayerList().players) {
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index a294b4780..0d9ac8778 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -177,7 +177,7 @@ public abstract class PlayerList {
+         }
+ 
+         chatmessage.a(EnumChatFormat.YELLOW);
+-        this.onPlayerJoin(entityplayer, CraftChatMessage.fromComponent(chatmessage));
++        this.onPlayerJoin(entityplayer, CraftChatMessage.fromComponent(chatmessage, EnumChatFormat.WHITE)); // Paper
+         // CraftBukkit end
+         worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
+         playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
 -- 
 2.19.1
 
