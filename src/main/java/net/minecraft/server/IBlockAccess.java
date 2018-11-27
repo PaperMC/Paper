@@ -46,7 +46,15 @@ public interface IBlockAccess {
 
     // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
     default MovingObjectPositionBlock rayTraceBlock(RayTrace raytrace1, BlockPosition blockposition) {
-            IBlockData iblockdata = this.getType(blockposition);
+            // Paper start - Prevent raytrace from loading chunks
+            IBlockData iblockdata = this.getTypeIfLoaded(blockposition);
+            if (iblockdata == null) {
+                // copied the last function parameter (listed below)
+                Vec3D vec3d = raytrace1.b().d(raytrace1.a());
+
+                return MovingObjectPositionBlock.a(raytrace1.a(), EnumDirection.a(vec3d.x, vec3d.y, vec3d.z), new BlockPosition(raytrace1.a()));
+            }
+            // Paper end
             Fluid fluid = this.getFluid(blockposition);
             Vec3D vec3d = raytrace1.b();
             Vec3D vec3d1 = raytrace1.a();
