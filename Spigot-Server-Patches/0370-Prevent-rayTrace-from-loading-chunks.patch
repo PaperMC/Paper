@@ -1,0 +1,35 @@
+From b0f9bb4104252c176abf468b9563a0008409e688 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 26 Nov 2018 19:44:01 -0500
+Subject: [PATCH] Prevent rayTrace from loading chunks
+
+ray tracing into an unloaded chunk should be treated as a miss
+this saves a ton of lag for when AI tries to raytrace near unloaded chunks.
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 7633a61342..bc231c7f29 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -932,7 +932,8 @@ public abstract class World implements IBlockAccess {
+                 int i1 = MathHelper.floor(vec3d.y);
+                 int j1 = MathHelper.floor(vec3d.z);
+                 BlockPosition blockposition = new BlockPosition(l, i1, j1);
+-                IBlockData iblockdata = this.getType(blockposition);
++                IBlockData iblockdata = this.getTypeIfLoaded(blockposition); // Paper
++                if (iblockdata == null) return null; // Paper
+                 Block block = iblockdata.getBlock();
+ 
+                 if ((!flag1 || iblockdata.d(this, blockposition) != Block.k) && block.a(iblockdata, flag)) {
+@@ -1034,7 +1035,8 @@ public abstract class World implements IBlockAccess {
+                     i1 = MathHelper.floor(vec3d.y) - (enumdirection == EnumDirection.UP ? 1 : 0);
+                     j1 = MathHelper.floor(vec3d.z) - (enumdirection == EnumDirection.SOUTH ? 1 : 0);
+                     blockposition = new BlockPosition(l, i1, j1);
+-                    IBlockData iblockdata1 = this.getType(blockposition);
++                    IBlockData iblockdata1 = this.getTypeIfLoaded(blockposition); // Paper
++                    if (iblockdata1 == null) return null; // Paper
+                     Block block1 = iblockdata1.getBlock();
+ 
+                     if (!flag1 || iblockdata1.getMaterial() == Material.PORTAL || iblockdata1.d(this, blockposition) != Block.k) {
+-- 
+2.19.1
+
