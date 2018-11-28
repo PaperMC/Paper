@@ -89,12 +89,15 @@ import LotoSelectorEntry
 import NavigationAbstract
 import NBTTagCompound
 import NBTTagList
+import Packet
+import PacketEncoder
 import PacketPlayInUseEntity
 import PacketPlayOutMapChunk
 import PacketPlayOutPlayerListHeaderFooter
 import PacketPlayOutScoreboardTeam
 import PacketPlayOutTitle
 import PacketPlayOutUpdateTime
+import PacketPlayOutWindowItems
 import PathfinderAbstract
 import PathfinderGoal
 import PathfinderGoalFloat
