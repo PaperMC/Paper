@@ -1,4 +1,4 @@
-From 61a77f36f64990073b33f4d0e0ab942060e044d3 Mon Sep 17 00:00:00 2001
+From b709527bf3e22ad2416273246ca618681d32d8c7 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Thu, 15 Nov 2018 13:38:37 +0000
 Subject: [PATCH] force entity dismount during teleportation
@@ -20,7 +20,7 @@ this is going to be the best soultion all around.
 Improvements/suggestions welcome!
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 32b90f30d9..78ec842f29 100644
+index 32b90f30d..78ec842f2 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2096,12 +2096,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -71,8 +71,46 @@ index 32b90f30d9..78ec842f29 100644
              Bukkit.getPluginManager().callEvent(event);
              if (event.isCancelled()) {
                  return false;
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 287001558..75dc93cd1 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -997,8 +997,11 @@ public abstract class EntityHuman extends EntityLiving {
+         return -0.35D;
+     }
+ 
+-    public void stopRiding() {
+-        super.stopRiding();
++    // Paper start
++    public void stopRiding() { stopRiding(false); }
++    public void stopRiding(boolean suppressCancellation) {
++    // Paper end
++        super.stopRiding(suppressCancellation); // Paper - suppress
+         this.k = 0;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index a845856af..44e0f1fe4 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2477,10 +2477,13 @@ public abstract class EntityLiving extends Entity {
+         return (((Byte) this.datawatcher.get(EntityLiving.aw)).byteValue() & 4) != 0;
+     }
+ 
+-    public void stopRiding() {
++    // Paper start
++    public void stopRiding() { stopRiding(false); }
++    public void stopRiding(boolean suppressCancellation) {
++        // Paper end
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper - suppress
+         if (entity != null && entity != this.getVehicle() && !this.world.isClientSide) {
+             this.A(entity);
+         }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 4490b63258..388a20a21f 100644
+index 4490b6325..342cdb4a9 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -776,10 +776,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -81,7 +119,7 @@ index 4490b63258..388a20a21f 100644
  
 -    public void stopRiding() {
 +    // Paper start
-+    public void stopRiding() { stopRiding(false);};
++    public void stopRiding() { stopRiding(false); }
 +    public void stopRiding(boolean suppressCancellation) {
 +    // paper end
          Entity entity = this.getVehicle();
