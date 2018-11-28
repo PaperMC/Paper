@@ -81,7 +81,29 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -141,8 +183,10 @@
+@@ -134,6 +176,21 @@
+     }
+ 
+     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
++        // Paper start - Handle large packets disconnecting client
++        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
++            final Packet<?> packet = packetTooLargeException.getPacket();
++            if (packet.packetTooLarge(this)) {
++                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                return;
++            } else if (packet.isSkippable()) {
++                Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
++                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                return;
++            } else {
++                throwable = throwable.getCause();
++            }
++        }
++        // Paper end - Handle large packets disconnecting client
+         if (throwable instanceof SkipPacketException) {
+             Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
+         } else {
+@@ -141,8 +198,10 @@
  
              this.handlingFault = true;
              if (this.channel.isOpen()) {
@@ -92,7 +114,7 @@
                      this.disconnect((Component) Component.translatable("disconnect.timeout"));
                  } else {
                      MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + String.valueOf(throwable));
-@@ -155,6 +199,7 @@
+@@ -155,6 +214,7 @@
                          disconnectiondetails = new DisconnectionDetails(ichatmutablecomponent);
                      }
  
@@ -100,7 +122,7 @@
                      if (flag) {
                          Connection.LOGGER.debug("Failed to sent packet", throwable);
                          if (this.getSending() == PacketFlow.CLIENTBOUND) {
-@@ -176,6 +221,7 @@
+@@ -176,6 +236,7 @@
  
              }
          }
@@ -108,7 +130,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -185,11 +231,61 @@
+@@ -185,11 +246,61 @@
              if (packetlistener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {
@@ -170,7 +192,7 @@
                      } catch (RejectedExecutionException rejectedexecutionexception) {
                          this.disconnect((Component) Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException classcastexception) {
-@@ -205,7 +301,7 @@
+@@ -205,7 +316,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -179,7 +201,7 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -418,12 +514,26 @@
+@@ -418,12 +529,26 @@
          }
      }
  
@@ -206,7 +228,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -431,7 +541,7 @@
+@@ -431,7 +556,7 @@
          }
  
          if (this.channel != null) {
@@ -215,7 +237,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -464,12 +574,15 @@
+@@ -464,12 +589,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -232,7 +254,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +650,7 @@
+@@ -537,7 +665,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -241,7 +263,7 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -633,6 +746,7 @@
+@@ -633,6 +761,7 @@
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
              }
@@ -249,7 +271,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -641,6 +755,7 @@
+@@ -641,6 +770,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -257,10 +279,11 @@
          }
  
      }
-@@ -661,6 +776,27 @@
+@@ -660,7 +790,28 @@
+                     });
  
                      packetlistener1.onDisconnect(disconnectiondetails);
-                 }
++                }
 +                this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
@@ -280,7 +303,7 @@
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
 +                                ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                    }
-+                }
+                 }
 +                // Paper end - Add PlayerConnectionCloseEvent
  
              }
