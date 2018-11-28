@@ -9,6 +9,15 @@ public class PacketPlayOutWindowItems implements Packet<PacketListenerPlayOut> {
     private int a;
     private List<ItemStack> b;
 
+    //Paper start
+    @Override
+    public boolean packetTooLarge(NetworkManager manager) {
+        for (int i = 0 ; i < this.b.size() ; i++) {
+            manager.sendPacket(new PacketPlayOutSetSlot(this.a, i, this.b.get(i)));
+        }
+        return true;
+    }
+    // Paper end
     public PacketPlayOutWindowItems() {}
 
     public PacketPlayOutWindowItems(int i, NonNullList<ItemStack> nonnulllist) {
