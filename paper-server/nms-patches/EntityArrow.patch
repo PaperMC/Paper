@@ -45,14 +45,14 @@
      }
  
      @Nullable
-@@ -453,9 +468,22 @@
+@@ -453,9 +468,23 @@
  
      public void d(EntityHuman entityhuman) {
          if (!this.world.isClientSide && (this.inGround || this.q()) && this.shake <= 0) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getItemStack();
-+            EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
-+            if (this.fromPlayer == PickupStatus.ALLOWED && entityhuman.inventory.canHold(itemstack) > 0) {
++            if (this.fromPlayer == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.inventory.canHold(itemstack) > 0) {
++                EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
 +                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), (org.bukkit.entity.Arrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
 +                this.world.getServer().getPluginManager().callEvent(event);
@@ -60,16 +60,17 @@
 +                if (event.isCancelled()) {
 +                    return;
 +                }
++                itemstack = item.getItemStack();
 +            }
              boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.q() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
  
 -            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.getItemStack())) {
-+            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(item.getItemStack())) {
++            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(itemstack)) {
 +                // CraftBukkit end
                  flag = false;
              }
  
-@@ -528,7 +556,14 @@
+@@ -528,7 +557,14 @@
          }
  
          if (EnchantmentManager.a(Enchantments.ARROW_FIRE, entityliving) > 0) {
