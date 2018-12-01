@@ -48,7 +48,9 @@ import BlockChest
 import BlockFalling
 import BlockFurnace
 import BlockIceFrost
+import BlockObserver
 import BlockPosition
+import BlockRedstoneComparator
 import BlockSnowBlock
 import BlockStateEnum
 import ChunkCache

@@ -1,0 +1,72 @@
+From 778d563e5b2d8141a1df1c4b3fc074928f6552c2 Mon Sep 17 00:00:00 2001
+From: Amosar <maxi.cass11@gmail.com>
+Date: Sat, 1 Dec 2018 20:00:22 +0000
+Subject: [PATCH] backport: SPIGOT-2719: Comparator and Observer don't trigger
+ BlockRedstoneEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockObserver.java b/src/main/java/net/minecraft/server/BlockObserver.java
+index 59e93e6f6..5836a7637 100644
+--- a/src/main/java/net/minecraft/server/BlockObserver.java
++++ b/src/main/java/net/minecraft/server/BlockObserver.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import java.util.Random;
++import org.bukkit.craftbukkit.event.CraftEventFactory; // Paper
+ 
+ public class BlockObserver extends BlockDirectional {
+ 
+@@ -26,8 +27,18 @@ public class BlockObserver extends BlockDirectional {
+ 
+     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+         if (((Boolean) iblockdata.get(BlockObserver.a)).booleanValue()) {
++            // Paper start
++            if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
++                return;
++            }
++            // Paper end
+             world.setTypeAndData(blockposition, iblockdata.set(BlockObserver.a, Boolean.valueOf(false)), 2);
+         } else {
++            // Paper start
++            if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
++                return;
++            }
++            // Paper end
+             world.setTypeAndData(blockposition, iblockdata.set(BlockObserver.a, Boolean.valueOf(true)), 2);
+             world.a(blockposition, (Block) this, 2);
+         }
+diff --git a/src/main/java/net/minecraft/server/BlockRedstoneComparator.java b/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
+index 78ad3374d..04d973d9a 100644
+--- a/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
++++ b/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
+@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
+ import java.util.List;
+ import java.util.Random;
+ import javax.annotation.Nullable;
++import org.bukkit.craftbukkit.event.CraftEventFactory; //Paper
+ 
+ public class BlockRedstoneComparator extends BlockDiodeAbstract implements ITileEntity {
+ 
+@@ -164,8 +165,18 @@ public class BlockRedstoneComparator extends BlockDiodeAbstract implements ITile
+             boolean flag1 = this.A(iblockdata);
+ 
+             if (flag1 && !flag) {
++                // Paper start
++                if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
++                    return;
++                }
++                // Paper end
+                 world.setTypeAndData(blockposition, iblockdata.set(BlockRedstoneComparator.POWERED, Boolean.valueOf(false)), 2);
+             } else if (!flag1 && flag) {
++                // Paper start
++                if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
++                    return;
++                }
++                // Paper end
+                 world.setTypeAndData(blockposition, iblockdata.set(BlockRedstoneComparator.POWERED, Boolean.valueOf(true)), 2);
+             }
+ 
+-- 
+2.19.2
+
