@@ -12,6 +12,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 
 /**
  * This type represents the storage mechanism for auxiliary item data.
@@ -313,6 +314,22 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @throws NullPointerException if the AttributeModifier is null
      */
     boolean removeAttributeModifier(Attribute attribute, AttributeModifier modifier);
+
+    /**
+     * Returns a public custom tag container capable of storing tags on the
+     * item.
+     *
+     * Those tags will be sent to the client with all of their content, so the
+     * client is capable of reading them. This will result in the player seeing
+     * a NBT Tag notification on the item.
+     *
+     * These tags can also be modified by the client once in creative mode
+     *
+     * @return the custom tag container
+     * @deprecated draft API
+     */
+    @Deprecated
+    CustomItemTagContainer getCustomTagContainer();
 
     @SuppressWarnings("javadoc")
     ItemMeta clone();
