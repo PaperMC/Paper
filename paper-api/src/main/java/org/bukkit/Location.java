@@ -649,6 +649,30 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
     // Paper end - expand Location API
 
+    // Paper start - Add heightmap api
+    /**
+     * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
+     * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
+     * @throws NullPointerException if {{@link #getWorld()}} is {@code null}
+     */
+    @NotNull
+    public Location toHighestLocation() {
+        return this.toHighestLocation(HeightMap.WORLD_SURFACE);
+    }
+
+    /**
+     * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ(), heightMap)
+     * @param heightMap The heightmap to use for finding the highest y location.
+     * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ(), heightMap)
+     */
+    @NotNull
+    public Location toHighestLocation(@NotNull final HeightMap heightMap) {
+        final Location ret = this.clone();
+        ret.setY(this.getWorld().getHighestBlockYAt(this, heightMap));
+        return ret;
+    }
+    // Paper end - Add heightmap api
+
     // Paper start - Expand Explosions API
     /**
      * Creates explosion at this location with given power
