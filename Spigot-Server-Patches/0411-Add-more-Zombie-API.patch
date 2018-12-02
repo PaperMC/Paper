@@ -1,0 +1,154 @@
+From d2ebaa99b142c7146e25f531dbac99888896534c Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 Oct 2018 04:29:59 -0500
+Subject: [PATCH] Add more Zombie API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
+index 69a12bab3..877d73f3b 100644
+--- a/src/main/java/net/minecraft/server/EntityZombie.java
++++ b/src/main/java/net/minecraft/server/EntityZombie.java
+@@ -22,8 +22,8 @@ public class EntityZombie extends EntityMonster {
+     private final AttributeModifier babyModifier = new AttributeModifier(EntityZombie.a, "Baby speed boost", world.paperConfig.babyZombieMovementSpeed, 1); // Paper - Remove static - Make baby speed configurable
+     private static final DataWatcherObject<Boolean> bC = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Integer> bD = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
+-    private static final DataWatcherObject<Boolean> bE = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
+-    private static final DataWatcherObject<Boolean> bF = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
++    private static final DataWatcherObject<Boolean> bE = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); private static final DataWatcherObject<Boolean> armsRaised = bE; // Paper - OBFHELPER
++    private static final DataWatcherObject<Boolean> bF = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); private static final DataWatcherObject<Boolean> drowning = bF; // Paper - OBFHELPER
+     private final PathfinderGoalBreakDoor bG;
+     private boolean bH;
+     private int bI;
+@@ -31,6 +31,7 @@ public class EntityZombie extends EntityMonster {
+     private float bK;
+     private float bL;
+     private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    private boolean shouldBurnInDay = true; // Paper
+ 
+     public EntityZombie(EntityTypes<?> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -79,14 +80,22 @@ public class EntityZombie extends EntityMonster {
+         this.getDataWatcher().register(EntityZombie.bF, Boolean.valueOf(false));
+     }
+ 
++    public boolean isDrowning() { return dG(); } // Paper - OBFHELPER
+     public boolean dG() {
+         return ((Boolean) this.getDataWatcher().get(EntityZombie.bF)).booleanValue();
+     }
+ 
++    public void setArmsRaised(boolean raised) { s(raised); } // Paper - OBFHELPER
+     public void s(boolean flag) {
+         this.getDataWatcher().set(EntityZombie.bE, Boolean.valueOf(flag));
+     }
+ 
++    // Paper start
++    public boolean isArmsRaised() {
++        return ((Boolean) this.getDataWatcher().get(EntityZombie.armsRaised)).booleanValue();
++    }
++    // Paper end
++
+     public boolean dH() {
+         return this.bH;
+     }
+@@ -210,11 +219,19 @@ public class EntityZombie extends EntityMonster {
+         super.k();
+     }
+ 
++    public void startDrowning(int drownedConversionTime) { a(drownedConversionTime); } // Paper - OBFHELPER
+     private void a(int i) {
+         this.bJ = i;
+         this.getDataWatcher().set(EntityZombie.bF, Boolean.valueOf(true));
+     }
+ 
++    // Paper start
++    public void stopDrowning() {
++        this.bJ = -1;
++        this.getDataWatcher().set(EntityZombie.drowning, Boolean.valueOf(false));
++    }
++    // Paper end
++
+     protected void dE() {
+         this.a((EntityZombie) EntityTypes.DROWNED.create(world)); // Paper
+         this.world.a((EntityHuman) null, 1040, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
+@@ -253,10 +270,17 @@ public class EntityZombie extends EntityMonster {
+         }
+     }
+ 
++    public boolean shouldBurnInDay() { return L_(); } // Paper - OBFHELPER
+     protected boolean L_() {
+-        return true;
++        return shouldBurnInDay; // Paper
+     }
+ 
++    // Paper start
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
++    }
++    // Paper end
++
+     public boolean damageEntity(DamageSource damagesource, float f) {
+         if (super.damageEntity(damagesource, f)) {
+             EntityLiving entityliving = this.getGoalTarget();
+@@ -369,6 +393,7 @@ public class EntityZombie extends EntityMonster {
+         nbttagcompound.setBoolean("CanBreakDoors", this.dH());
+         nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bI : -1);
+         nbttagcompound.setInt("DrownedConversionTime", this.dG() ? this.bJ : -1);
++        nbttagcompound.setBoolean("Paper.ShouldBurnInDay", shouldBurnInDay); // Paper
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+@@ -382,7 +407,11 @@ public class EntityZombie extends EntityMonster {
+         if (nbttagcompound.hasKeyOfType("DrownedConversionTime", 99) && nbttagcompound.getInt("DrownedConversionTime") > -1) {
+             this.a(nbttagcompound.getInt("DrownedConversionTime"));
+         }
+-
++        // Paper start
++        if (nbttagcompound.hasKey("Paper.ShouldBurnInDay")) {
++            shouldBurnInDay = nbttagcompound.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end
+     }
+ 
+     public void b(EntityLiving entityliving) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+index d2c3dbe48..43d4470d9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+@@ -54,4 +54,34 @@ public class CraftZombie extends CraftMonster implements Zombie {
+     public Villager.Profession getVillagerProfession() {
+         return null;
+     }
++
++    // Paper start
++    public boolean isDrowning() {
++        return getHandle().isDrowning();
++    }
++
++    public void startDrowning(int drownedConversionTime) {
++        getHandle().startDrowning(drownedConversionTime);
++    }
++
++    public void stopDrowning() {
++        getHandle().stopDrowning();
++    }
++
++    public void setArmsRaised(boolean raised) {
++        getHandle().setArmsRaised(raised);
++    }
++
++    public boolean isArmsRaised() {
++        return getHandle().isArmsRaised();
++    }
++
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
++    // Paper end
+ }
+-- 
+2.19.1
+

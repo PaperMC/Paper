@@ -1,4 +1,4 @@
-From 8cfb250c7604959047200370c281919b0ae0c420 Mon Sep 17 00:00:00 2001
+From d10ee21db91d466d499e140a462b37f04f22c787 Mon Sep 17 00:00:00 2001
 From: AlphaBlend <whizkid3000@hotmail.com>
 Date: Sun, 16 Oct 2016 23:19:34 -0700
 Subject: [PATCH] Add EntityZapEvent
@@ -6,10 +6,10 @@ Subject: [PATCH] Add EntityZapEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityZapEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityZapEvent.java
 new file mode 100644
-index 00000000..0da89441
+index 00000000..3547d063
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityZapEvent.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,62 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.apache.commons.lang.Validate;
@@ -18,24 +18,23 @@ index 00000000..0da89441
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.event.entity.EntityTransformEvent;
 +
 +import javax.annotation.Nonnull;
 +
 +/**
 + *  Fired when lightning strikes an entity
 + */
-+public class EntityZapEvent extends EntityEvent implements Cancellable {
++public class EntityZapEvent extends EntityTransformEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +    private final LightningStrike bolt;
-+    private final Entity replacementEntity;
 +
 +    public EntityZapEvent(final Entity entity, @Nonnull final LightningStrike bolt, @Nonnull final Entity replacementEntity) {
-+        super(entity);
++        super(entity, replacementEntity, TransformReason.LIGHTNING);
 +        Validate.notNull(bolt);
 +        Validate.notNull(replacementEntity);
 +        this.bolt = bolt;
-+        this.replacementEntity = replacementEntity;
 +    }
 +
 +    public boolean isCancelled() {
@@ -61,7 +60,7 @@ index 00000000..0da89441
 +     */
 +    @Nonnull
 +    public Entity getReplacementEntity() {
-+        return replacementEntity;
++        return getTransformedEntity();
 +    }
 +
 +    @Override
@@ -74,7 +73,7 @@ index 00000000..0da89441
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/entity/PigZapEvent.java b/src/main/java/org/bukkit/event/entity/PigZapEvent.java
-index aa80ebf1..73844b8f 100644
+index 86983676..8dd1e3ce 100644
 --- a/src/main/java/org/bukkit/event/entity/PigZapEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PigZapEvent.java
 @@ -1,5 +1,6 @@
@@ -88,7 +87,7 @@ index aa80ebf1..73844b8f 100644
  /**
   * Stores data for pigs being zapped
   */
--public class PigZapEvent extends EntityEvent implements Cancellable {
+-public class PigZapEvent extends EntityTransformEvent implements Cancellable {
 -    private static final HandlerList handlers = new HandlerList();
 +public class PigZapEvent extends EntityZapEvent implements Cancellable {
 +    //private static final HandlerList handlers = new HandlerList();
@@ -97,12 +96,12 @@ index aa80ebf1..73844b8f 100644
      private final LightningStrike bolt;
  
      public PigZapEvent(final Pig pig, final LightningStrike bolt, final PigZombie pigzombie) {
--        super(pig);
+-        super(pig, pigzombie, TransformReason.LIGHTNING);
 +        super(pig, bolt, pigzombie);
          this.bolt = bolt;
          this.pigzombie = pigzombie;
      }
-@@ -53,6 +54,8 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
+@@ -55,6 +56,8 @@ public class PigZapEvent extends EntityTransformEvent implements Cancellable {
          return pigzombie;
      }
  
@@ -111,7 +110,7 @@ index aa80ebf1..73844b8f 100644
      @Override
      public HandlerList getHandlers() {
          return handlers;
-@@ -61,4 +64,6 @@ public class PigZapEvent extends EntityEvent implements Cancellable {
+@@ -63,4 +66,6 @@ public class PigZapEvent extends EntityTransformEvent implements Cancellable {
      public static HandlerList getHandlerList() {
          return handlers;
      }
@@ -119,5 +118,5 @@ index aa80ebf1..73844b8f 100644
 +    // Paper end
  }
 -- 
-2.18.0
+2.19.1
 

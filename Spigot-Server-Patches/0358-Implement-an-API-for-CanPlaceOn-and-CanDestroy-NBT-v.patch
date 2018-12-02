@@ -1,0 +1,488 @@
+From 75fc670b2570b9f692502fea5a0018884b5e823f Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Wed, 12 Sep 2018 18:53:55 +0300
+Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
+
+
+diff --git a/src/main/java/net/minecraft/server/ArgumentBlock.java b/src/main/java/net/minecraft/server/ArgumentBlock.java
+index 35c436d19..fcfb17e4e 100644
+--- a/src/main/java/net/minecraft/server/ArgumentBlock.java
++++ b/src/main/java/net/minecraft/server/ArgumentBlock.java
+@@ -42,7 +42,7 @@ public class ArgumentBlock {
+     private final boolean j;
+     private final Map<IBlockState<?>, Comparable<?>> k = Maps.newHashMap();
+     private final Map<String, String> l = Maps.newHashMap();
+-    private MinecraftKey m = new MinecraftKey("");
++    private MinecraftKey m = new MinecraftKey(""); public MinecraftKey getBlockKey() { return this.m; } // Paper - OBFHELPER
+     private BlockStateList<Block, IBlockData> n;
+     private IBlockData o;
+     @Nullable
+@@ -71,11 +71,13 @@ public class ArgumentBlock {
+         return this.p;
+     }
+ 
++    public @Nullable MinecraftKey getTagKey() { return d(); } // Paper - OBFHELPER
+     @Nullable
+     public MinecraftKey d() {
+         return this.q;
+     }
+ 
++    public ArgumentBlock parse(boolean parseTile) throws CommandSyntaxException { return this.a(parseTile); } // Paper - OBFHELPER
+     public ArgumentBlock a(boolean flag) throws CommandSyntaxException {
+         this.s = this::l;
+         if (this.i.canRead() && this.i.peek() == '#') {
+@@ -135,7 +137,7 @@ public class ArgumentBlock {
+         if (this.q != null && !this.q.getKey().isEmpty()) {
+             Tag tag = TagsBlock.a().a(this.q);
+             if (tag != null) {
+-                for(Block block : tag.a()) {
++                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
+                     for(IBlockState iblockstate : block.getStates().d()) {
+                         if (!this.l.containsKey(iblockstate.a()) && iblockstate.a().startsWith(sx)) {
+                             suggestionsbuilder.suggest(iblockstate.a() + '=');
+@@ -163,7 +165,7 @@ public class ArgumentBlock {
+             if (this.q != null) {
+                 Tag tag = TagsBlock.a().a(this.q);
+                 if (tag != null) {
+-                    for(Block block : tag.a()) {
++                    for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
+                         if (block.isTileEntity()) {
+                             return true;
+                         }
+@@ -198,9 +200,9 @@ public class ArgumentBlock {
+     private static <T extends Comparable<T>> SuggestionsBuilder a(SuggestionsBuilder suggestionsbuilder, IBlockState<T> iblockstate) {
+         for(Comparable comparable : iblockstate.d()) {
+             if (comparable instanceof Integer) {
+-                suggestionsbuilder.suggest(comparable);
++                suggestionsbuilder.suggest((Integer) comparable); // Paper - decompiler fix
+             } else {
+-                suggestionsbuilder.suggest(iblockstate.a(comparable));
++                suggestionsbuilder.suggest(iblockstate.a((T) comparable)); // Paper - decompiler fix
+             }
+         }
+ 
+@@ -213,7 +215,7 @@ public class ArgumentBlock {
+             Tag tag = TagsBlock.a().a(this.q);
+             if (tag != null) {
+                 label40:
+-                for(Block block : tag.a()) {
++                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
+                     IBlockState iblockstate = block.getStates().a(sx);
+                     if (iblockstate != null) {
+                         a(suggestionsbuilder, iblockstate);
+@@ -254,7 +256,7 @@ public class ArgumentBlock {
+                 boolean flag = false;
+                 boolean flag1 = false;
+ 
+-                for(Block block : tag.a()) {
++                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
+                     flag |= !block.getStates().d().isEmpty();
+                     flag1 |= block.isTileEntity();
+                     if (flag && flag1) {
+@@ -453,8 +455,8 @@ public class ArgumentBlock {
+     private <T extends Comparable<T>> void a(IBlockState<T> iblockstate, String sx, int ix) throws CommandSyntaxException {
+         Optional optional = iblockstate.b(sx);
+         if (optional.isPresent()) {
+-            this.o = (IBlockData)this.o.set(iblockstate, (Comparable)optional.get());
+-            this.k.put(iblockstate, optional.get());
++            this.o = (IBlockData)this.o.set(iblockstate, (T)optional.get()); // Paper - decompiler fix
++            this.k.put(iblockstate, (Comparable<?>) optional.get()); // Paper - decompiler fix
+         } else {
+             this.i.setCursor(ix);
+             throw e.createWithContext(this.i, this.m.toString(), iblockstate.a(), sx);
+@@ -489,7 +491,7 @@ public class ArgumentBlock {
+     private static <T extends Comparable<T>> void a(StringBuilder stringbuilder, IBlockState<T> iblockstate, Comparable<?> comparable) {
+         stringbuilder.append(iblockstate.a());
+         stringbuilder.append('=');
+-        stringbuilder.append(iblockstate.a(comparable));
++        stringbuilder.append(iblockstate.a((T) comparable)); // Paper - decompile fix
+     }
+ 
+     public CompletableFuture<Suggestions> a(SuggestionsBuilder suggestionsbuilder) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index dacca4bc4..0b040527f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -78,6 +78,12 @@ import javax.annotation.Nullable;
+ import static org.spigotmc.ValidateUtils.*;
+ // Spigot end
+ 
++// Paper start
++import com.destroystokyo.paper.Namespaced;
++import com.destroystokyo.paper.NamespacedTag;
++import java.util.Collections;
++// Paper end
++
+ /**
+  * Children must include the following:
+  *
+@@ -252,6 +258,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+     static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
+     @Specific(Specific.To.NBT)
+     static final ItemMetaKey DAMAGE = new ItemMetaKey("Damage");
++    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    static final ItemMetaKey CAN_DESTROY = new ItemMetaKey("CanDestroy");
++    static final ItemMetaKey CAN_PLACE_ON = new ItemMetaKey("CanPlaceOn");
++    // Paper end
+ 
+     private IChatBaseComponent displayName;
+     private IChatBaseComponent locName;
+@@ -262,6 +272,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+     private int hideFlag;
+     private boolean unbreakable;
+     private int damage;
++    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    private Set<Namespaced> placeableKeys;
++    private Set<Namespaced> destroyableKeys;
++    // Paper end
+ 
+     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
+ 
+@@ -292,6 +306,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+         this.hideFlag = meta.hideFlag;
+         this.unbreakable = meta.unbreakable;
+         this.damage = meta.damage;
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        if (meta.hasPlaceableKeys()) {
++            this.placeableKeys = new java.util.HashSet<>(meta.placeableKeys);
++        }
++
++        if (meta.hasDestroyableKeys()) {
++            this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
++        }
++        // Paper end
+         this.unhandledTags.putAll(meta.unhandledTags);
+ 
+         this.internalTag = meta.internalTag;
+@@ -347,6 +370,33 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+         if (tag.hasKey(DAMAGE.NBT)) {
+             damage = tag.getInt(DAMAGE.NBT);
+         }
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        if (tag.hasKey(CAN_DESTROY.NBT)) {
++            this.destroyableKeys = Sets.newHashSet();
++            NBTTagList list = tag.getList(CAN_DESTROY.NBT, CraftMagicNumbers.NBT.TAG_STRING);
++            for (int i = 0; i < list.size(); i++) {
++                Namespaced namespaced = this.deserializeNamespaced(list.getString(i));
++                if (namespaced == null) {
++                    continue;
++                }
++
++                this.destroyableKeys.add(namespaced);
++            }
++        }
++
++        if (tag.hasKey(CAN_PLACE_ON.NBT)) {
++            this.placeableKeys = Sets.newHashSet();
++            NBTTagList list = tag.getList(CAN_PLACE_ON.NBT, CraftMagicNumbers.NBT.TAG_STRING);
++            for (int i = 0; i < list.size(); i++) {
++                Namespaced namespaced = this.deserializeNamespaced(list.getString(i));
++                if (namespaced == null) {
++                    continue;
++                }
++
++                this.placeableKeys.add(namespaced);
++            }
++        }
++        // Paper end
+ 
+         Set<String> keys = tag.getKeys();
+         for (String key : keys) {
+@@ -468,6 +518,36 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+             setDamage(damage);
+         }
+ 
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        Iterable<?> canPlaceOnSerialized = SerializableMeta.getObject(Iterable.class, map, CAN_PLACE_ON.BUKKIT, true);
++        if (canPlaceOnSerialized != null) {
++            this.placeableKeys = Sets.newHashSet();
++            for (Object canPlaceOnElement : canPlaceOnSerialized) {
++                String canPlaceOnRaw = (String) canPlaceOnElement;
++                Namespaced value = this.deserializeNamespaced(canPlaceOnRaw);
++                if (value == null) {
++                    continue;
++                }
++
++                this.placeableKeys.add(value);
++            }
++        }
++
++        Iterable<?> canDestroySerialized = SerializableMeta.getObject(Iterable.class, map, CAN_DESTROY.BUKKIT, true);
++        if (canDestroySerialized != null) {
++            this.destroyableKeys = Sets.newHashSet();
++            for (Object canDestroyElement : canDestroySerialized) {
++                String canDestroyRaw = (String) canDestroyElement;
++                Namespaced value = this.deserializeNamespaced(canDestroyRaw);
++                if (value == null) {
++                    continue;
++                }
++
++                this.destroyableKeys.add(value);
++            }
++        }
++        // Paper end
++
+         String internal = SerializableMeta.getString(map, "internal", true);
+         if (internal != null) {
+             ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
+@@ -579,6 +659,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+         if (hasDamage()) {
+             itemTag.setInt(DAMAGE.NBT, damage);
+         }
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        if (hasPlaceableKeys()) {
++            List<String> items = this.placeableKeys.stream()
++                .map(this::serializeNamespaced)
++                .collect(java.util.stream.Collectors.toList());
++
++            itemTag.set(CAN_PLACE_ON.NBT, createStringList(items));
++        }
++
++        if (hasDestroyableKeys()) {
++            List<String> items = this.destroyableKeys.stream()
++                .map(this::serializeNamespaced)
++                .collect(java.util.stream.Collectors.toList());
++
++            itemTag.set(CAN_DESTROY.NBT, createStringList(items));
++        }
++        // Paper end
+ 
+         for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
+             itemTag.set(e.getKey(), e.getValue());
+@@ -667,7 +764,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+ 
+     @Overridden
+     boolean isEmpty() {
+-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
++        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers()
++            || hasPlaceableKeys() || hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
+     }
+ 
+     public String getDisplayName() {
+@@ -1003,7 +1101,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+                 && (this.unhandledTags.equals(that.unhandledTags))
+                 && (this.hideFlag == that.hideFlag)
+                 && (this.isUnbreakable() == that.isUnbreakable())
+-                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage());
++                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
++                // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++                && (this.hasPlaceableKeys() ? that.hasPlaceableKeys() && this.placeableKeys.equals(that.placeableKeys) : !that.hasPlaceableKeys())
++                && (this.hasDestroyableKeys() ? that.hasDestroyableKeys() && this.destroyableKeys.equals(that.destroyableKeys) : !that.hasDestroyableKeys());
++                // Paper end
+     }
+ 
+     /**
+@@ -1034,6 +1136,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+         hash = 61 * hash + (isUnbreakable() ? 1231 : 1237);
+         hash = 61 * hash + (hasDamage() ? this.damage : 0);
+         hash = 61 * hash + (hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        hash = 61 * hash + (hasPlaceableKeys() ? this.placeableKeys.hashCode() : 0);
++        hash = 61 * hash + (hasDestroyableKeys() ? this.destroyableKeys.hashCode() : 0);
++        // Paper end
+         return hash;
+     }
+ 
+@@ -1054,6 +1160,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+             clone.hideFlag = this.hideFlag;
+             clone.unbreakable = this.unbreakable;
+             clone.damage = this.damage;
++            // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++            if (this.placeableKeys != null) {
++                clone.placeableKeys = Sets.newHashSet(this.placeableKeys);
++            }
++
++            if (this.destroyableKeys != null) {
++                clone.destroyableKeys = Sets.newHashSet(this.destroyableKeys);
++            }
++            // Paper end
+             return clone;
+         } catch (CloneNotSupportedException e) {
+             throw new Error(e);
+@@ -1103,6 +1218,24 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+             builder.put(DAMAGE.BUKKIT, damage);
+         }
+ 
++        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++        if (hasPlaceableKeys()) {
++            List<String> cerealPlaceable = this.placeableKeys.stream()
++                .map(this::serializeNamespaced)
++                .collect(java.util.stream.Collectors.toList());
++
++            builder.put(CAN_PLACE_ON.BUKKIT, cerealPlaceable);
++        }
++
++        if (hasDestroyableKeys()) {
++            List<String> cerealDestroyable = this.destroyableKeys.stream()
++                .map(this::serializeNamespaced)
++                .collect(java.util.stream.Collectors.toList());
++
++            builder.put(CAN_DESTROY.BUKKIT, cerealDestroyable);
++        }
++        // Paper end
++
+         final Map<String, NBTBase> internalTags = new HashMap<String, NBTBase>(unhandledTags);
+         serializeInternal(internalTags);
+         if (!internalTags.isEmpty()) {
+@@ -1247,7 +1380,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+                         CraftMetaArmorStand.NO_BASE_PLATE.NBT,
+                         CraftMetaArmorStand.SHOW_ARMS.NBT,
+                         CraftMetaArmorStand.SMALL.NBT,
+-                        CraftMetaArmorStand.MARKER.NBT
++                        CraftMetaArmorStand.MARKER.NBT,
++                        CAN_DESTROY.NBT,
++                        CAN_PLACE_ON.NBT
+                         // Paper end
+                 ));
+             }
+@@ -1294,4 +1429,147 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
+         return spigot;
+     }
+     // Spigot end
++    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
++    @Override
++    @SuppressWarnings("deprecation")
++    public Set<Material> getCanDestroy() {
++        return this.destroyableKeys == null ? Collections.emptySet() : legacyGetMatsFromKeys(this.destroyableKeys);
++    }
++
++    @Override
++    @SuppressWarnings("deprecation")
++    public void setCanDestroy(Set<Material> canDestroy) {
++        Validate.notNull(canDestroy, "Cannot replace with null set!");
++        legacyClearAndReplaceKeys(this.destroyableKeys, canDestroy);
++    }
++
++    @Override
++    @SuppressWarnings("deprecation")
++    public Set<Material> getCanPlaceOn() {
++        return this.placeableKeys == null ? Collections.emptySet() : legacyGetMatsFromKeys(this.placeableKeys);
++    }
++
++    @Override
++    @SuppressWarnings("deprecation")
++    public void setCanPlaceOn(Set<Material> canPlaceOn) {
++        Validate.notNull(canPlaceOn, "Cannot replace with null set!");
++        legacyClearAndReplaceKeys(this.placeableKeys, canPlaceOn);
++    }
++
++    @Override
++    public Set<Namespaced> getDestroyableKeys() {
++        return this.destroyableKeys == null ? Collections.emptySet() : Sets.newHashSet(this.destroyableKeys);
++    }
++
++    @Override
++    public void setDestroyableKeys(Collection<Namespaced> canDestroy) {
++        Validate.notNull(canDestroy, "Cannot replace with null collection!");
++        Validate.isTrue(ofAcceptableType(canDestroy), "Can only use NamespacedKey or NamespacedTag objects!");
++        this.destroyableKeys.clear();
++        this.destroyableKeys.addAll(canDestroy);
++    }
++
++    @Override
++    public Set<Namespaced> getPlaceableKeys() {
++        return this.placeableKeys == null ? Collections.emptySet() : Sets.newHashSet(this.placeableKeys);
++    }
++
++    @Override
++    public void setPlaceableKeys(Collection<Namespaced> canPlaceOn) {
++        Validate.notNull(canPlaceOn, "Cannot replace with null collection!");
++        Validate.isTrue(ofAcceptableType(canPlaceOn), "Can only use NamespacedKey or NamespacedTag objects!");
++        this.placeableKeys.clear();
++        this.placeableKeys.addAll(canPlaceOn);
++    }
++
++    @Override
++    public boolean hasPlaceableKeys() {
++        return this.placeableKeys != null && !this.placeableKeys.isEmpty();
++    }
++
++    @Override
++    public boolean hasDestroyableKeys() {
++        return this.destroyableKeys != null && !this.destroyableKeys.isEmpty();
++    }
++
++    @Deprecated
++    private void legacyClearAndReplaceKeys(Collection<Namespaced> toUpdate, Collection<Material> beingSet) {
++        if (beingSet.stream().anyMatch(Material::isLegacy)) {
++            throw new IllegalArgumentException("Set must not contain any legacy materials!");
++        }
++
++        toUpdate.clear();
++        toUpdate.addAll(beingSet.stream().map(Material::getKey).collect(java.util.stream.Collectors.toSet()));
++    }
++
++    @Deprecated
++    private Set<Material> legacyGetMatsFromKeys(Collection<Namespaced> names) {
++        Set<Material> mats = Sets.newHashSet();
++        for (Namespaced key : names) {
++            if (!(key instanceof org.bukkit.NamespacedKey)) {
++                continue;
++            }
++
++            Material material = Material.matchMaterial(key.toString(), false);
++            if (material != null) {
++                mats.add(material);
++            }
++        }
++
++        return mats;
++    }
++
++    private @Nullable Namespaced deserializeNamespaced(String raw) {
++        boolean isTag = raw.codePointAt(0) == '#';
++        net.minecraft.server.ArgumentBlock blockParser = new net.minecraft.server.ArgumentBlock(new com.mojang.brigadier.StringReader(raw), true);
++        try {
++            blockParser = blockParser.parse(false);
++        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
++            e.printStackTrace();
++            return null;
++        }
++
++        net.minecraft.server.MinecraftKey key;
++        if (isTag) {
++            key = blockParser.getTagKey();
++        } else {
++            key = blockParser.getBlockKey();
++        }
++
++        if (key == null) {
++            return null;
++        }
++
++        // don't DC the player if something slips through somehow
++        Namespaced resource = null;
++        try {
++            if (isTag) {
++                resource = new NamespacedTag(key.b(), key.getKey());
++            } else {
++                resource = CraftNamespacedKey.fromMinecraft(key);
++            }
++        } catch (IllegalArgumentException ex) {
++            org.bukkit.Bukkit.getLogger().warning("Namespaced resource does not validate: " + key.toString());
++            ex.printStackTrace();
++        }
++
++        return resource;
++    }
++
++    private @Nonnull String serializeNamespaced(Namespaced resource) {
++        return resource.toString();
++    }
++
++    // not a fan of this
++    private boolean ofAcceptableType(Collection<Namespaced> namespacedResources) {
++        boolean valid = true;
++        for (Namespaced resource : namespacedResources) {
++            if (valid && !(resource instanceof org.bukkit.NamespacedKey || resource instanceof com.destroystokyo.paper.NamespacedTag)) {
++                valid = false;
++            }
++        }
++
++        return valid;
++    }
++    // Paper end
+ }
+-- 
+2.19.1
+

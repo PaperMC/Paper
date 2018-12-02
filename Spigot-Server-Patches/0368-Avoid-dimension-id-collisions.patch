@@ -1,0 +1,25 @@
+From 8538f8531c0bfe13b5b47466adf2975571cf8341 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Tue, 25 Sep 2018 06:53:43 +0200
+Subject: [PATCH] Avoid dimension id collisions
+
+getDimensionId() returns the dimension id - 1. So without this patch
+we would reuse an existing dimension id, if some other dimension was
+unloaded before.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ef09846e8..c56511abc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -971,7 +971,7 @@ public final class CraftServer implements Server {
+         boolean used = false;
+         do {
+             for (WorldServer server : console.getWorlds()) {
+-                used = server.dimension.getDimensionID() == dimension;
++                used = server.dimension.getDimensionID() + 1 == dimension; // Paper - getDimensionID returns the dimension - 1, so we have to add 1
+                 if (used) {
+                     dimension++;
+                     break;
+-- 
+2.19.1
+
