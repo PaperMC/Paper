@@ -16,6 +16,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(PREFIX + "kill", "Allows the user to commit suicide", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "me", "Allows the user to perform a chat action", PermissionDefault.TRUE, commands);
         DefaultPermissions.registerPermission(PREFIX + "msg", "Allows the user to privately message another player", PermissionDefault.TRUE, commands);
+        DefaultPermissions.registerPermission(PREFIX + "help", "Allows the user to access Vanilla command help", PermissionDefault.TRUE, commands);
         DefaultPermissions.registerPermission(PREFIX + "say", "Allows the user to talk as the console", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "give", "Allows the user to give items to players", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "teleport", "Allows the user to teleport players", PermissionDefault.OP, commands);
