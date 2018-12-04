@@ -1,5 +1,7 @@
 package org.bukkit.event.entity;
 
+import java.util.Collections;
+import java.util.List;
 import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
@@ -17,21 +19,35 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
     private final Entity converted;
+    private final List<Entity> convertedList;
     private final TransformReason transformReason;
 
-    public EntityTransformEvent(Entity original, Entity converted, TransformReason transformReason) {
+    public EntityTransformEvent(Entity original, List<Entity> convertedList, TransformReason transformReason) {
         super(original);
-        this.converted = converted;
+        this.convertedList = Collections.unmodifiableList(convertedList);
+        this.converted = convertedList.get(0);
         this.transformReason = transformReason;
     }
 
     /**
      * Gets the entity that the original entity was transformed to.
      *
+     * This returns the first entity in the transformed entity list.
+     *
      * @return The transformed entity.
+     * @see #getTransformedEntities()
      */
     public Entity getTransformedEntity() {
         return converted;
+    }
+
+    /**
+     * Gets the entities that the original entity was transformed to.
+     *
+     * @return The transformed entities.
+     */
+    public List<Entity> getTransformedEntities() {
+        return convertedList;
     }
 
     /**

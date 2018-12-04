@@ -1,5 +1,7 @@
 package org.bukkit.event.entity;
 
+import java.util.Collections;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
@@ -16,7 +18,7 @@ public class PigZapEvent extends EntityTransformEvent implements Cancellable {
     private final LightningStrike bolt;
 
     public PigZapEvent(final Pig pig, final LightningStrike bolt, final PigZombie pigzombie) {
-        super(pig, pigzombie, TransformReason.LIGHTNING);
+        super(pig, Collections.singletonList((Entity) pigzombie), TransformReason.LIGHTNING);
         this.bolt = bolt;
         this.pigzombie = pigzombie;
     }
