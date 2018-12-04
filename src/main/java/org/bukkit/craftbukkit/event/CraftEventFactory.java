@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.event;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -303,8 +304,20 @@ public class CraftEventFactory {
     /**
      * EntityTransformEvent
      */
-    public static EntityTransformEvent callEntityTransformEvent(EntityLiving original, EntityLiving converted, EntityTransformEvent.TransformReason convertType) {
-        EntityTransformEvent event = new EntityTransformEvent(original.getBukkitEntity(), converted.getBukkitEntity(), convertType);
+    public static EntityTransformEvent callEntityTransformEvent(EntityLiving original, EntityLiving coverted, EntityTransformEvent.TransformReason transformReason) {
+        return callEntityTransformEvent(original, Collections.singletonList(coverted), transformReason);
+    }
+
+    /**
+     * EntityTransformEvent
+     */
+    public static EntityTransformEvent callEntityTransformEvent(EntityLiving original, List<EntityLiving> convertedList, EntityTransformEvent.TransformReason convertType) {
+        List<org.bukkit.entity.Entity> list = new ArrayList<>();
+        for (EntityLiving entityLiving : convertedList) {
+            list.add(entityLiving.getBukkitEntity());
+        }
+
+        EntityTransformEvent event = new EntityTransformEvent(original.getBukkitEntity(), list, convertType);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
