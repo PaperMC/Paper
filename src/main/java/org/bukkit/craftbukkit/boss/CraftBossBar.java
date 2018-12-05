@@ -49,9 +49,9 @@ public class CraftBossBar implements BossBar {
 
     private void initialize() {
         this.flags = new HashMap<>();
-        this.flags.put(BarFlag.DARKEN_SKY, new FlagContainer(handle::n, handle::setDarkenSky));
-        this.flags.put(BarFlag.PLAY_BOSS_MUSIC, new FlagContainer(handle::o, handle::setPlayMusic));
-        this.flags.put(BarFlag.CREATE_FOG, new FlagContainer(handle::p, handle::setCreateFog));
+        this.flags.put(BarFlag.DARKEN_SKY, new FlagContainer(handle::isDarkenSky, handle::setDarkenSky));
+        this.flags.put(BarFlag.PLAY_BOSS_MUSIC, new FlagContainer(handle::isPlayMusic, handle::setPlayMusic));
+        this.flags.put(BarFlag.CREATE_FOG, new FlagContainer(handle::isCreateFog, handle::setCreateFog));
     }
 
     private BarColor convertColor(BossBattle.BarColor color) {

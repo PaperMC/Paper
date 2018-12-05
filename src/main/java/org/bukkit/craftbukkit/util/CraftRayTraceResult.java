@@ -33,7 +33,7 @@ public class CraftRayTraceResult {
         }
 
         Block hitBlock = null;
-        BlockPosition nmsBlockPos = nmsHitResult.a(); // PAIL: getBlockPosition
+        BlockPosition nmsBlockPos = nmsHitResult.getBlockPosition();
         if (nmsBlockPos != null && world != null) {
             hitBlock = world.getBlockAt(nmsBlockPos.getX(), nmsBlockPos.getY(), nmsBlockPos.getZ());
         }

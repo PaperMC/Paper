@@ -104,19 +104,19 @@ public final class CraftCustomTagTypeRegistry {
             Primitives
          */
         if (Objects.equals(Byte.class, type)) {
-            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::new, NBTTagByte::g); // PAIL: rename asByte
+            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::new, NBTTagByte::asByte);
         }
         if (Objects.equals(Short.class, type)) {
-            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::new, NBTTagShort::f); // PAIL: rename asShort
+            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::new, NBTTagShort::asShort);
         }
         if (Objects.equals(Integer.class, type)) {
-            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::new, NBTTagInt::e); // PAIL: rename asInteger
+            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::new, NBTTagInt::asInt);
         }
         if (Objects.equals(Long.class, type)) {
-            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::new, NBTTagLong::d); // PAIL: rename asLong
+            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::new, NBTTagLong::asLong);
         }
         if (Objects.equals(Float.class, type)) {
-            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::new, NBTTagFloat::i); // PAIL: rename asFloat
+            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::new, NBTTagFloat::asFloat);
         }
         if (Objects.equals(Double.class, type)) {
             return createAdapter(Double.class, NBTTagDouble.class, NBTTagDouble::new, NBTTagDouble::asDouble);
@@ -126,20 +126,20 @@ public final class CraftCustomTagTypeRegistry {
             String
          */
         if (Objects.equals(String.class, type)) {
-            return createAdapter(String.class, NBTTagString.class, NBTTagString::new, NBTTagString::b_); // PAIL: rename getString
+            return createAdapter(String.class, NBTTagString.class, NBTTagString::new, NBTTagString::asString);
         }
 
         /*
             Primitive Arrays
          */
         if (Objects.equals(byte[].class, type)) {
-            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.c(), n.size())); // PAIL: rename getByteArray
+            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.c(), n.size()));
         }
         if (Objects.equals(int[].class, type)) {
-            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size())); // PAIL: rename getIntegerArray
+            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size()));
         }
         if (Objects.equals(long[].class, type)) {
-            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size())); // PAIL: rename getLongArray
+            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size()));
         }
 
         /*

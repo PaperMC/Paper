@@ -1739,7 +1739,7 @@ public final class CraftServer implements Server {
     public KeyedBossBar createBossBar(NamespacedKey key, String title, BarColor barColor, BarStyle barStyle, BarFlag... barFlags) {
         Preconditions.checkArgument(key != null, "key");
 
-        BossBattleCustom bossBattleCustom = getServer().aP().a(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
+        BossBattleCustom bossBattleCustom = getServer().getBossBattleCustomData().register(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
         CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
         craftKeyedBossbar.setColor(barColor);
         craftKeyedBossbar.setStyle(barStyle);
@@ -1752,7 +1752,7 @@ public final class CraftServer implements Server {
 
     @Override
     public Iterator<KeyedBossBar> getBossBars() {
-        return Iterators.unmodifiableIterator(Iterators.transform(getServer().aP().b().iterator(), new Function<BossBattleCustom, org.bukkit.boss.KeyedBossBar>() { // PAIL: rename
+        return Iterators.unmodifiableIterator(Iterators.transform(getServer().getBossBattleCustomData().getBattles().iterator(), new Function<BossBattleCustom, org.bukkit.boss.KeyedBossBar>() {
             @Override
             public org.bukkit.boss.KeyedBossBar apply(BossBattleCustom bossBattleCustom) {
                 return bossBattleCustom.getBukkitEntity();
@@ -1763,7 +1763,7 @@ public final class CraftServer implements Server {
     @Override
     public KeyedBossBar getBossBar(NamespacedKey key) {
         Preconditions.checkArgument(key != null, "key");
-        net.minecraft.server.BossBattleCustom bossBattleCustom = getServer().aP().a(CraftNamespacedKey.toMinecraft(key));
+        net.minecraft.server.BossBattleCustom bossBattleCustom = getServer().getBossBattleCustomData().a(CraftNamespacedKey.toMinecraft(key));
 
         return (bossBattleCustom == null) ? null : bossBattleCustom.getBukkitEntity();
     }
@@ -1771,11 +1771,11 @@ public final class CraftServer implements Server {
     @Override
     public boolean removeBossBar(NamespacedKey key) {
         Preconditions.checkArgument(key != null, "key");
-        net.minecraft.server.BossBattleCustomData bossBattleCustomData = getServer().aP();
+        net.minecraft.server.BossBattleCustomData bossBattleCustomData = getServer().getBossBattleCustomData();
         net.minecraft.server.BossBattleCustom bossBattleCustom = bossBattleCustomData.a(CraftNamespacedKey.toMinecraft(key));
 
         if (bossBattleCustom != null) {
-            bossBattleCustomData.a(bossBattleCustom);
+            bossBattleCustomData.remove(bossBattleCustom);
             return true;
         }
 

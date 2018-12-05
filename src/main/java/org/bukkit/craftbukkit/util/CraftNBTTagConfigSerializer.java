@@ -35,7 +35,7 @@ public class CraftNBTTagConfigSerializer {
 
             return baseList;
         } else if (base instanceof NBTTagString) {
-            return base.b_(); //PAIL Rename getString
+            return base.asString();
         }
 
         return base.toString();
@@ -66,12 +66,12 @@ public class CraftNBTTagConfigSerializer {
 
             if (ARRAY.matcher(string).matches()) {
                 try {
-                    return new MojangsonParser(new StringReader(string)).h(); // PAIL Rename parseTagList
+                    return new MojangsonParser(new StringReader(string)).parseArray();
                 } catch (CommandSyntaxException e) {
                     throw new RuntimeException("Could not deserialize found list ", e);
                 }
             } else {
-                return MOJANGSON_PARSER.b(string); // PAIL Rename parse tagBase
+                return MOJANGSON_PARSER.parseLiteral(string);
             }
         }
 

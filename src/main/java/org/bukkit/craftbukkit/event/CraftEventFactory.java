@@ -887,7 +887,7 @@ public class CraftEventFactory {
     public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
         Block hitBlock = null;
         if (position.type == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
-            BlockPosition blockposition = position.a();
+            BlockPosition blockposition = position.getBlockPosition();
             hitBlock = entity.getBukkitEntity().getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
         }
 

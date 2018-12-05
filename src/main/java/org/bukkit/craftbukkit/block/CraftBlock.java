@@ -629,9 +629,9 @@ public class CraftBlock implements Block {
 
         // Similar to to nms.World#rayTrace:
         IBlockData blockData = world.getType(position);
-        Fluid fluid = world.b(position); // PAIL getFluid
-        boolean collidableBlock = blockData.getBlock().d(blockData); // PAIL isCollidable
-        boolean collideWithFluid = CraftFluidCollisionMode.toNMS(fluidCollisionMode).d.test(fluid); // PAIL predicate
+        Fluid fluid = world.getFluid(position);
+        boolean collidableBlock = blockData.getBlock().isCollidable(blockData);
+        boolean collideWithFluid = CraftFluidCollisionMode.toNMS(fluidCollisionMode).predicate.test(fluid);
 
         if (!collidableBlock && !collideWithFluid) {
             return null;
@@ -639,11 +639,11 @@ public class CraftBlock implements Block {
 
         MovingObjectPosition nmsHitResult = null;
         if (collidableBlock) {
-            nmsHitResult = net.minecraft.server.Block.a(blockData, world.getMinecraftWorld(), position, startPos, endPos); // PAIL rayTrace
+            nmsHitResult = net.minecraft.server.Block.rayTrace(blockData, world.getMinecraftWorld(), position, startPos, endPos);
         }
 
         if (nmsHitResult == null && collideWithFluid) {
-            nmsHitResult = VoxelShapes.a(0.0D, 0.0D, 0.0D, 1.0D, (double) fluid.f(), 1.0D).a(startPos, endPos, position); // PAIL create, getHeight, rayTrace
+            nmsHitResult = VoxelShapes.create(0.0D, 0.0D, 0.0D, 1.0D, (double) fluid.getHeight(), 1.0D).rayTrace(startPos, endPos, position);
         }
 
         return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);

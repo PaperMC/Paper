@@ -194,7 +194,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public Fluid b(BlockPosition bp) {
+    public Fluid getFluid(BlockPosition bp) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
