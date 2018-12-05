@@ -127,7 +127,7 @@ public class Commodore
         ClassReader cr = new ClassReader( b );
         ClassWriter cw = new ClassWriter( cr, 0 );
 
-        cr.accept( new ClassVisitor( Opcodes.ASM7_EXPERIMENTAL, cw )
+        cr.accept( new ClassVisitor( Opcodes.ASM7, cw )
         {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions)

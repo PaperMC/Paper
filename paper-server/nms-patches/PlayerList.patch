@@ -32,7 +32,7 @@
      public static final File a = new File("banned-players.json");
 @@ -28,14 +51,16 @@
      private static final Logger f = LogManager.getLogger();
-     private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd \'at\' HH:mm:ss z");
+     private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
 -    public final List<EntityPlayer> players = Lists.newArrayList();
 +    public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
@@ -93,9 +93,9 @@
              s1 = networkmanager.getSocketAddress().toString();
          }
  
--        PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, Integer.valueOf(entityplayer.getId()), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ));
+-        PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.locX, entityplayer.locY, entityplayer.locZ);
 +        // CraftBukkit - Moved message to after join
-+        // PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, Integer.valueOf(entityplayer.getId()), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ));
++        // PlayerList.f.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.locX, entityplayer.locY, entityplayer.locZ);
          WorldServer worldserver = this.server.getWorldServer(entityplayer.dimension);
          WorldData worlddata = worldserver.getWorldData();
  
@@ -125,7 +125,7 @@
  
          entityplayer.syncInventory();
 +        // CraftBukkit - Moved from above, added world
-+        PlayerList.f.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getDisplayName().getString(), s1, Integer.valueOf(entityplayer.getId()), entityplayer.world.worldData.getName(), Double.valueOf(entityplayer.locX), Double.valueOf(entityplayer.locY), Double.valueOf(entityplayer.locZ));
++        PlayerList.f.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.world.worldData.getName(), entityplayer.locX, entityplayer.locY, entityplayer.locZ);
      }
  
      public void sendScoreboard(ScoreboardServer scoreboardserver, EntityPlayer entityplayer) {
@@ -235,12 +235,12 @@
  
 -        worldserver.addEntity(entityplayer);
 -        this.a(entityplayer, (WorldServer) null);
--        this.server.aP().a(entityplayer);
+-        this.server.getBossBattleCustomData().a(entityplayer);
 +        // CraftBukkit start - Only add if the player wasn't moved in the event
 +        if (entityplayer.world == worldserver && !worldserver.players.contains(entityplayer)) {
 +            worldserver.addEntity(entityplayer);
 +            this.a(entityplayer, (WorldServer) null);
-+            this.server.aP().a(entityplayer);
++            this.server.getBossBattleCustomData().a(entityplayer);
 +        }
 +        // CraftBukkit end
      }

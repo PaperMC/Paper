@@ -14,8 +14,8 @@ public class CraftWither extends CraftMonster implements Wither {
     public CraftWither(CraftServer server, EntityWither entity) {
         super(server, entity);
 
-        if (entity.bL != null) {
-            this.bossBar = new CraftBossBar(entity.bL);
+        if (entity.bossBattle != null) {
+            this.bossBar = new CraftBossBar(entity.bossBattle);
         }
     }
 

@@ -17,7 +17,7 @@
  
      protected static final IAttribute c = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
 @@ -21,6 +30,7 @@
-     private int bJ;
+     private int drownedConversionTime;
      private float bK;
      private float bL;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
@@ -28,15 +28,15 @@
  
      public void tick() {
          if (!this.world.isClientSide) {
--            if (this.dG()) {
--                --this.bJ;
+-            if (this.isDrownConverting()) {
+-                --this.drownedConversionTime;
 +            // CraftBukkit start - Use wall time instead of ticks for conversion
-+            if (this.dG() && this.isAlive()) {
++            if (this.isDrownConverting() && this.isAlive()) {
 +                int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +                this.lastTick = MinecraftServer.currentTick;
-+                this.bJ -= elapsedTicks;
++                this.drownedConversionTime -= elapsedTicks;
 +                // CraftBukkit end
-                 if (this.bJ < 0) {
+                 if (this.drownedConversionTime < 0) {
                      this.dE();
                  }
 @@ -182,7 +196,14 @@

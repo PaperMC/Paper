@@ -91,14 +91,14 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         Validate.notNull(renderType, "RenderType cannot be null");
         CraftScoreboard scoreboard = checkState();
 
-        this.objective.a(CraftScoreboardTranslations.fromBukkitRender(renderType));
+        this.objective.setRenderType(CraftScoreboardTranslations.fromBukkitRender(renderType));
     }
 
     @Override
     public RenderType getRenderType() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return CraftScoreboardTranslations.toBukkitRender(this.objective.f());
+        return CraftScoreboardTranslations.toBukkitRender(this.objective.getRenderType());
     }
 
     public Score getScore(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {

@@ -23,8 +23,8 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
     public CraftEnderDragon(CraftServer server, EntityEnderDragon entity) {
         super(server, entity);
 
-        if (entity.ds() != null) {
-            this.bossBar = new CraftBossBar(entity.ds().c); // PAIL rename getEnderDragonBattle
+        if (entity.getEnderDragonBattle() != null) {
+            this.bossBar = new CraftBossBar(entity.getEnderDragonBattle().bossBattle);
         }
     }
 
