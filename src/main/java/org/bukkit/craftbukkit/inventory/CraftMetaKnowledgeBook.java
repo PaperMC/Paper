@@ -116,7 +116,7 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
     @Override
     public void setRecipes(List<NamespacedKey> recipes) {
         this.recipes.clear();
-        for (NamespacedKey recipe : this.recipes) {
+        for (NamespacedKey recipe : recipes) {
             addRecipe(recipe);
         }
     }
