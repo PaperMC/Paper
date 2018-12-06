@@ -256,19 +256,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     }
 
     public List<String> getPages() {
-        final List<IChatBaseComponent> copy = ImmutableList.copyOf(pages);
-        return new AbstractList<String>() {
-
-            @Override
-            public String get(int index) {
-                return CraftChatMessage.fromComponent(copy.get(index));
-            }
-
-            @Override
-            public int size() {
-                return copy.size();
-            }
-        };
+        return pages.stream().map(CraftChatMessage::fromComponent).collect(ImmutableList.toImmutableList());
     }
 
     public void setPages(List<String> pages) {
