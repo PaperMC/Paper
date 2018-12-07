@@ -555,17 +555,15 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -425,32 +715,10 @@
-             }
- 
+@@ -427,30 +717,8 @@
              iworlddataserver.setInitialized(true);
--        }
--
+         }
+ 
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
-         }
- 
+-        }
+-
 -        RandomSequences randomsequences = worldserver.getRandomSequences();
 -        Iterator iterator = iregistry.entrySet().iterator();
 -
@@ -861,7 +859,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,12 +1152,31 @@
+@@ -744,11 +1152,30 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -870,7 +868,7 @@
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
                      }
-                 }
++                }
 +                // Spigot start
 +                // Paper start - further improve server tick loop
 +                currentTime = Util.getNanos();
@@ -880,19 +878,18 @@
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
- 
++
 +                    // Backwards compat with bad plugins
 +                    this.recentTps[0] = tps1.getAverage();
 +                    this.recentTps[1] = tps5.getAverage();
 +                    this.recentTps[2] = tps15.getAverage();
 +                    tickSection = currentTime;
-+                }
+                 }
 +                // Paper end - further improve server tick loop
 +                // Spigot end
-+
+ 
                  boolean flag = i == 0L;
  
-                 if (this.debugCommandProfilerDelayStart) {
 @@ -757,6 +1184,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
@@ -916,22 +913,24 @@
                  this.onServerExit();
              }
  
-@@ -889,7 +1325,14 @@
+@@ -889,9 +1325,16 @@
      }
  
      private boolean haveTime() {
 -        return this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
 +        // CraftBukkit start
 +        return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
-+    }
-+
+     }
+ 
 +    private void executeModerately() {
 +        this.runAllTasks();
 +        java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
 +        // CraftBukkit end
-     }
- 
++    }
++
      public static boolean throwIfFatalException() {
+         RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
+ 
 @@ -903,7 +1346,7 @@
      }
  
@@ -1216,7 +1215,15 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2471,7 @@
+@@ -1665,6 +2184,7 @@
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+             this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
+             this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
++            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings; they can be defined by datapacks so refresh it here
+         }, this);
+ 
+         if (this.isSameThread()) {
+@@ -1952,7 +2472,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1225,7 +1232,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2577,7 @@
+@@ -2058,7 +2578,7 @@
              try {
                  label51:
                  {
@@ -1234,7 +1241,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2627,21 @@
+@@ -2108,6 +2628,21 @@
  
      }
  
@@ -1256,7 +1263,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2759,24 @@
+@@ -2225,18 +2760,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1285,7 +1292,7 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2917,32 @@
+@@ -2377,6 +2918,32 @@
      }
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
