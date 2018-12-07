@@ -520,9 +520,39 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkState(MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
     }
 
+    // Paper start - cache block data strings
+    private static Map<String, CraftBlockData> stringDataCache = new HashMap<>();
+
+    static {
+        // cache all of the default states at startup, will not cache ones with the custom states inside of the
+        // brackets in a different order, though
+        reloadCache();
+    }
+
+    public static void reloadCache() {
+        stringDataCache.clear();
+        Block.REGISTRY_ID.forEach(blockData -> stringDataCache.put(blockData.toString(), blockData.createCraftBlockData()));
+    }
+    // Paper end
+
     public static CraftBlockData newData(Material material, String data) {
         Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
 
+        // Paper start - cache block data strings
+        if (material != null) {
+            Block block = CraftMagicNumbers.getBlock(material);
+            if (block != null) {
+                net.minecraft.server.MinecraftKey key = IRegistry.BLOCK.getKey(block);
+                data = data == null ? key.toString() : key + data;
+            }
+        }
+
+        CraftBlockData cached = stringDataCache.computeIfAbsent(data, s -> createNewData(null, s));
+        return (CraftBlockData) cached.clone();
+    }
+
+    private static CraftBlockData createNewData(Material material, String data) {
+        // Paper end - cache block data strings
         IBlockData blockData;
         Block block = CraftMagicNumbers.getBlock(material);
         Map<IBlockState<?>, Comparable<?>> parsed = null;

@@ -1825,6 +1825,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.getPlayerList().reload();
             this.customFunctionData.a(this.dataPackResources.a());
             this.ak.a(this.dataPackResources.h());
+            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
         }, this);
 
         if (this.isMainThread()) {
