@@ -1,0 +1,80 @@
+From 3d29f72d4520c5310d02502e88fbfdae7e398d17 Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Fri, 7 Dec 2018 23:07:20 +0100
+Subject: [PATCH] Implement plugin descriptor metadata
+
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index c29ede77..63fcd321 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -229,6 +229,7 @@ public final class PluginDescriptionFile {
+     private PermissionDefault defaultPerm = PermissionDefault.OP;
+     private Set<PluginAwareness> awareness = ImmutableSet.of();
+     private String apiVersion = null;
++    private Map<String, String> metadata = ImmutableMap.of(); // Paper - add plugin descriptor metadata
+ 
+     public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
+         loadMap(asMap(YAML.get().load(stream)));
+@@ -869,6 +870,24 @@ public final class PluginDescriptionFile {
+         return apiVersion;
+     }
+ 
++    // Paper start - add plugin descriptor metadata
++    /**
++     * Returns the map containing the metadata key/value entries defined
++     * in the plugin descriptor file.
++     * <p>
++     * In the plugin.yml, this entry is named <code>metadata</code>.
++     * <p>
++     * Example:<blockquote><pre>metadata:
++     *  key1: "value1"
++     *  key2: "value2"</pre></blockquote>
++     *
++     * @return a map containing the key/value metadata entries
++     */
++    public Map<String, String> getMetadata() {
++        return metadata;
++    }
++    // Paper end
++
+     /**
+      * @return unused
+      * @deprecated unused
+@@ -1022,6 +1041,20 @@ public final class PluginDescriptionFile {
+             apiVersion = map.get("api-version").toString();
+         }
+ 
++        // Paper start - add plugin descriptor metadata
++        if (map.get("metadata") != null) {
++            ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.builder();
++            try {
++                for (Map.Entry<?, ?> metadata : ((Map<?, ?>) map.get("metadata")).entrySet()) {
++                    metadataBuilder.put(metadata.getKey().toString(), metadata.getValue().toString());
++                }
++            } catch (ClassCastException ex) {
++                throw new InvalidDescriptionException(ex, "metadata is of wrong type");
++            }
++            metadata = metadataBuilder.build();
++        }
++        // Paper end
++
+         try {
+             lazyPermissions = (Map<?, ?>) map.get("permissions");
+         } catch (ClassCastException ex) {
+@@ -1087,6 +1120,12 @@ public final class PluginDescriptionFile {
+             map.put("api-version", apiVersion);
+         }
+ 
++        // Paper start - add plugin descriptor metadata
++        if (metadata != null) {
++            map.put("metadata", metadata);
++        }
++        // Paper end
++
+         if (classLoaderOf != null) {
+             map.put("class-loader-of", classLoaderOf);
+         }
+-- 
+2.19.2.windows.1
+
