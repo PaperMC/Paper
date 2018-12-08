@@ -100,7 +100,7 @@ index 35c436d19..fcfb17e4e 100644
  
      public CompletableFuture<Suggestions> a(SuggestionsBuilder suggestionsbuilder) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index dacca4bc4..0b040527f 100644
+index 197563552..d34b017f9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -117,9 +117,9 @@ index dacca4bc4..0b040527f 100644
   * Children must include the following:
   *
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
-     static final ItemMetaKey UNBREAKABLE = new ItemMetaKey("Unbreakable");
      @Specific(Specific.To.NBT)
      static final ItemMetaKey DAMAGE = new ItemMetaKey("Damage");
+     static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey("PublicBukkitValues");
 +    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
 +    static final ItemMetaKey CAN_DESTROY = new ItemMetaKey("CanDestroy");
 +    static final ItemMetaKey CAN_PLACE_ON = new ItemMetaKey("CanPlaceOn");
@@ -137,7 +137,7 @@ index dacca4bc4..0b040527f 100644
 +    // Paper end
  
      private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
- 
+     private static final CraftCustomTagTypeRegistry TAG_TYPE_REGISTRY = new CraftCustomTagTypeRegistry();
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
          this.hideFlag = meta.hideFlag;
          this.unbreakable = meta.unbreakable;
@@ -152,11 +152,11 @@ index dacca4bc4..0b040527f 100644
 +        }
 +        // Paper end
          this.unhandledTags.putAll(meta.unhandledTags);
+         this.publicItemTagContainer.putAll(meta.publicItemTagContainer.getRaw());
  
-         this.internalTag = meta.internalTag;
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
-         if (tag.hasKey(DAMAGE.NBT)) {
-             damage = tag.getInt(DAMAGE.NBT);
+                 publicItemTagContainer.put(key, compound.get(key));
+             }
          }
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
 +        if (tag.hasKey(CAN_DESTROY.NBT)) {
@@ -253,14 +253,14 @@ index dacca4bc4..0b040527f 100644
  
      @Overridden
      boolean isEmpty() {
--        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
-+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers()
+-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || !publicItemTagContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
++        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasRepairCost() || !unhandledTags.isEmpty() || !publicItemTagContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers()
 +            || hasPlaceableKeys() || hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
      }
  
      public String getDisplayName() {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
-                 && (this.unhandledTags.equals(that.unhandledTags))
+                 && (this.publicItemTagContainer.equals(that.publicItemTagContainer))
                  && (this.hideFlag == that.hideFlag)
                  && (this.isUnbreakable() == that.isUnbreakable())
 -                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage());
