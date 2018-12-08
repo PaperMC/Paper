@@ -1,4 +1,4 @@
-From 7ac07ac07ac07ac07ac07ac07ac07ac07ac07ac0 Mon Sep 17 00:00:00 2001
+From 04b7649ebd2cec65cac90240083f2bd66eaba5ef Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -12,7 +12,7 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 4048937c6..680764b34 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -9,6 +9,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
@@ -31,7 +31,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 5c5f19b4b..d81e2dc1c 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -240,6 +240,16 @@ public class BlockPosition extends BaseBlockPosition {
@@ -52,7 +52,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          public MutableBlockPosition() {
              this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 101d5bb01..6a23b1ec2 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -421,12 +421,24 @@ public class Chunk implements IChunkAccess {
@@ -84,7 +84,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
              IBlockData iblockdata = null;
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index 274c44948..7e4c79a1c 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -6,7 +6,7 @@ public class ChunkSection {
@@ -97,7 +97,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
      private NibbleArray skyLight;
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7ac07ac07ac0..7ac07ac07ac0 100644
+index befb3e23f..3bfb9397d 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -263,11 +263,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -167,7 +167,7 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
 @@ -748,7 +748,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
-     public Fluid b(BlockPosition blockposition) {
+     public Fluid getFluid(BlockPosition blockposition) {
 -        if (k(blockposition)) {
 +        if (blockposition.isInvalidYLocation()) { // Paper
              return FluidTypes.a.i();
@@ -201,5 +201,5 @@ index 7ac07ac07ac0..7ac07ac07ac0 100644
          } else {
              Chunk chunk = this.chunkProvider.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, false, false);
 -- 
-2.19.1
+2.19.2
 

@@ -1,4 +1,4 @@
-From 825c761eae146d5af538b56bc5b6c81ee911e698 Mon Sep 17 00:00:00 2001
+From 36694c1b91770ae842431bb2a55017f2e932a4b1 Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 03:15:41 -0600
 Subject: [PATCH] Add exception reporting event
@@ -6,7 +6,7 @@ Subject: [PATCH] Add exception reporting event
 
 diff --git a/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
 new file mode 100644
-index 0000000000..93397188b7
+index 000000000..f699ce18c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
 @@ -0,0 +1,38 @@
@@ -48,9 +48,8 @@ index 0000000000..93397188b7
 +        return internalTask;
 +    }
 +}
-\ No newline at end of file
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index d8ea5c1b5d..11fd68f597 100644
+index bc7ffbf8a..64342f54c 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,6 @@
@@ -89,7 +88,7 @@ index d8ea5c1b5d..11fd68f597 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 709d384e95..a03748f738 100644
+index 6a9b9fa2a..557aa5180 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -15,6 +15,7 @@ import java.util.function.BooleanSupplier;
@@ -100,25 +99,27 @@ index 709d384e95..a03748f738 100644
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
-@@ -209,9 +210,14 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -209,9 +210,16 @@ public class ChunkProviderServer implements IChunkProvider {
              ichunkaccess.setLastSaved(this.world.getTime());
              this.chunkLoader.saveChunk(this.world, ichunkaccess, unloaded); // Spigot
          } catch (IOException ioexception) {
--            ChunkProviderServer.a.error("Couldn\'t save chunk", ioexception);
+-            ChunkProviderServer.a.error("Couldn't save chunk", ioexception);
 +            // Paper start
 +            String msg = "Couldn\'t save chunk";
 +            ChunkProviderServer.a.error(msg, ioexception);
 +            ServerInternalException.reportInternalException(ioexception);
          } catch (ExceptionWorldConflict exceptionworldconflict) {
--            ChunkProviderServer.a.error("Couldn\'t save chunk; already in use by another instance of Minecraft?", exceptionworldconflict);
+-            ChunkProviderServer.a.error("Couldn't save chunk; already in use by another instance of Minecraft?", exceptionworldconflict);
++            ChunkProviderServer.a.error("Couldn\'t save chunk; already in use by another instance of Minecraft?", exceptionworldconflict);
 +            String msg = "Couldn\'t save chunk; already in use by another instance of Minecraft?";
 +            ChunkProviderServer.a.error(msg, exceptionworldconflict);
 +            ServerInternalException.reportInternalException(exceptionworldconflict);
++            // Paper end
          }
  
      }
 diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
-index 1d830dff64..58d971cf20 100644
+index 399eb231d..6a59e798d 100644
 --- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 +++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 @@ -1,5 +1,6 @@
@@ -145,7 +146,7 @@ index 1d830dff64..58d971cf20 100644
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index f991fddf7d..e888c9bdba 100644
+index f991fddf7..e888c9bdb 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -1,5 +1,6 @@
@@ -172,7 +173,7 @@ index f991fddf7d..e888c9bdba 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index d18921271f..e5115863ec 100644
+index d18921271..e5115863e 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -1,5 +1,6 @@
@@ -191,7 +192,7 @@ index d18921271f..e5115863ec 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index b919226bbf..ec43086ad1 100644
+index 4233b94a1..1ff5dcd85 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
@@ -210,7 +211,7 @@ index b919226bbf..ec43086ad1 100644
                                                                      return j1;
                                                                  }
  
-@@ -292,6 +294,7 @@ public final class SpawnerCreature {
+@@ -291,6 +293,7 @@ public final class SpawnerCreature {
                                  entityinsentient = (EntityInsentient) biomebase_biomemeta.b.a(generatoraccess.getMinecraftWorld());
                              } catch (Exception exception) {
                                  SpawnerCreature.a.warn("Failed to create mob", exception);
@@ -219,7 +220,7 @@ index b919226bbf..ec43086ad1 100644
                              }
  
 diff --git a/src/main/java/net/minecraft/server/VillageSiege.java b/src/main/java/net/minecraft/server/VillageSiege.java
-index e649d662ae..560edb523f 100644
+index e649d662a..560edb523 100644
 --- a/src/main/java/net/minecraft/server/VillageSiege.java
 +++ b/src/main/java/net/minecraft/server/VillageSiege.java
 @@ -1,5 +1,7 @@
@@ -239,7 +240,7 @@ index e649d662ae..560edb523f 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 051259cf80..a25c90518f 100644
+index 3ecddf0fd..20ab0d420 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
@@ -276,7 +277,7 @@ index 051259cf80..a25c90518f 100644
                          this.tileEntityListTick.remove(tileTickPosition--);
                          continue;
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
-index b21f7073f1..882b8fe4f1 100644
+index b21f7073f..882b8fe4f 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
 +++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
 @@ -138,6 +138,7 @@ public class WorldPersistentData {
@@ -288,7 +289,7 @@ index b21f7073f1..882b8fe4f1 100644
              throw throwable1;
          } finally {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 9dec941fb7..3f43d9eeab 100644
+index 311c4f5ca..e76882b8e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -16,6 +16,9 @@ import java.util.function.Consumer;
@@ -334,5 +335,5 @@ index 9dec941fb7..3f43d9eeab 100644
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 -- 
-2.19.1
+2.19.2
 

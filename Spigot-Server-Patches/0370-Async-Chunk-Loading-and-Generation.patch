@@ -1,4 +1,4 @@
-From 088f091d710c0163ea15f1dd11c9c53ca6ccb6a3 Mon Sep 17 00:00:00 2001
+From 8c80051f8c22caf7bcd9d9e5b7ccbbeaaa654ef6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -458,7 +458,7 @@ index 000000000..8f18c2869
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 479a84a25..340b756bb 100644
+index a08e7ff2e..d86e12042 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -184,6 +184,7 @@ public class Chunk implements IChunkAccess {
@@ -470,7 +470,7 @@ index 479a84a25..340b756bb 100644
  
          Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index 39ac032b0..1662e4eba 100644
+index e14ae2b42..1662e4eba 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -14,9 +14,17 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
@@ -508,7 +508,7 @@ index 39ac032b0..1662e4eba 100644
      }
  
      public Chunk a(Long olong, Chunk chunk) {
--        return this.a(olong.longValue(), chunk);
+-        return this.a(olong, chunk);
 +        return MCUtil.ensureMain("Chunk Put", () -> this.a(olong.longValue(), chunk)); // Paper
      }
  
@@ -556,7 +556,7 @@ index 39ac032b0..1662e4eba 100644
      // Paper end
  
      public Chunk a(Object object) {
--        return this.a(((Long) object).longValue());
+-        return this.a((Long) object);
 +        return MCUtil.ensureMain("Chunk Remove", () -> this.a(((Long) object).longValue())); // Paper
      }
  
@@ -576,7 +576,7 @@ index 39ac032b0..1662e4eba 100644
  
      public Chunk remove(Object object) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e64cb8051..7a1f84886 100644
+index dcc6e9762..87a1bddd0 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -35,12 +35,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -709,7 +709,7 @@ index e64cb8051..7a1f84886 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
-@@ -287,11 +357,13 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -289,11 +359,13 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
      public void close() {
@@ -718,7 +718,7 @@ index e64cb8051..7a1f84886 100644
 +        /*try {
              this.batchScheduler.a();
          } catch (InterruptedException interruptedexception) {
-             ChunkProviderServer.a.error("Couldn\'t stop taskManager", interruptedexception);
+             ChunkProviderServer.a.error("Couldn't stop taskManager", interruptedexception);
 -        }
 +        }*/
 +        // Paper end
@@ -726,7 +726,7 @@ index e64cb8051..7a1f84886 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 9b4bc3ff6..4c22f6d75 100644
+index 26a3f28cb..5ce57a6d4 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -120,7 +120,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -775,7 +775,7 @@ index bdfc7d81f..a5c4564d6 100644
      public IBlockData getType(int i, int j, int k) {
          return this.blockIds.a(i, j, k);
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 34019bd1b..fc9091c80 100644
+index ad7e4a036..f10f235ed 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -20,13 +20,14 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -944,7 +944,7 @@ index 271dc41d4..bd15534c2 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 13c0c7ee8..552be8cd8 100644
+index 522af3d53..ee878191a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -982,7 +982,7 @@ index 49fba0979..9ad646f8d 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 292547be3..5049595ab 100644
+index c73a61d94..17ae26cb8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -1732,7 +1732,7 @@ index 000000000..e9a38f9d9
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 2c7c8adf7..62c524ef3 100644
+index 068d203c8..cbff0d946 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -29,16 +29,59 @@ public class PlayerChunk {
@@ -1834,7 +1834,7 @@ index 2c7c8adf7..62c524ef3 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95baa1dc8..9f6028586 100644
+index 39e5b2484..a92557fd2 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -27,10 +27,10 @@ public class PlayerChunkMap {
@@ -1894,7 +1894,7 @@ index 95baa1dc8..9f6028586 100644
  
      private void e() {
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index 9c34319b6..7149b1472 100644
+index 38f3afb48..ddd7b91a9 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 @@ -35,7 +35,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
@@ -1962,7 +1962,7 @@ index d868149d1..0d45d933e 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
-index a5cf017da..def8730b8 100644
+index d444eb30f..d8c96b5c3 100644
 --- a/src/main/java/net/minecraft/server/StructurePiece.java
 +++ b/src/main/java/net/minecraft/server/StructurePiece.java
 @@ -14,7 +14,7 @@ public abstract class StructurePiece {
@@ -2038,7 +2038,7 @@ index 1926c902a..1117e4ae2 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 016d50d3c..f1495d30c 100644
+index eabf50e24..f8afa6f72 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2122,7 +2122,7 @@ index 016d50d3c..f1495d30c 100644
          // CraftBukkit end
          if (blockposition.isInvalidYLocation()) { // Paper
              return Blocks.VOID_AIR.getBlockData();
-@@ -1023,6 +1066,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1021,6 +1064,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
@@ -2282,7 +2282,7 @@ index fa99fe014..4f49786aa 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 6e54b71e8..a54ea5a69 100644
+index bab0c0e0f..af68074c1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -731,7 +731,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -2295,7 +2295,7 @@ index 6e54b71e8..a54ea5a69 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c56511abc..648ac4d18 100644
+index 2a9ff6d59..5945e1a6d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1017,8 +1017,12 @@ public final class CraftServer implements Server {
@@ -2361,10 +2361,10 @@ index 7e6a7b0e9..ef5a7bc38 100644
                      if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
                          unloadChunk(chunkCoordX + x, chunkCoordZ + z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c70890cc5..957ad628e 100644
+index 4a0a456a0..4068b8072 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -80,6 +80,7 @@ public class CraftEventFactory {
+@@ -81,6 +81,7 @@ public class CraftEventFactory {
      public static final DamageSource POISON = CraftDamageSource.copyOf(DamageSource.MAGIC);
      public static org.bukkit.block.Block blockDamage; // For use in EntityDamageByBlockEvent
      public static Entity entityDamage; // For use in EntityDamageByEntityEvent
@@ -2372,7 +2372,7 @@ index c70890cc5..957ad628e 100644
  
      // helper methods
      private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
-@@ -369,6 +370,7 @@ public class CraftEventFactory {
+@@ -382,6 +383,7 @@ public class CraftEventFactory {
          CraftServer craftServer = (CraftServer) entity.getServer();
  
          CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
@@ -2380,7 +2380,7 @@ index c70890cc5..957ad628e 100644
          craftServer.getPluginManager().callEvent(event);
          return event;
      }
-@@ -1016,6 +1018,7 @@ public class CraftEventFactory {
+@@ -1029,6 +1031,7 @@ public class CraftEventFactory {
          }
  
          BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(block.getX(), block.getY(), block.getZ()), cause, igniter);
@@ -2388,7 +2388,7 @@ index c70890cc5..957ad628e 100644
          world.getServer().getPluginManager().callEvent(event);
          return event;
      }
-@@ -1040,6 +1043,7 @@ public class CraftEventFactory {
+@@ -1053,6 +1056,7 @@ public class CraftEventFactory {
          }
  
          BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, bukkitIgniter);
@@ -2396,7 +2396,7 @@ index c70890cc5..957ad628e 100644
          world.getServer().getPluginManager().callEvent(event);
          return event;
      }
-@@ -1247,7 +1251,8 @@ public class CraftEventFactory {
+@@ -1260,7 +1264,8 @@ public class CraftEventFactory {
      public static BlockPhysicsEvent callBlockPhysicsEvent(GeneratorAccess world, BlockPosition blockposition) {
          org.bukkit.block.Block block = CraftBlock.at(world, blockposition);
          BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
@@ -2406,7 +2406,7 @@ index c70890cc5..957ad628e 100644
          return event;
      }
  
-@@ -1283,6 +1288,7 @@ public class CraftEventFactory {
+@@ -1296,6 +1301,7 @@ public class CraftEventFactory {
          }
  
          EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, cause, action, willOverride);
@@ -2414,7 +2414,7 @@ index c70890cc5..957ad628e 100644
          Bukkit.getPluginManager().callEvent(event);
  
          return event;
-@@ -1301,6 +1307,7 @@ public class CraftEventFactory {
+@@ -1314,6 +1320,7 @@ public class CraftEventFactory {
          blockState.setData(block);
  
          BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
@@ -2451,5 +2451,5 @@ index 04e29f58c..5fae0c6ad 100644
          this.random = new Random(seed);
          this.chunkManager = world.worldProvider.getChunkGenerator().getWorldChunkManager();
 -- 
-2.19.1
+2.19.2
 

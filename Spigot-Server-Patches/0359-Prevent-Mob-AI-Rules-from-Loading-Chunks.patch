@@ -1,35 +1,23 @@
-From 4a83ac5a4ae5fd765288ba4bb3a77b949af484d5 Mon Sep 17 00:00:00 2001
+From e9e56c914dfbf0e0247dd46619c712e006ff7255 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:56:36 -0400
 Subject: [PATCH] Prevent Mob AI Rules from Loading Chunks
 
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4e8eb137a..479a84a25 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -481,6 +481,7 @@ public class Chunk implements IChunkAccess {
-         }
-     }
- 
-+    public Fluid getFluid(BlockPosition blockposition) { return b(blockposition); } // Paper - OBFHELPER
-     public Fluid b(BlockPosition blockposition) {
-         return this.b(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
-index 9c72848f1..d007d0387 100644
+index 2b15aa6c9..3ca32123b 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 @@ -12,11 +12,13 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
      private final Block f;
-     private final EntityInsentient g;
+     private final EntityInsentient entity;
      private int h;
 +    private World world; // Paper
  
      public PathfinderGoalRemoveBlock(Block block, EntityCreature entitycreature, double d0, int i) {
          super(entitycreature, d0, 24, i);
          this.f = block;
-         this.g = entitycreature;
+         this.entity = entitycreature;
 +        this.world = entitycreature.world; // Paper
      }
  
@@ -65,7 +53,7 @@ index 9c72848f1..d007d0387 100644
          return block == this.f && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
      }
 diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-index 800e0046a..bfa6c2eef 100644
+index f252ef243..bfa6c2eef 100644
 --- a/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 +++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 @@ -78,6 +78,7 @@ public class RandomPositionGenerator {
@@ -80,34 +68,33 @@ index 800e0046a..bfa6c2eef 100644
      }
  
      private static boolean b(BlockPosition blockposition, EntityCreature entitycreature) {
--        return entitycreature.world.b(blockposition).a(TagsFluid.WATER);
+-        return entitycreature.world.getFluid(blockposition).a(TagsFluid.WATER);
 +        Fluid fluid = entitycreature.world.getFluidIfLoaded(blockposition); // Paper
 +        return fluid != null && fluid.a(TagsFluid.WATER); // Paper
      }
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a5c655155..016d50d3c 100644
+index 5fe4734e3..eabf50e24 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -763,6 +763,18 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -762,7 +762,17 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+             return chunk.getType(blockposition);
          }
      }
- 
 +    // Paper start
 +    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
 +        if (blockposition.isInvalidYLocation()) { // Paper
 +            return getFluid(blockposition);
 +        } else {
 +            Chunk chunk = this.getChunkIfLoaded(blockposition);
-+
+ 
 +            return chunk != null ? chunk.getFluid(blockposition) : null;
 +        }
 +    }
 +    // Paper end
-+    public Fluid getFluid(BlockPosition blockposition) { return b(blockposition); } // Paper - OBFHELPER
-     public Fluid b(BlockPosition blockposition) {
+     public Fluid getFluid(BlockPosition blockposition) {
          if (blockposition.isInvalidYLocation()) { // Paper
              return FluidTypes.a.i();
 -- 
-2.19.1
+2.19.2
 
