@@ -12,6 +12,11 @@ public class CraftEndermite extends CraftMonster implements Endermite {
     }
 
     @Override
+    public EntityEndermite getHandle() {
+        return (EntityEndermite) super.getHandle();
+    }
+
+    @Override
     public String toString() {
         return "CraftEndermite";
     }
@@ -19,5 +24,15 @@ public class CraftEndermite extends CraftMonster implements Endermite {
     @Override
     public EntityType getType() {
         return EntityType.ENDERMITE;
+    }
+
+    @Override
+    public boolean isPlayerSpawned() {
+        return getHandle().l(); // PAIL
+    }
+
+    @Override
+    public void setPlayerSpawned(boolean playerSpawned) {
+        getHandle().a(playerSpawned); // PAIL
     }
 }
