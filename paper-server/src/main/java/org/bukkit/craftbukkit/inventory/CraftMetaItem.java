@@ -421,7 +421,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                     continue;
                 }
 
-                EquipmentSlot slot = CraftEquipmentSlot.getSlot(EnumItemSlot.a(slotName.toLowerCase(Locale.ROOT))); // PAIL rename fromName
+                EquipmentSlot slot = CraftEquipmentSlot.getSlot(EnumItemSlot.fromName(slotName.toLowerCase(Locale.ROOT)));
                 if (slot == null) {
                     modifiers.put(attribute, attribMod);
                     continue;

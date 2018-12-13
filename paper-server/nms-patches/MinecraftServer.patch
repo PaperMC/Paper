@@ -49,10 +49,10 @@
          this.W = gameprofilerepository;
          this.X = usercache;
 -        this.universe = file;
--        this.l = file == null ? null : new ServerConnection(this);
+-        this.serverConnection = file == null ? null : new ServerConnection(this);
 -        this.convertable = file == null ? null : new WorldLoaderServer(file.toPath(), file.toPath().resolve("../backups"), datafixer);
 +        // this.universe = file; // CraftBukkit
-+        this.l = new ServerConnection(this); // CraftBukkit
++        this.serverConnection = new ServerConnection(this); // CraftBukkit
 +        // this.convertable = file == null ? null : new WorldLoaderServer(file.toPath(), file.toPath().resolve("../backups"), datafixer); // CraftBukkit - moved to DedicatedServer.init
          this.dataConverterManager = datafixer;
          this.ac.a((IResourcePackListener) this.ah);
@@ -189,7 +189,7 @@
 +                    world = (WorldServer) (new WorldServer(this, idatamanager, persistentcollection, worlddata, DimensionManager.OVERWORLD, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen)).i_();
 +                }
  
--        SecondaryWorldServer secondaryworldserver = (new SecondaryWorldServer(this, idatamanager, DimensionManager.NETHER, worldserver, this.methodProfiler)).b();
+-        SecondaryWorldServer secondaryworldserver = (new SecondaryWorldServer(this, idatamanager, DimensionManager.NETHER, worldserver, this.methodProfiler)).i_();
 +                world.a(worldsettings);
 +                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
 +            } else {
@@ -203,7 +203,7 @@
 +                File newWorld = new File(new File(name), dim);
 +                File oldWorld = new File(new File(s), dim);
  
--        SecondaryWorldServer secondaryworldserver1 = (new SecondaryWorldServer(this, idatamanager, DimensionManager.THE_END, worldserver, this.methodProfiler)).b();
+-        SecondaryWorldServer secondaryworldserver1 = (new SecondaryWorldServer(this, idatamanager, DimensionManager.THE_END, worldserver, this.methodProfiler)).i_();
 +                if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
 +                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
 +                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
@@ -246,7 +246,7 @@
 +                    worlddata = new WorldData(worldsettings, name);
 +                }
 +                worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
-+                world = (WorldServer) new SecondaryWorldServer(this, idatamanager, DimensionManager.a(dimension), this.getWorldServer(DimensionManager.OVERWORLD), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).b();
++                world = (WorldServer) new SecondaryWorldServer(this, idatamanager, DimensionManager.a(dimension), this.getWorldServer(DimensionManager.OVERWORLD), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).i_();
 +            }
 +
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
@@ -319,7 +319,7 @@
 +                continue;
              }
  
--            CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
+-            CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
 -                set.add(chunk.getPos());
 -            });
 +            BlockPosition blockposition = worldserver.getSpawn();
@@ -340,7 +340,7 @@
 -                    if (executionexception.getCause() instanceof RuntimeException) {
 -                        throw (RuntimeException) executionexception.getCause();
 -                    }
-+                CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
++                CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
 +                    set.add(chunk.getPos());
 +                });
 +
@@ -415,25 +415,25 @@
          }
 @@ -452,6 +624,7 @@
              MinecraftServer.LOGGER.info("Saving players");
-             this.s.savePlayers();
-             this.s.u();
+             this.playerList.savePlayers();
+             this.playerList.u();
 +            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
 @@ -516,11 +689,13 @@
-                     if (i > 2000L && this.aa - this.Q >= 15000L) {
+                     if (i > 2000L && this.nextTick - this.lastOverloadTime >= 15000L) {
                          long j = i / 50L;
  
 +                        if (server.getWarnOnOverload()) // CraftBukkit
                          MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
-                         this.aa += j * 50L;
-                         this.Q = this.aa;
+                         this.nextTick += j * 50L;
+                         this.lastOverloadTime = this.nextTick;
                      }
  
 +                    MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
-                     this.a(this::aT);
-                     this.aa += 50L;
+                     this.a(this::canSleepForTick);
+                     this.nextTick += 50L;
  
 @@ -559,6 +734,12 @@
              } catch (Throwable throwable1) {
@@ -454,20 +454,20 @@
  
 -        if (this.ticks % 900 == 0) {
 +        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
-             this.methodProfiler.a("save");
-             this.s.savePlayers();
+             this.methodProfiler.enter("save");
+             this.playerList.savePlayers();
              this.saveChunks(true);
 @@ -653,6 +834,7 @@
      }
  
      public void b(BooleanSupplier booleansupplier) {
 +        this.server.getScheduler().mainThreadHeartbeat(this.ticks); // CraftBukkit
-         this.methodProfiler.a("jobs");
+         this.methodProfiler.enter("jobs");
  
          FutureTask futuretask;
 @@ -665,23 +847,40 @@
-         this.getFunctionData().Y_();
-         this.methodProfiler.c("levels");
+         this.getFunctionData().tick();
+         this.methodProfiler.exitEnter("levels");
  
 -        WorldServer worldserver;
 +        // CraftBukkit start
@@ -491,12 +491,12 @@
  
 -        for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();((long[]) this.e.computeIfAbsent(worldserver.worldProvider.getDimensionManager(), (dimensionmanager) -> {
 -            return new long[100];
--        }))[this.ticks % 100] = SystemUtils.c() - i) {
+-        }))[this.ticks % 100] = SystemUtils.getMonotonicNanos() - i) {
 -            worldserver = (WorldServer) iterator.next();
 +        // CraftBukkit - dropTickTime
 +        for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
 +             WorldServer worldserver = (WorldServer) iterator.next();
-             i = SystemUtils.c();
+             i = SystemUtils.getMonotonicNanos();
 -            if (worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) {
 +            if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
@@ -504,13 +504,13 @@
                  });
 +                /* Drop global time updates
                  if (this.ticks % 20 == 0) {
-                     this.methodProfiler.a("timeSync");
-                     this.s.a((Packet) (new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle"))), worldserver.worldProvider.getDimensionManager());
-                     this.methodProfiler.e();
+                     this.methodProfiler.enter("timeSync");
+                     this.playerList.a((Packet) (new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle"))), worldserver.worldProvider.getDimensionManager());
+                     this.methodProfiler.exit();
                  }
 +                // CraftBukkit end */
  
-                 this.methodProfiler.a("tick");
+                 this.methodProfiler.enter("tick");
  
 @@ -732,10 +931,11 @@
          this.k.add(itickable);

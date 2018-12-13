@@ -52,8 +52,8 @@
  
      private static final Logger LOGGER = LogManager.getLogger();
 @@ -27,7 +71,10 @@
-     private long f;
-     private boolean g;
+     private long lastKeepAlive;
+     private boolean awaitingKeepAlive;
      private long h;
 -    private int chatThrottle;
 +    // CraftBukkit start - multithreaded fields
@@ -95,21 +95,21 @@
      }
 +    // CraftBukkit end
  
-     public void Y_() {
+     public void tick() {
          this.syncPosition();
 @@ -105,7 +178,7 @@
-         this.minecraftServer.methodProfiler.a("keepAlive");
-         long i = SystemUtils.b();
+         this.minecraftServer.methodProfiler.enter("keepAlive");
+         long i = SystemUtils.getMonotonicMillis();
  
--        if (i - this.f >= 15000L) {
-+        if (i - this.f >= 25000L) { // CraftBukkit
-             if (this.g) {
+-        if (i - this.lastKeepAlive >= 15000L) {
++        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
+             if (this.awaitingKeepAlive) {
                  this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
              } else {
 @@ -117,15 +190,21 @@
          }
  
-         this.minecraftServer.methodProfiler.e();
+         this.minecraftServer.methodProfiler.exit();
 +        // CraftBukkit start
 +        for (int spam; (spam = this.chatThrottle) > 0 && !chatSpamField.compareAndSet(this, spam, spam - 1); ) ;
 +        /* Use thread-safe field access instead
@@ -123,7 +123,7 @@
              --this.j;
          }
  
-         if (this.player.F() > 0L && this.minecraftServer.getIdleTimeout() > 0 && SystemUtils.b() - this.player.F() > (long) (this.minecraftServer.getIdleTimeout() * 1000 * 60)) {
+         if (this.player.F() > 0L && this.minecraftServer.getIdleTimeout() > 0 && SystemUtils.getMonotonicMillis() - this.player.F() > (long) (this.minecraftServer.getIdleTimeout() * 1000 * 60)) {
 +            this.player.resetIdleTimer(); // CraftBukkit - SPIGOT-854
              this.disconnect(new ChatMessage("multiplayer.disconnect.idling", new Object[0]));
          }
@@ -1600,8 +1600,8 @@
  
      public void a(PacketPlayInKeepAlive packetplayinkeepalive) {
 +        PlayerConnectionUtils.ensureMainThread(packetplayinkeepalive, this, this.player.getWorldServer()); // CraftBukkit
-         if (this.g && packetplayinkeepalive.b() == this.h) {
-             int i = (int) (SystemUtils.b() - this.f);
+         if (this.awaitingKeepAlive && packetplayinkeepalive.b() == this.h) {
+             int i = (int) (SystemUtils.getMonotonicMillis() - this.lastKeepAlive);
  
 @@ -1222,7 +2330,17 @@
  

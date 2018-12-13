@@ -104,7 +104,7 @@
  
 @@ -132,6 +206,7 @@
          if (nbttagcompound.hasKeyOfType("recipeBook", 10)) {
-             this.cy.a(nbttagcompound.getCompound("recipeBook"));
+             this.recipeBook.a(nbttagcompound.getCompound("recipeBook"));
          }
 +        this.getBukkitEntity().readExtraData(nbttagcompound); // CraftBukkit
  
@@ -135,7 +135,7 @@
 @@ -162,8 +250,34 @@
          }
  
-         nbttagcompound.set("recipeBook", this.cy.e());
+         nbttagcompound.set("recipeBook", this.recipeBook.e());
 +        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
      }
  
@@ -182,14 +182,14 @@
 @@ -275,7 +394,7 @@
              }
  
-             if (this.getHealth() != this.lastHealthSent || this.co != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.cp) {
+             if (this.getHealth() != this.lastHealthSent || this.lastFoodSent != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.cp) {
 -                this.playerConnection.sendPacket(new PacketPlayOutUpdateHealth(this.getHealth(), this.foodData.getFoodLevel(), this.foodData.getSaturationLevel()));
 +                this.playerConnection.sendPacket(new PacketPlayOutUpdateHealth(this.getBukkitEntity().getScaledHealth(), this.foodData.getFoodLevel(), this.foodData.getSaturationLevel())); // CraftBukkit
                  this.lastHealthSent = this.getHealth();
-                 this.co = this.foodData.getFoodLevel();
+                 this.lastFoodSent = this.foodData.getFoodLevel();
                  this.cp = this.foodData.getSaturationLevel() == 0.0F;
 @@ -306,6 +425,12 @@
-                 this.a(IScoreboardCriteria.k, MathHelper.f((float) this.cm));
+                 this.a(IScoreboardCriteria.XP, MathHelper.f((float) this.cm));
              }
  
 +            // CraftBukkit start - Force max health updates
@@ -200,7 +200,7 @@
 +
              if (this.expLevel != this.cl) {
                  this.cl = this.expLevel;
-                 this.a(IScoreboardCriteria.l, MathHelper.f((float) this.cl));
+                 this.a(IScoreboardCriteria.LEVEL, MathHelper.f((float) this.cl));
 @@ -320,6 +445,16 @@
                  CriterionTriggers.p.a(this);
              }
@@ -279,20 +279,20 @@
  
          this.releaseShoulderEntities();
 -        if (!this.world.getGameRules().getBoolean("keepInventory") && !this.isSpectator()) {
--            this.dj();
--            this.inventory.q();
+-            this.removeCursedItems();
+-            this.inventory.dropContents();
 +        // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
 +        if (!event.getKeepInventory()) {
 +            this.inventory.clear();
          }
  
--        this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.d, this.getName(), ScoreboardScore::incrementScore);
+-        this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.DEATH_COUNT, this.getName(), ScoreboardScore::incrementScore);
 +        this.closeInventory();
 +        this.setSpectatorTarget(this); // Remove spectated target
 +        // CraftBukkit end
 +
 +        // CraftBukkit - Get our scores instead
-+        this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.d, this.getName(), ScoreboardScore::incrementScore);
++        this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.DEATH_COUNT, this.getName(), ScoreboardScore::incrementScore);
          EntityLiving entityliving = this.cv();
  
          if (entityliving != null) {
@@ -300,14 +300,14 @@
              String s = this.getName();
              String s1 = entity.getName();
  
--            this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.f, s, ScoreboardScore::incrementScore);
+-            this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.TOTAL_KILL_COUNT, s, ScoreboardScore::incrementScore);
 +            // CraftBukkit - Get our scores instead
-+            this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.f, s, ScoreboardScore::incrementScore);
++            this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.TOTAL_KILL_COUNT, s, ScoreboardScore::incrementScore);
              if (entity instanceof EntityHuman) {
                  this.a(StatisticList.PLAYER_KILLS);
--                this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.e, s, ScoreboardScore::incrementScore);
+-                this.getScoreboard().getObjectivesForCriteria(IScoreboardCriteria.PLAYER_KILL_COUNT, s, ScoreboardScore::incrementScore);
 +                // CraftBukkit - Get our scores instead
-+                this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.e, s, ScoreboardScore::incrementScore);
++                this.world.getServer().getScoreboardManager().getScoreboardScores(IScoreboardCriteria.PLAYER_KILL_COUNT, s, ScoreboardScore::incrementScore);
              } else {
                  this.a(StatisticList.MOB_KILLS);
              }
@@ -545,9 +545,9 @@
 @@ -882,7 +1121,7 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
-         this.co = -1;
--        this.cy.a((RecipeBook) entityplayer.cy);
-+        // this.cy.a((RecipeBook) entityplayer.cy); // CraftBukkit
+         this.lastFoodSent = -1;
+-        this.recipeBook.a((RecipeBook) entityplayer.recipeBook);
++        // this.recipeBook.a((RecipeBook) entityplayer.recipeBook); // CraftBukkit
          this.removeQueue.addAll(entityplayer.removeQueue);
          this.cx = entityplayer.cx;
          this.cC = entityplayer.cC;
@@ -605,11 +605,11 @@
  
      protected void C() {
 @@ -1053,7 +1315,7 @@
-         this.cv = (Entity) (entity == null ? this : entity);
-         if (entity1 != this.cv) {
-             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
--            this.enderTeleportTo(this.cv.locX, this.cv.locY, this.cv.locZ);
-+            this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+         this.spectatedEntity = (Entity) (entity == null ? this : entity);
+         if (entity1 != this.spectatedEntity) {
+             this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
+-            this.enderTeleportTo(this.spectatedEntity.locX, this.spectatedEntity.locY, this.spectatedEntity.locZ);
++            this.playerConnection.a(this.spectatedEntity.locX, this.spectatedEntity.locY, this.spectatedEntity.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
          }
  
      }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/DedicatedServer.java
 +++ b/net/minecraft/server/DedicatedServer.java
-@@ -23,11 +23,22 @@
+@@ -23,6 +23,17 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -18,12 +18,6 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private static final Pattern h = Pattern.compile("^[a-fA-F0-9]{40}$");
--    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.newArrayList());
-+    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.<ServerCommand>newArrayList()); // CraftBukkit - fix decompile error
-     private RemoteStatusListener j;
-     public final RemoteControlCommandListener remoteControlCommandListener = new RemoteControlCommandListener(this);
-     private RemoteControlListener l;
 @@ -37,8 +48,10 @@
      private EnumGamemode p;
      private boolean q;
@@ -106,8 +100,8 @@
          DedicatedServer.LOGGER.info("Loading properties");
 -        this.propertyManager = new PropertyManager(new File("server.properties"));
 +        this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
-         this.n = new EULA(new File("eula.txt"));
-         if (!this.n.a()) {
+         this.eula = new EULA(new File("eula.txt"));
+         if (!this.eula.a()) {
              DedicatedServer.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
 @@ -143,6 +191,12 @@
                  return false;
@@ -128,7 +122,7 @@
              } else {
 -                this.a((PlayerList) (new DedicatedPlayerList(this)));
 +                this.convertable = new WorldLoaderServer(server.getWorldContainer().toPath(), server.getWorldContainer().toPath().resolve("../backups"), this.dataConverterManager); // CraftBukkit - moved from MinecraftServer constructor
-                 long j = SystemUtils.c();
+                 long j = SystemUtils.getMonotonicNanos();
  
                  if (this.getWorld() == null) {
 @@ -204,7 +258,13 @@
@@ -163,7 +157,7 @@
 +                }
 +                // CraftBukkit end
 +
-                 if (this.aY() > 0L) {
+                 if (this.getMaxTickTime() > 0L) {
                      Thread thread1 = new Thread(new ThreadWatchdog(this));
  
 @@ -303,11 +374,11 @@
@@ -178,7 +172,7 @@
 -    protected void b(BooleanSupplier booleansupplier) {
 +    public void b(BooleanSupplier booleansupplier) { // CraftBukkit - fix decompile error
          super.b(booleansupplier);
-         this.aU();
+         this.handleCommandQueue();
      }
 @@ -342,7 +413,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
@@ -197,12 +191,11 @@
          }
  
      }
-@@ -549,16 +628,75 @@
+@@ -549,12 +628,71 @@
      }
  
      public String getPlugins() {
 -        return "";
--    }
 +        // CraftBukkit start - Whole method
 +        StringBuilder result = new StringBuilder();
 +        org.bukkit.plugin.Plugin[] plugins = server.getPluginManager().getPlugins();
@@ -224,11 +217,7 @@
 +                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
 +            }
 +        }
- 
--    public String executeRemoteCommand(String s) {
--        this.remoteControlCommandListener.clearMessages();
--        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
--        return this.remoteControlCommandListener.getMessages();
++
 +        return result.toString();
 +        // CraftBukkit end
 +    }
@@ -261,21 +250,21 @@
 +            throw new RuntimeException("Interrupted processing rcon command " + s, e);
 +        }
 +        // CraftBukkit end
-     }
- 
-     public PlayerList getPlayerList() {
-         return this.aV();
-     }
++    }
 +
 +    // CraftBukkit start
 +    @Override
 +    public PropertyManager getPropertyManager() {
 +        return this.propertyManager;
-+    }
-+
+     }
+ 
+-    public String executeRemoteCommand(String s) {
+-        this.remoteControlCommandListener.clearMessages();
+-        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
+-        return this.remoteControlCommandListener.getMessages();
 +    @Override
 +    public CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
 +        return console;
-+    }
+     }
 +    // CraftBukkit end
  }
