@@ -108,7 +108,7 @@ public class NormalChunkGenerator<C extends GeneratorSettings> extends InternalC
     }
 
     @Override
-    public int e() {
-        return generator.e(); // PAIL: Gen depth
+    public int getGenerationDepth() {
+        return generator.getGenerationDepth();
     }
 }

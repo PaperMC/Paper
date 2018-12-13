@@ -962,7 +962,7 @@ public final class CraftServer implements Server {
                     }
 
                     BlockPosition chunkcoordinates = internal.getSpawn();
-                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true);
+                    internal.getChunkProvider().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true);
                 }
             }
         }
@@ -978,7 +978,7 @@ public final class CraftServer implements Server {
                 long k = longiterator.nextLong();
                 ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k);
 
-                internal.getChunkProviderServer().getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true);
+                internal.getChunkProvider().getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, true, true);
             }
         }
 

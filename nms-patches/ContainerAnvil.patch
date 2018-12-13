@@ -14,24 +14,24 @@
 @@ -22,8 +26,15 @@
      private int k;
      public String renameText;
-     private final EntityHuman m;
+     private final EntityHuman player;
 +    // CraftBukkit start
 +    public int maximumRepairCost = 40;
 +    private int lastLevelCost;
 +    private CraftInventoryView bukkitEntity;
-+    private PlayerInventory player;
++    private PlayerInventory playerInventory;
 +    // CraftBukkit end
  
      public ContainerAnvil(PlayerInventory playerinventory, final World world, final BlockPosition blockposition, EntityHuman entityhuman) {
-+        this.player = playerinventory; // CraftBukkit
-         this.j = blockposition;
-         this.i = world;
-         this.m = entityhuman;
++        this.playerInventory = playerinventory; // CraftBukkit
+         this.position = blockposition;
+         this.world = world;
+         this.player = entityhuman;
 @@ -111,7 +122,7 @@
          byte b1 = 0;
  
          if (itemstack.isEmpty()) {
--            this.g.setItem(0, ItemStack.a);
+-            this.resultInventory.setItem(0, ItemStack.a);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.a); // CraftBukkit
              this.levelCost = 0;
          } else {
@@ -40,7 +40,7 @@
                  if (itemstack1.e() && itemstack1.getItem().a(itemstack, itemstack2)) {
                      k = Math.min(itemstack1.getDamage(), itemstack1.h() / 4);
                      if (k <= 0) {
--                        this.g.setItem(0, ItemStack.a);
+-                        this.resultInventory.setItem(0, ItemStack.a);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.a); // CraftBukkit
                          this.levelCost = 0;
                          return;
@@ -49,7 +49,7 @@
                      this.k = i1;
                  } else {
                      if (!flag && (itemstack1.getItem() != itemstack2.getItem() || !itemstack1.e())) {
--                        this.g.setItem(0, ItemStack.a);
+-                        this.resultInventory.setItem(0, ItemStack.a);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.a); // CraftBukkit
                          this.levelCost = 0;
                          return;
@@ -58,7 +58,7 @@
                      }
  
                      if (flag2 && !flag1) {
--                        this.g.setItem(0, ItemStack.a);
+-                        this.resultInventory.setItem(0, ItemStack.a);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.a); // CraftBukkit
                          this.levelCost = 0;
                          return;
@@ -73,8 +73,8 @@
 +                this.levelCost = maximumRepairCost - 1; // CraftBukkit
              }
  
--            if (this.levelCost >= 40 && !this.m.abilities.canInstantlyBuild) {
-+            if (this.levelCost >= maximumRepairCost && !this.m.abilities.canInstantlyBuild) { // CraftBukkit
+-            if (this.levelCost >= 40 && !this.player.abilities.canInstantlyBuild) {
++            if (this.levelCost >= maximumRepairCost && !this.player.abilities.canInstantlyBuild) { // CraftBukkit
                  itemstack1 = ItemStack.a;
              }
  
@@ -82,7 +82,7 @@
                  EnchantmentManager.a(map, itemstack1);
              }
  
--            this.g.setItem(0, itemstack1);
+-            this.resultInventory.setItem(0, itemstack1);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
              this.b();
          }
@@ -92,7 +92,7 @@
  
      public boolean canUse(EntityHuman entityhuman) {
 +        if (!this.checkReachable) return true; // CraftBukkit
-         return !this.i.getType(this.j).a(TagsBlock.ANVIL) ? false : entityhuman.d((double) this.j.getX() + 0.5D, (double) this.j.getY() + 0.5D, (double) this.j.getZ() + 0.5D) <= 64.0D;
+         return !this.world.getType(this.position).a(TagsBlock.ANVIL) ? false : entityhuman.d((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
      }
  
 @@ -354,4 +366,33 @@
@@ -123,8 +123,8 @@
 +        }
 +
 +        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryAnvil(
-+                new org.bukkit.Location(i.getWorld(), j.getX(), j.getY(), j.getZ()), this.h, this.g, this);
-+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++                new org.bukkit.Location(world.getWorld(), position.getX(), position.getY(), position.getZ()), this.repairInventory, this.resultInventory, this);
++        bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end

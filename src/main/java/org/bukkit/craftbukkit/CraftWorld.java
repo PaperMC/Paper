@@ -140,7 +140,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
+        return this.world.getChunkProvider().getChunkAt(x, z, true, true).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -148,16 +148,16 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return world.getChunkProviderServer().isLoaded(x, z);
+        return world.getChunkProvider().isLoaded(x, z);
     }
 
     @Override
     public boolean isChunkGenerated(int x, int z) {
-        return isChunkLoaded(x, z) || ((ChunkRegionLoader) world.getChunkProviderServer().chunkLoader).chunkExists(x, z);
+        return isChunkLoaded(x, z) || ((ChunkRegionLoader) world.getChunkProvider().chunkLoader).chunkExists(x, z);
     }
 
     public Chunk[] getLoadedChunks() {
-        Object[] chunks = world.getChunkProviderServer().chunks.values().toArray();
+        Object[] chunks = world.getChunkProvider().chunks.values().toArray();
         org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
 
         for (int i = 0; i < chunks.length; i++) {
@@ -193,9 +193,9 @@ public class CraftWorld implements World {
             return false;
         }
 
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z, false, false);
+        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
         if (chunk != null) {
-            world.getChunkProviderServer().unload(chunk);
+            world.getChunkProvider().unload(chunk);
         }
 
         return true;
@@ -210,13 +210,13 @@ public class CraftWorld implements World {
     }
 
     private boolean unloadChunk0(int x, int z, boolean save) {
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().getChunkAt(x, z, false, false);
+        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
         if (chunk == null) {
             return true;
         }
 
         // If chunk had previously been queued to save, must do save to avoid loss of that data
-        return world.getChunkProviderServer().unloadChunk(chunk, chunk.mustSave || save);
+        return world.getChunkProvider().unloadChunk(chunk, chunk.mustSave || save);
     }
 
     public boolean regenerateChunk(int x, int z) {
@@ -225,9 +225,9 @@ public class CraftWorld implements World {
         }
 
         final long chunkKey = ChunkCoordIntPair.a(x, z);
-        world.getChunkProviderServer().unloadQueue.remove(chunkKey);
+        world.getChunkProvider().unloadQueue.remove(chunkKey);
 
-        net.minecraft.server.Chunk chunk = world.getChunkProviderServer().generateChunk(x, z);
+        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
         PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
         if (playerChunk != null) {
             playerChunk.chunk = chunk;
@@ -266,7 +266,7 @@ public class CraftWorld implements World {
 
     public boolean loadChunk(int x, int z, boolean generate) {
         chunkLoadCount++;
-        return world.getChunkProviderServer().getChunkAt(x, z, true, generate) != null;
+        return world.getChunkProvider().getChunkAt(x, z, true, generate) != null;
     }
 
     public boolean isChunkLoaded(Chunk chunk) {
@@ -1723,7 +1723,7 @@ public class CraftWorld implements World {
     @Override
     public Location locateNearestStructure(Location origin, StructureType structureType, int radius, boolean findUnexplored) {
         BlockPosition originPos = new BlockPosition(origin.getX(), origin.getY(), origin.getZ());
-        BlockPosition nearest = getHandle().getChunkProviderServer().getChunkGenerator().findNearestMapFeature(getHandle(), structureType.getName(), originPos, radius, findUnexplored);
+        BlockPosition nearest = getHandle().getChunkProvider().getChunkGenerator().findNearestMapFeature(getHandle(), structureType.getName(), originPos, radius, findUnexplored);
         return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
     }
 
@@ -1738,7 +1738,7 @@ public class CraftWorld implements World {
             return;
         }
 
-        ChunkProviderServer cps = world.getChunkProviderServer();
+        ChunkProviderServer cps = world.getChunkProvider();
         for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
             // If in use, skip it
             if (isChunkInUse(chunk.locX, chunk.locZ)) {

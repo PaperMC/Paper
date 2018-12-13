@@ -174,7 +174,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public int e() {
+    public int getGenerationDepth() {
         return world.getHeight();
     }
 }

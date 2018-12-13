@@ -44,17 +44,17 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public TickList<Block> J() {
+    public TickList<Block> getBlockTickList() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public TickList<FluidType> I() {
+    public TickList<FluidType> getFluidTickList() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public IChunkAccess b(int i, int i1) {
+    public IChunkAccess getChunkAt(int i, int i1) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

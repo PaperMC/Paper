@@ -39,7 +39,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         LootTableInfo nmsContext = convertContext(context);
-        List<net.minecraft.server.ItemStack> nmsItems = handle.a(random, nmsContext); // PAIL rename populateLoot
+        List<net.minecraft.server.ItemStack> nmsItems = handle.populateLoot(random, nmsContext);
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
         for (net.minecraft.server.ItemStack item : nmsItems) {
@@ -59,7 +59,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         IInventory handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        getHandle().a(handle, random, nmsContext); // PAIL rename fillInventory
+        getHandle().fillInventory(handle, random, nmsContext);
     }
 
     @Override
