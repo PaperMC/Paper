@@ -1,4 +1,4 @@
-From 92edd7342e31fb32f8cb5249c30aefb8570cd12b Mon Sep 17 00:00:00 2001
+From 4fcb18f366f3c6f24b150f1c5a192081e02866c3 Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Wed, 8 Aug 2018 15:30:52 -0400
 Subject: [PATCH] Add Early Warning Feature to WatchDog
@@ -9,7 +9,7 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index fad2f8f822..4061073b22 100644
+index 59264969a..8e522e3aa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -25,6 +25,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
@@ -36,7 +36,7 @@ index fad2f8f822..4061073b22 100644
      public static int tabSpamLimit = 500;
      private static void tabSpamLimiters() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 498a0c4504..1166209840 100644
+index c3efb5e1b..ca72e6ad1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -796,6 +796,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -47,8 +47,28 @@ index 498a0c4504..1166209840 100644
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, wait, tickSection = start; // Paper - Further improve server tick loop
                  lastTick = start - TICK_TIME; // Paper
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 71d1929c1..93a8f4cdf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -750,6 +750,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public void reload() {
++        org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
+         reloadCount++;
+         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
+         commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
+@@ -855,6 +856,7 @@ public final class CraftServer implements Server {
+         enablePlugins(PluginLoadOrder.STARTUP);
+         enablePlugins(PluginLoadOrder.POSTWORLD);
+         getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
++        org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index eed96c60c5..496c5cbdff 100644
+index eed96c60c..496c5cbdf 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -226,7 +226,7 @@ public class SpigotConfig
@@ -61,7 +81,7 @@ index eed96c60c5..496c5cbdff 100644
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index ed5f46bf6f..9dba9510f5 100644
+index ed5f46bf6..9dba9510f 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -5,6 +5,7 @@ import java.lang.management.MonitorInfo;
@@ -162,5 +182,5 @@ index ed5f46bf6f..9dba9510f5 100644
              {
                  interrupt();
 -- 
-2.19.1
+2.20.0
 
