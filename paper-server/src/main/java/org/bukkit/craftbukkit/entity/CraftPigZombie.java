@@ -41,4 +41,19 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
     public EntityType getType() {
         return EntityType.PIG_ZOMBIE;
     }
+
+    @Override
+    public boolean isConverting() {
+        return false;
+    }
+
+    @Override
+    public int getConversionTime() {
+        throw new UnsupportedOperationException("Not supported by this Entity.");
+    }
+
+    @Override
+    public void setConversionTime(int time) {
+        throw new UnsupportedOperationException("Not supported by this Entity.");
+    }
 }

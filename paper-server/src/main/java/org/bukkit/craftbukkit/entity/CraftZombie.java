@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityZombie;
 import net.minecraft.server.EntityZombieVillager;
 
@@ -53,5 +54,27 @@ public class CraftZombie extends CraftMonster implements Zombie {
     @Override
     public Villager.Profession getVillagerProfession() {
         return null;
+    }
+
+    @Override
+    public boolean isConverting() {
+        return getHandle().isDrownConverting();
+    }
+
+    @Override
+    public int getConversionTime() {
+        Preconditions.checkState(isConverting(), "Entity not converting");
+
+        return getHandle().drownedConversionTime;
+    }
+
+    @Override
+    public void setConversionTime(int time) {
+        if (time < 0) {
+            getHandle().drownedConversionTime = -1;
+            getHandle().getDataWatcher().set(EntityZombie.bF, false);
+        } else {
+            getHandle().a(time);
+        }
     }
 }
