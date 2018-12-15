@@ -1,0 +1,49 @@
+From 52cf83bd470922c316b22cf3633cf3b21ca786e7 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Wed, 29 Aug 2018 00:37:42 -0400
+Subject: [PATCH] Implement Force-Loaded Chunk API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 12c6d850d..b9371e3ae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -289,6 +289,18 @@ public class CraftChunk implements Chunk {
+         Preconditions.checkArgument(0 <= z && z <= 15, "z out of range (expected 0-15, got %s)", z);
+     }
+ 
++    // Paper start - Force-Loaded Chunk API
++    @Override
++    public boolean isForceLoaded() {
++        return getHandle().getWorld().isForceLoaded(this.x, this.z);
++    }
++
++    @Override
++    public void setForceLoaded(boolean force) {
++        getHandle().getWorld().setForceLoaded(this.x, this.z, force);
++    }
++    // Paper end
++
+     static {
+         Arrays.fill(emptySkyLight, (byte) 0xFF);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 4237e5e3c..d5936eb19 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -571,6 +571,12 @@ public class CraftWorld implements World {
+         return getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+     }
+ 
++    // Paper start
++    public boolean isChunkForceLoaded(int x, int z) {
++        return this.isChunkGenerated(x, z) && this.getHandle().isForceLoaded(x, z);
++    }
++    // Paper end
++
+     public ChunkGenerator getGenerator() {
+         return generator;
+     }
+-- 
+2.20.0
+

@@ -1,0 +1,38 @@
+From f0c1975cdbe87b4d2bba6c6cb2fc081b0d026433 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 5 Feb 2017 19:17:28 -0500
+Subject: [PATCH] Shame on you Mojang
+
+Someone wrote some horrible code that throws a world accessing task
+onto the HTTP DOWNLOADER Thread Pool, for an activity that is not even
+heavy enough to warrant async operation.
+
+This then triggers async chunk loads!
+
+What in the hell were you thinking?
+
+diff --git a/src/main/java/net/minecraft/server/BlockBeacon.java b/src/main/java/net/minecraft/server/BlockBeacon.java
+index 7148ea369..6d4e82b40 100644
+--- a/src/main/java/net/minecraft/server/BlockBeacon.java
++++ b/src/main/java/net/minecraft/server/BlockBeacon.java
+@@ -46,7 +46,7 @@ public class BlockBeacon extends BlockTileEntity {
+     }
+ 
+     public static void a(World world, BlockPosition blockposition) {
+-        HttpUtilities.a.submit(() -> {
++        //HttpUtilities.a.submit(() -> { // Paper
+             Chunk chunk = world.getChunkAtWorldCoords(blockposition);
+ 
+             for(int i = blockposition.getY() - 1; i >= 0; --i) {
+@@ -67,7 +67,6 @@ public class BlockBeacon extends BlockTileEntity {
+                     });
+                 }
+             }
+-
+-        });
++     //   }); // Paper
+     }
+ }
+-- 
+2.20.0
+
