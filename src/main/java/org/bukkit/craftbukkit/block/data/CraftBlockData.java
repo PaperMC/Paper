@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block.data;
 
+import java.util.stream.Collectors;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import net.minecraft.server.ArgumentBlock;
 import net.minecraft.server.Block;
+import net.minecraft.server.BlockDataAbstract;
 import net.minecraft.server.BlockStateBoolean;
 import net.minecraft.server.BlockStateEnum;
 import net.minecraft.server.BlockStateInteger;
@@ -29,7 +31,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 public class CraftBlockData implements BlockData {
 
     private IBlockData state;
-    private Set<IBlockState<?>> parsedStates;
+    private Map<IBlockState<?>, Comparable<?>> parsedStates;
 
     protected CraftBlockData() {
         throw new AssertionError("Template Constructor");
@@ -102,7 +104,7 @@ public class CraftBlockData implements BlockData {
         CraftBlockData clone = (CraftBlockData) this.clone();
         clone.parsedStates = null;
 
-        for (IBlockState parsed : craft.parsedStates) {
+        for (IBlockState parsed : craft.parsedStates.keySet()) {
             clone.state = clone.state.set(parsed, craft.state.get(parsed));
         }
 
@@ -238,7 +240,12 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public String getAsString() {
-        return state.toString();
+        return toString(((BlockDataAbstract) state).b());
+    }
+
+    @Override
+    public String getAsString(boolean hideUnspecified) {
+        return (hideUnspecified && parsedStates != null) ? toString(parsedStates) : getAsString();
     }
 
     @Override
@@ -254,6 +261,29 @@ public class CraftBlockData implements BlockData {
     public String toString() {
         return "CraftBlockData{" + state.toString() + "}";
     }
+
+    // Mimicked from BlockDataAbstract#toString()
+    public String toString(Map<IBlockState<?>, Comparable<?>> states) {
+        StringBuilder stateString = new StringBuilder(IRegistry.BLOCK.getKey(state.getBlock()).toString());
+
+        if (!states.isEmpty()) {
+            stateString.append('[');
+            stateString.append(states.entrySet().stream().map(STATE_TO_VALUE).collect(Collectors.joining(",")));
+            stateString.append(']');
+        }
+
+        return stateString.toString();
+    }
+
+    // BlockDataAbstract#b. Should PAIL public in future release but is mimicked for now to avoid a decompile error patch
+    private static final Function<Map.Entry<IBlockState<?>, Comparable<?>>, String> STATE_TO_VALUE = (entry) -> {
+        if (entry == null) {
+            return "<NULL>";
+        }
+
+        IBlockState state = entry.getKey();
+        return state.a() + "=" + state.a(entry.getValue());
+    };
 
     @Override
     public boolean equals(Object obj) {
@@ -473,7 +503,7 @@ public class CraftBlockData implements BlockData {
 
         IBlockData blockData;
         Block block = CraftMagicNumbers.getBlock(material);
-        Set<IBlockState<?>> parsed = null;
+        Map<IBlockState<?>, Comparable<?>> parsed = null;
 
         // Data provided, use it
         if (data != null) {
@@ -487,8 +517,8 @@ public class CraftBlockData implements BlockData {
                 ArgumentBlock arg = new ArgumentBlock(reader, false).a(false);
                 Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data");
 
-                blockData = arg.b();
-                parsed = arg.a().keySet();
+                blockData = arg.b(); // PAIL rename getBlockData
+                parsed = arg.a(); // PAIL rename getStateMap
             } catch (CommandSyntaxException ex) {
                 throw new IllegalArgumentException("Could not parse data: " + data, ex);
             }
