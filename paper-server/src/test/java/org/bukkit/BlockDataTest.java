@@ -152,4 +152,21 @@ public class BlockDataTest extends AbstractTestingBase {
         Assert.assertTrue(one.matches(two));
         Assert.assertFalse(two.matches(one));
     }
+
+    @Test
+    public void testGetAsString() {
+        String dataString = "minecraft:chest[facing=east,waterlogged=true]";
+        BlockData data = CraftBlockData.newData(null, dataString);
+
+        Assert.assertThat(data.getAsString(true), is(dataString));
+        Assert.assertThat(data.getAsString(false), is("minecraft:chest[facing=east,type=single,waterlogged=true]"));
+    }
+
+    @Test
+    public void testGetAsString2() {
+        Chest data = (Chest) CraftBlockData.fromData(Blocks.CHEST.getBlockData().set(BlockChest.FACING, EnumDirection.EAST));
+
+        Assert.assertThat(data.getAsString(true), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));
+        Assert.assertThat(data.getAsString(false), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));
+    }
 }
