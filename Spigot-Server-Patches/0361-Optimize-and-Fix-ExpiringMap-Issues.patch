@@ -1,4 +1,4 @@
-From 22c997ec6fc5edb318f4522db1d5edd32cda4262 Mon Sep 17 00:00:00 2001
+From 55b59db2a3d24f7f3c8990389b6282f01cbe0a7c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 16 Sep 2018 00:00:16 -0400
 Subject: [PATCH] Optimize and Fix ExpiringMap Issues
@@ -14,7 +14,7 @@ manipulation, and instead to run clean
 once per tick per active expiring map.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-index c8c1444e8..6723343b8 100644
+index 39a548881..37ea37de5 100644
 --- a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
 +++ b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
 @@ -143,13 +143,13 @@ public abstract class ChunkGeneratorAbstract<C extends GeneratorSettings> implem
@@ -34,17 +34,17 @@ index c8c1444e8..6723343b8 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
-index ae5a2077e..795e73542 100644
+index 9c0518d67..84a6dcb40 100644
 --- a/src/main/java/net/minecraft/server/ExpiringMap.java
 +++ b/src/main/java/net/minecraft/server/ExpiringMap.java
-@@ -2,94 +2,200 @@ package net.minecraft.server;
+@@ -2,94 +2,201 @@ package net.minecraft.server;
  
  import it.unimi.dsi.fastutil.longs.Long2LongLinkedOpenHashMap;
  import it.unimi.dsi.fastutil.longs.Long2LongMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
  import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 -import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
--import it.unimi.dsi.fastutil.objects.ObjectCollection;
+ import it.unimi.dsi.fastutil.objects.ObjectCollection;
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import java.util.Map;
 +import java.util.function.BiFunction;
@@ -68,7 +68,7 @@ index ae5a2077e..795e73542 100644
 +    // Paper start
 +    private void setAccess(long i) { a(i); } // Paper - OBFHELPER
      private void a(long i) {
--        long j = SystemUtils.b();
+-        long j = SystemUtils.getMonotonicMillis();
 +        synchronized (this.sync) {
 +            long j = System.currentTimeMillis(); // Paper
 +            this.ttl.put(i, j);
@@ -89,7 +89,7 @@ index ae5a2077e..795e73542 100644
      }
  
 -    public void cleanup() {
--        long j = SystemUtils.b();
+-        long j = SystemUtils.getMonotonicMillis();
 -        ObjectIterator<Long2LongMap.Entry> objectiterator = this.b.long2LongEntrySet().iterator(); // CraftBukkit - decompile error
 +    @Override
 +    public T putIfAbsent(long l, T t) {
@@ -275,7 +275,7 @@ index ae5a2077e..795e73542 100644
 -    // CraftBukkit start
 -    @Override
 -    public T computeIfAbsent(long l, LongFunction<? extends T> lf) {
--        this.b.put(l, SystemUtils.b());
+-        this.b.put(l, SystemUtils.getMonotonicMillis());
 -        return super.computeIfAbsent(l, lf);
 -    }
 -
@@ -287,7 +287,7 @@ index ae5a2077e..795e73542 100644
 -    // CraftBukkit end    
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 49a06f395..9b2703fd2 100644
+index aaefb98c0..0bc1c887a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -155,6 +155,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -299,7 +299,7 @@ index 49a06f395..9b2703fd2 100644
      // Spigot start
      public static final int TPS = 20;
 @@ -999,6 +1000,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-         this.methodProfiler.e();
+         this.methodProfiler.exit();
          org.spigotmc.WatchdogThread.tick(); // Spigot
          PaperLightingQueue.processQueue(startTime); // Paper
 +        expiringMaps.removeIf(ExpiringMap::clean); // Paper
@@ -307,7 +307,7 @@ index 49a06f395..9b2703fd2 100644
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 9c2adb235..04e29f58c 100644
+index 4cca65666..9c917370a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -144,7 +144,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin

@@ -1,4 +1,4 @@
-From 04c998bf22d871ead237bc6be5e12cd676965219 Mon Sep 17 00:00:00 2001
+From 3d3653b83b8c5299747f3636891adf061080ac5e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -81,7 +81,7 @@ index 92acfa6fb..05509e4fd 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 8ff542c88..bb76f56da 100644
+index 6c9d7df20..55cb7b88e 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,10 @@
@@ -95,7 +95,7 @@ index 8ff542c88..bb76f56da 100644
  import com.destroystokyo.paper.exception.ServerInternalException;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Queues;
-@@ -37,6 +42,7 @@ public class Chunk implements IChunkAccess {
+@@ -42,6 +47,7 @@ public class Chunk implements IChunkAccess {
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
      public Long scheduledForUnload; // Paper - delay chunk unloads
@@ -103,7 +103,7 @@ index 8ff542c88..bb76f56da 100644
      public final int locX;
      public final int locZ;
      private boolean l;
-@@ -687,6 +693,7 @@ public class Chunk implements IChunkAccess {
+@@ -692,6 +698,7 @@ public class Chunk implements IChunkAccess {
          if (i != this.locX || j != this.locZ) {
              Chunk.d.warn("Wrong location! ({}, {}) should be ({}, {}), {}", i, j, this.locX, this.locZ, entity);
              entity.die();
@@ -111,10 +111,10 @@ index 8ff542c88..bb76f56da 100644
          }
  
          int k = MathHelper.floor(entity.locY / 16.0D);
-@@ -875,6 +882,50 @@ public class Chunk implements IChunkAccess {
- 
+@@ -881,6 +888,50 @@ public class Chunk implements IChunkAccess {
          for (int j = 0; j < i; ++j) {
-             List entityslice = aentityslice[j]; // Spigot
+             // CraftBukkit start
+             List<Entity> entityslice = aentityslice[j]; // Spigot
 +            // Paper start
 +            DuplicateUUIDMode mode = world.paperConfig.duplicateUUIDMode;
 +            if (mode == DuplicateUUIDMode.WARN || mode == DuplicateUUIDMode.DELETE || mode == DuplicateUUIDMode.SAFE_REGEN) {
@@ -160,13 +160,13 @@ index 8ff542c88..bb76f56da 100644
 +            }
 +            // Paper end
  
+             List<Entity> toRemove = new LinkedList<>();
              this.world.a(entityslice.stream().filter((entity) -> {
-                 return !(entity instanceof EntityHuman);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index a402f71a9..6c427e9aa 100644
+index 1581edc4a..07cd5aa28 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2723,6 +2723,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -2722,6 +2722,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          });
      }
  
@@ -175,7 +175,7 @@ index a402f71a9..6c427e9aa 100644
          this.uniqueID = uuid;
          this.au = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 29c3a24f2..5557e9409 100644
+index 67ef109a5..66d2026d0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -75,7 +75,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -188,7 +188,7 @@ index 29c3a24f2..5557e9409 100644
      public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
      private final List<TileEntity> c = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0bb903aab..572c54c9c 100644
+index f37e85eb0..af9cdd9dc 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -41,7 +41,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -200,7 +200,7 @@ index 0bb903aab..572c54c9c 100644
      public boolean savingDisabled;
      private boolean J;
      private int emptyTime;
-@@ -994,7 +994,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -995,7 +995,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
                      this.g.remove(entity1);
                  } else {
                      if (!(entity instanceof EntityHuman)) {
@@ -209,7 +209,7 @@ index 0bb903aab..572c54c9c 100644
                              WorldServer.a.error("Keeping entity {} that already exists with UUID {}", entity1, uuid.toString()); // CraftBukkit // Paper
                              WorldServer.a.error("Deleting duplicate entity {}", entity); // Paper
  
-@@ -1025,7 +1025,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1026,7 +1026,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          }
  
          Entity old = this.entitiesByUUID.put(entity.getUniqueID(), entity);

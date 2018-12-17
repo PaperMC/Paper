@@ -1,24 +1,24 @@
-From 647dd278ce28d44290e63d656da9dff190becf11 Mon Sep 17 00:00:00 2001
+From e1120a8ca023f46b28a8ff0570054a7f979ffb39 Mon Sep 17 00:00:00 2001
 From: Caleb Bassham <caleb.bassham@gmail.com>
 Date: Fri, 28 Sep 2018 02:32:19 -0500
 Subject: [PATCH] Call player spectator target events
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index d429e552e..6105a4e14 100644
+index b5d48e7bf..2679c2358 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -62,7 +62,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      private EntityHuman.EnumChatVisibility cs;
      private boolean ct = true;
-     private long cu = SystemUtils.b();
--    private Entity cv;
-+    private Entity cv; private void setSpectatorTargetField(Entity e) { this.cv = e; } // Paper - OBFHELPER
+     private long cu = SystemUtils.getMonotonicMillis();
+-    private Entity spectatedEntity;
++    private Entity spectatedEntity; private void setSpectatorTargetField(Entity e) { this.spectatedEntity = e; } // Paper - OBFHELPER
      public boolean worldChangeInvuln;
      private boolean cx; private void setHasSeenCredits(boolean has) { this.cx = has; } // Paper - OBFHELPER
-     private final RecipeBookServer cy;
-@@ -1375,15 +1375,36 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         return (Entity) (this.cv == null ? this : this.cv);
+     private final RecipeBookServer recipeBook;
+@@ -1375,15 +1375,35 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return (Entity) (this.spectatedEntity == null ? this : this.spectatedEntity);
      }
  
 -    public void setSpectatorTarget(Entity entity) {
@@ -26,10 +26,10 @@ index d429e552e..6105a4e14 100644
 +        // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity Event
          Entity entity1 = this.getSpecatorTarget();
  
--        this.cv = (Entity) (entity == null ? this : entity);
--        if (entity1 != this.cv) {
--            this.playerConnection.sendPacket(new PacketPlayOutCamera(this.cv));
--            this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
+-        this.spectatedEntity = (Entity) (entity == null ? this : entity);
+-        if (entity1 != this.spectatedEntity) {
+-            this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
+-            this.playerConnection.a(this.spectatedEntity.locX, this.spectatedEntity.locY, this.spectatedEntity.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
 +        if (newSpectatorTarget == null) {
 +            newSpectatorTarget = this;
          }
@@ -53,9 +53,8 @@ index d429e552e..6105a4e14 100644
 +        setSpectatorTargetField(newSpectatorTarget);
 +
 +        this.playerConnection.sendPacket(new PacketPlayOutCamera(newSpectatorTarget));
++        this.playerConnection.a(this.spectatedEntity.locX, this.spectatedEntity.locY, this.spectatedEntity.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
 +        // Paper end
-+
-+        this.playerConnection.a(this.cv.locX, this.cv.locY, this.cv.locZ, this.yaw, this.pitch, TeleportCause.SPECTATE); // CraftBukkit
      }
  
      protected void E() {

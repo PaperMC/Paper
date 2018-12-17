@@ -1,4 +1,4 @@
-From 5adc07529bf386d144cafa53eb41c66b1c2cea8b Mon Sep 17 00:00:00 2001
+From 70c73da3afa8adfbe7458fea7e5e4e41554f7d8c Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Wed, 11 Oct 2017 18:22:50 +0200
 Subject: [PATCH] Make legacy ping handler more reliable
@@ -28,21 +28,21 @@ respond to the request.
 [2]: https://netty.io/wiki/user-guide-for-4.x.html#wiki-h4-13
 
 diff --git a/src/main/java/net/minecraft/server/LegacyPingHandler.java b/src/main/java/net/minecraft/server/LegacyPingHandler.java
-index 5691d0aea..aafca9c9c 100644
+index cb2b9c368..976888b66 100644
 --- a/src/main/java/net/minecraft/server/LegacyPingHandler.java
 +++ b/src/main/java/net/minecraft/server/LegacyPingHandler.java
-@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
- public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+@@ -14,6 +14,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+ 
      private static final Logger a = LogManager.getLogger();
      private final ServerConnection b;
 +    private ByteBuf buf; // Paper
  
      public LegacyPingHandler(ServerConnection serverconnection) {
          this.b = serverconnection;
-@@ -20,6 +21,16 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
- 
+@@ -22,6 +23,16 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
      public void channelRead(ChannelHandlerContext channelhandlercontext, Object object) throws Exception {
-         ByteBuf bytebuf = (ByteBuf)object;
+         ByteBuf bytebuf = (ByteBuf) object;
+ 
 +        // Paper start - Make legacy ping handler more reliable
 +        if (this.buf != null) {
 +            try {
@@ -56,26 +56,26 @@ index 5691d0aea..aafca9c9c 100644
          bytebuf.markReaderIndex();
          boolean flag = true;
  
-@@ -44,6 +55,10 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-                     this.a(channelhandlercontext, this.a(s));
-                     break;
-                 default:
-+                    // Paper start - Replace with improved version below
-+                    if (bytebuf.readUnsignedByte() != 0x01 || bytebuf.readUnsignedByte() != 0xFA) return;
-+                    readLegacy1_6(channelhandlercontext, bytebuf);
-+                    /*
-                     boolean flag1 = bytebuf.readUnsignedByte() == 1;
-                     flag1 = flag1 & bytebuf.readUnsignedByte() == 250;
-                     flag1 = flag1 & "MC|PingHost".equals(new String(bytebuf.readBytes(bytebuf.readShort() * 2).array(), StandardCharsets.UTF_16BE));
-@@ -65,6 +80,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-                     } finally {
-                         bytebuf1.release();
-                     }
-+                    */ // Paper end- end commenting out
-                 }
+@@ -52,6 +63,10 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+                 this.a(channelhandlercontext, this.a(s));
+                 break;
+             default:
++                // Paper start - Replace with improved version below
++                if (bytebuf.readUnsignedByte() != 0x01 || bytebuf.readUnsignedByte() != 0xFA) return;
++                readLegacy1_6(channelhandlercontext, bytebuf);
++                /*
+                 boolean flag1 = bytebuf.readUnsignedByte() == 1;
  
-                 bytebuf.release();
-@@ -84,6 +100,90 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+                 flag1 &= bytebuf.readUnsignedByte() == 250;
+@@ -75,6 +90,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+                 } finally {
+                     bytebuf1.release();
+                 }
++                */ // Paper end - Replace with improved version below
+             }
+ 
+             bytebuf.release();
+@@ -92,6 +108,90 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
  
      }
  

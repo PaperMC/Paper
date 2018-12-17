@@ -1,4 +1,4 @@
-From f8f4c08e6822205bb69f8318ba136fab257a2f2d Mon Sep 17 00:00:00 2001
+From 38f954aac3cbf55ef4c2ab8a91559775e2dcc5c0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 1 Jan 2018 16:10:24 -0500
 Subject: [PATCH] Configurable Max Chunk Gens per Tick
@@ -33,30 +33,30 @@ index 29cb718fb..695bdf2e6 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7cb1327a8..4383abccd 100644
+index 5497a458d..db43a8a9a 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -28,6 +28,7 @@ public class PlayerChunk {
-     // CraftBukkit start - add fields
-     // You know the drill, https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/browse
-     // All may seem good at first, but there's deeper issues if you play for a bit
+@@ -19,6 +19,7 @@ public class PlayerChunk {
+     private int h;
+     private long i;
+     private boolean done;
 +    boolean chunkExists; // Paper
-     private boolean loadInProgress = false;
-     private Runnable loadedRunnable = new Runnable() {
-         public void run() {
-@@ -58,6 +59,7 @@ public class PlayerChunk {
  
-         chunkproviderserver.a(i, j);
-         this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
-+        this.chunkExists = this.chunk != null || ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), i, j); // Paper
+     public PlayerChunk(PlayerChunkMap playerchunkmap, int ix, int j) {
+         this.playerChunkMap = playerchunkmap;
+@@ -26,6 +27,7 @@ public class PlayerChunk {
+         ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProvider();
+         chunkproviderserver.a(ix, j);
+         this.chunk = chunkproviderserver.getChunkAt(ix, j, true, false);
++        this.chunkExists = this.chunk != null || org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), ix, j); // Paper
          markChunkUsed(); // Paper - delay chunk unloads
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index a696be750..39e5b2484 100644
+index b1ece38b2..27343174d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -140,6 +140,7 @@ public class PlayerChunkMap {
+@@ -136,6 +136,7 @@ public class PlayerChunkMap {
              // Spigot start
              org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
              activityAccountant.startActivity(0.5);
@@ -64,7 +64,7 @@ index a696be750..39e5b2484 100644
              // Spigot end
  
              Iterator iterator1 = this.h.iterator();
-@@ -149,6 +150,11 @@ public class PlayerChunkMap {
+@@ -145,6 +146,11 @@ public class PlayerChunkMap {
  
                  if (playerchunk1.f() == null) {
                      boolean flag = playerchunk1.a(PlayerChunkMap.b);

@@ -1,4 +1,4 @@
-From b38db1bcd7c796e5a1a6737d4710400d52e0bad6 Mon Sep 17 00:00:00 2001
+From 3e4d2f1027bb17badd21e471bbe0f2ad900a24bf Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Wed, 11 Oct 2017 15:56:26 +0200
 Subject: [PATCH] Implement extended PaperServerListPingEvent
@@ -177,7 +177,7 @@ index 000000000..26e3031d2
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 34ba382a4..c3efb5e1b 100644
+index 906bd973d..9b823d4ca 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1,6 +1,7 @@
@@ -191,25 +191,12 @@ index 34ba382a4..c3efb5e1b 100644
 @@ -943,7 +944,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          if (i - this.Y >= 5000000000L) {
              this.Y = i;
-             this.m.setPlayerSample(new ServerPing.ServerPingPlayerSample(this.z(), this.y()));
--            GameProfile[] agameprofile = new GameProfile[Math.min(this.y(), 12)];
-+            GameProfile[] agameprofile = new GameProfile[Math.min(this.y(), org.spigotmc.SpigotConfig.playerSample)]; // Paper
-             int j = MathHelper.nextInt(this.n, 0, this.y() - agameprofile.length);
+             this.m.setPlayerSample(new ServerPing.ServerPingPlayerSample(this.getMaxPlayers(), this.getPlayerCount()));
+-            GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), 12)];
++            GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), org.spigotmc.SpigotConfig.playerSample)]; // Paper
+             int j = MathHelper.nextInt(this.n, 0, this.getPlayerCount() - agameprofile.length);
  
              for (int k = 0; k < agameprofile.length; ++k) {
-@@ -1300,10 +1301,12 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-         return "1.13.2";
-     }
- 
-+    public int getPlayerCount() { return y(); } // Paper - OBFHELPER
-     public int y() {
-         return this.s.getPlayerCount();
-     }
- 
-+    public int getMaxPlayers() { return z(); } // Paper - OBFHELPER
-     public int z() {
-         return this.s.getMaxPlayers();
-     }
 diff --git a/src/main/java/net/minecraft/server/PacketStatusListener.java b/src/main/java/net/minecraft/server/PacketStatusListener.java
 index c9edd289a..8aa121e2f 100644
 --- a/src/main/java/net/minecraft/server/PacketStatusListener.java
@@ -234,7 +221,7 @@ index c9edd289a..8aa121e2f 100644
          // CraftBukkit end
      }
 diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
-index 615aa2cd0..408aad098 100644
+index c338d09bf..087f5fe0d 100644
 --- a/src/main/java/net/minecraft/server/ServerPing.java
 +++ b/src/main/java/net/minecraft/server/ServerPing.java
 @@ -29,6 +29,7 @@ public class ServerPing {
@@ -245,7 +232,7 @@ index 615aa2cd0..408aad098 100644
      public ServerPing.ServerPingPlayerSample b() {
          return this.b;
      }
-@@ -174,10 +175,12 @@ public class ServerPing {
+@@ -156,10 +157,12 @@ public class ServerPing {
              return this.b;
          }
  

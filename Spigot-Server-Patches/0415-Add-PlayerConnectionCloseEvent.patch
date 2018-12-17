@@ -1,4 +1,4 @@
-From e2f257e0513b6f8699db8182a2d94fa92ecc37c0 Mon Sep 17 00:00:00 2001
+From 631184394cd176862f81504ab8355ff175ea4c55 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sun, 7 Oct 2018 12:05:28 -0700
 Subject: [PATCH] Add PlayerConnectionCloseEvent
@@ -34,7 +34,7 @@ how PlayerPreLoginEvent interacts with PlayerConnectionCloseEvent
 is undefined.
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 4df31c828..78ea9ad18 100644
+index 95d34fbfe..d20545bad 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -36,9 +36,9 @@ public class LoginListener implements PacketLoginInListener, ITickable {
@@ -50,7 +50,7 @@ index 4df31c828..78ea9ad18 100644
      private SecretKey loginKey;
      private EntityPlayer l;
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 2f887932b..1e5dfd3f7 100644
+index 065bede4c..21e92b921 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -16,6 +16,7 @@ import io.netty.handler.timeout.TimeoutException;
@@ -64,14 +64,14 @@ index 2f887932b..1e5dfd3f7 100644
 @@ -358,6 +359,26 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                      this.i().a(new ChatMessage("multiplayer.disconnect.generic", new Object[0]));
                  }
-                 this.i.clear(); // Free up packet queue.
+                 this.packetQueue.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.i();
 +                if (packetListener instanceof PlayerConnection) {
 +                    /* Player was logged in */
 +                    final PlayerConnection playerConnection = (PlayerConnection) packetListener;
 +                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(playerConnection.player.uniqueID,
-+                        playerConnection.player.getName(), ((java.net.InetSocketAddress)l).getAddress(), false).callEvent();
++                        playerConnection.player.getName(), ((java.net.InetSocketAddress)socketAddress).getAddress(), false).callEvent();
 +                } else if (packetListener instanceof LoginListener) {
 +                    /* Player is login stage */
 +                    final LoginListener loginListener = (LoginListener) packetListener;
@@ -81,7 +81,7 @@ index 2f887932b..1e5dfd3f7 100644
 +                        case ACCEPTED:
 +                            final com.mojang.authlib.GameProfile profile = loginListener.getGameProfile(); /* Should be non-null at this stage */
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
-+                                ((java.net.InetSocketAddress)l).getAddress(), false).callEvent();
++                                ((java.net.InetSocketAddress)socketAddress).getAddress(), false).callEvent();
 +                    }
 +                }
 +                // Paper end

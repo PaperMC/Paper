@@ -1,4 +1,4 @@
-From 36694c1b91770ae842431bb2a55017f2e932a4b1 Mon Sep 17 00:00:00 2001
+From d59504f70dfb71a27f3bee67630007337fc29f74 Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 03:15:41 -0600
 Subject: [PATCH] Add exception reporting event
@@ -49,7 +49,7 @@ index 000000000..f699ce18c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index bc7ffbf8a..64342f54c 100644
+index c5d562dca..37bea8dbe 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,6 @@
@@ -59,7 +59,7 @@ index bc7ffbf8a..64342f54c 100644
  import com.google.common.collect.Maps;
  import com.google.common.collect.Queues;
  import com.google.common.collect.Sets;
-@@ -420,6 +421,7 @@ public class Chunk implements IChunkAccess {
+@@ -425,6 +426,7 @@ public class Chunk implements IChunkAccess {
          return this.getBlockData(i, j, k).b(this.world, new BlockPosition(i, j, k));
      }
  
@@ -67,7 +67,7 @@ index bc7ffbf8a..64342f54c 100644
      public IBlockData getType(BlockPosition blockposition) {
          return this.getBlockData(blockposition.getX(), blockposition.getY(), blockposition.getZ());
      }
-@@ -815,10 +817,15 @@ public class Chunk implements IChunkAccess {
+@@ -820,10 +822,15 @@ public class Chunk implements IChunkAccess {
              this.tileEntities.remove(blockposition);
              // Paper end
          } else {
@@ -119,7 +119,7 @@ index 6a9b9fa2a..557aa5180 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
-index 399eb231d..6a59e798d 100644
+index 95120be5d..5977d3b48 100644
 --- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 +++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 @@ -1,5 +1,6 @@
@@ -146,7 +146,7 @@ index 399eb231d..6a59e798d 100644
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index f991fddf7..e888c9bdb 100644
+index 66fe6ff86..06417b9ec 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -1,5 +1,6 @@
@@ -165,7 +165,7 @@ index f991fddf7..e888c9bdb 100644
  
      }
 @@ -221,6 +223,7 @@ public class RegionFile {
-             this.b(i, j, (int)(SystemUtils.d() / 1000L));
+             this.b(i, j, (int)(SystemUtils.getTimeMillis() / 1000L));
          } catch (IOException ioexception) {
              ioexception.printStackTrace();
 +            ServerInternalException.reportInternalException(ioexception); // Paper
@@ -173,7 +173,7 @@ index f991fddf7..e888c9bdb 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index d18921271..e5115863e 100644
+index c5ca89691..e507a996f 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -1,5 +1,6 @@
@@ -240,7 +240,7 @@ index e649d662a..560edb523 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3ecddf0fd..20ab0d420 100644
+index a9239ee7b..0e70a3d68 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
@@ -252,7 +252,7 @@ index 3ecddf0fd..20ab0d420 100644
  import com.google.common.base.MoreObjects;
  import com.google.common.collect.Lists;
  import it.unimi.dsi.fastutil.longs.LongSet;
-@@ -1200,8 +1202,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1150,8 +1152,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  } catch (Throwable throwable1) {
                      entity.tickTimer.stopTiming();
                      // Paper start - Prevent tile entity and entity crashes
@@ -264,8 +264,8 @@ index 3ecddf0fd..20ab0d420 100644
                      entity.dead = true;
                      continue;
                      // Paper end
-@@ -1266,8 +1270,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-                         this.methodProfiler.e();
+@@ -1216,8 +1220,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+                         this.methodProfiler.exit();
                      } catch (Throwable throwable2) {
                          // Paper start - Prevent tile entity and entity crashes
 -                        System.err.println("TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ());
@@ -277,16 +277,16 @@ index 3ecddf0fd..20ab0d420 100644
                          this.tileEntityListTick.remove(tileTickPosition--);
                          continue;
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
-index b21f7073f..882b8fe4f 100644
+index f0a826cd1..2dee02669 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
 +++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
-@@ -138,6 +138,7 @@ public class WorldPersistentData {
- 
-             nbttagcompound = GameProfileSerializer.a(idatamanager.i(), DataFixTypes.SAVED_DATA, nbttagcompound1, j, i);
-         } catch (Throwable throwable1) {
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable1); // Paper
-             throwable = throwable1;
-             throw throwable1;
+@@ -121,6 +121,7 @@ public class WorldPersistentData {
+             int j = nbttagcompound.hasKeyOfType("DataVersion", 99) ? nbttagcompound.getInt("DataVersion") : 1343;
+             nbttagcompound1 = GameProfileSerializer.a(idatamanager.i(), DataFixTypes.SAVED_DATA, nbttagcompound, j, i);
+         } catch (Throwable throwable2) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable2); // Paper
+             throwable = throwable2;
+             throw throwable2;
          } finally {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 311c4f5ca..e76882b8e 100644
@@ -335,5 +335,5 @@ index 311c4f5ca..e76882b8e 100644
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 -- 
-2.19.2
+2.20.0
 

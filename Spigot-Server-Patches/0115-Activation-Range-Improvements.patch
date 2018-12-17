@@ -1,4 +1,4 @@
-From 138ea64830ff2fd0adfdd094500fea47c1e30852 Mon Sep 17 00:00:00 2001
+From fdd7766d19df64b696d939e214b6a03c3e1757ab Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 13 May 2016 01:38:06 -0400
 Subject: [PATCH] Activation Range Improvements
@@ -10,10 +10,10 @@ Fixes and adds new Immunities to improve gameplay behavior
 Adds water Mobs to activation range config and nerfs fish
 
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index d81e2dc1c5..7bd51b3578 100644
+index c9019260b..e980e31fc 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -327,6 +327,7 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -315,6 +315,7 @@ public class BlockPosition extends BaseBlockPosition {
              this.c = i;
          }
  
@@ -22,7 +22,7 @@ index d81e2dc1c5..7bd51b3578 100644
              return new BlockPosition(this);
          }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index e7f9e490bf..68ceee5f08 100644
+index 69645d517..9682b0a01 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -575,6 +575,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -34,7 +34,7 @@ index e7f9e490bf..68ceee5f08 100644
  
                  if (i != this.aM) {
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
-index 20b7c2c6dc..d659c57dbe 100644
+index 20b7c2c6d..d659c57db 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
 +++ b/src/main/java/net/minecraft/server/EntityCreature.java
 @@ -7,6 +7,7 @@ import org.bukkit.event.entity.EntityUnleashEvent;
@@ -46,7 +46,7 @@ index 20b7c2c6dc..d659c57dbe 100644
      private float b;
  
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index c87304d477..41a4962e94 100644
+index ac250182b..06bb8cf1f 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -104,6 +104,17 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -68,7 +68,7 @@ index c87304d477..41a4962e94 100644
          return this.moveController;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 334580a8b7..b2b575d0e8 100644
+index 95af2d529..162de836e 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -74,7 +74,7 @@ public abstract class EntityLiving extends Entity {
@@ -77,11 +77,11 @@ index 334580a8b7..b2b575d0e8 100644
      public EntityHuman killer;
 -    protected int lastDamageByPlayerTime;
 +    public int lastDamageByPlayerTime; // Paper - public
-     protected boolean aX;
+     protected boolean killed;
      protected int ticksFarFromPlayer;
      protected float aZ;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
-index c66d8b68f0..774e4d6414 100644
+index 9c48bb3c9..22cea8552 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -340,6 +340,7 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
@@ -93,7 +93,7 @@ index c66d8b68f0..774e4d6414 100644
          return this.bQ != null;
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
-index acc099e955..339c78eec9 100644
+index acc099e95..339c78eec 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
 @@ -20,7 +20,9 @@ public abstract class PathfinderGoal {
@@ -107,7 +107,7 @@ index acc099e955..339c78eec9 100644
      public void e() {
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
-index 9a75cb63ba..cf10605aaa 100644
+index 9a75cb63b..cf10605aa 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
 @@ -1,12 +1,12 @@
@@ -148,7 +148,7 @@ index 9a75cb63ba..cf10605aaa 100644
                          }
                      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
-index be3a3c82ee..1404b629d5 100644
+index ae21eb84d..8f35f71f8 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 @@ -10,10 +10,10 @@ import org.apache.logging.log4j.Logger;
@@ -187,7 +187,7 @@ index be3a3c82ee..1404b629d5 100644
          Iterator iterator = this.b.iterator();
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 09df00e94b..d08ef3fe10 100644
+index 09df00e94..d08ef3fe1 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -2,6 +2,8 @@ package org.spigotmc;
@@ -385,7 +385,7 @@ index 09df00e94b..d08ef3fe10 100644
          {
              isActive = false;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 87bc8e2d9c..06d84a0b66 100644
+index 87bc8e2d9..06d84a0b6 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -144,12 +144,14 @@ public class SpigotWorldConfig
@@ -404,5 +404,5 @@ index 87bc8e2d9c..06d84a0b66 100644
          log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Mi " + miscActivationRange + " / Tiv " + tickInactiveVillagers );
      }
 -- 
-2.19.1
+2.20.0
 

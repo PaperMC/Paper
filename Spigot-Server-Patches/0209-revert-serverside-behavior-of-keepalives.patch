@@ -1,4 +1,4 @@
-From 68c17de42dd9181bf40c9da2053c577a5896e86b Mon Sep 17 00:00:00 2001
+From 4f61d9e0c6247790014a1d359cdf9c132a199dde Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 15 Oct 2017 00:29:07 +0100
 Subject: [PATCH] revert serverside behavior of keepalives
@@ -17,16 +17,16 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 587f00286..870b59ce1 100644
+index fb63496a0..921e1ec9e 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -71,7 +71,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
      private final MinecraftServer minecraftServer;
      public EntityPlayer player;
      private int e;
--    private long f; private void setLastPing(long lastPing) { this.f = lastPing;}; private long getLastPing() { return this.f;}; // Paper - OBFHELPER
-+    private long f = SystemUtils.b(); private void setLastPing(long lastPing) { this.f = lastPing;}; private long getLastPing() { return this.f;}; // Paper - OBFHELPER - set ping to delay initial
-     private boolean g; private void setPendingPing(boolean isPending) { this.g = isPending;}; private boolean isPendingPing() { return this.g;}; // Paper - OBFHELPER
+-    private long lastKeepAlive; private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
++    private long lastKeepAlive = SystemUtils.getMonotonicMillis(); private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
+     private boolean awaitingKeepAlive; private void setPendingPing(boolean isPending) { this.awaitingKeepAlive = isPending;}; private boolean isPendingPing() { return this.awaitingKeepAlive;}; // Paper - OBFHELPER
      private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
      // CraftBukkit start - multithreaded fields
 @@ -102,6 +102,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -40,14 +40,14 @@ index 587f00286..870b59ce1 100644
 @@ -180,18 +181,26 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          }
  
-         this.minecraftServer.methodProfiler.a("keepAlive");
--        long i = SystemUtils.b();
+         this.minecraftServer.methodProfiler.enter("keepAlive");
+-        long i = SystemUtils.getMonotonicMillis();
 -
--        if (i - this.f >= 25000L) { // CraftBukkit
--            if (this.g) {
+-        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
+-            if (this.awaitingKeepAlive) {
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        long currentTime = SystemUtils.b();
++        long currentTime = SystemUtils.getMonotonicMillis();
 +        long elapsedTime = currentTime - this.getLastPing();
 +
 +        if (this.isPendingPing()) {
@@ -55,8 +55,8 @@ index 587f00286..870b59ce1 100644
 +                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
                  this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
 -            } else {
--                this.g = true;
--                this.f = i;
+-                this.awaitingKeepAlive = true;
+-                this.lastKeepAlive = i;
 -                this.h = i;
 -                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
 +            }
@@ -71,7 +71,7 @@ index 587f00286..870b59ce1 100644
          }
 +        // Paper end
  
-         this.minecraftServer.methodProfiler.e();
+         this.minecraftServer.methodProfiler.exit();
          // CraftBukkit start
 -- 
 2.20.0

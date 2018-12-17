@@ -1,4 +1,4 @@
-From 04b7649ebd2cec65cac90240083f2bd66eaba5ef Mon Sep 17 00:00:00 2001
+From f8874981d7f1f44b2420f499c41ecadd99903172 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -12,7 +12,7 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index 4048937c6..680764b34 100644
+index f1ad18511..339e2da6b 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -9,6 +9,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
@@ -31,10 +31,10 @@ index 4048937c6..680764b34 100644
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 5c5f19b4b..d81e2dc1c 100644
+index 880ce16b1..c9019260b 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -240,6 +240,16 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -228,6 +228,16 @@ public class BlockPosition extends BaseBlockPosition {
          protected int b;
          protected int c;
          protected int d;
@@ -52,10 +52,10 @@ index 5c5f19b4b..d81e2dc1c 100644
          public MutableBlockPosition() {
              this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 101d5bb01..6a23b1ec2 100644
+index eca041265..66520842d 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -421,12 +421,24 @@ public class Chunk implements IChunkAccess {
+@@ -426,12 +426,24 @@ public class Chunk implements IChunkAccess {
          return this.getBlockData(i, j, k).b(this.world, new BlockPosition(i, j, k));
      }
  
@@ -97,7 +97,7 @@ index 274c44948..7e4c79a1c 100644
      private NibbleArray skyLight;
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index befb3e23f..3bfb9397d 100644
+index 4093d3486..e109016b7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -263,11 +263,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -173,7 +173,7 @@ index befb3e23f..3bfb9397d 100644
              return FluidTypes.a.i();
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-@@ -1816,7 +1816,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1766,7 +1766,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      public Map<BlockPosition, TileEntity> capturedTileEntities = Maps.newHashMap();
      @Nullable
      public TileEntity getTileEntity(BlockPosition blockposition) {
@@ -182,7 +182,7 @@ index befb3e23f..3bfb9397d 100644
              return null;
          } else {
              // CraftBukkit start
-@@ -1857,7 +1857,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1807,7 +1807,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
@@ -191,7 +191,7 @@ index befb3e23f..3bfb9397d 100644
              if (tileentity != null && !tileentity.x()) {
                  // CraftBukkit start
                  if (captureBlockStates) {
-@@ -1918,7 +1918,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1868,7 +1868,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      }
  
      public boolean p(BlockPosition blockposition) {
@@ -201,5 +201,5 @@ index befb3e23f..3bfb9397d 100644
          } else {
              Chunk chunk = this.chunkProvider.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, false, false);
 -- 
-2.19.2
+2.20.0
 

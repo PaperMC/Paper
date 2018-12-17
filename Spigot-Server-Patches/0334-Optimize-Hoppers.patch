@@ -1,4 +1,4 @@
-From 67b546a9be501634109a7f3caca372e306466951 Mon Sep 17 00:00:00 2001
+From 705f90c7c280551734be5b98060ccac275b8ad1e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -31,7 +31,7 @@ index 10efe6b3d..6feea98b6 100644
      private void disableSprintInterruptionOnAttack() {
          disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 36c8644e2..eea6d9419 100644
+index 7afcac499..cf1ca505f 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -459,8 +459,9 @@ public final class ItemStack {
@@ -47,7 +47,7 @@ index 36c8644e2..eea6d9419 100644
          itemstack.d(this.B());
          if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ca72e6ad1..49a06f395 100644
+index 928dbf032..aaefb98c0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1050,7 +1050,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -57,7 +57,7 @@ index ca72e6ad1..49a06f395 100644
 -             WorldServer worldserver = (WorldServer) iterator.next();
 +            WorldServer worldserver = (WorldServer) iterator.next();
 +            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
-             i = SystemUtils.c();
+             i = SystemUtils.getMonotonicNanos();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
@@ -81,7 +81,7 @@ index 29fe031d8..d67fd92d9 100644
              this.world.b(this.position, this);
              if (!this.f.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 4bb650fa3..cdc576058 100644
+index 15e4a37fb..5291c1836 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -190,6 +190,154 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi

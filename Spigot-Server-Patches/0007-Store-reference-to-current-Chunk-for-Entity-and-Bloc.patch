@@ -1,4 +1,4 @@
-From 02e9001365c48007078e30a3e7566cecc2a53414 Mon Sep 17 00:00:00 2001
+From 89c7eb82c66a25dc178e94900fe26e498351762e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,10 +8,10 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4870a4bb5..085d3d3e8 100644
+index 5dd08018c..d1d8c3be6 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -32,7 +32,7 @@ public class Chunk implements IChunkAccess {
+@@ -37,7 +37,7 @@ public class Chunk implements IChunkAccess {
      private final BiomeBase[] f;
      private final boolean[] g;
      private final Map<BlockPosition, NBTTagCompound> h;
@@ -20,7 +20,7 @@ index 4870a4bb5..085d3d3e8 100644
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
      public final int locX;
-@@ -62,7 +62,30 @@ public class Chunk implements IChunkAccess {
+@@ -67,7 +67,30 @@ public class Chunk implements IChunkAccess {
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
      private int neighbors = 0x1 << 12;
      public long chunkKey;
@@ -51,7 +51,7 @@ index 4870a4bb5..085d3d3e8 100644
      public boolean areNeighborsLoaded(final int radius) {
          switch (radius) {
              case 2:
-@@ -93,7 +116,7 @@ public class Chunk implements IChunkAccess {
+@@ -98,7 +121,7 @@ public class Chunk implements IChunkAccess {
          this.g = new boolean[256];
          this.h = Maps.newHashMap();
          this.heightMap = Maps.newEnumMap(HeightMap.Type.class);
@@ -60,9 +60,9 @@ index 4870a4bb5..085d3d3e8 100644
          this.p = Maps.newHashMap();
          this.q = Maps.newHashMap();
          this.r = new ShortList[16];
-@@ -653,6 +676,9 @@ public class Chunk implements IChunkAccess {
-         entity.af = k;
-         entity.ag = this.locZ;
+@@ -658,6 +681,9 @@ public class Chunk implements IChunkAccess {
+         entity.chunkY = k;
+         entity.chunkZ = this.locZ;
          this.entitySlices[k].add(entity);
 +        // Paper start
 +        entity.setCurrentChunk(this);
@@ -70,7 +70,7 @@ index 4870a4bb5..085d3d3e8 100644
      }
  
      public void a(HeightMap.Type heightmap_type, long[] along) {
-@@ -671,8 +697,12 @@ public class Chunk implements IChunkAccess {
+@@ -676,8 +702,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
@@ -85,7 +85,7 @@ index 4870a4bb5..085d3d3e8 100644
      }
  
      public boolean c(BlockPosition blockposition) {
-@@ -873,6 +903,7 @@ public class Chunk implements IChunkAccess {
+@@ -886,6 +916,7 @@ public class Chunk implements IChunkAccess {
                      }
                  }
                  // Spigot End
@@ -94,7 +94,7 @@ index 4870a4bb5..085d3d3e8 100644
                  // Do not pass along players, as doing so can get them stuck outside of time.
                  // (which for example disables inventory icon updates and prevents block breaking)
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3e5c2d8e7..fde9d4d51 100644
+index a6eb8ab6c..50176b97b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -134,7 +134,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -103,9 +103,9 @@ index 3e5c2d8e7..fde9d4d51 100644
      private static final DataWatcherObject<Boolean> aH = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
 -    public boolean inChunk;
 +    public boolean inChunk; public boolean isAddedToChunk() { return inChunk; } // Paper - OBFHELPER
-     public int ae; public int getChunkX() { return ae; } // Paper - OBFHELPER
-     public int af; public int getChunkY() { return af; } // Paper - OBFHELPER
-     public int ag; public int getChunkZ() { return ag; } // Paper - OBFHELPER
+     public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
+     public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
+     public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
 @@ -1762,6 +1762,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
@@ -192,5 +192,5 @@ index 2c57a4f03..153efb9b9 100644
          /**
           * Order is *EXTREMELY* important -- keep it right! =D
 -- 
-2.19.1
+2.20.0
 

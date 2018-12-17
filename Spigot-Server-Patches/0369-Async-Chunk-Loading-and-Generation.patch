@@ -1,4 +1,4 @@
-From d36d1367dd5f8207585ac03adcb92d936482125c Mon Sep 17 00:00:00 2001
+From 21be7e16c4e783411306ef1992f7b39a1f13e04d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -458,10 +458,10 @@ index 000000000..8f18c2869
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 44d59d253..0bd975b6d 100644
+index 890715ff8..654cf763b 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -184,6 +184,7 @@ public class Chunk implements IChunkAccess {
+@@ -189,6 +189,7 @@ public class Chunk implements IChunkAccess {
  
          for (k = 0; k < this.sections.length; ++k) {
              this.sections[k] = protochunk.getSections()[k];
@@ -470,13 +470,13 @@ index 44d59d253..0bd975b6d 100644
  
          Iterator iterator = protochunk.s().iterator();
 diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
-index e14ae2b42..1662e4eba 100644
+index 2021c0d02..154ab09e0 100644
 --- a/src/main/java/net/minecraft/server/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/ChunkMap.java
 @@ -14,9 +14,17 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
      }
  
-     public Chunk a(long i, Chunk chunk) {
+     public Chunk put(long i, Chunk chunk) {
 +        org.spigotmc.AsyncCatcher.catchOp("Async Chunk put"); // Paper
          chunk.world.timings.syncChunkLoadPostTimer.startTiming(); // Paper
          lastChunkByPos = chunk; // Paper
@@ -507,12 +507,12 @@ index e14ae2b42..1662e4eba 100644
 @@ -64,11 +76,19 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
      }
  
-     public Chunk a(Long olong, Chunk chunk) {
--        return this.a(olong, chunk);
-+        return MCUtil.ensureMain("Chunk Put", () -> this.a(olong.longValue(), chunk)); // Paper
+     public Chunk put(Long olong, Chunk chunk) {
+-        return this.put(olong, chunk);
++        return MCUtil.ensureMain("Chunk Put", () -> this.put(olong.longValue(), chunk)); // Paper
      }
  
-     public Chunk a(long i) {
+     public Chunk remove(long i) {
 -        Chunk chunk = (Chunk) super.remove(i);
 +        // Paper start
 +        org.spigotmc.AsyncCatcher.catchOp("Async Chunk remove");
@@ -555,28 +555,14 @@ index e14ae2b42..1662e4eba 100644
      }
      // Paper end
  
-     public Chunk a(Object object) {
--        return this.a((Long) object);
-+        return MCUtil.ensureMain("Chunk Remove", () -> this.a(((Long) object).longValue())); // Paper
+     public Chunk remove(Object object) {
+-        return this.remove((Long) object);
++        return MCUtil.ensureMain("Chunk Remove", () -> this.remove(((Long) object).longValue())); // Paper
      }
  
      public void putAll(Map<? extends Long, ? extends Chunk> map) {
-@@ -114,11 +142,11 @@ public class ChunkMap extends Long2ObjectOpenHashMap<Chunk> {
- 
-     // CraftBukkit start - decompile errors
-     public Chunk remove(long i) {
--        return this.a(i);
-+        return MCUtil.ensureMain("Chunk Remove", () -> this.a(i)); // Paper
-     }
- 
-     public Chunk put(long i, Chunk object) {
--        return this.a(i, (Chunk) object);
-+        return MCUtil.ensureMain("Chunk Put", () -> this.a(i, (Chunk) object)); // Paper
-     }
- 
-     public Chunk remove(Object object) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index dcc6e9762..87a1bddd0 100644
+index b9f8a86aa..4fe173cfb 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -35,12 +35,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -726,7 +712,7 @@ index dcc6e9762..87a1bddd0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 26a3f28cb..5ce57a6d4 100644
+index c12db3cfa..6cacacb0b 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -120,7 +120,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -944,7 +930,7 @@ index 271dc41d4..bd15534c2 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 522af3d53..ee878191a 100644
+index ef5a21505..93171edb4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -209,7 +209,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -982,7 +968,7 @@ index 49fba0979..9ad646f8d 100644
          fx = fx % 360.0F;
          if (fx >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c73a61d94..17ae26cb8 100644
+index 63b5cdd41..32aee07d1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -503,6 +503,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -998,7 +984,7 @@ index c73a61d94..17ae26cb8 100644
  
              BlockPosition blockposition = worldserver.getSpawn();
 -            ArrayList arraylist = Lists.newArrayList();
-+            List<ChunkCoordIntPair> arraylist = worldserver.getChunkProviderServer().getSpiralOutChunks(blockposition,  worldserver.paperConfig.keepLoadedRange >> 4); // Paper
++            List<ChunkCoordIntPair> arraylist = worldserver.getChunkProvider().getSpiralOutChunks(blockposition,  worldserver.paperConfig.keepLoadedRange >> 4); // Paper
              Set set = Sets.newConcurrentHashSet();
  
 -            // Paper start
@@ -1014,8 +1000,8 @@ index c73a61d94..17ae26cb8 100644
                  int expected = arraylist.size(); // Paper
  
  
--                CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
-+                CompletableFuture completablefuture = worldserver.getChunkProviderServer().loadAllChunks(arraylist, (chunk) -> { // Paper
+-                CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
++                CompletableFuture completablefuture = worldserver.getChunkProvider().loadAllChunks((Iterable) arraylist, (chunk) -> { // Paper
                      set.add(chunk.getPos());
 -                    if (set.size() < expected && set.size() % 25 == 0) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
 +                    if (waitForChunks && (set.size() == expected || (set.size() < expected && set.size() % (set.size() / 10) == 0))) {
@@ -1061,14 +1047,14 @@ index c73a61d94..17ae26cb8 100644
 +        PaperAsyncChunkProvider.processMainThreadQueue(this); // Paper
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
-         this.methodProfiler.c("commandFunctions");
+         this.methodProfiler.exitEnter("commandFunctions");
 @@ -1053,6 +1052,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
 +            PaperAsyncChunkProvider.processMainThreadQueue(worldserver); // Paper
              TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
-             i = SystemUtils.c();
+             i = SystemUtils.getMonotonicNanos();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
@@ -1732,20 +1718,15 @@ index 000000000..e9a38f9d9
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 068d203c8..cbff0d946 100644
+index b58683e6f..e61538b3c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -29,16 +29,59 @@ public class PlayerChunk {
-     // You know the drill, https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/browse
-     // All may seem good at first, but there's deeper issues if you play for a bit
+@@ -20,19 +20,69 @@ public class PlayerChunk {
+     private long i;
+     private boolean done;
      boolean chunkExists; // Paper
--    private boolean loadInProgress = false;
--    private Runnable loadedRunnable = new Runnable() {
--        public void run() {
--            loadInProgress = false;
--            PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(location.x, location.z, true, true);
-+    PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
 +    // Paper start
++    PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
 +    private java.util.function.Consumer<Chunk> chunkLoadedConsumer = chunk -> {
 +        chunkRequest = null;
 +        PlayerChunk pChunk = PlayerChunk.this;
@@ -1766,18 +1747,17 @@ index 068d203c8..cbff0d946 100644
 +        }
 +
 +        markedHigh = true;
-+        playerChunkMap.getWorld().getChunkProviderServer().bumpPriority(location);
++        playerChunkMap.getWorld().getChunkProvider().bumpPriority(location);
 +        if (chunkRequest == null) {
 +            requestChunkIfNeeded(PlayerChunkMap.CAN_GEN_CHUNKS.test(player));
 +        }
 +    }
 +    private void requestChunkIfNeeded(boolean flag) {
 +        if (chunkRequest == null) {
-+            chunkRequest = this.playerChunkMap.getWorld().getChunkProviderServer().requestChunk(this.location.x, this.location.z, flag, markedHigh, chunkLoadedConsumer);
++            chunkRequest = this.playerChunkMap.getWorld().getChunkProvider().requestChunk(this.location.x, this.location.z, flag, markedHigh, chunkLoadedConsumer);
 +            this.chunk = chunkRequest.getChunk(); // Paper)
-             markChunkUsed(); // Paper - delay chunk unloads
-         }
--    };
++            markChunkUsed(); // Paper - delay chunk unloads
++        }
 +    }
 +    private double getDistance(EntityPlayer player, int inFront) {
 +        final float yaw = MathHelper.normalizeYaw(player.yaw);
@@ -1791,8 +1771,20 @@ index 068d203c8..cbff0d946 100644
 +        final double z = location.z - ((int)Math.floor(blockZ) >> 4);
 +        return Math.sqrt((x * x) + (z * z));
 +    }
-+    // Paper end
-     // Paper start - delay chunk unloads
+ 
+     public PlayerChunk(PlayerChunkMap playerchunkmap, int ix, int j) {
+         this.playerChunkMap = playerchunkmap;
+         this.location = new ChunkCoordIntPair(ix, j);
+         ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProvider();
+         chunkproviderserver.a(ix, j);
+-        this.chunk = chunkproviderserver.getChunkAt(ix, j, true, false);
+-        this.chunkExists = this.chunk != null || org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), ix, j); // Paper
++        this.chunk = chunkproviderserver.getChunkAt(ix, j, false, false); // Paper
++        this.chunkExists = this.chunk != null || chunkproviderserver.chunkGoingToExists(ix, j); // Paper
+         markChunkUsed(); // Paper - delay chunk unloads
+     }
+ 
+     // Paper start
      private void markChunkUsed() {
 +        if (!chunkHasPlayers && chunkRequest != null) {
 +            chunkRequest.cancel();
@@ -1801,19 +1793,8 @@ index 068d203c8..cbff0d946 100644
          if (chunk == null) {
              return;
          }
-@@ -58,8 +101,8 @@ public class PlayerChunk {
-         ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProviderServer();
- 
-         chunkproviderserver.a(i, j);
--        this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
--        this.chunkExists = this.chunk != null || ChunkIOExecutor.hasQueuedChunkLoad(playerChunkMap.getWorld(), i, j); // Paper
-+        this.chunk = chunkproviderserver.getChunkAt(i, j, false, false); // Paper
-+        this.chunkExists = this.chunk != null || chunkproviderserver.chunkGoingToExists(i, j); // Paper
-         markChunkUsed(); // Paper - delay chunk unloads
-     }
- 
-@@ -80,7 +123,7 @@ public class PlayerChunk {
-             this.c.add(entityplayer);
+@@ -62,7 +112,7 @@ public class PlayerChunk {
+             this.players.add(entityplayer);
              if (this.done) {
                  this.sendChunk(entityplayer);
 -            }
@@ -1821,11 +1802,11 @@ index 068d203c8..cbff0d946 100644
  
          }
      }
-@@ -105,8 +148,9 @@ public class PlayerChunk {
+@@ -87,8 +137,9 @@ public class PlayerChunk {
          if (this.chunk != null) {
              return true;
          } else {
--            this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, true, flag);
+-            this.chunk = this.playerChunkMap.getWorld().getChunkProvider().getChunkAt(this.location.x, this.location.z, true, flag);
 -            markChunkUsed(); // Paper - delay chunk unloads
 +            // Paper start - async chunks
 +            requestChunkIfNeeded(flag);
@@ -1834,7 +1815,7 @@ index 068d203c8..cbff0d946 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 39e5b2484..a92557fd2 100644
+index 27343174d..77b36ff89 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -27,10 +27,10 @@ public class PlayerChunkMap {
@@ -1850,7 +1831,7 @@ index 39e5b2484..a92557fd2 100644
      private final Set<PlayerChunk> f = Sets.newHashSet();
      private final List<PlayerChunk> g = Lists.newLinkedList();
      private final List<PlayerChunk> h = Lists.newLinkedList();
-@@ -349,7 +349,13 @@ public class PlayerChunkMap {
+@@ -345,7 +345,13 @@ public class PlayerChunkMap {
                              if (playerchunk != null) {
                                  playerchunk.b(entityplayer);
                              }
@@ -1864,7 +1845,7 @@ index 39e5b2484..a92557fd2 100644
                      }
                  }
  
-@@ -360,7 +366,11 @@ public class PlayerChunkMap {
+@@ -356,7 +362,11 @@ public class PlayerChunkMap {
                  // CraftBukkit start - send nearest chunks first
                  Collections.sort(chunksToLoad, new ChunkCoordComparator(entityplayer));
                  for (ChunkCoordIntPair pair : chunksToLoad) {
@@ -1877,7 +1858,7 @@ index 39e5b2484..a92557fd2 100644
                  }
                  // CraftBukkit end
              }
-@@ -432,6 +442,15 @@ public class PlayerChunkMap {
+@@ -428,6 +438,15 @@ public class PlayerChunkMap {
              }
          }
      }
@@ -1894,7 +1875,7 @@ index 39e5b2484..a92557fd2 100644
  
      private void e() {
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index 38f3afb48..ddd7b91a9 100644
+index d0b3e43c0..eb7f03898 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 @@ -35,7 +35,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
@@ -1962,7 +1943,7 @@ index d868149d1..0d45d933e 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/StructurePiece.java b/src/main/java/net/minecraft/server/StructurePiece.java
-index d444eb30f..d8c96b5c3 100644
+index 510543db4..ce9e5d4e0 100644
 --- a/src/main/java/net/minecraft/server/StructurePiece.java
 +++ b/src/main/java/net/minecraft/server/StructurePiece.java
 @@ -14,7 +14,7 @@ public abstract class StructurePiece {
@@ -2038,7 +2019,7 @@ index 1926c902a..1117e4ae2 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index eabf50e24..f8afa6f72 100644
+index 72bb3f862..d736ac63d 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2132,8 +2113,8 @@ index eabf50e24..f8afa6f72 100644
 +        }
 +        // Paper end
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
-         if (entity == null) return false;
          if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+         if (!CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
 index fa99fe014..4f49786aa 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
@@ -2282,10 +2263,10 @@ index fa99fe014..4f49786aa 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index bab0c0e0f..af68074c1 100644
+index b355c3f53..27c8a97be 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -731,7 +731,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -732,7 +732,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
          }
  
@@ -2295,7 +2276,7 @@ index bab0c0e0f..af68074c1 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 07f6580fd..c79baa922 100644
+index a0f255ff1..eb4b3c7a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1019,8 +1019,12 @@ public final class CraftServer implements Server {
@@ -2305,7 +2286,7 @@ index 07f6580fd..c79baa922 100644
 -            for (int j = -short1; j <= short1; j += 16) {
 -                for (int k = -short1; k <= short1; k += 16) {
 +            // Paper start
-+            for (ChunkCoordIntPair coords : internal.getChunkProviderServer().getSpiralOutChunks(internal.getSpawn(), short1 >> 4)) {{
++            for (ChunkCoordIntPair coords : internal.getChunkProvider().getSpiralOutChunks(internal.getSpawn(), short1 >> 4)) {{
 +                    int j = coords.x;
 +                    int k = coords.z;
 +                // Paper end
@@ -2317,13 +2298,13 @@ index 07f6580fd..c79baa922 100644
                      }
  
                      BlockPosition chunkcoordinates = internal.getSpawn();
--                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true);
-+                    internal.getChunkProviderServer().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true, c -> {}); // Paper
+-                    internal.getChunkProvider().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true);
++                    internal.getChunkProvider().getChunkAt(chunkcoordinates.getX() + j >> 4, chunkcoordinates.getZ() + k >> 4, true, true, c -> {}); // Paper
                  }
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 7e6a7b0e9..ef5a7bc38 100644
+index 5552b64fb..c6d033928 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -162,6 +162,16 @@ public class CraftWorld implements World {
@@ -2333,7 +2314,7 @@ index 7e6a7b0e9..ef5a7bc38 100644
 +    // Paper start - Async chunk load API
 +    @Override
 +    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
-+        final ChunkProviderServer cps = this.world.getChunkProviderServer();
++        final ChunkProviderServer cps = this.world.getChunkProvider();
 +        java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<>();
 +        cps.getChunkAt(x, z, true, gen, chunk -> future.complete(chunk != null ? chunk.bukkitChunk : null));
 +        return future;
@@ -2341,7 +2322,7 @@ index 7e6a7b0e9..ef5a7bc38 100644
 +    // Paper end
 +
      public Chunk getChunkAt(int x, int z) {
-         return this.world.getChunkProviderServer().getChunkAt(x, z, true, true).bukkitChunk;
+         return this.world.getChunkProvider().getChunkAt(x, z, true, true).bukkitChunk;
      }
 @@ -1457,10 +1467,13 @@ public class CraftWorld implements World {
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
@@ -2350,7 +2331,7 @@ index 7e6a7b0e9..ef5a7bc38 100644
 -        for (int x = -radius; x <= radius; x++) { // Paper
 -            for (int z = -radius; z <= radius; z++) { // Paper
 +        // Paper start
-+        for (ChunkCoordIntPair coords : world.getChunkProviderServer().getSpiralOutChunks(world.getSpawn(), radius)) {{
++        for (ChunkCoordIntPair coords : world.getChunkProvider().getSpiralOutChunks(world.getSpawn(), radius)) {{
 +            int x = coords.x;
 +            int z = coords.z;
 +            // Paper end
@@ -2361,7 +2342,7 @@ index 7e6a7b0e9..ef5a7bc38 100644
                      if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
                          unloadChunk(chunkCoordX + x, chunkCoordZ + z);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 4a0a456a0..4068b8072 100644
+index f87d2bed7..603f43b7e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -81,6 +81,7 @@ public class CraftEventFactory {
@@ -2372,7 +2353,7 @@ index 4a0a456a0..4068b8072 100644
  
      // helper methods
      private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
-@@ -382,6 +383,7 @@ public class CraftEventFactory {
+@@ -456,6 +457,7 @@ public class CraftEventFactory {
          CraftServer craftServer = (CraftServer) entity.getServer();
  
          CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
@@ -2380,7 +2361,7 @@ index 4a0a456a0..4068b8072 100644
          craftServer.getPluginManager().callEvent(event);
          return event;
      }
-@@ -1029,6 +1031,7 @@ public class CraftEventFactory {
+@@ -1103,6 +1105,7 @@ public class CraftEventFactory {
          }
  
          BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(block.getX(), block.getY(), block.getZ()), cause, igniter);
@@ -2388,7 +2369,7 @@ index 4a0a456a0..4068b8072 100644
          world.getServer().getPluginManager().callEvent(event);
          return event;
      }
-@@ -1053,6 +1056,7 @@ public class CraftEventFactory {
+@@ -1127,6 +1130,7 @@ public class CraftEventFactory {
          }
  
          BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, bukkitIgniter);
@@ -2396,7 +2377,7 @@ index 4a0a456a0..4068b8072 100644
          world.getServer().getPluginManager().callEvent(event);
          return event;
      }
-@@ -1260,7 +1264,8 @@ public class CraftEventFactory {
+@@ -1334,7 +1338,8 @@ public class CraftEventFactory {
      public static BlockPhysicsEvent callBlockPhysicsEvent(GeneratorAccess world, BlockPosition blockposition) {
          org.bukkit.block.Block block = CraftBlock.at(world, blockposition);
          BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
@@ -2406,7 +2387,7 @@ index 4a0a456a0..4068b8072 100644
          return event;
      }
  
-@@ -1296,6 +1301,7 @@ public class CraftEventFactory {
+@@ -1370,6 +1375,7 @@ public class CraftEventFactory {
          }
  
          EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, cause, action, willOverride);
@@ -2414,7 +2395,7 @@ index 4a0a456a0..4068b8072 100644
          Bukkit.getPluginManager().callEvent(event);
  
          return event;
-@@ -1314,6 +1320,7 @@ public class CraftEventFactory {
+@@ -1388,6 +1394,7 @@ public class CraftEventFactory {
          blockState.setData(block);
  
          BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
@@ -2423,7 +2404,7 @@ index 4a0a456a0..4068b8072 100644
  
          if (!event.isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 04e29f58c..5fae0c6ad 100644
+index 9c917370a..a299092a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin

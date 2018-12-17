@@ -1,36 +1,38 @@
-From 1ccbf8a244b37fa3cf0bd7e3843496891d891d3e Mon Sep 17 00:00:00 2001
+From dadb0a624cab08627738eb8b0538dc25bf636f10 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index a553fb747..4048937c6 100644
+index 25a1edc45..f1ad18511 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -99,7 +99,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+@@ -98,8 +98,4 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+         return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
      }
  
-     // $FF: synthetic method
+-    // $FF: synthetic method
 -    public int compareTo(Object object) {
-+    public int compareTo(BaseBlockPosition object) { // Paper - decompile fix
-         return this.l((BaseBlockPosition)object);
-     }
+-        return this.compareTo((BaseBlockPosition)object);
+-    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 7f8802b2e..6ffc53514 100644
+index 66c38df1f..50e29464b 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -179,7 +179,7 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -178,10 +178,6 @@ public class BlockPosition extends BaseBlockPosition {
+                     }
                  }
  
-                 // $FF: synthetic method
+-                // $FF: synthetic method
 -                protected Object computeNext() {
-+                protected BlockPosition computeNext() { // Paper - decompile fix
-                     return this.a();
-                 }
+-                    return this.computeNext();
+-                }
              };
-@@ -209,8 +209,11 @@ public class BlockPosition extends BaseBlockPosition {
+         };
+     }
+@@ -209,8 +205,11 @@ public class BlockPosition extends BaseBlockPosition {
                          if (this.g.b < l) {
                              ++this.g.b;
                          } else if (this.g.c < i1) {
@@ -42,15 +44,71 @@ index 7f8802b2e..6ffc53514 100644
                              ++this.g.d;
                          }
  
-@@ -219,7 +222,7 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -218,18 +217,10 @@ public class BlockPosition extends BaseBlockPosition {
+                     }
                  }
  
-                 // $FF: synthetic method
+-                // $FF: synthetic method
 -                protected Object computeNext() {
-+                protected BlockPosition.MutableBlockPosition computeNext() { // Paper - decompile fix
-                     return this.a();
-                 }
+-                    return this.computeNext();
+-                }
              };
+         };
+     }
+ 
+-    // $FF: synthetic method
+-    public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
+-        return this.d(baseblockposition);
+-    }
+ 
+     public static class MutableBlockPosition extends BlockPosition {
+         protected int b;
+@@ -314,10 +305,6 @@ public class BlockPosition extends BaseBlockPosition {
+             return new BlockPosition(this);
+         }
+ 
+-        // $FF: synthetic method
+-        public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
+-            return super.d(baseblockposition);
+-        }
+     }
+ 
+     public static final class b extends BlockPosition.MutableBlockPosition implements AutoCloseable {
+@@ -389,34 +376,5 @@ public class BlockPosition extends BaseBlockPosition {
+             }
+         }
+ 
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition d(int i, int j, int k) {
+-            return this.d(i, j, k);
+-        }
+-
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition c(EnumDirection enumdirection, int i) {
+-            return this.c(enumdirection, i);
+-        }
+-
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition c(EnumDirection enumdirection) {
+-            return this.c(enumdirection);
+-        }
+-
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition g(BaseBlockPosition baseblockposition) {
+-            return this.g(baseblockposition);
+-        }
+-
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
+-            return this.c(d0, d1, d2);
+-        }
+-
+-        // $FF: synthetic method
+-        public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
+-            return this.c(i, j, k);
+-        }
+     }
+ }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 index 3bd0c56d4..304e47bf2 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
@@ -139,7 +197,7 @@ index 8bfa218a6..e2e60d3ed 100644
              arraylist.add(definedstructure$a);
  
 diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
-index 5c2d50f97..fd6df39f1 100644
+index 6695f8d77..e1ea8da88 100644
 --- a/src/main/java/net/minecraft/server/EnchantmentManager.java
 +++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
 @@ -51,7 +51,7 @@ public class EnchantmentManager {
@@ -200,76 +258,101 @@ index 04cff50cb..e746a6a0d 100644
                  EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.world, this.locX, this.locY, this.locZ);
                  entityareaeffectcloud.setSource(this.shooter);
                  entityareaeffectcloud.setParticle(Particles.j);
+diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
+index 4dee04581..9c48bb3c9 100644
+--- a/src/main/java/net/minecraft/server/EntityLlama.java
++++ b/src/main/java/net/minecraft/server/EntityLlama.java
+@@ -371,11 +371,6 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+     public void s(boolean var1) {
+     }
+ 
+-    // $FF: synthetic method
+-    public EntityAgeable createChild(EntityAgeable entityageable) {
+-        return this.createChild(entityageable);
+-    }
+-
+     static class a extends PathfinderGoalNearestAttackableTarget<EntityWolf> {
+         public a(EntityLlama entityllama) {
+             super(entityllama, EntityWolf.class, 16, false, true, (Predicate)null);
 diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
-index 38c85f4ab..c0853f0fc 100644
+index 23ca6fc50..44c91ba26 100644
 --- a/src/main/java/net/minecraft/server/EnumDirection.java
 +++ b/src/main/java/net/minecraft/server/EnumDirection.java
-@@ -233,7 +233,7 @@ public enum EnumDirection implements INamable {
+@@ -232,10 +232,6 @@ public enum EnumDirection implements INamable {
+                 return d0;
              }
  
-             // $FF: synthetic method
+-            // $FF: synthetic method
 -            public boolean test(@Nullable Object object) {
-+            public boolean test(@Nullable EnumDirection object) { // Paper - decompile fix
-                 return super.a((EnumDirection)object);
-             }
+-                return super.test((EnumDirection)object);
+-            }
          },
-@@ -247,7 +247,7 @@ public enum EnumDirection implements INamable {
+         Y("y") {
+             public int a(int var1, int i, int var3) {
+@@ -246,10 +242,6 @@ public enum EnumDirection implements INamable {
+                 return d0;
              }
  
-             // $FF: synthetic method
+-            // $FF: synthetic method
 -            public boolean test(@Nullable Object object) {
-+            public boolean test(@Nullable EnumDirection object) { // Paper - decompile fix
-                 return super.a((EnumDirection)object);
-             }
+-                return super.test((EnumDirection)object);
+-            }
          },
-@@ -261,7 +261,7 @@ public enum EnumDirection implements INamable {
+         Z("z") {
+             public int a(int var1, int var2, int i) {
+@@ -260,10 +252,6 @@ public enum EnumDirection implements INamable {
+                 return d0;
              }
  
-             // $FF: synthetic method
+-            // $FF: synthetic method
 -            public boolean test(@Nullable Object object) {
-+            public boolean test(@Nullable EnumDirection object) { // Paper - decompile fix
-                 return super.a((EnumDirection)object);
-             }
+-                return super.test((EnumDirection)object);
+-            }
          };
-@@ -316,7 +316,7 @@ public enum EnumDirection implements INamable {
+ 
+         private static final Map<String, EnumDirection.EnumAxis> d = (Map)Arrays.stream(values()).collect(Collectors.toMap(EnumDirection.EnumAxis::a, (enumdirection$enumaxis) -> {
+@@ -315,10 +303,6 @@ public enum EnumDirection implements INamable {
+ 
          public abstract double a(double var1, double var3, double var5);
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public boolean test(@Nullable Object object) {
-+        public boolean test(@Nullable EnumDirection object) { // Paper - decompile fix
-             return this.a((EnumDirection)object);
-         }
+-            return this.test((EnumDirection)object);
+-        }
      }
-@@ -367,7 +367,7 @@ public enum EnumDirection implements INamable {
+ 
+     public static enum EnumAxisDirection {
+@@ -366,9 +350,5 @@ public enum EnumDirection implements INamable {
+             return Iterators.forArray(this.c);
          }
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public boolean test(@Nullable Object object) {
-+        public boolean test(@Nullable EnumDirection object) { // Paper - decompile fix
-             return this.a((EnumDirection)object);
-         }
+-            return this.test((EnumDirection)object);
+-        }
      }
+ }
 diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
-index 3f5d6c323..286c1b14f 100644
+index 0e0571a6c..8fc45c697 100644
 --- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
 +++ b/src/main/java/net/minecraft/server/IChatBaseComponent.java
-@@ -390,12 +390,12 @@ public interface IChatBaseComponent extends Message, Iterable<IChatBaseComponent
+@@ -389,14 +389,5 @@ public interface IChatBaseComponent extends Message, Iterable<IChatBaseComponent
+             }
          }
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+        public JsonElement serialize(IChatBaseComponent object, Type type, JsonSerializationContext jsonserializationcontext) { // Paper - decompile fix
-             return this.a((IChatBaseComponent)object, type, jsonserializationcontext);
-         }
- 
-         // $FF: synthetic method
+-            return this.serialize((IChatBaseComponent)object, type, jsonserializationcontext);
+-        }
+-
+-        // $FF: synthetic method
 -        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+        public IChatBaseComponent deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException { // Paper - decompile fix
-             return this.a(jsonelement, type, jsondeserializationcontext);
-         }
+-            return this.deserialize(jsonelement, type, jsondeserializationcontext);
+-        }
      }
+ }
 diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
-index 0c9249cd8..0648c76a0 100644
+index 4157fcea3..ba03b9dcc 100644
 --- a/src/main/java/net/minecraft/server/LocaleLanguage.java
 +++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
 @@ -27,7 +27,7 @@ public class LocaleLanguage {
@@ -282,24 +365,24 @@ index 0c9249cd8..0648c76a0 100644
                  this.d.put(entry.getKey(), s);
              }
 diff --git a/src/main/java/net/minecraft/server/LootSelectorEntry.java b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-index 9d01b70c7..8daccdd6e 100644
+index 252b0f3ed..86df2b969 100644
 --- a/src/main/java/net/minecraft/server/LootSelectorEntry.java
 +++ b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-@@ -83,12 +83,12 @@ public abstract class LootSelectorEntry {
+@@ -82,14 +82,5 @@ public abstract class LootSelectorEntry {
+             return jsonobject;
          }
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+        public JsonElement serialize(LootSelectorEntry object, Type type, JsonSerializationContext jsonserializationcontext) {// Paper - Decompile fix
-             return this.a((LootSelectorEntry)object, type, jsonserializationcontext);
-         }
- 
-         // $FF: synthetic method
+-            return this.serialize((LootSelectorEntry)object, type, jsonserializationcontext);
+-        }
+-
+-        // $FF: synthetic method
 -        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+        public LootSelectorEntry deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {// Paper - Decompile fix
-             return this.a(jsonelement, type, jsondeserializationcontext);
-         }
+-            return this.deserialize(jsonelement, type, jsondeserializationcontext);
+-        }
      }
+ }
 diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
 index 48d04b540..de9168a9c 100644
 --- a/src/main/java/net/minecraft/server/NBTBase.java
@@ -337,7 +420,7 @@ index 456b5f492..54f2935c0 100644
 +    // Paper end- Decompile fix
  }
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-index 86881a22d..81ff1fd69 100644
+index 973f28cc5..21a6f488a 100644
 --- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
 +++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
 @@ -66,7 +66,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
@@ -350,21 +433,8 @@ index 86881a22d..81ff1fd69 100644
          byte[] abyte = new byte[this.data.length];
  
          System.arraycopy(this.data, 0, abyte, 0, this.data.length);
-diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
-index 40f6179cd..ebc44ec9e 100644
---- a/src/main/java/net/minecraft/server/NBTTagIntArray.java
-+++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
-@@ -132,7 +132,7 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
-         return this.a(i);
-     }
- 
--    public NBTBase clone() {
-+    public NBTTagIntArray clone() { // Paper - decompile fix
-         return this.c();
-     }
- }
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index 24a66f95a..2e7c96056 100644
+index 8e6cce15f..1b72df8cd 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
 @@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
@@ -376,32 +446,56 @@ index 24a66f95a..2e7c96056 100644
      private byte type = 0;
  
      public NBTTagList() {
-@@ -286,6 +286,7 @@ public class NBTTagList extends NBTList<NBTBase> {
-         return this.c();
+@@ -281,11 +281,7 @@ public class NBTTagList extends NBTList<NBTBase> {
+         return this.type;
      }
  
+-    // $FF: synthetic method
+-    public NBTBase clone() {
+-        return this.clone();
+-    }
+-
 +    /* // Paper start - Decompile fix
      // $FF: synthetic method
      public Object remove(int i) {
          return this.remove(i);
-@@ -305,4 +306,5 @@ public class NBTTagList extends NBTList<NBTBase> {
+@@ -305,4 +301,5 @@ public class NBTTagList extends NBTList<NBTBase> {
      public boolean add(Object object) {
          return this.add((NBTBase)object);
      }
 +    */ // Paper end - Decompile fix
  }
 diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
-index 113e8780a..8e312c761 100644
+index a717ad95f..ff7e20dfc 100644
 --- a/src/main/java/net/minecraft/server/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/server/PacketEncoder.java
-@@ -49,7 +49,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+@@ -48,8 +48,4 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+         }
      }
  
-     // $FF: synthetic method
+-    // $FF: synthetic method
 -    protected void encode(ChannelHandlerContext channelhandlercontext, Object object, ByteBuf bytebuf) throws Exception {
-+    protected void encode(ChannelHandlerContext channelhandlercontext, Packet<?> object, ByteBuf bytebuf) throws Exception { // Paper - decompiler fix
-         this.a(channelhandlercontext, (Packet)object, bytebuf);
+-        this.encode(channelhandlercontext, (Packet)object, bytebuf);
+-    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
+index 8bc7c0ccd..faaad0f41 100644
+--- a/src/main/java/net/minecraft/server/ProtoChunk.java
++++ b/src/main/java/net/minecraft/server/ProtoChunk.java
+@@ -483,14 +483,4 @@ public class ProtoChunk implements IChunkAccess {
+     public void b(boolean flag) {
+         this.u = flag;
      }
+-
+-    // $FF: synthetic method
+-    public TickList l() {
+-        return this.l();
+-    }
+-
+-    // $FF: synthetic method
+-    public TickList k() {
+-        return this.k();
+-    }
  }
 diff --git a/src/main/java/net/minecraft/server/Registry.java b/src/main/java/net/minecraft/server/Registry.java
 index 5be9f0ff2..9efec49d6 100644
@@ -444,67 +538,93 @@ index 03c603362..d03ac0e70 100644
          this.b = (K[])(new Object[i]);
          this.c = new int[i];
 diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
-index 7b8a8064b..615aa2cd0 100644
+index 364dadfbd..c338d09bf 100644
 --- a/src/main/java/net/minecraft/server/ServerPing.java
 +++ b/src/main/java/net/minecraft/server/ServerPing.java
-@@ -101,12 +101,12 @@ public class ServerPing {
+@@ -100,15 +100,6 @@ public class ServerPing {
+             return jsonobject;
          }
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+        public JsonElement serialize(ServerPing object, Type type, JsonSerializationContext jsonserializationcontext) {// Paper - Decompile fix
-             return this.a((ServerPing)object, type, jsonserializationcontext);
-         }
- 
-         // $FF: synthetic method
+-            return this.serialize((ServerPing)object, type, jsonserializationcontext);
+-        }
+-
+-        // $FF: synthetic method
 -        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+        public ServerPing deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {// Paper - Decompile fix
-             return this.a(jsonelement, type, jsondeserializationcontext);
+-            return this.deserialize(jsonelement, type, jsondeserializationcontext);
+-        }
+     }
+ 
+     public static class ServerData {
+@@ -144,15 +135,6 @@ public class ServerPing {
+                 return jsonobject;
+             }
+ 
+-            // $FF: synthetic method
+-            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
+-                return this.serialize((ServerPing.ServerData)object, type, jsonserializationcontext);
+-            }
+-
+-            // $FF: synthetic method
+-            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
+-                return this.deserialize(jsonelement, type, jsondeserializationcontext);
+-            }
          }
      }
-@@ -145,12 +145,12 @@ public class ServerPing {
+ 
+@@ -228,15 +210,6 @@ public class ServerPing {
+                 return jsonobject;
              }
  
-             // $FF: synthetic method
+-            // $FF: synthetic method
 -            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+            public JsonElement serialize(ServerPing.ServerData object, Type type, JsonSerializationContext jsonserializationcontext) {// Paper - Decompile fix
-                 return this.a((ServerPing.ServerData)object, type, jsonserializationcontext);
-             }
- 
-             // $FF: synthetic method
+-                return this.serialize((ServerPing.ServerPingPlayerSample)object, type, jsonserializationcontext);
+-            }
+-
+-            // $FF: synthetic method
 -            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+            public ServerPing.ServerData deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {// Paper - Decompile fix
-                 return this.a(jsonelement, type, jsondeserializationcontext);
-             }
+-                return this.deserialize(jsonelement, type, jsondeserializationcontext);
+-            }
          }
-@@ -229,12 +229,12 @@ public class ServerPing {
-             }
- 
-             // $FF: synthetic method
--            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
-+            public JsonElement serialize(ServerPing.ServerPingPlayerSample object, Type type, JsonSerializationContext jsonserializationcontext) {// Paper - Decompile fix
-                 return this.a((ServerPing.ServerPingPlayerSample)object, type, jsonserializationcontext);
-             }
- 
-             // $FF: synthetic method
--            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
-+            public ServerPing.ServerPingPlayerSample deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {// Paper - Decompile fix
-                 return this.a(jsonelement, type, jsondeserializationcontext);
-             }
-         }
+     }
+ }
 diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
-index ef9d8e06f..0c9910d9a 100644
+index 475bf35fa..78234cbdd 100644
 --- a/src/main/java/net/minecraft/server/ShapeDetector.java
 +++ b/src/main/java/net/minecraft/server/ShapeDetector.java
-@@ -107,7 +107,7 @@ public class ShapeDetector {
+@@ -106,10 +106,6 @@ public class ShapeDetector {
+             return new ShapeDetectorBlock(this.a, blockposition, this.b);
          }
  
-         // $FF: synthetic method
+-        // $FF: synthetic method
 -        public Object load(Object object) throws Exception {
-+        public ShapeDetectorBlock load(BlockPosition object) throws Exception {// Paper - Decompile fix
-             return this.a((BlockPosition)object);
-         }
+-            return this.load((BlockPosition)object);
+-        }
      }
+ 
+     public static class ShapeDetectorCollection {
+diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
+index c1bbacfc1..f0a826cd1 100644
+--- a/src/main/java/net/minecraft/server/WorldPersistentData.java
++++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
+@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
+ import java.io.DataInputStream;
++import java.io.DataOutput;
+ import java.io.DataOutputStream;
+ import java.io.File;
+ import java.io.FileInputStream;
+@@ -98,7 +99,7 @@ public class WorldPersistentData {
+                     }
+ 
+                     DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file1));
+-                    NBTCompressedStreamTools.a(nbttagcompound, dataoutputstream);
++                    NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream); // Paper - decompile fix
+                     dataoutputstream.close();
+                 }
+             } catch (Exception exception) {
 -- 
-2.19.2
+2.20.0
 

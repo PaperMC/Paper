@@ -1,4 +1,4 @@
-From ce0e1b9fb596f82f91df77559fe845022517da42 Mon Sep 17 00:00:00 2001
+From f91d23d40efa6bb6385549a9dd7a69a2c42fceed Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 3 Aug 2018 22:47:46 -0400
 Subject: [PATCH] Entity add to world fixes
@@ -14,38 +14,44 @@ Fix this by differing entity add to world for all entities at the same time
 the original entity is dead, overwrite it as the logic does for unloaod queued entities.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a62d7196b..836aea6c3 100644
+index 4f01140e7..57e35564a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -911,6 +911,7 @@ public class Chunk implements IChunkAccess {
+@@ -916,6 +916,7 @@ public class Chunk implements IChunkAccess {
          this.world.a(this.tileEntities.values());
          List[] aentityslice = this.entitySlices; // Spigot
          int i = aentityslice.length;
 +        List<Entity> toAdd = new java.util.ArrayList<>(32); // Paper
  
          for (int j = 0; j < i; ++j) {
-             List entityslice = aentityslice[j]; // Spigot
-@@ -957,12 +958,11 @@ public class Chunk implements IChunkAccess {
-                     thisChunk.put(entity.uniqueID, entity);
+             // CraftBukkit start
+@@ -964,18 +965,11 @@ public class Chunk implements IChunkAccess {
                  }
              }
--            // Paper end
- 
+             // Paper end
+-
+-            List<Entity> toRemove = new LinkedList<>();
 -            this.world.a(entityslice.stream().filter((entity) -> {
+-                if (!CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+-                    toRemove.add(entity);
+-                    return false;
+-                }
 -                return !(entity instanceof EntityHuman);
 -            }));
-+            toAdd.addAll(entityslice);
-+            // Paper end
+-            entityslice.removeAll(toRemove);
+             // CraftBukkit end
          }
-+        this.world.addChunkEntities(toAdd.stream().filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
++        this.world.addChunkEntities(toAdd.stream() // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
++            .filter((entity) -> CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) // Paper - Inline into stream
++            .filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
  
          // CraftBukkit start
          org.bukkit.Server server = this.world.getServer();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 12379f755..72e74c59f 100644
+index 5e61826f6..bd6f64e52 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1103,6 +1103,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1037,6 +1037,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              }
  
              this.getChunkAt(i, j).a(entity);
@@ -53,7 +59,7 @@ index 12379f755..72e74c59f 100644
              this.entityList.add(entity);
              this.b(entity);
              return true;
-@@ -2508,9 +2509,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2442,9 +2443,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          return j;
      }
  
@@ -68,10 +74,10 @@ index 12379f755..72e74c59f 100644
              this.b(entity);
          });
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 572c54c9c..0545336b4 100644
+index af9cdd9dc..10630ac96 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -990,7 +990,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -991,7 +991,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              if (this.entitiesByUUID.containsKey(uuid)) {
                  Entity entity1 = (Entity) this.entitiesByUUID.get(uuid);
  

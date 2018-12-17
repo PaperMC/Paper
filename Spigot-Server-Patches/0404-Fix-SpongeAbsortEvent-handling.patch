@@ -1,4 +1,4 @@
-From 4fa0b38da6fd7cb7ca6af5fdc3cdb608ec74a024 Mon Sep 17 00:00:00 2001
+From c25257eebd8c342309774a7522eac6768df7cb85 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sat, 10 Nov 2018 05:15:21 +0000
 Subject: [PATCH] Fix SpongeAbsortEvent handling
@@ -6,22 +6,27 @@ Subject: [PATCH] Fix SpongeAbsortEvent handling
 Only process drops when the block is actually going to be removed
 
 diff --git a/src/main/java/net/minecraft/server/BlockSponge.java b/src/main/java/net/minecraft/server/BlockSponge.java
-index afd3f32d0..2aa9b68b8 100644
+index 9c508caa9..4b762a92c 100644
 --- a/src/main/java/net/minecraft/server/BlockSponge.java
 +++ b/src/main/java/net/minecraft/server/BlockSponge.java
-@@ -100,7 +100,11 @@ public class BlockSponge extends Block {
-                 Material material = iblockdata.getMaterial();
- 
-                 if (material == Material.WATER_PLANT || material == Material.REPLACEABLE_WATER_PLANT) {
--                    iblockdata.a(world, blockposition2, 0);
-+                    // Paper start
-+                    if (block.getHandle().getMaterial() == Material.AIR) {
-+                        iblockdata.dropNaturally(world, blockposition2, 0);
-+                    }
-+                    // Paper end
+@@ -106,7 +106,11 @@ public class BlockSponge extends Block {
+                     } else if (iblockdata.getBlock() instanceof BlockFluids) {
+                         // NOP
+                     } else if (material == Material.WATER_PLANT || material == Material.REPLACEABLE_WATER_PLANT) {
+-                        iblockdata.a(world, blockposition2, 0);
++                        // Paper start
++                        if (block.getHandle().getMaterial() == Material.AIR) {
++                            iblockdata.dropNaturally(world, blockposition2, 0);
++                        }
++                        // Paper end
+                     }
                  }
- 
                  world.setTypeAndData(blockposition2, block.getHandle(), block.getFlag());
+@@ -117,3 +121,4 @@ public class BlockSponge extends Block {
+         return i > 0;
+     }
+ }
++
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
 index 2d855aae6..bc345a2c3 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java

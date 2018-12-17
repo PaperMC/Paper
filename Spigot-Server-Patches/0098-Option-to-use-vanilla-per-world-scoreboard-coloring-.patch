@@ -1,4 +1,4 @@
-From 77c47f231d1a936f15d3dc8863d9e3362d0ca76d Mon Sep 17 00:00:00 2001
+From 33a493b42f79a4adbdd4afe6806bdeea1e52322a Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Wed, 6 Apr 2016 01:04:23 -0500
 Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
@@ -25,20 +25,8 @@ index 276dd98fd..973ea8bca 100644
 +        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 734ee9d8e..e60e8e8fe 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2259,6 +2259,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         return this.getFlag(5);
-     }
- 
-+    @Nullable public ScoreboardTeamBase getTeam() { return this.be(); } // Paper - OBFHELPER
-     @Nullable
-     public ScoreboardTeamBase be() {
-         if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index dc2c143c8..5c7a88ec8 100644
+index 8a65072fe..d162bd3d8 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -1631,7 +1631,16 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -49,7 +37,7 @@ index dc2c143c8..5c7a88ec8 100644
 +                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
 +                String displayName = event.getPlayer().getDisplayName();
 +                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
-+                    IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getTeam(),((CraftPlayer) player).getHandle().getDisplayName());
++                    IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getScoreboardTeam(),((CraftPlayer) player).getHandle().getDisplayName());
 +                    // Explicitly add a RESET here, vanilla uses components for this now...
 +                    displayName = CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET;
 +                }
@@ -60,7 +48,7 @@ index dc2c143c8..5c7a88ec8 100644
                  if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                      for (Object recipient : minecraftServer.getPlayerList().players) {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 8c10a0da1..2cb5869ae 100644
+index 80f595fea..7edca4284 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -177,7 +177,7 @@ public abstract class PlayerList {

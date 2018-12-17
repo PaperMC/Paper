@@ -1,4 +1,4 @@
-From 43480f765c8ce2abba530e068f7d17448fe4b92a Mon Sep 17 00:00:00 2001
+From 8186e73d20a64b9dd3d508260bd6a88e60eea217 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,23 +30,23 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index acdfb0e1e..a1a574023 100644
+index dacb372a5..fd405281b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -90,6 +90,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public final Map<DimensionManager, WorldServer> worldServer = Maps.newIdentityHashMap();
-     private PlayerList s;
+     private PlayerList playerList;
      private boolean isRunning = true;
 +    private boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
      private boolean isStopped;
      private int ticks;
      protected final Proxy c;
 @@ -659,7 +660,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-         if (this.s != null) {
+         if (this.playerList != null) {
              MinecraftServer.LOGGER.info("Saving players");
-             this.s.savePlayers();
--            this.s.u();
-+            this.s.u(isRestarting); // Paper
+             this.playerList.savePlayers();
+-            this.playerList.u();
++            this.playerList.u(isRestarting); // Paper
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
@@ -65,10 +65,10 @@ index acdfb0e1e..a1a574023 100644
      }
 +    // Paper end
  
-     private boolean aT() {
+     private boolean canSleepForTick() {
          return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index b10ac733f..3f96443eb 100644
+index 320c378e0..d8ed44fe2 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -1333,10 +1333,15 @@ public abstract class PlayerList {

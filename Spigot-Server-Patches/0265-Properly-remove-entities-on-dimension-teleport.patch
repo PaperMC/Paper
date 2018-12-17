@@ -1,4 +1,4 @@
-From 7ffeeb46285513123a676adfd4f812b5c9282d16 Mon Sep 17 00:00:00 2001
+From 50aa3a863c329e3f0fb655a6414d40eb6ed6845f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 10 Jun 2018 20:04:42 -0400
 Subject: [PATCH] Properly remove entities on dimension teleport
@@ -22,23 +22,23 @@ requirement, but plugins (such as my own) use this method to
 trigger a "reload" of the entity on the client.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 07a64966e..5600223d9 100644
+index 7c558c355..d033969cd 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2595,7 +2595,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -2594,7 +2594,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
              }
              // CraftBukkit end */
  
 -            this.world.kill(this);
 +            this.world.removeEntity(this); // Paper - Fully remove entity, can't have dupes in the UUID map
              this.dead = false;
-             this.world.methodProfiler.a("reposition");
+             this.world.methodProfiler.enter("reposition");
              /* CraftBukkit start - Handled in calculateTarget
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a30d92ce7..83109177d 100644
+index 55e45dbb1..91850fded 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1020,6 +1020,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1021,6 +1021,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
      }
  
      protected void c(Entity entity) {

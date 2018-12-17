@@ -1,4 +1,4 @@
-From af3d6d625bbb57168b75bd1995f4135cf107c94e Mon Sep 17 00:00:00 2001
+From af2828a58a4f89566cc230a26042e7811491def3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 21 Jun 2016 22:54:34 -0400
 Subject: [PATCH] Fix Double World Add issues
@@ -8,7 +8,7 @@ Vanilla will double add Spider Jockeys to the world, so ignore already added.
 Also add debug if something else tries to, and abort before world gets bad state
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 4a0f3989e6..695044b1b1 100644
+index 3b39b5472..6093ae408 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -1052,7 +1052,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -21,17 +21,17 @@ index 4a0f3989e6..695044b1b1 100644
              Iterator iterator = entity.bP().iterator();
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d31101861c..a81c7dfa2e 100644
+index 6f672aa22..0d04b14cf 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -993,6 +993,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -992,6 +992,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+ 
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
-         if (entity == null) return false;
 +        if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
- 
-         org.bukkit.event.Cancellable event = null;
-         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
+         if (!CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+             return false;
+         }
 -- 
-2.19.0
+2.20.0
 

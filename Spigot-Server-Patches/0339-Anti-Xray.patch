@@ -1,4 +1,4 @@
-From ddbf245c3681e18daf8334ae47737991977435df Mon Sep 17 00:00:00 2001
+From 07ee56ca64a98224dc9b972ba71fd113a7964298 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -1049,10 +1049,10 @@ index 000000000..37093419c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 836aea6c3..44d59d253 100644
+index 57e35564a..890715ff8 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -535,7 +535,7 @@ public class Chunk implements IChunkAccess {
+@@ -540,7 +540,7 @@ public class Chunk implements IChunkAccess {
                      return null;
                  }
  
@@ -1061,7 +1061,7 @@ index 836aea6c3..44d59d253 100644
                  this.sections[j >> 4] = chunksection;
                  flag1 = j >= l;
              }
-@@ -635,7 +635,7 @@ public class Chunk implements IChunkAccess {
+@@ -640,7 +640,7 @@ public class Chunk implements IChunkAccess {
                      return;
                  }
  
@@ -1071,7 +1071,7 @@ index 836aea6c3..44d59d253 100644
                  this.initLighting();
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index f734b85e0..26a3f28cb 100644
+index 41a7103ef..c12db3cfa 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -859,7 +859,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1271,7 +1271,7 @@ index 6e7454b13..71a3636be 100644
          int jx = along.length * 64 / 4096;
          if (this.h == this.b) {
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index f8facddb4..b2afec5e4 100644
+index e75b1a76e..e5cc77c6d 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -158,8 +158,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -1296,15 +1296,15 @@ index f8facddb4..b2afec5e4 100644
 +    private boolean o() { // void -> boolean
          if (this.channel != null && this.channel.isOpen()) {
 -            this.j.readLock().lock();
-+            if (this.i.isEmpty()) { // return if the packet queue is empty so that the write lock by Anti-Xray doesn't affect the vanilla performance at all
++            if (this.packetQueue.isEmpty()) { // return if the packet queue is empty so that the write lock by Anti-Xray doesn't affect the vanilla performance at all
 +                return true;
 +            }
 +
 +            this.j.writeLock().lock(); // readLock -> writeLock (because of race condition between peek and poll)
  
              try {
-                 while (!this.i.isEmpty()) {
--                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.i.poll();
+                 while (!this.packetQueue.isEmpty()) {
+-                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.packetQueue.poll();
 -
 -                    this.b(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
 +                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.getPacketQueue().peek(); // poll -> peek
@@ -1418,10 +1418,10 @@ index 22a262bb6..40ec398ee 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 4383abccd..068d203c8 100644
+index db43a8a9a..b58683e6f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -118,6 +118,8 @@ public class PlayerChunk {
+@@ -100,6 +100,8 @@ public class PlayerChunk {
              return false;
          } else if (!this.chunk.isReady()) {
              return false;
@@ -1430,24 +1430,24 @@ index 4383abccd..068d203c8 100644
          } else {
              this.dirtyCount = 0;
              this.h = 0;
-@@ -140,6 +142,7 @@ public class PlayerChunk {
+@@ -119,6 +121,7 @@ public class PlayerChunk {
  
      public void sendChunk(EntityPlayer entityplayer) {
          if (this.done) {
 +            this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, '\uffff', true); // Paper - Anti-Xray - Load nearby chunks if necessary
-             entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(this.chunk, '\uffff'));
+             entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(this.chunk, 65535));
              this.playerChunkMap.getWorld().getTracker().a(entityplayer, this.chunk);
          }
-@@ -204,6 +207,9 @@ public class PlayerChunk {
+@@ -177,6 +180,9 @@ public class PlayerChunk {
                          this.a(this.playerChunkMap.getWorld().getTileEntity(blockposition));
                      }
                  } else if (this.dirtyCount == 64) {
 +                    // Paper - Anti-Xray - Loading chunks here could cause a ConcurrentModificationException #1104
 +                    // Paper - Anti-Xray - TODO: Check if this is still the case for 1.13
 +                    //this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, this.h, true); // Paper - Anti-Xray - Load nearby chunks if necessary
-                     this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
+                     this.a(new PacketPlayOutMapChunk(this.chunk, this.h));
                  } else {
-                     this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
+                     this.a(new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk));
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 index 23223e89d..23fc4d8e1 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
@@ -1462,7 +1462,7 @@ index 23223e89d..23fc4d8e1 100644
  
      public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index b88d41d67..025160679 100644
+index faaad0f41..9fd966dfb 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/server/ProtoChunk.java
 @@ -40,12 +40,24 @@ public class ProtoChunk implements IChunkAccess {
@@ -1510,7 +1510,7 @@ index b88d41d67..025160679 100644
  
              if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0d401bf1d..de591d912 100644
+index 780c0a7e8..67b20c056 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
