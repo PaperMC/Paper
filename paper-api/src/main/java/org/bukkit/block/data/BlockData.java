@@ -22,6 +22,34 @@ public interface BlockData extends Cloneable {
     String getAsString();
 
     /**
+     * Gets a string, which when passed into a method such as
+     * {@link Server#createBlockData(java.lang.String)} will recreate this or a
+     * similar instance where unspecified states (if any) may be optionally
+     * omitted. If this instance was parsed and states are omitted, this exact
+     * instance will be creatable when parsed again, else their equality cannot
+     * be guaranteed.
+     * <p>
+     * This method will only take effect for BlockData instances created by
+     * methods such as {@link Server#createBlockData(String)} or any similar
+     * method whereby states are optionally defined. If otherwise, the result of
+     * {@link #getAsString()} will be returned. The following behaviour would be
+     * expected:
+     * <pre>{@code
+     * String dataString = "minecraft:chest[waterlogged=true]"
+     * BlockData data = Bukkit.createBlockData(dataString);
+     * dataString.equals(data.getAsString(true)); // This would return true
+     * dataString.equals(data.getAsString(false)); // This would return false as all states are present
+     * dataString.equals(data.getAsString()); // This is equivalent to the above, "getAsString(false)"
+     * }</pre>
+     *
+     * @param hideUnspecified true if unspecified states should be omitted,
+     * false if they are to be shown as performed by {@link #getAsString()}.
+     *
+     * @return serialized data string for this block
+     */
+    String getAsString(boolean hideUnspecified);
+
+    /**
      * Merges all explicitly set states from the given data with this BlockData.
      * <br>
      * Note that the given data MUST have been created from one of the String
