@@ -359,6 +359,47 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static boolean doEntityAddEventCalling(World world, Entity entity, SpawnReason spawnReason){
+        if (entity == null) return false;
+
+        org.bukkit.event.Cancellable event = null;
+        if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
+            boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal || entity instanceof EntityGolem;
+            boolean isMonster = entity instanceof EntityMonster || entity instanceof EntityGhast || entity instanceof EntitySlime;
+            boolean isNpc = entity instanceof NPC;
+
+            if (spawnReason != SpawnReason.CUSTOM) {
+                if (isAnimal && !world.allowAnimals || isMonster && !world.allowMonsters || isNpc && !world.getServer().getServer().getSpawnNPCs()) {
+                    entity.dead = true;
+                    return false;
+                }
+            }
+
+            event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving) entity, spawnReason);
+        } else if (entity instanceof EntityItem) {
+            event = CraftEventFactory.callItemSpawnEvent((EntityItem) entity);
+        } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
+            // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
+            event = CraftEventFactory.callProjectileLaunchEvent(entity);
+        } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle){
+            event = CraftEventFactory.callVehicleCreateEvent(entity);
+        }
+
+        if (event != null && (event.isCancelled() || entity.dead)) {
+            Entity vehicle = entity.getVehicle();
+            if (vehicle != null) {
+                vehicle.dead = true;
+            }
+            for (Entity passenger : entity.getAllPassengers()) {
+                passenger.dead = true;
+            }
+            entity.dead = true;
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * CreatureSpawnEvent
      */

@@ -1,15 +1,20 @@
 --- a/net/minecraft/server/Chunk.java
 +++ b/net/minecraft/server/Chunk.java
-@@ -22,6 +22,8 @@
+@@ -22,6 +22,13 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
-+import com.google.common.collect.Lists; // CraftBukkit
++// CraftBukkit start
++import com.google.common.collect.Lists;
++import java.util.LinkedList;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++// CraftBukkit end
 +
  public class Chunk implements IChunkAccess {
  
      private static final Logger d = LogManager.getLogger();
-@@ -57,6 +59,35 @@
+@@ -57,6 +64,35 @@
      private final AtomicInteger E;
      private final ChunkCoordIntPair F;
  
@@ -45,7 +50,7 @@
      public Chunk(World world, int i, int j, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long k) {
          this.sections = new ChunkSection[16];
          this.g = new boolean[256];
-@@ -95,8 +126,16 @@
+@@ -95,8 +131,16 @@
          this.s = ticklist;
          this.t = ticklist1;
          this.z = k;
@@ -62,7 +67,7 @@
      public Chunk(World world, ProtoChunk protochunk, int i, int j) {
          this(world, i, j, protochunk.getBiomeIndex(), protochunk.v(), protochunk.k(), protochunk.l(), protochunk.m());
  
-@@ -136,14 +175,15 @@
+@@ -136,14 +180,15 @@
              HeightMap.Type heightmap_type = (HeightMap.Type) iterator.next();
  
              if (heightmap_type.c() == HeightMap.Use.LIVE_WORLD) {
@@ -80,7 +85,7 @@
      }
  
      public Set<BlockPosition> t() {
-@@ -413,8 +453,15 @@
+@@ -413,8 +458,15 @@
          }
      }
  
@@ -96,7 +101,7 @@
          int i = blockposition.getX() & 15;
          int j = blockposition.getY();
          int k = blockposition.getZ() & 15;
-@@ -474,7 +521,8 @@
+@@ -474,7 +526,8 @@
                      }
                  }
  
@@ -106,7 +111,7 @@
                      iblockdata.onPlace(this.world, blockposition, iblockdata1);
                  }
  
-@@ -654,7 +702,12 @@
+@@ -654,7 +707,12 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -120,7 +125,7 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.h.remove(blockposition);
-@@ -701,6 +754,13 @@
+@@ -701,6 +759,13 @@
  
              tileentity.z();
              this.tileEntities.put(blockposition.h(), tileentity);
@@ -134,8 +139,24 @@
          }
      }
  
-@@ -733,6 +793,40 @@
+@@ -726,13 +791,55 @@
+         int i = aentityslice.length;
+ 
+         for (int j = 0; j < i; ++j) {
+-            EntitySlice entityslice = aentityslice[j];
++            // CraftBukkit start
++            EntitySlice<Entity> entityslice = aentityslice[j];
+ 
++            List<Entity> toRemove = new LinkedList<>();
+             this.world.a(entityslice.stream().filter((entity) -> {
++                if (!CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
++                    toRemove.add(entity);
++                    return false;
++                }
+                 return !(entity instanceof EntityHuman);
              }));
++            entityslice.removeAll(toRemove);
++            // CraftBukkit end
          }
  
 +        // CraftBukkit start
@@ -175,7 +196,7 @@
      }
  
      public void removeEntities() {
-@@ -749,9 +843,21 @@
+@@ -749,9 +856,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
@@ -199,7 +220,7 @@
          }
  
      }
-@@ -813,8 +919,8 @@
+@@ -813,8 +932,8 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
  
@@ -210,7 +231,7 @@
                  }
              }
          }
-@@ -1020,13 +1126,13 @@
+@@ -1020,13 +1139,13 @@
  
      @Nullable
      public LongSet b(String s) {
@@ -226,7 +247,7 @@
              return new LongOpenHashSet();
          })).add(i);
      }
-@@ -1074,14 +1180,14 @@
+@@ -1074,14 +1193,14 @@
              }
  
              if (this.s instanceof ProtoChunkTickList) {
