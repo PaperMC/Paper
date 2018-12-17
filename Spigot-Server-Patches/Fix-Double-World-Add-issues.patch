@@ -8,7 +8,7 @@ Vanilla will double add Spider Jockeys to the world, so ignore already added.
 Also add debug if something else tries to, and abort before world gets bad state
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 4a0f3989e6..695044b1b1 100644
+index 3b39b5472..6093ae408 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -21,15 +21,15 @@ index 4a0f3989e6..695044b1b1 100644
              Iterator iterator = entity.bP().iterator();
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d31101861c..a81c7dfa2e 100644
+index 6f672aa22..0d04b14cf 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+ 
      public boolean addEntity(Entity entity, SpawnReason spawnReason) { // Changed signature, added SpawnReason
          org.spigotmc.AsyncCatcher.catchOp( "entity add"); // Spigot
-         if (entity == null) return false;
 +        if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
- 
-         org.bukkit.event.Cancellable event = null;
-         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
+         if (!CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+             return false;
+         }
 --

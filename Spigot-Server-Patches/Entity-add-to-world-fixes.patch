@@ -14,7 +14,7 @@ Fix this by differing entity add to world for all entities at the same time
 the original entity is dead, overwrite it as the logic does for unloaod queued entities.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a62d7196b..836aea6c3 100644
+index 4f01140e7..57e35564a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -24,25 +24,31 @@ index a62d7196b..836aea6c3 100644
 +        List<Entity> toAdd = new java.util.ArrayList<>(32); // Paper
  
          for (int j = 0; j < i; ++j) {
-             List entityslice = aentityslice[j]; // Spigot
+             // CraftBukkit start
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-                     thisChunk.put(entity.uniqueID, entity);
                  }
              }
--            // Paper end
- 
+             // Paper end
+-
+-            List<Entity> toRemove = new LinkedList<>();
 -            this.world.a(entityslice.stream().filter((entity) -> {
+-                if (!CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+-                    toRemove.add(entity);
+-                    return false;
+-                }
 -                return !(entity instanceof EntityHuman);
 -            }));
-+            toAdd.addAll(entityslice);
-+            // Paper end
+-            entityslice.removeAll(toRemove);
+             // CraftBukkit end
          }
-+        this.world.addChunkEntities(toAdd.stream().filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
++        this.world.addChunkEntities(toAdd.stream() // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
++            .filter((entity) -> CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) // Paper - Inline into stream
++            .filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
  
          // CraftBukkit start
          org.bukkit.Server server = this.world.getServer();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 12379f755..72e74c59f 100644
+index 5e61826f6..bd6f64e52 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -68,7 +74,7 @@ index 12379f755..72e74c59f 100644
              this.b(entity);
          });
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 572c54c9c..0545336b4 100644
+index af9cdd9dc..10630ac96 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
