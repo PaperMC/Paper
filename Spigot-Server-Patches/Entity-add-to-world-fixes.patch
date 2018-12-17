@@ -14,7 +14,7 @@ Fix this by differing entity add to world for all entities at the same time
 the original entity is dead, overwrite it as the logic does for unloaod queued entities.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4f01140e7..57e35564a 100644
+index 37bb6f40c..ee4332eda 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -32,7 +32,7 @@ index 4f01140e7..57e35564a 100644
 -
 -            List<Entity> toRemove = new LinkedList<>();
 -            this.world.a(entityslice.stream().filter((entity) -> {
--                if (!CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+-                if (this.needsDecoration && !CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) { // Only call for new chunks
 -                    toRemove.add(entity);
 -                    return false;
 -                }
@@ -42,7 +42,14 @@ index 4f01140e7..57e35564a 100644
              // CraftBukkit end
          }
 +        this.world.addChunkEntities(toAdd.stream() // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
-+            .filter((entity) -> CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) // Paper - Inline into stream
++            // Paper start - Inline event into stream
++            .filter((entity) -> {
++                if (!this.needsDecoration) {
++                    return true;
++                }
++                return CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN);
++            })
++            // Paper end - Inline event into stream
 +            .filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
  
          // CraftBukkit start
