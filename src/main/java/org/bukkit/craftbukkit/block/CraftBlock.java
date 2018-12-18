@@ -436,7 +436,7 @@ public class CraftBlock implements Block {
     }
 
     public double getTemperature() {
-        return getWorld().getTemperature(getX(), getZ());
+        return world.getBiome(position).c(position); // PAIL: getAdjustedTemperature
     }
 
     public double getHumidity() {
