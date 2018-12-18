@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -384,4 +385,20 @@ public interface Block extends Metadatable {
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
     RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode);
+
+    /**
+     * Gets the approximate bounding box for this block.
+     * <p>
+     * This isn't exact as some blocks {@link org.bukkit.block.data.type.Stairs}
+     * contain many bounding boxes to establish their complete form.
+     *
+     * Also, the box may not be exactly the same as the collision shape (such as
+     * cactus, which is 16/16 of a block with 15/16 collisional bounds).
+     *
+     * This method will return an empty bounding box if the geometric shape of
+     * the block is empty (such as air blocks).
+     *
+     * @return the approximate bounding box of the block
+     */
+    BoundingBox getBoundingBox();
 }
