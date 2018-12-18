@@ -1,4 +1,4 @@
-From 3ad5ebde68a9a0a224d8c458cbf491555ecb120e Mon Sep 17 00:00:00 2001
+From 230019864ac37b09b4b61f018ae1becd1e9d185b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 3 Aug 2018 22:47:46 -0400
 Subject: [PATCH] Entity add to world fixes
@@ -14,7 +14,7 @@ Fix this by differing entity add to world for all entities at the same time
 the original entity is dead, overwrite it as the logic does for unloaod queued entities.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 37bb6f40c..414c27516 100644
+index 37bb6f40c..55104d00f 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;
@@ -26,15 +26,7 @@ index 37bb6f40c..414c27516 100644
  import java.util.HashMap;
  import java.util.UUID;
  // Paper end
-@@ -916,6 +918,7 @@ public class Chunk implements IChunkAccess {
-         this.world.a(this.tileEntities.values());
-         List[] aentityslice = this.entitySlices; // Spigot
-         int i = aentityslice.length;
-+        List<Entity> toAdd = new java.util.ArrayList<>(32); // Paper
- 
-         for (int j = 0; j < i; ++j) {
-             // CraftBukkit start
-@@ -964,17 +967,17 @@ public class Chunk implements IChunkAccess {
+@@ -964,16 +966,16 @@ public class Chunk implements IChunkAccess {
                  }
              }
              // Paper end
@@ -48,7 +40,6 @@ index 37bb6f40c..414c27516 100644
 -                return !(entity instanceof EntityHuman);
 -            }));
 -            entityslice.removeAll(toRemove);
-             // CraftBukkit end
 +            this.world.addChunkEntities(entityslice.stream() // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
 +                // Paper start - Inline event into stream
 +                .filter((entity) -> {
@@ -59,9 +50,9 @@ index 37bb6f40c..414c27516 100644
 +                })
 +                // Paper end - Inline event into stream
 +                .filter((entity) -> !(entity instanceof EntityHuman || entity.valid))); // Paper - add all at same time to avoid entities adding to world modifying slice state, skip already added entities (not normal, but can happen)
+             // CraftBukkit end
          }
  
-         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 5e61826f6..bd6f64e52 100644
 --- a/src/main/java/net/minecraft/server/World.java
