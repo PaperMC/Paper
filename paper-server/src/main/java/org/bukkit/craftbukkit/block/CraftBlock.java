@@ -30,6 +30,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BlockVector;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -647,5 +648,17 @@ public class CraftBlock implements Block {
         }
 
         return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);
+    }
+
+    @Override
+    public BoundingBox getBoundingBox() {
+        VoxelShape shape = getData0().g(world, position); // PAIL: getShape
+
+        if (shape.isEmpty()) {
+            return new BoundingBox(); // Return an empty bounding box if the block has no dimension
+        }
+
+        AxisAlignedBB aabb = shape.a(); // PAIL: getBoundingBox
+        return new BoundingBox(getX() + aabb.minX, getY() + aabb.minY, getZ() + aabb.minZ, getX() + aabb.maxX, getY() + aabb.maxY, getZ() + aabb.maxZ);
     }
 }
