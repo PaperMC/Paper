@@ -308,7 +308,10 @@ public interface Block extends Metadatable {
     boolean isLiquid();
 
     /**
-     * Gets the temperature of the biome of this block
+     * Gets the temperature of this block.
+     * <p>
+     * If the raw biome temperature without adjusting for height effects is
+     * required then please use {@link World#getTemperature(int, int)}.
      *
      * @return Temperature of this block
      */
