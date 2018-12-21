@@ -1,23 +1,23 @@
-From 1eb74e11de99c6807477c751d4ea094e73556cd4 Mon Sep 17 00:00:00 2001
+From 31a4ba2082b703b6b02ee16f019af60a82edbe8b Mon Sep 17 00:00:00 2001
 From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
 Date: Wed, 12 Sep 2018 18:53:55 +0300
 Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
 
 
 diff --git a/src/main/java/net/minecraft/server/ArgumentBlock.java b/src/main/java/net/minecraft/server/ArgumentBlock.java
-index 35c436d19..fcfb17e4e 100644
+index 00026eef7..207f95dcf 100644
 --- a/src/main/java/net/minecraft/server/ArgumentBlock.java
 +++ b/src/main/java/net/minecraft/server/ArgumentBlock.java
-@@ -42,7 +42,7 @@ public class ArgumentBlock {
+@@ -43,7 +43,7 @@ public class ArgumentBlock {
      private final boolean j;
-     private final Map<IBlockState<?>, Comparable<?>> k = Maps.newHashMap();
+     private final Map<IBlockState<?>, Comparable<?>> k = Maps.newLinkedHashMap(); // CraftBukkit - stable
      private final Map<String, String> l = Maps.newHashMap();
 -    private MinecraftKey m = new MinecraftKey("");
 +    private MinecraftKey m = new MinecraftKey(""); public MinecraftKey getBlockKey() { return this.m; } // Paper - OBFHELPER
      private BlockStateList<Block, IBlockData> n;
      private IBlockData o;
      @Nullable
-@@ -71,11 +71,13 @@ public class ArgumentBlock {
+@@ -72,11 +72,13 @@ public class ArgumentBlock {
          return this.p;
      }
  
@@ -30,77 +30,9 @@ index 35c436d19..fcfb17e4e 100644
 +    public ArgumentBlock parse(boolean parseTile) throws CommandSyntaxException { return this.a(parseTile); } // Paper - OBFHELPER
      public ArgumentBlock a(boolean flag) throws CommandSyntaxException {
          this.s = this::l;
-         if (this.i.canRead() && this.i.peek() == '#') {
-@@ -135,7 +137,7 @@ public class ArgumentBlock {
-         if (this.q != null && !this.q.getKey().isEmpty()) {
-             Tag tag = TagsBlock.a().a(this.q);
-             if (tag != null) {
--                for(Block block : tag.a()) {
-+                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
-                     for(IBlockState iblockstate : block.getStates().d()) {
-                         if (!this.l.containsKey(iblockstate.a()) && iblockstate.a().startsWith(sx)) {
-                             suggestionsbuilder.suggest(iblockstate.a() + '=');
-@@ -163,7 +165,7 @@ public class ArgumentBlock {
-             if (this.q != null) {
-                 Tag tag = TagsBlock.a().a(this.q);
-                 if (tag != null) {
--                    for(Block block : tag.a()) {
-+                    for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
-                         if (block.isTileEntity()) {
-                             return true;
-                         }
-@@ -198,9 +200,9 @@ public class ArgumentBlock {
-     private static <T extends Comparable<T>> SuggestionsBuilder a(SuggestionsBuilder suggestionsbuilder, IBlockState<T> iblockstate) {
-         for(Comparable comparable : iblockstate.d()) {
-             if (comparable instanceof Integer) {
--                suggestionsbuilder.suggest(comparable);
-+                suggestionsbuilder.suggest((Integer) comparable); // Paper - decompiler fix
-             } else {
--                suggestionsbuilder.suggest(iblockstate.a(comparable));
-+                suggestionsbuilder.suggest(iblockstate.a((T) comparable)); // Paper - decompiler fix
-             }
-         }
- 
-@@ -213,7 +215,7 @@ public class ArgumentBlock {
-             Tag tag = TagsBlock.a().a(this.q);
-             if (tag != null) {
-                 label40:
--                for(Block block : tag.a()) {
-+                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
-                     IBlockState iblockstate = block.getStates().a(sx);
-                     if (iblockstate != null) {
-                         a(suggestionsbuilder, iblockstate);
-@@ -254,7 +256,7 @@ public class ArgumentBlock {
-                 boolean flag = false;
-                 boolean flag1 = false;
- 
--                for(Block block : tag.a()) {
-+                for(Block block : (java.util.Collection<Block>) tag.a()) { // Paper - decompiler fix
-                     flag |= !block.getStates().d().isEmpty();
-                     flag1 |= block.isTileEntity();
-                     if (flag && flag1) {
-@@ -453,8 +455,8 @@ public class ArgumentBlock {
-     private <T extends Comparable<T>> void a(IBlockState<T> iblockstate, String sx, int ix) throws CommandSyntaxException {
-         Optional optional = iblockstate.b(sx);
-         if (optional.isPresent()) {
--            this.o = (IBlockData)this.o.set(iblockstate, (Comparable)optional.get());
--            this.k.put(iblockstate, optional.get());
-+            this.o = (IBlockData)this.o.set(iblockstate, (T)optional.get()); // Paper - decompiler fix
-+            this.k.put(iblockstate, (Comparable<?>) optional.get()); // Paper - decompiler fix
-         } else {
-             this.i.setCursor(ix);
-             throw e.createWithContext(this.i, this.m.toString(), iblockstate.a(), sx);
-@@ -489,7 +491,7 @@ public class ArgumentBlock {
-     private static <T extends Comparable<T>> void a(StringBuilder stringbuilder, IBlockState<T> iblockstate, Comparable<?> comparable) {
-         stringbuilder.append(iblockstate.a());
-         stringbuilder.append('=');
--        stringbuilder.append(iblockstate.a(comparable));
-+        stringbuilder.append(iblockstate.a((T) comparable)); // Paper - decompile fix
-     }
- 
-     public CompletableFuture<Suggestions> a(SuggestionsBuilder suggestionsbuilder) {
+         if (this.i.canRead() && this.i.peek() == 35) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 197563552..d34b017f9 100644
+index 2446badd8..356390db7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -81,6 +81,12 @@ import javax.annotation.Nullable;
@@ -484,5 +416,5 @@ index 197563552..d34b017f9 100644
 +    // Paper end
  }
 -- 
-2.20.0
+2.20.1
 
