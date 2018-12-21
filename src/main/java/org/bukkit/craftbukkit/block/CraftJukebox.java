@@ -63,15 +63,15 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
         this.getSnapshot().setRecord(new ItemStack(CraftMagicNumbers.getItem(record), 1));
         if (record == Material.AIR) {
-            setRawData((byte) 0);
+            getHandle().set(BlockJukeBox.HAS_RECORD, false);
         } else {
-            setRawData((byte) 1);
+            getHandle().set(BlockJukeBox.HAS_RECORD, true);
         }
     }
 
     @Override
     public boolean isPlaying() {
-        return getRawData() == 1;
+        return getHandle().get(BlockJukeBox.HAS_RECORD);
     }
 
     @Override
