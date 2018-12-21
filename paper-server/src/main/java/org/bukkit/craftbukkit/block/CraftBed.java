@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
-import net.minecraft.server.EnumColor;
 import net.minecraft.server.TileEntityBed;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;

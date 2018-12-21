@@ -21,22 +21,17 @@ import org.bukkit.plugin.Plugin;
 import java.util.List;
 import net.minecraft.server.GeneratorAccess;
 import net.minecraft.server.IBlockData;
-import org.bukkit.craftbukkit.util.CraftLegacy;
 
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
     private final CraftChunk chunk;
-    private final int x;
-    private final int y;
-    private final int z;
+    protected final BlockPosition position;
     protected IBlockData data;
     protected int flag;
 
     public CraftBlockState(final Block block) {
         this.world = (CraftWorld) block.getWorld();
-        this.x = block.getX();
-        this.y = block.getY();
-        this.z = block.getZ();
+        this.position = ((CraftBlock) block).getPosition();
         this.data = ((CraftBlock) block).getNMS();
         this.chunk = (CraftChunk) block.getChunk();
         this.flag = 3;
@@ -51,7 +46,7 @@ public class CraftBlockState implements BlockState {
         world = null;
         data = CraftMagicNumbers.getBlock(material).getBlockData();
         chunk = null;
-        x = y = z = 0;
+        position = BlockPosition.ZERO;
     }
 
     public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.server.BlockPosition pos) {
@@ -68,15 +63,15 @@ public class CraftBlockState implements BlockState {
     }
 
     public int getX() {
-        return x;
+        return position.getX();
     }
 
     public int getY() {
-        return y;
+        return position.getY();
     }
 
     public int getZ() {
-        return z;
+        return position.getZ();
     }
 
     public Chunk getChunk() {
@@ -149,7 +144,7 @@ public class CraftBlockState implements BlockState {
 
     public CraftBlock getBlock() {
         requirePlaced();
-        return (CraftBlock) world.getBlockAt(x, y, z);
+        return CraftBlock.at(world.getHandle(), position);
     }
 
     public boolean update() {
@@ -172,11 +167,10 @@ public class CraftBlockState implements BlockState {
             }
         }
 
-        BlockPosition pos = new BlockPosition(x, y, z);
         IBlockData newBlock = this.data;
         block.setTypeAndData(newBlock, applyPhysics);
         world.getHandle().notify(
-                pos,
+                position,
                 block.getNMS(),
                 newBlock,
                 3
@@ -184,7 +178,7 @@ public class CraftBlockState implements BlockState {
 
         // Update levers etc
         if (false && applyPhysics && getData() instanceof Attachable) { // Call does not map to new API
-            world.getHandle().applyPhysics(pos.shift(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock());
+            world.getHandle().applyPhysics(position.shift(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock());
         }
 
         return true;
@@ -195,15 +189,15 @@ public class CraftBlockState implements BlockState {
     }
 
     public Location getLocation() {
-        return new Location(world, x, y, z);
+        return new Location(world, getX(), getY(), getZ());
     }
 
     public Location getLocation(Location loc) {
         if (loc != null) {
             loc.setWorld(world);
-            loc.setX(x);
-            loc.setY(y);
-            loc.setZ(z);
+            loc.setX(getX());
+            loc.setY(getY());
+            loc.setZ(getZ());
             loc.setYaw(0);
             loc.setPitch(0);
         }
@@ -227,13 +221,7 @@ public class CraftBlockState implements BlockState {
         if (this.world != other.world && (this.world == null || !this.world.equals(other.world))) {
             return false;
         }
-        if (this.x != other.x) {
-            return false;
-        }
-        if (this.y != other.y) {
-            return false;
-        }
-        if (this.z != other.z) {
+        if (this.position != other.position && (this.position == null || !this.position.equals(other.position))) {
             return false;
         }
         if (this.data != other.data && (this.data == null || !this.data.equals(other.data))) {
@@ -246,9 +234,7 @@ public class CraftBlockState implements BlockState {
     public int hashCode() {
         int hash = 7;
         hash = 73 * hash + (this.world != null ? this.world.hashCode() : 0);
-        hash = 73 * hash + this.x;
-        hash = 73 * hash + this.y;
-        hash = 73 * hash + this.z;
+        hash = 73 * hash + (this.position != null ? this.position.hashCode() : 0);
         hash = 73 * hash + (this.data != null ? this.data.hashCode() : 0);
         return hash;
     }
