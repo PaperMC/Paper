@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Represents a captured state of a jukebox.
@@ -8,9 +9,9 @@ import org.bukkit.Material;
 public interface Jukebox extends BlockState {
 
     /**
-     * Gets the record being played.
+     * Gets the record inserted into the jukebox.
      *
-     * @return The record Material, or AIR if none is playing
+     * @return The record Material, or AIR if none is inserted
      */
     public Material getPlaying();
 
@@ -20,6 +21,20 @@ public interface Jukebox extends BlockState {
      * @param record The record Material, or null/AIR to stop playing
      */
     public void setPlaying(Material record);
+
+    /**
+     * Gets the record item inserted into the jukebox.
+     *
+     * @return a copy of the inserted record, or an air stack if none
+     */
+    public ItemStack getRecord();
+
+    /**
+     * Sets the record being played.
+     *
+     * @param record the record to insert or null/AIR to empty
+     */
+    public void setRecord(ItemStack record);
 
     /**
      * Checks if the jukebox is playing a record.
