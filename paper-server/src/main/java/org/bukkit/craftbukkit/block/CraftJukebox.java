@@ -12,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Jukebox;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> implements Jukebox {
@@ -36,7 +37,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             } else {
                 world.getHandle().setTypeAndData(position, Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, true), 3);
             }
-            world.playEffect(this.getLocation(), Effect.RECORD_PLAY, Item.getId(CraftMagicNumbers.getItem((Material) record)));
+            world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
         }
 
         return result;
@@ -44,11 +45,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
     @Override
     public Material getPlaying() {
-        ItemStack record = this.getSnapshot().getRecord();
-        if (record.isEmpty()) {
-            return Material.AIR;
-        }
-        return CraftMagicNumbers.getMaterial(record.getItem());
+        return getRecord().getType();
     }
 
     @Override
@@ -57,8 +54,20 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             record = Material.AIR;
         }
 
-        this.getSnapshot().setRecord(new ItemStack(CraftMagicNumbers.getItem(record), 1));
-        if (record == Material.AIR) {
+        setRecord(new org.bukkit.inventory.ItemStack(record));
+    }
+
+    @Override
+    public org.bukkit.inventory.ItemStack getRecord() {
+        ItemStack record = this.getSnapshot().getRecord();
+        return CraftItemStack.asBukkitCopy(record);
+    }
+
+    @Override
+    public void setRecord(org.bukkit.inventory.ItemStack record) {
+        ItemStack nms = CraftItemStack.asNMSCopy(record);
+        this.getSnapshot().setRecord(nms);
+        if (nms.isEmpty()) {
             getHandle().set(BlockJukeBox.HAS_RECORD, false);
         } else {
             getHandle().set(BlockJukeBox.HAS_RECORD, true);
