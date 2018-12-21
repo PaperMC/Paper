@@ -47,13 +47,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         }
 
         // The logic here is basically identical to the logic in BlockChest.interact
-        int x = this.getX();
-        int y = this.getY();
-        int z = this.getZ();
         CraftWorld world = (CraftWorld) this.getWorld();
 
         BlockChest blockChest = (BlockChest) (this.getType() == Material.CHEST ? Blocks.CHEST : Blocks.TRAPPED_CHEST);
-        ITileInventory nms = blockChest.getInventory(data, world.getHandle(), new BlockPosition(x, y, z), true);
+        ITileInventory nms = blockChest.getInventory(data, world.getHandle(), position, true);
 
         if (nms instanceof InventoryLargeChest) {
             inventory = new CraftInventoryDoubleChest((InventoryLargeChest) nms);
