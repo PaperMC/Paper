@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.BlockFurnace;
 import net.minecraft.server.TileEntityFurnace;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -40,6 +41,8 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
     @Override
     public void setBurnTime(short burnTime) {
         this.getSnapshot().setProperty(0, burnTime);
+        // SPIGOT-844: Allow lighting and relighting using this API
+        this.data = this.data.set(BlockFurnace.LIT, burnTime > 0);
     }
 
     @Override
