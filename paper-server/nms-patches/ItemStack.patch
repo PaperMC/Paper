@@ -85,11 +85,12 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -106,12 +146,142 @@
+@@ -106,12 +146,147 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().F(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
 +            // CraftBukkit start - handle all block place event logic here
++            NBTTagCompound oldData = this.getTagClone();
 +            int oldCount = this.getCount();
 +            World world = itemactioncontext.getWorld();
 +
@@ -102,8 +103,10 @@
 +            }
              Item item = this.getItem();
              EnumInteractionResult enuminteractionresult = item.a(itemactioncontext);
++            NBTTagCompound newData = this.getTagClone();
 +            int newCount = this.getCount();
 +            this.setCount(oldCount);
++            this.setTagClone(oldData);
 +            world.captureBlockStates = false;
 +            if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +                world.captureTreeGeneration = false;
@@ -125,7 +128,8 @@
 +
 +                if (!fertilizeEvent.isCancelled()) {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount) {
++                    if (this.getCount() == oldCount && Objects.equals(this.tag, oldData)) {
++                        this.setTag(newData);
 +                        this.setCount(newCount);
 +                    }
 +                    for (BlockState blockstate : blocks) {
@@ -164,7 +168,8 @@
 +                    }
 +                } else {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount) {
++                    if (this.getCount() == oldCount && Objects.equals(this.tag, oldData)) {
++                        this.setTag(newData);
 +                        this.setCount(newCount);
 +                    }
 +
@@ -229,7 +234,7 @@
  
              return enuminteractionresult;
          }
-@@ -135,7 +305,7 @@
+@@ -135,7 +310,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -238,7 +243,7 @@
          }
  
          return nbttagcompound;
-@@ -213,6 +383,11 @@
+@@ -213,6 +388,11 @@
                  if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.c(this);
                      Item item = this.getItem();
@@ -250,7 +255,25 @@
  
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
-@@ -480,6 +655,14 @@
+@@ -336,6 +516,17 @@
+         return this.tag;
+     }
+ 
++    // CraftBukkit start
++    @Nullable
++    private NBTTagCompound getTagClone() {
++        return this.tag == null ? null : this.tag.clone();
++    }
++
++    private void setTagClone(@Nullable NBTTagCompound nbtttagcompound) {
++        this.setTag(nbtttagcompound == null ? null : nbtttagcompound.clone());
++    }
++    // CraftBukkit end
++
+     public NBTTagCompound getOrCreateTag() {
+         if (this.tag == null) {
+             this.setTag(new NBTTagCompound());
+@@ -480,6 +671,14 @@
      }
  
      public void setRepairCost(int i) {
@@ -265,7 +288,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -522,6 +705,13 @@
+@@ -522,6 +721,13 @@
          nbttaglist.add((NBTBase) nbttagcompound);
      }
  
