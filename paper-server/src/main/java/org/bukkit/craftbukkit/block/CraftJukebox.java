@@ -1,9 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.BlockJukeBox;
-import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
-import net.minecraft.server.Item;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityJukeBox;
@@ -68,9 +66,9 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         ItemStack nms = CraftItemStack.asNMSCopy(record);
         this.getSnapshot().setRecord(nms);
         if (nms.isEmpty()) {
-            getHandle().set(BlockJukeBox.HAS_RECORD, false);
+            this.data = this.data.set(BlockJukeBox.HAS_RECORD, false);
         } else {
-            getHandle().set(BlockJukeBox.HAS_RECORD, true);
+            this.data = this.data.set(BlockJukeBox.HAS_RECORD, true);
         }
     }
 
