@@ -416,13 +416,10 @@ public class CraftWorld implements World {
         world.captureTreeGeneration = false;
         if (grownTree) { // Copy block data to delegate
             for (BlockState blockstate : world.capturedBlockStates) {
-                int x = blockstate.getX();
-                int y = blockstate.getY();
-                int z = blockstate.getZ();
-                BlockPosition position = new BlockPosition(x, y, z);
+                BlockPosition position = ((CraftBlockState) blockstate).getPosition();
                 net.minecraft.server.IBlockData oldBlock = world.getType(position);
                 int flag = ((CraftBlockState) blockstate).getFlag();
-                delegate.setBlockData(x, y, z, blockstate.getBlockData());
+                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
                 net.minecraft.server.IBlockData newBlock = world.getType(position);
                 world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flag);
             }
@@ -432,10 +429,6 @@ public class CraftWorld implements World {
             world.capturedBlockStates.clear();
             return false;
         }
-    }
-
-    public TileEntity getTileEntityAt(final int x, final int y, final int z) {
-        return world.getTileEntity(new BlockPosition(x, y, z));
     }
 
     public String getName() {

@@ -25,7 +25,7 @@ import net.minecraft.server.IBlockData;
 public class CraftBlockState implements BlockState {
     private final CraftWorld world;
     private final CraftChunk chunk;
-    protected final BlockPosition position;
+    private final BlockPosition position;
     protected IBlockData data;
     protected int flag;
 
@@ -81,6 +81,10 @@ public class CraftBlockState implements BlockState {
 
     public void setData(IBlockData data) {
         this.data = data;
+    }
+
+    public BlockPosition getPosition() {
+        return this.position;
     }
 
     public IBlockData getHandle() {
