@@ -18,6 +18,9 @@ public interface Furnace extends Container, Nameable {
     /**
      * Set burn time.
      *
+     * A burn time greater than 0 will cause this block to be lit, whilst a time
+     * less than 0 will extinguish it.
+     *
      * @param burnTime Burn time
      */
     public void setBurnTime(short burnTime);
