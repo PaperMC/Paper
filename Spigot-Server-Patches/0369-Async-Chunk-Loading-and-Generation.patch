@@ -1,4 +1,4 @@
-From e22e2ee24da923acb3e2ea7eb4389918c5bf8578 Mon Sep 17 00:00:00 2001
+From 0a9fba478449b363ca64fe653a250248a34d80a2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -458,7 +458,7 @@ index 000000000..8f18c2869
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index c3a54576f..6255aa285 100644
+index 25e49de19..8246194df 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -191,6 +191,7 @@ public class Chunk implements IChunkAccess {
@@ -2019,7 +2019,7 @@ index 1926c902a..1117e4ae2 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 72bb3f862..d736ac63d 100644
+index cb09e1052..cd31792b7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2070,7 +2070,7 @@ index 72bb3f862..d736ac63d 100644
              Iterator<CraftBlockState> it = capturedBlockStates.iterator();
              while (it.hasNext()) {
                  CraftBlockState previous = it.next();
--                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
+-                if (previous.getPosition().equals(blockposition)) {
 -                    return previous.getHandle();
 +                if (previous.getX() == x && previous.getY() == blockposition.getY() && previous.getZ() == z) {
 +                    return java.util.concurrent.CompletableFuture.completedFuture(previous.getHandle());
@@ -2304,7 +2304,7 @@ index a0f255ff1..eb4b3c7a2 100644
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5552b64fb..c6d033928 100644
+index 7ef3c7746..162ff3414 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -162,6 +162,16 @@ public class CraftWorld implements World {
@@ -2324,7 +2324,7 @@ index 5552b64fb..c6d033928 100644
      public Chunk getChunkAt(int x, int z) {
          return this.world.getChunkProvider().getChunkAt(x, z, true, true).bukkitChunk;
      }
-@@ -1457,10 +1467,13 @@ public class CraftWorld implements World {
+@@ -1450,10 +1460,13 @@ public class CraftWorld implements World {
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
          int radius = world.paperConfig.keepLoadedRange / 16; // Paper
@@ -2432,5 +2432,5 @@ index 9c917370a..a299092a5 100644
          this.random = new Random(seed);
          this.chunkManager = world.worldProvider.getChunkGenerator().getWorldChunkManager();
 -- 
-2.20.0
+2.20.1
 
