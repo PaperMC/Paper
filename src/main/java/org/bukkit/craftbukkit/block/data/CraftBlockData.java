@@ -240,7 +240,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public String getAsString() {
-        return toString(((BlockDataAbstract) state).b());
+        return toString(((BlockDataAbstract) state).getStateMap());
     }
 
     @Override
@@ -268,22 +268,12 @@ public class CraftBlockData implements BlockData {
 
         if (!states.isEmpty()) {
             stateString.append('[');
-            stateString.append(states.entrySet().stream().map(STATE_TO_VALUE).collect(Collectors.joining(",")));
+            stateString.append(states.entrySet().stream().map(BlockDataAbstract.STATE_TO_VALUE).collect(Collectors.joining(",")));
             stateString.append(']');
         }
 
         return stateString.toString();
     }
-
-    // BlockDataAbstract#b. Should PAIL public in future release but is mimicked for now to avoid a decompile error patch
-    private static final Function<Map.Entry<IBlockState<?>, Comparable<?>>, String> STATE_TO_VALUE = (entry) -> {
-        if (entry == null) {
-            return "<NULL>";
-        }
-
-        IBlockState state = entry.getKey();
-        return state.a() + "=" + state.a(entry.getValue());
-    };
 
     @Override
     public boolean equals(Object obj) {
@@ -517,8 +507,8 @@ public class CraftBlockData implements BlockData {
                 ArgumentBlock arg = new ArgumentBlock(reader, false).a(false);
                 Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data");
 
-                blockData = arg.b(); // PAIL rename getBlockData
-                parsed = arg.a(); // PAIL rename getStateMap
+                blockData = arg.getBlockData();
+                parsed = arg.getStateMap();
             } catch (CommandSyntaxException ex) {
                 throw new IllegalArgumentException("Could not parse data: " + data, ex);
             }

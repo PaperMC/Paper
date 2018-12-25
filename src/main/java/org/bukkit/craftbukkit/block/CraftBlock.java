@@ -436,7 +436,7 @@ public class CraftBlock implements Block {
     }
 
     public double getTemperature() {
-        return world.getBiome(position).c(position); // PAIL: getAdjustedTemperature
+        return world.getBiome(position).getAdjustedTemperature(position);
     }
 
     public double getHumidity() {
@@ -652,13 +652,13 @@ public class CraftBlock implements Block {
 
     @Override
     public BoundingBox getBoundingBox() {
-        VoxelShape shape = getData0().g(world, position); // PAIL: getShape
+        VoxelShape shape = getData0().getShape(world, position);
 
         if (shape.isEmpty()) {
             return new BoundingBox(); // Return an empty bounding box if the block has no dimension
         }
 
-        AxisAlignedBB aabb = shape.a(); // PAIL: getBoundingBox
+        AxisAlignedBB aabb = shape.getBoundingBox();
         return new BoundingBox(getX() + aabb.minX, getY() + aabb.minY, getZ() + aabb.minZ, getX() + aabb.maxX, getY() + aabb.maxY, getZ() + aabb.maxZ);
     }
 }

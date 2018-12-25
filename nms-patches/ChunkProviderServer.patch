@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -18,6 +18,11 @@
+@@ -16,6 +16,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,39 +12,16 @@
  public class ChunkProviderServer implements IChunkProvider {
  
      private static final Logger a = LogManager.getLogger();
-@@ -36,7 +41,7 @@
+@@ -34,7 +39,7 @@
          this.chunkLoader = ichunkloader;
          this.chunkGenerator = chunkgenerator;
          this.asyncTaskHandler = iasynctaskhandler;
 -        this.chunkScheduler = new ChunkTaskScheduler(2, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler);
 +        this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
-         this.batchScheduler = new SchedulerBatch(this.chunkScheduler);
+         this.batchScheduler = new SchedulerBatch<>(this.chunkScheduler);
      }
  
-@@ -86,9 +91,10 @@
- 
-             if (flag) {
-                 try {
--                    chunk = this.chunkLoader.a(this.world, i, j, (chunk) -> {
--                        chunk.setLastSaved(this.world.getTime());
--                        this.chunks.put(ChunkCoordIntPair.a(i, j), chunk);
-+                    // CraftBukkit - decompile error
-+                    chunk = this.chunkLoader.a(this.world, i, j, (chunk1) -> {
-+                        chunk1.setLastSaved(this.world.getTime());
-+                        this.chunks.put(ChunkCoordIntPair.a(i, j), chunk1);
-                     });
-                 } catch (Exception exception) {
-                     ChunkProviderServer.a.error("Couldn't load chunk", exception);
-@@ -103,7 +109,7 @@
-             try {
-                 this.batchScheduler.b();
-                 this.batchScheduler.a(new ChunkCoordIntPair(i, j));
--                CompletableFuture completablefuture = this.batchScheduler.c();
-+                CompletableFuture<ProtoChunk> completablefuture = this.batchScheduler.c(); // CraftBukkit - decompile error
- 
-                 return (Chunk) completablefuture.thenApply(this::a).join();
-             } catch (RuntimeException runtimeexception) {
-@@ -114,6 +120,22 @@
+@@ -112,6 +117,22 @@
          }
      }
  
@@ -67,7 +44,7 @@
      public IChunkAccess a(int i, int j, boolean flag) {
          Chunk chunk = this.getChunkAt(i, j, true, false);
  
-@@ -251,10 +273,12 @@
+@@ -249,10 +270,12 @@
                          Chunk chunk = (Chunk) this.chunks.get(olong);
  
                          if (chunk != null) {
@@ -84,7 +61,7 @@
                              ++i;
                          }
                      }
-@@ -267,6 +291,42 @@
+@@ -265,6 +288,42 @@
          return false;
      }
  

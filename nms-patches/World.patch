@@ -1,11 +1,12 @@
 --- a/net/minecraft/server/World.java
 +++ b/net/minecraft/server/World.java
-@@ -21,6 +21,23 @@
+@@ -18,6 +18,22 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import com.google.common.collect.Maps;
++import java.util.ArrayList;
 +import java.util.Map;
 +import org.bukkit.Bukkit;
 +import org.bukkit.block.BlockState;
@@ -14,8 +15,6 @@
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-+import org.bukkit.event.block.BlockCanBuildEvent;
 +import org.bukkit.event.block.BlockPhysicsEvent;
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +import org.bukkit.generator.ChunkGenerator;
@@ -24,7 +23,7 @@
  public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAccess, AutoCloseable {
  
      protected static final Logger e = LogManager.getLogger();
-@@ -62,7 +79,52 @@
+@@ -59,7 +75,52 @@
      private final WorldBorder K;
      int[] E;
  
@@ -78,7 +77,7 @@
          this.v = Lists.newArrayList(new IWorldAccess[] { this.u});
          this.allowMonsters = true;
          this.allowAnimals = true;
-@@ -74,6 +136,36 @@
+@@ -71,6 +132,36 @@
          this.worldProvider = worldprovider;
          this.isClientSide = flag;
          this.K = worldprovider.getWorldBorder();
@@ -115,7 +114,7 @@
      }
  
      public BiomeBase getBiome(BlockPosition blockposition) {
-@@ -148,6 +240,26 @@
+@@ -145,6 +236,26 @@
      }
  
      public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
@@ -142,7 +141,7 @@
          if (k(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-@@ -155,9 +267,23 @@
+@@ -152,9 +263,23 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
@@ -167,7 +166,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getType(blockposition);
-@@ -168,6 +294,7 @@
+@@ -165,6 +290,7 @@
                      this.methodProfiler.exit();
                  }
  
@@ -175,7 +174,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.a(blockposition, blockposition);
-@@ -192,12 +319,63 @@
+@@ -189,12 +315,63 @@
                          iblockdata.b(this, blockposition, j);
                      }
                  }
@@ -239,7 +238,7 @@
      public boolean setAir(BlockPosition blockposition) {
          Fluid fluid = this.getFluid(blockposition);
  
-@@ -234,6 +412,11 @@
+@@ -231,6 +408,11 @@
  
      public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
@@ -251,7 +250,7 @@
              this.applyPhysics(blockposition, block);
          }
  
-@@ -309,6 +492,17 @@
+@@ -306,6 +488,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -269,16 +268,7 @@
                  iblockdata.doPhysics(this, blockposition, block, blockposition1);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -317,7 +511,7 @@
-                 crashreportsystemdetails.a("Source block type", () -> {
-                     try {
-                         return String.format("ID #%s (%s // %s)", new Object[] { IRegistry.BLOCK.getKey(block), block.m(), block.getClass().getCanonicalName()});
--                    } catch (Throwable throwable) {
-+                    } catch (Throwable throwablex) { // CraftBukkit - decompile error
-                         return "ID #" + IRegistry.BLOCK.getKey(block);
-                     }
-                 });
-@@ -403,6 +597,17 @@
+@@ -400,6 +593,17 @@
      }
  
      public IBlockData getType(BlockPosition blockposition) {
@@ -296,7 +286,7 @@
          if (k(blockposition)) {
              return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -649,6 +854,16 @@
+@@ -646,6 +850,16 @@
      }
  
      public boolean addEntity(Entity entity) {
@@ -313,7 +303,7 @@
          int i = MathHelper.floor(entity.locX / 16.0D);
          int j = MathHelper.floor(entity.locZ / 16.0D);
          boolean flag = entity.attachedToPlayer;
-@@ -679,6 +894,7 @@
+@@ -676,6 +890,7 @@
              ((IWorldAccess) this.v.get(i)).a(entity);
          }
  
@@ -321,7 +311,7 @@
      }
  
      protected void c(Entity entity) {
-@@ -686,6 +902,7 @@
+@@ -683,6 +898,7 @@
              ((IWorldAccess) this.v.get(i)).b(entity);
          }
  
@@ -329,7 +319,7 @@
      }
  
      public void kill(Entity entity) {
-@@ -721,7 +938,15 @@
+@@ -718,7 +934,15 @@
              this.getChunkAt(i, j).b(entity);
          }
  
@@ -346,7 +336,7 @@
          this.c(entity);
      }
  
-@@ -756,6 +981,11 @@
+@@ -753,6 +977,11 @@
  
          for (i = 0; i < this.k.size(); ++i) {
              entity = (Entity) this.k.get(i);
@@ -358,7 +348,7 @@
  
              try {
                  ++entity.ticksLived;
-@@ -804,8 +1034,10 @@
+@@ -801,8 +1030,10 @@
          CrashReport crashreport1;
          CrashReportSystemDetails crashreportsystemdetails1;
  
@@ -371,7 +361,7 @@
              Entity entity1 = entity.getVehicle();
  
              if (entity1 != null) {
-@@ -838,7 +1070,7 @@
+@@ -835,7 +1066,7 @@
                      this.getChunkAt(j, l).b(entity);
                  }
  
@@ -380,7 +370,7 @@
                  this.c(entity);
              }
  
-@@ -893,9 +1125,11 @@
+@@ -890,9 +1121,11 @@
                  TileEntity tileentity1 = (TileEntity) this.c.get(i1);
  
                  if (!tileentity1.x()) {
@@ -392,7 +382,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
-@@ -903,6 +1137,12 @@
+@@ -900,6 +1133,12 @@
  
                          chunk.a(tileentity1.getPosition(), tileentity1);
                          this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
@@ -405,7 +395,7 @@
                      }
                  }
              }
-@@ -956,15 +1196,13 @@
+@@ -953,15 +1192,13 @@
          int i;
          int j;
  
@@ -427,7 +417,7 @@
  
          entity.N = entity.locX;
          entity.O = entity.locY;
-@@ -980,6 +1218,7 @@
+@@ -977,6 +1214,7 @@
                      return IRegistry.ENTITY_TYPE.getKey(entity.P()).toString();
                  });
                  entity.tick();
@@ -435,7 +425,7 @@
                  this.methodProfiler.exit();
              }
          }
-@@ -1310,11 +1549,18 @@
+@@ -1307,11 +1545,18 @@
          }
      }
  
@@ -454,7 +444,7 @@
              TileEntity tileentity = null;
  
              if (this.J) {
-@@ -1349,6 +1595,14 @@
+@@ -1346,6 +1591,14 @@
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
          if (!k(blockposition)) {
              if (tileentity != null && !tileentity.x()) {
@@ -469,7 +459,7 @@
                  if (this.J) {
                      tileentity.setPosition(blockposition);
                      Iterator iterator = this.c.iterator();
-@@ -1509,6 +1763,14 @@
+@@ -1506,6 +1759,14 @@
                  }
  
                  this.p = MathHelper.a(this.p, 0.0F, 1.0F);
@@ -484,7 +474,7 @@
              }
          }
      }
-@@ -1594,7 +1856,10 @@
+@@ -1591,7 +1852,10 @@
      }
  
      public boolean c(EnumSkyBlock enumskyblock, BlockPosition blockposition) {
@@ -496,43 +486,47 @@
              return false;
          } else {
              int i = 0;
-@@ -1737,7 +2002,7 @@
+@@ -1734,7 +1998,7 @@
      }
  
      public Stream<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, VoxelShape voxelshape1, Set<Entity> set) {
--        Stream stream = super.a(entity, voxelshape, voxelshape1, set);
-+        Stream stream = IIBlockAccess.super.a(entity, voxelshape, voxelshape1, set); // CraftBukkit - decompile error
+-        Stream<VoxelShape> stream = GeneratorAccess.super.a(entity, voxelshape, voxelshape1, set);
++        Stream<VoxelShape> stream = IIBlockAccess.super.a(entity, voxelshape, voxelshape1, set); // CraftBukkit - decompile error
  
          return entity == null ? stream : Stream.concat(stream, this.a(entity, voxelshape, set));
      }
-@@ -1767,7 +2032,7 @@
+@@ -1764,8 +2028,8 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
 -            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test(entity)) {
-+            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) {
-                 arraylist.add(entity);
+-                list.add(entity);
++            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) { // CraftBukkit - decompile error
++                list.add((T) entity); // CraftBukkit - decompile error
              }
          }
-@@ -1782,7 +2047,7 @@
+ 
+@@ -1779,8 +2043,8 @@
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
 -            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test(entity)) {
-+            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) { // CraftBukkit - fix decompile error
-                 arraylist.add(entity);
-             }
-         }
-@@ -1831,7 +2096,7 @@
+-                list.add(entity);
++            if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) { // CraftBukkit - decompile error
++                list.add((T) entity); // CraftBukkit - decompile error
              }
          }
  
--        return entity;
-+        return (T) entity; // CraftBukkit fix decompile error
-     }
+@@ -1816,7 +2080,7 @@
+         double d0 = Double.MAX_VALUE;
  
-     @Nullable
-@@ -1852,8 +2117,16 @@
+         for (int i = 0; i < list.size(); ++i) {
+-            T t2 = (Entity) list.get(i);
++            T t2 = (T) list.get(i); // CraftBukkit - decompile error
+ 
+             if (t2 != t0 && IEntitySelector.f.test(t2)) {
+                 double d1 = t0.h(t2);
+@@ -1849,8 +2113,16 @@
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -550,7 +544,7 @@
                  if (oclass.isAssignableFrom(entity.getClass())) {
                      ++j;
                  }
-@@ -1972,6 +2245,11 @@
+@@ -1969,6 +2241,11 @@
  
          for (int i = 0; i < this.players.size(); ++i) {
              EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
@@ -562,7 +556,7 @@
  
              if (predicate.test(entityhuman1)) {
                  double d5 = entityhuman1.d(d0, d1, d2);
-@@ -2185,6 +2463,16 @@
+@@ -2182,6 +2459,16 @@
  
      public void everyoneSleeping() {}
  
@@ -579,7 +573,7 @@
      public float g(float f) {
          return (this.q + (this.r - this.q) * f) * this.i(f);
      }
-@@ -2346,7 +2634,7 @@
+@@ -2343,7 +2630,7 @@
          int l = j * 16 + 8 - blockposition.getZ();
          boolean flag = true;
  

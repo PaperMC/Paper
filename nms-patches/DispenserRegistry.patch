@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/DispenserRegistry.java
 +++ b/net/minecraft/server/DispenserRegistry.java
-@@ -8,6 +8,16 @@
+@@ -7,6 +7,16 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -17,27 +17,9 @@
  public class DispenserRegistry {
  
      public static final PrintStream a = System.out;
-@@ -70,7 +80,7 @@
-         BlockDispenser.a((IMaterial) Items.SPLASH_POTION, new IDispenseBehavior() {
-             public ItemStack dispense(ISourceBlock isourceblock, final ItemStack itemstack) {
-                 return (new DispenseBehaviorProjectile() {
--                    protected IProjectile a(World world, IPosition iposition, ItemStack itemstack) {
-+                    protected IProjectile a(World world, IPosition iposition, ItemStack itemstack1) { // CraftBukkit - decompile issue
-                         return new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), itemstack1.cloneItemStack());
-                     }
- 
-@@ -87,7 +97,7 @@
-         BlockDispenser.a((IMaterial) Items.LINGERING_POTION, new IDispenseBehavior() {
-             public ItemStack dispense(ISourceBlock isourceblock, final ItemStack itemstack) {
-                 return (new DispenseBehaviorProjectile() {
--                    protected IProjectile a(World world, IPosition iposition, ItemStack itemstack) {
-+                    protected IProjectile a(World world, IPosition iposition, ItemStack itemstack1) { // CraftBukkit - decompile issue
-                         return new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), itemstack1.cloneItemStack());
-                     }
- 
-@@ -106,11 +116,39 @@
+@@ -105,11 +115,39 @@
                  EnumDirection enumdirection = (EnumDirection) isourceblock.e().get(BlockDispenser.FACING);
-                 EntityTypes entitytypes = ((ItemMonsterEgg) itemstack.getItem()).b(itemstack.getTag());
+                 EntityTypes<?> entitytypes = ((ItemMonsterEgg) itemstack.getItem()).b(itemstack.getTag());
  
 +                // CraftBukkit start
 +                World world = isourceblock.getWorld();
@@ -76,7 +58,7 @@
                  return itemstack;
              }
          };
-@@ -128,10 +166,39 @@
+@@ -127,10 +165,39 @@
                  double d0 = isourceblock.getX() + (double) enumdirection.getAdjacentX();
                  double d1 = (double) ((float) isourceblock.getBlockPosition().getY() + 0.2F);
                  double d2 = isourceblock.getZ() + (double) enumdirection.getAdjacentZ();
@@ -118,7 +100,7 @@
                  return itemstack;
              }
  
-@@ -152,8 +219,38 @@
+@@ -151,8 +218,38 @@
                  double d4 = random.nextGaussian() * 0.05D + (double) enumdirection.getAdjacentY();
                  double d5 = random.nextGaussian() * 0.05D + (double) enumdirection.getAdjacentZ();
  
@@ -159,7 +141,7 @@
                  return itemstack;
              }
  
-@@ -175,9 +272,52 @@
+@@ -174,9 +271,52 @@
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.e().get(BlockDispenser.FACING));
                  World world = isourceblock.getWorld();
  
@@ -213,12 +195,12 @@
                  } else {
                      return this.a.dispense(isourceblock, itemstack);
                  }
-@@ -200,13 +340,39 @@
+@@ -199,13 +339,39 @@
                  Block block = iblockdata.getBlock();
  
                  if (block instanceof IFluidSource) {
--                    FluidType fluidtype = ((IFluidSource) block).a(world, blockposition, iblockdata);
-+                    FluidType fluidtype = ((IFluidSource) block).a(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata); // CraftBukkit
+-                    FluidType fluidtype = ((IFluidSource) block).removeFluid(world, blockposition, iblockdata);
++                    FluidType fluidtype = ((IFluidSource) block).removeFluid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata); // CraftBukkit
  
                      if (!(fluidtype instanceof FluidTypeFlowing)) {
                          return super.a(isourceblock, itemstack);
@@ -248,13 +230,13 @@
 +                            }
 +                        }
 +
-+                        fluidtype = ((IFluidSource) block).a(world, blockposition, iblockdata); // From above
++                        fluidtype = ((IFluidSource) block).removeFluid(world, blockposition, iblockdata); // From above
 +                        // CraftBukkit end
 +
                          itemstack.subtract(1);
                          if (itemstack.isEmpty()) {
                              return new ItemStack(item);
-@@ -227,11 +393,39 @@
+@@ -226,11 +392,39 @@
              protected ItemStack a(ISourceBlock isourceblock, ItemStack itemstack) {
                  World world = isourceblock.getWorld();
  
@@ -295,7 +277,7 @@
                  } else {
                      Block block = world.getType(blockposition).getBlock();
  
-@@ -255,12 +449,57 @@
+@@ -254,12 +448,57 @@
                  this.a = true;
                  World world = isourceblock.getWorld();
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.e().get(BlockDispenser.FACING));
@@ -353,7 +335,7 @@
  
                  return itemstack;
              }
-@@ -269,11 +508,40 @@
+@@ -268,11 +507,40 @@
              protected ItemStack a(ISourceBlock isourceblock, ItemStack itemstack) {
                  World world = isourceblock.getWorld();
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.e().get(BlockDispenser.FACING));
@@ -396,7 +378,7 @@
                  return itemstack;
              }
          }));
-@@ -295,6 +563,30 @@
+@@ -294,6 +562,30 @@
                  EnumDirection enumdirection = (EnumDirection) isourceblock.e().get(BlockDispenser.FACING);
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift(enumdirection);
  
@@ -427,7 +409,7 @@
                  this.a = true;
                  if (world.isEmpty(blockposition) && BlockWitherSkull.b(world, blockposition, itemstack)) {
                      world.setTypeAndData(blockposition, (IBlockData) Blocks.WITHER_SKELETON_SKULL.getBlockData().set(BlockSkull.a, enumdirection.k() == EnumDirection.EnumAxis.Y ? 0 : enumdirection.opposite().get2DRotationValue() * 4), 3);
-@@ -318,6 +610,30 @@
+@@ -317,6 +609,30 @@
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.e().get(BlockDispenser.FACING));
                  BlockPumpkinCarved blockpumpkincarved = (BlockPumpkinCarved) Blocks.CARVED_PUMPKIN;
  
@@ -458,24 +440,7 @@
                  this.a = true;
                  if (world.isEmpty(blockposition) && blockpumpkincarved.a((IWorldReader) world, blockposition)) {
                      if (!world.isClientSide) {
-@@ -336,14 +652,14 @@
-                 return itemstack;
-             }
-         }));
--        BlockDispenser.a((IMaterial) Blocks.SHULKER_BOX.getItem(), (IDispenseBehavior) (new DispenserRegistry.d(null)));
-+        BlockDispenser.a((IMaterial) Blocks.SHULKER_BOX.getItem(), (IDispenseBehavior) (new DispenserRegistry.d())); // CraftBukkit - decompile error
-         EnumColor[] aenumcolor = EnumColor.values();
-         int i = aenumcolor.length;
- 
-         for (int j = 0; j < i; ++j) {
-             EnumColor enumcolor = aenumcolor[j];
- 
--            BlockDispenser.a((IMaterial) BlockShulkerBox.a(enumcolor).getItem(), (IDispenseBehavior) (new DispenserRegistry.d(null)));
-+            BlockDispenser.a((IMaterial) BlockShulkerBox.a(enumcolor).getItem(), (IDispenseBehavior) (new DispenserRegistry.d())); // CraftBukkit - decompile error
-         }
- 
-     }
-@@ -385,6 +701,51 @@
+@@ -384,6 +700,51 @@
                  }
  
                  d();
@@ -527,16 +492,7 @@
              }
          }
      }
-@@ -393,7 +754,7 @@
-         LocaleLanguage localelanguage = LocaleLanguage.a();
- 
-         iregistry.iterator().forEachRemaining((object) -> {
--            String s = (String) function.apply(object);
-+            String s1 = (String) function.apply(object); // CraftBukkit - decompile error
- 
-             if (!localelanguage.b(s)) {
-                 DispenserRegistry.c.warn("Missing translation for {}: {} (key: '{}')", s1, iregistry.getKey(object), s);
-@@ -482,6 +843,30 @@
+@@ -481,6 +842,30 @@
                  BlockPosition blockposition = isourceblock.getBlockPosition().shift(enumdirection);
                  EnumDirection enumdirection1 = isourceblock.getWorld().isEmpty(blockposition.down()) ? enumdirection : EnumDirection.UP;
  
@@ -567,7 +523,7 @@
                  this.a = ((ItemBlock) item).a((BlockActionContext) (new DispenserRegistry.b(isourceblock.getWorld(), blockposition, enumdirection, itemstack, enumdirection1))) == EnumInteractionResult.SUCCESS;
                  if (this.a) {
                      itemstack.subtract(1);
-@@ -531,12 +916,40 @@
+@@ -530,12 +915,40 @@
                  d3 = 0.0D;
              }
  

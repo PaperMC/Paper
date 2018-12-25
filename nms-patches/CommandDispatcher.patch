@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/CommandDispatcher.java
 +++ b/net/minecraft/server/CommandDispatcher.java
-@@ -27,12 +27,21 @@
+@@ -22,12 +22,21 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -23,7 +23,7 @@
          CommandAdvancement.a(this.b);
          CommandExecute.a(this.b);
          CommandBossBar.a(this.b);
-@@ -100,8 +109,13 @@
+@@ -95,8 +104,13 @@
          }
  
          this.b.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
@@ -35,10 +35,10 @@
 +
 +    public CommandDispatcher() {
 +        // CraftBukkit end
-         this.b.setConsumer((commandcontext, flag, i) -> {
-             ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag, i);
+         this.b.setConsumer((commandcontext, flag1, i) -> {
+             ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag1, i);
          });
-@@ -116,7 +130,47 @@
+@@ -111,7 +125,47 @@
  
      }
  
@@ -85,8 +85,8 @@
 +        // CraftBukkit end
          StringReader stringreader = new StringReader(s);
  
-         if(stringreader.canRead() && stringreader.peek() == 47) {
-@@ -128,7 +182,6 @@
+         if (stringreader.canRead() && stringreader.peek() == '/') {
+@@ -123,7 +177,6 @@
          byte b0;
  
          try {
@@ -94,7 +94,7 @@
              ChatComponentText chatcomponenttext;
  
              try {
-@@ -137,52 +190,56 @@
+@@ -132,52 +185,56 @@
                  return i;
              } catch (CommandException commandexception) {
                  commandlistenerwrapper.sendFailureMessage(commandexception.a());
@@ -104,21 +104,21 @@
 +                return b0;
              } catch (CommandSyntaxException commandsyntaxexception) {
                  commandlistenerwrapper.sendFailureMessage(ChatComponentUtils.a(commandsyntaxexception.getRawMessage()));
-                 if(commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                 if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
                      int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
 -                    IChatBaseComponent ichatbasecomponent = (new ChatComponentText("")).a(EnumChatFormat.GRAY).a((chatmodifier) -> {
 -                        chatmodifier.setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s));
 -                    });
  
 +                    chatcomponenttext = new ChatComponentText("");
-                     if(j > 10) {
+                     if (j > 10) {
 -                        ichatbasecomponent.a("...");
 +                        chatcomponenttext.a("...");
                      }
  
 -                    ichatbasecomponent.a(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
 +                    chatcomponenttext.a(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
-                     if(j < commandsyntaxexception.getInput().length()) {
+                     if (j < commandsyntaxexception.getInput().length()) {
 -                        IChatBaseComponent ichatbasecomponent1 = (new ChatComponentText(commandsyntaxexception.getInput().substring(j))).a(new EnumChatFormat[]{EnumChatFormat.RED, EnumChatFormat.UNDERLINE});
 +                        ChatComponentText chatcomponenttext1 = new ChatComponentText(commandsyntaxexception.getInput().substring(j));
  
@@ -147,11 +147,11 @@
 -                chatcomponenttext = new ChatComponentText;
 -            }
 -
--            chatcomponenttext.<init>(exception.getMessage() == null?exception.getClass().getName():exception.getMessage());
+-            chatcomponenttext.<init>(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 -            ChatComponentText chatcomponenttext1 = chatcomponenttext;
 +                ChatMessage chatmessage1 = new ChatMessage("command.failed", new Object[0]);
  
--            if(CommandDispatcher.a.isDebugEnabled()) {
+-            if (CommandDispatcher.a.isDebugEnabled()) {
 -                StackTraceElement[] astacktraceelement = exception.getStackTrace();
 +                chatcomponenttext = new ChatComponentText(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 +                if (CommandDispatcher.a.isDebugEnabled()) {
@@ -166,7 +166,7 @@
 -            }
  
 -            commandlistenerwrapper.sendFailureMessage((new ChatMessage("command.failed", new Object[0])).a((chatmodifier) -> {
--                chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, ichatbasecomponent));
+-                chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext1));
 -            }));
 -            b0 = 0;
 +                chatmessage1.getChatModifier().setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext));
@@ -178,26 +178,25 @@
          } finally {
              commandlistenerwrapper.getServer().methodProfiler.exit();
          }
-@@ -191,11 +248,36 @@
+@@ -186,11 +243,36 @@
      }
  
      public void a(EntityPlayer entityplayer) {
--        HashMap hashmap = Maps.newHashMap();
--        RootCommandNode rootcommandnode = new RootCommandNode();
+-        Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newHashMap();
 +        // CraftBukkit start
 +        // Register Vanilla commands into builtRoot as before
-+        Map hashmap = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
++        Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
 +        RootCommandNode vanillaRoot = new RootCommandNode();
 +
 +        RootCommandNode<CommandListenerWrapper> vanilla = entityplayer.server.vanillaCommandDispatcher.a().getRoot();
-+        hashmap.put(vanilla, vanillaRoot);
-+        this.a(vanilla, vanillaRoot, entityplayer.getCommandListener(), (Map) hashmap);
++        map.put(vanilla, vanillaRoot);
++        this.a(vanilla, vanillaRoot, entityplayer.getCommandListener(), (Map) map);
 +
 +        // Now build the global commands in a second pass
-+        RootCommandNode<ICompletionProvider> rootcommandnode = new RootCommandNode();
+         RootCommandNode<ICompletionProvider> rootcommandnode = new RootCommandNode();
  
-         hashmap.put(this.b.getRoot(), rootcommandnode);
-         this.a(this.b.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) hashmap);
+         map.put(this.b.getRoot(), rootcommandnode);
+         this.a(this.b.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) map);
 +
 +        Collection<String> bukkit = new LinkedHashSet<>();
 +        for (CommandNode node : rootcommandnode.getChildren()) {
@@ -217,3 +216,21 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
      }
  
+@@ -201,7 +283,7 @@
+             CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
+ 
+             if (commandnode2.canUse(commandlistenerwrapper)) {
+-                ArgumentBuilder<ICompletionProvider, ?> argumentbuilder = commandnode2.createBuilder();
++                ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
+ 
+                 argumentbuilder.requires((icompletionprovider) -> {
+                     return true;
+@@ -224,7 +306,7 @@
+                     argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
+                 }
+ 
+-                CommandNode<ICompletionProvider> commandnode3 = argumentbuilder.build();
++                CommandNode commandnode3 = argumentbuilder.build(); // CraftBukkit - decompile error
+ 
+                 map.put(commandnode2, commandnode3);
+                 commandnode1.addChild(commandnode3);

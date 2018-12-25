@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -59,6 +59,14 @@
+@@ -54,6 +54,14 @@
  import org.apache.commons.lang3.Validate;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -15,7 +15,7 @@
  
  public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStatistics, ICommandListener, Runnable {
  
-@@ -129,7 +137,21 @@
+@@ -124,7 +132,21 @@
      private boolean forceUpgrade;
      private float ap;
  
@@ -36,9 +36,9 @@
 +
 +    public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
          this.ac = new ResourceManager(EnumResourcePackType.SERVER_DATA);
-         this.resourcePackRepository = new ResourcePackRepository(ResourcePackLoader::new);
+         this.resourcePackRepository = new ResourcePackRepository<>(ResourcePackLoader::new);
          this.ag = new CraftingManager();
-@@ -140,22 +162,51 @@
+@@ -135,22 +157,51 @@
          this.al = new AdvancementDataWorld();
          this.am = new CustomFunctionData(this);
          this.c = proxy;
@@ -94,7 +94,7 @@
      public abstract boolean init() throws IOException;
  
      public void convertWorld(String s) {
-@@ -180,11 +231,11 @@
+@@ -175,11 +226,11 @@
          }
  
          if (this.forceUpgrade) {
@@ -109,7 +109,7 @@
                  IChatBaseComponent ichatbasecomponent = null;
  
                  while (!worldupgrader.b()) {
-@@ -223,8 +274,9 @@
+@@ -218,8 +269,9 @@
      }
  
      public void a(String s, String s1, long i, WorldType worldtype, JsonElement jsonelement) {
@@ -120,7 +120,7 @@
          IDataManager idatamanager = this.getConvertable().a(s, this);
  
          this.a(this.getWorld(), idatamanager);
-@@ -249,54 +301,144 @@
+@@ -244,54 +296,144 @@
          }
  
          this.a(idatamanager.getDirectory(), worlddata);
@@ -158,8 +158,7 @@
 +                    continue;
 +                }
 +            }
- 
--        WorldServer worldserver = this.getWorldServer(DimensionManager.OVERWORLD);
++
 +            String worldType = org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase();
 +            String name = (dimension == 0) ? s : s + "_" + worldType;
 +            this.convertWorld(name); // Run conversion now
@@ -178,32 +177,32 @@
 +                this.a(idatamanager.getDirectory(), worlddata);
 +                PersistentCollection persistentcollection = new PersistentCollection(idatamanager);
  
--        worldserver.a(worldsettings);
--        worldserver.addIWorldAccess(new WorldManager(this, worldserver));
--        if (!this.H()) {
--            worldserver.getWorldData().setGameType(this.getGamemode());
--        }
+-        WorldServer worldserver = this.getWorldServer(DimensionManager.OVERWORLD);
 +                if (this.L()) {
 +                    world = (WorldServer) (new DemoWorldServer(this, idatamanager, persistentcollection, worlddata, DimensionManager.OVERWORLD, this.methodProfiler)).i_();
 +                } else {
 +                    world = (WorldServer) (new WorldServer(this, idatamanager, persistentcollection, worlddata, DimensionManager.OVERWORLD, this.methodProfiler, org.bukkit.World.Environment.getEnvironment(dimension), gen)).i_();
 +                }
  
--        SecondaryWorldServer secondaryworldserver = (new SecondaryWorldServer(this, idatamanager, DimensionManager.NETHER, worldserver, this.methodProfiler)).i_();
+-        worldserver.a(worldsettings);
+-        worldserver.addIWorldAccess(new WorldManager(this, worldserver));
+-        if (!this.H()) {
+-            worldserver.getWorldData().setGameType(this.getGamemode());
+-        }
 +                world.a(worldsettings);
 +                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
 +            } else {
 +                String dim = "DIM" + dimension;
+ 
+-        SecondaryWorldServer secondaryworldserver = (new SecondaryWorldServer(this, idatamanager, DimensionManager.NETHER, worldserver, this.methodProfiler)).i_();
++                File newWorld = new File(new File(name), dim);
++                File oldWorld = new File(new File(s), dim);
  
 -        this.worldServer.put(DimensionManager.NETHER, secondaryworldserver);
 -        secondaryworldserver.addIWorldAccess(new WorldManager(this, secondaryworldserver));
 -        if (!this.H()) {
 -            secondaryworldserver.getWorldData().setGameType(this.getGamemode());
 -        }
-+                File newWorld = new File(new File(name), dim);
-+                File oldWorld = new File(new File(s), dim);
- 
--        SecondaryWorldServer secondaryworldserver1 = (new SecondaryWorldServer(this, idatamanager, DimensionManager.THE_END, worldserver, this.methodProfiler)).i_();
 +                if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
 +                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
 +                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
@@ -234,11 +233,7 @@
 +                    }
 +                }
  
--        this.worldServer.put(DimensionManager.THE_END, secondaryworldserver1);
--        secondaryworldserver1.addIWorldAccess(new WorldManager(this, secondaryworldserver1));
--        if (!this.H()) {
--            secondaryworldserver1.getWorldData().setGameType(this.getGamemode());
--        }
+-        SecondaryWorldServer secondaryworldserver1 = (new SecondaryWorldServer(this, idatamanager, DimensionManager.THE_END, worldserver, this.methodProfiler)).i_();
 +                IDataManager idatamanager = new ServerNBTManager(server.getWorldContainer(), name, this, this.dataConverterManager);
 +                // world =, b0 to dimension, s1 to name, added Environment and gen
 +                worlddata = idatamanager.getWorldData();
@@ -248,20 +243,25 @@
 +                worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
 +                world = (WorldServer) new SecondaryWorldServer(this, idatamanager, DimensionManager.a(dimension), this.getWorldServer(DimensionManager.OVERWORLD), this.methodProfiler, worlddata, org.bukkit.World.Environment.getEnvironment(dimension), gen).i_();
 +            }
-+
+ 
+-        this.worldServer.put(DimensionManager.THE_END, secondaryworldserver1);
+-        secondaryworldserver1.addIWorldAccess(new WorldManager(this, secondaryworldserver1));
+-        if (!this.H()) {
+-            secondaryworldserver1.getWorldData().setGameType(this.getGamemode());
+-        }
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
 +
 +            world.addIWorldAccess(new WorldManager(this, world));
 +            if (!this.H()) {
 +                world.getWorldData().setGameType(this.getGamemode());
 +            }
-+
-+            this.worldServer.put(world.dimension, world);
-+            this.getPlayerList().setPlayerFileData(world);
  
 -        this.getPlayerList().setPlayerFileData(worldserver);
 -        if (worlddata.P() != null) {
 -            this.getBossBattleCustomData().a(worlddata.P());
++            this.worldServer.put(world.dimension, world);
++            this.getPlayerList().setPlayerFileData(world);
++
 +            if (worlddata.P() != null) {
 +                this.getBossBattleCustomData().a(worlddata.P());
 +            }
@@ -296,8 +296,8 @@
 +        // CraftBukkit end
          this.resourcePackRepository.a((ResourcePackSource) this.resourcePackFolder);
          this.resourcePackRepository.a();
-         ArrayList arraylist = Lists.newArrayList();
-@@ -325,42 +467,52 @@
+         List<ResourcePackLoader> list = Lists.newArrayList();
+@@ -320,42 +462,52 @@
          boolean flag4 = true;
  
          this.b((IChatBaseComponent) (new ChatMessage("menu.generatingTerrain", new Object[0])));
@@ -305,30 +305,30 @@
  
 -        MinecraftServer.LOGGER.info("Preparing start region for dimension " + DimensionManager.a(worldserver.worldProvider.getDimensionManager()));
 -        BlockPosition blockposition = worldserver.getSpawn();
--        ArrayList arraylist = Lists.newArrayList();
--        Set set = Sets.newConcurrentHashSet();
+-        List<ChunkCoordIntPair> list = Lists.newArrayList();
+-        Set<ChunkCoordIntPair> set = Sets.newConcurrentHashSet();
 +        // CraftBukkit start - fire WorldLoadEvent and handle whether or not to keep the spawn in memory
          Stopwatch stopwatch = Stopwatch.createStarted();
 -
 -        for (int i = -192; i <= 192 && this.isRunning(); i += 16) {
 -            for (int j = -192; j <= 192 && this.isRunning(); j += 16) {
--                arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
+-                list.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
 +        for (WorldServer worldserver : this.getWorlds()) {
 +            MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
 +            if (!worldserver.getWorld().getKeepSpawnInMemory()) {
 +                continue;
              }
  
--            CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
+-            CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) list, (chunk) -> {
 -                set.add(chunk.getPos());
 -            });
 +            BlockPosition blockposition = worldserver.getSpawn();
-+            ArrayList arraylist = Lists.newArrayList();
-+            Set set = Sets.newConcurrentHashSet();
++            List<ChunkCoordIntPair> list = Lists.newArrayList();
++            Set<ChunkCoordIntPair> set = Sets.newConcurrentHashSet();
 +
 +            for (int i = -192; i <= 192 && this.isRunning(); i += 16) {
 +                for (int j = -192; j <= 192 && this.isRunning(); j += 16) {
-+                    arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
++                    list.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
 +                }
  
 -            while (!completablefuture.isDone()) {
@@ -340,7 +340,7 @@
 -                    if (executionexception.getCause() instanceof RuntimeException) {
 -                        throw (RuntimeException) executionexception.getCause();
 -                    }
-+                CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
++                CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) list, (chunk) -> {
 +                    set.add(chunk.getPos());
 +                });
 +
@@ -376,7 +376,7 @@
          MinecraftServer.LOGGER.info("Time elapsed: {} ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
          Iterator iterator = DimensionManager.b().iterator();
  
-@@ -419,6 +571,10 @@
+@@ -414,6 +566,10 @@
      protected void l() {
          this.w = null;
          this.x = 0;
@@ -387,7 +387,7 @@
      }
  
      protected void saveChunks(boolean flag) {
-@@ -442,8 +598,24 @@
+@@ -437,8 +593,24 @@
  
      }
  
@@ -413,7 +413,7 @@
          if (this.getServerConnection() != null) {
              this.getServerConnection().b();
          }
-@@ -452,6 +624,7 @@
+@@ -447,6 +619,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
              this.playerList.u();
@@ -421,7 +421,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -516,11 +689,13 @@
+@@ -511,11 +684,13 @@
                      if (i > 2000L && this.nextTick - this.lastOverloadTime >= 15000L) {
                          long j = i / 50L;
  
@@ -435,7 +435,7 @@
                      this.a(this::canSleepForTick);
                      this.nextTick += 50L;
  
-@@ -559,6 +734,12 @@
+@@ -554,6 +729,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -448,7 +448,7 @@
                  this.t();
              }
  
-@@ -627,7 +808,7 @@
+@@ -622,7 +803,7 @@
              this.m.b().a(agameprofile);
          }
  
@@ -457,7 +457,7 @@
              this.methodProfiler.enter("save");
              this.playerList.savePlayers();
              this.saveChunks(true);
-@@ -653,6 +834,7 @@
+@@ -648,6 +829,7 @@
      }
  
      public void b(BooleanSupplier booleansupplier) {
@@ -465,7 +465,7 @@
          this.methodProfiler.enter("jobs");
  
          FutureTask futuretask;
-@@ -665,23 +847,40 @@
+@@ -660,23 +842,40 @@
          this.getFunctionData().tick();
          this.methodProfiler.exitEnter("levels");
  
@@ -512,7 +512,7 @@
  
                  this.methodProfiler.enter("tick");
  
-@@ -732,10 +931,11 @@
+@@ -727,10 +926,11 @@
          this.k.add(itickable);
      }
  
@@ -525,7 +525,7 @@
              boolean flag = true;
              String s = null;
              String s1 = ".";
-@@ -783,13 +983,16 @@
+@@ -778,13 +978,16 @@
                      ++j;
                  }
              }
@@ -543,7 +543,7 @@
              if (s != null) {
                  dedicatedserver.h(s);
              }
-@@ -827,6 +1030,29 @@
+@@ -822,6 +1025,29 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -573,7 +573,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -838,11 +1064,13 @@
+@@ -833,11 +1059,13 @@
      }
  
      public void v() {
@@ -587,7 +587,7 @@
      }
  
      public File c(String s) {
-@@ -882,7 +1110,7 @@
+@@ -877,7 +1105,7 @@
      }
  
      public boolean isDebugging() {
@@ -596,7 +596,7 @@
      }
  
      public void f(String s) {
-@@ -897,7 +1125,7 @@
+@@ -892,7 +1120,7 @@
      }
  
      public String getServerModName() {
@@ -605,7 +605,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -933,7 +1161,7 @@
+@@ -928,7 +1156,7 @@
      }
  
      public boolean D() {
@@ -614,7 +614,7 @@
      }
  
      public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-@@ -1073,7 +1301,7 @@
+@@ -1068,7 +1296,7 @@
      public abstract boolean Q();
  
      public boolean getOnlineMode() {
@@ -623,36 +623,16 @@
      }
  
      public void setOnlineMode(boolean flag) {
-@@ -1233,7 +1461,7 @@
+@@ -1228,7 +1456,7 @@
  
      public <V> ListenableFuture<V> a(Callable<V> callable) {
          Validate.notNull(callable);
 -        if (!this.isMainThread() && !this.isStopped()) {
 +        if (!this.isMainThread()) { // CraftBukkit && !this.isStopped()) {
-             ListenableFutureTask listenablefuturetask = ListenableFutureTask.create(callable);
+             ListenableFutureTask<V> listenablefuturetask = ListenableFutureTask.create(callable);
  
              this.f.add(listenablefuturetask);
-@@ -1304,8 +1532,8 @@
- 
-             if (!worlddata.N().contains(resourcepackloader.e()) && !arraylist.contains(resourcepackloader)) {
-                 MinecraftServer.LOGGER.info("Found new data pack {}, loading it automatically", resourcepackloader.e());
--                resourcepackloader.h().a(arraylist, resourcepackloader, (resourcepackloader) -> {
--                    return resourcepackloader;
-+                resourcepackloader.h().a(arraylist, resourcepackloader, (resourcepackloader1) -> { // CraftBukkit - decompile error
-+                    return resourcepackloader1; // CraftBukkit - decompile error
-                 }, false);
-             }
-         }
-@@ -1314,7 +1542,7 @@
-         ArrayList arraylist1 = Lists.newArrayList();
- 
-         this.resourcePackRepository.d().forEach((resourcepackloader) -> {
--            list.add(resourcepackloader.d());
-+            arraylist1.add(resourcepackloader.d()); // CraftBukkit - decompile error
-         });
-         this.ac.a((List) arraylist1);
-         worlddata.O().clear();
-@@ -1416,4 +1644,11 @@
+@@ -1411,4 +1639,11 @@
              return 0;
          }
      }
