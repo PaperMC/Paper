@@ -383,6 +383,8 @@ public class CraftEventFactory {
             event = CraftEventFactory.callProjectileLaunchEvent(entity);
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle){
             event = CraftEventFactory.callVehicleCreateEvent(entity);
+        } else {
+            event = CraftEventFactory.callEntitySpawnEvent(entity);
         }
 
         if (event != null && (event.isCancelled() || entity.dead)) {
@@ -398,6 +400,17 @@ public class CraftEventFactory {
         }
 
         return true;
+    }
+
+    /**
+     * EntitySpawnEvent
+     */
+    public static EntitySpawnEvent callEntitySpawnEvent(Entity entity) {
+        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+
+        EntitySpawnEvent event = new EntitySpawnEvent(bukkitEntity);
+        bukkitEntity.getServer().getPluginManager().callEvent(event);
+        return event;
     }
 
     /**
