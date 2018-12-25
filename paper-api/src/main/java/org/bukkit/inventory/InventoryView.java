@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 
@@ -157,12 +158,9 @@ public abstract class InventoryView {
      * @param item The new item to put in the slot, or null to clear it.
      */
     public void setItem(int slot, ItemStack item) {
-        if (slot != OUTSIDE) {
-            if (slot < getTopInventory().getSize()) {
-                getTopInventory().setItem(convertSlot(slot), item);
-            } else {
-                getBottomInventory().setItem(convertSlot(slot), item);
-            }
+        Inventory inventory = getInventory(slot);
+        if (inventory != null) {
+            inventory.setItem(convertSlot(slot), item);
         } else {
             getPlayer().getWorld().dropItemNaturally(getPlayer().getLocation(), item);
         }
@@ -175,14 +173,8 @@ public abstract class InventoryView {
      * @return The item currently in the slot.
      */
     public ItemStack getItem(int slot) {
-        if (slot == OUTSIDE) {
-            return null;
-        }
-        if (slot < getTopInventory().getSize()) {
-            return getTopInventory().getItem(convertSlot(slot));
-        } else {
-            return getBottomInventory().getItem(convertSlot(slot));
-        }
+        Inventory inventory = getInventory(slot);
+        return (inventory == null) ? null : inventory.getItem(convertSlot(slot));
     }
 
     /**
@@ -203,6 +195,32 @@ public abstract class InventoryView {
      */
     public final ItemStack getCursor() {
         return getPlayer().getItemOnCursor();
+    }
+
+    /**
+     * Gets the inventory corresponding to the given raw slot ID.
+     *
+     * If the slot ID is {@link #OUTSIDE} null will be returned, otherwise
+     * behaviour for illegal and negative slot IDs is undefined.
+     *
+     * May be used with {@link #convertSlot(int)} to directly index an
+     * underlying inventory.
+     *
+     * @param rawSlot The raw slot ID.
+     * @return corresponding inventory, or null
+     */
+    public final Inventory getInventory(int rawSlot) {
+        if (rawSlot == OUTSIDE) {
+            return null;
+        }
+        Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
+        Preconditions.checkArgument(rawSlot < countSlots(), "Slot %s greater than inventory slot count", rawSlot);
+
+        if (rawSlot < getTopInventory().getSize()) {
+            return getTopInventory();
+        } else {
+            return getBottomInventory();
+        }
     }
 
     /**

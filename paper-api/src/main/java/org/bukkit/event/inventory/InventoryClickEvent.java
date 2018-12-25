@@ -158,6 +158,16 @@ public class InventoryClickEvent extends InventoryInteractEvent {
     }
 
     /**
+     * Gets the inventory corresponding to the clicked slot.
+     *
+     * @see InventoryView#getInventory(int)
+     * @return inventory, or null if clicked outside
+     */
+    public Inventory getClickedInventory() {
+        return getView().getInventory(rawSlot);
+    }
+
+    /**
      * The slot number that was clicked, ready for passing to
      * {@link Inventory#getItem(int)}. Note that there may be two slots with
      * the same slot number, since a view links two different inventories.
