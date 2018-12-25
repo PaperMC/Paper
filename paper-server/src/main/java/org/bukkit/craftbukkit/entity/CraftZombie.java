@@ -72,9 +72,9 @@ public class CraftZombie extends CraftMonster implements Zombie {
     public void setConversionTime(int time) {
         if (time < 0) {
             getHandle().drownedConversionTime = -1;
-            getHandle().getDataWatcher().set(EntityZombie.bF, false);
+            getHandle().getDataWatcher().set(EntityZombie.DROWN_CONVERTING, false);
         } else {
-            getHandle().a(time);
+            getHandle().startDrownedConversion(time);
         }
     }
 }

@@ -55,9 +55,9 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
     public void setConversionTime(int time) {
         if (time < 0) {
             getHandle().conversionTime = -1;
-            getHandle().getDataWatcher().set(EntityZombieVillager.a, false);
+            getHandle().getDataWatcher().set(EntityZombieVillager.CONVERTING, false);
         } else {
-            getHandle().a((UUID) null, time);
+            getHandle().startConversion((UUID) null, time);
         }
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Chunk.java
 +++ b/net/minecraft/server/Chunk.java
-@@ -22,6 +22,13 @@
+@@ -21,6 +21,13 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -14,7 +14,7 @@
  public class Chunk implements IChunkAccess {
  
      private static final Logger d = LogManager.getLogger();
-@@ -57,6 +64,35 @@
+@@ -56,6 +63,35 @@
      private final AtomicInteger E;
      private final ChunkCoordIntPair F;
  
@@ -50,7 +50,7 @@
      public Chunk(World world, int i, int j, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long k) {
          this.sections = new ChunkSection[16];
          this.g = new boolean[256];
-@@ -95,8 +131,16 @@
+@@ -94,8 +130,16 @@
          this.s = ticklist;
          this.t = ticklist1;
          this.z = k;
@@ -67,17 +67,7 @@
      public Chunk(World world, ProtoChunk protochunk, int i, int j) {
          this(world, i, j, protochunk.getBiomeIndex(), protochunk.v(), protochunk.k(), protochunk.l(), protochunk.m());
  
-@@ -136,14 +180,15 @@
-             HeightMap.Type heightmap_type = (HeightMap.Type) iterator.next();
- 
-             if (heightmap_type.c() == HeightMap.Use.LIVE_WORLD) {
--                ((HeightMap) this.heightMap.computeIfAbsent(heightmap_type, (heightmap_type) -> {
--                    return new HeightMap(this, heightmap_type);
-+                ((HeightMap) this.heightMap.computeIfAbsent(heightmap_type, (heightmap_type1) -> { // CraftBukkit - decompile error
-+                    return new HeightMap(this, heightmap_type1); // CraftBukkit - decompile error
-                 })).a(protochunk.b(heightmap_type).b());
-             }
-         }
+@@ -143,6 +187,7 @@
  
          this.x = true;
          this.a(ChunkStatus.FULLCHUNK);
@@ -85,7 +75,7 @@
      }
  
      public Set<BlockPosition> t() {
-@@ -413,8 +458,15 @@
+@@ -412,8 +457,15 @@
          }
      }
  
@@ -101,7 +91,7 @@
          int i = blockposition.getX() & 15;
          int j = blockposition.getY();
          int k = blockposition.getZ() & 15;
-@@ -474,7 +526,8 @@
+@@ -473,7 +525,8 @@
                      }
                  }
  
@@ -111,7 +101,7 @@
                      iblockdata.onPlace(this.world, blockposition, iblockdata1);
                  }
  
-@@ -654,7 +707,12 @@
+@@ -653,7 +706,12 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -125,7 +115,7 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.h.remove(blockposition);
-@@ -701,6 +759,13 @@
+@@ -700,6 +758,13 @@
  
              tileentity.z();
              this.tileEntities.put(blockposition.h(), tileentity);
@@ -139,14 +129,11 @@
          }
      }
  
-@@ -726,13 +791,55 @@
-         int i = aentityslice.length;
- 
+@@ -727,11 +792,53 @@
          for (int j = 0; j < i; ++j) {
--            EntitySlice entityslice = aentityslice[j];
-+            // CraftBukkit start
-+            EntitySlice<Entity> entityslice = aentityslice[j];
+             EntitySlice<Entity> entityslice = aentityslice[j];
  
++            // CraftBukkit start
 +            List<Entity> toRemove = new LinkedList<>();
              this.world.a(entityslice.stream().filter((entity) -> {
 +                if (this.needsDecoration && !CraftEventFactory.doEntityAddEventCalling(this.world, entity, CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) { // Only call for new chunks
@@ -196,11 +183,11 @@
      }
  
      public void removeEntities() {
-@@ -749,9 +856,21 @@
+@@ -748,9 +855,21 @@
          int i = aentityslice.length;
  
          for (int j = 0; j < i; ++j) {
--            EntitySlice entityslice = aentityslice[j];
+-            EntitySlice<Entity> entityslice = aentityslice[j];
 +            // CraftBukkit start
 +            List<Entity> newList = Lists.newArrayList(aentityslice[j]);
 +            java.util.Iterator<Entity> iter = newList.iterator();
@@ -220,49 +207,28 @@
          }
  
      }
-@@ -813,8 +932,8 @@
+@@ -810,7 +929,7 @@
+             Iterator iterator = this.entitySlices[k].c(oclass).iterator();
+ 
              while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
+-                T t0 = (Entity) iterator.next();
++                T t0 = (T) iterator.next(); // CraftBukkit - decompile error
  
--                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(entity))) {
--                    list.add(entity);
-+                if (entity.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test((T) entity))) { // CraftBukkit - fix decompile error
-+                    list.add((T) entity); // Fix decompile error
-                 }
-             }
-         }
-@@ -1020,13 +1139,13 @@
- 
-     @Nullable
-     public LongSet b(String s) {
--        return (LongSet) this.q.computeIfAbsent(s, (s) -> {
-+        return (LongSet) this.q.computeIfAbsent(s, (s1) -> { // CraftBukkit - decompile error
-             return new LongOpenHashSet();
-         });
-     }
- 
-     public void a(String s, long i) {
--        ((LongSet) this.q.computeIfAbsent(s, (s) -> {
-+        ((LongSet) this.q.computeIfAbsent(s, (s1) -> { // CraftBukkit - decompile error
-             return new LongOpenHashSet();
-         })).add(i);
-     }
-@@ -1074,14 +1193,14 @@
+                 if (t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) {
+                     list.add(t0);
+@@ -1073,13 +1192,13 @@
              }
  
              if (this.s instanceof ProtoChunkTickList) {
--                ((ProtoChunkTickList) this.s).a(this.world.getBlockTickList(), (blockposition) -> {
--                    return this.world.getType(blockposition).getBlock();
+-                ((ProtoChunkTickList) this.s).a(this.world.getBlockTickList(), (blockposition1) -> {
 +                ((ProtoChunkTickList<Block>) this.s).a(this.world.getBlockTickList(), (blockposition1) -> { // CraftBukkit - decompile error
-+                    return this.world.getType(blockposition1).getBlock();
+                     return this.world.getType(blockposition1).getBlock();
                  });
              }
  
              if (this.t instanceof ProtoChunkTickList) {
--                ((ProtoChunkTickList) this.t).a(this.world.getFluidTickList(), (blockposition) -> {
--                    return this.world.getFluid(blockposition).c();
+-                ((ProtoChunkTickList) this.t).a(this.world.getFluidTickList(), (blockposition1) -> {
 +                ((ProtoChunkTickList<FluidType>) this.t).a(this.world.getFluidTickList(), (blockposition1) -> { // CraftBukkit - decompile error
-+                    return this.world.getFluid(blockposition1).c();
+                     return this.world.getFluid(blockposition1).c();
                  });
              }
- 
