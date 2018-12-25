@@ -326,9 +326,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * These tags can also be modified by the client once in creative mode
      *
      * @return the custom tag container
-     * @deprecated draft API
      */
-    @Deprecated
     CustomItemTagContainer getCustomTagContainer();
 
     @SuppressWarnings("javadoc")

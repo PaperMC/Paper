@@ -2,18 +2,13 @@ package org.bukkit.event.entity;
 
 import java.util.Collections;
 import java.util.List;
-import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
 /**
  * Called when an entity is about to be replaced by another entity.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class EntityTransformEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
