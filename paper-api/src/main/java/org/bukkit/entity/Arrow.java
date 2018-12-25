@@ -24,6 +24,24 @@ public interface Arrow extends Projectile {
     public void setKnockbackStrength(int knockbackStrength);
 
     /**
+     * Gets the base amount of damage this arrow will do.
+     *
+     * Defaults to 2.0 for a normal arrow with
+     * <code>0.5 * (1 + power level)</code> added for arrows fired from
+     * enchanted bows.
+     *
+     * @return base damage amount
+     */
+    public double getDamage();
+
+    /**
+     * Sets the base amount of damage this arrow will do.
+     *
+     * @param damage new damage amount
+     */
+    public void setDamage(double damage);
+
+    /**
      * Gets whether this arrow is critical.
      * <p>
      * Critical arrows have increased damage and cause particle effects.
