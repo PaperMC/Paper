@@ -447,7 +447,7 @@ public class CraftEventFactory {
         org.bukkit.entity.Item entity = (org.bukkit.entity.Item) entityitem.getBukkitEntity();
         CraftServer craftServer = (CraftServer) entity.getServer();
 
-        ItemSpawnEvent event = new ItemSpawnEvent(entity, entity.getLocation());
+        ItemSpawnEvent event = new ItemSpawnEvent(entity);
 
         craftServer.getPluginManager().callEvent(event);
         return event;
