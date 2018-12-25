@@ -26,6 +26,17 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         return getHandle().knockbackStrength;
     }
 
+    @Override
+    public double getDamage() {
+        return getHandle().getDamage();
+    }
+
+    @Override
+    public void setDamage(double damage) {
+        Preconditions.checkArgument(damage >= 0, "Damage must be positive");
+        getHandle().setDamage(damage);
+    }
+
     public boolean isCritical() {
         return getHandle().isCritical();
     }
