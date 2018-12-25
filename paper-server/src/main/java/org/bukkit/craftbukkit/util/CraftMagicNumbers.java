@@ -145,6 +145,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static final int DATA_VERSION = 1631;
+    /**
+     * This string should be changed if the NMS mappings do.
+     *
+     * It has no meaning and should only be used as an equality check. Plugins
+     * which are sensitive to the NMS mappings may read it and refuse to load if
+     * it cannot be found or is different to the expected value.
+     *
+     * Remember: NMS is not supported API and may break at any time for any
+     * reason irrespective of this. There is often supported API to do the same
+     * thing as many common NMS usages. If not, you are encouraged to open a
+     * feature and/or pull request for consideration, or use a well abstracted
+     * third-party API such as ProtocolLib.
+     */
+    public static final String MAPPINGS_VERSION = "00ed8e5c39debc3ed194ad7c5645cc45";
 
     @Override
     public int getDataVersion() {
