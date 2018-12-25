@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ItemStack.java
 +++ b/net/minecraft/server/ItemStack.java
-@@ -15,6 +15,22 @@
+@@ -15,6 +15,24 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -14,16 +14,18 @@
 +import org.bukkit.block.BlockState;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.block.BlockFertilizeEvent;
++import org.bukkit.event.player.PlayerItemDamageEvent;
 +import org.bukkit.event.world.StructureGrowEvent;
 +// CraftBukkit end
 +
  public final class ItemStack {
  
      private static final Logger c = LogManager.getLogger();
-@@ -49,25 +65,49 @@
+@@ -49,25 +67,49 @@
          this.E();
      }
  
@@ -76,7 +78,7 @@
          this.E();
      }
  
-@@ -97,7 +137,7 @@
+@@ -97,7 +139,7 @@
          return this.h ? Items.AIR : this.item;
      }
  
@@ -85,7 +87,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -105,12 +145,144 @@
+@@ -105,12 +147,144 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().F(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -231,7 +233,7 @@
  
              return enuminteractionresult;
          }
-@@ -134,7 +306,7 @@
+@@ -134,7 +308,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -240,7 +242,29 @@
          }
  
          return nbttagcompound;
-@@ -212,6 +384,11 @@
+@@ -191,6 +365,21 @@
+                 }
+ 
+                 i -= k;
++                // CraftBukkit start
++                if (entityplayer != null) {
++                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(entityplayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), i);
++                    event.getPlayer().getServer().getPluginManager().callEvent(event);
++
++                    if (i != event.getDamage() || event.isCancelled()) {
++                        event.getPlayer().updateInventory();
++                    }
++                    if (event.isCancelled()) {
++                        return false;
++                    }
++
++                    i = event.getDamage();
++                }
++                // CraftBukkit end
+                 if (i <= 0) {
+                     return false;
+                 }
+@@ -212,6 +401,11 @@
                  if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
                      entityliving.c(this);
                      Item item = this.getItem();
@@ -252,7 +276,7 @@
  
                      this.subtract(1);
                      if (entityliving instanceof EntityHuman) {
-@@ -335,6 +512,17 @@
+@@ -335,6 +529,17 @@
          return this.tag;
      }
  
@@ -270,7 +294,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -479,6 +667,14 @@
+@@ -479,6 +684,14 @@
      }
  
      public void setRepairCost(int i) {
@@ -285,7 +309,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -521,6 +717,13 @@
+@@ -521,6 +734,13 @@
          nbttaglist.add((NBTBase) nbttagcompound);
      }
  
