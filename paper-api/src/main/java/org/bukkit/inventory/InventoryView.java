@@ -300,6 +300,82 @@ public abstract class InventoryView {
     }
 
     /**
+     * Determine the type of the slot by its raw slot ID.
+     * <p>
+     * If the type of the slot is unknown, then
+     * {@link InventoryType.SlotType#CONTAINER} will be returned.
+     *
+     * @param slot The raw slot ID
+     * @return the slot type
+     */
+    public final InventoryType.SlotType getSlotType(int slot) {
+        InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
+        if (slot >= 0 && slot < this.getTopInventory().getSize()) {
+            switch(this.getType()) {
+            case FURNACE:
+                if (slot == 2) {
+                    type = InventoryType.SlotType.RESULT;
+                } else if(slot == 1) {
+                    type = InventoryType.SlotType.FUEL;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
+                break;
+            case BREWING:
+                if (slot == 3) {
+                    type = InventoryType.SlotType.FUEL;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
+                break;
+            case ENCHANTING:
+                type = InventoryType.SlotType.CRAFTING;
+                break;
+            case WORKBENCH:
+            case CRAFTING:
+                if (slot == 0) {
+                    type = InventoryType.SlotType.RESULT;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
+                break;
+            case MERCHANT:
+                if (slot == 2) {
+                    type = InventoryType.SlotType.RESULT;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
+                break;
+            case BEACON:
+                type = InventoryType.SlotType.CRAFTING;
+                break;
+            case ANVIL:
+                if (slot == 2) {
+                    type = InventoryType.SlotType.RESULT;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
+                break;
+            default:
+                // Nothing to do, it's a CONTAINER slot
+            }
+        } else {
+            if (slot < 0) {
+                type = InventoryType.SlotType.OUTSIDE;
+            } else if (this.getType() == InventoryType.CRAFTING) { // Also includes creative inventory
+                if (slot < 9) {
+                    type = InventoryType.SlotType.ARMOR;
+                } else if (slot > 35) {
+                    type = InventoryType.SlotType.QUICKBAR;
+                }
+            } else if (slot >= (this.countSlots() - (9 + 4 + 1))) { // Quickbar, Armor, Offhand
+                type = InventoryType.SlotType.QUICKBAR;
+            }
+        }
+        return type;
+    }
+
+    /**
      * Closes the inventory view.
      */
     public final void close() {
