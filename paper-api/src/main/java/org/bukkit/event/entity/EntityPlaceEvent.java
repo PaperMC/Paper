@@ -12,8 +12,8 @@ import org.bukkit.event.HandlerList;
  * Triggered when a entity is created in the world by a player "placing" an item
  * on a block.
  * <br>
- * Note that this event is currently only fired for two specific placements:
- * armor stands, and end crystals.
+ * Note that this event is currently only fired for three specific placements:
+ * armor stands, minecarts, and end crystals.
  *
  * @deprecated draft API
  */
