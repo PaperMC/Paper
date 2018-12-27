@@ -48,9 +48,8 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandListenerWrapper> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         List<String> results = server.tabComplete(context.getSource().getBukkitSender(), builder.getInput(), context.getSource().getWorld(), context.getSource().getPosition(), true);
 
-        // These are normally only set based on sub nodes, but we have just one giant args node
-        builder.start = builder.getInput().lastIndexOf(' ') + 1;
-        builder.remaining = builder.getInput().substring(builder.start);
+        // Defaults to sub nodes, but we have just one giant args node, so offset accordingly
+        builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
 
         for (String s : results) {
             builder.suggest(s);
