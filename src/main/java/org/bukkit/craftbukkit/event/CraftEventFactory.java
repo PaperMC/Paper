@@ -940,12 +940,13 @@ public class CraftEventFactory {
 
     public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
         Block hitBlock = null;
+        BlockFace hitFace = null;
         if (position.type == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
-            BlockPosition blockposition = position.getBlockPosition();
-            hitBlock = entity.getBukkitEntity().getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+            hitBlock = CraftBlock.at(entity.world, position.getBlockPosition());
+            hitFace = CraftBlock.notchToBlockFace(position.direction);
         }
 
-        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity(), hitBlock);
+        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity(), hitBlock, hitFace);
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
     }
