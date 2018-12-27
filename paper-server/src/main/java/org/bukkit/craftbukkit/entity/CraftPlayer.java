@@ -1467,6 +1467,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth() {
+        updateScaledHealth(true);
+    }
+
+    public void updateScaledHealth(boolean sendHealth) {
         AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
         Collection<AttributeInstance> set = attributemapserver.c(); // PAIL: Rename
 
@@ -1475,7 +1479,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // SPIGOT-3813: Attributes before health
         if (getHandle().playerConnection != null) {
             getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
-            sendHealthUpdate();
+            if (sendHealth) {
+                sendHealthUpdate();
+            }
         }
         getHandle().getDataWatcher().set(EntityLiving.HEALTH, (float) getScaledHealth());
 
