@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Futures;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -276,6 +277,27 @@ public class CraftWorld implements World {
     public void loadChunk(Chunk chunk) {
         loadChunk(chunk.getX(), chunk.getZ());
         ((CraftChunk) getChunkAt(chunk.getX(), chunk.getZ())).getHandle().bukkitChunk = chunk;
+    }
+
+    @Override
+    public boolean isChunkForceLoaded(int x, int z) {
+        return getHandle().isForceLoaded(x, z);
+    }
+
+    @Override
+    public void setChunkForceLoaded(int x, int z, boolean forced) {
+        getHandle().setForceLoaded(x, z, forced);
+    }
+
+    @Override
+    public Collection<Chunk> getForceLoadedChunks() {
+        Set<Chunk> chunks = new HashSet<>();
+
+        for (long coord : getHandle().ag()) { // PAIL
+            chunks.add(getChunkAt(ChunkCoordIntPair.a(coord), ChunkCoordIntPair.b(coord)));
+        }
+
+        return Collections.unmodifiableCollection(chunks);
     }
 
     public WorldServer getHandle() {
