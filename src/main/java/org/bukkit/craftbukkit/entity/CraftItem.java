@@ -38,6 +38,14 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     @Override
+    public void setTicksLived(int value) {
+        super.setTicksLived(value);
+
+        // Second field for EntityItem
+        item.age = value;
+    }
+
+    @Override
     public String toString() {
         return "CraftItem";
     }
