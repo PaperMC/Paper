@@ -130,4 +130,26 @@ public interface Chunk {
      * @return true if slimes are able to spawn in this chunk
      */
     boolean isSlimeChunk();
+
+    /**
+     * Gets whether the chunk at the specified chunk coordinates is force
+     * loaded.
+     * <p>
+     * A force loaded chunk will not be unloaded due to lack of player activity.
+     *
+     * @return force load status
+     * @see World#isChunkForceLoaded(int, int)
+     */
+    boolean isForceLoaded();
+
+    /**
+     * Sets whether the chunk at the specified chunk coordinates is force
+     * loaded.
+     * <p>
+     * A force loaded chunk will not be unloaded due to lack of player activity.
+     *
+     * @param forced
+     * @see World#setChunkForceLoaded(int, int, boolean)
+     */
+    void setForceLoaded(boolean forced);
 }

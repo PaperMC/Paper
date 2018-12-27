@@ -286,6 +286,39 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean refreshChunk(int x, int z);
 
     /**
+     * Gets whether the chunk at the specified chunk coordinates is force
+     * loaded.
+     * <p>
+     * A force loaded chunk will not be unloaded due to lack of player activity.
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return force load status
+     */
+    public boolean isChunkForceLoaded(int x, int z);
+
+    /**
+     * Sets whether the chunk at the specified chunk coordinates is force
+     * loaded.
+     * <p>
+     * A force loaded chunk will not be unloaded due to lack of player activity.
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param forced
+     */
+    public void setChunkForceLoaded(int x, int z, boolean forced);
+
+    /**
+     * Returns all force loaded chunks in this world.
+     * <p>
+     * A force loaded chunk will not be unloaded due to lack of player activity.
+     *
+     * @return unmodifiable collection of force loaded chunks
+     */
+    public Collection<Chunk> getForceLoadedChunks();
+
+    /**
      * Drops an item at the specified {@link Location}
      *
      * @param location Location to drop the item
