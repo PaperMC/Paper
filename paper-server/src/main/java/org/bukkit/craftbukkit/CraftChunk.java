@@ -147,6 +147,16 @@ public class CraftChunk implements Chunk {
         return getWorld().unloadChunk(getX(), getZ(), save, safe);
     }
 
+    @Override
+    public boolean isForceLoaded() {
+        return getWorld().isChunkForceLoaded(getX(), getZ());
+    }
+
+    @Override
+    public void setForceLoaded(boolean forced) {
+        getWorld().setChunkForceLoaded(getX(), getZ(), forced);
+    }
+
     public ChunkSnapshot getChunkSnapshot() {
         return getChunkSnapshot(true, false, false);
     }
