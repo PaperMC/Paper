@@ -144,7 +144,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftBlockData.fromData(getBlock(material, data));
     }
 
-    public static final int DATA_VERSION = 1631;
     /**
      * This string should be changed if the NMS mappings do.
      *
@@ -157,12 +156,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * thing as many common NMS usages. If not, you are encouraged to open a
      * feature and/or pull request for consideration, or use a well abstracted
      * third-party API such as ProtocolLib.
+     *
+     * @return string
      */
-    public static final String MAPPINGS_VERSION = "00ed8e5c39debc3ed194ad7c5645cc45";
+    public String getMappingsVersion() {
+        return "00ed8e5c39debc3ed194ad7c5645cc45";
+    }
 
     @Override
     public int getDataVersion() {
-        return DATA_VERSION;
+        return 1631;
     }
 
     @Override
