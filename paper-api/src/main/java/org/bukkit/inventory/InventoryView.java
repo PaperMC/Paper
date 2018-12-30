@@ -210,7 +210,9 @@ public abstract class InventoryView {
      * @return corresponding inventory, or null
      */
     public final Inventory getInventory(int rawSlot) {
-        if (rawSlot == OUTSIDE) {
+        // Slot may be -1 if not properly detected due to client bug
+        // e.g. dropping an item into part of the enchantment list section of an enchanting table
+        if (rawSlot == OUTSIDE || rawSlot == -1) {
             return null;
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
