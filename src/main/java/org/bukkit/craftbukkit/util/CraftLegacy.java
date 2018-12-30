@@ -400,7 +400,7 @@ public class CraftLegacy {
                 stack.setInt("id", material.getId());
                 stack.setShort("Damage", data);
 
-                Dynamic<NBTBase> converted = DataConverterRegistry.a().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.a, stack), -1, CraftMagicNumbers.DATA_VERSION);
+                Dynamic<NBTBase> converted = DataConverterRegistry.a().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.a, stack), -1, CraftMagicNumbers.INSTANCE.getDataVersion());
 
                 String newId = converted.getString("id");
                 // Recover spawn eggs with invalid data
