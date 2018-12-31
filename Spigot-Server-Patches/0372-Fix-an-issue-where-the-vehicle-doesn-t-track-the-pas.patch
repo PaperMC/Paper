@@ -1,0 +1,40 @@
+From 45f2b8707a23911141a1c20a4f9176060014091e Mon Sep 17 00:00:00 2001
+From: connorhartley <vectrixu+gh@gmail.com>
+Date: Mon, 31 Dec 2018 18:54:23 +1300
+Subject: [PATCH] Fix an issue where the vehicle doesn't track the passenger
+ when they disconnect
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index d44c55d84..74bbba011 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -2958,6 +2958,7 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+         return entity instanceof EntityHuman ? ((EntityHuman) entity).cZ() : !this.world.isClientSide;
+     }
+ 
++    @Nullable Entity getVehicleDirect() { return this.bJ(); } // Paper - OBFHELPER
+     @Nullable
+     public Entity bJ() {
+         return this.au;
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 6afb6cf7b..c1a2ddcf5 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1088,6 +1088,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public void s() {
+         this.cu = true;
+         this.ejectPassengers();
++
++        // Paper start - "Fixes" an issue where the vehicle doesn't track the passenger disconnection dismount.
++        if (this.isPassenger() && this.getVehicleDirect() instanceof EntityLiving) {
++            this.stopRiding();
++        }
++        // Paper end
++
+         if (this.sleeping) {
+             this.a(true, false, false);
+         }
+-- 
+2.20.1
+
