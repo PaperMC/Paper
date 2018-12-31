@@ -742,7 +742,12 @@ public class MemorySection implements ConfigurationSection {
             MemorySection sec = (MemorySection) section;
 
             for (Map.Entry<String, Object> entry : sec.map.entrySet()) {
-                output.put(createPath(section, entry.getKey(), this), entry.getValue());
+                // Because of the copyDefaults call potentially copying out of order, we must remove and then add in our saved order
+                // This means that default values we haven't set end up getting placed first
+                // See SPIGOT-4558 for an example using spigot.yml - watch subsections move around to default order
+                String childPath = createPath(section, entry.getKey(), this);
+                output.remove(childPath);
+                output.put(childPath, entry.getValue());
 
                 if (entry.getValue() instanceof ConfigurationSection) {
                     if (deep) {

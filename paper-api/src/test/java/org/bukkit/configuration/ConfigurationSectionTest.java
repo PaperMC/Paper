@@ -69,18 +69,21 @@ public abstract class ConfigurationSectionTest {
         ConfigurationSection section = getConfigurationSection();
         section.getRoot().options().copyDefaults(true);
 
+        // Fix for SPIGOT-4558 means that defaults will always be first
+        // This is a little bit unintuitive for section defaults when deep iterating keys / values as shown below
+        // But the API doesn't guarantee order & when serialized (using shallow getters) all is well
         section.set("bool", true);
         section.set("subsection.string", "test");
         section.addDefault("subsection.long", Long.MAX_VALUE);
         section.addDefault("int", 42);
 
         Map<String, Object> shallowValues = section.getValues(false);
-        assertArrayEquals(new String[] { "subsection", "int", "bool" }, shallowValues.keySet().toArray());
-        assertArrayEquals(new Object[] { section.getConfigurationSection("subsection"), 42, true }, shallowValues.values().toArray());
+        assertArrayEquals(new String[] { "int", "bool", "subsection" }, shallowValues.keySet().toArray());
+        assertArrayEquals(new Object[] { 42, true, section.getConfigurationSection("subsection") }, shallowValues.values().toArray());
 
         Map<String, Object> deepValues = section.getValues(true);
-        assertArrayEquals(new String[] { "subsection", "subsection.long", "int", "bool", "subsection.string" }, deepValues.keySet().toArray());
-        assertArrayEquals(new Object[] { section.getConfigurationSection("subsection"), Long.MAX_VALUE, 42, true, "test" }, deepValues.values().toArray());
+        assertArrayEquals(new String[] { "subsection.long", "int", "bool", "subsection",  "subsection.string" }, deepValues.keySet().toArray());
+        assertArrayEquals(new Object[] { Long.MAX_VALUE, 42, true, section.getConfigurationSection("subsection"), "test" }, deepValues.values().toArray());
     }
 
     @Test
