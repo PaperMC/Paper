@@ -1,4 +1,4 @@
-From fd0cba99aee112db7620e0860c08f2c65c982ee4 Mon Sep 17 00:00:00 2001
+From e990ffd965e20df1b41e07f7861db7bf2584fb8c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ffda9d793..4acb908ec 100644
+index b5f30b2b2..b12d9fbe8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -146,7 +146,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -141,7 +141,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -24,7 +24,7 @@ index ffda9d793..4acb908ec 100644
      public final Thread primaryThread;
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-@@ -156,7 +156,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -151,7 +151,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      // Spigot start
      public static final int TPS = 20;
      public static final int TICK_TIME = 1000000000 / TPS;
@@ -33,7 +33,7 @@ index ffda9d793..4acb908ec 100644
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
-@@ -689,7 +689,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -684,7 +684,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      }
  
      private boolean canSleepForTick() {
@@ -42,7 +42,7 @@ index ffda9d793..4acb908ec 100644
      }
  
      // Spigot Start
-@@ -697,6 +697,57 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -692,6 +692,57 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
      }
@@ -100,7 +100,7 @@ index ffda9d793..4acb908ec 100644
      // Spigot End
  
      public void run() {
-@@ -709,29 +760,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -704,29 +755,47 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -224,5 +224,5 @@ index be2e31dea..6d21c3269 100644
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
                  + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
 -- 
-2.20.0
+2.20.1
 

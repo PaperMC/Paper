@@ -1,4 +1,4 @@
-From d128b3896e20ff9f497284c2686617631ea0f874 Mon Sep 17 00:00:00 2001
+From f7f5a84a18d147fe939616f32507e91ee572ac68 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 20:47:41 -0400
 Subject: [PATCH] Optimize UserCache / Thread Safe
@@ -10,10 +10,10 @@ Additionally, move Saving of the User cache to be done async, incase
 the user never changed the default setting for Spigot's save on stop only.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1c09dded9..edf72fbec 100644
+index 3ff271869..7710962ce 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -691,7 +691,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -686,7 +686,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // Spigot start
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              LOGGER.info("Saving usercache.json");
@@ -23,10 +23,10 @@ index 1c09dded9..edf72fbec 100644
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index d1197b959..51c2c5dd7 100644
+index f782ecb82..65d230d45 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -109,7 +109,7 @@ public class UserCache {
+@@ -108,7 +108,7 @@ public class UserCache {
          this.a(gameprofile, (Date) null);
      }
  
@@ -35,9 +35,9 @@ index d1197b959..51c2c5dd7 100644
          UUID uuid = gameprofile.getId();
  
          if (date == null) {
-@@ -122,8 +122,9 @@ public class UserCache {
+@@ -121,8 +121,9 @@ public class UserCache {
  
-         UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date); // CraftBukkit - decompile error
+         UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date);
  
 -        if (this.e.containsKey(uuid)) {
 +        //if (this.e.containsKey(uuid)) { // Paper
@@ -46,7 +46,7 @@ index d1197b959..51c2c5dd7 100644
  
              this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
              this.f.remove(gameprofile);
-@@ -136,7 +137,7 @@ public class UserCache {
+@@ -135,7 +136,7 @@ public class UserCache {
      }
  
      @Nullable
@@ -55,7 +55,7 @@ index d1197b959..51c2c5dd7 100644
          String s1 = s.toLowerCase(Locale.ROOT);
          UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
  
-@@ -165,8 +166,9 @@ public class UserCache {
+@@ -164,8 +165,9 @@ public class UserCache {
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
      }
  
@@ -66,7 +66,7 @@ index d1197b959..51c2c5dd7 100644
          UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
  
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
-@@ -221,8 +223,15 @@ public class UserCache {
+@@ -220,8 +222,15 @@ public class UserCache {
  
      }
  
@@ -82,7 +82,7 @@ index d1197b959..51c2c5dd7 100644
          BufferedWriter bufferedwriter = null;
  
          try {
-@@ -236,6 +245,14 @@ public class UserCache {
+@@ -235,6 +244,14 @@ public class UserCache {
          } finally {
              IOUtils.closeQuietly(bufferedwriter);
          }
@@ -98,5 +98,5 @@ index d1197b959..51c2c5dd7 100644
      }
  
 -- 
-2.20.0
+2.20.1
 

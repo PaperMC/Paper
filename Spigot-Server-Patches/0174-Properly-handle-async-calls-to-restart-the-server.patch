@@ -1,4 +1,4 @@
-From 8186e73d20a64b9dd3d508260bd6a88e60eea217 Mon Sep 17 00:00:00 2001
+From b2776d5425d6c74a71d747af2e7714c8ed573402 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,10 +30,10 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index dacb372a5..fd405281b 100644
+index f09d358e2..f2c172ff1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -90,6 +90,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -85,6 +85,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      public final Map<DimensionManager, WorldServer> worldServer = Maps.newIdentityHashMap();
      private PlayerList playerList;
      private boolean isRunning = true;
@@ -41,7 +41,7 @@ index dacb372a5..fd405281b 100644
      private boolean isStopped;
      private int ticks;
      protected final Proxy c;
-@@ -659,7 +660,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -654,7 +655,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          if (this.playerList != null) {
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
@@ -50,7 +50,7 @@ index dacb372a5..fd405281b 100644
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
-@@ -709,9 +710,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -704,9 +705,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          return this.isRunning;
      }
  
@@ -68,10 +68,10 @@ index dacb372a5..fd405281b 100644
      private boolean canSleepForTick() {
          return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 320c378e0..d8ed44fe2 100644
+index 0bc27d914..128fcaf25 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1333,10 +1333,15 @@ public abstract class PlayerList {
+@@ -1332,10 +1332,15 @@ public abstract class PlayerList {
          entityplayer.playerInteractManager.b(generatoraccess.getWorldData().getGameType());
      }
  
@@ -88,7 +88,7 @@ index 320c378e0..d8ed44fe2 100644
          }
          // CraftBukkit end
          // Paper start - Remove collideRule team if it exists
-@@ -1347,6 +1352,7 @@ public abstract class PlayerList {
+@@ -1346,6 +1351,7 @@ public abstract class PlayerList {
          }
          // Paper end
      }
@@ -97,16 +97,17 @@ index 320c378e0..d8ed44fe2 100644
      // CraftBukkit start
      public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 947c43a5d..f15fd9f37 100644
+index 944151d14..061cbe7fc 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
-@@ -46,88 +46,123 @@ public class RestartCommand extends Command
+@@ -46,86 +46,123 @@ public class RestartCommand extends Command
          org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
          try
          {
--            if ( script.isFile() )
+-            String[] split = restartScript.split( " " );
+-            if ( split.length > 0 && new File( split[0] ).isFile() )
 +            // Paper - extract method and cleanup
-+            boolean isRestarting = addShutdownHook(script);
++            boolean isRestarting = addShutdownHook(restartScript);
 +            if (isRestarting) {
 +                System.out.println("Attempting to restart with " + SpigotConfig.restartScript);
 +            } else {
@@ -130,7 +131,8 @@ index 947c43a5d..f15fd9f37 100644
 +        {
 +            // Kick all players
 +            for ( EntityPlayer p : com.google.common.collect.ImmutableList.copyOf( MinecraftServer.getServer().getPlayerList().players ) )
-+            {
+             {
+-                System.out.println( "Attempting to restart with " + restartScript );
 +                p.playerConnection.disconnect(SpigotConfig.restartMessage);
 +            }
 +            // Give the socket a chance to send the packets
@@ -138,8 +140,7 @@ index 947c43a5d..f15fd9f37 100644
 +            {
 +                Thread.sleep( 100 );
 +            } catch ( InterruptedException ex )
-             {
--                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
++            {
 +            }
  
 -                // Disable Watchdog
@@ -201,13 +202,10 @@ index 947c43a5d..f15fd9f37 100644
 -                            String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
 -                            if ( os.contains( "win" ) )
 -                            {
--                                Runtime.getRuntime().exec( "cmd /c start " + script.getPath() );
+-                                Runtime.getRuntime().exec( "cmd /c start " + restartScript );
 -                            } else
 -                            {
--                                Runtime.getRuntime().exec( new String[]
--                                {
--                                    "sh", script.getPath()
--                                } );
+-                                Runtime.getRuntime().exec( "sh " + restartScript );
 -                            }
 -                        } catch ( Exception e )
 -                        {
@@ -219,15 +217,9 @@ index 947c43a5d..f15fd9f37 100644
 -                shutdownHook.setDaemon( true );
 -                Runtime.getRuntime().addShutdownHook( shutdownHook );
 -            } else
-+            // wait 10 seconds to see if we're actually going to try shutdown
-+            try
-+            {
-+                Thread.sleep(10000);
-+            }
-+            catch (InterruptedException ignored)
-             {
+-            {
 -                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
--
+ 
 -                // Actually shutdown
 -                try
 -                {
@@ -235,6 +227,13 @@ index 947c43a5d..f15fd9f37 100644
 -                } catch ( Throwable t )
 -                {
 -                }
++            // wait 10 seconds to see if we're actually going to try shutdown
++            try
++            {
++                Thread.sleep(10000);
++            }
++            catch (InterruptedException ignored)
++            {
              }
 +
 +            // Check if we've actually hit a state where the server is going to safely shutdown
@@ -265,21 +264,20 @@ index 947c43a5d..f15fd9f37 100644
 +    // Paper end
 +
 +    // Paper - copied from above and modified to return if the hook registered
-+    private static boolean addShutdownHook(final File script) {
++    private static boolean addShutdownHook(final String restartScript) {
 +
-+        if (script.isFile()) {
++        String[] split = restartScript.split( " " );
++        if ( split.length > 0 && new File( split[0] ).isFile() )
++        {
 +            Thread shutdownHook = new Thread() {
 +                @Override
 +                public void run() {
 +                    try {
 +                        String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ENGLISH);
 +                        if (os.contains("win")) {
-+                            Runtime.getRuntime().exec("cmd /c start " + script.getPath());
++                            Runtime.getRuntime().exec("cmd /c start " + restartScript);
 +                        } else {
-+                            Runtime.getRuntime().exec(new String[]
-+                                    {
-+                                            "sh", script.getPath()
-+                                    });
++                            Runtime.getRuntime().exec( "sh " + restartScript );
 +                        }
 +                    } catch (Exception e) {
 +                        e.printStackTrace();
@@ -296,5 +294,5 @@ index 947c43a5d..f15fd9f37 100644
      }
  }
 -- 
-2.20.0
+2.20.1
 

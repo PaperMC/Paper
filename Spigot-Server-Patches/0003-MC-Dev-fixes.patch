@@ -1,393 +1,156 @@
-From dadb0a624cab08627738eb8b0538dc25bf636f10 Mon Sep 17 00:00:00 2001
+From 7ad9c299e87d66f79104c9f21043392b0d60700d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
-diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index 25a1edc45..f1ad18511 100644
---- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -98,8 +98,4 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-         return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index bcb4b5e5c..c399bdecc 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -124,7 +124,7 @@ public abstract class BiomeBase {
+ 
+     @Nullable
+     public static BiomeBase a(BiomeBase biomebase) {
+-        return (BiomeBase) BiomeBase.aH.fromId(IRegistry.BIOME.a((Object) biomebase));
++        return (BiomeBase) BiomeBase.aH.fromId(IRegistry.BIOME.a(biomebase)); // Paper - decompile fix
      }
  
--    // $FF: synthetic method
--    public int compareTo(Object object) {
--        return this.compareTo((BaseBlockPosition)object);
--    }
- }
+     public static <C extends WorldGenFeatureConfiguration> WorldGenCarverWrapper<C> a(WorldGenCarver<C> worldgencarver, C c0) {
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 66c38df1f..50e29464b 100644
+index bd2a67cfc..330f5d0c1 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -178,10 +178,6 @@ public class BlockPosition extends BaseBlockPosition {
-                     }
-                 }
+@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
+ @Immutable
+ public class BlockPosition extends BaseBlockPosition {
  
--                // $FF: synthetic method
--                protected Object computeNext() {
--                    return this.computeNext();
--                }
-             };
-         };
+-    private static final Logger b = LogManager.getLogger();
++    //private static final Logger b = LogManager.getLogger(); // Paper - variable name conflict, logger isn't used
+     public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
+     private static final int c = 1 + MathHelper.e(MathHelper.c(30000000));
+     private static final int d = BlockPosition.c;
+@@ -147,7 +147,7 @@ public class BlockPosition extends BaseBlockPosition {
+         return a(Math.min(blockposition.getX(), blockposition1.getX()), Math.min(blockposition.getY(), blockposition1.getY()), Math.min(blockposition.getZ(), blockposition1.getZ()), Math.max(blockposition.getX(), blockposition1.getX()), Math.max(blockposition.getY(), blockposition1.getY()), Math.max(blockposition.getZ(), blockposition1.getZ()));
      }
-@@ -209,8 +205,11 @@ public class BlockPosition extends BaseBlockPosition {
+ 
+-    public static Iterable<BlockPosition> a(int i, int j, int k, int l, int i1, int j1) {
++    public static Iterable<BlockPosition> a(int ix, int jx, int kx, int l, int i1, int j1) { // Paper - decompile fix
+         return () -> {
+             return new AbstractIterator<BlockPosition>() {
+                 private boolean g = true;
+@@ -158,21 +158,21 @@ public class BlockPosition extends BaseBlockPosition {
+                 protected BlockPosition computeNext() {
+                     if (this.g) {
+                         this.g = false;
+-                        this.h = i;
+-                        this.i = j;
+-                        this.j = k;
+-                        return new BlockPosition(i, j, k);
++                        this.h = ix; // Paper - decompile fix
++                        this.i = jx; // Paper - decompile fix
++                        this.j = kx; // Paper - decompile fix
++                        return new BlockPosition(ix, jx, kx);
+                     } else if (this.h == l && this.i == i1 && this.j == j1) {
+                         return (BlockPosition) this.endOfData();
+                     } else {
+                         if (this.h < l) {
+                             ++this.h;
+                         } else if (this.i < i1) {
+-                            this.h = i;
++                            this.h = ix; // Paper - decompile fix
+                             ++this.i;
+                         } else if (this.j < j1) {
+-                            this.h = i;
+-                            this.i = j;
++                            this.h = ix; // Paper - decompile fix
++                            this.i = jx; // Paper - decompile fix
+                             ++this.j;
+                         }
+ 
+@@ -206,8 +206,11 @@ public class BlockPosition extends BaseBlockPosition {
                          if (this.g.b < l) {
                              ++this.g.b;
                          } else if (this.g.c < i1) {
-+                            this.g.b = ix; // Paper - decompile fix Readd line removed by the decompiler
++                            this.g.b = i; // Paper - decompile fix Readd line removed by the decompiler
                              ++this.g.c;
                          } else if (this.g.d < j1) {
-+                            this.g.b = ix; // Paper - decompile fix Readd line removed by the decompiler
-+                            this.g.c = jx; // Paper - decompile fix Readd line removed by the decompiler
++                            this.g.b = i; // Paper - decompile fix Readd line removed by the decompiler
++                            this.g.c = j; // Paper - decompile fix Readd line removed by the decompiler
                              ++this.g.d;
                          }
  
-@@ -218,18 +217,10 @@ public class BlockPosition extends BaseBlockPosition {
-                     }
-                 }
+diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
+index 401b6d970..986b9ccea 100644
+--- a/src/main/java/net/minecraft/server/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -20,10 +20,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+     protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
+         super(s, oclass);
+         this.a = ImmutableSet.copyOf(collection);
+-        Iterator iterator = collection.iterator();
++        Iterator<T> iterator = collection.iterator(); // Paper - decompile fix
  
--                // $FF: synthetic method
--                protected Object computeNext() {
--                    return this.computeNext();
--                }
-             };
-         };
-     }
+         while (iterator.hasNext()) {
+-            T t0 = (Enum) iterator.next();
++            T t0 = iterator.next(); // Paper - Decompile fix
+             String s1 = ((INamable) t0).getName();
  
--    // $FF: synthetic method
--    public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
--        return this.d(baseblockposition);
--    }
- 
-     public static class MutableBlockPosition extends BlockPosition {
-         protected int b;
-@@ -314,10 +305,6 @@ public class BlockPosition extends BaseBlockPosition {
-             return new BlockPosition(this);
-         }
- 
--        // $FF: synthetic method
--        public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
--            return super.d(baseblockposition);
--        }
-     }
- 
-     public static final class b extends BlockPosition.MutableBlockPosition implements AutoCloseable {
-@@ -389,34 +376,5 @@ public class BlockPosition extends BaseBlockPosition {
-             }
-         }
- 
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition d(int i, int j, int k) {
--            return this.d(i, j, k);
--        }
--
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition c(EnumDirection enumdirection, int i) {
--            return this.c(enumdirection, i);
--        }
--
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition c(EnumDirection enumdirection) {
--            return this.c(enumdirection);
--        }
--
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition g(BaseBlockPosition baseblockposition) {
--            return this.g(baseblockposition);
--        }
--
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
--            return this.c(d0, d1, d2);
--        }
--
--        // $FF: synthetic method
--        public BlockPosition.MutableBlockPosition c(int i, int j, int k) {
--            return this.c(i, j, k);
--        }
-     }
- }
-diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 3bd0c56d4..304e47bf2 100644
---- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
-+++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-@@ -72,11 +72,11 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-     public int onResize(int ix, T object) {
-         this.b();
-         DataBits databits = this.a;
--        DataPalette datapalette = this.h;
-+        DataPalette<T> datapalette = this.h; // Paper - decompile fix
-         this.b(ix);
- 
-         for(int jx = 0; jx < databits.b(); ++jx) {
--            Object object1 = datapalette.a(databits.a(jx));
-+            T object1 = datapalette.a(databits.a(jx)); // Paper - decompile fix
-             if (object1 != null) {
-                 this.setBlockIndex(jx, object1);
-             }
-@@ -103,7 +103,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-     }
- 
-     protected T a(int ix) {
--        Object object = this.h.a(this.a.a(ix));
-+        T object = this.h.a(this.a.a(ix)); // Paper - decompile fix
-         return (T)(object == null ? this.g : object);
-     }
- 
-@@ -127,7 +127,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-         long[] along = nbttagcompound.o(s1);
-         int jx = along.length * 64 / 4096;
-         if (this.h == this.b) {
--            DataPaletteHash datapalettehash = new DataPaletteHash(this.d, ix, this.c, this.e, this.f);
-+            DataPaletteHash<T> datapalettehash = new DataPaletteHash(this.d, ix, this.c, this.e, this.f); // Paper - decompile fix
-             datapalettehash.a(nbttaglist);
-             DataBits databits = new DataBits(ix, 4096, along);
- 
-diff --git a/src/main/java/net/minecraft/server/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
-index 5eded6dc2..11f9642e6 100644
---- a/src/main/java/net/minecraft/server/DedicatedPlayerList.java
-+++ b/src/main/java/net/minecraft/server/DedicatedPlayerList.java
-@@ -136,7 +136,7 @@ public class DedicatedPlayerList extends PlayerList {
-     }
- 
-     // $FF: synthetic method
--    public MinecraftServer getServer() {
-+    public MinecraftServer getMinecraftServer() { // Paper - decompile fix
-         return this.getServer();
-     }
- }
+             if (this.b.containsKey(s1)) {
 diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
-index 8bfa218a6..e2e60d3ed 100644
+index 66b168396..83db94c4a 100644
 --- a/src/main/java/net/minecraft/server/DefinedStructure.java
 +++ b/src/main/java/net/minecraft/server/DefinedStructure.java
-@@ -77,7 +77,7 @@ public class DefinedStructure {
+@@ -85,7 +85,7 @@ public class DefinedStructure {
      }
  
      private void a(World world, BlockPosition blockposition, BlockPosition blockposition1) {
--        List list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (entity1) -> {
-+        List<Entity> list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1),(java.util.function.Predicate<? super Entity>) (entity1) -> { // Paper - decompile fix
-             return !(entity1 instanceof EntityHuman);
+-        List<Entity> list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (entity) -> {
++        List<Entity> list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (java.util.function.Predicate<? super Entity>) (entity) -> { // Paper - decompile fix
+             return !(entity instanceof EntityHuman);
          });
-         this.b.clear();
-@@ -145,12 +145,12 @@ public class DefinedStructure {
-         if (this.a.isEmpty()) {
-             return false;
-         } else {
--            List list = definedstructureinfo.a(this.a, blockposition);
-+            List<BlockInfo> list = definedstructureinfo.a(this.a, blockposition); // Paper - decompile fix
-             if ((!list.isEmpty() || !definedstructureinfo.h() && !this.b.isEmpty()) && this.c.getX() >= 1 && this.c.getY() >= 1 && this.c.getZ() >= 1) {
-                 Block block = definedstructureinfo.i();
-                 StructureBoundingBox structureboundingbox = definedstructureinfo.j();
--                ArrayList arraylist = Lists.newArrayListWithCapacity(definedstructureinfo.m() ? list.size() : 0);
--                ArrayList arraylist1 = Lists.newArrayListWithCapacity(list.size());
-+                ArrayList<BlockPosition> arraylist = Lists.newArrayListWithCapacity(definedstructureinfo.m() ? list.size() : 0); // Paper - decompile fix
-+                ArrayList<Pair> arraylist1 = Lists.newArrayListWithCapacity(list.size()); // Paper - decompile fix
-                 int j = Integer.MAX_VALUE;
-                 int k = Integer.MAX_VALUE;
-                 int l = Integer.MAX_VALUE;
-@@ -427,7 +427,7 @@ public class DefinedStructure {
-             nbttagcompound.set("blocks", new NBTTagList());
-             nbttagcompound.set("palette", new NBTTagList());
-         } else {
--            ArrayList arraylist = Lists.newArrayList();
-+            ArrayList<DefinedStructure.a> arraylist = Lists.newArrayList(); // Paper - decompile fix
-             DefinedStructure.a definedstructure$a = new DefinedStructure.a();
-             arraylist.add(definedstructure$a);
  
-diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
-index 6695f8d77..e1ea8da88 100644
---- a/src/main/java/net/minecraft/server/EnchantmentManager.java
-+++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
-@@ -51,7 +51,7 @@ public class EnchantmentManager {
-     public static void a(Map<Enchantment, Integer> map, ItemStack itemstack) {
-         NBTTagList nbttaglist = new NBTTagList();
+@@ -235,7 +235,7 @@ public class DefinedStructure {
+                 boolean flag = true;
+                 EnumDirection[] aenumdirection = new EnumDirection[] { EnumDirection.UP, EnumDirection.NORTH, EnumDirection.EAST, EnumDirection.SOUTH, EnumDirection.WEST};
  
--        for(Entry entry : map.entrySet()) {
-+        for(Entry<Enchantment, Integer> entry : map.entrySet()) { // Paper - decompile fix
-             Enchantment enchantment = (Enchantment)entry.getKey();
-             if (enchantment != null) {
-                 int i = entry.getValue();
-@@ -146,7 +146,7 @@ public class EnchantmentManager {
-     }
+-                int l1;
++                //int l1; // Paper - decompile fix
  
-     public static int a(Enchantment enchantment, EntityLiving entityliving) {
--        List list = enchantment.a(entityliving);
-+        List<ItemStack> list = enchantment.a(entityliving); // Paper - decompile fix
-         if (list == null) {
-             return 0;
-         } else {
-@@ -224,7 +224,7 @@ public class EnchantmentManager {
-     }
+                 while (flag && !list1.isEmpty()) {
+                     flag = false;
+@@ -245,7 +245,7 @@ public class DefinedStructure {
+                         BlockPosition blockposition2 = (BlockPosition) iterator1.next();
+                         Fluid fluid1 = generatoraccess.getFluid(blockposition2);
  
-     public static ItemStack b(Enchantment enchantment, EntityLiving entityliving) {
--        List list = enchantment.a(entityliving);
-+        List<ItemStack> list = enchantment.a(entityliving);// Paper - decompile fix
-         if (list.isEmpty()) {
-             return ItemStack.a;
-         } else {
-@@ -260,7 +260,7 @@ public class EnchantmentManager {
-     }
+-                        for (l1 = 0; l1 < aenumdirection.length && !fluid1.d(); ++l1) {
++                        for (int l1 = 0; l1 < aenumdirection.length && !fluid1.d(); ++l1) { // Paper - decompile fix
+                             Fluid fluid2 = generatoraccess.getFluid(blockposition2.shift(aenumdirection[l1]));
  
-     public static ItemStack a(Random random, ItemStack itemstack, int i, boolean flag) {
--        List list = b(random, itemstack, i, flag);
-+        List<WeightedRandomEnchant> list = b(random, itemstack, i, flag); // Paper - decompile fix
-         boolean flag1 = itemstack.getItem() == Items.BOOK;
-         if (flag1) {
-             itemstack = new ItemStack(Items.ENCHANTED_BOOK);
-@@ -328,7 +328,7 @@ public class EnchantmentManager {
-     }
+                             if (fluid2.getHeight() > fluid1.getHeight() || fluid2.d() && !fluid1.d()) {
+@@ -270,7 +270,7 @@ public class DefinedStructure {
+                     int i2 = j;
+                     int j2 = k;
  
-     public static List<WeightedRandomEnchant> a(int i, ItemStack itemstack, boolean flag) {
--        ArrayList arraylist = Lists.newArrayList();
-+        ArrayList<WeightedRandomEnchant> arraylist = Lists.newArrayList();
-         Item item = itemstack.getItem();
-         boolean flag1 = itemstack.getItem() == Items.BOOK;
+-                    l1 = l;
++                    int l1 = l; // Paper - decompile fix
+                     Iterator iterator2 = list2.iterator();
  
-diff --git a/src/main/java/net/minecraft/server/EntityDragonFireball.java b/src/main/java/net/minecraft/server/EntityDragonFireball.java
-index 04cff50cb..e746a6a0d 100644
---- a/src/main/java/net/minecraft/server/EntityDragonFireball.java
-+++ b/src/main/java/net/minecraft/server/EntityDragonFireball.java
-@@ -14,7 +14,7 @@ public class EntityDragonFireball extends EntityFireball {
-     protected void a(MovingObjectPosition movingobjectposition) {
-         if (movingobjectposition.entity == null || !movingobjectposition.entity.s(this.shooter)) {
-             if (!this.world.isClientSide) {
--                List list = this.world.a(EntityLiving.class, this.getBoundingBox().grow(4.0D, 2.0D, 4.0D));
-+                List<EntityLiving> list = this.world.a(EntityLiving.class, this.getBoundingBox().grow(4.0D, 2.0D, 4.0D)); // Paper - decompile fix
-                 EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.world, this.locX, this.locY, this.locZ);
-                 entityareaeffectcloud.setSource(this.shooter);
-                 entityareaeffectcloud.setParticle(Particles.j);
-diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
-index 4dee04581..9c48bb3c9 100644
---- a/src/main/java/net/minecraft/server/EntityLlama.java
-+++ b/src/main/java/net/minecraft/server/EntityLlama.java
-@@ -371,11 +371,6 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
-     public void s(boolean var1) {
-     }
+                     Pair pair;
+@@ -717,7 +717,7 @@ public class DefinedStructure {
+         public IBlockData a(int i) {
+             IBlockData iblockdata = (IBlockData) this.b.fromId(i);
  
--    // $FF: synthetic method
--    public EntityAgeable createChild(EntityAgeable entityageable) {
--        return this.createChild(entityageable);
--    }
--
-     static class a extends PathfinderGoalNearestAttackableTarget<EntityWolf> {
-         public a(EntityLlama entityllama) {
-             super(entityllama, EntityWolf.class, 16, false, true, (Predicate)null);
-diff --git a/src/main/java/net/minecraft/server/EnumDirection.java b/src/main/java/net/minecraft/server/EnumDirection.java
-index 23ca6fc50..44c91ba26 100644
---- a/src/main/java/net/minecraft/server/EnumDirection.java
-+++ b/src/main/java/net/minecraft/server/EnumDirection.java
-@@ -232,10 +232,6 @@ public enum EnumDirection implements INamable {
-                 return d0;
-             }
- 
--            // $FF: synthetic method
--            public boolean test(@Nullable Object object) {
--                return super.test((EnumDirection)object);
--            }
-         },
-         Y("y") {
-             public int a(int var1, int i, int var3) {
-@@ -246,10 +242,6 @@ public enum EnumDirection implements INamable {
-                 return d0;
-             }
- 
--            // $FF: synthetic method
--            public boolean test(@Nullable Object object) {
--                return super.test((EnumDirection)object);
--            }
-         },
-         Z("z") {
-             public int a(int var1, int var2, int i) {
-@@ -260,10 +252,6 @@ public enum EnumDirection implements INamable {
-                 return d0;
-             }
- 
--            // $FF: synthetic method
--            public boolean test(@Nullable Object object) {
--                return super.test((EnumDirection)object);
--            }
-         };
- 
-         private static final Map<String, EnumDirection.EnumAxis> d = (Map)Arrays.stream(values()).collect(Collectors.toMap(EnumDirection.EnumAxis::a, (enumdirection$enumaxis) -> {
-@@ -315,10 +303,6 @@ public enum EnumDirection implements INamable {
- 
-         public abstract double a(double var1, double var3, double var5);
- 
--        // $FF: synthetic method
--        public boolean test(@Nullable Object object) {
--            return this.test((EnumDirection)object);
--        }
-     }
- 
-     public static enum EnumAxisDirection {
-@@ -366,9 +350,5 @@ public enum EnumDirection implements INamable {
-             return Iterators.forArray(this.c);
+-            return iblockdata == null ? DefinedStructure.a.a : iblockdata;
++            return iblockdata == null ? a : iblockdata; // Paper - decompile fix
          }
  
--        // $FF: synthetic method
--        public boolean test(@Nullable Object object) {
--            return this.test((EnumDirection)object);
--        }
-     }
- }
-diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
-index 0e0571a6c..8fc45c697 100644
---- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
-+++ b/src/main/java/net/minecraft/server/IChatBaseComponent.java
-@@ -389,14 +389,5 @@ public interface IChatBaseComponent extends Message, Iterable<IChatBaseComponent
-             }
-         }
- 
--        // $FF: synthetic method
--        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--            return this.serialize((IChatBaseComponent)object, type, jsonserializationcontext);
--        }
--
--        // $FF: synthetic method
--        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--            return this.deserialize(jsonelement, type, jsondeserializationcontext);
--        }
-     }
- }
-diff --git a/src/main/java/net/minecraft/server/LocaleLanguage.java b/src/main/java/net/minecraft/server/LocaleLanguage.java
-index 4157fcea3..ba03b9dcc 100644
---- a/src/main/java/net/minecraft/server/LocaleLanguage.java
-+++ b/src/main/java/net/minecraft/server/LocaleLanguage.java
-@@ -27,7 +27,7 @@ public class LocaleLanguage {
-             JsonElement jsonelement = (JsonElement)(new Gson()).fromJson(new InputStreamReader(inputstream, StandardCharsets.UTF_8), JsonElement.class);
-             JsonObject jsonobject = ChatDeserializer.m(jsonelement, "strings");
- 
--            for(Entry entry : jsonobject.entrySet()) {
-+            for(Entry<String, JsonElement> entry : jsonobject.entrySet()) {// Paper - Decompile fix
-                 String s = b.matcher(ChatDeserializer.a((JsonElement)entry.getValue(), (String)entry.getKey())).replaceAll("%$1s");
-                 this.d.put(entry.getKey(), s);
-             }
-diff --git a/src/main/java/net/minecraft/server/LootSelectorEntry.java b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-index 252b0f3ed..86df2b969 100644
---- a/src/main/java/net/minecraft/server/LootSelectorEntry.java
-+++ b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-@@ -82,14 +82,5 @@ public abstract class LootSelectorEntry {
-             return jsonobject;
-         }
- 
--        // $FF: synthetic method
--        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--            return this.serialize((LootSelectorEntry)object, type, jsonserializationcontext);
--        }
--
--        // $FF: synthetic method
--        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--            return this.deserialize(jsonelement, type, jsondeserializationcontext);
--        }
-     }
- }
+         public Iterator<IBlockData> iterator() {
 diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
-index 48d04b540..de9168a9c 100644
+index 1425584ed..b2757aad8 100644
 --- a/src/main/java/net/minecraft/server/NBTBase.java
 +++ b/src/main/java/net/minecraft/server/NBTBase.java
-@@ -87,7 +87,7 @@ public interface NBTBase {
+@@ -88,7 +88,7 @@ public interface NBTBase {
          }
      }
  
@@ -396,31 +159,8 @@ index 48d04b540..de9168a9c 100644
  
      default String asString() {
          return this.toString();
-diff --git a/src/main/java/net/minecraft/server/NBTList.java b/src/main/java/net/minecraft/server/NBTList.java
-index 456b5f492..54f2935c0 100644
---- a/src/main/java/net/minecraft/server/NBTList.java
-+++ b/src/main/java/net/minecraft/server/NBTList.java
-@@ -25,6 +25,7 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
-     public abstract void b(int var1);
- 
-     // $FF: synthetic method
-+    /* // Paper start- Decompile fix
-     public Object set(int i, Object object) {
-         return this.set(i, (NBTBase)object);
-     }
-@@ -32,5 +33,9 @@ public abstract class NBTList<T extends NBTBase> extends AbstractList<T> impleme
-     // $FF: synthetic method
-     public Object get(int i) {
-         return this.get(i);
--    }
-+    }*/
-+
-+    @Override
-+    public abstract NBTBase clone();
-+    // Paper end- Decompile fix
- }
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-index 973f28cc5..21a6f488a 100644
+index 767013cae..e0fb6fb49 100644
 --- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
 +++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
 @@ -66,7 +66,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
@@ -434,197 +174,94 @@ index 973f28cc5..21a6f488a 100644
  
          System.arraycopy(this.data, 0, abyte, 0, this.data.length);
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index 8e6cce15f..1b72df8cd 100644
+index 2b7b8be8a..27debcfca 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
-@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
- 
+@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
  public class NBTTagList extends NBTList<NBTBase> {
+ 
      private static final Logger f = LogManager.getLogger();
 -    private List<NBTBase> list = Lists.newArrayList();
 +    public List<NBTBase> list = Lists.newArrayList(); // Paper
      private byte type = 0;
  
-     public NBTTagList() {
-@@ -281,11 +281,7 @@ public class NBTTagList extends NBTList<NBTBase> {
-         return this.type;
-     }
- 
--    // $FF: synthetic method
--    public NBTBase clone() {
--        return this.clone();
--    }
--
-+    /* // Paper start - Decompile fix
-     // $FF: synthetic method
-     public Object remove(int i) {
-         return this.remove(i);
-@@ -305,4 +301,5 @@ public class NBTTagList extends NBTList<NBTBase> {
-     public boolean add(Object object) {
-         return this.add((NBTBase)object);
-     }
-+    */ // Paper end - Decompile fix
- }
-diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
-index a717ad95f..ff7e20dfc 100644
---- a/src/main/java/net/minecraft/server/PacketEncoder.java
-+++ b/src/main/java/net/minecraft/server/PacketEncoder.java
-@@ -48,8 +48,4 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-         }
-     }
- 
--    // $FF: synthetic method
--    protected void encode(ChannelHandlerContext channelhandlercontext, Object object, ByteBuf bytebuf) throws Exception {
--        this.encode(channelhandlercontext, (Packet)object, bytebuf);
--    }
- }
-diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index 8bc7c0ccd..faaad0f41 100644
---- a/src/main/java/net/minecraft/server/ProtoChunk.java
-+++ b/src/main/java/net/minecraft/server/ProtoChunk.java
-@@ -483,14 +483,4 @@ public class ProtoChunk implements IChunkAccess {
-     public void b(boolean flag) {
-         this.u = flag;
-     }
--
--    // $FF: synthetic method
--    public TickList l() {
--        return this.l();
--    }
--
--    // $FF: synthetic method
--    public TickList k() {
--        return this.k();
--    }
- }
+     public NBTTagList() {}
 diff --git a/src/main/java/net/minecraft/server/Registry.java b/src/main/java/net/minecraft/server/Registry.java
-index 5be9f0ff2..9efec49d6 100644
+index 723372f26..9efec49d6 100644
 --- a/src/main/java/net/minecraft/server/Registry.java
 +++ b/src/main/java/net/minecraft/server/Registry.java
-@@ -1,4 +1,8 @@
+@@ -1,3 +1,8 @@
  package net.minecraft.server;
  
--public interface Registry extends Iterable {
+-public interface Registry extends Iterable {}
 +import java.util.Iterator;
 +public interface Registry<T> extends Iterable<T> { // Paper - decompile fix
 +
 +    @Override
 +    Iterator<T> iterator(); // Paper - decompile fix
- }
++}
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 8d1f9237a..a21006290 100644
+index 50410264f..a894f7886 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
 +++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
-@@ -26,7 +26,7 @@ public class RegistryBlockID<T> implements Registry<T> {
-         this.b.put(object, i);
+@@ -27,7 +27,7 @@ public class RegistryBlockID<T> implements Registry<T> {
+         this.b.put(t0, i);
  
-         while(this.c.size() <= i) {
--            this.c.add((Object)null);
+         while (this.c.size() <= i) {
+-            this.c.add((Object) null);
 +            this.c.add(null); // Paper - decompile fix
          }
  
-         this.c.set(i, object);
+         this.c.set(i, t0);
 diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
-index 03c603362..d03ac0e70 100644
+index 9400a4369..5a5c464ea 100644
 --- a/src/main/java/net/minecraft/server/RegistryID.java
 +++ b/src/main/java/net/minecraft/server/RegistryID.java
-@@ -49,7 +49,7 @@ public class RegistryID<K> implements Registry<K> {
-     }
+@@ -17,9 +17,9 @@ public class RegistryID<K> implements Registry<K> {
  
-     private void d(int i) {
--        Object[] aobject = this.b;
-+        K[] aobject = this.b; // Paper - decompile fix
-         int[] aint = this.c;
-         this.b = (K[])(new Object[i]);
+     public RegistryID(int i) {
+         i = (int) ((float) i / 0.8F);
+-        this.b = (Object[]) (new Object[i]);
++        this.b = (K[]) (new Object[i]); // Paper - decompile fix
          this.c = new int[i];
-diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
-index 364dadfbd..c338d09bf 100644
---- a/src/main/java/net/minecraft/server/ServerPing.java
-+++ b/src/main/java/net/minecraft/server/ServerPing.java
-@@ -100,15 +100,6 @@ public class ServerPing {
-             return jsonobject;
-         }
- 
--        // $FF: synthetic method
--        public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--            return this.serialize((ServerPing)object, type, jsonserializationcontext);
--        }
--
--        // $FF: synthetic method
--        public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--            return this.deserialize(jsonelement, type, jsondeserializationcontext);
--        }
+-        this.d = (Object[]) (new Object[i]);
++        this.d = (K[]) (new Object[i]); // Paper - decompile fix
      }
  
-     public static class ServerData {
-@@ -144,15 +135,6 @@ public class ServerPing {
-                 return jsonobject;
-             }
+     public int getId(@Nullable K k0) {
+@@ -54,9 +54,9 @@ public class RegistryID<K> implements Registry<K> {
+         K[] ak = this.b;
+         int[] aint = this.c;
  
--            // $FF: synthetic method
--            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--                return this.serialize((ServerPing.ServerData)object, type, jsonserializationcontext);
--            }
--
--            // $FF: synthetic method
--            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--                return this.deserialize(jsonelement, type, jsondeserializationcontext);
--            }
-         }
-     }
+-        this.b = (Object[]) (new Object[i]);
++        this.b = (K[]) (new Object[i]); // Paper - decompile fix
+         this.c = new int[i];
+-        this.d = (Object[]) (new Object[i]);
++        this.d = (K[]) (new Object[i]); // Paper - decompile fix
+         this.e = 0;
+         this.f = 0;
  
-@@ -228,15 +210,6 @@ public class ServerPing {
-                 return jsonobject;
-             }
- 
--            // $FF: synthetic method
--            public JsonElement serialize(Object object, Type type, JsonSerializationContext jsonserializationcontext) {
--                return this.serialize((ServerPing.ServerPingPlayerSample)object, type, jsonserializationcontext);
--            }
--
--            // $FF: synthetic method
--            public Object deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
--                return this.deserialize(jsonelement, type, jsondeserializationcontext);
--            }
-         }
-     }
- }
-diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
-index 475bf35fa..78234cbdd 100644
---- a/src/main/java/net/minecraft/server/ShapeDetector.java
-+++ b/src/main/java/net/minecraft/server/ShapeDetector.java
-@@ -106,10 +106,6 @@ public class ShapeDetector {
-             return new ShapeDetectorBlock(this.a, blockposition, this.b);
-         }
- 
--        // $FF: synthetic method
--        public Object load(Object object) throws Exception {
--            return this.load((BlockPosition)object);
--        }
-     }
- 
-     public static class ShapeDetectorCollection {
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
-index c1bbacfc1..f0a826cd1 100644
+index c01a05b25..478bf4997 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
 +++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
-@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
- import it.unimi.dsi.fastutil.objects.ObjectIterator;
- import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
- import java.io.DataInputStream;
-+import java.io.DataOutput;
- import java.io.DataOutputStream;
- import java.io.File;
- import java.io.FileInputStream;
-@@ -98,7 +99,7 @@ public class WorldPersistentData {
-                     }
+@@ -39,14 +39,14 @@ public class WorldPersistentData {
  
-                     DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file1));
--                    NBTCompressedStreamTools.a(nbttagcompound, dataoutputstream);
-+                    NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream); // Paper - decompile fix
-                     dataoutputstream.close();
+     @Nullable
+     public <T extends PersistentBase> T a(Function<String, T> function, String s) {
+-        PersistentBase persistentbase = (PersistentBase) this.data.get(s);
++        T persistentbase = (T) this.data.get(s); // Paper - decompile fix
+ 
+         if (persistentbase == null && this.e != null) {
+             try {
+                 File file = this.e.getDataFile(this.b, s);
+ 
+                 if (file != null && file.exists()) {
+-                    persistentbase = (PersistentBase) function.apply(s);
++                    persistentbase = function.apply(s); // Paper - decompile fix
+                     persistentbase.a(a(this.e, this.b, s, 1631).getCompound("data"));
+                     this.data.put(s, persistentbase);
                  }
-             } catch (Exception exception) {
 -- 
-2.20.0
+2.20.1
 

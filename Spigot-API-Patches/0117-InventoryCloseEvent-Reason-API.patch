@@ -1,0 +1,94 @@
+From 79b0b5b19b53d8ecf4eeeae5adbd66d271ce7fd1 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 3 Jul 2018 21:52:52 -0400
+Subject: [PATCH] InventoryCloseEvent Reason API
+
+Allows you to determine why an inventory was closed, enabling plugin developers
+to "confirm" things based on if it was player triggered close or not.
+
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index ca789867..d4b3caeb 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -138,6 +138,15 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      */
+     public void closeInventory();
+ 
++    // Paper start
++    /**
++     * Force-closes the currently open inventory view for this player, if any.
++     *
++     * @param reason why the inventory is closing
++     */
++    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
++    // Paper end
++
+     /**
+      * Returns the ItemStack currently in your hand, can be empty.
+      *
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryCloseEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryCloseEvent.java
+index 19889b27..e6e45b93 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryCloseEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryCloseEvent.java
+@@ -11,8 +11,58 @@ import org.bukkit.inventory.InventoryView;
+ public class InventoryCloseEvent extends InventoryEvent {
+     private static final HandlerList handlers = new HandlerList();
+ 
++    // Paper start
++    private final Reason reason;
++    public Reason getReason() {
++        return reason;
++    }
++
++    public enum Reason {
++        /**
++         * Unknown reason
++         */
++        UNKNOWN,
++        /**
++         * Player is teleporting
++         */
++        TELEPORT,
++        /**
++         * Player is no longer permitted to use this inventory
++         */
++        CANT_USE,
++        /**
++         * The chunk the inventory was in was unloaded
++         */
++        UNLOADED,
++        /**
++         * Opening new inventory instead
++         */
++        OPEN_NEW,
++        /**
++         * Closed
++         */
++        PLAYER,
++        /**
++         * Closed due to disconnect
++         */
++        DISCONNECT,
++        /**
++         * The player died
++         */
++        DEATH,
++        /**
++         * Closed by Bukkit API
++         */
++        PLUGIN,
++    }
+     public InventoryCloseEvent(InventoryView transaction) {
++        this(transaction, Reason.UNKNOWN);
++    }
++
++    public InventoryCloseEvent(InventoryView transaction, Reason reason) {
+         super(transaction);
++        this.reason = reason;
++        // Paper end
+     }
+ 
+     /**
+-- 
+2.20.1
+

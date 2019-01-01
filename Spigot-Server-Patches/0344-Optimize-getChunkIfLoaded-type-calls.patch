@@ -1,0 +1,81 @@
+From cb4fba79d8fc1806c9b87c7145aff6dc957abd59 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 29 Aug 2018 21:59:22 -0400
+Subject: [PATCH] Optimize getChunkIfLoaded type calls
+
+Uses optimized check to avoid major locks and large method.
+
+Will improve inlining across many hot methods.
+
+Improve getBrightness to not do double chunk map lookups.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index f7c433b94..fce3f673d 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -376,7 +376,7 @@ public class ChunkProviderServer implements IChunkProvider {
+                     continue;
+                 }
+ 
+-                Chunk neighbor = this.getChunkAt(chunk.locX + x, chunk.locZ + z, false, false);
++                Chunk neighbor = this.chunks.get(chunk.chunkKey); // Paper
+                 if (neighbor != null) {
+                     neighbor.setNeighborUnloaded(-x, -z);
+                     chunk.setNeighborUnloaded(x, z);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index a95c8df4b..cd56ca04e 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -161,7 +161,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     }
+ 
+     public Chunk getChunkIfLoaded(int x, int z) {
+-        return ((ChunkProviderServer) this.chunkProvider).getChunkAt(x, z, false, false);
++        return ((ChunkProviderServer) this.chunkProvider).chunks.get(ChunkCoordIntPair.a(x, z)); // Paper - optimize getChunkIfLoaded
+     }
+ 
+     protected World(IDataManager idatamanager, @Nullable PersistentCollection persistentcollection, WorldData worlddata, WorldProvider worldprovider, MethodProfiler methodprofiler, boolean flag, ChunkGenerator gen, org.bukkit.World.Environment env) {
+@@ -717,7 +717,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+             blockposition = new BlockPosition(blockposition.getX(), 0, blockposition.getZ());
+         }
+ 
+-        return !blockposition.isValidLocation() ? enumskyblock.c : (!this.isLoaded(blockposition) ? enumskyblock.c : this.getChunkAtWorldCoords(blockposition).getBrightness(enumskyblock, blockposition)); // Paper
++        Chunk chunk; // Paper
++        return !blockposition.isValidLocation() ? enumskyblock.c : ((chunk = this.getChunkIfLoaded(blockposition)) == null ? enumskyblock.c : chunk.getBrightness(enumskyblock, blockposition)); // Paper - optimize ifChunkLoaded
+     }
+ 
+     public void a(EnumSkyBlock enumskyblock, BlockPosition blockposition, int i) {
+@@ -1960,7 +1961,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         if (blockposition.isInvalidYLocation()) { // Paper
+             return false;
+         } else {
+-            Chunk chunk = this.chunkProvider.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, false, false);
++            Chunk chunk = this.getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper - optimize ifLoaded
+ 
+             return chunk != null && !chunk.isEmpty();
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index e0b466d0c..2c4465fff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -218,7 +218,7 @@ public class CraftWorld implements World {
+             return false;
+         }
+ 
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
++        net.minecraft.server.Chunk chunk = world.getChunkIfLoaded(x, z); // Paper - optimize ifLaoded
+         if (chunk != null) {
+             world.getChunkProvider().unload(chunk);
+         }
+@@ -237,7 +237,7 @@ public class CraftWorld implements World {
+ 
+     private boolean unloadChunk0(int x, int z, boolean save) {
+         Boolean result = MCUtil.ensureMain("Unload Chunk", () -> { // Paper - Ensure never async
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
++        net.minecraft.server.Chunk chunk = world.getChunkIfLoaded(x, z); // Paper - optimize ifLoaded
+         if (chunk == null) {
+             return true;
+         }
+-- 
+2.20.1
+

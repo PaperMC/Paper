@@ -1,4 +1,4 @@
-From ec6342a78de5a84e7a81431fcdbf37db320b27c8 Mon Sep 17 00:00:00 2001
+From b8e43d91f2413961dbec06e5545224fce3aade80 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Jun 2016 23:22:12 -0400
 Subject: [PATCH] Delay Chunk Unloads based on Player Movement
@@ -43,10 +43,10 @@ index 42d951554..d8f258105 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index f6bfd6ece..7380c4386 100644
+index 0421f8f95..ddccdc939 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -41,6 +41,7 @@ public class Chunk implements IChunkAccess {
+@@ -40,6 +40,7 @@ public class Chunk implements IChunkAccess {
      private boolean i;public boolean isLoaded() { return i; } // Paper - OBFHELPER
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
@@ -75,10 +75,10 @@ index 8b3738c8f..2021c0d02 100644
          // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 1d08ec37f..516a583a8 100644
+index fd68f06fe..ff6f7596c 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -308,6 +308,19 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -304,6 +304,19 @@ public class ChunkProviderServer implements IChunkProvider {
                  }
                  activityAccountant.endActivity(); // Spigot
              }
@@ -99,13 +99,13 @@ index 1d08ec37f..516a583a8 100644
              this.chunkScheduler.a(booleansupplier);
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 1d672eaa1..5497a458d 100644
+index e47aae2f8..b9d90c4fb 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -26,8 +26,23 @@ public class PlayerChunk {
-         ChunkProviderServer chunkproviderserver = playerchunkmap.getWorld().getChunkProvider();
-         chunkproviderserver.a(ix, j);
-         this.chunk = chunkproviderserver.getChunkAt(ix, j, true, false);
+@@ -29,8 +29,23 @@ public class PlayerChunk {
+ 
+         chunkproviderserver.a(i, j);
+         this.chunk = chunkproviderserver.getChunkAt(i, j, true, false);
 +        markChunkUsed(); // Paper - delay chunk unloads
      }
  
@@ -126,7 +126,7 @@ index 1d672eaa1..5497a458d 100644
      public ChunkCoordIntPair a() {
          return this.location;
      }
-@@ -38,6 +53,8 @@ public class PlayerChunk {
+@@ -41,6 +56,8 @@ public class PlayerChunk {
          } else {
              if (this.players.isEmpty()) {
                  this.i = this.playerChunkMap.getWorld().getTime();
@@ -135,7 +135,7 @@ index 1d672eaa1..5497a458d 100644
              }
  
              this.players.add(entityplayer);
-@@ -56,6 +73,8 @@ public class PlayerChunk {
+@@ -59,6 +76,8 @@ public class PlayerChunk {
  
              this.players.remove(entityplayer);
              if (this.players.isEmpty()) {
@@ -144,7 +144,7 @@ index 1d672eaa1..5497a458d 100644
                  this.playerChunkMap.b(this);
              }
  
-@@ -67,6 +86,7 @@ public class PlayerChunk {
+@@ -70,6 +89,7 @@ public class PlayerChunk {
              return true;
          } else {
              this.chunk = this.playerChunkMap.getWorld().getChunkProvider().getChunkAt(this.location.x, this.location.z, true, flag);
@@ -153,10 +153,10 @@ index 1d672eaa1..5497a458d 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 3d17ad646..c3ac66d35 100644
+index 206457650..ab4f3b722 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -456,7 +456,13 @@ public class PlayerChunkMap {
+@@ -452,7 +452,13 @@ public class PlayerChunkMap {
          Chunk chunk = playerchunk.f();
  
          if (chunk != null) {
@@ -172,10 +172,10 @@ index 3d17ad646..c3ac66d35 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c484493b0..9a0e5342d 100644
+index b51415e9b..1ffa3f0aa 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1292,7 +1292,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1287,7 +1287,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              if (!tileentity.x() && tileentity.hasWorld()) {
                  BlockPosition blockposition = tileentity.getPosition();
  
@@ -191,10 +191,10 @@ index c484493b0..9a0e5342d 100644
                          this.methodProfiler.a(() -> {
                              return String.valueOf(TileEntityTypes.a(tileentity.C()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index ff1ccbd64..3e71cdcdc 100644
+index 274e8626d..cecdc5388 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1750,7 +1750,7 @@ public class CraftWorld implements World {
+@@ -1772,7 +1772,7 @@ public class CraftWorld implements World {
          ChunkProviderServer cps = world.getChunkProvider();
          for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
              // If in use, skip it

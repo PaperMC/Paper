@@ -1,11 +1,11 @@
-From bb502b2f16c52b6ef4fe6ac457c423bf940618e3 Mon Sep 17 00:00:00 2001
+From 99e8159915dbca4b04eac59a3ebe3cb845b70f15 Mon Sep 17 00:00:00 2001
 From: Jedediah Smith <jedediah@silencegreys.com>
 Date: Wed, 2 Mar 2016 23:13:07 -0600
 Subject: [PATCH] Send absolute position the first time an entity is seen
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 5dbd493f41..a049b8d68e 100644
+index dd6c84b4a..a12a42c32 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -41,7 +41,19 @@ public class EntityTrackerEntry {
@@ -45,15 +45,14 @@ index 5dbd493f41..a049b8d68e 100644
                      if (l1 >= -32768L && l1 < 32768L && i2 >= -32768L && i2 < 32768L && j2 >= -32768L && j2 < 32768L && this.v <= 400 && !this.x && this.y == this.tracker.onGround) {
                          if ((!flag1 || !flag2) && !(this.tracker instanceof EntityArrow)) {
                              if (flag1) {
-@@ -201,7 +213,26 @@ public class EntityTrackerEntry {
-                 }
+@@ -202,6 +214,26 @@ public class EntityTrackerEntry {
  
-                 if (object != null) {
--                    this.broadcast((Packet) object);
+                 if (packet1 != null) {
+                     this.broadcast((Packet) packet1);
 +                    // Paper start - ensure fresh viewers get an absolute position on their first update,
 +                    // since we can't be certain what position they received in the spawn packet.
-+                    if (object instanceof PacketPlayOutEntityTeleport) {
-+                        this.broadcast((Packet) object);
++                    if (packet1 instanceof PacketPlayOutEntityTeleport) {
++                        this.broadcast((Packet) packet1);
 +                    } else {
 +                        PacketPlayOutEntityTeleport teleportPacket = null;
 +
@@ -65,7 +64,7 @@ index 5dbd493f41..a049b8d68e 100644
 +                                }
 +                                sendPlayerPacket(viewer.getKey(), teleportPacket);
 +                            } else {
-+                                sendPlayerPacket(viewer.getKey(), (Packet) object);
++                                sendPlayerPacket(viewer.getKey(), (Packet) packet1);
 +                            }
 +                        }
 +                    }
@@ -73,15 +72,15 @@ index 5dbd493f41..a049b8d68e 100644
                  }
  
                  this.d();
-@@ -338,7 +369,7 @@ public class EntityTrackerEntry {
+@@ -338,7 +370,7 @@ public class EntityTrackerEntry {
  
                      entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
                      // CraftBukkit end
 -                    this.trackedPlayers.add(entityplayer);
 +                    this.trackedPlayerMap.put(entityplayer, true); // Paper
-                     Packet packet = this.e();
+                     Packet<?> packet = this.e();
  
                      entityplayer.playerConnection.sendPacket(packet);
 -- 
-2.19.1
+2.20.1
 
