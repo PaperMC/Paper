@@ -21,12 +21,12 @@ index 058cd8cc8..276dd98fd 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eef8d2b5a..cc98b745b 100644
+index 7a2f128d3..c21ebd466 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-             ArrayList arraylist = Lists.newArrayList();
-             Set set = Sets.newConcurrentHashSet();
+             List<ChunkCoordIntPair> list = Lists.newArrayList();
+             Set<ChunkCoordIntPair> set = Sets.newConcurrentHashSet();
  
 -            for (int i = -192; i <= 192 && this.isRunning(); i += 16) {
 -                for (int j = -192; j <= 192 && this.isRunning(); j += 16) {
@@ -35,14 +35,14 @@ index eef8d2b5a..cc98b745b 100644
 +            for (int i = -radius; i <= radius && this.isRunning(); i += 16) {
 +                for (int j = -radius; j <= radius && this.isRunning(); j += 16) {
 +                    // Paper end
-                     arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
+                     list.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
                  }
 +            } // Paper
 +            if (this.isRunning()) { // Paper
-+                int expected = arraylist.size(); // Paper
++                int expected = list.size(); // Paper
 +
  
-                 CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) arraylist, (chunk) -> {
+                 CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) list, (chunk) -> {
                      set.add(chunk.getPos());
 +                    if (set.size() < expected && set.size() % 25 == 0) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
                  });
@@ -63,7 +63,7 @@ index eef8d2b5a..cc98b745b 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 520235d1b..7953d7f99 100644
+index 907681cdf..5aea44cd8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -91,7 +91,7 @@ index acd54067e..c655d51ac 100644
              for (int j = -short1; j <= short1; j += 16) {
                  for (int k = -short1; k <= short1; k += 16) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 889f99d66..ff1ccbd64 100644
+index f118d382c..274e8626d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {

@@ -5,7 +5,7 @@ Subject: [PATCH] Add more Zombie API
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
-index f25bcfd8f..72ea3ba76 100644
+index 92ad1ad15..85465879d 100644
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
@@ -13,9 +13,9 @@ index f25bcfd8f..72ea3ba76 100644
      private static final DataWatcherObject<Boolean> bC = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Integer> bD = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
 -    private static final DataWatcherObject<Boolean> bE = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
--    public static final DataWatcherObject<Boolean> bF = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); // PAIL
-+    private static final DataWatcherObject<Boolean> bE = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); private static final DataWatcherObject<Boolean> armsRaised = bE; // Paper - OBFHELPER
-+    public static final DataWatcherObject<Boolean> bF = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); private static final DataWatcherObject<Boolean> drowning = bF; // Paper - OBFHELPER
+-    public static final DataWatcherObject<Boolean> DROWN_CONVERTING = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
++    private static final DataWatcherObject<Boolean> bE = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);  private static final DataWatcherObject<Boolean> armsRaised = bE; // Paper - OBFHELPER
++    public static final DataWatcherObject<Boolean> DROWN_CONVERTING = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i); private static final DataWatcherObject<Boolean> drowning = DROWN_CONVERTING; // Paper - OBFHELPER
      private final PathfinderGoalBreakDoor bG;
      private boolean bH;
      private int bI;
@@ -28,12 +28,12 @@ index f25bcfd8f..72ea3ba76 100644
      public EntityZombie(EntityTypes<?> entitytypes, World world) {
          super(entitytypes, world);
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
-         this.getDataWatcher().register(EntityZombie.bF, false);
+         this.getDataWatcher().register(EntityZombie.DROWN_CONVERTING, false);
      }
  
 +    public boolean isDrowning() { return isDrownConverting(); } // Paper - OBFHELPER
      public boolean isDrownConverting() {
-         return (Boolean) this.getDataWatcher().get(EntityZombie.bF);
+         return (Boolean) this.getDataWatcher().get(EntityZombie.DROWN_CONVERTING);
      }
  
 +    public void setArmsRaised(boolean raised) { s(raised); } // Paper - OBFHELPER
@@ -51,13 +51,7 @@ index f25bcfd8f..72ea3ba76 100644
          return this.bH;
      }
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
-         super.movementTick();
-     }
- 
-+    public void startDrowning(int drownedConversionTime) { a(drownedConversionTime); } // Paper - OBFHELPER
-     public void a(int i) { // PAIL
-         this.drownedConversionTime = i;
-         this.getDataWatcher().set(EntityZombie.bF, true);
+         this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, true);
      }
  
 +    // Paper start
@@ -99,7 +93,7 @@ index f25bcfd8f..72ea3ba76 100644
      public void a(NBTTagCompound nbttagcompound) {
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
          if (nbttagcompound.hasKeyOfType("DrownedConversionTime", 99) && nbttagcompound.getInt("DrownedConversionTime") > -1) {
-             this.a(nbttagcompound.getInt("DrownedConversionTime"));
+             this.startDrownedConversion(nbttagcompound.getInt("DrownedConversionTime"));
          }
 -
 +        // Paper start
@@ -111,11 +105,11 @@ index f25bcfd8f..72ea3ba76 100644
  
      public void b(EntityLiving entityliving) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
-index 7af4ea9f8..4d4c50212 100644
+index e93ecb076..c516d3475 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 @@ -0,0 +0,0 @@ public class CraftZombie extends CraftMonster implements Zombie {
-             getHandle().a(time);
+             getHandle().startDrownedConversion(time);
          }
      }
 +
@@ -125,7 +119,7 @@ index 7af4ea9f8..4d4c50212 100644
 +    }
 +
 +    public void startDrowning(int drownedConversionTime) {
-+        getHandle().startDrowning(drownedConversionTime);
++        getHandle().startDrownedConversion(drownedConversionTime);
 +    }
 +
 +    public void stopDrowning() {

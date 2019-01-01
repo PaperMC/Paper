@@ -14,27 +14,27 @@ manipulation, and instead to run clean
 once per tick per active expiring map.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-index 39a548881..37ea37de5 100644
+index a23768441..835a2aae4 100644
 --- a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
 +++ b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
 @@ -0,0 +0,0 @@ public abstract class ChunkGeneratorAbstract<C extends GeneratorSettings> implem
  
      public Long2ObjectMap<StructureStart> getStructureStartCache(StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
-         return (Long2ObjectMap) this.d.computeIfAbsent(structuregenerator, (s) -> {
--            return Long2ObjectMaps.synchronize(new ExpiringMap(8192, 10000));
-+            return new ExpiringMap(8192, 10000); // Paper - already synchronized
+         return (Long2ObjectMap) this.d.computeIfAbsent(structuregenerator, (structuregenerator1) -> {
+-            return Long2ObjectMaps.synchronize(new ExpiringMap<>(8192, 10000));
++            return new ExpiringMap<>(8192, 10000); // Paper - already synchronized
          });
      }
  
      public Long2ObjectMap<LongSet> getStructureCache(StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
-         return (Long2ObjectMap) this.e.computeIfAbsent(structuregenerator, (s) -> {
--            return Long2ObjectMaps.synchronize(new ExpiringMap(8192, 10000));
-+            return new ExpiringMap(8192, 10000); // Paper - already synchronized
+         return (Long2ObjectMap) this.e.computeIfAbsent(structuregenerator, (structuregenerator1) -> {
+-            return Long2ObjectMaps.synchronize(new ExpiringMap<>(8192, 10000));
++            return new ExpiringMap<>(8192, 10000); // Paper - already synchronized
          });
      }
  
 diff --git a/src/main/java/net/minecraft/server/ExpiringMap.java b/src/main/java/net/minecraft/server/ExpiringMap.java
-index 9c0518d67..84a6dcb40 100644
+index bd3636479..bf6095137 100644
 --- a/src/main/java/net/minecraft/server/ExpiringMap.java
 +++ b/src/main/java/net/minecraft/server/ExpiringMap.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
@@ -80,8 +80,8 @@ index 9c0518d67..84a6dcb40 100644
 +    }
  
 -        this.b.put(i, j);
--        cleanup();
 -        // CraftBukkit start
+-        cleanup();
 +    @Override
 +    public T compute(long l, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
 +        setAccess(l);
@@ -90,7 +90,8 @@ index 9c0518d67..84a6dcb40 100644
  
 -    public void cleanup() {
 -        long j = SystemUtils.getMonotonicMillis();
--        ObjectIterator<Long2LongMap.Entry> objectiterator = this.b.long2LongEntrySet().iterator(); // CraftBukkit - decompile error
+-        // CraftBukkit end
+-        ObjectIterator objectiterator = this.b.long2LongEntrySet().iterator();
 +    @Override
 +    public T putIfAbsent(long l, T t) {
 +        setAccess(l);
@@ -99,7 +100,7 @@ index 9c0518d67..84a6dcb40 100644
  
 -        while (objectiterator.hasNext()) {
 -            Long2LongMap.Entry entry = (Long2LongMap.Entry) objectiterator.next(); // CraftBukkit - decompile error
--            T object = super.get(entry.getLongKey()); // CraftBukkit - decompile error
+-            T t0 = super.get(entry.getLongKey());
 +    @Override
 +    public T computeIfPresent(long l, BiFunction<? super Long, ? super T, ? extends T> biFunction) {
 +        setAccess(l);
@@ -115,10 +116,11 @@ index 9c0518d67..84a6dcb40 100644
 +        return super.computeIfAbsent(l, longFunction);
 +    }
  
--            if (object != null && this.a(object)) {
+-            if (t0 != null && this.a(t0)) {
 -                super.remove(entry.getLongKey());
 -                objectiterator.remove();
 -            }
++
 +    @Override
 +    public boolean replace(long l, T t, T v1) {
 +        setAccess(l);
@@ -173,7 +175,6 @@ index 9c0518d67..84a6dcb40 100644
 +            ttl.clear();
 +            super.clear();
          }
--        // CraftBukkit end
 +    }
  
 +    private boolean registered = false;
@@ -271,23 +272,25 @@ index 9c0518d67..84a6dcb40 100644
 +    public T remove(Object var1) {
          throw new RuntimeException("Not implemented");
      }
--
--    // CraftBukkit start
--    @Override
--    public T computeIfAbsent(long l, LongFunction<? extends T> lf) {
+ 
++    // Paper start
++    /*
+     // CraftBukkit start
+     @Override
+     public T computeIfAbsent(long l, LongFunction<? extends T> lf) {
 -        this.b.put(l, SystemUtils.getMonotonicMillis());
--        return super.computeIfAbsent(l, lf);
--    }
--
--    @Override
--    public ObjectCollection<T> values() {
--        cleanup();
--        return super.values();
--    }
--    // CraftBukkit end    
++        this.ttl.put(l, SystemUtils.getMonotonicMillis()); // Paper
+         return super.computeIfAbsent(l, lf);
+     }
+ 
+@@ -0,0 +0,0 @@ public class ExpiringMap<T> extends Long2ObjectOpenHashMap<T> {
+         return super.values();
+     }
+     // CraftBukkit end
++    */ // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index aaefb98c0..0bc1c887a 100644
+index 59a71e5b0..7b24f6e24 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati

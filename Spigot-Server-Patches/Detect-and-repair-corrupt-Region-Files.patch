@@ -11,12 +11,12 @@ I don't know why mojang only checks for 4096, when anything less than 8192 is a 
 But to be safe, it will attempt to back up the file.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 5d2853b9c..6a2edfd1e 100644
+index 407ac75aa..d3e6d755e 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
- 
  public class RegionFile {
+ 
      private static final byte[] a = new byte[4096];
 -    private final File b;
 -    private RandomAccessFile c;
@@ -32,11 +32,11 @@ index 5d2853b9c..6a2edfd1e 100644
 @@ -0,0 +0,0 @@ public class RegionFile {
              }
  
-             this.c = new RandomAccessFile(file1, "rw");
+             this.c = new RandomAccessFile(file, "rw");
 -            if (this.c.length() < 4096L) {
 +            if (this.c.length() < 8192L) { // Paper - headers should be 8192
-                 this.c.write(a);
-                 this.c.write(a);
+                 this.c.write(RegionFile.a);
+                 this.c.write(RegionFile.a);
                  this.g += 8192;
 @@ -0,0 +0,0 @@ public class RegionFile {
              for(int j1 = 0; j1 < 1024; ++j1) {
@@ -44,17 +44,17 @@ index 5d2853b9c..6a2edfd1e 100644
                  this.d[j1] = k;
 -                if (k != 0 && (k >> 8) + (k & 255) <= this.f.size()) {
 +                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
-                     for(int l = 0; l < (k & 255); ++l) {
+                     for (int l = 0; l < (k & 255); ++l) {
                          this.f.set((k >> 8) + l, false);
                      }
 -                }
 +                } else if (k != 0) deleteChunk(j1); // Paper
              }
  
-             for(int k1 = 0; k1 < 1024; ++k1) {
-                 int l1 = headerAsInts.get(); // Paper
--                this.e[k1] = l1;
-+                if (offsets[k1] != 0) this.timestamps[k1] = l1; // Paper - don't set timestamp if it got 0'd above due to corruption
+             for (j = 0; j < 1024; ++j) {
+                 int k = headerAsInts.get(); // Paper
+-                this.e[j] = k;
++                if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
              }
          } catch (IOException ioexception) {
              ioexception.printStackTrace();
@@ -112,6 +112,6 @@ index 5d2853b9c..6a2edfd1e 100644
 +    // Paper end
 +
      class ChunkBuffer extends ByteArrayOutputStream {
+ 
          private final int b;
-         private final int c;
 --

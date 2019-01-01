@@ -26,7 +26,7 @@ Then finally, Sleeping will by default be removed, but due to known issues with 
 But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index aa920c469..4aad68a57 100644
+index cc69ff3a4..f80b385ff 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -41,11 +41,11 @@ index aa920c469..4aad68a57 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-index d9608121b..d7a670093 100644
+index b0c004b1f..d2cece265 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 +++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 @@ -0,0 +0,0 @@ public class ChunkCoordIntPair {
-         this.z = (int)(i >> 32);
+         this.z = (int) (i >> 32);
      }
  
 +    public long asLong() { return a(); } // Paper
@@ -53,12 +53,12 @@ index d9608121b..d7a670093 100644
          return a(this.x, this.z);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 43f77a398..4a0f3989e 100644
+index 63533d237..c0785eea0 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -0,0 +0,0 @@ import java.util.function.Consumer;
+@@ -0,0 +0,0 @@ import java.util.Map.Entry;
+ import java.util.function.Consumer;
  import java.util.function.Function;
- import java.util.function.Predicate;
  import javax.annotation.Nullable;
 +import java.util.concurrent.ConcurrentLinkedQueue; // Paper
  import org.apache.logging.log4j.LogManager;
@@ -126,7 +126,8 @@ index 43f77a398..4a0f3989e 100644
      }
  
      private boolean processSaveQueueEntry(boolean logCompletion) {
--        Iterator iterator = this.b.entrySet().iterator();
+-        Iterator<Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>>> iterator = this.b.entrySet().iterator(); // Spigot
+-
 -        if (!iterator.hasNext()) {
 +        // Paper start - Chunk queue improvements
 +        QueuedChunk chunk = queue.poll();
@@ -138,7 +139,7 @@ index 43f77a398..4a0f3989e 100644
  
              return false;
          } else {
--            Entry entry = (Entry) iterator.next();
+-            Entry<ChunkCoordIntPair, NBTTagCompound> entry = (Entry) iterator.next();
 -
 -            iterator.remove();
 -            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) entry.getKey();
@@ -171,15 +172,15 @@ index 43f77a398..4a0f3989e 100644
                      NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
                      dataoutputstream.close();
 diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
-index a3aba244a..97917551a 100644
+index 8c3537ab8..3c688f546 100644
 --- a/src/main/java/net/minecraft/server/FileIOThread.java
 +++ b/src/main/java/net/minecraft/server/FileIOThread.java
 @@ -0,0 +0,0 @@ public class FileIOThread implements Runnable {
-         for(int i = 0; i < this.c.size(); ++i) {
-             IAsyncChunkSaver iasyncchunksaver = (IAsyncChunkSaver)this.c.get(i);
+             IAsyncChunkSaver iasyncchunksaver = (IAsyncChunkSaver) this.c.get(i);
              boolean flag;
--            synchronized(iasyncchunksaver) {
-+            //synchronized(iasyncchunksaver) { // Paper - remove synchronized
+ 
+-            synchronized (iasyncchunksaver) {
++            //synchronized (iasyncchunksaver) { // Paper - remove synchronized
                  flag = iasyncchunksaver.a();
 -            }
 +            //} // Paper
@@ -193,8 +194,8 @@ index a3aba244a..97917551a 100644
              try {
 -                Thread.sleep(this.f ? 0L : 10L);
 +                Thread.sleep(this.f ? 0L : 1L); // Paper
-             } catch (InterruptedException interruptedexception1) {
-                 interruptedexception1.printStackTrace();
+             } catch (InterruptedException interruptedexception) {
+                 interruptedexception.printStackTrace();
 -            }
 +            }} // Paper
          }

@@ -1049,7 +1049,7 @@ index 000000000..37093419c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 414c27516..c3a54576f 100644
+index edf4d9130..71d865b76 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -1071,7 +1071,7 @@ index 414c27516..c3a54576f 100644
                  this.initLighting();
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 41a7103ef..c12db3cfa 100644
+index 450c9e79b..f3e766967 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1093,7 +1093,7 @@ index 41a7103ef..c12db3cfa 100644
              chunksection.getBlocks().a(nbttagcompound, "Palette", "BlockStates");
              chunksection.a(new NibbleArray(nbttagcompound.getByteArray("BlockLight")));
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 7e4c79a1c..bdfc7d81f 100644
+index 621ed1fc5..2af07ae59 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -0,0 +0,0 @@ public class ChunkSection {
@@ -1108,13 +1108,13 @@ index 7e4c79a1c..bdfc7d81f 100644
 +
 +    public ChunkSection(int i, boolean flag, IChunkAccess chunk, IWorldReader world, boolean initializeBlocks) { // Paper - Anti-Xray
          this.yPos = i;
--        this.blockIds = new DataPaletteBlock<IBlockData>(GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData());
-+        this.blockIds = new DataPaletteBlock<IBlockData>(GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData(), world instanceof GeneratorAccess ? ((GeneratorAccess) world).getMinecraftWorld().chunkPacketBlockController.getPredefinedBlockData(world, chunk, this, flag, initializeBlocks) : null, initializeBlocks); // Paper - Anti-Xray - Add predefined block data
+-        this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData());
++        this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData(), world instanceof GeneratorAccess ? ((GeneratorAccess) world).getMinecraftWorld().chunkPacketBlockController.getPredefinedBlockData(world, chunk, this, flag, initializeBlocks) : null, initializeBlocks); // Paper - Anti-Xray - Add predefined block data
          this.emittedLight = new NibbleArray();
          if (flag) {
              this.skyLight = new NibbleArray();
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 9deab61fc..ad7e4a036 100644
+index 56958a5ce..d3898599f 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -0,0 +0,0 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -1136,7 +1136,7 @@ index 9deab61fc..ad7e4a036 100644
              }) : (Scheduler.a) this.progressCache.get(chunkcoordintpair.a());
          }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 6e7454b13..71a3636be 100644
+index 6fcfc5ef7..454903a0e 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -0,0 +0,0 @@
@@ -1157,18 +1157,18 @@ index 6e7454b13..71a3636be 100644
 @@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
      }
  
-     public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T object) {
+     public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0) {
 +        // Paper start - Anti-Xray - Support default constructor
-+        this(datapalette, registryblockid, function, function1, object, null, true);
++        this(datapalette, registryblockid, function, function1, t0, null, true);
 +    }
 +
-+    public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T object, T[] predefinedObjects, boolean initialize) {
++    public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0, T[] predefinedObjects, boolean initialize) {
 +        // Paper end - Anti-Xray - Add predefined objects
          this.b = datapalette;
          this.d = registryblockid;
          this.e = function;
          this.f = function1;
-         this.g = (T)object;
+         this.g = t0;
 -        this.b(4);
 +        // Paper start - Anti-Xray - Add predefined objects
 +        this.predefinedObjects = predefinedObjects;
@@ -1198,7 +1198,7 @@ index 6e7454b13..71a3636be 100644
 +        // Paper end
      }
  
-     private static int b(int ix, int jx, int k) {
+     private static int b(int i, int j, int k) {
 @@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
          }
      }
@@ -1212,18 +1212,20 @@ index 6e7454b13..71a3636be 100644
 +        }
 +    }
 +    // Paper end
-     public int onResize(int ix, T object) {
++
+     public int onResize(int i, T t0) {
          this.b();
          DataBits databits = this.a;
-         DataPalette<T> datapalette = this.h; // Paper - decompile fix
-         this.b(ix);
+@@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+ 
+         int j;
  
 +        this.addPredefinedObjects(); // Paper - Anti-Xray - Add predefined objects
-         for(int jx = 0; jx < databits.b(); ++jx) {
-             T object1 = datapalette.a(databits.a(jx)); // Paper - decompile fix
-             if (object1 != null) {
+         for (j = 0; j < databits.b(); ++j) {
+             T t1 = datapalette.a(databits.a(j));
+ 
 @@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-         return (T)(object == null ? this.g : object);
+         return t0 == null ? this.g : t0;
      }
  
 -    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
@@ -1256,22 +1258,22 @@ index 6e7454b13..71a3636be 100644
      public void a(NBTTagCompound nbttagcompound, String s, String s1) {
          this.b();
          NBTTagList nbttaglist = nbttagcompound.getList(s, 10);
--        int ix = Math.max(4, MathHelper.d(nbttaglist.size()));
--        if (ix != this.i) {
+-        int i = Math.max(4, MathHelper.d(nbttaglist.size()));
 +        // Paper - Anti-Xray - TODO: Should this.predefinedObjects.length just be added here (faster) or should the contents be compared to calculate the size (less RAM)?
-+        int ix = Math.max(4, MathHelper.d(nbttaglist.size() + (this.predefinedObjects == null ? 0 : this.predefinedObjects.length))); // Paper - Anti-Xray - Calculate the size with predefined objects
-+
-+        if (true || ix != this.i) { // Paper - Anti-Xray - Not initialized yet
-             this.b(ix);
++        int i = Math.max(4, MathHelper.d(nbttaglist.size() + (this.predefinedObjects == null ? 0 : this.predefinedObjects.length))); // Paper - Anti-Xray - Calculate the size with predefined objects
+ 
+-        if (i != this.i) {
++        if (true || i != this.i) { // Paper - Anti-Xray - Not initialized yet
+             this.b(i);
          }
  
          this.h.a(nbttaglist);
 +        this.addPredefinedObjects(); // Paper - Anti-Xray - Add predefined objects
          long[] along = nbttagcompound.o(s1);
-         int jx = along.length * 64 / 4096;
-         if (this.h == this.b) {
+         int j = along.length * 64 / 4096;
+ 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index e75b1a76e..e5cc77c6d 100644
+index 4a50aab51..4c1110479 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -1332,7 +1334,7 @@ index e75b1a76e..e5cc77c6d 100644
      public void a() {
          this.o();
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 22a262bb6..40ec398ee 100644
+index 18ef7232e..8e35d14f9 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -0,0 +0,0 @@
@@ -1348,9 +1350,10 @@ index 22a262bb6..40ec398ee 100644
      private boolean f;
 +    private volatile boolean ready = false; // Paper - Async-Anti-Xray - Ready flag for the network manager
  
-     public PacketPlayOutMapChunk() {
+-    public PacketPlayOutMapChunk() {}
++    public PacketPlayOutMapChunk() {
 +        this.ready = true; // Paper - Async-Anti-Xray - Set the ready flag to true
-     }
++    }
  
      public PacketPlayOutMapChunk(Chunk chunk, int i) {
 +        ChunkPacketInfo<IBlockData> chunkPacketInfo = chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i); // Paper - Anti-Xray - Add chunk packet info
@@ -1358,6 +1361,7 @@ index 22a262bb6..40ec398ee 100644
          this.b = chunk.locZ;
          this.f = i == 65535;
          boolean flag = chunk.getWorld().worldProvider.g();
+ 
          this.d = new byte[this.a(chunk, flag, i)];
 -        this.c = this.a(new PacketDataSerializer(this.h()), chunk, flag, i);
 +
@@ -1369,8 +1373,8 @@ index 22a262bb6..40ec398ee 100644
 +
 +        this.c = this.writeChunk(new PacketDataSerializer(this.h()), chunk, flag, i, chunkPacketInfo); // Paper - Anti-Xray - Add chunk packet info
          this.e = Lists.newArrayList();
+         Iterator iterator = chunk.getTileEntities().entrySet().iterator();
  
-         for(Entry entry : chunk.getTileEntities().entrySet()) {
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
              }
          }
@@ -1381,16 +1385,15 @@ index 22a262bb6..40ec398ee 100644
 +    // Paper start - Async-Anti-Xray - Getter and Setter for the ready flag
 +    public boolean isReady() {
 +        return this.ready;
-     }
- 
++    }
++
 +    public void setReady(boolean ready) {
 +        this.ready = ready;
-+    }
+     }
 +    // Paper end
-+
+ 
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.readInt();
-         this.b = packetdataserializer.readInt();
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          return bytebuf;
      }
@@ -1409,7 +1412,7 @@ index 22a262bb6..40ec398ee 100644
          ChunkSection[] achunksection = chunk.getSections();
          int k = 0;
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
-             ChunkSection chunksection = achunksection[k];
+ 
              if (chunksection != Chunk.a && (!this.f() || !chunksection.a()) && (i & 1 << k) != 0) {
                  j |= 1 << k;
 -                chunksection.getBlocks().b(packetdataserializer);
@@ -1418,7 +1421,7 @@ index 22a262bb6..40ec398ee 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index db43a8a9a..b58683e6f 100644
+index 7d3f846a1..240f59066 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -0,0 +0,0 @@ public class PlayerChunk {
@@ -1445,11 +1448,11 @@ index db43a8a9a..b58683e6f 100644
 +                    // Paper - Anti-Xray - Loading chunks here could cause a ConcurrentModificationException #1104
 +                    // Paper - Anti-Xray - TODO: Check if this is still the case for 1.13
 +                    //this.chunk.world.chunkPacketBlockController.onChunkPacketCreate(this.chunk, this.h, true); // Paper - Anti-Xray - Load nearby chunks if necessary
-                     this.a(new PacketPlayOutMapChunk(this.chunk, this.h));
+                     this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
                  } else {
-                     this.a(new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk));
+                     this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 23223e89d..23fc4d8e1 100644
+index c884fcd34..1d76c4c99 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
@@ -1462,7 +1465,7 @@ index 23223e89d..23fc4d8e1 100644
  
      public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index faaad0f41..9fd966dfb 100644
+index 16e3469d0..e4c0cc6a3 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/server/ProtoChunk.java
 @@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
@@ -1472,9 +1475,9 @@ index faaad0f41..9fd966dfb 100644
 +    private GeneratorAccess world; // Paper - Anti-Xray
  
 +    // Paper start - Anti-Xray - Support default constructors
-     public ProtoChunk(int ix, int jx, ChunkConverter chunkconverter) {
--        this(new ChunkCoordIntPair(ix, jx), chunkconverter);
-+        this(new ChunkCoordIntPair(ix, jx), chunkconverter, null);
+     public ProtoChunk(int i, int j, ChunkConverter chunkconverter) {
+-        this(new ChunkCoordIntPair(i, j), chunkconverter);
++        this(new ChunkCoordIntPair(i, j), chunkconverter, null);
      }
  
      public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) {
@@ -1495,11 +1498,11 @@ index faaad0f41..9fd966dfb 100644
                      return iblockdata;
                  }
  
--                this.j[jx >> 4] = new ChunkSection(jx >> 4 << 4, this.x());
-+                this.j[jx >> 4] = new ChunkSection(jx >> 4 << 4, this.x(), this, this.world, true); // Paper - Anti-Xray
+-                this.j[j >> 4] = new ChunkSection(j >> 4 << 4, this.x());
++                this.j[j >> 4] = new ChunkSection(j >> 4 << 4, this.x(), this, this.world, true); // Paper - Anti-Xray
              }
  
-             IBlockData iblockdata1 = this.j[jx >> 4].getType(ix & 15, jx & 15, kx & 15);
+             IBlockData iblockdata1 = this.j[j >> 4].getType(i & 15, j & 15, k & 15);
 @@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
                      return;
                  }
@@ -1510,7 +1513,7 @@ index faaad0f41..9fd966dfb 100644
  
              if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 780c0a7e8..67b20c056 100644
+index b4c9df025..a95c8df4b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@

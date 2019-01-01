@@ -5,7 +5,7 @@ Subject: [PATCH] Reduce IO ops opening a new region file.
 
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index f4405be395..5d2853b9ce 100644
+index 9299ab56a..407ac75aa 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ import java.io.ByteArrayInputStream;
@@ -25,6 +25,7 @@ index f4405be395..5d2853b9ce 100644
              this.f.set(1, false);
              this.c.seek(0L);
  
+-            int k;
 +            // Paper Start
 +            ByteBuffer header = ByteBuffer.allocate(8192);
 +            while (header.hasRemaining())  {
@@ -33,19 +34,23 @@ index f4405be395..5d2853b9ce 100644
 +            header.clear();
 +            IntBuffer headerAsInts = header.asIntBuffer();
 +            // Paper End
-             for(int j1 = 0; j1 < 1024; ++j1) {
--                int k = this.c.readInt();
+ 
+-            for (j = 0; j < 1024; ++j) {
+-                k = this.c.readInt();
+-                this.d[j] = k;
++            for(int j1 = 0; j1 < 1024; ++j1) {
 +                int k = headerAsInts.get(); // Paper
-                 this.d[j1] = k;
++                this.d[j1] = k;
                  if (k != 0 && (k >> 8) + (k & 255) <= this.f.size()) {
-                     for(int l = 0; l < (k & 255); ++l) {
+                     for (int l = 0; l < (k & 255); ++l) {
+                         this.f.set((k >> 8) + l, false);
 @@ -0,0 +0,0 @@ public class RegionFile {
              }
  
-             for(int k1 = 0; k1 < 1024; ++k1) {
--                int l1 = this.c.readInt();
-+                int l1 = headerAsInts.get(); // Paper
-                 this.e[k1] = l1;
+             for (j = 0; j < 1024; ++j) {
+-                k = this.c.readInt();
++                int k = headerAsInts.get(); // Paper
+                 this.e[j] = k;
              }
          } catch (IOException ioexception) {
 --
