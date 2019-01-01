@@ -342,6 +342,29 @@ public class CraftWorld implements World {
         return getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
     }
 
+    // Paper start - Implement heightmap api
+    @Override
+    public int getHighestBlockYAt(final int x, final int z, final com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
+        this.getChunkAt(x >> 4, z >> 4); // heightmap will ret 0 on unloaded areas
+
+        switch (heightmap) {
+            case LIGHT_BLOCKING:
+                throw new UnsupportedOperationException(); // TODO
+                //return this.world.getHighestBlockY(HeightMap.Type.LIGHT_BLOCKING, x, z);
+            case ANY:
+                return this.world.getHighestBlockY(net.minecraft.server.HeightMap.Type.WORLD_SURFACE, x, z);
+            case SOLID:
+                return this.world.getHighestBlockY(net.minecraft.server.HeightMap.Type.OCEAN_FLOOR, x, z);
+            case SOLID_OR_LIQUID:
+                return this.world.getHighestBlockY(net.minecraft.server.HeightMap.Type.MOTION_BLOCKING, x, z);
+            case SOLID_OR_LIQUID_NO_LEAVES:
+                return this.world.getHighestBlockY(net.minecraft.server.HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
+            default:
+                throw new UnsupportedOperationException();
+        }
+    }
+    // Paper end
+
     @Override
     public Location getSpawnLocation() {
         BlockPosition spawn = world.getSpawn();
