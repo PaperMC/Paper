@@ -34,7 +34,6 @@ import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.Container;
 import net.minecraft.server.Entity;
-import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTracker;
@@ -75,7 +74,6 @@ import org.bukkit.BanList;
 import org.bukkit.Statistic;
 import org.bukkit.Material;
 import org.bukkit.Statistic.Type;
-import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
@@ -959,35 +957,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setFoodLevel(int value) {
         getHandle().getFoodData().foodLevel = value;
-    }
-
-    @Override
-    public Location getBedSpawnLocation() {
-        World world = getServer().getWorld(getHandle().spawnWorld);
-        BlockPosition bed = getHandle().getBed();
-
-        if (world != null && bed != null) {
-            bed = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
-            if (bed != null) {
-                return new Location(world, bed.getX(), bed.getY(), bed.getZ());
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void setBedSpawnLocation(Location location) {
-        setBedSpawnLocation(location, false);
-    }
-
-    @Override
-    public void setBedSpawnLocation(Location location, boolean override) {
-        if (location == null) {
-            getHandle().setRespawnPosition(null, override);
-        } else {
-            getHandle().setRespawnPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
-            getHandle().spawnWorld = location.getWorld().getName();
-        }
     }
 
     @Nullable
