@@ -108,4 +108,44 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return "MaterialChoice{" + "choices=" + choices + '}';
         }
     }
+
+    /**
+     * Represents a choice that will be valid only if a stack is exactly matched
+     * (aside from stack size).
+     * <br>
+     * <b>Not valid for shapeless recipes</b>
+     *
+     * @deprecated draft API
+     */
+    @Deprecated
+    public static class ExactChoice implements RecipeChoice {
+
+        private ItemStack stack;
+
+        public ExactChoice(ItemStack stack) {
+            Preconditions.checkArgument(stack != null, "stack");
+            this.stack = stack;
+        }
+
+        @Override
+        public ItemStack getItemStack() {
+            return stack;
+        }
+
+        @Override
+        public ExactChoice clone() {
+            try {
+                ExactChoice clone = (ExactChoice) super.clone();
+                clone.stack = stack.clone();
+                return clone;
+            } catch (CloneNotSupportedException ex) {
+                throw new AssertionError(ex);
+            }
+        }
+
+        @Override
+        public boolean test(ItemStack t) {
+            return stack.equals(t);
+        }
+    }
 }
