@@ -888,30 +888,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setFoodLevel(int value);
 
     /**
-     * Gets the Location where the player will spawn at their bed, null if
-     * they have not slept in one or their current bed spawn is invalid.
-     *
-     * @return Bed Spawn Location if bed exists, otherwise null.
-     */
-    public Location getBedSpawnLocation();
-
-    /**
-     * Sets the Location where the player will spawn at their bed.
-     *
-     * @param location where to set the respawn location
-     */
-    public void setBedSpawnLocation(Location location);
-
-    /**
-     * Sets the Location where the player will spawn at their bed.
-     *
-     * @param location where to set the respawn location
-     * @param force whether to forcefully set the respawn location even if a
-     *     valid bed is not present
-     */
-    public void setBedSpawnLocation(Location location, boolean force);
-
-    /**
      * Determines if the Player is allowed to fly via jump key double-tap like
      * in creative mode.
      *

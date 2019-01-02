@@ -222,6 +222,61 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getSleepTicks();
 
     /**
+     * Gets the Location where the player will spawn at their bed, null if
+     * they have not slept in one or their current bed spawn is invalid.
+     *
+     * @return Bed Spawn Location if bed exists, otherwise null.
+     */
+    public Location getBedSpawnLocation();
+
+    /**
+     * Sets the Location where the player will spawn at their bed.
+     *
+     * @param location where to set the respawn location
+     */
+    public void setBedSpawnLocation(Location location);
+
+    /**
+     * Sets the Location where the player will spawn at their bed.
+     *
+     * @param location where to set the respawn location
+     * @param force whether to forcefully set the respawn location even if a
+     *     valid bed is not present
+     */
+    public void setBedSpawnLocation(Location location, boolean force);
+
+    /**
+     * Attempts to make the entity sleep at the given location.
+     * <br>
+     * The location must be in the current world and have a bed placed at the
+     * location. The game may also enforce other requirements such as proximity
+     * to bed, monsters, and dimension type if force is not set.
+     *
+     * @param location the location of the bed
+     * @param force whether to try and sleep at the location even if not
+     * normally possible
+     * @return whether the sleep was successful
+     */
+    public boolean sleep(Location location, boolean force);
+
+    /**
+     * Causes the player to wakeup if they are currently sleeping.
+     *
+     * @param setSpawnLocation whether to set their spawn location to the bed
+     * they are currently sleeping in
+     * @throws IllegalStateException if not sleeping
+     */
+    public void wakeup(boolean setSpawnLocation);
+
+    /**
+     * Gets the location of the bed the player is currently sleeping in
+     *
+     * @return location
+     * @throws IllegalStateException if not sleeping
+     */
+    public Location getBedLocation();
+
+    /**
      * Gets this human's current {@link GameMode}
      *
      * @return Current game mode
