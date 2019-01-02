@@ -162,7 +162,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(location != null, "Location == null");
         Preconditions.checkArgument(location.getWorld().equals(getWorld()), "Cannot sleep across worlds");
 
-        BlockPosition blockposition = new BlockPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        BlockPosition blockposition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         IBlockData iblockdata = getHandle().world.getType(blockposition);
         if (!(iblockdata.getBlock() instanceof BlockBed)) {
             return false;
