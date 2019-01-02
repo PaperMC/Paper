@@ -1,4 +1,4 @@
-From b2776d5425d6c74a71d747af2e7714c8ed573402 Mon Sep 17 00:00:00 2001
+From 8ee9cf07c510a72ea8e005a9d38df4724ea36b95 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,7 +30,7 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f09d358e2..f2c172ff1 100644
+index f09d358e29..f2c172ff18 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -85,6 +85,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -68,10 +68,10 @@ index f09d358e2..f2c172ff1 100644
      private boolean canSleepForTick() {
          return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 0bc27d914..128fcaf25 100644
+index 9570a8800b..9d44dcb3b2 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1332,10 +1332,15 @@ public abstract class PlayerList {
+@@ -1336,10 +1336,15 @@ public abstract class PlayerList {
          entityplayer.playerInteractManager.b(generatoraccess.getWorldData().getGameType());
      }
  
@@ -88,7 +88,7 @@ index 0bc27d914..128fcaf25 100644
          }
          // CraftBukkit end
          // Paper start - Remove collideRule team if it exists
-@@ -1346,6 +1351,7 @@ public abstract class PlayerList {
+@@ -1350,6 +1355,7 @@ public abstract class PlayerList {
          }
          // Paper end
      }
@@ -97,7 +97,7 @@ index 0bc27d914..128fcaf25 100644
      // CraftBukkit start
      public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 944151d14..061cbe7fc 100644
+index 944151d140..061cbe7fcf 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -46,86 +46,123 @@ public class RestartCommand extends Command
