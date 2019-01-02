@@ -262,6 +262,61 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.getData() != null;
     }
 
+    // Paper start
+    @Override
+    public long getLastLogin() {
+        Player player = getPlayer();
+        if (player != null) return player.getLastLogin();
+
+        CompoundTag data = getPaperData();
+
+        if (data != null) {
+            if (data.contains("LastLogin")) {
+                return data.getLong("LastLogin");
+            } else {
+                // if the player file cannot provide accurate data, this is probably the closest we can approximate
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public long getLastSeen() {
+        Player player = getPlayer();
+        if (player != null) return player.getLastSeen();
+
+        CompoundTag data = getPaperData();
+
+        if (data != null) {
+            if (data.contains("LastSeen")) {
+                return data.getLong("LastSeen");
+            } else {
+                // if the player file cannot provide accurate data, this is probably the closest we can approximate
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    private CompoundTag getPaperData() {
+        CompoundTag result = getData();
+
+        if (result != null) {
+            if (!result.contains("Paper")) {
+                result.put("Paper", new CompoundTag());
+            }
+            result = result.getCompound("Paper");
+        }
+
+        return result;
+    }
+    // Paper end
+
     @Override
     public Location getLastDeathLocation() {
         if (this.getData().contains("LastDeathLocation", 10)) {
