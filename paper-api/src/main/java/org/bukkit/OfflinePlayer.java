@@ -223,7 +223,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * UTC.
      *
      * @return Date of last log-in for this player, or 0
+     * @deprecated The API contract is ambiguous and the implementation may or may not return the correct value given this API ambiguity. It is instead recommended use {@link #getLastLogin()} or {@link #getLastSeen()} depending on your needs.
      */
+    @Deprecated
     public long getLastPlayed();
 
     /**
@@ -246,6 +248,30 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     @Nullable
     @Deprecated(since = "1.20.4")
     public Location getBedSpawnLocation();
+    // Paper start
+    /**
+     * Gets the last date and time that this player logged into the server.
+     * <p>
+     * If the player has never played before, this will return 0. Otherwise,
+     * it will be the amount of milliseconds since midnight, January 1, 1970
+     * UTC.
+     *
+     * @return last login time
+     */
+    public long getLastLogin();
+
+    /**
+     * Gets the last date and time that this player was seen on the server.
+     * <p>
+     * If the player has never played before, this will return 0. If the
+     * player is currently online, this will return the current time.
+     * Otherwise it will be the amount of milliseconds since midnight,
+     * January 1, 1970 UTC.
+     *
+     * @return last seen time
+     */
+    public long getLastSeen();
+    // Paper end
 
     /**
      * Gets the Location where the player will spawn at, null if they
