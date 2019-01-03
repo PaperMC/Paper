@@ -267,8 +267,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually regenerated
      *
-     * @deprecated regenerating a single chunk is not guaranteed to produce the
-     * same chunk as before as terrain decoration may be spread across chunks
+     * @deprecated regenerating a single chunk is not likely to produce the same
+     * chunk as before as terrain decoration may be spread across chunks. Use of
+     * this method should be avoided as it is known to produce buggy results.
      */
     @Deprecated
     public boolean regenerateChunk(int x, int z);
