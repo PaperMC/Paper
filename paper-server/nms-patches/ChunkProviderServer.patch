@@ -21,7 +21,7 @@
          this.batchScheduler = new SchedulerBatch<>(this.chunkScheduler);
      }
  
-@@ -112,6 +117,22 @@
+@@ -112,6 +117,25 @@
          }
      }
  
@@ -31,10 +31,13 @@
 +            this.batchScheduler.b();
 +            ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
 +            this.chunkScheduler.forcePolluteCache(pos);
++            ((ChunkRegionLoader) this.chunkLoader).blacklist.add(pos.a());
 +            this.batchScheduler.a(pos);
 +            CompletableFuture<ProtoChunk> completablefuture = this.batchScheduler.c();
 +
-+            return (Chunk) completablefuture.thenApply(this::a).join();
++            Chunk chunk = (Chunk) completablefuture.thenApply(this::a).join();
++            ((ChunkRegionLoader) this.chunkLoader).blacklist.remove(pos.a());
++            return chunk;
 +        } catch (RuntimeException runtimeexception) {
 +            throw this.a(x, z, (Throwable) runtimeexception);
 +        }
@@ -44,7 +47,7 @@
      public IChunkAccess a(int i, int j, boolean flag) {
          Chunk chunk = this.getChunkAt(i, j, true, false);
  
-@@ -249,10 +270,12 @@
+@@ -249,10 +273,12 @@
                          Chunk chunk = (Chunk) this.chunks.get(olong);
  
                          if (chunk != null) {
@@ -61,7 +64,7 @@
                              ++i;
                          }
                      }
-@@ -265,6 +288,42 @@
+@@ -265,6 +291,42 @@
          return false;
      }
  

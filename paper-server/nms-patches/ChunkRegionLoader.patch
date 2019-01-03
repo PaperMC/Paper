@@ -1,15 +1,16 @@
 --- a/net/minecraft/server/ChunkRegionLoader.java
 +++ b/net/minecraft/server/ChunkRegionLoader.java
-@@ -29,7 +29,7 @@
+@@ -29,7 +29,8 @@
      private final File c;
      private final DataFixer d;
      private PersistentStructureLegacy e;
 -    private boolean f;
 +    // private boolean f; // CraftBukkit
++    public final LongSet blacklist = new LongOpenHashSet();
  
      public ChunkRegionLoader(File file, DataFixer datafixer) {
          this.c = file;
-@@ -38,25 +38,64 @@
+@@ -38,25 +39,69 @@
  
      @Nullable
      private NBTTagCompound a(GeneratorAccess generatoraccess, int i, int j) throws IOException {
@@ -51,6 +52,11 @@
      @Nullable
 -    private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j) throws IOException {
 +    private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
++        // CraftBukkit start
++        if (blacklist.contains(ChunkCoordIntPair.a(i, j))) {
++            return null;
++        }
++        // CraftBukkit end
          NBTTagCompound nbttagcompound = (NBTTagCompound) this.b.get(new ChunkCoordIntPair(i, j));
  
          if (nbttagcompound != null) {
@@ -81,7 +87,7 @@
  
                  if (k < 1493) {
                      nbttagcompound1 = GameProfileSerializer.a(this.d, DataFixTypes.CHUNK, nbttagcompound1, k, 1493);
-@@ -84,13 +123,29 @@
+@@ -84,13 +129,29 @@
  
      }
  
@@ -111,7 +117,7 @@
              Chunk chunk = this.a(generatoraccess, i, j, nbttagcompound);
  
              if (chunk != null) {
-@@ -99,6 +154,9 @@
+@@ -99,6 +160,9 @@
              }
  
              return chunk;
@@ -121,7 +127,7 @@
          }
      }
  
-@@ -130,7 +188,7 @@
+@@ -130,7 +194,7 @@
      }
  
      @Nullable
@@ -130,7 +136,7 @@
          if (nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8)) {
              ChunkStatus.Type chunkstatus_type = this.a(nbttagcompound);
  
-@@ -149,10 +207,28 @@
+@@ -149,10 +213,28 @@
                          ChunkRegionLoader.a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", i, j, i, j, chunk.locX, chunk.locZ);
                          nbttagcompound1.setInt("xPos", i);
                          nbttagcompound1.setInt("zPos", j);
@@ -160,7 +166,7 @@
                  }
              }
          } else {
-@@ -167,7 +243,7 @@
+@@ -167,7 +249,7 @@
              ChunkStatus.Type chunkstatus_type = this.a(nbttagcompound);
  
              if (chunkstatus_type == ChunkStatus.Type.LEVELCHUNK) {
@@ -169,7 +175,7 @@
              } else {
                  NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level");
  
-@@ -215,10 +291,15 @@
+@@ -215,10 +297,15 @@
      }
  
      public boolean a() {
@@ -186,7 +192,7 @@
                  ChunkRegionLoader.a.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.c.getName());
              }
  
-@@ -234,10 +315,14 @@
+@@ -234,10 +321,14 @@
                  return true;
              } else {
                  try {
@@ -202,7 +208,7 @@
                      if (this.e != null) {
                          this.e.a(chunkcoordintpair.a());
                      }
-@@ -264,15 +349,16 @@
+@@ -264,15 +355,16 @@
  
      public void b() {
          try {
@@ -222,7 +228,7 @@
          }
  
      }
-@@ -301,7 +387,7 @@
+@@ -301,7 +393,7 @@
  
          if (abiomebase != null) {
              for (int k = 0; k < abiomebase.length; ++k) {
@@ -231,7 +237,7 @@
              }
          }
  
-@@ -383,7 +469,7 @@
+@@ -383,7 +475,7 @@
          int[] aint = new int[abiomebase.length];
  
          for (int i = 0; i < abiomebase.length; ++i) {
@@ -240,7 +246,7 @@
          }
  
          nbttagcompound.setIntArray("Biomes", aint);
-@@ -833,17 +919,29 @@
+@@ -833,17 +925,29 @@
      }
  
      @Nullable
@@ -272,7 +278,7 @@
          });
      }
  
-@@ -857,8 +955,14 @@
+@@ -857,8 +961,14 @@
          }
      }
  
@@ -288,7 +294,7 @@
              Iterator iterator = entity.bP().iterator();
  
              while (iterator.hasNext()) {
-@@ -874,7 +978,7 @@
+@@ -874,7 +984,7 @@
          boolean flag = false;
  
          try {
