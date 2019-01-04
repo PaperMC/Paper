@@ -1,4 +1,4 @@
-From 509516752bce9e1f9a8e0eb8f0d94d11b4ff841c Mon Sep 17 00:00:00 2001
+From 2eb12d8fcb6b1715e3583e9b3333f5032a7b240d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -53,7 +53,7 @@ index b0c004b1f..d2cece265 100644
          return a(this.x, this.z);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 63533d237..c0785eea0 100644
+index 35976a26f..21ee154a5 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -20,6 +20,7 @@ import java.util.Map.Entry;
@@ -94,16 +94,16 @@ index 63533d237..c0785eea0 100644
      private final File c;
      private final DataFixer d;
      private PersistentStructureLegacy e;
-@@ -80,7 +101,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-     @Nullable
-     private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
+@@ -86,7 +107,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             return null;
+         }
+         // CraftBukkit end
 -        NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.b.get(new ChunkCoordIntPair(i, j))); // Spigot
 +        NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.saveMap.get(ChunkCoordIntPair.asLong(i, j))); // Spigot // Paper
  
          if (nbttagcompound != null) {
              return nbttagcompound;
-@@ -308,7 +329,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -314,7 +335,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                  };
              }
  
@@ -112,7 +112,7 @@ index 63533d237..c0785eea0 100644
              // Spigot end
          } catch (Exception exception) {
              ChunkRegionLoader.a.error("Failed to save chunk", exception);
-@@ -317,7 +338,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -323,7 +344,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
@@ -122,7 +122,7 @@ index 63533d237..c0785eea0 100644
          FileIOThread.a().a(this);
      }
  
-@@ -327,20 +349,24 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -333,20 +355,24 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      private boolean processSaveQueueEntry(boolean logCompletion) {
@@ -155,7 +155,7 @@ index 63533d237..c0785eea0 100644
  
              if (nbttagcompound == null) {
                  return true;
-@@ -349,6 +375,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -355,6 +381,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                      // CraftBukkit start
                      RegionFileCache.write(this.c, chunkcoordintpair.x, chunkcoordintpair.z, SupplierUtils.getIfExists(nbttagcompound)); // Spigot
  

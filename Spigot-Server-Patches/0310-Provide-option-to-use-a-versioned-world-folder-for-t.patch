@@ -1,4 +1,4 @@
-From 8222de7ca5f4e939f901f04d36d4107fba3e2e8e Mon Sep 17 00:00:00 2001
+From 3e31184a36f550f8b89aba7879c6d92fd8871624 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 29 Jul 2018 15:48:50 -0400
 Subject: [PATCH] Provide option to use a versioned world folder for testing
@@ -59,12 +59,12 @@ index 48b0a742a..f0b87972d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 8d7309bb0..450c9e79b 100644
+index 485bce987..829cc9ed8 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -57,8 +57,55 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     private PersistentStructureLegacy e;
+@@ -58,8 +58,55 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      // private boolean f; // CraftBukkit
+     public final LongSet blacklist = new LongOpenHashSet();
      private static final double SAVE_QUEUE_TARGET_SIZE = 625; // Spigot
 +    // Paper start - support saving to an alternate directory
 +    private final File templateWorld;
@@ -118,7 +118,7 @@ index 8d7309bb0..450c9e79b 100644
          this.c = file;
          this.d = datafixer;
      }
-@@ -96,11 +143,18 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -97,7 +144,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      public boolean chunkExists(int x, int z) {
@@ -133,8 +133,12 @@ index 8d7309bb0..450c9e79b 100644
      }
  
      @Nullable
-     private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
+@@ -107,6 +160,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             return null;
+         }
+         // CraftBukkit end
 +        copyIfNeeded(i, j); // Paper
++
          NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.saveMap.get(ChunkCoordIntPair.asLong(i, j))); // Spigot // Paper
  
          if (nbttagcompound != null) {
