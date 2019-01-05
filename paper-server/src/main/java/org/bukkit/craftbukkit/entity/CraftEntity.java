@@ -306,7 +306,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // If this entity is riding another entity, we must dismount before teleporting.
         entity.stopRiding();
 
-        entity.world = ((CraftWorld) location.getWorld()).getHandle();
+        // Let the server handle cross world teleports
+        if (!location.getWorld().equals(getWorld())) {
+            entity.teleportTo(location, cause == TeleportCause.NETHER_PORTAL);
+            return true;
+        }
+
         // entity.setLocation() throws no event, and so cannot be cancelled
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // SPIGOT-619: Force sync head rotation also
