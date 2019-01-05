@@ -1318,6 +1318,7 @@ public final class CraftServer implements Server {
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Validate.notNull(name, "Name cannot be null");
+        Validate.notEmpty(name, "Name cannot be empty");
 
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
