@@ -110,6 +110,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
 
     public Score getScore(String entry) throws IllegalArgumentException, IllegalStateException {
         Validate.notNull(entry, "Entry cannot be null");
+        Validate.isTrue(entry.length() <= 40, "Score '" + entry + "' is longer than the limit of 40 characters");
         CraftScoreboard scoreboard = checkState();
 
         return new CraftScore(this, entry);
