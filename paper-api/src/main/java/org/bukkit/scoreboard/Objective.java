@@ -121,6 +121,7 @@ public interface Objective {
      * @return Score tracking the Objective and entry specified
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this objective has been unregistered
+     * @throws IllegalArgumentException if entry is longer than 40 characters.
      */
     Score getScore(String entry) throws IllegalArgumentException, IllegalStateException;
 }
