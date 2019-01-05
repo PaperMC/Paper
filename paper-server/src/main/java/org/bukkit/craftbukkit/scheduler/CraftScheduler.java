@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -80,7 +81,7 @@ public class CraftScheduler implements BukkitScheduler {
      */
     private volatile CraftTask currentTask = null;
     private volatile int currentTick = -1;
-    private final Executor executor = Executors.newCachedThreadPool();
+    private final Executor executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %d").build());
     private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {@Override StringBuilder debugTo(StringBuilder string) {return string;}};
     private CraftAsyncDebugger debugTail = debugHead;
     private static final int RECENT_TICKS;
