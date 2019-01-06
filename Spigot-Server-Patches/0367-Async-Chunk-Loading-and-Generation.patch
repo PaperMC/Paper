@@ -1,4 +1,4 @@
-From 275e0ccf901515a273c3014d29fa86a2191dfbc9 Mon Sep 17 00:00:00 2001
+From 75a29b394a7a772620d850fa0422a2627afb5209 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -712,7 +712,7 @@ index 186cfda7e..9cdeb3bfc 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 18c06d3c8..5e00ca869 100644
+index d938eb374..51df075b4 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -119,7 +119,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -933,7 +933,7 @@ index f5a6387f2..f45685099 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 11d5c2655..80e395b1a 100644
+index cb8125c13..5807ef8a2 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -207,7 +207,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -980,10 +980,10 @@ index 8bb2593aa..67bb28954 100644
          f %= 360.0F;
          if (f >= 180.0F) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d0be8d2fb..84d588122 100644
+index 68743a6b7..1dbb03a9a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -498,6 +498,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -499,6 +499,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
          // CraftBukkit start - fire WorldLoadEvent and handle whether or not to keep the spawn in memory
          Stopwatch stopwatch = Stopwatch.createStarted();
@@ -991,7 +991,7 @@ index d0be8d2fb..84d588122 100644
          for (WorldServer worldserver : this.getWorlds()) {
              MinecraftServer.LOGGER.info("Preparing start region for level " + worldserver.dimension + " (Seed: " + worldserver.getSeed() + ")");
              if (!worldserver.getWorld().getKeepSpawnInMemory()) {
-@@ -505,29 +506,24 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -506,29 +507,24 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              }
  
              BlockPosition blockposition = worldserver.getSpawn();
@@ -1030,7 +1030,7 @@ index d0be8d2fb..84d588122 100644
                      } catch (InterruptedException interruptedexception) {
                          throw new RuntimeException(interruptedexception);
                      } catch (ExecutionException executionexception) {
-@@ -537,11 +533,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -538,11 +534,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                          throw new RuntimeException(executionexception.getCause());
                      } catch (TimeoutException timeoutexception) {
@@ -1044,7 +1044,7 @@ index d0be8d2fb..84d588122 100644
              }
          }
  
-@@ -645,6 +641,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -646,6 +642,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
              if (hasStopped) return;
              hasStopped = true;
          }
@@ -1052,7 +1052,7 @@ index d0be8d2fb..84d588122 100644
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
          MinecraftTimings.stopServer(); // Paper
-@@ -1012,6 +1009,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1013,6 +1010,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          while ((futuretask = (FutureTask) this.f.poll()) != null) {
              SystemUtils.a(futuretask, MinecraftServer.LOGGER);
          }
@@ -1060,7 +1060,7 @@ index d0be8d2fb..84d588122 100644
          MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
  
          this.methodProfiler.exitEnter("commandFunctions");
-@@ -1048,6 +1046,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1049,6 +1047,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -2302,7 +2302,7 @@ index 69d8a25bd..d0eaa9e9f 100644
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0a1ffd009..82cfd694a 100644
+index a9fffa544..19ce77c4a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -715,7 +715,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
@@ -2315,7 +2315,7 @@ index 0a1ffd009..82cfd694a 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a0f255ff1..eb4b3c7a2 100644
+index 4dabd31d9..007cc6438 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1019,8 +1019,12 @@ public final class CraftServer implements Server {

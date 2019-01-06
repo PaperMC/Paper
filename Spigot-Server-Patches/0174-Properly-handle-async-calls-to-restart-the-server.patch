@@ -1,4 +1,4 @@
-From 8ee9cf07c510a72ea8e005a9d38df4724ea36b95 Mon Sep 17 00:00:00 2001
+From f9866f40c00cb70dd6987b0e82b4cb30b89dbc8c Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,18 +30,18 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f09d358e29..f2c172ff18 100644
+index a5047084e..dd910b16d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -85,6 +85,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-     public final Map<DimensionManager, WorldServer> worldServer = Maps.newIdentityHashMap();
+     public final Map<DimensionManager, WorldServer> worldServer = Maps.newLinkedHashMap(); // CraftBukkit - keep order, k+v already use identity methods
      private PlayerList playerList;
      private boolean isRunning = true;
 +    private boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
      private boolean isStopped;
      private int ticks;
      protected final Proxy c;
-@@ -654,7 +655,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -655,7 +656,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          if (this.playerList != null) {
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
@@ -50,7 +50,7 @@ index f09d358e29..f2c172ff18 100644
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
-@@ -704,9 +705,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -705,9 +706,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
          return this.isRunning;
      }
  
@@ -68,7 +68,7 @@ index f09d358e29..f2c172ff18 100644
      private boolean canSleepForTick() {
          return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 9570a8800b..9d44dcb3b2 100644
+index 9570a8800..9d44dcb3b 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -1336,10 +1336,15 @@ public abstract class PlayerList {
@@ -97,7 +97,7 @@ index 9570a8800b..9d44dcb3b2 100644
      // CraftBukkit start
      public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 944151d140..061cbe7fcf 100644
+index 944151d14..061cbe7fc 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -46,86 +46,123 @@ public class RestartCommand extends Command
