@@ -23,9 +23,6 @@ import org.bukkit.event.HandlerList;
  * AIR in most cases. Use #getBlockData() for more Information about the broken
  * block.
  *
- * <b>Note this event may not currently fire for some drops associated with tile
- * entities</b>
- *
  * @deprecated draft API
  */
 @Deprecated
