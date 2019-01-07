@@ -308,7 +308,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         // Let the server handle cross world teleports
         if (!location.getWorld().equals(getWorld())) {
-            entity.teleportTo(location, cause == TeleportCause.NETHER_PORTAL);
+            entity.teleportTo(location, false);
             return true;
         }
 
