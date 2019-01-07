@@ -20,7 +20,7 @@ import org.bukkit.event.HandlerList;
  * for example a torch on top of a stone. Both items will have an event call.
  *
  * The Block is already broken as this event is called, so #getBlock() will be
- * AIR in most cases. Use #getBlockData() for more Information about the broken
+ * AIR in most cases. Use #getBlockState() for more Information about the broken
  * block.
  *
  * @deprecated draft API
