@@ -9,6 +9,8 @@ package org.bukkit.block.data;
  * to "falling" fluids. All falling fluids have the same behaviour, but the
  * level corresponds to that of the block above them, equal to
  * <code>this.level - 8</code>
+ * <b>Note that counterintuitively, an adjusted level of 1 is the highest level,
+ * whilst 7 is the lowest.</b>
  * <br>
  * May not be higher than {@link #getMaximumLevel()}.
  */
