@@ -835,6 +835,12 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
+    public static FluidLevelChangeEvent callFluidLevelChangeEvent(World world, BlockPosition block, IBlockData newData) {
+        FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(world, block), CraftBlockData.fromData(newData));
+        world.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
     public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level) {
         FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level);
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);

@@ -232,7 +232,7 @@ public class CraftBlock implements Block {
 
     @Override
     public String toString() {
-        return "CraftBlock{pos=" + position + ",type=" + getType() + ",data=" + getNMS() + '}';
+        return "CraftBlock{pos=" + position + ",type=" + getType() + ",data=" + getNMS() + ",fluid=" + world.getFluid(position) + '}';
     }
 
     public static BlockFace notchToBlockFace(EnumDirection notch) {
