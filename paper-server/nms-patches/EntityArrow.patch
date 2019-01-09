@@ -1,20 +1,19 @@
 --- a/net/minecraft/server/EntityArrow.java
 +++ b/net/minecraft/server/EntityArrow.java
-@@ -7,6 +7,13 @@
+@@ -7,6 +7,12 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
-+import org.bukkit.event.entity.EntityCombustEvent;
 +import org.bukkit.event.player.PlayerPickupArrowEvent;
 +// CraftBukkit end
 +
  public abstract class EntityArrow extends Entity implements IProjectile {
  
      private static final Predicate<Entity> g = IEntitySelector.f.and(IEntitySelector.a.and(Entity::isInteractable));
-@@ -22,7 +29,7 @@
+@@ -22,7 +28,7 @@
      public EntityArrow.PickupStatus fromPlayer;
      public int shake;
      public UUID shooter;
@@ -23,7 +22,7 @@
      private int aB;
      private double damage;
      public int knockbackStrength;
-@@ -250,6 +257,7 @@
+@@ -250,6 +256,7 @@
      }
  
      protected void a(MovingObjectPosition movingobjectposition) {
@@ -31,7 +30,7 @@
          if (movingobjectposition.entity != null) {
              this.b(movingobjectposition);
          } else {
-@@ -299,7 +307,13 @@
+@@ -299,7 +306,13 @@
          }
  
          if (this.isBurning() && !(entity instanceof EntityEnderman)) {
@@ -46,7 +45,7 @@
          }
  
          if (entity.damageEntity(damagesource, (float) i)) {
-@@ -444,6 +458,7 @@
+@@ -444,6 +457,7 @@
  
      public void setShooter(@Nullable Entity entity) {
          this.shooter = entity == null ? null : entity.getUniqueID();
@@ -54,7 +53,7 @@
      }
  
      @Nullable
-@@ -453,9 +468,23 @@
+@@ -453,9 +467,23 @@
  
      public void d(EntityHuman entityhuman) {
          if (!this.world.isClientSide && (this.inGround || this.q()) && this.shake <= 0) {
@@ -79,19 +78,3 @@
                  flag = false;
              }
  
-@@ -528,7 +557,14 @@
-         }
- 
-         if (EnchantmentManager.a(Enchantments.ARROW_FIRE, entityliving) > 0) {
--            this.setOnFire(100);
-+            // CraftBukkit start - call EntityCombustEvent
-+            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), 100);
-+            this.world.getServer().getPluginManager().callEvent(event);
-+
-+            if (!event.isCancelled()) {
-+                this.setOnFire(event.getDuration());
-+            }
-+            // CraftBukkit end
-         }
- 
-     }
