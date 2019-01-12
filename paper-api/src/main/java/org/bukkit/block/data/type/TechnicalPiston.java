@@ -11,14 +11,14 @@ public interface TechnicalPiston extends Directional {
     /**
      * Gets the value of the 'type' property.
      *
-     * @return the 'stage' value
+     * @return the 'type' value
      */
     Type getType();
 
     /**
      * Sets the value of the 'type' property.
      *
-     * @param type the new ''type value
+     * @param type the new 'type' value
      */
     void setType(Type type);
 
