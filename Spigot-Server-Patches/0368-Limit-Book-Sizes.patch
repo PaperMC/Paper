@@ -1,11 +1,11 @@
-From a9f81124c623c9d1003357bb6c4c89ca834f3c2f Mon Sep 17 00:00:00 2001
+From 797d58776f9e4c4bc6e59a4d78d540d7fb069402 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 17 Nov 2018 00:08:54 -0500
 Subject: [PATCH] Limit Book Sizes
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 332e90f8..0ac61f4d 100644
+index 332e90f86..0ac61f4de 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -320,4 +320,12 @@ public class PaperConfig {
@@ -22,10 +22,10 @@ index 332e90f8..0ac61f4d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index d6d2010d..ea999b70 100644
+index d6d2010d5..de62c3b76 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -2329,6 +2329,39 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2329,6 +2329,45 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          this.player.a(packetplayinsettings);
      }
  
@@ -40,24 +40,30 @@ index d6d2010d..ea999b70 100644
 +            String testString = pageList.getString(i);
 +            int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
 +            byteTotal += byteLength;
-+            if (byteTotal > byteAllowed) {
-+                PlayerConnection.LOGGER.warn(this.player.getName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
-+                minecraftServer.postToMainThread(() -> this.disconnect("Book too large!"));
-+                return false;
-+            }
++
 +            int length = testString.length();
-+            int multibytes = byteLength == length ? byteLength : (int) Math.round((double) byteLength / (double) length);
-+            for (int x = 1; x < multibytes; x++) {
-+                multiplier *= multiplier;
++            int multibytes = 0;
++            if (length != byteLength) {
++                for (char c : testString.toCharArray()) {
++                    if (c > 127) {
++                        multibytes++;
++                    }
++                }
 +            }
 +            byteAllowed += (maxBookPageSize * Math.min(1, Math.max(0.1D, (double) length / 255D))) * multiplier;
-+            multiplier *= multiplier;
 +
 +            if (multibytes > 1) {
-+                // penalize MB some more
-+                byteAllowed -= length;
++                // penalize MB
++                byteAllowed -= multibytes;
 +            }
 +        }
++
++        if (byteTotal > byteAllowed) {
++            PlayerConnection.LOGGER.warn(this.player.getName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
++            minecraftServer.postToMainThread(() -> this.disconnect("Book too large!"));
++            return false;
++        }
++
 +        return true;
 +    }
 +    // Paper end
@@ -65,7 +71,7 @@ index d6d2010d..ea999b70 100644
      public void a(PacketPlayInCustomPayload packetplayincustompayload) {
          PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.x());
          String s = packetplayincustompayload.a();
-@@ -2362,6 +2395,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2362,6 +2401,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                  }
  
                  if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack.getItem() == itemstack1.getItem()) {
@@ -73,7 +79,7 @@ index d6d2010d..ea999b70 100644
                      itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
                      CraftEventFactory.handleEditBookEvent(player, itemstack1); // CraftBukkit
                  }
-@@ -2397,6 +2431,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -2397,6 +2437,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                      }
  
                      if (itemstack.getItem() == Items.WRITABLE_BOOK && itemstack1.getItem() == Items.WRITABLE_BOOK) {
@@ -82,5 +88,5 @@ index d6d2010d..ea999b70 100644
  
                          itemstack2.a("author", (NBTBase) (new NBTTagString(this.player.getName())));
 -- 
-2.19.2
+2.20.1
 
