@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6feea98b6..2220a18d9 100644
+index 6feea98b6..2a0aa2d6d 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@
@@ -37,8 +37,15 @@ index 6feea98b6..2220a18d9 100644
 +        asynchronous = true;
 +        engineMode = EngineMode.getById(getInt("anti-xray.engine-mode", EngineMode.HIDE.getId()));
 +        engineMode = engineMode == null ? EngineMode.HIDE : engineMode;
-+        chunkEdgeMode = ChunkEdgeMode.getById(getInt("anti-xray.chunk-edge-mode", ChunkEdgeMode.DEFAULT.getId()));
++        chunkEdgeMode = ChunkEdgeMode.getById(getInt("anti-xray.chunk-edge-mode", ChunkEdgeMode.LOAD.getId()));
 +        chunkEdgeMode = chunkEdgeMode == null ? ChunkEdgeMode.DEFAULT : chunkEdgeMode;
++
++        if (PaperConfig.version < 17 && engineMode == EngineMode.HIDE && chunkEdgeMode == ChunkEdgeMode.DEFAULT) {
++            set("anti-xray.chunk-edge-mode", ChunkEdgeMode.LOAD.getId());
++            chunkEdgeMode = ChunkEdgeMode.LOAD;
++            log("Migrating Anti-Xray engine mode to mode 3 (LOAD)");
++        }
++
 +        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
 +        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
 +        updateRadius = getInt("anti-xray.update-radius", 2);
@@ -1071,7 +1078,7 @@ index edf4d9130..71d865b76 100644
                  this.initLighting();
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 829cc9ed8..18c06d3c8 100644
+index 60143ff63..d938eb374 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1452,7 +1459,7 @@ index 7d3f846a1..240f59066 100644
                  } else {
                      this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index c884fcd34..1d76c4c99 100644
+index ef0b03795..cf5392311 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
