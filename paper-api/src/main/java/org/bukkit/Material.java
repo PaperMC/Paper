@@ -3266,8 +3266,8 @@ public enum Material implements Keyed {
             case DARK_PRISMARINE_SLAB:
             case DARK_PRISMARINE_STAIRS:
             case DAYLIGHT_DETECTOR:
-            case DEAD_BRAIN_CORAL_BLOCK:
             case DEAD_BRAIN_CORAL:
+            case DEAD_BRAIN_CORAL_BLOCK:
             case DEAD_BRAIN_CORAL_FAN:
             case DEAD_BRAIN_CORAL_WALL_FAN:
             case DEAD_BUBBLE_CORAL:
@@ -3730,7 +3730,6 @@ public enum Material implements Keyed {
             case CARROT:
             case CHICKEN:
             case CHORUS_FRUIT:
-            case TROPICAL_FISH:
             case COD:
             case COOKED_BEEF:
             case COOKED_CHICKEN:
@@ -3757,6 +3756,7 @@ public enum Material implements Keyed {
             case ROTTEN_FLESH:
             case SALMON:
             case SPIDER_EYE:
+            case TROPICAL_FISH:
             // ----- Legacy Separator -----
             case LEGACY_BREAD:
             case LEGACY_CARROT_ITEM:
