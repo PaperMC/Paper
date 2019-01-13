@@ -385,7 +385,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
 
     static Multimap<Attribute, AttributeModifier> buildModifiers(NBTTagCompound tag, ItemMetaKey key) {
         Multimap<Attribute, AttributeModifier> modifiers = HashMultimap.create();
-        if (!tag.hasKey(key.NBT)) {
+        if (!tag.hasKeyOfType(key.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
             return modifiers;
         }
         NBTTagList mods = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
@@ -504,6 +504,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     }
 
     void deserializeInternal(NBTTagCompound tag, Object context) {
+        // SPIGOT-4576: Need to migrate from internal to proper data
+        if (tag.hasKeyOfType(ATTRIBUTES.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
+            this.attributeModifiers = buildModifiers(tag, ATTRIBUTES);
+        }
     }
 
     static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {

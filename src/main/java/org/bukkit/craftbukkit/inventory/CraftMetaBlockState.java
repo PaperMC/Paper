@@ -111,6 +111,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     void deserializeInternal(NBTTagCompound tag, Object context) {
+        super.deserializeInternal(tag, context);
+
         if (tag.hasKeyOfType(BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             blockEntityTag = tag.getCompound(BLOCK_ENTITY_TAG.NBT);
         }
