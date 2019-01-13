@@ -58,6 +58,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @Override
     void deserializeInternal(NBTTagCompound tag, Object context) {
+        super.deserializeInternal(tag, context);
+
         if (tag.hasKeyOfType(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT));
         }
