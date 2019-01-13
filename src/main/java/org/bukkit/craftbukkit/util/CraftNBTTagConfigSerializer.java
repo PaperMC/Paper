@@ -11,12 +11,16 @@ import net.minecraft.server.MojangsonParser;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTList;
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NBTTagDouble;
+import net.minecraft.server.NBTTagInt;
 import net.minecraft.server.NBTTagList;
 import net.minecraft.server.NBTTagString;
 
 public class CraftNBTTagConfigSerializer {
 
     private static final Pattern ARRAY = Pattern.compile("^\\[.*]");
+    private static final Pattern INTEGER = Pattern.compile("[-+]?(?:0|[1-9][0-9]*)?i", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DOUBLE = Pattern.compile("[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d", Pattern.CASE_INSENSITIVE);
     private static final MojangsonParser MOJANGSON_PARSER = new MojangsonParser(new StringReader(""));
 
     public static Object serialize(NBTBase base) {
@@ -36,6 +40,8 @@ public class CraftNBTTagConfigSerializer {
             return baseList;
         } else if (base instanceof NBTTagString) {
             return base.asString();
+        } else if (base instanceof NBTTagInt) { // No need to check for doubles, those are covered by the double itself
+            return base.toString() + "i";
         }
 
         return base.toString();
@@ -70,8 +76,20 @@ public class CraftNBTTagConfigSerializer {
                 } catch (CommandSyntaxException e) {
                     throw new RuntimeException("Could not deserialize found list ", e);
                 }
+            } else if (INTEGER.matcher(string).matches()) { //Read integers on our own
+                return new NBTTagInt(Integer.parseInt(string.substring(0, string.length() - 1)));
+            } else if (DOUBLE.matcher(string).matches()) {
+                return new NBTTagDouble(Double.parseDouble(string.substring(0, string.length() - 1)));
             } else {
-                return MOJANGSON_PARSER.parseLiteral(string);
+                NBTBase nbtBase = MOJANGSON_PARSER.parseLiteral(string);
+
+                if (nbtBase instanceof NBTTagInt) { // If this returns an integer, it did not use our method from above
+                    return new NBTTagString(nbtBase.asString()); // It then is a string that was falsely read as an int
+                } else if (nbtBase instanceof NBTTagDouble) {
+                    return new NBTTagString(String.valueOf(((NBTTagDouble) nbtBase).asDouble())); // Doubles add "d" at the end
+                } else {
+                    return nbtBase;
+                }
             }
         }
 

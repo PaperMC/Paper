@@ -131,6 +131,29 @@ public class ItemMetaCustomValueTest extends AbstractTestingBase {
         assertNotEquals(new ItemStack(Material.DIAMOND), loadedConfig.getSerializable("testpath", ItemStack.class));
     }
 
+    @Test
+    public void testCorrectType() {
+        ItemStack stack = new ItemStack(Material.DIAMOND);
+        CraftMetaItem meta = createComplexItemMeta();
+
+        meta.getCustomTagContainer().setCustomTag(requestKey("int"), ItemTagType.STRING, "1");
+        meta.getCustomTagContainer().setCustomTag(requestKey("double"), ItemTagType.STRING, "1.33");
+        stack.setItemMeta(meta);
+
+        YamlConfiguration configuration = new YamlConfiguration();
+        configuration.set("testpath", stack);
+
+        String configValue = configuration.saveToString();
+        YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(new StringReader(configValue));
+        ItemStack newStack = loadedConfig.getSerializable("testpath", ItemStack.class);
+
+        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(requestKey("int"), ItemTagType.STRING));
+        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(requestKey("int"), ItemTagType.STRING), "1");
+
+        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(requestKey("double"), ItemTagType.STRING));
+        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(requestKey("double"), ItemTagType.STRING), "1.33");
+    }
+
     private CraftMetaItem createComplexItemMeta() {
         CraftMetaItem itemMeta = (CraftMetaItem) createNewItemMeta();
         itemMeta.setDisplayName("Item Display Name");
@@ -140,6 +163,8 @@ public class ItemMetaCustomValueTest extends AbstractTestingBase {
             0, 1, 2, 10
         });
         itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-string"), ItemTagType.STRING, "Hello there world");
+        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-int"), ItemTagType.INTEGER, 3);
+        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-double"), ItemTagType.DOUBLE, 3.123);
 
         CustomItemTagContainer innerContainer = itemMeta.getCustomTagContainer().getAdapterContext().newTagContainer(); //Add a inner container
         innerContainer.setCustomTag(VALID_KEY, ItemTagType.LONG, 5L);
