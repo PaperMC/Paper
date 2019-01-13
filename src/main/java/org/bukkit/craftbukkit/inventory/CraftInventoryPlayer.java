@@ -206,7 +206,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setItemInMainHandDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 
     @Override
@@ -216,7 +216,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setItemInOffHandDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 
     public float getHelmetDropChance() {
@@ -224,7 +224,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public void setHelmetDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 
     public float getChestplateDropChance() {
@@ -232,7 +232,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public void setChestplateDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 
     public float getLeggingsDropChance() {
@@ -240,7 +240,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public void setLeggingsDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 
     public float getBootsDropChance() {
@@ -248,6 +248,6 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     public void setBootsDropChance(float chance) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
 }
