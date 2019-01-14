@@ -257,7 +257,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param z Z-coordinate of the chunk
      * @param safe Controls whether to queue the chunk when players are nearby
      * @return Whether the chunk was actually queued
+     * @deprecated it is never safe to remove a chunk in use
      */
+    @Deprecated
     public boolean unloadChunkRequest(int x, int z, boolean safe);
 
     /**
