@@ -187,7 +187,9 @@ public final class Bukkit {
      * Get the name of this server.
      *
      * @return the name of this server
+     * @deprecated not a standard server property
      */
+    @Deprecated
     public static String getServerName() {
         return server.getServerName();
     }
@@ -197,7 +199,9 @@ public final class Bukkit {
      * that can be used for uniquely identifying this server.
      *
      * @return the ID of this server
+     * @deprecated not a standard server property
      */
+    @Deprecated
     public static String getServerId() {
         return server.getServerId();
     }

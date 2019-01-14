@@ -51,7 +51,11 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns the name of the inventory
      *
      * @return The String with the name of the inventory
+     * @deprecated different instances of the same inventory may have different names;
+     *      it is not clear what this method is meant to return
+     * @see InventoryView#getTitle()
      */
+    @Deprecated
     public String getName();
 
     /**
@@ -320,7 +324,10 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns the title of this inventory.
      *
      * @return A String with the title.
+     * @deprecated different instances of the same inventory may have different titles
+     * @see InventoryView#getTitle()
      */
+    @Deprecated
     public String getTitle();
 
     /**

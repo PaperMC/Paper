@@ -157,7 +157,9 @@ public interface Server extends PluginMessageRecipient {
      * Get the name of this server.
      *
      * @return the name of this server
+     * @deprecated not a standard server property
      */
+    @Deprecated
     public String getServerName();
 
     /**
@@ -165,7 +167,9 @@ public interface Server extends PluginMessageRecipient {
      * that can be used for uniquely identifying this server.
      *
      * @return the ID of this server
+     * @deprecated not a standard server property
      */
+    @Deprecated
     public String getServerId();
 
     /**
