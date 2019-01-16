@@ -64,7 +64,7 @@ public interface BukkitScheduler {
     public int scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long period);
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}     *
+     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
      * @param delay Delay in server ticks before executing first repeat
