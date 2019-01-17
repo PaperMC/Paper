@@ -125,18 +125,6 @@ public interface Tag<T extends Keyed> {
      */
     Tag<Material> RAILS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("rails"), Material.class);
     /**
-     * Vanilla block tag representing all coral blocks.
-     */
-    Tag<Material> CORAL_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("coral_blocks"), Material.class);
-    /**
-     * Vanilla block tag representing all coral.
-     */
-    Tag<Material> CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("corals"), Material.class);
-    /**
-     * Vanilla block tag representing all wall corals.
-     */
-    Tag<Material> WALL_CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wall_corals"), Material.class);
-    /**
      * Vanilla block tag representing all leaves fans.
      */
     Tag<Material> LEAVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("leaves"), Material.class);
@@ -165,6 +153,26 @@ public interface Tag<T extends Keyed> {
      * Vanilla block tag denoting impermeable blocks which do not drip fluids.
      */
     Tag<Material> IMPERMEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("impermeable"), Material.class);
+    /**
+     * Vanilla block tag denoting all underwater blocks which may be bonemealed.
+     */
+    Tag<Material> UNDERWATER_BONEMEALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("underwater_bonemeals"), Material.class);
+    /**
+     * Vanilla block tag representing all coral blocks.
+     */
+    Tag<Material> CORAL_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("coral_blocks"), Material.class);
+    /**
+     * Vanilla block tag representing all wall corals.
+     */
+    Tag<Material> WALL_CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wall_corals"), Material.class);
+    /**
+     * Vanilla block tag representing all coral plants.
+     */
+    Tag<Material> CORAL_PLANTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("coral_plants"), Material.class);
+    /**
+     * Vanilla block tag representing all coral.
+     */
+    Tag<Material> CORALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("corals"), Material.class);
     /**
      * Key for the built in item registry.
      */
