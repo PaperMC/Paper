@@ -15,6 +15,7 @@ import org.bukkit.event.HandlerList;
  * <li>Cactus
  * <li>Watermelon
  * <li>Pumpkin
+ * <li>Turtle Egg
  * </ul>
  * <p>
  * If a Block Grow event is cancelled, the block will not grow.
