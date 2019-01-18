@@ -63,16 +63,46 @@ public class ShapelessRecipes implements RecipeCrafting {
         AutoRecipeStackManager autorecipestackmanager = new AutoRecipeStackManager();
         int i = 0;
 
+        // Paper start
+        java.util.List<ItemStack> providedItems = new java.util.ArrayList<>();
+        co.aikar.util.Counter<ItemStack> matchedProvided = new co.aikar.util.Counter<>();
+        co.aikar.util.Counter<RecipeItemStack> matchedIngredients = new co.aikar.util.Counter<>();
+        // Paper end
         for (int j = 0; j < inventorycrafting.getSize(); ++j) {
             ItemStack itemstack = inventorycrafting.getItem(j);
 
             if (!itemstack.isEmpty()) {
-                ++i;
-                autorecipestackmanager.a(itemstack, 1);
+                // Paper start
+                itemstack = itemstack.cloneItemStack();
+                providedItems.add(itemstack);
+                for (RecipeItemStack ingredient : ingredients) {
+                    if (ingredient.test(itemstack)) {
+                        matchedProvided.increment(itemstack);
+                        matchedIngredients.increment(ingredient);
+                    }
+                }
+                // Paper end
             }
         }
 
-        return i == this.ingredients.size() && autorecipestackmanager.a(this, (IntList) null);
+        // Paper start
+        java.util.List<RecipeItemStack> ingredients = new java.util.ArrayList<>(this.ingredients);
+        providedItems.sort(java.util.Comparator.comparingInt((ItemStack c) -> (int) matchedProvided.getCount(c)).reversed());
+        ingredients.sort(java.util.Comparator.comparingInt((RecipeItemStack c) -> (int) matchedIngredients.getCount(c)));
+
+        PROVIDED:
+        for (ItemStack provided : providedItems) {
+            for (Iterator<RecipeItemStack> itIngredient = ingredients.iterator(); itIngredient.hasNext(); ) {
+                RecipeItemStack ingredient = itIngredient.next();
+                if (ingredient.test(provided)) {
+                    itIngredient.remove();
+                    continue PROVIDED;
+                }
+            }
+            return false;
+        }
+        return ingredients.isEmpty();
+        // Paper end
     }
 
     public ItemStack a(InventoryCrafting inventorycrafting) {
