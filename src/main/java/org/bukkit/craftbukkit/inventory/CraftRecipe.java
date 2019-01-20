@@ -14,19 +14,26 @@ public interface CraftRecipe extends Recipe {
 
     void addToCraftingManager();
 
-    default net.minecraft.server.RecipeItemStack toNMS(RecipeChoice bukkit) {
-        if (bukkit == null) {
-            return RecipeItemStack.a;
-        } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
-            return new RecipeItemStack(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(new ItemStack(mat)))));
-        } else if (bukkit instanceof RecipeChoice.ExactChoice) {
-            RecipeItemStack stack = new RecipeItemStack(Stream.of(new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(((RecipeChoice.ExactChoice) bukkit).getItemStack()))));
-            stack.exact = true;
+    default RecipeItemStack toNMS(RecipeChoice bukkit, boolean requireNotEmpty) {
+       RecipeItemStack stack;
 
-            return stack;
+        if (bukkit == null) {
+            stack= RecipeItemStack.a;
+        } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
+            stack= new RecipeItemStack(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(new ItemStack(mat)))));
+        } else if (bukkit instanceof RecipeChoice.ExactChoice) {
+            stack = new RecipeItemStack(Stream.of(new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(((RecipeChoice.ExactChoice) bukkit).getItemStack()))));
+            stack.exact = true;
         } else {
             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
         }
+
+        stack.buildChoices();
+        if (requireNotEmpty && stack.choices.length == 0) {
+            throw new IllegalArgumentException("Recipe requires at least one non-air choice!");
+        }
+
+        return stack;
     }
 
     public static RecipeChoice toBukkit(RecipeItemStack list) {
