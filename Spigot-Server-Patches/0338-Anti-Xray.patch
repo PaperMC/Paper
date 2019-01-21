@@ -1,11 +1,11 @@
-From b6628d091b2d03a1d0587efb1acda26524e2a88d Mon Sep 17 00:00:00 2001
+From 353e49433fc2512d8f1296ca1775822f9e0bc372 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6feea98b6..2a0aa2d6d 100644
+index 6feea98b6b..2a0aa2d6d2 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,7 +1,10 @@
@@ -56,7 +56,7 @@ index 6feea98b6..2a0aa2d6d 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 new file mode 100644
-index 000000000..1ba8477bf
+index 0000000000..1ba8477bf9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 @@ -0,0 +1,45 @@
@@ -107,10 +107,10 @@ index 000000000..1ba8477bf
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 000000000..d00e113ba
+index 0000000000..904544b3c3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,670 @@
+@@ -0,0 +1,678 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.HashSet;
@@ -135,9 +135,11 @@ index 000000000..d00e113ba
 +import net.minecraft.server.IBlockData;
 +import net.minecraft.server.IChunkAccess;
 +import net.minecraft.server.IWorldReader;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.PacketPlayOutMapChunk;
 +import net.minecraft.server.PlayerInteractManager;
 +import net.minecraft.server.World;
++import net.minecraft.server.WorldServer;
 +
 +public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
@@ -271,10 +273,16 @@ index 000000000..d00e113ba
 +                return false;
 +            }
 +        } else if (chunkEdgeMode == ChunkEdgeMode.LOAD || chunkEdgeMode == ChunkEdgeMode.WAIT) {
-+            chunk.world.getChunkAt(chunk.locX - 1, chunk.locZ);
-+            chunk.world.getChunkAt(chunk.locX + 1, chunk.locZ);
-+            chunk.world.getChunkAt(chunk.locX, chunk.locZ - 1);
-+            chunk.world.getChunkAt(chunk.locX, chunk.locZ + 1);
++            boolean missingChunk = false;
++            //noinspection ConstantConditions
++            missingChunk |= ((WorldServer)chunk.world).getChunkProvider().getChunkAt(chunk.locX - 1, chunk.locZ, true, true, c -> {}) == null;
++            missingChunk |= ((WorldServer)chunk.world).getChunkProvider().getChunkAt(chunk.locX + 1, chunk.locZ, true, true, c -> {}) == null;
++            missingChunk |= ((WorldServer)chunk.world).getChunkProvider().getChunkAt(chunk.locX, chunk.locZ - 1, true, true, c -> {}) == null;
++            missingChunk |= ((WorldServer)chunk.world).getChunkProvider().getChunkAt(chunk.locX, chunk.locZ + 1, true, true, c -> {}) == null;
++
++            if (missingChunk) {
++                return false;
++            }
 +        }
 +
 +        //Create the chunk packet now
@@ -783,7 +791,7 @@ index 000000000..d00e113ba
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java
 new file mode 100644
-index 000000000..a68bace35
+index 0000000000..a68bace353
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java
 @@ -0,0 +1,81 @@
@@ -870,7 +878,7 @@ index 000000000..a68bace35
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfoAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfoAntiXray.java
 new file mode 100644
-index 000000000..e255a45fa
+index 0000000000..e255a45fa3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfoAntiXray.java
 @@ -0,0 +1,29 @@
@@ -905,7 +913,7 @@ index 000000000..e255a45fa
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/DataBitsReader.java b/src/main/java/com/destroystokyo/paper/antixray/DataBitsReader.java
 new file mode 100644
-index 000000000..cc586827a
+index 0000000000..cc586827aa
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/DataBitsReader.java
 @@ -0,0 +1,56 @@
@@ -967,7 +975,7 @@ index 000000000..cc586827a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/DataBitsWriter.java b/src/main/java/com/destroystokyo/paper/antixray/DataBitsWriter.java
 new file mode 100644
-index 000000000..37093419c
+index 0000000000..37093419cf
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/DataBitsWriter.java
 @@ -0,0 +1,84 @@
@@ -1056,7 +1064,7 @@ index 000000000..37093419c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index edf4d9130..71d865b76 100644
+index edf4d91303..71d865b76a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -541,7 +541,7 @@ public class Chunk implements IChunkAccess {
@@ -1078,7 +1086,7 @@ index edf4d9130..71d865b76 100644
                  this.initLighting();
              }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 60143ff63..d938eb374 100644
+index 60143ff63f..d938eb3749 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -849,7 +849,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1100,7 +1108,7 @@ index 60143ff63..d938eb374 100644
              chunksection.getBlocks().a(nbttagcompound, "Palette", "BlockStates");
              chunksection.a(new NibbleArray(nbttagcompound.getByteArray("BlockLight")));
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 621ed1fc5..2af07ae59 100644
+index 621ed1fc53..2af07ae592 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -11,9 +11,15 @@ public class ChunkSection {
@@ -1121,7 +1129,7 @@ index 621ed1fc5..2af07ae59 100644
          if (flag) {
              this.skyLight = new NibbleArray();
 diff --git a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
-index 56958a5ce..d3898599f 100644
+index 56958a5ce3..d3898599f8 100644
 --- a/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 +++ b/src/main/java/net/minecraft/server/ChunkTaskScheduler.java
 @@ -39,7 +39,7 @@ public class ChunkTaskScheduler extends Scheduler<ChunkCoordIntPair, ChunkStatus
@@ -1143,7 +1151,7 @@ index 56958a5ce..d3898599f 100644
              }) : (Scheduler.a) this.progressCache.get(chunkcoordintpair.a());
          }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 6fcfc5ef7..454903a0e 100644
+index 6fcfc5ef72..454903a0e7 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -1,5 +1,6 @@
@@ -1280,7 +1288,7 @@ index 6fcfc5ef7..454903a0e 100644
          int j = along.length * 64 / 4096;
  
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 4a50aab51..4c1110479 100644
+index 4a50aab512..4c1110479c 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -157,8 +157,8 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -1341,7 +1349,7 @@ index 4a50aab51..4c1110479 100644
      public void a() {
          this.o();
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 18ef7232e..8e35d14f9 100644
+index 18ef7232ec..8e35d14f97 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -1,5 +1,6 @@
@@ -1428,7 +1436,7 @@ index 18ef7232e..8e35d14f9 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7d3f846a1..240f59066 100644
+index 7d3f846a19..240f590666 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -103,6 +103,8 @@ public class PlayerChunk {
@@ -1459,7 +1467,7 @@ index 7d3f846a1..240f59066 100644
                  } else {
                      this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index ef0b03795..cf5392311 100644
+index 4c1f43c49c..22574a184f 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -207,6 +207,8 @@ public class PlayerInteractManager {
@@ -1472,7 +1480,7 @@ index ef0b03795..cf5392311 100644
  
      public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index 16e3469d0..e4c0cc6a3 100644
+index 16e3469d01..e4c0cc6a33 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/server/ProtoChunk.java
 @@ -41,12 +41,24 @@ public class ProtoChunk implements IChunkAccess {
@@ -1520,7 +1528,7 @@ index 16e3469d0..e4c0cc6a3 100644
  
              if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b4c9df025..a95c8df4b 100644
+index b4c9df0256..a95c8df4b0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
@@ -1557,7 +1565,7 @@ index b4c9df025..a95c8df4b 100644
              if (iblockdata1 == null) {
                  // CraftBukkit start - remove blockstate if failed
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-index 550416bef..923d1b282 100644
+index 550416bef0..923d1b2821 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
 @@ -17,9 +17,11 @@ import org.bukkit.material.MaterialData;
