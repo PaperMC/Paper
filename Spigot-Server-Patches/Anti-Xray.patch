@@ -107,7 +107,7 @@ index 0000000000..1ba8477bf9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000..904544b3c3
+index 0000000000..e3da35b6ba
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 @@ -0,0 +0,0 @@
@@ -267,12 +267,18 @@ index 0000000000..904544b3c3
 +    @Override
 +    public boolean onChunkPacketCreate(Chunk chunk, int chunkSectionSelector, boolean force) {
 +        //Load nearby chunks if necessary
-+        if (chunkEdgeMode == ChunkEdgeMode.WAIT && !force) {
++        if (force) {
++            // if forced, load NOW;
++            chunk.world.getChunkAt(chunk.locX - 1, chunk.locZ);
++            chunk.world.getChunkAt(chunk.locX + 1, chunk.locZ);
++            chunk.world.getChunkAt(chunk.locX, chunk.locZ - 1);
++            chunk.world.getChunkAt(chunk.locX, chunk.locZ + 1);
++        } else if (chunkEdgeMode == ChunkEdgeMode.WAIT && !force) {
 +            if (chunk.world.getChunkIfLoaded(chunk.locX - 1, chunk.locZ) == null || chunk.world.getChunkIfLoaded(chunk.locX + 1, chunk.locZ) == null || chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ - 1) == null || chunk.world.getChunkIfLoaded(chunk.locX, chunk.locZ + 1) == null) {
 +                //Don't create the chunk packet now, wait until nearby chunks are loaded and create it later
 +                return false;
 +            }
-+        } else if (chunkEdgeMode == ChunkEdgeMode.LOAD || chunkEdgeMode == ChunkEdgeMode.WAIT) {
++        } else if (chunkEdgeMode == ChunkEdgeMode.LOAD) {
 +            boolean missingChunk = false;
 +            //noinspection ConstantConditions
 +            missingChunk |= ((WorldServer)chunk.world).getChunkProvider().getChunkAt(chunk.locX - 1, chunk.locZ, true, true, c -> {}) == null;
