@@ -1,5 +1,6 @@
 package org.bukkit.potion;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -303,11 +304,11 @@ public abstract class PotionEffectType {
 
     /**
      * Returns an array of all the registered {@link PotionEffectType}s.
-     * This array is not necessarily in any particular order and may contain null.
+     * This array is not necessarily in any particular order.
      *
      * @return Array of types.
      */
     public static PotionEffectType[] values() {
-        return byId.clone();
+        return Arrays.copyOfRange(byId, 1, byId.length);
     }
 }
