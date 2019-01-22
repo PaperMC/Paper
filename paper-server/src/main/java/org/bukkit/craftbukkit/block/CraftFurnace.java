@@ -56,6 +56,16 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
     }
 
     @Override
+    public int getCookTimeTotal() {
+        return this.getSnapshot().getProperty(3);
+    }
+
+    @Override
+    public void setCookTimeTotal(int cookTimeTotal) {
+        this.getSnapshot().setProperty(3, cookTimeTotal);
+    }
+
+    @Override
     public String getCustomName() {
         TileEntityFurnace furnace = this.getSnapshot();
         return furnace.hasCustomName() ? CraftChatMessage.fromComponent(furnace.getCustomName()) : null;
