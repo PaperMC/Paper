@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -34,9 +35,21 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<Material> choices;
 
+        public MaterialChoice(Material choice) {
+            this(Arrays.asList(choice));
+        }
+
+        public MaterialChoice(Material... choices) {
+            this(Arrays.asList(choices));
+        }
+
         public MaterialChoice(List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
+            for (Material choice : choices) {
+                Preconditions.checkArgument(choice != null, "Cannot have null choice");
+            }
+
             this.choices = choices;
         }
 
@@ -110,8 +123,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
 
     /**
-     * Represents a choice that will be valid only if a stack is exactly matched
-     * (aside from stack size).
+     * Represents a choice that will be valid only one of the stacks is exactly
+     * matched (aside from stack size).
      * <br>
      * <b>Not valid for shapeless recipes</b>
      *
@@ -120,23 +133,40 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     @Deprecated
     public static class ExactChoice implements RecipeChoice {
 
-        private ItemStack stack;
+        private List<ItemStack> choices;
 
         public ExactChoice(ItemStack stack) {
-            Preconditions.checkArgument(stack != null, "stack");
-            this.stack = stack;
+            this(Arrays.asList(stack));
+        }
+
+        public ExactChoice(ItemStack... stacks) {
+            this(Arrays.asList(stacks));
+        }
+
+        public ExactChoice(List<ItemStack> choices) {
+            Preconditions.checkArgument(choices != null, "choices");
+            Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
+            for (ItemStack choice : choices) {
+                Preconditions.checkArgument(choice != null, "Cannot have null choice");
+            }
+
+            this.choices = choices;
         }
 
         @Override
         public ItemStack getItemStack() {
-            return stack;
+            return choices.get(0).clone();
+        }
+
+        public List<ItemStack> getChoices() {
+            return Collections.unmodifiableList(choices);
         }
 
         @Override
         public ExactChoice clone() {
             try {
                 ExactChoice clone = (ExactChoice) super.clone();
-                clone.stack = stack.clone();
+                clone.choices = new ArrayList<>(choices);
                 return clone;
             } catch (CloneNotSupportedException ex) {
                 throw new AssertionError(ex);
@@ -145,7 +175,43 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         @Override
         public boolean test(ItemStack t) {
-            return stack.equals(t);
+            for (ItemStack match : choices) {
+                if (t.isSimilar(match)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 41 * hash + Objects.hashCode(this.choices);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final ExactChoice other = (ExactChoice) obj;
+            if (!Objects.equals(this.choices, other.choices)) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "ExactChoice{" + "choices=" + choices + '}';
         }
     }
 }
