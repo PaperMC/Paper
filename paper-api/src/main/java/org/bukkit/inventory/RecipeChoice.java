@@ -50,7 +50,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
                 Preconditions.checkArgument(choice != null, "Cannot have null choice");
             }
 
-            this.choices = choices;
+            this.choices = new ArrayList<>(choices);
         }
 
         @Override
@@ -150,7 +150,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
                 Preconditions.checkArgument(choice != null, "Cannot have null choice");
             }
 
-            this.choices = choices;
+            this.choices = new ArrayList<>(choices);
         }
 
         @Override
