@@ -1,5 +1,6 @@
 package org.bukkit.event.block;
 
+import java.util.List;
 import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -33,13 +34,13 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
     private final Player player;
     private boolean cancel;
     private final BlockState blockState;
-    private final Item item;
+    private final List<Item> items;
 
-    public BlockDropItemEvent(Block block, BlockState blockState, Player player, Item item) {
+    public BlockDropItemEvent(Block block, BlockState blockState, Player player, List<Item> items) {
         super(block);
         this.blockState = blockState;
         this.player = player;
-        this.item = item;
+        this.items = items;
     }
 
     /**
@@ -62,12 +63,23 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the Item drop caused by the block break.
+     * Gets list of the Item drops caused by the block break.
+     *
+     * This list is mutable - removing an item from it will cause it to not
+     * drop. It is not legal however to add new items to the list.
      *
      * @return The Item the block caused to drop
      */
+    public List<Item> getItems() {
+        return items;
+    }
+
+    /**
+     * @deprecated very temporary compatibility measure
+     */
+    @Deprecated
     public Item getItem() {
-        return item;
+        return items.get(0);
     }
 
     @Override
