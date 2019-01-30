@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
 
 import net.minecraft.server.*;
 
@@ -198,11 +199,15 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockDropItemEvent callBlockDropItemEvent(Block block, BlockState state, EntityPlayer player, EntityItem item) {
-        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity());
+    public static void handleBlockDropItemEvent(Block block, BlockState state, EntityPlayer player, List<EntityItem> items) {
+        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), Lists.transform(items, (item) -> (org.bukkit.entity.Item) item.getBukkitEntity()));
         Bukkit.getPluginManager().callEvent(event);
 
-        return event;
+        if (!event.isCancelled()) {
+            for (EntityItem item : items) {
+                item.world.addEntity(item);
+            }
+        }
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
