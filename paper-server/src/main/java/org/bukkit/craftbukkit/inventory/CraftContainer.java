@@ -17,6 +17,7 @@ import net.minecraft.server.ContainerEnchantTable;
 import net.minecraft.server.ContainerFurnace;
 import net.minecraft.server.ContainerHopper;
 import net.minecraft.server.ContainerShulkerBox;
+import net.minecraft.server.ContainerWorkbench;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
@@ -174,6 +175,11 @@ public class CraftContainer extends Container {
         if (delegate != null) {
             this.items = delegate.items;
             this.slots = delegate.slots;
+        }
+
+        // SPIGOT-4598 - we should still delegate the shift click handler
+        if (cachedType == InventoryType.WORKBENCH) {
+            delegate = new ContainerWorkbench(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
         }
     }
 
