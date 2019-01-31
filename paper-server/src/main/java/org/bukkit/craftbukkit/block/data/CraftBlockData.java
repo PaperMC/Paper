@@ -505,7 +505,7 @@ public class CraftBlockData implements BlockData {
 
                 StringReader reader = new StringReader(data);
                 ArgumentBlock arg = new ArgumentBlock(reader, false).a(false);
-                Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data");
+                Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data: " + data);
 
                 blockData = arg.getBlockData();
                 parsed = arg.getStateMap();
