@@ -112,7 +112,7 @@ public class BlockPiston extends BlockDirectional {
             }
 
             // CraftBukkit start
-            if (!this.sticky) {
+            //if (!this.sticky) { // Paper - Prevents empty sticky pistons from firing retract - history behind is odd
                 org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
                 BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
                 world.getServer().getPluginManager().callEvent(event);
@@ -120,7 +120,7 @@ public class BlockPiston extends BlockDirectional {
                 if (event.isCancelled()) {
                     return;
                 }
-            }
+            //} // Paper
             // PAIL: checkME - what happened to setTypeAndData?
             // CraftBukkit end
             world.playBlockAction(blockposition, this, b0, enumdirection.c());
