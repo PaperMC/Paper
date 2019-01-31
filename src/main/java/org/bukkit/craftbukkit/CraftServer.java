@@ -132,7 +132,9 @@ import com.google.common.collect.MapMaker;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
@@ -1871,6 +1873,25 @@ public final class CraftServer implements Server {
 
         LootTableRegistry registry = getServer().getLootTableRegistry();
         return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
+    }
+
+    @Override
+    public List<Entity> selectEntities(CommandSender sender, String selector) {
+        Preconditions.checkArgument(selector != null, "Selector cannot be null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+
+        ArgumentEntity arg = ArgumentEntity.b();
+        List<? extends net.minecraft.server.Entity> nms;
+
+        try {
+            StringReader reader = new StringReader(selector);
+            nms = arg.parse(reader, true).b(VanillaCommandWrapper.getListener(sender));
+            Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data in selector: " + selector);
+        } catch (CommandSyntaxException ex) {
+            throw new IllegalArgumentException("Could not parse selector: " + selector, ex);
+        }
+
+        return new ArrayList<>(Lists.transform(nms, (entity) -> entity.getBukkitEntity()));
     }
 
     @Deprecated

@@ -63,7 +63,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         return results;
     }
 
-    private CommandListenerWrapper getListener(CommandSender sender) {
+    public static CommandListenerWrapper getListener(CommandSender sender) {
         if (sender instanceof Player) {
             return ((CraftPlayer) sender).getHandle().getCommandListener();
         }
