@@ -1385,6 +1385,32 @@ public final class Bukkit {
     }
 
     /**
+     * Selects entities using the given Vanilla selector.
+     * <br>
+     * No guarantees are made about the selector format, other than they match
+     * the Vanilla format for the active Minecraft version.
+     * <br>
+     * Usually a selector will start with '@', unless selecting a Player in
+     * which case it may simply be the Player's name or UUID.
+     * <br>
+     * Note that in Vanilla, elevated permissions are usually required to use
+     * '@' selectors, but this method should not check such permissions from the
+     * sender.
+     *
+     * @param sender the sender to execute as, must be provided
+     * @param selector the selection string
+     * @return a list of the selected entities. The list will not be null, but
+     * no further guarantees are made.
+     * @throws IllegalArgumentException if the selector is malformed in any way
+     * or a parameter is null
+     * @deprecated draft API
+     */
+    @Deprecated
+    public static List<Entity> selectEntities(CommandSender sender, String selector) throws IllegalArgumentException {
+        return server.selectEntities(sender, selector);
+    }
+
+    /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */
