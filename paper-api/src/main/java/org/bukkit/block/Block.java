@@ -7,6 +7,7 @@ import org.bukkit.FluidCollisionMode;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
@@ -178,6 +179,19 @@ public interface Block extends Metadatable {
     /**
      * Sets the complete data for this block
      *
+     * <br>
+     * Note that applyPhysics = false is not in general safe. It should only be
+     * used when you need to avoid triggering a physics update of neighboring
+     * blocks, for example when creating a {@link Bisected} block. If you are
+     * using a custom populator, then this parameter may also be required to
+     * prevent triggering infinite chunk loads on border blocks. This method
+     * should NOT be used to "hack" physics by placing blocks in impossible
+     * locations. Such blocks are liable to be removed on various events such as
+     * world upgrades. Furthermore setting large amounts of such blocks in close
+     * proximity may overload the server physics engine if an update is
+     * triggered at a later point. If this occurs, the resulting behavior is
+     * undefined.
+     *
      * @param data new block specific data
      * @param applyPhysics false to cancel physics from the changed block
      */
@@ -192,6 +206,19 @@ public interface Block extends Metadatable {
 
     /**
      * Sets the type of this block
+     *
+     * <br>
+     * Note that applyPhysics = false is not in general safe. It should only be
+     * used when you need to avoid triggering a physics update of neighboring
+     * blocks, for example when creating a {@link Bisected} block. If you are
+     * using a custom populator, then this parameter may also be required to
+     * prevent triggering infinite chunk loads on border blocks. This method
+     * should NOT be used to "hack" physics by placing blocks in impossible
+     * locations. Such blocks are liable to be removed on various events such as
+     * world upgrades. Furthermore setting large amounts of such blocks in close
+     * proximity may overload the server physics engine if an update is
+     * triggered at a later point. If this occurs, the resulting behavior is
+     * undefined.
      *
      * @param type Material to change this block to
      * @param applyPhysics False to cancel physics on the changed block.
