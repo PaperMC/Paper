@@ -1,4 +1,4 @@
-From f716ee5f3b705d56bb2a134590c5c6c1d87e1b51 Mon Sep 17 00:00:00 2001
+From 1ed9f0e1531bbf28ef63667a2d958906abf1b036 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -929,7 +929,7 @@ index c24f4a8fe..e01222ad2 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index f9e5103a3..d2970c086 100644
+index a2ec56bc9..da0d0cc10 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -58,6 +58,7 @@ import org.bukkit.inventory.CraftingInventory;
@@ -984,10 +984,10 @@ index f9e5103a3..d2970c086 100644
          // this.minecraftServer.getCommandDispatcher().a(this.player.getCommandListener(), s);
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-index 6c88d0c86..8bf94c1b9 100644
+index a73947d26..596aa27fe 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-@@ -1,11 +1,17 @@
+@@ -1,12 +1,19 @@
  package net.minecraft.server;
  
 +import co.aikar.timings.MinecraftTimings; // Paper
@@ -998,8 +998,10 @@ index 6c88d0c86..8bf94c1b9 100644
      public static <T extends PacketListener> void ensureMainThread(Packet<T> packet, T t0, IAsyncTaskHandler iasynctaskhandler) throws CancelledPacketHandleException {
          if (!iasynctaskhandler.isMainThread()) {
 +            Timing timing = MinecraftTimings.getPacketTiming(packet); // Paper
++
              iasynctaskhandler.postToMainThread(() -> {
-+            try (Timing ignored = timing.startTiming()) { // Paper
+                 if (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect) return; // CraftBukkit
++                try (Timing ignored = timing.startTiming()) { // Paper
                  packet.a(t0);
 +            } // Paper - timings
              });
@@ -1104,7 +1106,7 @@ index c69209497..68ac014aa 100644
      private final TileEntityTypes<?> e; public TileEntityTypes getTileEntityType() { return e; } // Paper - OBFHELPER
      protected World world;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 5531f5205..209091a9c 100644
+index 9865f7f7a..a1c5375a5 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,5 +1,6 @@
@@ -1129,9 +1131,9 @@ index 5531f5205..209091a9c 100644
 -    public final SpigotTimings.WorldTimingsHandler timings; // Spigot
 +    public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      private boolean guardEntityList; // Spigot
-     public static boolean haveWeSilencedAPhysicsCrash;
-     public static String blockLocation;
-@@ -201,7 +201,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     public static BlockPosition lastPhysicsProblem; // Spigot
+     private org.spigotmc.TickLimiter entityLimiter;
+@@ -200,7 +200,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          });
          this.getServer().addWorld(this.world);
          // CraftBukkit end
@@ -1140,7 +1142,7 @@ index 5531f5205..209091a9c 100644
                  this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
-@@ -1076,6 +1076,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1081,6 +1081,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          }
  
          this.methodProfiler.exitEnter("remove");
@@ -1148,7 +1150,7 @@ index 5531f5205..209091a9c 100644
          this.entityList.removeAll(this.g);
  
          int j;
-@@ -1096,6 +1097,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1101,6 +1102,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
          this.g.clear();
          this.p_();
@@ -1156,7 +1158,7 @@ index 5531f5205..209091a9c 100644
          this.methodProfiler.exitEnter("regular");
  
          CrashReport crashreport1;
-@@ -1105,6 +1107,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1110,6 +1112,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          timings.entityTick.startTiming(); // Spigot
          guardEntityList = true; // Spigot
          // CraftBukkit start - Use field for loop variable
@@ -1164,7 +1166,7 @@ index 5531f5205..209091a9c 100644
          int entitiesThisCycle = 0;
          if (tickPosition < 0) tickPosition = 0;
          for (entityLimiter.initTick();
-@@ -1126,10 +1129,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1131,10 +1134,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              this.methodProfiler.enter("tick");
              if (!entity.dead && !(entity instanceof EntityPlayer)) {
                  try {
@@ -1178,7 +1180,7 @@ index 5531f5205..209091a9c 100644
                      crashreport1 = CrashReport.a(throwable1, "Ticking entity");
                      crashreportsystemdetails1 = crashreport1.a("Entity being ticked");
                      entity.appendEntityCrashDetails(crashreportsystemdetails1);
-@@ -1254,6 +1258,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1259,6 +1263,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          }
  
          timings.tileEntityPending.stopTiming(); // Spigot
@@ -1186,7 +1188,7 @@ index 5531f5205..209091a9c 100644
          this.methodProfiler.exit();
          this.methodProfiler.exit();
      }
-@@ -1312,7 +1317,6 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1317,7 +1322,6 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          }
          // CraftBukkit end
  
@@ -1194,7 +1196,7 @@ index 5531f5205..209091a9c 100644
          entity.N = entity.locX;
          entity.O = entity.locY;
          entity.P = entity.locZ;
-@@ -1320,6 +1324,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1325,6 +1329,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          entity.lastPitch = entity.pitch;
          if (flag && entity.inChunk) {
              ++entity.ticksLived;
@@ -1202,7 +1204,7 @@ index 5531f5205..209091a9c 100644
              if (entity.isPassenger()) {
                  entity.aH();
              } else {
-@@ -1383,8 +1388,6 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1388,8 +1393,6 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  }
              }
          }

@@ -1,4 +1,4 @@
-From f3535616c140d470acb08dfa6671ea715300c8f8 Mon Sep 17 00:00:00 2001
+From f2e6a430e2bb0295c4e5a23223dbd20857d0c8a5 Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Cache World Entity Type counts
@@ -133,7 +133,7 @@ index 000000000..a10a5bc13
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index a9b0f8497..3311e2b24 100644
+index 3ca51a5c5..c29d7eeb0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -122,6 +122,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -171,7 +171,7 @@ index e62616552..bfbe4d3e3 100644
                      if (l1 <= k) {
                          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 187506b57..823c3900b 100644
+index db130852f..0866c6feb 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -45,7 +45,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -192,16 +192,19 @@ index 187506b57..823c3900b 100644
      // Spigot end
      protected final Set<Entity> g = com.google.common.collect.Sets.newHashSet(); public Set<Entity> getEntityUnloadQueue() { return g; };// Paper - OBFHELPER
      //public final List<TileEntity> tileEntityList = Lists.newArrayList(); // Paper - remove unused list
-@@ -139,7 +141,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -139,8 +141,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
      public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
  
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
 -    private boolean guardEntityList; // Spigot
 +    public boolean guardEntityList; // Spigot // Paper - public
-     public static boolean haveWeSilencedAPhysicsCrash;
-     public static String blockLocation;
+     public static BlockPosition lastPhysicsProblem; // Spigot
++    public static boolean haveWeSilencedAPhysicsCrash;
++    public static String blockLocation;
      private org.spigotmc.TickLimiter entityLimiter;
-@@ -1117,6 +1119,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+@@ -1122,6 +1126,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
              this.getChunkAt(i, j).b(entity);
          }
          entity.shouldBeRemoved = true; // Paper
