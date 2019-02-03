@@ -929,7 +929,7 @@ index c24f4a8fe..e01222ad2 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index f9e5103a3..d2970c086 100644
+index a2ec56bc9..da0d0cc10 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ import org.bukkit.inventory.CraftingInventory;
@@ -984,7 +984,7 @@ index f9e5103a3..d2970c086 100644
          // this.minecraftServer.getCommandDispatcher().a(this.player.getCommandListener(), s);
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-index 6c88d0c86..8bf94c1b9 100644
+index a73947d26..596aa27fe 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 @@ -0,0 +0,0 @@
@@ -998,8 +998,10 @@ index 6c88d0c86..8bf94c1b9 100644
      public static <T extends PacketListener> void ensureMainThread(Packet<T> packet, T t0, IAsyncTaskHandler iasynctaskhandler) throws CancelledPacketHandleException {
          if (!iasynctaskhandler.isMainThread()) {
 +            Timing timing = MinecraftTimings.getPacketTiming(packet); // Paper
++
              iasynctaskhandler.postToMainThread(() -> {
-+            try (Timing ignored = timing.startTiming()) { // Paper
+                 if (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect) return; // CraftBukkit
++                try (Timing ignored = timing.startTiming()) { // Paper
                  packet.a(t0);
 +            } // Paper - timings
              });
@@ -1104,7 +1106,7 @@ index c69209497..68ac014aa 100644
      private final TileEntityTypes<?> e; public TileEntityTypes getTileEntityType() { return e; } // Paper - OBFHELPER
      protected World world;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 5531f5205..209091a9c 100644
+index 9865f7f7a..a1c5375a5 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@
@@ -1129,8 +1131,8 @@ index 5531f5205..209091a9c 100644
 -    public final SpigotTimings.WorldTimingsHandler timings; // Spigot
 +    public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      private boolean guardEntityList; // Spigot
-     public static boolean haveWeSilencedAPhysicsCrash;
-     public static String blockLocation;
+     public static BlockPosition lastPhysicsProblem; // Spigot
+     private org.spigotmc.TickLimiter entityLimiter;
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          });
          this.getServer().addWorld(this.world);
