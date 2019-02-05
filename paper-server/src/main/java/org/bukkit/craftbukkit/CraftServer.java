@@ -1244,7 +1244,7 @@ public final class CraftServer implements Server {
 
     @Override
     @Deprecated
-    public CraftMapView getMap(short id) {
+    public CraftMapView getMap(int id) {
         PersistentCollection collection = console.getWorldServer(DimensionManager.OVERWORLD).worldMaps;
         WorldMap worldmap = (WorldMap) collection.get(DimensionManager.OVERWORLD, WorldMap::new, "map_" + id);
         if (worldmap == null) {
