@@ -229,8 +229,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void remove() {
+        if (this.getHandle().getClass().equals(ServerPlayer.class)) { // special case for NMS plugins inheriting
         // Will lead to an inconsistent player state if we remove the player as any other entity.
         throw new UnsupportedOperationException(String.format("Cannot remove player %s, use Player#kickPlayer(String) instead.", this.getName()));
+        } else {
+            super.remove();
+        }
     }
 
     @Override
