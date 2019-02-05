@@ -2015,6 +2015,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void resetCooldown() {
         getHandle().resetAttackCooldown();
     }
+
+    @Override
+    public void remove() {
+        if (this.getHandle().getClass().equals(EntityPlayer.class)) { // special case for NMS plugins inheriting
+            throw new UnsupportedOperationException("Calling Entity#remove on players produces undefined (bad) behavior");
+        } else {
+            super.remove();
+        }
+    }
     // Paper end
 
     // Spigot start
