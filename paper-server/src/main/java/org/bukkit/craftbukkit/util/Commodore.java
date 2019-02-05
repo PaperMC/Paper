@@ -207,10 +207,10 @@ public class Commodore
                             return;
                         }
                         // SPIGOT-4608
-                        if ( (owner.equals( "org/bukkit/Bukkit" ) || owner.equals( "org/bukkit/Server" ) ) && name.equals( "getMap" ) && desc.equals( "(Lorg/bukkit/map/MapView;)S" ) )
+                        if ( (owner.equals( "org/bukkit/Bukkit" ) || owner.equals( "org/bukkit/Server" ) ) && name.equals( "getMap" ) && desc.equals( "(S)Lorg/bukkit/map/MapView;" ) )
                         {
                             // Should be same size on stack so just call other method
-                            super.visitMethodInsn( opcode, owner, name, "(Lorg/bukkit/map/MapView;)I", itf );
+                            super.visitMethodInsn( opcode, owner, name, "(I)Lorg/bukkit/map/MapView;", itf );
                             return;
                         }
 
