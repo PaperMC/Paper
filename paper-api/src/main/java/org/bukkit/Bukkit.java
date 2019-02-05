@@ -521,7 +521,7 @@ public final class Bukkit {
      * @deprecated Magic value
      */
     @Deprecated
-    public static MapView getMap(short id) {
+    public static MapView getMap(int id) {
         return server.getMap(id);
     }
 

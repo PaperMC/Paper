@@ -433,7 +433,7 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated Magic value
      */
     @Deprecated
-    public MapView getMap(short id);
+    public MapView getMap(int id);
 
     /**
      * Create a new map with an automatically assigned ID.
