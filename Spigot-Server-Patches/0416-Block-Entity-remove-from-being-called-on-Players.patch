@@ -1,0 +1,32 @@
+From 77bf3954e56da679c67b1fab72772d8824ffb401 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 4 Feb 2019 23:33:24 -0500
+Subject: [PATCH] Block Entity#remove from being called on Players
+
+This doesn't result in the same behavior as other entities and causes
+several problems. Anyone ever complain about the "Cannot send chat
+message" thing? That's one of the issues this causes, among others.
+
+If a plugin developer can come up with a valid reason to call this on a
+Player we will look at limiting the scope of this change. It appears to
+be unintentional in the few cases we've seen so far.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 36a38713..7b7dc7f2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1937,6 +1937,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void resetCooldown() {
+         getHandle().resetCooldown();
+     }
++
++    @Override
++    public void remove() {
++        throw new UnsupportedOperationException("Calling Entity#remove on players produces undefined (bad) behavior");
++    }
+     //Paper end
+ 
+     // Spigot start
+-- 
+2.20.1.windows.1
+
