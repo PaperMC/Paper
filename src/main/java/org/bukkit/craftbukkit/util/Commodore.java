@@ -206,6 +206,13 @@ public class Commodore
                             super.visitMethodInsn( opcode, owner, name, "()I", itf );
                             return;
                         }
+                        // SPIGOT-4608
+                        if ( (owner.equals( "org/bukkit/Bukkit" ) || owner.equals( "org/bukkit/Server" ) ) && name.equals( "getMap" ) && desc.equals( "(Lorg/bukkit/map/MapView;)S" ) )
+                        {
+                            // Should be same size on stack so just call other method
+                            super.visitMethodInsn( opcode, owner, name, "(Lorg/bukkit/map/MapView;)I", itf );
+                            return;
+                        }
 
                         if ( modern )
                         {

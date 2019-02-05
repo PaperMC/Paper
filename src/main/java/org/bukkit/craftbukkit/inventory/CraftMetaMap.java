@@ -6,12 +6,15 @@ import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagInt;
 import net.minecraft.server.NBTTagString;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.MapMeta;
+import org.bukkit.map.MapView;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
@@ -145,6 +148,22 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     @Override
     public void setMapId(int id) {
         this.mapId = id;
+    }
+
+    @Override
+    public boolean hasMapView() {
+        return mapId != null;
+    }
+
+    @Override
+    public MapView getMapView() {
+        Preconditions.checkState(hasMapView(), "Item does not have map associated - check hasMapView() first!");
+        return Bukkit.getMap(mapId);
+    }
+
+    @Override
+    public void setMapView(MapView map) {
+        this.mapId = (map != null) ? map.getId() : null;
     }
 
     boolean hasScaling() {
