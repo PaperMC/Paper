@@ -1,4 +1,4 @@
-From 4eedfa988b7e9b1d975fedfc09e4ac05fb071ac0 Mon Sep 17 00:00:00 2001
+From 5086b17a95581c2e6db5359144c215d354025377 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 26 Nov 2017 13:19:58 -0500
 Subject: [PATCH] AsyncTabCompleteEvent
@@ -14,7 +14,7 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 9afe20d40..59b0084c7 100644
+index 7017c02ba..2ad238796 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -507,10 +507,10 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -30,7 +30,7 @@ index 9afe20d40..59b0084c7 100644
              return;
          }
          // CraftBukkit end
-@@ -520,12 +520,34 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -520,12 +520,35 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
              stringreader.skip();
          }
  
@@ -58,10 +58,11 @@ index 9afe20d40..59b0084c7 100644
 +            }
 +        // Paper start - async tab completion
 +        } else if (!completions.isEmpty()) {
-+            com.mojang.brigadier.suggestion.SuggestionsBuilder suggestionsBuilder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), stringreader.getTotalLength());
-+            completions.forEach(suggestionsBuilder::suggest);
++            com.mojang.brigadier.suggestion.SuggestionsBuilder builder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), stringreader.getTotalLength());
 +
-+            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestionsBuilder.build()));
++            builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
++            completions.forEach(builder::suggest);
++            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), builder.buildFuture().join()));
 +        }
 +        // Paper end - async tab completion
 +
