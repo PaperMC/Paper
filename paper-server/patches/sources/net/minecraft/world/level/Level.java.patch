@@ -1,14 +1,17 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -27,6 +27,7 @@
+@@ -25,8 +25,10 @@
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
++import io.papermc.paper.util.MCUtil;
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.ServerLevel;
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
  import net.minecraft.sounds.SoundSource;
-@@ -43,6 +44,7 @@
+@@ -43,6 +45,7 @@
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.boss.EnderDragonPart;
  import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
@@ -16,7 +19,7 @@
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.alchemy.PotionBrewing;
-@@ -57,12 +59,14 @@
+@@ -57,12 +60,14 @@
  import net.minecraft.world.level.block.entity.FuelValues;
  import net.minecraft.world.level.block.entity.TickingBlockEntity;
  import net.minecraft.world.level.block.state.BlockState;
@@ -31,7 +34,7 @@
  import net.minecraft.world.level.entity.EntityTypeTest;
  import net.minecraft.world.level.entity.LevelEntityGetter;
  import net.minecraft.world.level.gameevent.GameEvent;
-@@ -81,6 +85,25 @@
+@@ -81,6 +86,25 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  
@@ -57,7 +60,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-@@ -94,7 +117,7 @@
+@@ -94,7 +118,7 @@
      public static final int TICKS_PER_DAY = 24000;
      public static final int MAX_ENTITY_SPAWN_Y = 20000000;
      public static final int MIN_ENTITY_SPAWN_Y = -20000000;
@@ -66,7 +69,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -121,23 +144,74 @@
+@@ -121,23 +145,74 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -150,7 +153,7 @@
                  }
              };
          } else {
-@@ -145,13 +219,90 @@
+@@ -145,13 +220,90 @@
          }
  
          this.thread = Thread.currentThread();
@@ -246,7 +249,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -163,6 +314,13 @@
+@@ -163,6 +315,13 @@
          return null;
      }
  
@@ -260,7 +263,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +337,73 @@
+@@ -179,18 +338,73 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -310,7 +313,7 @@
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
-     @Override
++    @Override
 +    public final boolean hasChunkAt(BlockPos pos) {
 +        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
 +    }
@@ -331,13 +334,13 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-+    @Override
+     @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +420,18 @@
+@@ -207,6 +421,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -356,7 +359,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,45 +439,125 @@
+@@ -214,44 +440,124 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -441,10 +444,10 @@
 +                // CraftBukkit end
 +
                  return true;
-             }
-         }
-     }
- 
++            }
++        }
++    }
++
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
 +    public void notifyAndUpdatePhysics(BlockPos blockposition, LevelChunk chunk, BlockState oldBlock, BlockState newBlock, BlockState actualBlock, int i, int j) {
 +        BlockState iblockdata = newBlock;
@@ -483,21 +486,49 @@
 +                // CraftBukkit end
 +                iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
 +                iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
-+            }
+             }
 +
 +            // CraftBukkit start - SPIGOT-5710
 +            if (!this.preventPoiUpdated) {
 +                this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
 +            }
 +            // CraftBukkit end
-+        }
-+    }
+         }
+     }
 +    // CraftBukkit end
-+
+ 
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
-     @Override
-@@ -340,10 +645,18 @@
+@@ -270,9 +576,26 @@
+             return false;
+         } else {
+             FluidState fluid = this.getFluidState(pos);
++            // Paper start - BlockDestroyEvent; while the above setAir method is named same and looks very similar
++            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
++            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
++            boolean playEffect = true;
++            BlockState effectType = iblockdata;
++            int xp = iblockdata.getBlock().getExpDrop(iblockdata, (ServerLevel) this, pos, ItemStack.EMPTY, true);
++            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluid.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, drop);
++                if (!event.callEvent()) {
++                    return false;
++                }
++                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
++                playEffect = event.playEffect();
++                drop = event.willDrop();
++                xp = event.getExpToDrop();
++            }
++            // Paper end - BlockDestroyEvent
+ 
+-            if (!(iblockdata.getBlock() instanceof BaseFireBlock)) {
+-                this.levelEvent(2001, pos, Block.getId(iblockdata));
++            if (playEffect && !(effectType.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
++                this.levelEvent(2001, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
+             }
+ 
+             if (drop) {
+@@ -340,10 +663,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -517,7 +548,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,34 +759,53 @@
+@@ -446,34 +777,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -569,18 +600,18 @@
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
          }
-+    }
+     }
 +    // Paper start - Option to prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
 +        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
 +        return LevelAccessor.super.noCollision(entity, box);
-     }
++    }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +842,29 @@
+@@ -510,13 +860,29 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -611,7 +642,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +991,7 @@
+@@ -643,7 +1009,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -620,7 +651,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1260,7 @@
+@@ -912,7 +1278,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
