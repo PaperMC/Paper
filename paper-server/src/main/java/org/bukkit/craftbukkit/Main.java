@@ -184,7 +184,7 @@ public class Main {
                     deadline.add(Calendar.DAY_OF_YEAR, -21);
                     if (buildDate.before(deadline.getTime())) {
                         System.err.println("*** Error, this build is outdated ***");
-                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/ ***");
+                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
                         System.err.println("*** Server will start in 20 seconds ***");
                         Thread.sleep(TimeUnit.SECONDS.toMillis(20));
                     }
