@@ -1,0 +1,102 @@
+From a63636c9d74292ca7be38a3dd45bca141b6c9273 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Sat, 9 Feb 2019 14:48:38 +0100
+Subject: [PATCH] Allow delegation to vanilla chunk gen
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkConverter.java b/src/main/java/net/minecraft/server/ChunkConverter.java
+index 3dd32a42..adeaf953 100755
+--- a/src/main/java/net/minecraft/server/ChunkConverter.java
++++ b/src/main/java/net/minecraft/server/ChunkConverter.java
+@@ -336,7 +336,7 @@ public class ChunkConverter {
+                         if ((Integer) iblockdata.get(BlockProperties.ab) >= j) {
+                             generatoraccess.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockProperties.ab, j), 18);
+                             if (i != 7) {
+-                                EnumDirection[] aenumdirection = null.f;
++                                EnumDirection[] aenumdirection = f; // Paper - decomp fix
+                                 int k = aenumdirection.length;
+ 
+                                 for (int l = 0; l < k; ++l) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+old mode 100644
+new mode 100755
+index eeb2ddf7..33898f28
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1874,6 +1874,23 @@ public final class CraftServer implements Server {
+         return new CraftChunkData(world);
+     }
+ 
++    // Paper start
++    @Override
++    public ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z) {
++        CraftChunkData data = (CraftChunkData) createChunkData(world);
++
++        // call vanilla generator
++        ProtoChunk protoChunk = new ProtoChunk(x, z, ChunkConverter.EMPTY);
++        ((org.bukkit.craftbukkit.CraftWorld) world).getHandle().worldProvider.getChunkGenerator().createChunk(protoChunk);
++
++        // copy over generated sections
++        data.setRawChunkData(protoChunk.getSections());
++
++        return data;
++    }
++    // Paper end
++
++
+     @Override
+     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+         return new CraftBossBar(title, color, style, flags);
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
+old mode 100644
+new mode 100755
+index 923d1b28..2253731a
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
+@@ -16,7 +16,7 @@ import org.bukkit.material.MaterialData;
+  */
+ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     private final int maxHeight;
+-    private final ChunkSection[] sections;
++    private ChunkSection[] sections; // Paper - remove final
+     private World world; // Paper - Anti-Xray
+ 
+     public CraftChunkData(World world) {
+@@ -155,4 +155,10 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     ChunkSection[] getRawChunkData() {
+         return sections;
+     }
++
++    // Paper start
++    public void setRawChunkData(ChunkSection[] sections) {
++        this.sections = sections;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+old mode 100644
+new mode 100755
+index a299092a..5198f7ad
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -113,14 +113,17 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
+ 
+     @Override
+     public void addFeatures(RegionLimitedWorldAccess regionlimitedworldaccess, WorldGenStage.Features worldgenstage_features) {
++        if(generator.shouldAddVanillaFeatures()) world.worldProvider.getChunkGenerator().addFeatures(regionlimitedworldaccess, worldgenstage_features); //Paper
+     }
+ 
+     @Override
+     public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess) {
++        if(generator.shouldAddVanillaDecorations()) world.worldProvider.getChunkGenerator().addDecorations(regionlimitedworldaccess); //Paper
+     }
+ 
+     @Override
+     public void addMobs(RegionLimitedWorldAccess regionlimitedworldaccess) {
++        if(generator.shouldAddVanillaMobs()) world.worldProvider.getChunkGenerator().addMobs(regionlimitedworldaccess); //Paper
+     }
+ 
+     @Override
+-- 
+2.17.1
+

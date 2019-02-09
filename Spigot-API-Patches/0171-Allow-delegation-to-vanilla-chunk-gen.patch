@@ -1,0 +1,125 @@
+From 37f43ea770c69a2fc47267da8391d985517d76bc Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Sat, 9 Feb 2019 13:13:39 +0100
+Subject: [PATCH] Allow delegation to vanilla chunk gen
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+old mode 100644
+new mode 100755
+index 81f01c95..fe9a9801
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1213,6 +1213,21 @@ public final class Bukkit {
+         return server.createChunkData(world);
+     }
+ 
++    // Paper start
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     *
++     */
++    public static ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z) {
++        return server.createVanillaChunkData(world, x, z);
++    }
++    // Paper stop
++
+     /**
+      * Creates a boss bar instance to display to players. The progress
+      * defaults to 1.0
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+old mode 100644
+new mode 100755
+index 6a3f3298..f764472e
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -994,6 +994,7 @@ public interface Server extends PluginMessageRecipient {
+      */
+     public int getIdleTimeout();
+ 
++    // Paper start
+     /**
+      * Create a ChunkData for use in a generator.
+      * 
+@@ -1004,6 +1005,18 @@ public interface Server extends PluginMessageRecipient {
+      * 
+      */
+     public ChunkGenerator.ChunkData createChunkData(World world);
++    // Paper end
++
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     *
++     */
++    public ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z);
+ 
+     /**
+      * Creates a boss bar instance to display to players. The progress
+diff --git a/src/main/java/org/bukkit/generator/ChunkGenerator.java b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+old mode 100644
+new mode 100755
+index 6caef007..f7b2da2e
+--- a/src/main/java/org/bukkit/generator/ChunkGenerator.java
++++ b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+@@ -131,6 +131,48 @@ public abstract class ChunkGenerator {
+         return null;
+     }
+ 
++    // Paper start
++    /**
++     * Override this method and return true if you want to have vanilla world features in this generator
++     *
++     * @return if this custom chunk generator should add vanilla world features
++     */
++    public boolean shouldAddVanillaFeatures() {
++        return false;
++    }
++
++    /**
++     * Override this method and return true if you want to have vanilla world decorations in this generator
++     *
++     * @return if this custom chunk generator should add vanilla world decoration
++     */
++    public boolean shouldAddVanillaDecorations() {
++        return false;
++    }
++
++    /**
++     * Override this method and return true if you want to have vanilla mobs in this generator
++     *
++     * @return if this custom chunk generator should add vanilla mobs
++     */
++    public boolean shouldAddVanillaMobs() {
++        return false;
++    }
++
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     *
++     */
++    public ChunkData createVanillaChunkData(World world, int x, int z) {
++        return Bukkit.getServer().createVanillaChunkData(world, x, z);
++    }
++    // Paper end
++
+     /**
+      * Data for a Chunk.
+      */
+-- 
+2.17.1
+
