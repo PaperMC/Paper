@@ -1,19 +1,20 @@
 --- a/net/minecraft/server/EntityWither.java
 +++ b/net/minecraft/server/EntityWither.java
-@@ -5,6 +5,12 @@
+@@ -5,6 +5,13 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
 +
  public class EntityWither extends EntityMonster implements IRangedEntity {
  
      private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityWither.class, DataWatcherRegistry.b);
-@@ -181,13 +187,38 @@
+@@ -181,13 +188,38 @@
          if (this.dz() > 0) {
              i = this.dz() - 1;
              if (i <= 0) {
@@ -55,7 +56,19 @@
              }
  
          } else {
-@@ -278,6 +309,11 @@
+@@ -239,9 +271,11 @@
+                             if (entityliving != this && entityliving.isAlive() && this.hasLineOfSight(entityliving)) {
+                                 if (entityliving instanceof EntityHuman) {
+                                     if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
++                                        if (CraftEventFactory.callEntityTargetLivingEvent(this, entityliving, EntityTargetEvent.TargetReason.CLOSEST_PLAYER).isCancelled()) continue; // CraftBukkit
+                                         this.a(i, entityliving.getId());
+                                     }
+                                 } else {
++                                    if (CraftEventFactory.callEntityTargetLivingEvent(this, entityliving, EntityTargetEvent.TargetReason.CLOSEST_ENTITY).isCancelled()) continue; // CraftBukkit
+                                     this.a(i, entityliving.getId());
+                                 }
+                                 break;
+@@ -278,6 +312,11 @@
                                  Block block = iblockdata.getBlock();
  
                                  if (!iblockdata.isAir() && a(block)) {
@@ -67,7 +80,7 @@
                                      flag = this.world.setAir(blockposition, true) || flag;
                                  }
                              }
-@@ -291,7 +327,7 @@
+@@ -291,7 +330,7 @@
              }
  
              if (this.ticksLived % 20 == 0) {
