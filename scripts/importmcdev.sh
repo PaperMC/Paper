@@ -46,7 +46,7 @@ function importLibrary {
             exit 1
         fi
         export MODLOG="$MODLOG  Imported $file from $lib\n";
-        cp "$base" "$target" || exit 1
+        sed 's/\r$//' "$base" > "$target" || exit 1
     done
 }
 
