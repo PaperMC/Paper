@@ -51,7 +51,7 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super((World) worldserver, gameprofile);
          playerinteractmanager.player = this;
-@@ -61,7 +93,49 @@
+@@ -61,8 +93,50 @@
          this.cf = minecraftserver.getPlayerList().h(this);
          this.Q = 1.0F;
          this.a(worldserver);
@@ -60,8 +60,8 @@
 +        this.displayName = this.getName();
 +        this.canPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-+    }
-+
+     }
+ 
 +    // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 +    // If this is an issue, PRs are welcome
 +    public final BlockPosition getSpawnPoint(WorldServer worldserver) {
@@ -96,11 +96,12 @@
 +        }
 +
 +        return blockposition;
-     }
++    }
 +    // CraftBukkit end
- 
++
      private void a(WorldServer worldserver) {
          BlockPosition blockposition = worldserver.getSpawn();
+ 
 @@ -129,6 +203,7 @@
          if (nbttagcompound.hasKeyOfType("recipeBook", 10)) {
              this.recipeBook.a(nbttagcompound.getCompound("recipeBook"));
@@ -131,13 +132,13 @@
              NBTTagCompound nbttagcompound2 = new NBTTagCompound();
              NBTTagCompound nbttagcompound3 = new NBTTagCompound();
  
-@@ -159,7 +247,33 @@
+@@ -159,8 +247,34 @@
          }
  
          nbttagcompound.set("recipeBook", this.recipeBook.e());
 +        this.getBukkitEntity().setExtraData(nbttagcompound); // CraftBukkit
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - World fallback code, either respawn location or global spawn
 +    public void spawnIn(World world) {
 +        super.spawnIn(world);
@@ -160,11 +161,12 @@
 +        }
 +        this.dimension = ((WorldServer) this.world).dimension;
 +        this.playerInteractManager.a((WorldServer) world);
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void a(int i) {
          float f = (float) this.getExpToLevel();
+         float f1 = (f - 1.0F) / f;
 @@ -207,6 +321,11 @@
      }
  
@@ -443,7 +445,7 @@
  
              this.activeContainer.windowId = this.containerCounter;
              this.activeContainer.addSlotListener(this);
-@@ -657,8 +873,14 @@
+@@ -657,14 +873,27 @@
      }
  
      public void openTrade(IMerchant imerchant) {
@@ -455,11 +457,26 @@
 +        // CraftBukkit end
          this.nextContainerCounter();
 -        this.activeContainer = new ContainerMerchant(this.inventory, imerchant, this.world);
+-        this.activeContainer.windowId = this.containerCounter;
+-        this.activeContainer.addSlotListener(this);
 +        this.activeContainer = container; // CraftBukkit
-         this.activeContainer.windowId = this.containerCounter;
-         this.activeContainer.addSlotListener(this);
++        // CraftBukkit start - moved down (SPIGOT-4619)
++        // this.activeContainer.windowId = this.containerCounter;
++        // this.activeContainer.addSlotListener(this);
++        // CraftBukkit end
++
          InventoryMerchant inventorymerchant = ((ContainerMerchant) this.activeContainer).d();
-@@ -678,13 +900,20 @@
+         IChatBaseComponent ichatbasecomponent = imerchant.getScoreboardDisplayName();
+ 
+         this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.containerCounter, "minecraft:villager", ichatbasecomponent, inventorymerchant.getSize()));
++        // CraftBukkit start
++        this.activeContainer.windowId = this.containerCounter;
++        this.activeContainer.addSlotListener(this);
++        // CraftBukkit end
+         MerchantRecipeList merchantrecipelist = imerchant.getOffers(this);
+ 
+         if (merchantrecipelist != null) {
+@@ -678,13 +907,20 @@
      }
  
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -481,7 +498,7 @@
          this.activeContainer.windowId = this.containerCounter;
          this.activeContainer.addSlotListener(this);
      }
-@@ -725,6 +954,11 @@
+@@ -725,6 +961,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -493,7 +510,7 @@
      }
  
      public void setContainerData(Container container, int i, int j) {
-@@ -739,6 +973,7 @@
+@@ -739,6 +980,7 @@
      }
  
      public void closeInventory() {
@@ -501,7 +518,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.m();
      }
-@@ -772,14 +1007,14 @@
+@@ -772,14 +1014,14 @@
  
      public void a(Statistic<?> statistic, int i) {
          this.cg.b(this, statistic, i);
@@ -518,7 +535,7 @@
      }
  
      public int discoverRecipes(Collection<IRecipe> collection) {
-@@ -827,8 +1062,17 @@
+@@ -827,8 +1069,17 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -536,7 +553,7 @@
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, flag ? ChatMessageType.GAME_INFO : ChatMessageType.CHAT));
      }
-@@ -879,7 +1123,7 @@
+@@ -879,7 +1130,7 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -545,7 +562,7 @@
          this.removeQueue.addAll(entityplayer.removeQueue);
          this.cx = entityplayer.cx;
          this.cC = entityplayer.cC;
-@@ -938,6 +1182,18 @@
+@@ -938,6 +1189,18 @@
      }
  
      public void a(EnumGamemode enumgamemode) {
@@ -564,7 +581,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -985,6 +1241,17 @@
+@@ -985,6 +1248,17 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -582,7 +599,7 @@
          this.locale = packetplayinsettings.b();
          this.cs = packetplayinsettings.d();
          this.ct = packetplayinsettings.e();
-@@ -1020,13 +1287,13 @@
+@@ -1020,13 +1294,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[] { entity.getId()}));
          } else {
@@ -598,7 +615,7 @@
      }
  
      protected void C() {
-@@ -1050,7 +1317,7 @@
+@@ -1050,7 +1324,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -607,7 +624,7 @@
          }
  
      }
-@@ -1077,7 +1344,7 @@
+@@ -1077,7 +1351,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -616,7 +633,7 @@
      }
  
      public void a(EnumHand enumhand) {
-@@ -1094,12 +1361,17 @@
+@@ -1094,12 +1368,17 @@
      }
  
      public void J() {
@@ -634,7 +651,7 @@
      }
  
      public AdvancementDataPlayer getAdvancementData() {
-@@ -1111,9 +1383,16 @@
+@@ -1111,9 +1390,16 @@
          return this.cC;
      }
  
@@ -651,7 +668,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1138,6 +1417,149 @@
+@@ -1138,6 +1424,149 @@
              this.server.getPlayerList().b(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
