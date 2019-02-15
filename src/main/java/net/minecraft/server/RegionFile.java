@@ -18,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.zip.InflaterInputStream; // Paper
+
 import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,7 @@ public class RegionFile implements AutoCloseable {
     private final IntBuffer i;
     @VisibleForTesting
     protected final RegionFileBitSet freeSectors;
+    public final File file; // Paper
 
     public RegionFile(File file, File file1, boolean flag) throws IOException {
         this(file.toPath(), file1.toPath(), RegionFileCompression.b, flag);
@@ -41,6 +44,8 @@ public class RegionFile implements AutoCloseable {
 
     public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression, boolean flag) throws IOException {
         this.g = ByteBuffer.allocateDirect(8192);
+        this.file = java_nio_file_path.toFile(); // Paper
+        initOversizedState(); // Paper
         this.freeSectors = new RegionFileBitSet();
         this.f = regionfilecompression;
         if (!Files.isDirectory(java_nio_file_path1, new LinkOption[0])) {
@@ -404,6 +409,74 @@ public class RegionFile implements AutoCloseable {
         void run() throws IOException;
     }
 
+    // Paper start
+    private final byte[] oversized = new byte[1024];
+    private int oversizedCount = 0;
+
+    private synchronized void initOversizedState() throws IOException {
+        File metaFile = getOversizedMetaFile();
+        if (metaFile.exists()) {
+            final byte[] read = java.nio.file.Files.readAllBytes(metaFile.toPath());
+            System.arraycopy(read, 0, oversized, 0, oversized.length);
+            for (byte temp : oversized) {
+                oversizedCount += temp;
+            }
+        }
+    }
+
+    private static int getChunkIndex(int x, int z) {
+        return (x & 31) + (z & 31) * 32;
+    }
+    synchronized boolean isOversized(int x, int z) {
+        return this.oversized[getChunkIndex(x, z)] == 1;
+    }
+    synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
+        final int offset = getChunkIndex(x, z);
+        boolean previous = this.oversized[offset] == 1;
+        this.oversized[offset] = (byte) (oversized ? 1 : 0);
+        if (!previous && oversized) {
+            oversizedCount++;
+        } else if (!oversized && previous) {
+            oversizedCount--;
+        }
+        if (previous && !oversized) {
+            File oversizedFile = getOversizedFile(x, z);
+            if (oversizedFile.exists()) {
+                oversizedFile.delete();
+            }
+        }
+        if (oversizedCount > 0) {
+            if (previous != oversized) {
+                writeOversizedMeta();
+            }
+        } else if (previous) {
+            File oversizedMetaFile = getOversizedMetaFile();
+            if (oversizedMetaFile.exists()) {
+                oversizedMetaFile.delete();
+            }
+        }
+    }
+
+    private void writeOversizedMeta() throws IOException {
+        java.nio.file.Files.write(getOversizedMetaFile().toPath(), oversized);
+    }
+
+    private File getOversizedMetaFile() {
+        return new File(this.file.getParentFile(), this.file.getName().replaceAll("\\.mca$", "") + ".oversized.nbt");
+    }
+
+    private File getOversizedFile(int x, int z) {
+        return new File(this.file.getParentFile(), this.file.getName().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
+    }
+
+    synchronized NBTTagCompound getOversizedData(int x, int z) throws IOException {
+        File file = getOversizedFile(x, z);
+        try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file))))) {
+            return NBTCompressedStreamTools.readNBT((java.io.DataInput) out);
+        }
+
+    }
+    // Paper end
     class ChunkBuffer extends ByteArrayOutputStream {
 
         private final ChunkCoordIntPair b;

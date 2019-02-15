@@ -45,6 +45,74 @@ public final class RegionFileCache implements AutoCloseable {
         }
     }
 
+    // Paper start
+    private static void printOversizedLog(String msg, File file, int x, int z) {
+        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
+    }
+
+    private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
+    private static final int OVERZEALOUS_TOTAL_THRESHOLD = 1024 * 64;
+    private static final int OVERZEALOUS_THRESHOLD = 1024;
+    private static int SIZE_THRESHOLD = DEFAULT_SIZE_THRESHOLD;
+    private static void resetFilterThresholds() {
+        SIZE_THRESHOLD = Math.max(1024 * 4, Integer.getInteger("Paper.FilterThreshhold", DEFAULT_SIZE_THRESHOLD));
+    }
+    static {
+        resetFilterThresholds();
+    }
+
+    static boolean isOverzealous() {
+        return SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD;
+    }
+
+
+    private static NBTTagCompound readOversizedChunk(RegionFile regionfile, ChunkCoordIntPair chunkCoordinate) throws IOException {
+        synchronized (regionfile) {
+            try (DataInputStream datainputstream = regionfile.getReadStream(chunkCoordinate)) {
+                NBTTagCompound oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
+                NBTTagCompound chunk = NBTCompressedStreamTools.readNBT((DataInput) datainputstream);
+                if (oversizedData == null) {
+                    return chunk;
+                }
+                NBTTagCompound oversizedLevel = oversizedData.getCompound("Level");
+                NBTTagCompound level = chunk.getCompound("Level");
+
+                mergeChunkList(level, oversizedLevel, "Entities");
+                mergeChunkList(level, oversizedLevel, "TileEntities");
+
+                chunk.set("Level", level);
+
+                return chunk;
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+                throw throwable;
+            }
+        }
+    }
+
+    private static void mergeChunkList(NBTTagCompound level, NBTTagCompound oversizedLevel, String key) {
+        NBTTagList levelList = level.getList(key, 10);
+        NBTTagList oversizedList = oversizedLevel.getList(key, 10);
+
+        if (!oversizedList.isEmpty()) {
+            levelList.addAll(oversizedList);
+            level.set(key, levelList);
+        }
+    }
+
+    private static int getNBTSize(NBTBase nbtBase) {
+        DataOutputStream test = new DataOutputStream(new org.apache.commons.io.output.NullOutputStream());
+        try {
+            nbtBase.write(test);
+            return test.size();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    // Paper End
+
     @Nullable
     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
@@ -54,6 +122,12 @@ public final class RegionFileCache implements AutoCloseable {
         }
         // CraftBukkit end
         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
+        // Paper start
+        if (regionfile.isOversized(chunkcoordintpair.x, chunkcoordintpair.z)) {
+            printOversizedLog("Loading Oversized Chunk!", regionfile.file, chunkcoordintpair.x, chunkcoordintpair.z);
+            return readOversizedChunk(regionfile, chunkcoordintpair);
+        }
+        // Paper end
         Throwable throwable = null;
 
         NBTTagCompound nbttagcompound;
@@ -94,6 +168,7 @@ public final class RegionFileCache implements AutoCloseable {
 
         try {
             NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
         } catch (Throwable throwable1) {
             throwable = throwable1;
             throw throwable1;
