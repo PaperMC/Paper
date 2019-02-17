@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +55,8 @@ public final class SimplePluginManager implements PluginManager {
         server = instance;
         this.commandMap = commandMap;
 
-        defaultPerms.put(true, new HashSet<Permission>());
-        defaultPerms.put(false, new HashSet<Permission>());
+        defaultPerms.put(true, new LinkedHashSet<Permission>());
+        defaultPerms.put(false, new LinkedHashSet<Permission>());
     }
 
     /**
