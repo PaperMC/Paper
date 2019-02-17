@@ -1375,6 +1375,23 @@ public final class Bukkit {
     }
 
     /**
+     * Gets a all tags which have been defined within the server.
+     * <br>
+     * Server implementations are allowed to handle only the registries
+     * indicated in {@link Tag}.
+     * <br>
+     * No guarantees are made about the mutability of the returned iterator.
+     *
+     * @param <T> type of the tag
+     * @param registry the tag registry to look at
+     * @param clazz the class of the tag entries
+     * @return all defined tags
+     */
+    public static <T extends Keyed> Iterable<Tag<T>> getTags(String registry, Class<T> clazz) {
+        return server.getTags(registry, clazz);
+    }
+
+    /**
      * Gets the specified {@link LootTable}.
      *
      * @param key the name of the LootTable

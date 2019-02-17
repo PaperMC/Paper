@@ -1146,6 +1146,21 @@ public interface Server extends PluginMessageRecipient {
     <T extends Keyed> Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz);
 
     /**
+     * Gets a all tags which have been defined within the server.
+     * <br>
+     * Server implementations are allowed to handle only the registries
+     * indicated in {@link Tag}.
+     * <br>
+     * No guarantees are made about the mutability of the returned iterator.
+     *
+     * @param <T> type of the tag
+     * @param registry the tag registry to look at
+     * @param clazz the class of the tag entries
+     * @return all defined tags
+     */
+    <T extends Keyed> Iterable<Tag<T>> getTags(String registry, Class<T> clazz);
+
+    /**
      * Gets the specified {@link LootTable}.
      *
      * @param key the name of the LootTable
