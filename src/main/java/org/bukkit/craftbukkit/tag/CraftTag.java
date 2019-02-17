@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.tag;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.TagsServer;
 import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
 
@@ -25,5 +27,10 @@ public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
         }
 
         return handle;
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return CraftNamespacedKey.fromMinecraft(tag);
     }
 }
