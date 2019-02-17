@@ -354,9 +354,9 @@ public final class CraftServer implements Server {
             commandMap.setFallbackCommands();
             setVanillaCommands();
             commandMap.registerServerAliases();
-            loadCustomPermissions();
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
+            loadCustomPermissions();
             helpMap.initializeCommands();
             syncCommands();
         }
