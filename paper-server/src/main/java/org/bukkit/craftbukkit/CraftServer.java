@@ -1868,6 +1868,25 @@ public final class CraftServer implements Server {
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Keyed> Iterable<org.bukkit.Tag<T>> getTags(String registry, Class<T> clazz) {
+        switch (registry) {
+            case org.bukkit.Tag.REGISTRY_BLOCKS:
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
+
+                TagsServer<Block> blockTags = console.getTagRegistry().a(); // PAIL: getBlockTags
+                return blockTags.c().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, key)).collect(ImmutableList.toImmutableList());
+            case org.bukkit.Tag.REGISTRY_ITEMS:
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
+
+                TagsServer<Item> itemTags = console.getTagRegistry().b(); // PAIL: getItemTags
+                return itemTags.c().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, key)).collect(ImmutableList.toImmutableList());
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
     public LootTable getLootTable(NamespacedKey key) {
         Validate.notNull(key, "NamespacedKey cannot be null");
 
