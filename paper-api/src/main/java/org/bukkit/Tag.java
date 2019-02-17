@@ -11,7 +11,7 @@ import java.util.Set;
  *
  * @param <T> the type of things grouped by this tag
  */
-public interface Tag<T extends Keyed> {
+public interface Tag<T extends Keyed> extends Keyed {
 
     /**
      * Key for the built in block registry.
