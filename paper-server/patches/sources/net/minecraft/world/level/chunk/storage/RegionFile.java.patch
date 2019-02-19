@@ -25,7 +25,33 @@
              int i = this.file.read(this.header, 0L);
  
              if (i != -1) {
-@@ -132,7 +133,7 @@
+@@ -89,6 +90,14 @@
+                     if (l != 0) {
+                         int i1 = RegionFile.getSectorNumber(l);
+                         int j1 = RegionFile.getNumSectors(l);
++                        // Spigot start
++                        if (j1 == 255) {
++                            // We're maxed out, so we need to read the proper length from the section
++                            ByteBuffer realLen = ByteBuffer.allocate(4);
++                            this.file.read(realLen, i1 * 4096);
++                            j1 = (realLen.getInt(0) + 4) / 4096 + 1;
++                        }
++                        // Spigot end
+ 
+                         if (i1 < 2) {
+                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", new Object[]{path, k, i1});
+@@ -128,11 +137,18 @@
+         } else {
+             int j = RegionFile.getSectorNumber(i);
+             int k = RegionFile.getNumSectors(i);
++            // Spigot start
++            if (k == 255) {
++                ByteBuffer realLen = ByteBuffer.allocate(4);
++                this.file.read(realLen, j * 4096);
++                k = (realLen.getInt(0) + 4) / 4096 + 1;
++            }
++            // Spigot end
+             int l = k * 4096;
              ByteBuffer bytebuffer = ByteBuffer.allocate(l);
  
              this.file.read(bytebuffer, (long) (j * 4096));
@@ -34,7 +60,7 @@
              if (bytebuffer.remaining() < 5) {
                  RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", new Object[]{pos, l, bytebuffer.remaining()});
                  return null;
-@@ -246,7 +247,7 @@
+@@ -246,7 +262,7 @@
  
              try {
                  this.file.read(bytebuffer, (long) (j * 4096));
@@ -43,7 +69,7 @@
                  if (bytebuffer.remaining() != 5) {
                      return false;
                  } else {
-@@ -349,7 +350,7 @@
+@@ -349,7 +365,7 @@
  
          bytebuffer.putInt(1);
          bytebuffer.put((byte) (this.version.getId() | 128));
@@ -52,7 +78,7 @@
          return bytebuffer;
      }
  
-@@ -358,7 +359,7 @@
+@@ -358,7 +374,7 @@
          FileChannel filechannel = FileChannel.open(path1, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
  
          try {
@@ -61,7 +87,7 @@
              filechannel.write(buf);
          } catch (Throwable throwable) {
              if (filechannel != null) {
-@@ -382,7 +383,7 @@
+@@ -382,7 +398,7 @@
      }
  
      private void writeHeader() throws IOException {
@@ -70,7 +96,7 @@
          this.file.write(this.header, 0L);
      }
  
-@@ -418,7 +419,7 @@
+@@ -418,7 +434,7 @@
          if (i != j) {
              ByteBuffer bytebuffer = RegionFile.PADDING_BUFFER.duplicate();
  
