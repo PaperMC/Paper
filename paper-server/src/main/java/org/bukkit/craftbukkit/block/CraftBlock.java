@@ -40,7 +40,7 @@ public class CraftBlock implements Block {
 
     public CraftBlock(GeneratorAccess world, BlockPosition position) {
         this.world = world;
-        this.position = position;
+        this.position = position.h();
     }
 
     public static CraftBlock at(GeneratorAccess world, BlockPosition position) {
