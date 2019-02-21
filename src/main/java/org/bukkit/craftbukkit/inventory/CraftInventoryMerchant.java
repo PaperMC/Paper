@@ -17,7 +17,8 @@ public class CraftInventoryMerchant extends CraftInventory implements MerchantIn
 
     @Override
     public MerchantRecipe getSelectedRecipe() {
-        return getInventory().getRecipe().asBukkit();
+        net.minecraft.server.MerchantRecipe nmsRecipe = getInventory().getRecipe();
+        return (nmsRecipe == null) ? null : nmsRecipe.asBukkit();
     }
 
     @Override
