@@ -1,4 +1,4 @@
-From ba4afed44f76c2d0b8ba63439ecc28b6c2212d05 Mon Sep 17 00:00:00 2001
+From 5cc6dd8fc7df054e9388d7feaf9a506db71480d6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
@@ -51,18 +51,18 @@ index 12268f87b9..e1f7e06ab2 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 999adf7dc7..303c13ccd0 100644
+index c20511588d..448a903c16 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -75,6 +75,7 @@ public class RegionFile {
+@@ -78,6 +78,7 @@ public class RegionFile {
              }
              header.clear();
-             IntBuffer headerAsInts = header.asIntBuffer();
+             java.nio.IntBuffer headerAsInts = header.asIntBuffer();
 +            initOversizedState();
              // Paper End
  
-             for(int j1 = 0; j1 < 1024; ++j1) {
-@@ -99,7 +100,7 @@ public class RegionFile {
+             for (j = 0; j < 1024; ++j) {
+@@ -119,7 +120,7 @@ public class RegionFile {
      }
  
      @Nullable
@@ -71,7 +71,7 @@ index 999adf7dc7..303c13ccd0 100644
          if (this.e(i, j)) {
              return null;
          } else {
-@@ -175,8 +176,8 @@ public class RegionFile {
+@@ -203,8 +204,8 @@ public class RegionFile {
      }
  
      @Nullable
@@ -82,16 +82,18 @@ index 999adf7dc7..303c13ccd0 100644
      }
  
      protected synchronized void a(int i, int j, byte[] abyte, int k) {
-@@ -187,7 +188,7 @@ public class RegionFile {
-             int k1 = (k + 5) / 4096 + 1;
+@@ -222,8 +223,9 @@ public class RegionFile {
  
              if (k1 >= 256) {
--                return;
-+                throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 // Spigot start
+-                if (!ENABLE_EXTENDED_SAVE) return;
++                if (!USE_SPIGOT_OVERSIZED_METHOD) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
++                if (!ENABLE_EXTENDED_SAVE) return;
+                 // Spigot end
              }
  
-             if (i1 != 0 && j1 == k1) {
-@@ -338,6 +339,101 @@ public class RegionFile {
+@@ -374,6 +376,109 @@ public class RegionFile {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
      }
@@ -172,6 +174,14 @@ index 999adf7dc7..303c13ccd0 100644
 +
 +    }
 +
++    private static final boolean USE_SPIGOT_OVERSIZED_METHOD = Boolean.getBoolean("Paper.useSpigotExtendedSaveMethod"); // Paper
++    static {
++        if (USE_SPIGOT_OVERSIZED_METHOD) {
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Using Spigot Oversized Chunk save method. Warning this will result in extremely fragmented chunks, as well as making the entire region file unable to be to used in any other software but Forge or Spigot (not usable in Vanilla or CraftBukkit). Paper's method is highly recommended.");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++        }
++    }
 +    public class ChunkTooLargeException extends RuntimeException {
 +        public ChunkTooLargeException(int x, int z, int sectors) {
 +            super("Chunk " + x + "," + z + " of " + getFile().toString() + " is too large (" + sectors + "/256)");
@@ -193,7 +203,7 @@ index 999adf7dc7..303c13ccd0 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -351,8 +447,40 @@ public class RegionFile {
+@@ -387,8 +492,40 @@ public class RegionFile {
              this.c = j;
          }
  
@@ -237,7 +247,7 @@ index 999adf7dc7..303c13ccd0 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 8c8b7cbab5..50a62d6e23 100644
+index 8c8b7cbab5..a17e76d839 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -16,6 +16,7 @@ public class RegionFileCache {
@@ -248,7 +258,7 @@ index 8c8b7cbab5..50a62d6e23 100644
      public static synchronized RegionFile a(File file, int i, int j) {
          File file1 = new File(file, "region");
          File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
-@@ -83,6 +84,129 @@ public class RegionFileCache {
+@@ -83,6 +84,125 @@ public class RegionFileCache {
      public static synchronized boolean hasRegionFile(File file, int i, int j) {
          return RegionFileCache.cache.containsKey(getRegionFileName(file, i, j));
      }
@@ -298,11 +308,7 @@ index 8c8b7cbab5..50a62d6e23 100644
 +
 +                regionfile.writeOversizedData(x, z, oversizedData);
 +            }
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+            throw e;
 +        }
-+
 +    }
 +
 +    private static NBTTagCompound filterChunkData(NBTTagCompound chunk) {
@@ -378,7 +384,7 @@ index 8c8b7cbab5..50a62d6e23 100644
      // Paper End
  
      public static synchronized void a() {
-@@ -108,6 +232,12 @@ public class RegionFileCache {
+@@ -108,6 +228,12 @@ public class RegionFileCache {
      // CraftBukkit start - call sites hoisted for synchronization
      public static NBTTagCompound read(File file, int i, int j) throws IOException { // Paper - remove synchronization
          RegionFile regionfile = a(file, i, j);
@@ -391,7 +397,7 @@ index 8c8b7cbab5..50a62d6e23 100644
  
          DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
  
-@@ -121,11 +251,14 @@ public class RegionFileCache {
+@@ -121,11 +247,14 @@ public class RegionFileCache {
      @Nullable
      public static void write(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
          int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper

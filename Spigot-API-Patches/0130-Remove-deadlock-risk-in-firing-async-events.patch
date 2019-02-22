@@ -1,4 +1,4 @@
-From 48dba594ee0744d16cbcc43439e732d9eb97795b Mon Sep 17 00:00:00 2001
+From 0c1023b2f663801604199610c741023df370b001 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 9 Sep 2018 00:32:05 -0400
 Subject: [PATCH] Remove deadlock risk in firing async events
@@ -16,10 +16,10 @@ which results in a hard crash.
 This change removes the synchronize and adds some protection around enable/disable
 
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index cb2b0b9c..a7dd902f 100644
+index d925423d..59c70b8a 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -385,7 +385,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -386,7 +386,7 @@ public final class SimplePluginManager implements PluginManager {
       * @param plugin Plugin to check
       * @return true if the plugin is enabled, otherwise false
       */
@@ -28,7 +28,7 @@ index cb2b0b9c..a7dd902f 100644
          if ((plugin != null) && (plugins.contains(plugin))) {
              return plugin.isEnabled();
          } else {
-@@ -393,7 +393,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -394,7 +394,7 @@ public final class SimplePluginManager implements PluginManager {
          }
      }
  
@@ -37,7 +37,7 @@ index cb2b0b9c..a7dd902f 100644
          if (!plugin.isEnabled()) {
              List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
  
-@@ -430,7 +430,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -431,7 +431,7 @@ public final class SimplePluginManager implements PluginManager {
          disablePlugin(plugin, false);
      }
  
@@ -46,7 +46,7 @@ index cb2b0b9c..a7dd902f 100644
          // Paper end - close Classloader on disable
          if (plugin.isEnabled()) {
              try {
-@@ -490,6 +490,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -491,6 +491,7 @@ public final class SimplePluginManager implements PluginManager {
              defaultPerms.get(false).clear();
          }
      }
@@ -54,7 +54,7 @@ index cb2b0b9c..a7dd902f 100644
  
      /**
       * Calls an event with the given details.
-@@ -499,22 +500,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -500,22 +501,7 @@ public final class SimplePluginManager implements PluginManager {
       * @param event Event details
       */
      public void callEvent(Event event) {
