@@ -51,17 +51,17 @@ index 12268f87b9..e1f7e06ab2 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 999adf7dc7..303c13ccd0 100644
+index c20511588d..448a903c16 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile {
              }
              header.clear();
-             IntBuffer headerAsInts = header.asIntBuffer();
+             java.nio.IntBuffer headerAsInts = header.asIntBuffer();
 +            initOversizedState();
              // Paper End
  
-             for(int j1 = 0; j1 < 1024; ++j1) {
+             for (j = 0; j < 1024; ++j) {
 @@ -0,0 +0,0 @@ public class RegionFile {
      }
  
@@ -83,14 +83,16 @@ index 999adf7dc7..303c13ccd0 100644
  
      protected synchronized void a(int i, int j, byte[] abyte, int k) {
 @@ -0,0 +0,0 @@ public class RegionFile {
-             int k1 = (k + 5) / 4096 + 1;
  
              if (k1 >= 256) {
--                return;
-+                throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 // Spigot start
+-                if (!ENABLE_EXTENDED_SAVE) return;
++                if (!USE_SPIGOT_OVERSIZED_METHOD) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
++                if (!ENABLE_EXTENDED_SAVE) return;
+                 // Spigot end
              }
  
-             if (i1 != 0 && j1 == k1) {
 @@ -0,0 +0,0 @@ public class RegionFile {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
@@ -172,6 +174,14 @@ index 999adf7dc7..303c13ccd0 100644
 +
 +    }
 +
++    private static final boolean USE_SPIGOT_OVERSIZED_METHOD = Boolean.getBoolean("Paper.useSpigotExtendedSaveMethod"); // Paper
++    static {
++        if (USE_SPIGOT_OVERSIZED_METHOD) {
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Using Spigot Oversized Chunk save method. Warning this will result in extremely fragmented chunks, as well as making the entire region file unable to be to used in any other software but Forge or Spigot (not usable in Vanilla or CraftBukkit). Paper's method is highly recommended.");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++        }
++    }
 +    public class ChunkTooLargeException extends RuntimeException {
 +        public ChunkTooLargeException(int x, int z, int sectors) {
 +            super("Chunk " + x + "," + z + " of " + getFile().toString() + " is too large (" + sectors + "/256)");
@@ -237,7 +247,7 @@ index 999adf7dc7..303c13ccd0 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 8c8b7cbab5..50a62d6e23 100644
+index 8c8b7cbab5..a17e76d839 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public class RegionFileCache {
@@ -298,11 +308,7 @@ index 8c8b7cbab5..50a62d6e23 100644
 +
 +                regionfile.writeOversizedData(x, z, oversizedData);
 +            }
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+            throw e;
 +        }
-+
 +    }
 +
 +    private static NBTTagCompound filterChunkData(NBTTagCompound chunk) {
