@@ -26,6 +26,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
                 maxUses,
                 this
         );
+        this.setExperienceReward(experienceReward);
     }
 
     @Override
