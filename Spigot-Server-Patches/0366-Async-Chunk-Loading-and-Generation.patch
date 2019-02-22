@@ -1,4 +1,4 @@
-From bba78182ec52a072682706dce430c8bab5bf3d97 Mon Sep 17 00:00:00 2001
+From cee4125e99e69e9d7b2344e915d39b7955a722b7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -562,7 +562,7 @@ index 2021c0d02e..154ab09e0c 100644
  
      public void putAll(Map<? extends Long, ? extends Chunk> map) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 186cfda7e4..9cdeb3bfc2 100644
+index 186cfda7e4..781e068770 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -33,12 +33,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -581,7 +581,7 @@ index 186cfda7e4..9cdeb3bfc2 100644
  
      public ChunkProviderServer(WorldServer worldserver, IChunkLoader ichunkloader, ChunkGenerator<?> chunkgenerator, IAsyncTaskHandler iasynctaskhandler) {
          this.world = worldserver;
-@@ -75,10 +75,76 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -75,10 +75,77 @@ public class ChunkProviderServer implements IChunkProvider {
          this.unloadQueue.remove(ChunkCoordIntPair.a(i, j));
      }
  
@@ -597,14 +597,15 @@ index 186cfda7e4..9cdeb3bfc2 100644
 +    public List<ChunkCoordIntPair> getSpiralOutChunks(BlockPosition blockposition, int radius) {
 +        List<ChunkCoordIntPair> list = com.google.common.collect.Lists.newArrayList();
 +
++        list.add(new ChunkCoordIntPair(blockposition.getX() >> 4, blockposition.getZ() >> 4));
 +        for (int r = 1; r <= radius; r++) {
 +            int x = -r;
 +            int z = r;
-+            list.add(new ChunkCoordIntPair(blockposition.getX(), blockposition.getZ()));
++
 +            // Iterates the edge of half of the box; then negates for other half.
 +            while (x <= r && z > -r) {
-+                list.add(new ChunkCoordIntPair(blockposition.getX() + x, blockposition.getZ() + z));
-+                list.add(new ChunkCoordIntPair(blockposition.getX() - x, blockposition.getZ() - z));
++                list.add(new ChunkCoordIntPair((blockposition.getX() + (x << 4)) >> 4, (blockposition.getZ() + (z << 4)) >> 4));
++                list.add(new ChunkCoordIntPair((blockposition.getX() - (x << 4)) >> 4, (blockposition.getZ() - (z << 4)) >> 4));
 +
 +                if (x < r) {
 +                    x++;
@@ -658,7 +659,7 @@ index 186cfda7e4..9cdeb3bfc2 100644
  
          synchronized (this.chunkLoader) {
              // Paper start - remove vanilla lastChunk, we do it more accurately
-@@ -86,13 +152,15 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -86,13 +153,15 @@ public class ChunkProviderServer implements IChunkProvider {
                  return this.lastChunk;
              }*/ // Paper end
  
@@ -677,7 +678,7 @@ index 186cfda7e4..9cdeb3bfc2 100644
  
              if (flag) {
                  try (co.aikar.timings.Timing timing = world.timings.syncChunkLoadTimer.startTiming()) { // Paper
-@@ -150,7 +218,8 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -150,7 +219,8 @@ public class ChunkProviderServer implements IChunkProvider {
          return (IChunkAccess) (chunk != null ? chunk : (IChunkAccess) this.chunkScheduler.b(new ChunkCoordIntPair(i, j), flag));
      }
  
@@ -687,7 +688,7 @@ index 186cfda7e4..9cdeb3bfc2 100644
          this.batchScheduler.b();
          Iterator iterator = iterable.iterator();
  
-@@ -168,6 +237,7 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -168,6 +238,7 @@ public class ChunkProviderServer implements IChunkProvider {
          return this.batchScheduler.c();
      }
  
@@ -695,7 +696,7 @@ index 186cfda7e4..9cdeb3bfc2 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
-@@ -289,11 +359,13 @@ public class ChunkProviderServer implements IChunkProvider {
+@@ -289,11 +360,13 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
      public void close() {
@@ -2318,7 +2319,7 @@ index a9fffa544f..19ce77c4a3 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8dccf94989..75c4592c21 100644
+index fac42f8e5c..59b1628e5a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1021,8 +1021,12 @@ public final class CraftServer implements Server {
