@@ -1,4 +1,4 @@
-From 3bb80307cfe675a18922158a1d2b1427e334a27b Mon Sep 17 00:00:00 2001
+From 2853582c3382e794163a9c8a02e139eac9a8ea8e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -662,7 +662,7 @@ index 00000000..521c985e
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 00000000..28d0954a
+index 00000000..e08a25f5
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
 @@ -0,0 +1,345 @@
@@ -692,9 +692,7 @@ index 00000000..28d0954a
 +package co.aikar.timings;
 +
 +import co.aikar.timings.TimingHistory.RegionData.RegionId;
-+import co.aikar.util.JSONUtil;
 +import com.google.common.base.Function;
-+import com.google.common.collect.Maps;
 +import com.google.common.collect.Sets;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Chunk;
@@ -759,11 +757,13 @@ index 00000000..28d0954a
 +        }
 +        this.totalTicks = ticks;
 +        this.totalTime = FULL_SERVER_TICK.record.getTotalTime();
-+        this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
++        synchronized (TimingsManager.HANDLERS) {
++            this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
 +
-+        int i = 0;
-+        for (TimingHandler handler : TimingsManager.HANDLERS) {
-+            entries[i++] = new TimingHistoryEntry(handler);
++            int i = 0;
++            for (TimingHandler handler : TimingsManager.HANDLERS) {
++                entries[i++] = new TimingHistoryEntry(handler);
++            }
 +        }
 +
 +
@@ -1074,10 +1074,10 @@ index 00000000..0e114eb3
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 00000000..a7f1f44d
+index 00000000..d3258a09
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,107 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1104,9 +1104,10 @@ index 00000000..a7f1f44d
 +package co.aikar.timings;
 +
 +import co.aikar.util.LoadingMap;
-+import co.aikar.util.MRUMapCache;
 +
-+import java.util.ArrayDeque;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
 +import java.util.Map;
 +import java.util.Objects;
 +import java.util.concurrent.ConcurrentHashMap;
@@ -1164,7 +1165,7 @@ index 00000000..a7f1f44d
 +        final int id = idPool.getAndIncrement();
 +
 +        final String name;
-+        ArrayDeque<TimingHandler> handlers = new ArrayDeque<TimingHandler>(64);
++        final List<TimingHandler> handlers = Collections.synchronizedList(new ArrayList<>(64));
 +
 +        private TimingGroup(String name) {
 +            this.name = name;
@@ -1601,10 +1602,10 @@ index 00000000..56b10e89
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 00000000..df7f4259
+index 00000000..4a69074a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,342 @@
+@@ -0,0 +1,350 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1760,21 +1761,29 @@ index 00000000..df7f4259
 +
 +
 +        Map handlers = createObject();
-+        for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
-+            for (TimingHandler id : group.handlers) {
-+                if (!id.isTimed() && !id.isSpecial()) {
-+                    continue;
++        Map groupData;
++        synchronized (TimingIdentifier.GROUP_MAP) {
++            for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
++                synchronized (group.handlers) {
++                    for (TimingHandler id : group.handlers) {
++
++                        if (!id.isTimed() && !id.isSpecial()) {
++                            continue;
++                        }
++                        handlers.put(id.id, toArray(
++                            group.id,
++                            id.name
++                        ));
++                    }
 +                }
-+                handlers.put(id.id, toArray(
-+                    group.id,
-+                    id.name
-+                ));
 +            }
++
++            groupData = toObjectMapper(
++                TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name));
 +        }
 +
 +        parent.put("idmap", createObject(
-+            pair("groups", toObjectMapper(
-+                TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name))),
++            pair("groups", groupData),
 +            pair("handlers", handlers),
 +            pair("worlds", toObjectMapper(TimingHistory.worldMap.entrySet(), input -> pair(input.getValue(), input.getKey()))),
 +            pair("tileentity",
@@ -1949,10 +1958,10 @@ index 00000000..df7f4259
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 00000000..f63e7033
+index 00000000..127651ff
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,189 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1978,18 +1987,16 @@ index 00000000..f63e7033
 + */
 +package co.aikar.timings;
 +
++import co.aikar.util.LoadingMap;
 +import com.google.common.collect.EvictingQueue;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.command.Command;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.PluginClassLoader;
-+import co.aikar.util.LoadingMap;
 +
 +import javax.annotation.Nullable;
-+import java.util.ArrayDeque;
 +import java.util.ArrayList;
-+import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Map;
@@ -2006,7 +2013,7 @@ index 00000000..f63e7033
 +    public static List<String> hiddenConfigs = new ArrayList<String>();
 +    public static boolean privacy = false;
 +
-+    static final List<TimingHandler> HANDLERS = new ArrayList<>(1024);
++    static final List<TimingHandler> HANDLERS = Collections.synchronizedList(new ArrayList<>(1024));
 +    static final List<TimingHistory.MinuteReport> MINUTE_REPORTS = new ArrayList<>(64);
 +
 +    static EvictingQueue<TimingHistory> HISTORY = EvictingQueue.create(12);
@@ -2033,12 +2040,14 @@ index 00000000..f63e7033
 +        if (Timings.timingsEnabled) {
 +            boolean violated = FULL_SERVER_TICK.isViolated();
 +
-+            for (TimingHandler handler : HANDLERS) {
-+                if (handler.isSpecial()) {
-+                    // We manually call this
-+                    continue;
++            synchronized (HANDLERS) {
++                for (TimingHandler handler : HANDLERS) {
++                    if (handler.isSpecial()) {
++                        // We manually call this
++                        continue;
++                    }
++                    handler.processTick(violated);
 +                }
-+                handler.processTick(violated);
 +            }
 +
 +            TimingHistory.playerTicks += Bukkit.getOnlinePlayers().size();
@@ -2075,8 +2084,10 @@ index 00000000..f63e7033
 +        } else {
 +            // Soft resets only need to act on timings that have done something
 +            // Handlers can only be modified on main thread.
-+            for (TimingHandler timings : HANDLERS) {
-+                timings.reset(false);
++            synchronized (HANDLERS) {
++                for (TimingHandler timings : HANDLERS) {
++                    timings.reset(false);
++                }
 +            }
 +        }
 +
@@ -2530,10 +2541,10 @@ index 00000000..24eae4be
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 00000000..9a4f9dca
+index 00000000..dfefda35
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
-@@ -0,0 +1,339 @@
+@@ -0,0 +1,343 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2787,6 +2798,10 @@ index 00000000..9a4f9dca
 +
 +    @Override
 +    public V get(Object key) {
++        V v = backingMap.get(key);
++        if (v != null) {
++            return v;
++        }
 +        return backingMap.computeIfAbsent((K) key, loader);
 +    }
 +
