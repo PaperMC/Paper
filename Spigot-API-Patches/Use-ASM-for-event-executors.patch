@@ -6,7 +6,7 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/pom.xml b/pom.xml
-index f8f12595b..84ba2076f 100644
+index f8f12595..84ba2076 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -0,0 +0,0 @@
@@ -29,7 +29,7 @@ index f8f12595b..84ba2076f 100644
      <build>
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
 new file mode 100644
-index 000000000..9ff99e3b3
+index 00000000..9ff99e3b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
 @@ -0,0 +0,0 @@
@@ -75,7 +75,7 @@ index 000000000..9ff99e3b3
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
 new file mode 100644
-index 000000000..f60f01005
+index 00000000..bac04fd8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
 @@ -0,0 +0,0 @@
@@ -86,8 +86,10 @@ index 000000000..f60f01005
 +import java.lang.reflect.Method;
 +import java.lang.reflect.Modifier;
 +
++import com.destroystokyo.paper.util.SneakyThrow;
 +import com.google.common.base.Preconditions;
 +
++import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.EventException;
 +import org.bukkit.event.Listener;
@@ -113,14 +115,14 @@ index 000000000..f60f01005
 +        if (!eventClass.isInstance(event)) return;
 +        try {
 +            handle.invoke(event);
-+        } catch (Throwable t) {
-+            throw new EventException(t);
++        } catch (Throwable throwable) {
++            SneakyThrow.sneaky(throwable);
 +        }
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 000000000..140cf0ad3
+index 00000000..140cf0ad
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 @@ -0,0 +0,0 @@
@@ -170,7 +172,7 @@ index 000000000..140cf0ad3
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
 new file mode 100644
-index 000000000..6941d9fbf
+index 00000000..6941d9fb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
 @@ -0,0 +0,0 @@
@@ -208,7 +210,7 @@ index 000000000..6941d9fbf
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
 new file mode 100644
-index 000000000..1473ff8cd
+index 00000000..1473ff8c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
 @@ -0,0 +0,0 @@
@@ -277,7 +279,7 @@ index 000000000..1473ff8cd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java b/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java
 new file mode 100644
-index 000000000..62acbf821
+index 00000000..62acbf82
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/UnsafeUtils.java
 @@ -0,0 +0,0 @@
@@ -315,7 +317,7 @@ index 000000000..62acbf821
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
-index 3b2c99ea7..b45b6c1c3 100644
+index 3b2c99ea..b11c6ce6 100644
 --- a/src/main/java/org/bukkit/plugin/EventExecutor.java
 +++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.Event;
@@ -380,16 +382,9 @@ index 3b2c99ea7..b45b6c1c3 100644
 +            try {
 +                EventExecutor asmExecutor = executorClass.newInstance();
 +                // Define a wrapper to conform to bukkit stupidity (passing in events that don't match and wrapper exception)
-+                return new EventExecutor() {
-+                    @Override
-+                    public void execute(Listener listener, Event event) throws EventException {
-+                        if (!eventClass.isInstance(event)) return;
-+                        try {
-+                            asmExecutor.execute(listener, event);
-+                        } catch (Exception e) {
-+                            throw new EventException(e);
-+                        }
-+                    }
++                return (listener, event) -> {
++                    if (!eventClass.isInstance(event)) return;
++                    asmExecutor.execute(listener, event);
 +                };
 +            } catch (InstantiationException | IllegalAccessException e) {
 +                throw new AssertionError("Unable to initialize generated event executor", e);
@@ -401,7 +396,7 @@ index 3b2c99ea7..b45b6c1c3 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index bf9723029..77207f147 100644
+index bf972302..77207f14 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
