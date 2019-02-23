@@ -1,4 +1,4 @@
-From 0644771327501a754ae14c834e50fc97f6417085 Mon Sep 17 00:00:00 2001
+From a501a552251e9189257a6b9dd5ebb679c32bedf2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -671,10 +671,10 @@ index 00000000..916b6f9d
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 00000000..c2c2fb83
+index 00000000..87993256
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,352 @@
+@@ -0,0 +1,347 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -768,11 +768,13 @@ index 00000000..c2c2fb83
 +        }
 +        this.totalTicks = ticks;
 +        this.totalTime = FULL_SERVER_TICK.record.getTotalTime();
-+        this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
++        synchronized (TimingsManager.HANDLERS) {
++            this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
 +
-+        int i = 0;
-+        for (TimingHandler handler : TimingsManager.HANDLERS) {
-+            entries[i++] = new TimingHistoryEntry(handler);
++            int i = 0;
++            for (TimingHandler handler : TimingsManager.HANDLERS) {
++                entries[i++] = new TimingHistoryEntry(handler);
++            }
 +        }
 +
 +
@@ -878,11 +880,11 @@ index 00000000..c2c2fb83
 +
 +        @SuppressWarnings("unchecked")
 +        final Map<EntityType, Counter> entityCounts = MRUMapCache.of(LoadingMap.of(
-+                new EnumMap<EntityType, Counter>(EntityType.class), Counter.LOADER
++                new EnumMap<EntityType, Counter>(EntityType.class), k -> new Counter()
 +        ));
 +        @SuppressWarnings("unchecked")
 +        final Map<Material, Counter> tileEntityCounts = MRUMapCache.of(LoadingMap.of(
-+                new EnumMap<Material, Counter>(Material.class), Counter.LOADER
++                new EnumMap<Material, Counter>(Material.class), k -> new Counter()
 +        ));
 +
 +        static class RegionId {
@@ -1012,13 +1014,6 @@ index 00000000..c2c2fb83
 +
 +    private static class Counter {
 +        private int count = 0;
-+        @SuppressWarnings({"rawtypes", "SuppressionAnnotation", "Guava"})
-+        static Function LOADER = new LoadingMap.Feeder<Counter>() {
-+            @Override
-+            public Counter apply() {
-+                return new Counter();
-+            }
-+        };
 +        public int increment() {
 +            return ++count;
 +        }
@@ -1090,10 +1085,10 @@ index 00000000..0e114eb3
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 00000000..623dda49
+index 00000000..812344bd
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,109 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1119,12 +1114,15 @@ index 00000000..623dda49
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
 +import co.aikar.util.LoadingMap;
-+import co.aikar.util.MRUMapCache;
 +
-+import java.util.ArrayDeque;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
 +import java.util.Map;
++import java.util.Objects;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.atomic.AtomicInteger;
 +
 +/**
 + * <p>Used as a basis for fast HashMap key comparisons for the Timing Map.</p>
@@ -1135,15 +1133,8 @@ index 00000000..623dda49
 +    /**
 +     * Holds all groups. Autoloads on request for a group by name.
 +     */
-+    static final Map<String, TimingGroup> GROUP_MAP = MRUMapCache.of(
-+        LoadingMap.newIdentityHashMap(new Function<String, TimingGroup>() {
-+            @Override
-+            public TimingGroup apply(String group) {
-+                return new TimingGroup(group);
-+            }
-+        }, 64)
-+    );
-+    static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
++    static final Map<String, TimingGroup> GROUP_MAP = LoadingMap.of(new ConcurrentHashMap<>(64, .5F), TimingGroup::new);
++    private static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
 +    final String group;
 +    final String name;
 +    final TimingHandler groupHandler;
@@ -1151,8 +1142,8 @@ index 00000000..623dda49
 +    private final int hashCode;
 +
 +    TimingIdentifier(String group, String name, Timing groupHandler, boolean protect) {
-+        this.group = group != null ? group.intern() : DEFAULT_GROUP.name;
-+        this.name = name.intern();
++        this.group = group != null ? group: DEFAULT_GROUP.name;
++        this.name = name;
 +        this.groupHandler = groupHandler != null ? groupHandler.getTimingHandler() : null;
 +        this.protect = protect;
 +        this.hashCode = (31 * this.group.hashCode()) + this.name.hashCode();
@@ -1163,11 +1154,9 @@ index 00000000..623dda49
 +            return DEFAULT_GROUP;
 +        }
 +
-+        return GROUP_MAP.get(groupName.intern());
++        return GROUP_MAP.get(groupName);
 +    }
 +
-+    // We are using .intern() on the strings so it is guaranteed to be an identity comparison.
-+    @SuppressWarnings("StringEquality")
 +    @Override
 +    public boolean equals(Object o) {
 +        if (o == null) {
@@ -1175,7 +1164,7 @@ index 00000000..623dda49
 +        }
 +
 +        TimingIdentifier that = (TimingIdentifier) o;
-+        return group == that.group && name == that.name;
++        return Objects.equals(group, that.group) && Objects.equals(name, that.name);
 +    }
 +
 +    @Override
@@ -1185,14 +1174,27 @@ index 00000000..623dda49
 +
 +    static class TimingGroup {
 +
-+        private static int idPool = 1;
-+        final int id = idPool++;
++        private static AtomicInteger idPool = new AtomicInteger(1);
++        final int id = idPool.getAndIncrement();
 +
 +        final String name;
-+        ArrayDeque<TimingHandler> handlers = new ArrayDeque<TimingHandler>(64);
++        final List<TimingHandler> handlers = Collections.synchronizedList(new ArrayList<>(64));
 +
 +        private TimingGroup(String name) {
 +            this.name = name;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            TimingGroup that = (TimingGroup) o;
++            return id == that.id;
++        }
++
++        @Override
++        public int hashCode() {
++            return id;
 +        }
 +    }
 +}
@@ -1613,10 +1615,10 @@ index 00000000..56b10e89
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 00000000..df7f4259
+index 00000000..62f5115a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,342 @@
+@@ -0,0 +1,347 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1772,21 +1774,26 @@ index 00000000..df7f4259
 +
 +
 +        Map handlers = createObject();
-+        for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
-+            for (TimingHandler id : group.handlers) {
-+                if (!id.isTimed() && !id.isSpecial()) {
-+                    continue;
++        Map groupData;
++        synchronized (TimingIdentifier.GROUP_MAP) {
++            for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
++                synchronized (group.handlers) {
++                    for (TimingHandler id : group.handlers) {
++                        if (!id.isTimed() && !id.isSpecial()) {
++                            continue;
++                        }
++                        handlers.put(id.id, toArray(
++                            group.id,
++                            id.name
++                        ));
++                    }
 +                }
-+                handlers.put(id.id, toArray(
-+                    group.id,
-+                    id.name
-+                ));
 +            }
-+        }
 +
++            groupData = toObjectMapper(TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name));
++        }
 +        parent.put("idmap", createObject(
-+            pair("groups", toObjectMapper(
-+                TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name))),
++            pair("groups", groupData),
 +            pair("handlers", handlers),
 +            pair("worlds", toObjectMapper(TimingHistory.worldMap.entrySet(), input -> pair(input.getValue(), input.getKey()))),
 +            pair("tileentity",
@@ -1961,10 +1968,10 @@ index 00000000..df7f4259
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 00000000..58ed35e0
+index 00000000..06b67b96
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,191 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1990,45 +1997,36 @@ index 00000000..58ed35e0
 + */
 +package co.aikar.timings;
 +
-+import com.google.common.base.Function;
++import co.aikar.util.LoadingMap;
 +import com.google.common.collect.EvictingQueue;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.command.Command;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.PluginClassLoader;
-+import co.aikar.util.LoadingMap;
 +
-+import java.util.ArrayDeque;
 +import java.util.ArrayList;
-+import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
 +import java.util.logging.Level;
 +
 +public final class TimingsManager {
-+    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP =
-+        Collections.synchronizedMap(LoadingMap.newHashMap(
-+            new Function<TimingIdentifier, TimingHandler>() {
-+                @Override
-+                public TimingHandler apply(TimingIdentifier id) {
-+                    return (id.protect ?
-+                        new UnsafeTimingHandler(id) :
-+                        new TimingHandler(id)
-+                    );
-+                }
-+            },
-+            256, .5F
-+        ));
++    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
++        new ConcurrentHashMap<>(4096, .5F), id -> (id.protect ?
++            new UnsafeTimingHandler(id) :
++            new TimingHandler(id)
++        )
++    );
 +    public static final FullServerTickHandler FULL_SERVER_TICK = new FullServerTickHandler();
 +    public static final TimingHandler TIMINGS_TICK = Timings.ofSafe("Timings Tick", FULL_SERVER_TICK);
 +    public static final Timing PLUGIN_GROUP_HANDLER = Timings.ofSafe("Plugins");
 +    public static List<String> hiddenConfigs = new ArrayList<String>();
 +    public static boolean privacy = false;
 +
-+    static final Collection<TimingHandler> HANDLERS = new ArrayDeque<TimingHandler>();
-+    static final ArrayDeque<TimingHistory.MinuteReport> MINUTE_REPORTS = new ArrayDeque<TimingHistory.MinuteReport>();
++    static final List<TimingHandler> HANDLERS = Collections.synchronizedList(new ArrayList<>(1024));
++    static final List<TimingHistory.MinuteReport> MINUTE_REPORTS = new ArrayList<>(64);
 +
 +    static EvictingQueue<TimingHistory> HISTORY = EvictingQueue.create(12);
 +    static TimingHandler CURRENT;
@@ -2054,12 +2052,14 @@ index 00000000..58ed35e0
 +        if (Timings.timingsEnabled) {
 +            boolean violated = FULL_SERVER_TICK.isViolated();
 +
-+            for (TimingHandler handler : HANDLERS) {
-+                if (handler.isSpecial()) {
-+                    // We manually call this
-+                    continue;
++            synchronized (HANDLERS) {
++                for (TimingHandler handler : HANDLERS) {
++                    if (handler.isSpecial()) {
++                        // We manually call this
++                        continue;
++                    }
++                    handler.processTick(violated);
 +                }
-+                handler.processTick(violated);
 +            }
 +
 +            TimingHistory.playerTicks += Bukkit.getOnlinePlayers().size();
@@ -2096,8 +2096,10 @@ index 00000000..58ed35e0
 +        } else {
 +            // Soft resets only need to act on timings that have done something
 +            // Handlers can only be modified on main thread.
-+            for (TimingHandler timings : HANDLERS) {
-+                timings.reset(false);
++            synchronized (HANDLERS) {
++                for (TimingHandler timings : HANDLERS) {
++                    timings.reset(false);
++                }
 +            }
 +        }
 +
@@ -2551,10 +2553,10 @@ index 00000000..24eae4be
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 00000000..1474384e
+index 00000000..dfefda35
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,343 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2580,20 +2582,14 @@ index 00000000..1474384e
 + */
 +package co.aikar.util;
 +
-+
-+import com.google.common.base.Function;
-+import org.bukkit.Material;
-+import co.aikar.timings.TimingHistory;
-+import org.w3c.dom.css.Counter;
-+
 +import java.lang.reflect.Constructor;
 +import java.util.AbstractMap;
 +import java.util.Collection;
-+import java.util.EnumMap;
 +import java.util.HashMap;
 +import java.util.IdentityHashMap;
 +import java.util.Map;
 +import java.util.Set;
++import java.util.function.Function;
 +
 +/**
 + * Allows you to pass a Loader function that when a key is accessed that doesn't exists,
@@ -2610,16 +2606,16 @@ index 00000000..1474384e
 + * @param <K> Key
 + * @param <V> Value
 + */
-+public class LoadingMap <K,V> extends AbstractMap<K, V> {
++public class LoadingMap <K, V> extends AbstractMap<K, V> {
 +    private final Map<K, V> backingMap;
-+    private final Function<K, V> loader;
++    private final java.util.function.Function<K, V> loader;
 +
 +    /**
 +     * Initializes an auto loading map using specified loader and backing map
 +     * @param backingMap Map to wrap
 +     * @param loader Loader
 +     */
-+    public LoadingMap(Map<K, V> backingMap, Function<K, V> loader) {
++    public LoadingMap(Map<K, V> backingMap, java.util.function.Function<K, V> loader) {
 +        this.backingMap = backingMap;
 +        this.loader = loader;
 +    }
@@ -2634,7 +2630,7 @@ index 00000000..1474384e
 +     * @return Map
 +     */
 +    public static <K, V> Map<K, V> of(Map<K, V> backingMap, Function<K, V> loader) {
-+        return new LoadingMap<K, V>(backingMap, loader);
++        return new LoadingMap<>(backingMap, loader);
 +    }
 +
 +    /**
@@ -2654,7 +2650,7 @@ index 00000000..1474384e
 +     */
 +    public static <K, V> Map<K, V> newAutoMap(Map<K, V> backingMap, final Class<? extends K> keyClass,
 +                                              final Class<? extends V> valueClass) {
-+        return new LoadingMap<K, V>(backingMap, new AutoInstantiatingLoader<K, V>(keyClass, valueClass));
++        return new LoadingMap<>(backingMap, new AutoInstantiatingLoader<>(keyClass, valueClass));
 +    }
 +    /**
 +     * Creates a LoadingMap with an auto instantiating loader.
@@ -2687,7 +2683,7 @@ index 00000000..1474384e
 +     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass) {
-+        return newAutoMap(new HashMap<K, V>(), keyClass, valueClass);
++        return newAutoMap(new HashMap<>(), keyClass, valueClass);
 +    }
 +
 +    /**
@@ -2718,7 +2714,7 @@ index 00000000..1474384e
 +     * @return Map that auto instantiates on .get()
 +     */
 +    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
-+        return newAutoMap(new HashMap<K, V>(initialCapacity, loadFactor), keyClass, valueClass);
++        return newAutoMap(new HashMap<>(initialCapacity, loadFactor), keyClass, valueClass);
 +    }
 +
 +    /**
@@ -2746,9 +2742,21 @@ index 00000000..1474384e
 +     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader) {
-+        return new LoadingMap<K, V>(new HashMap<K, V>(), loader);
++        return new LoadingMap<>(new HashMap<>(), loader);
 +    }
 +
++    /**
++     * Initializes an auto loading map using a HashMap
++     *
++     * @param loader Loader to use
++     * @param initialCapacity Initial capacity to use
++     * @param <K> Key Type of the Map
++     * @param <V> Value Type of the Map
++     * @return Map
++     */
++    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity) {
++        return new LoadingMap<>(new HashMap<>(initialCapacity), loader);
++    }
 +    /**
 +     * Initializes an auto loading map using a HashMap
 +     *
@@ -2760,7 +2768,7 @@ index 00000000..1474384e
 +     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity, float loadFactor) {
-+        return new LoadingMap<K, V>(new HashMap<K, V>(initialCapacity, loadFactor), loader);
++        return new LoadingMap<>(new HashMap<>(initialCapacity, loadFactor), loader);
 +    }
 +
 +    /**
@@ -2772,7 +2780,7 @@ index 00000000..1474384e
 +     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader) {
-+        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(), loader);
++        return new LoadingMap<>(new IdentityHashMap<>(), loader);
 +    }
 +
 +    /**
@@ -2785,7 +2793,7 @@ index 00000000..1474384e
 +     * @return Map
 +     */
 +    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader, int initialCapacity) {
-+        return new LoadingMap<K, V>(new IdentityHashMap<K, V>(initialCapacity), loader);
++        return new LoadingMap<>(new IdentityHashMap<>(initialCapacity), loader);
 +    }
 +
 +    @Override
@@ -2802,14 +2810,11 @@ index 00000000..1474384e
 +
 +    @Override
 +    public V get(Object key) {
-+        V res =  backingMap.get(key);
-+        if (res == null && key != null) {
-+            res = loader.apply((K) key);
-+            if (res != null) {
-+                backingMap.put((K) key, res);
-+            }
++        V v = backingMap.get(key);
++        if (v != null) {
++            return v;
 +        }
-+        return res;
++        return backingMap.computeIfAbsent((K) key, loader);
 +    }
 +
 +    public V put(K key, V value) {return backingMap.put(key, value);}
@@ -2840,7 +2845,7 @@ index 00000000..1474384e
 +    }
 +
 +    public LoadingMap<K, V> clone() {
-+        return new LoadingMap<K, V>(backingMap, loader);
++        return new LoadingMap<>(backingMap, loader);
 +    }
 +
 +    private static class AutoInstantiatingLoader<K, V> implements Function<K, V> {
@@ -3907,5 +3912,5 @@ index 8d982974..7e89b97b 100644
 -    }
  }
 -- 
-2.18.0
+2.20.1
 
