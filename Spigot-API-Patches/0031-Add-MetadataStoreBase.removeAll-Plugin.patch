@@ -1,0 +1,41 @@
+From 28cef08075786587ecc702ad3dab4bc06d3ce624 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 16 Jul 2013 21:26:50 -0400
+Subject: [PATCH] Add MetadataStoreBase.removeAll(Plugin)
+
+So that on reload, metadata will be cleared
+
+diff --git a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
+index 64c0f0a7..6da6abd8 100644
+--- a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
++++ b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
+@@ -124,6 +124,26 @@ public abstract class MetadataStoreBase<T> {
+         }
+     }
+ 
++    /**
++     * Removes all metadata in the metadata store that originates from the
++     * given plugin.
++     *
++     * @param owningPlugin the plugin requesting the invalidation.
++     * @throws IllegalArgumentException If plugin is null
++     */
++    public void removeAll(Plugin owningPlugin) {
++        Validate.notNull(owningPlugin, "Plugin cannot be null");
++        for (Iterator<Map<Plugin, MetadataValue>> iterator = metadataMap.values().iterator(); iterator.hasNext(); ) {
++            Map<Plugin, MetadataValue> values = iterator.next();
++            if (values.containsKey(owningPlugin)) {
++                values.remove(owningPlugin);
++            }
++            if (values.isEmpty()) {
++                iterator.remove();
++            }
++        }
++    }
++
+     /**
+      * Creates a unique name for the object receiving metadata by combining
+      * unique data from the subject with a metadataKey.
+-- 
+2.20.1
+

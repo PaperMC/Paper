@@ -1,0 +1,133 @@
+From 52bcd82fc9c739a5d191a3facdefc09304f1c527 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 14 Aug 2018 21:42:10 -0700
+Subject: [PATCH] Allow Blocks to be accessed via a long key
+
+The key can be retrieved via methods Location#toBlockKey() and
+Block#getBlockKey()
+
+World provides lookup for blocks by long key via method World#getBlockAtKey(long)
+
+The formatting for the key is as follows:
+
+10 bit y|27 bit z|27 bit x
+
+The y value is considered unsigned while z and x are considered two's complement
+
+Y range: [0, 1023]
+X, Z range: [-67 108 864, 67 108 863]
+
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 8dcb15fb..7e1ee875 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -10,7 +10,6 @@ import org.bukkit.util.Vector;
+ 
+ // Paper start
+ import java.util.Collection;
+-import java.util.Collections;
+ import java.util.function.Predicate;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.LivingEntity;
+@@ -558,6 +557,18 @@ public class Location implements Cloneable, ConfigurationSerializable {
+         blockLoc.setZ(getBlockZ());
+         return blockLoc;
+     }
++
++    // Paper Start
++
++    /**
++     * @return The block key for this location's block location.
++     * @see Block#getBlockKey()
++     */
++    public long toBlockKey() {
++        return ((long)getBlockX() & 0x7FFFFFF) | (((long)getBlockZ() & 0x7FFFFFF) << 27) | ((long)getBlockY() << 54);
++    }
++    // Paper End
++
+     /**
+      * @return A new location where X/Y/Z are the center of the block
+      */
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 61f2cd9a..30204b98 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -75,6 +75,37 @@ public interface World extends PluginMessageRecipient, Metadatable {
+      */
+     public Block getBlockAt(Location location);
+ 
++    // Paper start
++    /**
++     * Gets the {@link Block} at the given block key
++     *
++     * @param key The block key. See {@link Block#getBlockKey()}
++     * @return Block at the key
++     * @see Location#toBlockKey()
++     * @see Block#getBlockKey()
++     */
++    public default Block getBlockAtKey(long key) {
++        int x = (int) ((key << 37) >> 37);
++        int y = (int) (key >>> 54);
++        int z = (int) ((key << 10) >> 37);
++        return getBlockAt(x, y, z);
++    }
++    /**
++     * Gets the {@link Location} at the given block key
++     *
++     * @param key The block key. See {@link Location#toBlockKey()}
++     * @return Location at the key
++     * @see Location#toBlockKey()
++     * @see Block#getBlockKey()
++     */
++    public default Location getLocationAtKey(long key) {
++        int x = (int) ((key << 37) >> 37);
++        int y = (int) (key >>> 54);
++        int z = (int) ((key << 10) >> 37);
++        return new Location(this, x, y, z);
++    }
++    // Paper end
++
+     /**
+      * Gets the y coordinate of the lowest block at this position such that the
+      * block and all blocks above it are transparent for lighting purposes.
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index 064acf32..d1a9512a 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -144,6 +144,33 @@ public interface Block extends Metadatable {
+      */
+     int getZ();
+ 
++    // Paper Start
++
++    /**
++     * Returns this block's coordinates packed into a long value
++     * <p>
++     * The return value can be computed as follows:
++     * <br>
++     * {@code long value = ((long)getX() & 0x7FFFFFF) | (((long)getZ() & 0x7FFFFFF) << 27) | ((long)getY() << 54);}
++     * </p>
++     *
++     * <p>
++     * And may be unpacked as follows:
++     *<br>
++     * {@code int x = (int) ((packed << 37) >> 37);}
++     * <br>
++     * {@code int y = (int) (packed >>> 54);}
++     * <br>
++     * {@code int z = (int) ((packed << 10) >> 37);}
++     * </p>
++     *
++     * @return This block's x, y, and z coordinates packed into a long value
++     */
++    public default long getBlockKey() {
++        return ((long)getX() & 0x7FFFFFF) | (((long)getZ() & 0x7FFFFFF) << 27) | ((long)getY() << 54);
++    }
++    // Paper End
++
+     /**
+      * Gets the Location of the block
+      *
+-- 
+2.20.1
+
