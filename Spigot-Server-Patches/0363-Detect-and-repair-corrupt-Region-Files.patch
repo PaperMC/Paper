@@ -1,4 +1,4 @@
-From ec510b0b41b7924da4737613c9c10441498eb46f Mon Sep 17 00:00:00 2001
+From 25f06715b685a629d93544f7a05d99c243b6d56e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 00:49:20 -0400
 Subject: [PATCH] Detect and repair corrupt Region Files
@@ -11,12 +11,12 @@ I don't know why mojang only checks for 4096, when anything less than 8192 is a 
 But to be safe, it will attempt to back up the file.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 2bd85e2d..d334d634 100644
+index eac8b22b..d58cda9a 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -23,10 +23,10 @@ import javax.annotation.Nullable;
- public class RegionFile {
- 
+@@ -28,10 +28,10 @@ public class RegionFile {
+     private static final boolean ENABLE_EXTENDED_SAVE = Boolean.parseBoolean(System.getProperty("net.minecraft.server.RegionFile.enableExtendedSave", "true"));
+     // Spigot end
      private static final byte[] a = new byte[4096];
 -    private final File b;
 -    private RandomAccessFile c;
@@ -29,7 +29,7 @@ index 2bd85e2d..d334d634 100644
      private List<Boolean> f;
      private int g;
      private long h;
-@@ -40,10 +40,11 @@ public class RegionFile {
+@@ -45,10 +45,11 @@ public class RegionFile {
                  this.h = file.lastModified();
              }
  
@@ -44,17 +44,24 @@ index 2bd85e2d..d334d634 100644
                  this.g += 8192;
              }
  
-@@ -81,16 +82,16 @@ public class RegionFile {
-             for (j = 0; j < 1024; ++j) {
-                 k = headerAsInts.get(); // Paper
-                 this.d[j] = k;
--                if (k != 0 && (k >> 8) + (k & 255) <= this.f.size()) {
-+                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
-                     for (int l = 0; l < (k & 255); ++l) {
+@@ -96,22 +97,23 @@ public class RegionFile {
+                         this.c.seek(j * 4 + 4); // Go back to where we were
+                     }
+                 }
+-                if (k != 0 && (k >> 8) + (length) <= this.f.size()) {
++                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (length) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
+                     for (int l = 0; l < (length); ++l) {
+                         // Spigot end
                          this.f.set((k >> 8) + l, Boolean.valueOf(false));
                      }
--                }
-+                } else if (k != 0) deleteChunk(j); // Paper
+                 }
+                 // Spigot start
+-                else if (length > 0) {
++                else if (k != 0) { // Paper
+                     org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Invalid chunk: ({0}, {1}) Offset: {2} Length: {3} runs off end file. {4}", new Object[]{j % 32, (int) (j / 32), k >> 8, length, file});
++                    deleteChunk(j); // Paper
+                 }
+                 // Spigot end
              }
  
              for (j = 0; j < 1024; ++j) {
@@ -64,7 +71,7 @@ index 2bd85e2d..d334d634 100644
              }
          } catch (IOException ioexception) {
              ioexception.printStackTrace();
-@@ -264,6 +265,55 @@ public class RegionFile {
+@@ -302,6 +304,55 @@ public class RegionFile {
  
      }
  
@@ -121,5 +128,5 @@ index 2bd85e2d..d334d634 100644
  
          private final int b;
 -- 
-2.19.1
+2.20.1
 

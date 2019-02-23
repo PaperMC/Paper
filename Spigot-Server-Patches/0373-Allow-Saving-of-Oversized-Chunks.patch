@@ -1,4 +1,4 @@
-From 026320c912a5ce008130be4a5089eceea3a24da2 Mon Sep 17 00:00:00 2001
+From 0c66385b2ab612b92641c37518e15ba12530b3ff Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
@@ -51,10 +51,10 @@ index 2162d3ad..8b5aeb1b 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index d334d634..34f72c3d 100644
+index d58cda9a..56783ab5 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -78,6 +78,7 @@ public class RegionFile {
+@@ -83,6 +83,7 @@ public class RegionFile {
              }
              header.clear();
              IntBuffer headerAsInts = header.asIntBuffer();
@@ -62,7 +62,7 @@ index d334d634..34f72c3d 100644
              // Paper End
              for (j = 0; j < 1024; ++j) {
                  k = headerAsInts.get(); // Paper
-@@ -101,7 +102,7 @@ public class RegionFile {
+@@ -123,7 +124,7 @@ public class RegionFile {
      }
  
      @Nullable
@@ -71,7 +71,7 @@ index d334d634..34f72c3d 100644
          if (this.d(i, j)) {
              return null;
          } else {
-@@ -149,8 +150,8 @@ public class RegionFile {
+@@ -179,8 +180,8 @@ public class RegionFile {
      }
  
      @Nullable
@@ -82,16 +82,18 @@ index d334d634..34f72c3d 100644
      }
  
      protected synchronized void a(int i, int j, byte[] abyte, int k) {
-@@ -161,7 +162,7 @@ public class RegionFile {
-             int k1 = (k + 5) / 4096 + 1;
+@@ -198,8 +199,9 @@ public class RegionFile {
  
              if (k1 >= 256) {
--                return;
-+                throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 // Spigot start
+-                if (!ENABLE_EXTENDED_SAVE) return;
++                if (!USE_SPIGOT_OVERSIZED_METHOD) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
++                if (!ENABLE_EXTENDED_SAVE) return;
+                 // Spigot end
              }
  
-             if (i1 != 0 && j1 == k1) {
-@@ -312,6 +313,101 @@ public class RegionFile {
+@@ -351,6 +353,110 @@ public class RegionFile {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
      }
@@ -172,6 +174,15 @@ index d334d634..34f72c3d 100644
 +
 +    }
 +
++    private static final boolean USE_SPIGOT_OVERSIZED_METHOD = Boolean.getBoolean("Paper.useSpigotExtendedSaveMethod"); // Paper
++    static {
++        if (USE_SPIGOT_OVERSIZED_METHOD) {
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Using Spigot Oversized Chunk save method. Warning this will result in extremely fragmented chunks, as well as making the entire region file unable to be to used in any other software but Forge or Spigot (not usable in Vanilla or CraftBukkit). Paper's method is highly recommended.");
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
++        }
++    }
++
 +    public class ChunkTooLargeException extends RuntimeException {
 +        public ChunkTooLargeException(int x, int z, int sectors) {
 +            super("Chunk " + x + "," + z + " of " + getFile().toString() + " is too large (" + sectors + "/256)");
@@ -193,7 +204,7 @@ index d334d634..34f72c3d 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -325,8 +421,40 @@ public class RegionFile {
+@@ -364,8 +470,40 @@ public class RegionFile {
              this.c = j;
          }
  
