@@ -1,4 +1,4 @@
-From 668a1de336154c1375df2341f437b33e9f398e05 Mon Sep 17 00:00:00 2001
+From abf1bf94c272bcaf8daf2d6e5252e54a426bf936 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 23 Jul 2018 22:44:23 -0400
 Subject: [PATCH] Add some Debug to Chunk Entity slices
@@ -9,10 +9,10 @@ This should hopefully avoid duplicate entities ever being created
 if the entity was to end up in 2 different chunk slices
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 42b76b212..ca236a315 100644
+index 42b76b2122..1c9e2cb1ce 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -714,8 +714,34 @@ public class Chunk implements IChunkAccess {
+@@ -714,8 +714,27 @@ public class Chunk implements IChunkAccess {
          entity.chunkX = this.locX;
          entity.chunkY = k;
          entity.chunkZ = this.locZ;
@@ -24,17 +24,10 @@ index 42b76b212..ca236a315 100644
 +        List<Entity> currentSlice = entity.entitySlice;
 +        if ((currentSlice != null && currentSlice.contains(entity)) || inThis) {
 +            if (currentSlice == entitySlice || inThis) {
-+                LogManager.getLogger().warn(entity + " was already in this chunk section! Report this to https://github.com/PaperMC/Paper/issues/1302");
-+                new Throwable().printStackTrace();
 +                return;
 +            } else {
-+                LogManager.getLogger().warn(entity + " is still in another ChunkSection! Report this to https://github.com/PaperMC/Paper/issues/1302");
-+
 +                Chunk chunk = entity.getCurrentChunk();
 +                if (chunk != null) {
-+                    if (chunk != this) {
-+                        LogManager.getLogger().warn(entity + " was in another chunk at that! " + chunk.locX + "," + chunk.locZ);
-+                    }
 +                    chunk.removeEntity(entity);
 +                } else {
 +                    removeEntity(entity);
@@ -48,7 +41,7 @@ index 42b76b212..ca236a315 100644
          this.markDirty();
          if (entity instanceof EntityItem) {
              itemCounts[k]++;
-@@ -745,9 +771,13 @@ public class Chunk implements IChunkAccess {
+@@ -745,9 +764,10 @@ public class Chunk implements IChunkAccess {
              i = this.entitySlices.length - 1;
          }
          // Paper start
@@ -56,15 +49,12 @@ index 42b76b212..ca236a315 100644
 -            return;
 +        if (entity.entitySlice == null || !entity.entitySlice.contains(entity) || entitySlices[i] == entity.entitySlice) {
 +            entity.entitySlice = null;
-+        } else {
-+            LogManager.getLogger().warn(entity + " was removed from a entitySlice we did not expect. Report this to https://github.com/PaperMC/Paper/issues/1302");
-+            new Throwable().printStackTrace();
          }
 +        if (!this.entitySlices[i].remove(entity)) { return; }
          this.markDirty();
          if (entity instanceof EntityItem) {
              itemCounts[i]--;
-@@ -1028,6 +1058,7 @@ public class Chunk implements IChunkAccess {
+@@ -1028,6 +1048,7 @@ public class Chunk implements IChunkAccess {
                  }
                  // Spigot End
                  entity.setCurrentChunk(null); // Paper
@@ -73,7 +63,7 @@ index 42b76b212..ca236a315 100644
                  // Do not pass along players, as doing so can get them stuck outside of time.
                  // (which for example disables inventory icon updates and prevents block breaking)
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 12ab5def2..50e616179 100644
+index 61a547a40d..15a81d1eb9 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -62,6 +62,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
