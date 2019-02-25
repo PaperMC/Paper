@@ -2307,7 +2307,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
             ItemStack itemstack = packetplayinsetcreativeslot.getItemStack();
             NBTTagCompound nbttagcompound = itemstack.b("BlockEntityTag");
 
-            if (!itemstack.isEmpty() && nbttagcompound != null && nbttagcompound.hasKey("x") && nbttagcompound.hasKey("y") && nbttagcompound.hasKey("z")) {
+            if (!itemstack.isEmpty() && nbttagcompound != null && nbttagcompound.hasKey("x") && nbttagcompound.hasKey("y") && nbttagcompound.hasKey("z") && this.player.getBukkitEntity().hasPermission("minecraft.nbt.copy")) { // Spigot
                 BlockPosition blockposition = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
                 TileEntity tileentity = this.player.world.getTileEntity(blockposition);
 

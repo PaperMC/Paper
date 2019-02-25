@@ -38,7 +38,7 @@ public class ItemDebugStick extends Item {
     }
 
     private void a(EntityHuman entityhuman, IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, boolean flag, ItemStack itemstack) {
-        if (entityhuman.isCreativeAndOp()) {
+        if (entityhuman.isCreativeAndOp() || (entityhuman.abilities.canInstantlyBuild && entityhuman.getBukkitEntity().hasPermission("minecraft.debugstick")) || entityhuman.getBukkitEntity().hasPermission("minecraft.debugstick.always")) { // Spigot
             Block block = iblockdata.getBlock();
             BlockStateList<Block, IBlockData> blockstatelist = block.getStates();
             Collection<IBlockState<?>> collection = blockstatelist.d();

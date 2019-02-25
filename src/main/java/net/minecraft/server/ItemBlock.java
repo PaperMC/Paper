@@ -184,7 +184,7 @@ public class ItemBlock extends Item {
                 TileEntity tileentity = world.getTileEntity(blockposition);
 
                 if (tileentity != null) {
-                    if (!world.isClientSide && tileentity.isFilteredNBT() && (entityhuman == null || !entityhuman.isCreativeAndOp())) {
+                    if (!world.isClientSide && tileentity.isFilteredNBT() && (entityhuman == null || !(entityhuman.isCreativeAndOp() || (entityhuman.abilities.canInstantlyBuild && entityhuman.getBukkitEntity().hasPermission("minecraft.nbt.place"))))) { // Spigot - add permission
                         return false;
                     }
 
