@@ -12,6 +12,16 @@ import org.bukkit.event.inventory.InventoryType;
 /**
  * Interface to the various inventories. Behavior relating to {@link
  * Material#AIR} is unspecified.
+ *
+ * <br>
+ * <b>Note that whilst {@link #iterator()} deals with the entire inventory, add
+ * / contains / remove methods deal only with the storage contents.</b>
+ * <br>
+ * <b>Consider using {@link #getContents()} and {@link #getStorageContents()} for
+ * specific iteration.</b>
+ *
+ * @see #getContents()
+ * @see #getStorageContents()
  */
 public interface Inventory extends Iterable<ItemStack> {
 
