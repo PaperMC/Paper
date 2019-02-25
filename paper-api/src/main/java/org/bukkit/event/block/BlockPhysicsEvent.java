@@ -28,11 +28,28 @@ import org.bukkit.event.HandlerList;
 public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final BlockData changed;
+    private final Block sourceBlock;
     private boolean cancel = false;
 
     public BlockPhysicsEvent(final Block block, final BlockData changed) {
+        this(block, changed, block);
+    }
+
+    public BlockPhysicsEvent(final Block block, final BlockData changed, final Block sourceBlock) {
         super(block);
         this.changed = changed;
+        this.sourceBlock = sourceBlock;
+    }
+
+    /**
+     * Gets the source block that triggered this event.
+     * 
+     * Note: This will default to block if not set.
+     *
+     * @return The source block
+     */
+    public Block getSourceBlock() {
+        return sourceBlock;
     }
 
     /**
