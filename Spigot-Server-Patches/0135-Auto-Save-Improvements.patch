@@ -1,4 +1,4 @@
-From c566e08769d6f447d3fa5e17095b6d9d3038f8c7 Mon Sep 17 00:00:00 2001
+From 245ce5906974836db86776d813d9f2828e31a085 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 19 Sep 2016 23:16:39 -0400
 Subject: [PATCH] Auto Save Improvements
@@ -12,7 +12,7 @@ Re-introduce a cap per tick for auto save (Spigot disabled the vanilla cap) and 
 Adds incremental player auto saving too
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 51b0dd972..9f8b43d2a 100644
+index 4e07ab0fef..a4853e04be 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -269,4 +269,15 @@ public class PaperConfig {
@@ -32,7 +32,7 @@ index 51b0dd972..9f8b43d2a 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d8f258105..47bfb5b62 100644
+index d8f2581058..47bfb5b626 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -2,6 +2,7 @@ package com.destroystokyo.paper;
@@ -64,7 +64,7 @@ index d8f258105..47bfb5b62 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ddccdc939..0d70ce797 100644
+index ddccdc9390..0d70ce797f 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -53,9 +53,9 @@ public class Chunk implements IChunkAccess {
@@ -96,7 +96,7 @@ index ddccdc939..0d70ce797 100644
  
      public boolean isEmpty() {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index d0bf0f72d..fbc69b5ba 100644
+index d0bf0f72da..fbc69b5ba5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -243,7 +243,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -109,7 +109,7 @@ index d0bf0f72d..fbc69b5ba 100644
                      }
                  }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 749e41aed..97714be6d 100644
+index 3ea9dd740d..77b90f62c3 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -34,6 +34,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -121,7 +121,7 @@ index 749e41aed..97714be6d 100644
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7e1711b2f..a5047084e 100644
+index 7ffb061414..6283c774d6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -143,6 +143,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -168,7 +168,7 @@ index 7e1711b2f..a5047084e 100644
          this.methodProfiler.enter("snooper");
          if (getSnooperEnabled() && !this.snooper.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 79641a73a..fe6649224 100644
+index 79641a73a8..fe6649224a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -341,6 +341,7 @@ public abstract class PlayerList {
@@ -207,10 +207,10 @@ index 79641a73a..fe6649224 100644
      public WhiteList getWhitelist() {
          return this.whitelist;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1d46b8967..1e7e503eb 100644
+index 639068d2dc..49c5b0b5cc 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -856,8 +856,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -855,8 +855,9 @@ public class WorldServer extends World implements IAsyncTaskHandler {
          ChunkProviderServer chunkproviderserver = this.getChunkProvider();
  
          if (chunkproviderserver.d()) {
@@ -221,7 +221,7 @@ index 1d46b8967..1e7e503eb 100644
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
              }
-@@ -866,6 +867,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -865,6 +866,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
              if (iprogressupdate != null) {
                  iprogressupdate.c(new ChatMessage("menu.savingChunks", new Object[0]));
              }
