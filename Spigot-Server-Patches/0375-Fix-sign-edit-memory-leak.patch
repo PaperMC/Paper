@@ -1,0 +1,47 @@
+From 5a1e1396b62a291dc2f6a2b3ee92cce18b8ebd74 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 28 Feb 2019 00:15:28 -0500
+Subject: [PATCH] Fix sign edit memory leak
+
+when a player edits a sign, a reference to their Entity is never cleand up.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index cb47e54d..68728d43 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2211,7 +2211,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+             TileEntitySign tileentitysign = (TileEntitySign) tileentity;
+ 
+-            if (!tileentitysign.a() || tileentitysign.e() != this.player) {
++            if (!tileentitysign.a() || tileentitysign.signEditor == null || !tileentitysign.signEditor.equals(this.player.getUniqueID())) { // Paper
+                 this.minecraftServer.warning("Player " + this.player.getName() + " just tried to change non-editable sign");
+                 this.sendPacket(tileentity.getUpdatePacket()); // CraftBukkit
+                 return;
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index 786b2984..e7d9d811 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -10,6 +10,7 @@ public class TileEntitySign extends TileEntity {
+     private EntityHuman h;
+     private final CommandObjectiveExecutor i = new CommandObjectiveExecutor();
+     public static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
++    public java.util.UUID signEditor; // Paper
+ 
+     public TileEntitySign() {}
+ 
+@@ -123,7 +124,10 @@ public class TileEntitySign extends TileEntity {
+     }
+ 
+     public void a(EntityHuman entityhuman) {
+-        this.h = entityhuman;
++        // Paper start
++        //this.h = entityhuman;
++        signEditor = entityhuman != null ? entityhuman.getUniqueID() : null;
++        // Paper end
+     }
+ 
+     public EntityHuman e() {
+-- 
+2.20.1
+
