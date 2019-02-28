@@ -1,4 +1,4 @@
-From 2bd563d8f9d88dd0aa6ece2f0c954144d10a40fd Mon Sep 17 00:00:00 2001
+From b730a9659f67fda08d8de3a9eb395bef9dfdfe72 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Feb 2019 22:18:40 -0500
 Subject: [PATCH] Strip extra Sign data to/from client
@@ -20,7 +20,7 @@ it only impacts data sent to and from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 04344a3711..9b857a8d1d 100644
+index 04344a371..9b857a8d1 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2543,6 +2543,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -36,10 +36,18 @@ index 04344a3711..9b857a8d1d 100644
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
 diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
-index c2bcbbbab9..9dbdabeb0c 100644
+index c2bcbbbab..05fb2eea5 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySign.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySign.java
-@@ -14,19 +14,25 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
++
+ import javax.annotation.Nullable;
+ 
+ public class TileEntitySign extends TileEntity implements ICommandListener {
+@@ -14,17 +15,31 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
      // Paper start - Strip invalid unicode from signs on load
      private static final boolean keepInvalidUnicode = Boolean.getBoolean("Paper.keepInvalidUnicode"); // Allow people to keep their bad unicode if they really want it
      private boolean privateUnicodeRemoved = false;
@@ -59,14 +67,20 @@ index c2bcbbbab9..9dbdabeb0c 100644
          super.save(nbttagcompound);
  
          for (int i = 0; i < 4; ++i) {
-             String s = IChatBaseComponent.ChatSerializer.a(this.lines[i]);
+-            String s = IChatBaseComponent.ChatSerializer.a(this.lines[i]);
++            // Paper start
++            String component = org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(lines[i]);
++
++            if (filterLines && MAX_SIGN_LINE_LENGTH > 0 && component.length() > MAX_SIGN_LINE_LENGTH) {
++                component = component.substring(0, MAX_SIGN_LINE_LENGTH);
++            }
++
++            String s = org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(component)[0]);
++            // Paper end
  
--            nbttagcompound.setString("Text" + (i + 1), s);
-+            nbttagcompound.setString("Text" + (i + 1), filterLines && MAX_SIGN_LINE_LENGTH > 0 && s.length() > MAX_SIGN_LINE_LENGTH ? s.substring(0, MAX_SIGN_LINE_LENGTH): s); // Paper
+             nbttagcompound.setString("Text" + (i + 1), s);
          }
- 
-         // CraftBukkit start
-@@ -118,7 +124,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+@@ -118,7 +133,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
      }
  
      public NBTTagCompound aa_() {
@@ -76,5 +90,5 @@ index c2bcbbbab9..9dbdabeb0c 100644
  
      public boolean isFilteredNBT() {
 -- 
-2.20.1
+2.21.0
 
