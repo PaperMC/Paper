@@ -1,4 +1,4 @@
-From 2b5bbee0eb86a2486367181c384d7040b8c52656 Mon Sep 17 00:00:00 2001
+From 7c9f744502fe7d16b4ab37f51a5247b474609f9f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Feb 2019 22:18:40 -0500
 Subject: [PATCH] Strip extra Sign data to/from client
@@ -20,7 +20,7 @@ it only impacts data sent to and from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index de62c3b7..cb47e54d 100644
+index de62c3b76..cb47e54da 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2227,6 +2227,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -36,10 +36,10 @@ index de62c3b7..cb47e54d 100644
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
 diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
-index 67bd3bcb..786b2984 100644
+index 67bd3bcbe..6e3359362 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySign.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySign.java
-@@ -9,16 +9,22 @@ public class TileEntitySign extends TileEntity {
+@@ -9,15 +9,28 @@ public class TileEntitySign extends TileEntity {
      public boolean isEditable = true;
      private EntityHuman h;
      private final CommandObjectiveExecutor i = new CommandObjectiveExecutor();
@@ -56,14 +56,20 @@ index 67bd3bcb..786b2984 100644
          super.save(nbttagcompound);
  
          for (int i = 0; i < 4; ++i) {
-             String s = IChatBaseComponent.ChatSerializer.a(this.lines[i]);
+-            String s = IChatBaseComponent.ChatSerializer.a(this.lines[i]);
++            // Paper start
++            String line = org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(lines[i]);
++
++            if (filterLines && MAX_SIGN_LINE_LENGTH > 0 && line.length() > MAX_SIGN_LINE_LENGTH) {
++                line = line.substring(0, MAX_SIGN_LINE_LENGTH);
++            }
  
--            nbttagcompound.setString("Text" + (i + 1), s);
-+            nbttagcompound.setString("Text" + (i + 1), filterLines && MAX_SIGN_LINE_LENGTH > 0 && s.length() > MAX_SIGN_LINE_LENGTH ? s.substring(0, MAX_SIGN_LINE_LENGTH): s); // Paper
++            String s = IChatBaseComponent.ChatSerializer.a(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(line)[0]);
++            // Paper end
+             nbttagcompound.setString("Text" + (i + 1), s);
          }
  
-         // CraftBukkit start
-@@ -105,7 +111,7 @@ public class TileEntitySign extends TileEntity {
+@@ -105,7 +118,7 @@ public class TileEntitySign extends TileEntity {
      }
  
      public NBTTagCompound d() {
@@ -73,5 +79,5 @@ index 67bd3bcb..786b2984 100644
  
      public boolean isFilteredNBT() {
 -- 
-2.20.1
+2.21.0
 
