@@ -1,0 +1,58 @@
+From 270c7bb8936f603c5f8700598807bb20482ed4d8 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Jan 2019 00:08:15 -0500
+Subject: [PATCH] Fix Custom Shapeless Custom Crafting Recipes
+
+Mojang implemented Shapeless different than Shaped
+
+This made the Bukkit RecipeChoice API not work for Shapeless.
+
+This reimplements vanilla logic using the same test logic as Shaped
+
+diff --git a/src/main/java/net/minecraft/server/ShapelessRecipes.java b/src/main/java/net/minecraft/server/ShapelessRecipes.java
+index 819b4ac2da..1dc9a1c93c 100644
+--- a/src/main/java/net/minecraft/server/ShapelessRecipes.java
++++ b/src/main/java/net/minecraft/server/ShapelessRecipes.java
+@@ -59,21 +59,32 @@ public class ShapelessRecipes implements IRecipe {
+         if (!(iinventory instanceof InventoryCrafting)) {
+             return false;
+         } else {
+-            AutoRecipeStackManager autorecipestackmanager = new AutoRecipeStackManager();
+-            int i = 0;
+-
++            // Paper start - use RecipeItemStack.test
++            java.util.List<ItemStack> providedItems = new java.util.ArrayList<>();
+             for (int j = 0; j < iinventory.n(); ++j) {
+                 for (int k = 0; k < iinventory.U_(); ++k) {
+                     ItemStack itemstack = iinventory.getItem(k + j * iinventory.U_());
+ 
+                     if (!itemstack.isEmpty()) {
+-                        ++i;
+-                        autorecipestackmanager.b(new ItemStack(itemstack.getItem()));
++                        providedItems.add(itemstack.cloneItemStack());
+                     }
+                 }
+             }
+-
+-            return i == this.ingredients.size() && autorecipestackmanager.a(this, (IntList) null);
++            java.util.List<RecipeItemStack> ingredients = new java.util.ArrayList<>(this.ingredients);
++
++            PROVIDED:
++            for (ItemStack provided : providedItems) {
++                for (Iterator<RecipeItemStack> itIngredient = ingredients.iterator(); itIngredient.hasNext(); ) {
++                    RecipeItemStack ingredient = itIngredient.next();
++                    if (ingredient.test(provided)) {
++                        itIngredient.remove();
++                        continue PROVIDED;
++                    }
++                }
++                return false;
++            }
++            return ingredients.isEmpty();
++            // Paper end
+         }
+     }
+ 
+-- 
+2.20.1
+
