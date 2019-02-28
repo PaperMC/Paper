@@ -104,6 +104,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private int E;
     private int receivedMovePackets;
     private int processedMovePackets;
+    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 
     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
@@ -2604,6 +2605,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
             String[] lines = new String[4];
 
             for (int i = 0; i < astring.length; ++i) {
+                // Paper start - cap line length - modified clients can send longer data than normal
+                if (MAX_SIGN_LINE_LENGTH > 0 && astring[i].length() > MAX_SIGN_LINE_LENGTH) {
+                    // This handles multibyte characters as 1
+                    int offset = astring[i].codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
+                    if (offset < astring[i].length()) {
+                        astring[i] = astring[i].substring(0, offset);
+                    }
+                }
+                // Paper end
                 lines[i] = SharedConstants.a(astring[i]); //Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
             }
             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
