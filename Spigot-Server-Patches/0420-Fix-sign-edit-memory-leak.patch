@@ -1,0 +1,47 @@
+From 3ebcdbd761e9b0b604ff97f197cfe4c55227ef2c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 28 Feb 2019 00:15:28 -0500
+Subject: [PATCH] Fix sign edit memory leak
+
+when a player edits a sign, a reference to their Entity is never cleand up.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 9b857a8d1d..53ef6bf175 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2527,7 +2527,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+             TileEntitySign tileentitysign = (TileEntitySign) tileentity;
+ 
+-            if (!tileentitysign.d() || tileentitysign.e() != this.player) {
++            if (!tileentitysign.d() || tileentitysign.signEditor == null || !tileentitysign.signEditor.equals(this.player.getUniqueID())) { // Paper
+                 this.minecraftServer.warning("Player " + this.player.getDisplayName().getString() + " just tried to change non-editable sign");
+                 this.sendPacket(tileentity.getUpdatePacket()); // CraftBukkit
+                 return;
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index 9dbdabeb0c..0a5971d0ec 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -15,6 +15,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+     private static final boolean keepInvalidUnicode = Boolean.getBoolean("Paper.keepInvalidUnicode"); // Allow people to keep their bad unicode if they really want it
+     private boolean privateUnicodeRemoved = false;
+     public static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
++    public java.util.UUID signEditor;
+     // Paper end
+ 
+     public TileEntitySign() {
+@@ -136,7 +137,10 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+     }
+ 
+     public void a(EntityHuman entityhuman) {
+-        this.g = entityhuman;
++        // Paper start
++        //this.g = entityhuman;
++        signEditor = entityhuman != null ? entityhuman.getUniqueID() : null;
++        // Paper end
+     }
+ 
+     public EntityHuman e() {
+-- 
+2.20.1
+
