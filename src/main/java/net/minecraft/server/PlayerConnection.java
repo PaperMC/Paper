@@ -2588,7 +2588,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
             TileEntitySign tileentitysign = (TileEntitySign) tileentity;
 
-            if (!tileentitysign.d() || tileentitysign.f() != this.player) {
+            if (!tileentitysign.d() || tileentitysign.signEditor == null || !tileentitysign.signEditor.equals(this.player.getUniqueID())) {
                 PlayerConnection.LOGGER.warn("Player {} just tried to change non-editable sign", this.player.getDisplayName().getString());
                 this.sendPacket(tileentity.getUpdatePacket()); // CraftBukkit
                 return;
