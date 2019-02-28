@@ -1,0 +1,80 @@
+From 2bd563d8f9d88dd0aa6ece2f0c954144d10a40fd Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Feb 2019 22:18:40 -0500
+Subject: [PATCH] Strip extra Sign data to/from client
+
+modified clients can send abnormally large data from the client
+to the server and it would get stored on the sign as sent.
+
+the client can barely render around 16 characters as-is, but formatting
+codes can get it to be more than 16 actual length.
+
+Set a limit of 80 which should give an average of 16 characters 2
+sets of legacy formatting codes which should be plenty for all uses.
+
+This does not strip any existing data from the NBT as plugins
+may use this for storing data out of the rendered area.
+
+it only impacts data sent to and from the client.
+
+Set -DPaper.maxSignLength=XX to change limit or -1 to disable
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 04344a3711..9b857a8d1d 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2543,6 +2543,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             String[] lines = new String[4];
+ 
+             for (int i = 0; i < astring.length; ++i) {
++                // Paper start - cap line length - modified clients can send longer data than normal
++                if (astring[i].length() > TileEntitySign.MAX_SIGN_LINE_LENGTH && TileEntitySign.MAX_SIGN_LINE_LENGTH > 0) {
++                    astring[i] = astring[i].substring(0, TileEntitySign.MAX_SIGN_LINE_LENGTH);
++                }
++                // Paper end
+                 lines[i] = SharedConstants.a(astring[i]); //Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
+             }
+             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index c2bcbbbab9..9dbdabeb0c 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -14,19 +14,25 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+     // Paper start - Strip invalid unicode from signs on load
+     private static final boolean keepInvalidUnicode = Boolean.getBoolean("Paper.keepInvalidUnicode"); // Allow people to keep their bad unicode if they really want it
+     private boolean privateUnicodeRemoved = false;
++    public static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     // Paper end
+ 
+     public TileEntitySign() {
+         super(TileEntityTypes.SIGN);
+     }
+ 
++    // Paper start
+     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
++        return save(nbttagcompound, false);
++    }
++    public NBTTagCompound save(NBTTagCompound nbttagcompound, boolean filterLines) {
++        // Paper end
+         super.save(nbttagcompound);
+ 
+         for (int i = 0; i < 4; ++i) {
+             String s = IChatBaseComponent.ChatSerializer.a(this.lines[i]);
+ 
+-            nbttagcompound.setString("Text" + (i + 1), s);
++            nbttagcompound.setString("Text" + (i + 1), filterLines && MAX_SIGN_LINE_LENGTH > 0 && s.length() > MAX_SIGN_LINE_LENGTH ? s.substring(0, MAX_SIGN_LINE_LENGTH): s); // Paper
+         }
+ 
+         // CraftBukkit start
+@@ -118,7 +124,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+     }
+ 
+     public NBTTagCompound aa_() {
+-        return this.save(new NBTTagCompound());
++        return this.save(new NBTTagCompound(), true); // Paper - filter lines
+     }
+ 
+     public boolean isFilteredNBT() {
+-- 
+2.20.1
+
