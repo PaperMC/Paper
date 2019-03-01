@@ -32,7 +32,7 @@ index 8e8390282..f52936581 100644
          this.s = this::l;
          if (this.i.canRead() && this.i.peek() == '#') {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index eaf4cd11c..03644365c 100644
+index eaf4cd11c..dc417fb9d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -64,8 +64,8 @@ index eaf4cd11c..03644365c 100644
      private boolean unbreakable;
      private int damage;
 +    // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
-+    private Set<Namespaced> placeableKeys;
-+    private Set<Namespaced> destroyableKeys;
++    private Set<Namespaced> placeableKeys = Sets.newHashSet();
++    private Set<Namespaced> destroyableKeys = Sets.newHashSet();
 +    // Paper end
  
      private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
@@ -105,7 +105,6 @@ index eaf4cd11c..03644365c 100644
 +        }
 +
 +        if (tag.hasKey(CAN_PLACE_ON.NBT)) {
-+            this.placeableKeys = Sets.newHashSet();
 +            NBTTagList list = tag.getList(CAN_PLACE_ON.NBT, CraftMagicNumbers.NBT.TAG_STRING);
 +            for (int i = 0; i < list.size(); i++) {
 +                Namespaced namespaced = this.deserializeNamespaced(list.getString(i));
@@ -127,7 +126,6 @@ index eaf4cd11c..03644365c 100644
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
 +        Iterable<?> canPlaceOnSerialized = SerializableMeta.getObject(Iterable.class, map, CAN_PLACE_ON.BUKKIT, true);
 +        if (canPlaceOnSerialized != null) {
-+            this.placeableKeys = Sets.newHashSet();
 +            for (Object canPlaceOnElement : canPlaceOnSerialized) {
 +                String canPlaceOnRaw = (String) canPlaceOnElement;
 +                Namespaced value = this.deserializeNamespaced(canPlaceOnRaw);
@@ -275,7 +273,7 @@ index eaf4cd11c..03644365c 100644
 +    @Override
 +    @SuppressWarnings("deprecation")
 +    public Set<Material> getCanDestroy() {
-+        return this.destroyableKeys == null ? Collections.emptySet() : legacyGetMatsFromKeys(this.destroyableKeys);
++        return !hasDestroyableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.destroyableKeys);
 +    }
 +
 +    @Override
@@ -288,7 +286,7 @@ index eaf4cd11c..03644365c 100644
 +    @Override
 +    @SuppressWarnings("deprecation")
 +    public Set<Material> getCanPlaceOn() {
-+        return this.placeableKeys == null ? Collections.emptySet() : legacyGetMatsFromKeys(this.placeableKeys);
++        return !hasPlaceableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.placeableKeys);
 +    }
 +
 +    @Override
@@ -300,7 +298,7 @@ index eaf4cd11c..03644365c 100644
 +
 +    @Override
 +    public Set<Namespaced> getDestroyableKeys() {
-+        return this.destroyableKeys == null ? Collections.emptySet() : Sets.newHashSet(this.destroyableKeys);
++        return !hasDestroyableKeys() ? Collections.emptySet() : Sets.newHashSet(this.destroyableKeys);
 +    }
 +
 +    @Override
@@ -313,7 +311,7 @@ index eaf4cd11c..03644365c 100644
 +
 +    @Override
 +    public Set<Namespaced> getPlaceableKeys() {
-+        return this.placeableKeys == null ? Collections.emptySet() : Sets.newHashSet(this.placeableKeys);
++        return !hasPlaceableKeys() ? Collections.emptySet() : Sets.newHashSet(this.placeableKeys);
 +    }
 +
 +    @Override
