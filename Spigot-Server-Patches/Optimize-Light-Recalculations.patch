@@ -13,8 +13,24 @@ changes from 1 block to another.
 Also optimizes to not repeatedly look up the same chunk for
 light lookups.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e042040557..0b54b7d789 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
+     }
+ 
++    public boolean optimizeLight = true;
++    private void optimizeLight() {
++        this.optimizeLight = getBoolean("optimize-light", optimizeLight);
++    }
++
+     public boolean antiXray;
+     public boolean asynchronous;
+     public EngineMode engineMode;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a002aabf3..cd7b6318f 100644
+index a002aabf31..1cb9030dab 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -31,12 +47,12 @@ index a002aabf3..cd7b6318f 100644
                  if (flag1) {
                      this.initLighting();
 -                } else {
-+                } else if (block != block1) { // Paper - Optimize light recalculations
++                } else if (!world.paperConfig.optimizeLight || block != block1) { // Paper - Optimize light recalculations
                      this.runOrQueueLightUpdate(() -> { // Paper - Queue light update
                      int i1 = iblockdata.b(this.world, blockposition);
                      int j1 = iblockdata1.b(this.world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a6176c805..5dc32a6e5 100644
+index 2224eeab27..57de5f48ab 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
