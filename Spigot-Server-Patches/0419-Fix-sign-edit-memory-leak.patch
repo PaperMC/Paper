@@ -1,4 +1,4 @@
-From 09a0ec26b1ed7bea71eb912b3dfc10c051cb2ae6 Mon Sep 17 00:00:00 2001
+From da540325bd88cf730edad5ce1eb6d264f6eb543d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 28 Feb 2019 00:15:28 -0500
 Subject: [PATCH] Fix sign edit memory leak
@@ -6,7 +6,7 @@ Subject: [PATCH] Fix sign edit memory leak
 when a player edits a sign, a reference to their Entity is never cleand up.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 9b857a8d1..53ef6bf17 100644
+index 04344a3711..5c58b85388 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2527,7 +2527,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
@@ -19,18 +19,18 @@ index 9b857a8d1..53ef6bf17 100644
                  this.sendPacket(tileentity.getUpdatePacket()); // CraftBukkit
                  return;
 diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
-index 05fb2eea5..ca80391d7 100644
+index c2bcbbbab9..fdb771317a 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySign.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySign.java
-@@ -16,6 +16,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+@@ -14,6 +14,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+     // Paper start - Strip invalid unicode from signs on load
      private static final boolean keepInvalidUnicode = Boolean.getBoolean("Paper.keepInvalidUnicode"); // Allow people to keep their bad unicode if they really want it
      private boolean privateUnicodeRemoved = false;
-     public static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
 +    public java.util.UUID signEditor;
      // Paper end
  
      public TileEntitySign() {
-@@ -145,7 +146,10 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
+@@ -130,7 +131,10 @@ public class TileEntitySign extends TileEntity implements ICommandListener {
      }
  
      public void a(EntityHuman entityhuman) {
@@ -43,5 +43,5 @@ index 05fb2eea5..ca80391d7 100644
  
      public EntityHuman e() {
 -- 
-2.21.0
+2.20.1
 
