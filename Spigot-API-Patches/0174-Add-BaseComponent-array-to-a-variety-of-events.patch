@@ -1,0 +1,2185 @@
+From 91304939c57660f9f81845718b100a5be5c88c3d Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 12 Oct 2018 23:18:21 -0700
+Subject: [PATCH] Add BaseComponent array to a variety of events
+
+This patch adds BaseComponents to each of the events:
+- AsyncPlayerChatEvent
+- AsyncPlayerPreLoginEvent
+- PlayerChatEvent
+- PlayerJoinEvent
+- PlayerKickEvent
+- PlayerLoginEvent
+- PlayerPreLoginEvent
+- PlayerQuitEvent
+- ProfileWhitelistVerifyEvent
+- PlayerDeathEvent
+- BroadcastMessageEvent
+
+Each message in each event listed above has a BaseComponent[] counterpart. Note that
+any call to modify the String counterpart will override any BaseComponent-specific
+formatting. The String and BaseComponent[] counterparts are kept in sync.
+
+As for performance regressions, there will be none for plugins that strictly use the
+String counterpart. However, the server will now have to convert from BaseComponent[]
+to JSON then to IChatBaseComponent instead of a String to IChatBaseComponent. There
+may also be an additional hit of converting from the String component to the
+BaseComponent[] counterpart, which will always be the case unless a plugin has
+set the BaseComponent[] counterpart. // NOTE: Edit this during final stage.
+
+This patch also fixes a bug where modifying the leave message in PlayerKickEvent
+would actually have no effect.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
+index b57fff9f..2d52f92a 100644
+--- a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
+@@ -24,6 +24,9 @@
+ package com.destroystokyo.paper.event.profile;
+ 
+ import com.destroystokyo.paper.profile.PlayerProfile;
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+ 
+@@ -41,6 +44,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
+     private boolean whitelisted;
+     private final boolean isOp;
+     private String kickMessage;
++    private BaseComponent[] kickMessageComponents;
+ 
+     public ProfileWhitelistVerifyEvent(final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, String kickMessage) {
+         this.profile = profile;
+@@ -50,39 +54,78 @@ public class ProfileWhitelistVerifyEvent extends Event {
+         this.kickMessage = kickMessage;
+     }
+ 
++    public ProfileWhitelistVerifyEvent(final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, BaseComponent[] kickMessage) {
++        this.profile = profile;
++        this.whitelistEnabled = whitelistEnabled;
++        this.whitelisted = whitelisted;
++        this.isOp = isOp;
++        this.kickMessage = kickMessage == null ? null : TextComponent.toLegacyText(kickMessage);
++        this.kickMessageComponents = kickMessage;
++    }
++
+     /**
+      * @return the currently planned message to send to the user if they are not whitelisted
+      */
+     public String getKickMessage() {
+-        return kickMessage;
++        return this.kickMessage;
++    }
++
++    /**
++     * Returns the message to send to the user if he is not whitelisted.
++     * <p>
++     * The returned message is a NOT copy. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * Modifying the returned result will cause undefined behaviour.
++     * </p>
++     * @return the currently planned message to send to the user if they are not whitelisted
++     */
++    public BaseComponent[] getKickMessageComponents() {
++        return this.kickMessageComponents == null ? (this.kickMessageComponents = TextComponent.fromLegacyText(this.kickMessage)) : this.kickMessageComponents;
+     }
+ 
+     /**
+      * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
+      */
+-    public void setKickMessage(String kickMessage) {
++    public void setKickMessage(final String kickMessage) {
+         this.kickMessage = kickMessage;
++        this.kickMessageComponents = null;
++    }
++
++    /**
++     * Sets the kick message to send to the user if he is kicked.
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
++     */
++    public void setKickMessageComponents(final BaseComponent[] kickMessage) {
++        if (kickMessage == null) {
++            this.kickMessage = null;
++            this.kickMessageComponents = null;
++            return;
++        }
++        this.kickMessage = BaseComponent.toLegacyText(kickMessage); /* This ensures the components are valid */
++        this.kickMessageComponents = kickMessage;
+     }
+ 
+     /**
+      * @return The profile of the player trying to connect
+      */
+     public PlayerProfile getPlayerProfile() {
+-        return profile;
++        return this.profile;
+     }
+ 
+     /**
+      * @return Whether the player is whitelisted to play on this server (whitelist may be off is why its true)
+      */
+     public boolean isWhitelisted() {
+-        return whitelisted;
++        return this.whitelisted;
+     }
+ 
+     /**
+      * Changes the players whitelisted state. false will deny the login
+      * @param whitelisted The new whitelisted state
+      */
+-    public void setWhitelisted(boolean whitelisted) {
++    public void setWhitelisted(final boolean whitelisted) {
+         this.whitelisted = whitelisted;
+     }
+ 
+@@ -90,14 +133,14 @@ public class ProfileWhitelistVerifyEvent extends Event {
+      * @return if the player obtained whitelist status by having op
+      */
+     public boolean isOp() {
+-        return isOp;
++        return this.isOp;
+     }
+ 
+     /**
+      * @return if the server even has whitelist on
+      */
+     public boolean isWhitelistEnabled() {
+-        return whitelistEnabled;
++        return this.whitelistEnabled;
+     }
+ 
+     @Override
+diff --git a/src/main/java/com/destroystokyo/paper/utils/BaseComponentFormatter.java b/src/main/java/com/destroystokyo/paper/utils/BaseComponentFormatter.java
+new file mode 100644
+index 00000000..394590a7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/BaseComponentFormatter.java
+@@ -0,0 +1,727 @@
++package com.destroystokyo.paper.utils;
++
++import net.md_5.bungee.api.chat.*;
++import net.md_5.bungee.chat.ComponentSerializer;
++
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.List;
++
++/**
++ * Represents methods for dealing with formatter {@link String Strings} and {@link BaseComponent BaseComponent arrays}.
++ * The BaseComponent format is listed below:
++ * <p>
++ * Note that when "number of characters" refers to the plain text {@link String#length() length}.
++ * </p>
++ *
++ * <p>
++ * Note that only the string format specifier is considered here, as any other format specifiers
++ * cannot be used, except for %n and %%. (%n inserts {@link System#lineSeparator()}, %% inserts %).
++ * </p>
++ *
++ * <p>
++ * The general format for format specifiers is as follows:
++ * </p>
++ *
++ * <p>
++ * %[argument_index$][flags][width][.precision]conversion
++ * </p>
++ *
++ * <p>
++ * The argument_index parameter refers to which argument is being formatted. This is an integer value starting
++ * from 1, and with 1 referring to the first argument. The $ suffix is mandatory to describe this parameter.
++ * </p>
++ *
++ * <p>
++ * The flags parameter is a set of characters that will modify the output format. The valid flags
++ * are as follows:
++ * <ul>
++ * <li>
++ *     '-' (left justified flag)
++ * </li>
++ * <li>
++ *     '<' (reuse argument flag)
++ * </li>
++ * <li>
++ *     'E' (passon everything flag)
++ * </li>
++ * <li>
++ *     'F' (passon text formatting flag)
++ * </li>
++ * <li>
++ *     'I' (passon nothing flag)
++ * </li>
++ * <li>
++ *     'e' (retain everything flag)
++ * </li>
++ * <li>
++ *     'f' (retain text formatting flag)
++ * </li>
++ * <li>
++ *     'i' (retain nothing flag)
++ * </li>
++ * </ul>
++ * </p>
++ *
++ * <p>
++ * The flag '-' specifies that the result will be left-justified. If this is not specified,
++ * the result is right-justified.
++ * </p>
++ *
++ * <p>
++ * The flag '<' specifies that the previous format specifier's argument index be used. Note that
++ * specifying an argument_index when this flag is present is considered invalid. This flag may not be used
++ * in the first format specifier.
++ * </p>
++ *
++ * <p>
++ * There can be no more than 1 passon flag present and no more than 1 retain flag present.
++ * </p>
++ *
++ * <p>
++ * If a passon flag is not specified, then 'F' is used instead.
++ * </p>
++ *
++ * <p>
++ * If a retain flag is not specified, then 'f' is used instead.
++ * </p>
++ *
++ * <p>
++ * Passon flags refer to the type of formatting to pass on to the strings on the right of the specifier.
++ * </p>
++ *
++ * <p>
++ * Retain flags refer to the type of formatting to retain from the formatting to the left of the specifier.
++ * </p>
++ *
++ * <p>
++ * The width parameter specifies the minimum number of characters to be written. In this case, the padding
++ * is just spaces. The default value for width is 0.
++ * </p>
++ *
++ * <p>
++ * The precision flag specifies the maximum number of characters to be written in this case. The value is trimmed
++ * according to {@link BaseComponentUtils#trimMessage(BaseComponent[], int)}.
++ * The default value for precision is {@link Integer#MAX_VALUE}.
++ * </p>
++ *
++ * <p>
++ * The conversion parameter is only one of the following:
++ * <ul>
++ * <li>
++ *     's'
++ * </li>
++ * <li>
++ *     'S'
++ * </li>
++ * <li>
++ *     '%'
++ * </li>
++ * <li>
++ *     'n'
++ * </li>
++ * </ul>
++ * </p>
++ *
++ * <p>
++ * If the conversion is 'n' or '%', then specifying the precision parameter or argument index is invalid. If the
++ * width or flags argument is present, they are simply ignored.
++ * </p>
++ *
++ * <p>
++ * For conversion 's' or 'S', a BaseComponent[] argument is required. If the 'S' conversion is used, then the
++ * BaseComponent[] argument is converted to uppercase via {@link BaseComponentUtils#toUpperCase(BaseComponent[])}.
++ * </p>
++ *
++ * <p>
++ * Note that format specifiers are ignored if they are not in any of the following locations:
++ * <ul>
++ * <li>
++ *     {@link TextComponent#getText()}
++ * </li>
++ * <li>
++ *     {@link BaseComponent#getClickEvent()}
++ *     Note that for this the argument is converted to plain text when formatting.
++ * </li>
++ * <li>
++ *     {@link BaseComponent#getHoverEvent()}
++ * </li>
++ * <li>
++ *     {@link BaseComponent#getExtra()}
++ * </li>
++ * </ul>
++ * </p>
++ *
++ * <p>
++ * Arguments are only guaranteed to be implicitly inferred from right to left if the specifier is in the base
++ * message. The base message is the text returned by {@link TextComponent#toLegacyText(BaseComponent...)}. If the
++ * argument index is not specified and the specifier is not in the base message, behaviour is undefined.
++ * </p>
++ *
++ * <p>
++ * If a null value is used for any argument, then the output is {@code new TextComponent("null")}
++ * </p>
++ *
++ * <p>
++ * Finally, it is considered invalid if a format specifier is not in one TextComponent instance.
++ * </p>
++ *
++ */
++public final class BaseComponentFormatter {
++
++    public static boolean isValidFormatLegacyText(final String text, final int arguments) {
++        return BaseComponentFormatter.isValidFormatLegacyText(text, 0, arguments);
++    }
++
++    public static boolean isValidFormatLegacyText(final String text, final int off, final int arguments) {
++        return BaseComponentFormatter.isValidFormatLegacyText(new FormatSpecifier(), text, off, arguments, false);
++    }
++
++    public static boolean testValidFormatLegacyText(final String text, final int arguments) throws IllegalArgumentException {
++        return BaseComponentFormatter.testValidFormatLegacyText(text, 0, arguments);
++    }
++
++    public static boolean testValidFormatLegacyText(final String text, final int off, final int arguments) throws IllegalArgumentException {
++        return BaseComponentFormatter.isValidFormatLegacyText(new FormatSpecifier(), text, off, arguments, true);
++    }
++
++    private static boolean isValidFormatLegacyText(final FormatSpecifier format, final String text, final int off, final int arguments, final boolean throwException) {
++        for (int nextFormat = text.indexOf('%', off); nextFormat != -1;) {
++            nextFormat = FormatSpecifier.readFormatSpecifier(format, text, nextFormat, arguments, throwException);
++            if (nextFormat == -1) {
++                return false;
++            }
++            nextFormat = text.indexOf('%', nextFormat);
++        }
++        return true;
++    }
++
++    public static BaseComponent[] format(final String format, final BaseComponent[]... arguments) {
++        final List<BaseComponent> ret = new ArrayList<>();
++
++        final FormatSpecifier specifier = new FormatSpecifier();
++
++        int off, lastOff = 0;
++        for (off = format.indexOf('%'); off != -1;) {
++            ret.addAll(Arrays.asList(TextComponent.fromLegacyText(format.substring(lastOff, off))));
++
++            lastOff = FormatSpecifier.readFormatSpecifier(specifier, format, off, arguments.length, true);
++
++            off = format.indexOf('%', lastOff);
++
++            BaseComponent[] insert;
++
++            switch (specifier.conversion) {
++                case '%':
++                    insert = new BaseComponent[] { new TextComponent("%") };
++                    break;
++                case 'n':
++                    insert = new BaseComponent[] { new TextComponent(System.lineSeparator()) };
++                    break;
++                case 's':
++                    insert = BaseComponentUtils.copy(arguments[specifier.argumentIndex]);
++                    break;
++                case 'S':
++                    insert = BaseComponentUtils.toUpperCase(arguments[specifier.argumentIndex]);
++                    break;
++                default:
++                    throw new IllegalStateException("Conversion " + specifier.conversion + " in '" + format + '\'');
++            }
++
++            final int length;
++
++            if (specifier.precision != Integer.MAX_VALUE) {
++                insert = BaseComponentUtils.trimMessage(insert, specifier.precision);
++                length = specifier.precision;
++            } else {
++                length = BaseComponentUtils.length(insert);
++            }
++
++            if (specifier.width != 0) {
++                final int toAdd = specifier.width - length;
++                if (toAdd > 0) {
++                    final char[] padding = new char[toAdd];
++                    Arrays.fill(padding, ' ');
++
++                    if ((specifier.flags & FormatSpecifier.LEFT_JUSTIFIED_FLAG) != 0) {
++                        insert = BaseComponentUtils.append(insert, new String(padding));
++                    } else {
++                        insert = BaseComponentUtils.prepend(insert, new String(padding));
++                    }
++                }
++            }
++
++
++            final int formattingFlags = specifier.flags & FormatSpecifier.FORMATTING_FLAGS;
++
++            final BaseComponent previousComponent = ret.get(ret.size() - 1);
++            /* The previous component will be used for format retention */
++
++
++
++
++        }
++
++    }
++
++    private static BaseComponent[] formatComponent(final BaseComponent[] components, int retainFlag, int passonFlag) {
++
++    }
++
++    /**
++     * Holds all of the data for format specifiers of the below form:
++     * <p>
++     * %[argument_index$][flags][width][.precision]conversion
++     * </p>
++     * <p>
++     * Each instance should be used in only one format sequence, and each format sequence should have one instance. This is because
++     * the sequential argument index (used if there is no specified argument) is stored in a FormatSpecifier index.
++     * </p>
++     * <p>
++     * For internal use only.
++     * </p>
++     */
++    static final class FormatSpecifier {
++
++        public static final int LEFT_JUSTIFIED_FLAG       = (1 << 0);
++        public static final int REUSE_ARGUMENT_INDEX_FLAG = (1 << 1);
++        public static final int RETAIN_EVERYTHING_FLAG    = (1 << 2);
++        public static final int RETAIN_FORMATTING_FLAG    = (1 << 3);
++        public static final int RETAIN_NOTHING_FLAG       = (1 << 4);
++        public static final int PASSON_EVERYTHING_FLAG    = (1 << 5);
++        public static final int PASSON_FORMATTING_FLAG    = (1 << 6);
++        public static final int PASSON_NOTHING_FLAG       = (1 << 7);
++
++        public static final int RETAIN_FLAGS = RETAIN_EVERYTHING_FLAG | RETAIN_FORMATTING_FLAG | RETAIN_NOTHING_FLAG;
++        public static final int PASSON_FLAGS = PASSON_EVERYTHING_FLAG | PASSON_FORMATTING_FLAG | PASSON_NOTHING_FLAG;
++        public static final int FORMATTING_FLAGS = RETAIN_FLAGS | PASSON_FLAGS;
++
++        public static final int DEFAULT_RETAIN_FLAG = RETAIN_FORMATTING_FLAG;
++        public static final int DEFAULT_PASSON_FLAG = PASSON_FORMATTING_FLAG;
++        public static final int DEFAULT_FORMATTING_FLAGS = DEFAULT_RETAIN_FLAG | DEFAULT_PASSON_FLAG;
++
++        /**
++         * The last sequential index used.
++         * This will be 0 if none has previously been used.
++         */
++        public int lastSeqIndex;
++
++        /**
++         * The previous index, or 0 if there is no previous index.
++         */
++        public int prevIndex;
++
++        /**
++         * The argument_index parameter.
++         * Must be > 0.
++         */
++        public int argumentIndex;
++
++        /**
++         * The flags parameter.
++         * May be a bitwise OR of flags defined in this class (static fields suffixed with "_FLAG").
++         * <p>
++         * There can only be one retain flag and one passon flag.
++         * </p>
++         * <p>
++         * By default, this value is {@link #DEFAULT_FORMATTING_FLAGS}.
++         * </p>
++         */
++        public int flags;
++
++
++        /**
++         * The width parameter.
++         * Must be >= 0.
++         * <p>
++         * By default, this value is 0.
++         * </p>
++         */
++        public int width;
++
++        /**
++         * The precision parameter.
++         * Must be >= 0.
++         * <p>
++         * By default, this value is {@link Integer#MAX_VALUE}
++         * </p>
++         */
++        public int precision;
++
++        /**
++         * The conversion parameter.
++         * Must be one of:
++         * <li>
++         *     s
++         * </li>
++         * <li>
++         *     S
++         * </li>
++         * <li>
++         *     n
++         * </li>
++         * <li>
++         *     %
++         * </li>
++         */
++        public char conversion;
++
++        /**
++         * Reads a format specifier of the form "%[argument_index$][flags][width][.precision]conversion" into dst. See
++         * {@link BaseComponentFormatter} for specifications on a format specifier.
++         * If this function returns {@code -1} or throws an exception, the values in dst are not modified.
++         * @param dst The {@link FormatSpecifier} to contain the above arguments.
++         * @param string The string to read from.
++         * @param off The offset in the string of the specifier. Must be at the specifier prefix, which is '%'.
++         * @param maxArgument
++         * @param throwException Whether to throw a detailed exception instead of returning {@code -1}.
++         * @throws IllegalArgumentException If {@code throwException == true} and this function would return {@code -1}.
++         * @return The index after the conversion if the format in the string is valid, -1 otherwise.
++         */
++        public static int readFormatSpecifier(final FormatSpecifier dst, final String string, final int off, final int maxArgument, final boolean throwException) {
++            /* off is the index of the '%' prefix */
++
++            /* For reference: */
++            /* %[argument_index$][flags][width][.precision]conversion */
++
++
++            /* First, try to find a conversion */
++            /* While searching for a conversion, return false on any invalid characters */
++
++            /*
++             * These invalid characters are as follows:
++             * - Any character not in flags
++             * - Not $ or .
++             * - Not in [0, 9]
++             */
++
++            char conversion = 0;
++            int conversionIndex;
++
++conversion_search:
++            for (conversionIndex = off + 1; conversionIndex < string.length(); ++conversionIndex) {
++                final char current = string.charAt(conversionIndex);
++                switch (current) {
++                    case 's':
++                    case 'S':
++                    case 'n':
++                    case '%':
++                        conversion = current;
++                        break conversion_search;
++                }
++
++                /* Check if possibly invalid by checking against valid characters */
++                switch (current) {
++                    /* Flag characters */
++                    case '<':
++                    case '-':
++                    case 'e':
++                    case 'f':
++                    case 'i':
++                    case 'E':
++                    case 'F':
++                    case 'I':
++
++                    /* parameter values */
++                    case '.':
++                    case '$':
++                        continue conversion_search;
++
++                    /* Digits */
++                    default:
++                        if (current >= '0' && current <= '9') {
++                            continue conversion_search;
++                        }
++                }
++
++                /* Invalid */
++                if (throwException) {
++                    throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains invalid characters!");
++                }
++                return -1;
++            }
++
++            if (conversion == 0) {
++                /* No conversion found */
++                if (throwException) {
++                    throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains no conversion!");
++                }
++                return -1;
++            }
++
++            /* Parameters are read BACKWARDS as this simplifies the logic involved */
++            /* currentOffset however may never be less-than off, but it may be equal to */
++            int currentOffset = conversionIndex - 1; /* start at character before conversion */
++
++            int width; /* will default to 0 */
++            int precision = Integer.MAX_VALUE;
++
++            boolean readPrecision = false;
++            /* This loop should read both the width and precision if they exist */
++            /* Otherwise they will remain at the default value */
++
++            /* Note that this loop will break immediately if there is no width or precision */
++            /* As the loop only continues if the precision is read */
++            for (;;) {
++                int currentNumber = 0;
++                for (int multiplier = 1; currentOffset > off; --currentOffset, multiplier *= 10) {
++                    final char current = string.charAt(currentOffset);
++                    if (current < '0' || current > '9') {
++                        break;
++                    }
++                    currentNumber += multiplier * (current - '0');
++                }
++                if (string.charAt(currentOffset) == '.') {
++                    /* Read the precision */
++                    if (readPrecision) {
++                        /* Precision may not be specified twice */
++                        if (throwException) {
++                            throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies precision more than once!");
++                        }
++                        return -1;
++                    }
++                    readPrecision = true;
++
++                    precision = currentNumber;
++                } else {
++                    /* Read the width */
++                    width = currentNumber;
++                    /* Next to read is the flags */
++                    break;
++                }
++            }
++
++            /* Next up to read is the flags value */
++
++            int flags = 0;
++
++            /*
++             * Current character can only be '$' or '%' or a flag because:
++             * - '.' is weeded out through the above loop
++             * - digits are weeded out through the above loop
++             * - conversion (excluding '%') only exists at the end of the specifier (we are reading backwards)
++             * Thus only the flag characters or '$','%' can exist.
++             */
++            for (char current = string.charAt(currentOffset); current != '$' && current != '%'; current = string.charAt(--currentOffset)) {
++                final int flag;
++                switch (current) {
++                    case '<':
++                        flag = REUSE_ARGUMENT_INDEX_FLAG;
++                        break;
++                    case '-':
++                        flag = LEFT_JUSTIFIED_FLAG;
++                        break;
++
++                    case 'e':
++                        flag = RETAIN_EVERYTHING_FLAG;
++                        if ((flags & RETAIN_FLAGS) != 0) {
++                            /* Retain flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a retain flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++                    case 'f':
++                        flag = RETAIN_FORMATTING_FLAG;
++                        if ((flags & RETAIN_FLAGS) != 0) {
++                            /* Retain flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a retain flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++                    case 'i':
++                        flag = RETAIN_NOTHING_FLAG;
++                        if ((flags & RETAIN_FLAGS) != 0) {
++                            /* Retain flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a retain flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++                    case 'E':
++                        flag = PASSON_EVERYTHING_FLAG;
++                        if ((flags & PASSON_FLAGS) != 0) {
++                            /* Passon flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a passon flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++                    case 'F':
++                        flag = PASSON_FORMATTING_FLAG;
++                        if ((flags & PASSON_FLAGS) != 0) {
++                            /* Passon flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a passon flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++                    case 'I':
++                        flag = PASSON_NOTHING_FLAG;
++                        if ((flags & PASSON_FLAGS) != 0) {
++                            /* Passon flags may not be specified in combination */
++                            if (throwException) {
++                                throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a passon flag more than once!");
++                            }
++                            return -1;
++                        }
++                        break;
++
++                    default:
++                        /* This may not happen it's just for adding final to the flags variable */
++                        throw new IllegalStateException("off " + off + " in \"" + string + "\" is invalid somehow");
++                }
++
++                /* Check for duplicate flags */
++                if (flags == (flags |= flag)) {
++                    /* Duplicate */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains a duplicate flag!");
++                    }
++                    return -1;
++                }
++            }
++
++            if ((flags & RETAIN_FLAGS) == 0) {
++                flags |= DEFAULT_RETAIN_FLAG;
++            }
++            if ((flags & PASSON_FLAGS) == 0) {
++                flags |= DEFAULT_PASSON_FLAG;
++            }
++
++            /* Read the argument value */
++
++            final boolean readArgument = string.charAt(currentOffset) == '$';
++            if (conversion == '%' || conversion == 'n') {
++                if (readArgument) {
++                    /* Cannot specify argument and '%' or 'n' conversion */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies an argument for an invalid conversion!");
++                    }
++                    return -1;
++                }
++                if (currentOffset != off) {
++                    /* There are garbage characters */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains garbage characters!");
++                    }
++                    return -1;
++                }
++            }
++            int argument;
++            if (readArgument) {
++                /* Argument parameter exists */
++                argument = 0;
++                for (int multiplier = 1; currentOffset > off; --currentOffset, multiplier *= 10) {
++                    final char current = string.charAt(currentOffset);
++                    if (current < '0' || current > '9') {
++                        break;
++                    }
++                    argument += multiplier * (current - '0');
++                }
++
++                /* Note that if there are no digits argument defaults to 0, which is invalid anyways */
++                /* Just do one final check to ensure currentOffset is equal to off, otherwise there are some garbage characters */
++                if (currentOffset != off) {
++                    /* There are garbage characters */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains garbage characters!");
++                    }
++                    return -1;
++                }
++                if (argument == 0) {
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies an invalid argument (0)!");
++                    }
++                    return -1;
++                }
++            } else {
++                /* Use sequential value if there is no re-use argument flag */
++                if ((flags & REUSE_ARGUMENT_INDEX_FLAG) != 0) {
++                    if (dst.prevIndex == 0) {
++                        /* no previous argument to re-use */
++                        if (throwException) {
++                            throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" is trying to reference a previous argument which does not exist!");
++                        }
++                        return -1;
++                    }
++                } else {
++                    argument = dst.lastSeqIndex + 1;
++                    /* At this point there is nothing left to read so offset should be equal to off */
++                    if (currentOffset != off) {
++                        /* Garbage characters */
++                        if (throwException) {
++                            throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" contains garbage characters!");
++                        }
++                        return -1;
++                    }
++                }
++            }
++
++            if (argument > maxArgument) {
++                if (throwException) {
++                    throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" references an argument which doesn't exist!");
++                }
++                return -1; /* Too few arguments */
++            }
++
++            /* All values have been read */
++
++            /* Now ensure the parameters specified are allowed by spec */
++
++            if ((flags & REUSE_ARGUMENT_INDEX_FLAG) != 0) {
++                if (readArgument) {
++                    /* May not specify an argument and the re-use argument flag */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies an argument and the re-use argument flag!");
++                    }
++                    return -1;
++                }
++                if (dst.prevIndex == 0) {
++                    /* May not specify the re-use flag without a previous argument */
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies the re-use argument flag without a previous argument!");
++                    }
++                    return -1;
++                }
++            }
++
++            if (conversion == 'n' || conversion == '%') {
++                /* Conversions of n or % may only specify flags or width (this appears to be the behaviour of String#format) */
++                if (readPrecision) {
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a precision when not allowed!");
++                    }
++                    return -1;
++                }
++                if ((flags & REUSE_ARGUMENT_INDEX_FLAG) != 0) {
++                    if (throwException) {
++                        throw new IllegalArgumentException("Specifier at index " + off + " in string \"" + string + "\" specifies a re-use argument flag when not allowed!");
++                    }
++                    return -1;
++                }
++                /* While the width and flags parameters are valid in the format specifier, they are ignored. */
++                /* Set them to 0 for the convert to legacy method */
++                flags = 0;
++                width = 0;
++            }
++
++            dst.argumentIndex = argument;
++            dst.flags = flags;
++            dst.width = width;
++            dst.precision = precision;
++            dst.conversion = conversion;
++            dst.prevIndex = argument;
++            if (!readArgument) {
++                dst.lastSeqIndex = argument;
++            }
++            return conversionIndex + 1;
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/utils/BaseComponentUtils.java b/src/main/java/com/destroystokyo/paper/utils/BaseComponentUtils.java
+new file mode 100644
+index 00000000..c2170eb5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/BaseComponentUtils.java
+@@ -0,0 +1,189 @@
++package com.destroystokyo.paper.utils;
++
++import net.md_5.bungee.api.chat.*;
++
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.List;
++import java.util.function.Function;
++
++public final class BaseComponentUtils {
++
++    /**
++     * Returns a copy of the specified {@code BaseComponent} array.
++     * @param components The specified {@code BaseComponent} array.
++     * @throws NullPointerException If components or any {@code BaseComponent} in components is {@code null}
++     */
++    public static BaseComponent[] copy(final BaseComponent[] components) {
++        final BaseComponent[] ret = new BaseComponent[components.length];
++        for (int i = 0; i < ret.length; ++i) {
++            ret[i] = properDuplicate(components[i]);
++        }
++        return ret;
++    }
++
++    /**
++     * Returns whether the specified message is not empty.
++     * @param components Whether the specified message is not empty.
++     */
++    public static boolean isEmpty(final BaseComponent[] components) {
++        return length(components) == 0;
++    }
++
++    /**
++     * Prepends the specified message with the specified prefix.
++     * @param components The specified message.
++     * @param prefix The specified prefix
++     */
++    public static BaseComponent[] prepend(final BaseComponent[] components, final String prefix) {
++        final BaseComponent[] ret = new BaseComponent[components.length + 1];
++        ret[0] = new TextComponent(prefix);
++        for (int i = 0; i < components.length; ++i) {
++            ret[i + 1] = properDuplicate(components[i]);
++        }
++        return ret;
++    }
++
++    /**
++     * Appends the specified message with the specified suffix.
++     * @param components The specified message.
++     * @param suffix The specified suffix
++     */
++    public static BaseComponent[] append(final BaseComponent[] components, final String suffix) {
++        final BaseComponent[] ret = new BaseComponent[components.length + 1];
++        for (int i = 0; i < components.length; ++i) {
++            ret[i] = properDuplicate(components[i]);
++        }
++        ret[components.length] = new TextComponent(suffix);
++        return ret;
++    }
++
++    /**
++     * Trims the message to the specified length. Note that format codes are not included
++     * in the length of the string. This is at a best effort method; with the returned message's length
++     * being at least less-than or equal to length.
++     * @param components The message to trim.
++     * @param length The length to trim to.
++     * @return
++     */
++    public static BaseComponent[] trimMessage(final BaseComponent[] components, final int length) {
++        final List<BaseComponent> ret = new ArrayList<>();
++
++        trimMessageInternal(ret, Arrays.asList(components), 0, length);
++
++        return ret.toArray(new BaseComponent[ret.size()]);
++    }
++
++
++    private static int trimMessageInternal(final List<BaseComponent> dst, final List<BaseComponent> src, int currLength, final int targetLength) {
++        for (final BaseComponent component : src) {
++            if (component instanceof TextComponent) {
++                final TextComponent text = (TextComponent) component;
++                if ((currLength + text.getText().length()) >= targetLength) {
++
++                }
++            }
++        }
++
++        return currLength;
++    }
++
++    public static int length(final BaseComponent[] components) {
++        return lengthInternal(Arrays.asList(components));
++    }
++
++    private static int lengthInternal(final List<BaseComponent> components) {
++        int length = 0;
++        for (final BaseComponent component : components) {
++            if (component instanceof TextComponent) {
++                length += ((TextComponent)component).getText().length();
++                if (component.getExtra() != null) {
++                    length += BaseComponentUtils.lengthInternal(component.getExtra());
++                }
++            } else {
++                length += component.toPlainText().length();
++            }
++        }
++        return length;
++    }
++
++    /**
++     * Converts all of the text in the given component array to upper case via {@link #transform(BaseComponent[], Function)}.
++     * @param components The given component array
++     */
++    public static BaseComponent[] toUpperCase(final BaseComponent[] components) {
++        return transform(components, String::toUpperCase);
++    }
++
++    /**
++     * Converts all of the text in the given component array to lower case via {@link #transform(BaseComponent[], Function)}.
++     * @param components The given component array
++     */
++    public static BaseComponent[] toLowerCase(final BaseComponent[] components) {
++        return transform(components, String::toLowerCase);
++    }
++
++    /**
++     * Transforms all {@code TextComponent}s in the array with the specified transform function.
++     * The transform function will be called for the {@link TextComponent#getText() text} in each component as well
++     * as its {@link TextComponent#getClickEvent() click event} or {@link TextComponent#getHoverEvent() hover event}.
++     * @param components The components to transform.
++     * @param transform The function to transform strings.
++     * @return The transformed BaseComponent[].
++     */
++    public static BaseComponent[] transform(final BaseComponent[] components, final Function<String, String> transform) {
++        final BaseComponent[] ret = new BaseComponent[components.length];
++        for (int i = 0; i < ret.length; ++i) {
++            final BaseComponent current = components[i];
++            if (current instanceof TextComponent) {
++                final TextComponent textComponent = (TextComponent) current;
++                final TextComponent duplicate = (TextComponent) properDuplicate(current);
++
++                duplicate.setText(transform.apply(textComponent.getText()));
++
++                final ClickEvent clickEvent = duplicate.getClickEvent();
++                duplicate.setClickEvent(new ClickEvent(clickEvent.getAction(), transform.apply(clickEvent.getValue())));
++
++                final HoverEvent hoverEvent = duplicate.getHoverEvent();
++                duplicate.setHoverEvent(new HoverEvent(hoverEvent.getAction(), BaseComponentUtils.transform(hoverEvent.getValue(), transform)));
++
++                ret[i] = duplicate;
++            } else {
++                ret[i] = properDuplicate(current);
++            }
++
++            final List<BaseComponent> extras = ret[i].getExtra();
++            if (extras != null) {
++                ret[i].setExtra(new ArrayList<>(Arrays.asList(BaseComponentUtils.transform(extras.toArray(new BaseComponent[extras.size()]), transform))));
++            }
++        }
++        return ret;
++    }
++
++    /* this is required as duplicate does not copy inherited formatting */
++    private static BaseComponent properDuplicate(final BaseComponent original) {
++        final BaseComponent ret = original.duplicate();
++        ret.setBold(original.isBold());
++        ret.setItalic(original.isItalic());
++        ret.setUnderlined(original.isUnderlined());
++
++        final List<BaseComponent> extra = original.getExtra();
++        if (extra == null) {
++            return ret;
++        }
++
++        final List<BaseComponent> newExtra = new ArrayList<>(extra.size());
++
++        for (final BaseComponent component : extra) {
++            newExtra.add(BaseComponentUtils.properDuplicate(component));
++        }
++
++        ret.setExtra(newExtra);
++
++        return ret;
++    }
++
++    private BaseComponentUtils() {
++        throw new RuntimeException();
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index aad03549..3c34c094 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -2,6 +2,9 @@ package org.bukkit.event.entity;
+ 
+ import java.util.List;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.inventory.ItemStack;
+ 
+@@ -10,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
+  */
+ public class PlayerDeathEvent extends EntityDeathEvent {
+     private int newExp = 0;
+-    private String deathMessage = "";
++    private String deathMessage; // Paper - Remove default value for 'Add BaseComponent to events'
+     private int newLevel = 0;
+     private int newTotalExp = 0;
+     private boolean keepLevel = false;
+@@ -32,6 +35,49 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         this.deathMessage = deathMessage;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] deathMessageComponents;
++
++    public PlayerDeathEvent(final Player player, final List<ItemStack> drops, final int droppedExp, final int newExp, final BaseComponent[] deathMessage) {
++        this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
++    }
++
++    public PlayerDeathEvent(final Player player, final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final BaseComponent[] deathMessage) {
++        super(player, drops, droppedExp);
++        this.newExp = newExp;
++        this.newTotalExp = newTotalExp;
++        this.newLevel = newLevel;
++        this.deathMessageComponents = deathMessage;
++    }
++
++    /**
++     * Sets the death message that will appear to everyone on the server.
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setDeathMessageComponents(final BaseComponent[] components) {
++        this.deathMessageComponents = components;
++        this.deathMessage = null;
++    }
++
++    /**
++     * Returns the death message that will appear to everyone on the server.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The death message that will appear to everyone on the server.
++     */
++    public BaseComponent[] getDeathMessageComponents() {
++        if (this.deathMessageComponents == null) {
++            return this.deathMessage == null ? null : (this.deathMessageComponents = TextComponent.fromLegacyText(this.deathMessage));
++        }
++        return this.deathMessageComponents;
++    }
++    // Paper end
++
+     @Override
+     public Player getEntity() {
+         return (Player) entity;
+@@ -44,6 +90,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+      */
+     public void setDeathMessage(String deathMessage) {
+         this.deathMessage = deathMessage;
++        this.deathMessageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -52,7 +99,12 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+      * @return Message to appear to other players on the server.
+      */
+     public String getDeathMessage() {
+-        return deathMessage;
++        // Paper start - Add BaseComponent to events
++        if (this.deathMessage == null) {
++            return this.deathMessageComponents == null ? null : (this.deathMessage = TextComponent.toLegacyText(this.deathMessageComponents));
++        }
++        return this.deathMessage;
++        // Paper end
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+index 680a632e..ddde75fa 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+@@ -3,6 +3,10 @@ package org.bukkit.event.player;
+ import java.util.IllegalFormatException;
+ import java.util.Set;
+ 
++import com.destroystokyo.paper.utils.BaseComponentFormatter;
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+@@ -44,6 +48,94 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+         recipients = players;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++    private BaseComponent[] displayName;
++
++    /**
++     * <p>
++     * The message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param async This changes the event to a synchronous state if {@code true}.
++     * @param who the chat sender
++     * @param message the message sent
++     * @param players the players to receive the message. This may be a lazy
++     *     or unmodifiable collection.
++     */
++    public AsyncPlayerChatEvent(final boolean async, final Player who, final BaseComponent[] message, final Set<Player> players) {
++        super(who, async);
++        this.messageComponents = message;
++        this.recipients = players;
++    }
++
++
++    /**
++     * Sets the message that the player will send. This message will be used
++     * with {@link #getFormatComponents()}.
++     *
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     *
++     * @param components New message that the player will send
++     */
++    public void setMessageComponents(final BaseComponent[] components) {
++        this.message = null;
++        this.messageComponents = components;
++    }
++
++    /**
++     * Sets the display name to appear in the chat format. May be in legacy text format.
++     * @param name The new display name.
++     */
++    public void setDisplayName(final String name) {
++        if (name == null) {
++            this.displayName = null;
++        } else {
++            this.displayName = TextComponent.fromLegacyText(name);
++        }
++    }
++
++    /**
++     * Sets the display name to appear in the chat format. Use {@code null} to use the {@link Player#getDisplayName() player's display name} instead.
++     * Note that the {@link Player#getDisplayName() player's display name} is retrieved after the event has finished execution.
++     * <p>
++     * Note that the specified display name is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param name The new display name.
++     */
++    public void setDisplayName(final BaseComponent[] name) {
++        this.displayName = name;
++    }
++
++    /**
++     * Returns the display name to use. Returns {@code null} if the {@link Player#getDisplayName() player's display name} will be used.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The display name to use.
++     */
++    public BaseComponent[] getDisplayName() {
++        return this.displayName;
++    }
++
++    /**
++     * Returns the message that the player is attempting to send.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The message the player is attempting to send.
++     */
++    public BaseComponent[] getMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++    // Paper end
++
+     /**
+      * Gets the message that the player is attempting to send. This message
+      * will be used with {@link #getFormat()}.
+@@ -51,7 +143,12 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+      * @return Message the player is attempting to send
+      */
+     public String getMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -62,6 +159,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setMessage(String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+index 0c16128e..6d0169e6 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+@@ -4,6 +4,9 @@ import java.net.InetAddress;
+ import java.util.UUID;
+ 
+ import com.destroystokyo.paper.profile.PlayerProfile;
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.Bukkit;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+@@ -59,6 +62,50 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         this.uniqueId = uniqueId;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setKickMessageComponents(final BaseComponent[] components) {
++        this.message = null;
++        this.messageComponents = components;
++    }
++
++    /**
++     * Disallows the player from logging in, with the given reason
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(final Result result, final BaseComponent[] message) {
++        this.result = result;
++        this.setKickMessageComponents(message);
++    }
++
++    /**
++     * Returns the current kick message that will be used if getResult() != Result.ALLOWED
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The kick message to used if getResult() != Result.ALLOWED
++     */
++    public BaseComponent[] getKickMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++    // Paper end
++
+     /**
+      * Gets the current result of the login, as an enum
+      *
+@@ -110,7 +157,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     public String getKickMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -120,6 +172,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     public void setKickMessage(final String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -127,7 +180,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        this.setKickMessage(""); // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -138,7 +191,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     public void disallow(final Result result, final String message) {
+         this.result = result;
+-        this.message = message;
++        this.setKickMessage(message); // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -153,7 +206,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     @Deprecated
+     public void disallow(final PlayerPreLoginEvent.Result result, final String message) {
+         this.result = result == null ? null : Result.valueOf(result.name());
+-        this.message = message;
++        this.setKickMessage(message); // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+index 1fb5cd75..52aa33ca 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+@@ -1,8 +1,13 @@
+ package org.bukkit.event.player;
+ 
+ import java.util.HashSet;
++import java.util.IllegalFormatException;
+ import java.util.Set;
+ 
++import com.destroystokyo.paper.utils.BaseComponentFormatter;
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Warning;
+ import org.bukkit.entity.Player;
+@@ -42,6 +47,85 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
+         this.recipients = recipients;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++    private BaseComponent[] displayName;
++
++    public PlayerChatEvent(final Player player, final BaseComponent[] message, final String format, final Set<Player> recipients) {
++        super(player);
++        this.messageComponents = message;
++        this.format = format;
++        this.recipients = recipients;
++    }
++
++    /**
++     * Sets the message that the player will send. This message will be used
++     * with {@link #getFormatComponents()}.
++     *
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     *
++     * @param components New message that the player will send
++     */
++    public void setMessageComponents(final BaseComponent[] components) {
++        this.message = null;
++        this.messageComponents = components;
++    }
++
++
++    /**
++     * Sets the display name to appear in the chat format. May be in legacy text format.
++     * @param name The new display name.
++     */
++    public void setDisplayName(final String name) {
++        if (name == null) {
++            this.displayName = null;
++        } else {
++            this.displayName = TextComponent.fromLegacyText(name);
++        }
++    }
++
++    /**
++     * Sets the display name to appear in the chat format. Use {@code null} to use the {@link Player#getDisplayName() player's display name} instead.
++     * Note that the {@link Player#getDisplayName() player's display name} is retrieved after the event has finished execution.
++     * <p>
++     * Note that the specified display name is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param name The new display name.
++     */
++    public void setDisplayName(final BaseComponent[] name) {
++        this.displayName = name;
++    }
++
++    /**
++     * Returns the display name to use. Returns {@code null} if the {@link Player#getDisplayName() player's display name} will be used.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The display name to use.
++     */
++    public BaseComponent[] getDisplayName() {
++        return this.displayName;
++    }
++
++    /**
++     * Returns the message that the player is attempting to send.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The message the player is attempting to send.
++     */
++    public BaseComponent[] getMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++    // Paper end
++
+     public boolean isCancelled() {
+         return cancel;
+     }
+@@ -56,7 +140,12 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
+      * @return Message the player is attempting to send
+      */
+     public String getMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -66,6 +155,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setMessage(String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -77,6 +167,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
+     public void setPlayer(final Player player) {
+         Validate.notNull(player, "Player cannot be null");
+         this.player = player;
++        this.displayName = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+index e7481f92..6ce5fa5c 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+@@ -1,5 +1,8 @@
+ package org.bukkit.event.player;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
+ 
+@@ -15,13 +18,62 @@ public class PlayerJoinEvent extends PlayerEvent {
+         this.joinMessage = joinMessage;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] joinMessageComponents;
++
++    /**
++     * Constructs this event with the specified player and join message.
++     * <p>
++     * The join message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param playerJoined The specified player
++     * @param joinMessage The specified initial join message
++     */
++    public PlayerJoinEvent(final Player playerJoined, final BaseComponent[] joinMessage) {
++        super(playerJoined);
++        this.joinMessageComponents = joinMessage;
++    }
++
++    /**
++     * Gets the join message to send to all online players.
++     * <p>
++     * The join message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified join message.
++     */
++    public void setJoinMessageComponents(final BaseComponent[] components) {
++        this.joinMessage = null;
++        this.joinMessageComponents = components;
++    }
++
++    /**
++     * Returns the join message to send to all online players.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The join message to send to all online players.
++     */
++    public BaseComponent[] getJoinMessageComponents() {
++        if (this.joinMessageComponents == null) {
++            return this.joinMessage == null ? null : (this.joinMessageComponents = TextComponent.fromLegacyText(this.joinMessage));
++        }
++        return this.joinMessageComponents;
++    }
++    // Paper end
++
+     /**
+      * Gets the join message to send to all online players
+      *
+      * @return string join message
+      */
+     public String getJoinMessage() {
+-        return joinMessage;
++        // Paper start - Add BaseComponent to events
++        if (this.joinMessage == null) {
++            return this.joinMessageComponents == null ? null : (this.joinMessage = TextComponent.toLegacyText(this.joinMessageComponents));
++        }
++        return this.joinMessage;
++        // Paper end
+     }
+ 
+     /**
+@@ -31,6 +83,7 @@ public class PlayerJoinEvent extends PlayerEvent {
+      */
+     public void setJoinMessage(String joinMessage) {
+         this.joinMessage = joinMessage;
++        this.joinMessageComponents = null; // Paper start - Add BaseComponent to events
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+index 39e81b67..ab19272c 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+@@ -1,5 +1,8 @@
+ package org.bukkit.event.player;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+@@ -11,7 +14,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private String leaveMessage;
+     private String kickReason;
+-    private Boolean cancel;
++    private boolean cancel; // Paper Boolean -> boolean
+ 
+     public PlayerKickEvent(final Player playerKicked, final String kickReason, final String leaveMessage) {
+         super(playerKicked);
+@@ -20,22 +23,105 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+         this.cancel = false;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] leaveMessageComponents;
++    private BaseComponent[] kickReasonComponents;
++
++    /**
++     * <p>
++     * The kick reason and leave message are NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param playerKicked The specified player.
++     * @param kickReason The reason the player may be kicked for.
++     * @param leaveMessage The potential message to broadcast to all users after the kick event completes.
++     */
++    public PlayerKickEvent(final Player playerKicked, final BaseComponent[] kickReason, final BaseComponent[] leaveMessage) {
++        super(playerKicked);
++        this.kickReasonComponents = kickReason;
++        this.leaveMessageComponents = leaveMessage;
++    }
++
++    /**
++     * Returns the kick reason.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The kick reason.
++     */
++    public BaseComponent[] getKickReasonComponents() {
++        if (this.kickReasonComponents == null) {
++            return this.kickReason == null ? null : (this.kickReasonComponents = TextComponent.fromLegacyText(this.kickReason));
++        }
++        return this.kickReasonComponents;
++    }
++
++    /**
++     * Sets the kick reason.
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setKickReasonComponents(final BaseComponent[] components) {
++        this.kickReason = null;
++        this.kickReasonComponents = components;
++    }
++
++    /**
++     * Returns the leave message to send to all online players.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The leave message to send to all online players.
++     */
++    public BaseComponent[] getLeaveMessageComponents() {
++        if (this.leaveMessageComponents == null) {
++            return this.leaveMessage == null ? null : (this.leaveMessageComponents = TextComponent.fromLegacyText(this.leaveMessage));
++        }
++        return this.leaveMessageComponents;
++    }
++
++    /**
++     * Sets the leave message to send to all online players.
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setLeaveMessageComponents(final BaseComponent[] components) {
++        this.leaveMessage = null;
++        this.leaveMessageComponents = components;
++    }
++    // Paper end
++
+     /**
+      * Gets the reason why the player is getting kicked
+      *
+      * @return string kick reason
+      */
+     public String getReason() {
+-        return kickReason;
++        // Paper start - Add BaseComponent to events
++        if (this.kickReason == null) {
++            return this.kickReasonComponents == null ? null : (this.kickReason = TextComponent.toLegacyText(this.kickReasonComponents));
++        }
++        return this.kickReason;
++        // Paper end
+     }
+ 
+     /**
+      * Gets the leave message send to all online players
+      *
+-     * @return string kick reason
++     * @return string leave message
+      */
+     public String getLeaveMessage() {
+-        return leaveMessage;
++        // Paper start - Add BaseComponent to events
++        if (this.leaveMessage == null) {
++            return this.leaveMessageComponents == null ? null : (this.leaveMessage = TextComponent.toLegacyText(this.leaveMessageComponents));
++        }
++        return this.leaveMessage;
++        // Paper end
+     }
+ 
+     public boolean isCancelled() {
+@@ -53,6 +139,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setReason(String kickReason) {
+         this.kickReason = kickReason;
++        this.kickReasonComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -62,6 +149,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+      */
+     public void setLeaveMessage(String leaveMessage) {
+         this.leaveMessage = leaveMessage;
++        this.leaveMessageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+index ee0b1273..7c99a9da 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+@@ -2,6 +2,9 @@ package org.bukkit.event.player;
+ 
+ import java.net.InetAddress;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
+ 
+@@ -60,6 +63,69 @@ public class PlayerLoginEvent extends PlayerEvent {
+         this.message = message;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++
++    /**
++     * This constructor pre-configures the event with a result and message.
++     * <p>
++     * The message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param player The {@link Player} for this event
++     * @param hostname The hostname that was used to connect to the server
++     * @param address The address the player used to connect, provided for
++     *     timing issues
++     * @param result The result status for this event
++     * @param message The message to be displayed if result denies login
++     * @param realAddress The unspoofed, actual address, that the player used to connect
++     */
++    public PlayerLoginEvent(final Player player, String hostname, final InetAddress address, final Result result, final BaseComponent[] message, final InetAddress realAddress) {
++        this(player, hostname, address, realAddress);
++        this.result = result;
++        this.messageComponents = message;
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setKickMessageComponents(final BaseComponent[] components) {
++        this.message = null;
++        this.messageComponents = components;
++    }
++
++    /**
++     * Disallows the player from logging in, with the given reason
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(final Result result, final BaseComponent[] message) {
++        this.result = result;
++        this.setKickMessageComponents(message);
++    }
++
++    /**
++     * Returns the current kick message that will be used if getResult() != Result.ALLOWED
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The kick message to used if getResult() != Result.ALLOWED
++     */
++    public BaseComponent[] getKickMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++    // Paper end
++
+     // Spigot start
+     /**
+      * Gets the connection address of this player, regardless of whether it has been spoofed or not.
+@@ -96,7 +162,12 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @return Current kick message
+      */
+     public String getKickMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -106,6 +177,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     public void setKickMessage(final String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper start - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -123,7 +195,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        this.setKickMessage(""); // Paper start - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -134,7 +206,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     public void disallow(final Result result, final String message) {
+         this.result = result;
+-        this.message = message;
++        this.setKickMessage(message); // Paper start - Add BaseComponent to events
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+index e8553f0f..7389d8af 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+@@ -3,6 +3,9 @@ package org.bukkit.event.player;
+ import java.net.InetAddress;
+ import java.util.UUID;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.Warning;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+@@ -37,6 +40,50 @@ public class PlayerPreLoginEvent extends Event {
+         this.uniqueId = uniqueId;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setKickMessageComponents(final BaseComponent[] components) {
++        this.message = null;
++        this.messageComponents = components;
++    }
++
++    /**
++     * Disallows the player from logging in, with the given reason
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(final Result result, final BaseComponent[] message) {
++        this.result = result;
++        this.setKickMessageComponents(message);
++    }
++
++    /**
++     * Returns the current kick message that will be used if getResult() != Result.ALLOWED
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The kick message to used if getResult() != Result.ALLOWED
++     */
++    public BaseComponent[] getKickMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++    // Paper end
++
+     /**
+      * Gets the current result of the login, as an enum
+      *
+@@ -62,7 +109,12 @@ public class PlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     public String getKickMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -72,6 +124,7 @@ public class PlayerPreLoginEvent extends Event {
+      */
+     public void setKickMessage(final String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -79,7 +132,7 @@ public class PlayerPreLoginEvent extends Event {
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        this.setKickMessage(""); // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+@@ -90,7 +143,7 @@ public class PlayerPreLoginEvent extends Event {
+      */
+     public void disallow(final Result result, final String message) {
+         this.result = result;
+-        this.message = message;
++        this.setKickMessage(message); // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+index 5c8dc1b9..bc136556 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+@@ -1,5 +1,8 @@
+ package org.bukkit.event.player;
+ 
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
+ 
+@@ -15,13 +18,61 @@ public class PlayerQuitEvent extends PlayerEvent {
+         this.quitMessage = quitMessage;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] quitMessageComponents;
++
++    /**
++     * <p>
++     * The quit message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param who The specified player.
++     * @param quitMessage The initial quit message.
++     */
++    public PlayerQuitEvent(final Player who, final BaseComponent[] quitMessage) {
++        super(who);
++        this.quitMessageComponents = quitMessage;
++    }
++
++    /**
++     * Sets the quit message to send to all online players
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param components The specified message.
++     */
++    public void setQuitMessageComponents(final BaseComponent[] components) {
++        this.quitMessage = null;
++        this.quitMessageComponents = components;
++    }
++
++    /**
++     * Returns the quit message to send to all online players.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The quit message to send to all online players.
++     */
++    public BaseComponent[] getQuitMessageComponents() {
++        if (this.quitMessageComponents == null) {
++            return this.quitMessage == null ? null : (this.quitMessageComponents = TextComponent.fromLegacyText(this.quitMessage));
++        }
++        return this.quitMessageComponents;
++    }
++    // Paper end
++
+     /**
+      * Gets the quit message to send to all online players
+      *
+      * @return string quit message
+      */
+     public String getQuitMessage() {
+-        return quitMessage;
++        // Paper start - Add BaseComponent to events
++        if (this.quitMessage == null) {
++            return this.quitMessageComponents == null ? null : (this.quitMessage = TextComponent.toLegacyText(this.quitMessageComponents));
++        }
++        return this.quitMessage;
++        // Paper end
+     }
+ 
+     /**
+@@ -31,6 +82,7 @@ public class PlayerQuitEvent extends PlayerEvent {
+      */
+     public void setQuitMessage(String quitMessage) {
+         this.quitMessage = quitMessage;
++        this.quitMessageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+index ae563114..f2946ef9 100644
+--- a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
++++ b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+@@ -1,6 +1,10 @@
+ package org.bukkit.event.server;
+ 
+ import java.util.Set;
++
++import com.destroystokyo.paper.utils.BaseComponentUtils;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.TextComponent;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+@@ -21,13 +25,54 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+         this.recipients = recipients;
+     }
+ 
++    // Paper start - Add BaseComponent to events
++    private BaseComponent[] messageComponents;
++
++    public BroadcastMessageEvent(final BaseComponent[] message, final Set<CommandSender> recipients) {
++        this.messageComponents = message;
++        this.recipients = recipients;
++    }
++
++    /**
++     * Returns the message to broadcast.
++     * <p>
++     * The returned value is NOT a copy. Modifying the value will result in undefined behaviour.
++     * Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @return The message to broadcast.
++     */
++    public BaseComponent[] getMessageComponents() {
++        if (this.messageComponents == null) {
++            return this.message == null ? null : (this.messageComponents = TextComponent.fromLegacyText(this.message));
++        }
++        return this.messageComponents;
++    }
++
++    /**
++     * Sets the message to broadcast.
++     * <p>
++     * The specified message is NOT copied. Use {@link BaseComponentUtils#copy(BaseComponent[])} to make a copy.
++     * </p>
++     * @param message The specified message.
++     */
++    public void setMessageComponents(final BaseComponent[] message) {
++        this.messageComponents = message;
++        this.message = null;
++    }
++    // Paper end
++
+     /**
+      * Get the message to broadcast.
+      *
+      * @return Message to broadcast
+      */
+     public String getMessage() {
+-        return message;
++        // Paper start - Add BaseComponent to events
++        if (this.message == null) {
++            return this.messageComponents == null ? null : (this.message = TextComponent.toLegacyText(this.messageComponents));
++        }
++        return this.message;
++        // Paper end
+     }
+ 
+     /**
+@@ -37,6 +82,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+      */
+     public void setMessage(String message) {
+         this.message = message;
++        this.messageComponents = null; // Paper - Add BaseComponent to events
+     }
+ 
+     /**
+-- 
+2.21.0
+

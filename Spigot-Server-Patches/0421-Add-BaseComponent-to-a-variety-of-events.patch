@@ -1,0 +1,420 @@
+From d2bddab834f6ffa7ac2a368ea74378afc369333a Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 13 Oct 2018 16:55:29 -0700
+Subject: [PATCH] Add BaseComponent to a variety of events
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/ChatComponentHelper.java b/src/main/java/com/destroystokyo/paper/util/ChatComponentHelper.java
+new file mode 100644
+index 000000000..99d9d6d95
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/ChatComponentHelper.java
+@@ -0,0 +1,30 @@
++package com.destroystokyo.paper.util;
++
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.chat.ComponentSerializer;
++import net.minecraft.server.ChatBaseComponent;
++import net.minecraft.server.IChatBaseComponent;
++
++public final class ChatComponentHelper {
++
++    public static IChatBaseComponent vanillaFromBaseComponent(final BaseComponent[] components) {
++        return vanillaFromJson(ComponentSerializer.toString(components));
++    }
++
++    public static IChatBaseComponent vanillaFromJson(final String json) {
++        return ChatBaseComponent.ChatSerializer.jsonToComponent(json);
++    }
++
++    public static BaseComponent[] baseComponentFromVanilla(final IChatBaseComponent component) {
++        return baseComponentFromJson(ChatBaseComponent.ChatSerializer.componentToJson(component));
++    }
++
++    public static BaseComponent[] baseComponentFromJson(final String json) {
++        return ComponentSerializer.parse(json);
++    }
++
++    private ChatComponentHelper() {
++        throw new RuntimeException();
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 010749ddc..f648b495c 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -509,8 +509,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+         IChatBaseComponent defaultMessage = this.getCombatTracker().getDeathMessage();
+ 
+-        String deathmessage = defaultMessage.getString();
+-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
++        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(defaultMessage), keepInventory); // Paper - Add BaseComponent to events
+         // Paper start - cancellable death event
+         if (event.isCancelled()) {
+             // make compatible with plugins that might have already set the health in an event listener
+@@ -525,16 +524,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         if (this.activeContainer != this.defaultContainer) {
+             this.closeInventory();
+         }
++        // Paper start - Add BaseComponent to events
++        net.md_5.bungee.api.chat.BaseComponent[] deathMessage = event.getDeathMessageComponents();
+ 
+-        String deathMessage = event.getDeathMessage();
+-
+-        if (deathMessage != null && deathMessage.length() > 0 && flag) { // TODO: allow plugins to override?
+-            IChatBaseComponent ichatbasecomponent;
+-            if (deathMessage.equals(deathmessage)) {
+-                ichatbasecomponent = this.getCombatTracker().getDeathMessage();
+-            } else {
+-                ichatbasecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromStringOrNull(deathMessage);
+-            }
++        if (deathMessage != null && !com.destroystokyo.paper.utils.BaseComponentUtils.isEmpty(deathMessage) && flag) { // TODO: allow plugins to override?
++            IChatBaseComponent ichatbasecomponent = com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(deathMessage);
++        // Paper end
+ 
+             this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
+                 if (!future.isSuccess()) {
+diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+index 48fecffdf..a5922f0ef 100644
+--- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
++++ b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+@@ -390,6 +390,7 @@ public interface IChatBaseComponent extends Message, Iterable<IChatBaseComponent
+             return jsonobject;
+         }
+ 
++        public static String componentToJson(final IChatBaseComponent component) { return a(component); } // Paper - OBFHELPER
+         public static String a(IChatBaseComponent ichatbasecomponent) {
+             return IChatBaseComponent.ChatSerializer.a.toJson(ichatbasecomponent);
+         }
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index dfe7a029f..1c3c95268 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -311,7 +311,7 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+                             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                                 final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
+                                 if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
+-                                    event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
++                                    event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessageComponents()); // Paper - Add BaseComponent to events
+                                 }
+                                 Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
+                                     @Override
+@@ -322,12 +322,12 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+ 
+                                 LoginListener.this.server.processQueue.add(waitable);
+                                 if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
+-                                    disconnect(event.getKickMessage());
++                                    disconnect(com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(event.getKickMessageComponents())); // Paper - Add BaseComponent to events
+                                     return;
+                                 }
+                             } else {
+                                 if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+-                                    disconnect(asyncEvent.getKickMessage());
++                                    disconnect(com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(asyncEvent.getKickMessageComponents())); // Paper - Add BaseComponent to events
+                                     return;
+                                 }
+                             }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 53ef6bf17..99ebd1d78 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -105,6 +105,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private int receivedMovePackets;
+     private int processedMovePackets;
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
++    public net.md_5.bungee.api.chat.BaseComponent[] leaveMessage; // Paper - Fix PlayerKickEvent#setLeaveMessage not setting the leave message
+ 
+     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
+         this.minecraftServer = minecraftserver;
+@@ -113,6 +114,12 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         this.player = entityplayer;
+         entityplayer.playerConnection = this;
+ 
++        // Paper start - Fix PlayerKickEvent#setLeaveMessage not setting the leave message
++        net.md_5.bungee.api.chat.TextComponent defaultMessage = new net.md_5.bungee.api.chat.TextComponent(entityplayer.getName() + " left the game");
++        defaultMessage.setColor(net.md_5.bungee.api.ChatColor.YELLOW);
++        this.leaveMessage = new net.md_5.bungee.api.chat.BaseComponent[] { defaultMessage };
++        // Paper end
++
+         // CraftBukkit start - add fields and methods
+         this.server = minecraftserver.server;
+     }
+@@ -251,9 +258,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         if (this.processedDisconnect) {
+             return;
+         }
+-        String leaveMessage = EnumChatFormat.YELLOW + this.player.getName() + " left the game.";
+ 
+-        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
++        // Paper start - Add BaseComponent to events
++        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), null, this.leaveMessage);
++        event.setReason(s);
++        // Paper end
+ 
+         if (this.server.getServer().isRunning()) {
+             this.server.getPluginManager().callEvent(event);
+@@ -264,9 +273,17 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+             return;
+         }
+         // Send the possibly modified leave message
+-        s = event.getReason();
++        // Paper start - Add BaseComponent to events
+         // CraftBukkit end
+-        final ChatComponentText ichatbasecomponent = new ChatComponentText(s);
++        final IChatBaseComponent ichatbasecomponent;
++        final net.md_5.bungee.api.chat.BaseComponent[] kickReason = event.getKickReasonComponents();
++        if (kickReason == null) {
++            ichatbasecomponent = new ChatComponentText("");
++        } else {
++            ichatbasecomponent = com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(kickReason);
++        }
++        this.leaveMessage = event.getLeaveMessageComponents();
++        // Paper end
+ 
+         this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
+             this.networkManager.close(ichatbasecomponent);
+@@ -1477,9 +1494,11 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+         */
+ 
+         this.player.n();
+-        String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
+-        if ((quitMessage != null) && (quitMessage.length() > 0)) {
+-            this.minecraftServer.getPlayerList().sendMessage(CraftChatMessage.fromString(quitMessage));
++        // Paper start - Add BaseComponent to events
++        IChatBaseComponent quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
++        if (quitMessage != null) { /* Paper - Remove length check as disconnect method handles that now */
++            this.minecraftServer.getPlayerList().sendMessage(quitMessage);
++        // Paper end
+         }
+         // CraftBukkit end
+         if (this.minecraftServer.H() && this.player.getDisplayName().getString().equals(this.minecraftServer.G())) {
+@@ -1711,7 +1730,7 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+ 
+             if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                 // Evil plugins still listening to deprecated event
+-                final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
++                final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessageComponents(), event.getFormat(), event.getRecipients()); // Paper - Add BaseComponent to events
+                 queueEvent.setCancelled(event.isCancelled());
+                 Waitable waitable = new Waitable() {
+                     @Override
+@@ -1721,16 +1740,27 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                         if (queueEvent.isCancelled()) {
+                             return null;
+                         }
+-
+-                        String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage());
++                        // Paper start - Add BaseComponent to events
++                        final EntityPlayer targetPlayer = ((CraftPlayer)queueEvent.getPlayer()).getHandle();
++                        net.md_5.bungee.api.chat.BaseComponent[] displayName = event.getDisplayName();
++                        if (displayName == null) {
++                            displayName = com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(((CraftPlayer) player).getHandle().getDisplayName());
++                        }
++                        if (PlayerConnection.this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
++                            IChatBaseComponent nameFromTeam = ScoreboardTeam.a(PlayerConnection.this.player.getScoreboardTeam(), com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(displayName));
++                            // Explicitly add a RESET here, vanilla uses components for this now...
++                            displayName = net.md_5.bungee.api.chat.TextComponent.fromLegacyText(CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET);
++                        }
++                        final net.md_5.bungee.api.chat.BaseComponent[] message = com.destroystokyo.paper.utils.BaseComponentFormatter.format(queueEvent.getFormat(), displayName, queueEvent.getMessageComponents());
+                         PlayerConnection.this.minecraftServer.console.sendMessage(message);
++                        // Paper end
+                         if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
+                             for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
+-                                ((EntityPlayer) player).sendMessage(CraftChatMessage.fromString(message));
++                                ((EntityPlayer) player).getBukkitEntity().sendMessage(message); // Paper - Add BaseComponent to events
+                             }
+                         } else {
+                             for (Player player : queueEvent.getRecipients()) {
+-                                player.sendMessage(message);
++                                player.sendMessage(message); // Paper - Add BaseComponent to events
+                             }
+                         }
+                         return null;
+@@ -1753,23 +1783,26 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+ 
+                 // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
+-                String displayName = event.getPlayer().getDisplayName();
++                net.md_5.bungee.api.chat.BaseComponent[] displayName = event.getDisplayName();
++                if (displayName == null) {
++                    displayName = com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(((CraftPlayer) player).getHandle().getDisplayName());
++                }
+                 if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
+                     IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getScoreboardTeam(),((CraftPlayer) player).getHandle().getDisplayName());
+                     // Explicitly add a RESET here, vanilla uses components for this now...
+-                    displayName = CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET;
++                    displayName = net.md_5.bungee.api.chat.TextComponent.fromLegacyText(CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET);
+                 }
+ 
+-                s = String.format(event.getFormat(), displayName, event.getMessage());
++                final net.md_5.bungee.api.chat.BaseComponent[] message = com.destroystokyo.paper.utils.BaseComponentFormatter.format(event.getFormat(), displayName, event.getMessageComponents()); // Paper - Add BaseComponent to events
+                 // Paper end
+-                minecraftServer.console.sendMessage(s);
++                minecraftServer.console.sendMessage(message); // Paper - Add BaseComponent to events
+                 if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
+                     for (Object recipient : minecraftServer.getPlayerList().players) {
+-                        ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s));
++                        ((EntityPlayer) recipient).getBukkitEntity().sendMessage(message); // Paper - Add BaseComponent to events
+                     }
+                 } else {
+                     for (Player recipient : event.getRecipients()) {
+-                        recipient.sendMessage(s);
++                        recipient.sendMessage(message); // Paper - Add BaseComponent to events
+                     }
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 135d25abd..1245f317f 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -177,7 +177,7 @@ public abstract class PlayerList {
+         }
+ 
+         chatmessage.a(EnumChatFormat.YELLOW);
+-        this.onPlayerJoin(entityplayer, CraftChatMessage.fromComponent(chatmessage, EnumChatFormat.WHITE)); // Paper
++        this.onPlayerJoin(entityplayer, com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(chatmessage)); // Paper // Paper - Add BaseComponents to events
+         // CraftBukkit end
+         worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
+         playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
+@@ -357,7 +357,7 @@ public abstract class PlayerList {
+ 
+     }
+ 
+-    public void onPlayerJoin(EntityPlayer entityplayer, String joinMessage) { // CraftBukkit added param
++    public void onPlayerJoin(EntityPlayer entityplayer, net.md_5.bungee.api.chat.BaseComponent[] joinMessage) { // CraftBukkit added param // Paper - Change second param for 'Add BaseComponent to events'
+         this.players.add(entityplayer);
+         this.playersByName.put(entityplayer.getName().toLowerCase(java.util.Locale.ROOT), entityplayer); // Spigot
+         this.j.put(entityplayer.getUniqueID(), entityplayer);
+@@ -372,13 +372,14 @@ public abstract class PlayerList {
+             return;
+         }
+ 
+-        joinMessage = playerJoinEvent.getJoinMessage();
+-
+-        if (joinMessage != null && joinMessage.length() > 0) {
+-            for (IChatBaseComponent line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
+-                server.getPlayerList().sendAll(new PacketPlayOutChat(line));
+-            }
++        // Paper start - Add BaseComponent to events
++        final net.md_5.bungee.api.chat.BaseComponent[] joinMessageComponents = playerJoinEvent.getJoinMessageComponents();
++        if (joinMessageComponents != null && !com.destroystokyo.paper.utils.BaseComponentUtils.isEmpty(joinMessageComponents)) {
++            final PacketPlayOutChat packet = new PacketPlayOutChat(null);
++            packet.components = joinMessageComponents;
++            server.getPlayerList().sendAll(packet);
+         }
++        // Paper end
+ 
+         ChunkIOExecutor.adjustPoolSize(getPlayerCount());
+         // CraftBukkit end
+@@ -417,7 +418,7 @@ public abstract class PlayerList {
+         entityplayer.getWorldServer().getPlayerChunkMap().movePlayer(entityplayer);
+     }
+ 
+-    public String disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string
++    public IChatBaseComponent disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string // Paper return IChatBaseComponent instead of String
+         WorldServer worldserver = entityplayer.getWorldServer();
+ 
+         entityplayer.a(StatisticList.LEAVE_GAME);
+@@ -425,8 +426,17 @@ public abstract class PlayerList {
+         // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
+         org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer, org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
+ 
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), entityplayer.playerConnection.leaveMessage); // Paper - Fix PlayerKickEvent#setLeaveMessage not setting the leave message
+         cserver.getPluginManager().callEvent(playerQuitEvent);
++        // Paper start - Add BaseComponent to events
++        final net.md_5.bungee.api.chat.BaseComponent[] quitEventComponents = playerQuitEvent.getQuitMessageComponents();
++        final IChatBaseComponent quitEventMessage;
++        if (quitEventComponents == null || com.destroystokyo.paper.utils.BaseComponentUtils.isEmpty(quitEventComponents)) {
++            quitEventMessage = null;
++        } else {
++            quitEventMessage = com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(quitEventComponents);
++        }
++        // Paper end
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
+         entityplayer.playerTick();// SPIGOT-924
+@@ -497,7 +507,7 @@ public abstract class PlayerList {
+ 
+         ChunkIOExecutor.adjustPoolSize(this.getPlayerCount()); // CraftBukkit
+ 
+-        return playerQuitEvent.getQuitMessage(); // CraftBukkit
++        return quitEventMessage; // CraftBukkit // Paper - Add BaseComponent to events
+     }
+ 
+     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
+@@ -543,7 +553,7 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
++            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(chatmessage)); // Spigot // Paper - Add BaseComponent to events
+         } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
+             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted", new Object[0]);
+             //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
+@@ -556,7 +566,7 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, com.destroystokyo.paper.util.ChatComponentHelper.baseComponentFromVanilla(chatmessage)); // Paper - Add BaseComponent to events
+         } else {
+             // return this.players.size() >= this.maxPlayers && !this.f(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full", new Object[0]) : null;
+             if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
+@@ -566,7 +576,7 @@ public abstract class PlayerList {
+ 
+         cserver.getPluginManager().callEvent(event);
+         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+-            loginlistener.disconnect(event.getKickMessage());
++            loginlistener.disconnect(com.destroystokyo.paper.util.ChatComponentHelper.vanillaFromBaseComponent(event.getKickMessageComponents())); // Paper - Add BaseComponent to events
+             return null;
+         }
+         return entity;
+@@ -1184,7 +1194,12 @@ public abstract class PlayerList {
+         event.callEvent();
+         if (!event.isWhitelisted()) {
+             if (loginEvent != null) {
+-                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage());
++                final net.md_5.bungee.api.chat.BaseComponent[] kickMessage = event.getKickMessageComponents();
++                if (kickMessage == null) {
++                    loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage);
++                } else {
++                    loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, kickMessage);
++                }
+             }
+             return false;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 8d26f8d52..877cd18b6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1413,10 +1413,10 @@ public final class CraftServer implements Server {
+             return 0;
+         }
+ 
+-        message = broadcastMessageEvent.getMessage();
++        final BaseComponent[] messageComponents = broadcastMessageEvent.getMessageComponents(); // Paper - Add BaseComponent to events
+ 
+         for (CommandSender recipient : recipients) {
+-            recipient.sendMessage(message);
++            recipient.sendMessage(messageComponents); // Paper - Add BaseComponent to events
+         }
+ 
+         return recipients.size();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 2e0b4de83..84d8a747d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -623,7 +623,7 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
++    public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.md_5.bungee.api.chat.BaseComponent[] deathMessage, boolean keepInventory) { // Paper - Add BaseComponent to events
+         CraftPlayer entity = victim.getBukkitEntity();
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
+         event.setKeepInventory(keepInventory);
+-- 
+2.21.0
+
