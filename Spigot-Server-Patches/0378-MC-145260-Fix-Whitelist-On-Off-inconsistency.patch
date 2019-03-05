@@ -1,0 +1,66 @@
+From 6370a90529e458d939522ed6a66f2d04f6b49e9c Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 2 Mar 2019 16:12:35 -0500
+Subject: [PATCH] MC-145260: Fix Whitelist On/Off inconsistency
+
+mojang stored whitelist state in 2 places (Whitelist Object, PlayerList)
+
+some things checked PlayerList, some checked object. This moves
+everything to the Whitelist object.
+
+https://github.com/PaperMC/Paper/issues/1880
+
+diff --git a/src/main/java/net/minecraft/server/JsonList.java b/src/main/java/net/minecraft/server/JsonList.java
+index 93111cc24..2a259758b 100644
+--- a/src/main/java/net/minecraft/server/JsonList.java
++++ b/src/main/java/net/minecraft/server/JsonList.java
+@@ -65,6 +65,7 @@ public class JsonList<K, V extends JsonListEntry<K>> {
+         return this.e;
+     }
+ 
++    public void setEnabled(boolean flag) { a(flag); } // Paper - OBFHeLPER
+     public void a(boolean flag) {
+         this.e = flag;
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 44ced604a..80e9c9200 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -64,7 +64,7 @@ public abstract class PlayerList {
+     // private final Map<UUID, AdvancementDataPlayer> p;
+     // CraftBukkit end
+     public IPlayerFileData playerFileData;
+-    private boolean hasWhitelist;
++    //private boolean hasWhitelist; // Paper - moved to whitelist object so not duplicated
+     protected int maxPlayers;
+     private int s;
+     private EnumGamemode t;
+@@ -1215,9 +1215,9 @@ public abstract class PlayerList {
+     }
+     public boolean isWhitelisted(GameProfile gameprofile, org.bukkit.event.player.PlayerLoginEvent loginEvent) {
+         boolean isOp = this.operators.d(gameprofile);
+-        boolean isWhitelisted = !this.hasWhitelist || isOp || this.whitelist.d(gameprofile);
++        boolean isWhitelisted = !this.getHasWhitelist() || isOp || this.whitelist.d(gameprofile);
+         final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
+-        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(MCUtil.toBukkit(gameprofile), this.hasWhitelist, isWhitelisted, isOp, org.spigotmc.SpigotConfig.whitelistMessage);
++        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(MCUtil.toBukkit(gameprofile), this.getHasWhitelist(), isWhitelisted, isOp, org.spigotmc.SpigotConfig.whitelistMessage);
+         event.callEvent();
+         if (!event.isWhitelisted()) {
+             if (loginEvent != null) {
+@@ -1366,11 +1366,11 @@ public abstract class PlayerList {
+     }
+ 
+     public boolean getHasWhitelist() {
+-        return this.hasWhitelist;
++        return this.whitelist.isEnabled(); // Paper
+     }
+ 
+     public void setHasWhitelist(boolean flag) {
+-        this.hasWhitelist = flag;
++        this.whitelist.setEnabled(flag); // Paper
+     }
+ 
+     public List<EntityPlayer> b(String s) {
+-- 
+2.21.0
+
