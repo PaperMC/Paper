@@ -25,4 +25,14 @@ public class CraftVex extends CraftMonster implements Vex {
     public EntityType getType() {
         return EntityType.VEX;
     }
+
+    @Override
+    public boolean isCharging() {
+        return getHandle().dA();
+    }
+
+    @Override
+    public void setCharging(boolean charging) {
+        getHandle().a(charging);
+    }
 }
