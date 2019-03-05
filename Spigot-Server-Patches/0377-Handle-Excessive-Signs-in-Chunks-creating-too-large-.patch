@@ -1,0 +1,88 @@
+From c73ffdd999a7b85cabc341b0a721f1ab10a55a11 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 2 Mar 2019 14:55:01 -0500
+Subject: [PATCH] Handle Excessive Signs in Chunks creating too large of
+ packets
+
+Also adds a limit to stop sending Sign data to client after 500
+signs per chunk to limit client lag.
+
+Use -DPaper.excessiveSignsLimit=500 to configure that limit, or -1
+to disable the limit and let your players be abused.
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index a7fcc14f2..95c7eba96 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -223,6 +223,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+             });
+         }
+ 
++        // Paper start
++        java.util.List<Packet> extraPackets = packet.getExtraPackets();
++        if (extraPackets != null && !extraPackets.isEmpty()) {
++            for (Packet extraPacket : extraPackets) {
++                this.dispatchPacket(extraPacket, agenericfuturelistener);
++            }
++        }
++        // Paper end
++
+     }
+ 
+     // Paper start - Async-Anti-Xray - Stop dispatching further packets and return false if the peeked packet is a chunk packet which is not ready
+diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
+index b283e1557..668d47089 100644
+--- a/src/main/java/net/minecraft/server/Packet.java
++++ b/src/main/java/net/minecraft/server/Packet.java
+@@ -9,6 +9,7 @@ public interface Packet<T extends PacketListener> {
+     void b(PacketDataSerializer packetdataserializer) throws IOException;
+ 
+     // Paper start
++    default java.util.List<Packet> getExtraPackets() { return null; }
+     default boolean packetTooLarge(NetworkManager manager) {
+         return false;
+     }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+index 306a6b7cd..4fe7c9956 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+@@ -28,6 +28,13 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+     }
+     // Paper end
+ 
++    // Paper start
++    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
++    private static final int SKIP_EXCESSIVE_SIGNS_LIMIT = Integer.getInteger("Paper.excessiveSignsLimit", 500);
++    public java.util.List<Packet> getExtraPackets() {
++        return extraPackets;
++    }
++    // Paper end
+     public PacketPlayOutMapChunk(Chunk chunk, int i) {
+         PacketPlayOutMapChunkInfo packetPlayOutMapChunkInfo = chunk.world.chunkPacketBlockController.getPacketPlayOutMapChunkInfo(this, chunk, i); // Paper - Anti-Xray - Add chunk packet info
+         this.a = chunk.locX;
+@@ -46,6 +53,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         this.c = this.writeChunk(new PacketDataSerializer(this.g()), chunk, flag, i, packetPlayOutMapChunkInfo); // Paper - Anti-Xray - Add chunk packet info
+         this.e = Lists.newArrayList();
+         Iterator iterator = chunk.getTileEntities().entrySet().iterator();
++        int totalSigns = 0; // Paper
+ 
+         while (iterator.hasNext()) {
+             Entry entry = (Entry) iterator.next();
+@@ -54,6 +62,14 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+             int j = blockposition.getY() >> 4;
+ 
+             if (this.e() || (i & 1 << j) != 0) {
++                // Paper start - send signs separately
++                if (tileentity instanceof TileEntitySign) {
++                    if (SKIP_EXCESSIVE_SIGNS_LIMIT < 0 || ++totalSigns < SKIP_EXCESSIVE_SIGNS_LIMIT) {
++                        extraPackets.add(tileentity.getUpdatePacket());
++                    }
++                    continue;
++                }
++                // Paper end
+                 NBTTagCompound nbttagcompound = tileentity.d();
+ 
+                 this.e.add(nbttagcompound);
+-- 
+2.21.0
+
