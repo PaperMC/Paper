@@ -128,7 +128,7 @@ public class InventoryWrapper implements IInventory {
         List<ItemStack> items = new ArrayList<ItemStack>(size);
 
         for (int i = 0; i < size; i++) {
-            items.set(i, getItem(i));
+            items.add(getItem(i));
         }
 
         return items;
