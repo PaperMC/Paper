@@ -43,7 +43,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     public void addIngredient(ItemStack item) {
-        Preconditions.checkState(ingredients.size() < 2, "MerchantRecipe can only have 2 ingredients");
+        Preconditions.checkState(ingredients.size() < 2, "MerchantRecipe can only have maximum 2 ingredients");
         ingredients.add(item.clone());
     }
 
@@ -52,6 +52,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     public void setIngredients(List<ItemStack> ingredients) {
+        Preconditions.checkState(ingredients.size() <= 2, "MerchantRecipe can only have maximum 2 ingredients");
         this.ingredients = new ArrayList<ItemStack>();
         for (ItemStack item : ingredients) {
             this.ingredients.add(item.clone());
