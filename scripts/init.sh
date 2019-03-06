@@ -29,7 +29,7 @@ do
     cp "$nms/$file" "$cb/$file"
 done
 $gitcmd add src
-$gitcmd commit -m "Minecraft $ $(date)" --author="Auto <auto@mated.null>"
+$gitcmd commit -m "Minecraft $ $(date)" --author="Vanilla <auto@mated.null>"
 
 # apply patches
 for file in $(ls nms-patches)
@@ -46,6 +46,6 @@ do
 done
 
 $gitcmd add src
-$gitcmd commit -m "CraftBukkit $ $(date)" --author="Auto <auto@mated.null>"
+$gitcmd commit -m "CraftBukkit $ $(date)" --author="CraftBukkit <auto@mated.null>"
 $gitcmd checkout -f HEAD~2
 )
