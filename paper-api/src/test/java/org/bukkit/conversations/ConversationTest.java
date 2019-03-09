@@ -1,5 +1,6 @@
 package org.bukkit.conversations;
 
+import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -32,7 +33,7 @@ public class ConversationTest {
     public void testConversationFactory() {
         FakeConversable forWhom = new FakeConversable();
         NullConversationPrefix prefix = new NullConversationPrefix();
-        ConversationFactory factory = new ConversationFactory(null)
+        ConversationFactory factory = new ConversationFactory(new TestPlugin("Test"))
                 .withFirstPrompt(new FirstPrompt())
                 .withModality(false)
                 .withPrefix(prefix);
@@ -75,7 +76,7 @@ public class ConversationTest {
     @Test
     public void testNotPlayer() {
         FakeConversable forWhom = new FakeConversable();
-        ConversationFactory factory = new ConversationFactory(null)
+        ConversationFactory factory = new ConversationFactory(new TestPlugin("Test"))
                 .thatExcludesNonPlayersWithMessage("bye");
         Conversation conversation = factory.buildConversation(forWhom);
 
