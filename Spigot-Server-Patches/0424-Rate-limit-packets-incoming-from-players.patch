@@ -1,4 +1,4 @@
-From 5ee916e3f0513eb0f60718f931414278568cf55a Mon Sep 17 00:00:00 2001
+From b37a8c08c40639d9c2d881b9f33c6aa7098096c5 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 11 Mar 2019 12:18:29 -0700
 Subject: [PATCH] Rate limit packets incoming from players
@@ -12,7 +12,7 @@ Without these ratelimits in place I can happily send 40,000 move packets per
 second which will take down the server.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index a7673dd49..7c4b45522 100644
+index a7673dd49..2dedac4bc 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -462,4 +462,11 @@ public class PaperConfig {
@@ -20,7 +20,7 @@ index a7673dd49..7c4b45522 100644
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
 +
-+    public static int packetRateLimit = 250; // per second
++    public static int packetRateLimit = 150; // per second
 +    public static String packetRateLimitKickMessage = "Sent too many packets";
 +    private static void packetRateLimit() {
 +        packetRateLimit = Math.max(-1, getInt("settings.spam-limiter.packets-per-second", packetRateLimit));
@@ -28,26 +28,28 @@ index a7673dd49..7c4b45522 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 30f646e42..de3fb824a 100644
+index 30f646e42..d3a0a4836 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -153,6 +153,11 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -153,6 +153,13 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private static <T extends PacketListener> void a(Packet<T> packet, PacketListener packetlistener) {
 +        // Paper start - Ratelimit packets
 +        if (packetlistener instanceof PlayerConnection) {
-+            ((PlayerConnection)packetlistener).rateLimitPacket(packet);
++            if (((PlayerConnection)packetlistener).rateLimitPacket(packet)) {
++                return; // we've been killed as a result of rate limiting
++            }
 +        }
 +        // Paper end
          packet.a((T) packetlistener); // CraftBukkit - decompile error
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index dc8c20efb..5ef493188 100644
+index dc8c20efb..1ff551a18 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -141,6 +141,51 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -141,6 +141,61 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
      }
      // CraftBukkit end
@@ -57,42 +59,52 @@ index dc8c20efb..5ef493188 100644
 +    private long rateLimitPacketsTime = System.nanoTime();
 +    private int rateLimitPacketCount; // packets read since rateLimitPacketsTime
 +
-+    void rateLimitPacket(final Packet<?> packet) {
++    private static final java.text.DecimalFormat ONE_DECIMAL_PLACE = new java.text.DecimalFormat("0.0");
++
++    /** @return {@code true} if the client has been killed as a result of rate limiting, {@code false} if not */
++    boolean rateLimitPacket(final Packet<?> packet) {
 +        /*
 +         * We cannot rely on tick() being called. If a server lags we could end up kicking everyone!
 +         * So we must rely on our own timer.
 +         */
 +        final int limit = com.destroystokyo.paper.PaperConfig.packetRateLimit * PACKET_LIMIT_TIME_INTERVAL;
 +        if (limit < 0) {
-+            return;
++            return false;
 +        }
 +
 +        // Note: SeqLock would perform better here if needed
 +        synchronized (this.rateLimitPacketsLock) {
 +            if (this.rateLimitPacketsTime == -1) {
 +                // kicked already
-+                return;
-+            }
-+            final long now = System.nanoTime();
-+            // we use an interval to decrease the effect of latency spikes
-+            if ((now - this.rateLimitPacketsTime) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(PACKET_LIMIT_TIME_INTERVAL)) {
-+                this.rateLimitPacketsTime = now;
-+                this.rateLimitPacketCount = 1;
-+                return; // no need to check
++                return true;
 +            }
 +
-+            if (++this.rateLimitPacketCount > limit) {
++            final int packets = ++this.rateLimitPacketCount;
++            final long now = System.nanoTime();
++            final long timeInInterval = (now - this.rateLimitPacketsTime);
++
++            if (packets > limit) {
 +                this.minecraftServer.postToMainThread(() -> {
 +                    if (PlayerConnection.this.processedDisconnect) {
 +                        return; // no point, we've disconnected already
 +                    }
 +                    PlayerConnection.this.disconnect(com.destroystokyo.paper.PaperConfig.packetRateLimitKickMessage);
-+                    PlayerConnection.LOGGER.warn("{} was kicked for sending too many packets!",
-+                        PlayerConnection.this.player.getDisplayName().getString());
++                    PlayerConnection.LOGGER.warn("{} was kicked for sending too many packets! {} in the last {} seconds",
++                        PlayerConnection.this.player.getDisplayName().getString(), this.rateLimitPacketCount,
++                        ONE_DECIMAL_PLACE.format((timeInInterval) / 1.0e9));
 +                });
 +
 +                this.rateLimitPacketsTime = -1;
++                return true;
 +            }
++
++            // we use an interval to decrease the effect of latency spikes
++            if (timeInInterval >= java.util.concurrent.TimeUnit.SECONDS.toNanos(PACKET_LIMIT_TIME_INTERVAL)) {
++                this.rateLimitPacketsTime = now;
++                this.rateLimitPacketCount = 0;
++            }
++
++            return false;
 +        }
 +    }
 +    // Paper end
