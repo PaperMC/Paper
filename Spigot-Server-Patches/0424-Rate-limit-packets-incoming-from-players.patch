@@ -1,4 +1,4 @@
-From b37a8c08c40639d9c2d881b9f33c6aa7098096c5 Mon Sep 17 00:00:00 2001
+From e93653dbccf4b09246b12410b34715db0aa78f7d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 11 Mar 2019 12:18:29 -0700
 Subject: [PATCH] Rate limit packets incoming from players
@@ -12,21 +12,167 @@ Without these ratelimits in place I can happily send 40,000 move packets per
 second which will take down the server.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index a7673dd49..2dedac4bc 100644
+index a7673dd49..99f1d55ae 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -462,4 +462,11 @@ public class PaperConfig {
+@@ -462,4 +462,16 @@ public class PaperConfig {
          maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
 +
-+    public static int packetRateLimit = 150; // per second
++    public static int packetRateLimit = 250; // per second
++    public static double packetRateLimitInterval = 10.0; // seconds
 +    public static String packetRateLimitKickMessage = "Sent too many packets";
 +    private static void packetRateLimit() {
 +        packetRateLimit = Math.max(-1, getInt("settings.spam-limiter.packets-per-second", packetRateLimit));
++        packetRateLimitInterval = getDouble("settings.spam-limiter.packet-spam-interval", packetRateLimitInterval);
++        if (packetRateLimitInterval <= 0.0 && packetRateLimit >= 0) {
++            fatal("If packet rate limiting is enabled, the rate limit interval must be greater-than 0!");
++        }
 +        packetRateLimitKickMessage = getString("messages.kick.packet-spam", packetRateLimitKickMessage);
 +    }
  }
+diff --git a/src/main/java/com/destroystokyo/paper/network/PacketLimiter.java b/src/main/java/com/destroystokyo/paper/network/PacketLimiter.java
+new file mode 100644
+index 000000000..91c8c5f53
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PacketLimiter.java
+@@ -0,0 +1,135 @@
++package com.destroystokyo.paper.network;
++
++import java.util.Arrays;
++
++public class PacketLimiter {
++
++    /** multiplier to convert ns to ms */
++    private static final double NANOSECONDS_TO_MILLISECONDS = 1.0e-6; // 1e3 / 1e9
++
++    /**
++     * The time frame this packet limiter will count packets over (ms).
++     */
++    public final double intervalTime;
++
++    /**
++     * The time each bucket will represent (ms).
++     */
++    public final double intervalResolution;
++
++    /**
++     * Total buckets contained in this limiter.
++     */
++    public final int totalBuckets;
++
++    /**contains all packet data, note that indices of buckets will wrap around the array */
++    private final int[] data;
++
++    /** pointer which represents the bucket containing the newest data */
++    private int newestData;
++
++    /** the time attached to the bucket at newestData */
++    private double lastBucketTime;
++
++    /** cached sum of all data */
++    private int sum;
++
++    /**
++     * Constructs a packetlimiter which will record total packets sent over the specified
++     * interval time (in ms) with the specified number of buckets
++     * @param intervalTime The specified interval time, in ms
++     * @param totalBuckets The total number of buckets
++     */
++    public PacketLimiter(final double intervalTime, final int totalBuckets) {
++        this.intervalTime = intervalTime;
++        this.intervalResolution = intervalTime/(double)totalBuckets;
++        this.totalBuckets = totalBuckets;
++        this.data = new int[totalBuckets];
++    }
++
++    /*
++     * Stores number of packets according to their relative time. Each "bucket" will represent a time frame, according
++     * to this.intervalResolution. The newestData pointer represents the bucket containing the newest piece of data.
++     * The oldest piece of data is always the bucket after the newest data. When a new time frame is needed, the newest
++     * data pointer is simply moved forward and previous data is either removed or overridden.
++     *
++     * For example, the following piece of code will sum all data older than the newest (starting from new -> older):
++     *
++     * int sum = 0;
++     * for (int i = (newestData - 1) % buckets; i != newestData; i = (i - 1) % total_buckets) {
++     *     sum += buckets[i];
++     * }
++     *
++     * Additionally, the sum of data is cached. Older data is automatically subtracted and newer data is automatically
++     * summed. This makes calls made within a time interval of 'this.intervalResolution' O(1)
++     *
++     * Calls made over larger timers are O(n), with n ~ min(total_buckets, timePassed / bucket_interval)
++     */
++
++    /**
++     * Adds to this limiter's packet count. Old data is automatically purged, and the current time from {@link System#nanoTime()}
++     * is used to record this data. Returns the new packet count.
++     * @param packets The number of packets to attach to the current time
++     * @return The new packet count
++     */
++    public int incrementPackets(final int packets) {
++        return this.incrementPackets(System.nanoTime(), packets);
++    }
++
++    private int incrementPackets(final long currentTime, final int packets) {
++        final double timeMs = currentTime * NANOSECONDS_TO_MILLISECONDS;
++        double timeDelta = timeMs - this.lastBucketTime;
++
++        if (timeDelta < 0.0) {
++            // we presume the difference is small. nanotime always moves forward
++            timeDelta = 0.0;
++        }
++
++        if (timeDelta < this.intervalResolution) {
++            this.data[this.newestData] += packets;
++            return this.sum += packets;
++        }
++
++        final int bucketsToMove = (int) (timeDelta / this.intervalResolution);
++
++        // With this expression there will be error, however it is small and will continue to the next counter.
++        // In the end what matters is the DIFFERENCE in time between each bucket being the interval resolution,
++        // which will remain approximately the case for this class' use case.
++        // For large bucket counts (n > 1_000_000) we might have to consider the error.
++        final double nextBucketTime = (this.lastBucketTime + bucketsToMove * this.intervalResolution);
++
++        if (bucketsToMove >= this.totalBuckets) {
++            // we need to simply clear all data
++            Arrays.fill(this.data, 0);
++
++            this.data[0] = packets;
++            this.sum = packets;
++            this.newestData = 0;
++            this.lastBucketTime = timeMs;
++
++            return packets;
++        }
++
++        // buckets we have no data for (since we've jumped ahead of them)
++        for (int i = 1; i < bucketsToMove; ++i) {
++            final int index = (this.newestData + i) % this.totalBuckets;
++            this.sum -= this.data[index];
++            this.data[index] = 0;
++        }
++
++        final int newestDataIndex = (this.newestData + bucketsToMove) % this.totalBuckets;
++        this.sum += packets - this.data[newestDataIndex]; // this.sum += packets; this.sum -= this.data[index]
++        this.data[newestDataIndex] = packets;
++        this.newestData = newestDataIndex;
++        this.lastBucketTime = nextBucketTime;
++
++        return this.sum;
++    }
++
++    /**
++     * Returns the total number of packets recorded in this interval.
++     */
++    public int getTotalPackets() {
++        return this.sum;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
 index 30f646e42..d3a0a4836 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
@@ -46,65 +192,64 @@ index 30f646e42..d3a0a4836 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index dc8c20efb..1ff551a18 100644
+index dc8c20efb..eeec2364b 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -141,6 +141,61 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -141,6 +141,60 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
          return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
      }
      // CraftBukkit end
 +    // Paper start - ratelimit packets
-+    private static final int PACKET_LIMIT_TIME_INTERVAL = 5; // seconds
-+    private final Object rateLimitPacketsLock = new Object();
-+    private long rateLimitPacketsTime = System.nanoTime();
-+    private int rateLimitPacketCount; // packets read since rateLimitPacketsTime
++    /*
++     * We cannot rely on tick() being called. If a server lags we could end up kicking everyone!
++     * So we must rely on our own timer.
++     */
++    private final com.destroystokyo.paper.network.PacketLimiter packetLimiter = com.destroystokyo.paper.PaperConfig.packetRateLimit < 0 ?
++        null : new com.destroystokyo.paper.network.PacketLimiter(com.destroystokyo.paper.PaperConfig.packetRateLimitInterval * 1000.0, 100);
++    private boolean kickedForPacketSpam;
 +
 +    private static final java.text.DecimalFormat ONE_DECIMAL_PLACE = new java.text.DecimalFormat("0.0");
 +
 +    /** @return {@code true} if the client has been killed as a result of rate limiting, {@code false} if not */
 +    boolean rateLimitPacket(final Packet<?> packet) {
-+        /*
-+         * We cannot rely on tick() being called. If a server lags we could end up kicking everyone!
-+         * So we must rely on our own timer.
-+         */
-+        final int limit = com.destroystokyo.paper.PaperConfig.packetRateLimit * PACKET_LIMIT_TIME_INTERVAL;
-+        if (limit < 0) {
++        final com.destroystokyo.paper.network.PacketLimiter limiter = this.packetLimiter;
++        if (limiter == null) {
++            // not configured
 +            return false;
 +        }
 +
-+        // Note: SeqLock would perform better here if needed
-+        synchronized (this.rateLimitPacketsLock) {
-+            if (this.rateLimitPacketsTime == -1) {
-+                // kicked already
++        // avoid contending the lock if we've been kicked already
++        if (this.kickedForPacketSpam) {
++            return true;
++        }
++
++        final int limit = com.destroystokyo.paper.PaperConfig.packetRateLimit;
++
++        synchronized (limiter) {
++            // we need to re-check this, as it could have changed during the lock hold
++            if (this.kickedForPacketSpam) {
 +                return true;
 +            }
 +
-+            final int packets = ++this.rateLimitPacketCount;
-+            final long now = System.nanoTime();
-+            final long timeInInterval = (now - this.rateLimitPacketsTime);
++            final int packets = limiter.incrementPackets(1);
 +
-+            if (packets > limit) {
-+                this.minecraftServer.postToMainThread(() -> {
-+                    if (PlayerConnection.this.processedDisconnect) {
-+                        return; // no point, we've disconnected already
-+                    }
-+                    PlayerConnection.this.disconnect(com.destroystokyo.paper.PaperConfig.packetRateLimitKickMessage);
-+                    PlayerConnection.LOGGER.warn("{} was kicked for sending too many packets! {} in the last {} seconds",
-+                        PlayerConnection.this.player.getDisplayName().getString(), this.rateLimitPacketCount,
-+                        ONE_DECIMAL_PLACE.format((timeInInterval) / 1.0e9));
-+                });
-+
-+                this.rateLimitPacketsTime = -1;
-+                return true;
++            if (packets / (limiter.intervalTime / 1000.0) <= limit) {
++                // below limit
++                return false;
 +            }
 +
-+            // we use an interval to decrease the effect of latency spikes
-+            if (timeInInterval >= java.util.concurrent.TimeUnit.SECONDS.toNanos(PACKET_LIMIT_TIME_INTERVAL)) {
-+                this.rateLimitPacketsTime = now;
-+                this.rateLimitPacketCount = 0;
-+            }
++            this.kickedForPacketSpam = true;
++            this.minecraftServer.postToMainThread(() -> {
++                if (PlayerConnection.this.processedDisconnect) {
++                    return; // no point, we've disconnected already
++                }
++                PlayerConnection.this.disconnect(com.destroystokyo.paper.PaperConfig.packetRateLimitKickMessage);
++                PlayerConnection.LOGGER.warn("{} was kicked for sending too many packets! {} in the last {} seconds",
++                    PlayerConnection.this.player.getDisplayName().getString(), packets,
++                    ONE_DECIMAL_PLACE.format(limiter.intervalTime / 1000.0));
++            });
 +
-+            return false;
++            return true;
 +        }
 +    }
 +    // Paper end
