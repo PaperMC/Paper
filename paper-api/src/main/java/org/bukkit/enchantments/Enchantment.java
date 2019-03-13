@@ -6,6 +6,9 @@ import java.util.Map;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The various type of enchantments that may be added to armour or weapons
@@ -188,10 +191,11 @@ public abstract class Enchantment implements Keyed {
     private static boolean acceptingNew = true;
     private final NamespacedKey key;
 
-    public Enchantment(NamespacedKey key) {
+    public Enchantment(@NotNull NamespacedKey key) {
         this.key = key;
     }
 
+    @NotNull
     @Override
     public NamespacedKey getKey() {
         return key;
@@ -203,6 +207,7 @@ public abstract class Enchantment implements Keyed {
      * @return Unique name
      * @deprecated enchantments are badly named, use {@link #getKey()}.
      */
+    @NotNull
     @Deprecated
     public abstract String getName();
 
@@ -225,6 +230,7 @@ public abstract class Enchantment implements Keyed {
      *
      * @return Target type of the Enchantment
      */
+    @NotNull
     public abstract EnchantmentTarget getItemTarget();
 
     /**
@@ -256,7 +262,7 @@ public abstract class Enchantment implements Keyed {
      * @param other The enchantment to check against
      * @return True if there is a conflict.
      */
-    public abstract boolean conflictsWith(Enchantment other);
+    public abstract boolean conflictsWith(@NotNull Enchantment other);
 
     /**
      * Checks if this Enchantment may be applied to the given {@link
@@ -268,7 +274,7 @@ public abstract class Enchantment implements Keyed {
      * @param item Item to test
      * @return True if the enchantment may be applied, otherwise False
      */
-    public abstract boolean canEnchantItem(ItemStack item);
+    public abstract boolean canEnchantItem(@NotNull ItemStack item);
 
     @Override
     public boolean equals(Object obj) {
@@ -302,7 +308,7 @@ public abstract class Enchantment implements Keyed {
      *
      * @param enchantment Enchantment to register
      */
-    public static void registerEnchantment(Enchantment enchantment) {
+    public static void registerEnchantment(@NotNull Enchantment enchantment) {
         if (byKey.containsKey(enchantment.key) || byName.containsKey(enchantment.getName())) {
             throw new IllegalArgumentException("Cannot set already-set enchantment");
         } else if (!isAcceptingRegistrations()) {
@@ -335,7 +341,9 @@ public abstract class Enchantment implements Keyed {
      * @param key key to fetch
      * @return Resulting Enchantment, or null if not found
      */
-    public static Enchantment getByKey(NamespacedKey key) {
+    @Contract("null -> null")
+    @Nullable
+    public static Enchantment getByKey(@Nullable NamespacedKey key) {
         return byKey.get(key);
     }
 
@@ -347,7 +355,9 @@ public abstract class Enchantment implements Keyed {
      * @deprecated enchantments are badly named, use {@link #getByKey(org.bukkit.NamespacedKey)}.
      */
     @Deprecated
-    public static Enchantment getByName(String name) {
+    @Contract("null -> null")
+    @Nullable
+    public static Enchantment getByName(@Nullable String name) {
         return byName.get(name);
     }
 
@@ -356,6 +366,7 @@ public abstract class Enchantment implements Keyed {
      *
      * @return Array of enchantments
      */
+    @NotNull
     public static Enchantment[] values() {
         return byName.values().toArray(new Enchantment[byName.size()]);
     }

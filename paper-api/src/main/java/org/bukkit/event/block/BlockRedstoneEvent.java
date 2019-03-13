@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a redstone current changes
@@ -11,7 +12,7 @@ public class BlockRedstoneEvent extends BlockEvent {
     private final int oldCurrent;
     private int newCurrent;
 
-    public BlockRedstoneEvent(final Block block, final int oldCurrent, final int newCurrent) {
+    public BlockRedstoneEvent(@NotNull final Block block, final int oldCurrent, final int newCurrent) {
         super(block);
         this.oldCurrent = oldCurrent;
         this.newCurrent = newCurrent;
@@ -44,11 +45,13 @@ public class BlockRedstoneEvent extends BlockEvent {
         this.newCurrent = newCurrent;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

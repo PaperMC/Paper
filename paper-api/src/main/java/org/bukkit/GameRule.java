@@ -1,6 +1,9 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -150,7 +153,7 @@ public final class GameRule<T> {
     private final String name;
     private final Class<T> type;
 
-    private GameRule(String name, Class<T> clazz) {
+    private GameRule(@NotNull String name, @NotNull Class<T> clazz) {
         Preconditions.checkNotNull(name, "GameRule name cannot be null");
         Preconditions.checkNotNull(clazz, "GameRule type cannot be null");
         Preconditions.checkArgument(clazz == Boolean.class || clazz == Integer.class, "Must be of type Boolean or Integer. Found %s ", clazz.getName());
@@ -164,6 +167,7 @@ public final class GameRule<T> {
      *
      * @return the name of this GameRule
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -173,6 +177,7 @@ public final class GameRule<T> {
      *
      * @return the rule type; Integer or Boolean
      */
+    @NotNull
     public Class<T> getType() {
         return type;
     }
@@ -201,7 +206,8 @@ public final class GameRule<T> {
      * @return the {@link GameRule} or null if no GameRule matches the given
      * name
      */
-    public static GameRule<?> getByName(String rule) {
+    @Nullable
+    public static GameRule<?> getByName(@NotNull String rule) {
         Preconditions.checkNotNull(rule, "Rule cannot be null");
         return gameRules.get(rule);
     }
@@ -211,6 +217,7 @@ public final class GameRule<T> {
      *
      * @return an immutable collection containing all registered GameRules.
      */
+    @NotNull
     public static GameRule<?>[] values() {
         return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
     }

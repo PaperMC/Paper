@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.meta.BookMeta;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player edits or signs a book and quill item. If the event is
@@ -20,7 +21,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     private boolean isSigning;
     private boolean cancel;
 
-    public PlayerEditBookEvent(Player who, int slot, BookMeta previousBookMeta, BookMeta newBookMeta, boolean isSigning) {
+    public PlayerEditBookEvent(@NotNull Player who, int slot, @NotNull BookMeta previousBookMeta, @NotNull BookMeta newBookMeta, boolean isSigning) {
         super(who);
 
         Validate.isTrue(slot >= -1 && slot <= 8, "Slot must be in range (-1)-8 inclusive");
@@ -44,6 +45,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      *
      * @return the book meta currently on the book
      */
+    @NotNull
     public BookMeta getPreviousBookMeta() {
         return previousBookMeta.clone();
     }
@@ -57,6 +59,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      *
      * @return the book meta that the player is attempting to add
      */
+    @NotNull
     public BookMeta getNewBookMeta() {
         return newBookMeta.clone();
     }
@@ -82,7 +85,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      * @param newBookMeta new book meta
      * @throws IllegalArgumentException if the new book meta is null
      */
-    public void setNewBookMeta(BookMeta newBookMeta) throws IllegalArgumentException {
+    public void setNewBookMeta(@NotNull BookMeta newBookMeta) throws IllegalArgumentException {
         Validate.notNull(newBookMeta, "New book meta must not be null");
         Bukkit.getItemFactory().equals(newBookMeta, null);
         this.newBookMeta = newBookMeta.clone();
@@ -108,11 +111,13 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
         isSigning = signing;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

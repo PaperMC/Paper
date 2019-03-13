@@ -13,6 +13,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a stack of items
@@ -31,7 +33,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @param type item material
      */
-    public ItemStack(final Material type) {
+    public ItemStack(@NotNull final Material type) {
         this(type, 1);
     }
 
@@ -41,7 +43,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param type item material
      * @param amount stack size
      */
-    public ItemStack(final Material type, final int amount) {
+    public ItemStack(@NotNull final Material type, final int amount) {
         this(type, amount, (short) 0);
     }
 
@@ -53,7 +55,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param damage durability / damage
      * @deprecated see {@link #setDurability(short)}
      */
-    public ItemStack(final Material type, final int amount, final short damage) {
+    public ItemStack(@NotNull final Material type, final int amount, final short damage) {
         this(type, amount, damage, null);
     }
 
@@ -65,7 +67,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @deprecated this method uses an ambiguous data byte object
      */
     @Deprecated
-    public ItemStack(final Material type, final int amount, final short damage, final Byte data) {
+    public ItemStack(@NotNull final Material type, final int amount, final short damage, @Nullable final Byte data) {
         Validate.notNull(type, "Material cannot be null");
         this.type = type;
         this.amount = amount;
@@ -84,7 +86,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @throws IllegalArgumentException if the specified stack is null or
      *     returns an item meta not created by the item factory
      */
-    public ItemStack(final ItemStack stack) throws IllegalArgumentException {
+    public ItemStack(@NotNull final ItemStack stack) throws IllegalArgumentException {
         Validate.notNull(stack, "Cannot copy null stack");
         this.type = stack.getType();
         this.amount = stack.getAmount();
@@ -100,6 +102,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return Type of the items in this stack
      */
     @Utility
+    @NotNull
     public Material getType() {
         return type;
     }
@@ -112,7 +115,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param type New type to set the items in this stack to
      */
     @Utility
-    public void setType(Material type) {
+    public void setType(@NotNull Material type) {
         Validate.notNull(type, "Material cannot be null");
         this.type = type;
         if (this.meta != null) {
@@ -148,6 +151,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @return MaterialData for this item
      */
+    @Nullable
     public MaterialData getData() {
         Material mat = Bukkit.getUnsafe().toLegacy(getType());
         if (data == null && mat != null && mat.getData() != null) {
@@ -162,7 +166,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @param data New MaterialData for this item
      */
-    public void setData(MaterialData data) {
+    public void setData(@Nullable MaterialData data) {
         Material mat = Bukkit.getUnsafe().toLegacy(getType());
 
         if (data == null || mat == null || mat.getData() == null) {
@@ -258,7 +262,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return true if the two stacks are equal, ignoring the amount
      */
     @Utility
-    public boolean isSimilar(ItemStack stack) {
+    public boolean isSimilar(@Nullable ItemStack stack) {
         if (stack == null) {
             return false;
         }
@@ -269,6 +273,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         return comparisonType == stack.getType() && getDurability() == stack.getDurability() && hasItemMeta() == stack.hasItemMeta() && (hasItemMeta() ? Bukkit.getItemFactory().equals(getItemMeta(), stack.getItemMeta()) : true);
     }
 
+    @NotNull
     @Override
     public ItemStack clone() {
         try {
@@ -307,7 +312,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param ench Enchantment to test
      * @return True if this has the given enchantment
      */
-    public boolean containsEnchantment(Enchantment ench) {
+    public boolean containsEnchantment(@NotNull Enchantment ench) {
         return meta == null ? false : meta.hasEnchant(ench);
     }
 
@@ -317,7 +322,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param ench Enchantment to check
      * @return Level of the enchantment, or 0
      */
-    public int getEnchantmentLevel(Enchantment ench) {
+    public int getEnchantmentLevel(@NotNull Enchantment ench) {
         return meta == null ? 0 : meta.getEnchantLevel(ench);
     }
 
@@ -326,6 +331,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @return Map of enchantments.
      */
+    @NotNull
     public Map<Enchantment, Integer> getEnchantments() {
         return meta == null ? ImmutableMap.<Enchantment, Integer>of() : meta.getEnchants();
     }
@@ -344,7 +350,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *     exception is thrown.
      */
     @Utility
-    public void addEnchantments(Map<Enchantment, Integer> enchantments) {
+    public void addEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
         Validate.notNull(enchantments, "Enchantments cannot be null");
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             addEnchantment(entry.getKey(), entry.getValue());
@@ -363,7 +369,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *     not applicable
      */
     @Utility
-    public void addEnchantment(Enchantment ench, int level) {
+    public void addEnchantment(@NotNull Enchantment ench, int level) {
         Validate.notNull(ench, "Enchantment cannot be null");
         if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
             throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
@@ -384,7 +390,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param enchantments Enchantments to add
      */
     @Utility
-    public void addUnsafeEnchantments(Map<Enchantment, Integer> enchantments) {
+    public void addUnsafeEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             addUnsafeEnchantment(entry.getKey(), entry.getValue());
         }
@@ -402,8 +408,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param ench Enchantment to add
      * @param level Level of the enchantment
      */
-    public void addUnsafeEnchantment(Enchantment ench, int level) {
-        (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(type) : meta).addEnchant(ench, level, true);
+    public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
+        ItemMeta itemMeta = (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(type) : meta);
+        if (itemMeta != null) {
+            itemMeta.addEnchant(ench, level, true);
+        }
     }
 
     /**
@@ -413,7 +422,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param ench Enchantment to remove
      * @return Previous level, or 0
      */
-    public int removeEnchantment(Enchantment ench) {
+    public int removeEnchantment(@NotNull Enchantment ench) {
         int level = getEnchantmentLevel(ench);
         if (level == 0 || meta == null) {
             return level;
@@ -422,6 +431,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         return level;
     }
 
+    @NotNull
     @Utility
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -448,7 +458,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @return deserialized item stack
      * @see ConfigurationSerializable
      */
-    public static ItemStack deserialize(Map<String, Object> args) {
+    @NotNull
+    public static ItemStack deserialize(@NotNull Map<String, Object> args) {
         int version = (args.containsKey("v")) ? ((Number) args.get("v")).intValue() : -1;
         short damage = 0;
         int amount = 1;
@@ -461,7 +472,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         if (version < 0) {
             type = Material.getMaterial(Material.LEGACY_PREFIX + (String) args.get("type"));
 
-            byte dataVal = (type.getMaxDurability() == 0) ? (byte) damage : 0; // Actually durable items get a 0 passed into conversion
+            byte dataVal = (type != null && type.getMaxDurability() == 0) ? (byte) damage : 0; // Actually durable items get a 0 passed into conversion
             type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, dataVal), true);
 
             // We've converted now so the data val isn't a thing and can be reset
@@ -514,6 +525,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *
      * @return a copy of the current ItemStack's ItemData
      */
+    @Nullable
     public ItemMeta getItemMeta() {
         return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
     }
@@ -536,14 +548,14 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @throws IllegalArgumentException if the item meta was not created by
      *     the {@link ItemFactory}
      */
-    public boolean setItemMeta(ItemMeta itemMeta) {
+    public boolean setItemMeta(@Nullable ItemMeta itemMeta) {
         return setItemMeta0(itemMeta, type);
     }
 
     /*
      * Cannot be overridden, so it's safe for constructor call
      */
-    private boolean setItemMeta0(ItemMeta itemMeta, Material material) {
+    private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
         if (itemMeta == null) {
             this.meta = null;
             return true;

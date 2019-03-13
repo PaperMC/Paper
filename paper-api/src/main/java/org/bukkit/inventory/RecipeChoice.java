@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a potential item match within a recipe. All choices within a
@@ -24,9 +25,14 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @deprecated for compatability only
      */
     @Deprecated
+    @NotNull
     ItemStack getItemStack();
 
+    @NotNull
     RecipeChoice clone();
+
+    @Override
+    boolean test(@NotNull ItemStack itemStack);
 
     /**
      * Represents a choice of multiple matching Materials.
@@ -35,15 +41,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<Material> choices;
 
-        public MaterialChoice(Material choice) {
+        public MaterialChoice(@NotNull Material choice) {
             this(Arrays.asList(choice));
         }
 
-        public MaterialChoice(Material... choices) {
+        public MaterialChoice(@NotNull Material... choices) {
             this(Arrays.asList(choices));
         }
 
-        public MaterialChoice(List<Material> choices) {
+        public MaterialChoice(@NotNull List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
             for (Material choice : choices) {
@@ -54,7 +60,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
-        public boolean test(ItemStack t) {
+        public boolean test(@NotNull ItemStack t) {
             for (Material match : choices) {
                 if (t.getType() == match) {
                     return true;
@@ -64,6 +70,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return false;
         }
 
+        @NotNull
         @Override
         public ItemStack getItemStack() {
             ItemStack stack = new ItemStack(choices.get(0));
@@ -76,10 +83,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return stack;
         }
 
+        @NotNull
         public List<Material> getChoices() {
             return Collections.unmodifiableList(choices);
         }
 
+        @NotNull
         @Override
         public MaterialChoice clone() {
             try {
@@ -135,15 +144,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<ItemStack> choices;
 
-        public ExactChoice(ItemStack stack) {
+        public ExactChoice(@NotNull ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
-        public ExactChoice(ItemStack... stacks) {
+        public ExactChoice(@NotNull ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
 
-        public ExactChoice(List<ItemStack> choices) {
+        public ExactChoice(@NotNull List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
             for (ItemStack choice : choices) {
@@ -153,15 +162,18 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             this.choices = new ArrayList<>(choices);
         }
 
+        @NotNull
         @Override
         public ItemStack getItemStack() {
             return choices.get(0).clone();
         }
 
+        @NotNull
         public List<ItemStack> getChoices() {
             return Collections.unmodifiableList(choices);
         }
 
+        @NotNull
         @Override
         public ExactChoice clone() {
             try {
@@ -174,7 +186,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
 
         @Override
-        public boolean test(ItemStack t) {
+        public boolean test(@NotNull ItemStack t) {
             for (ItemStack match : choices) {
                 if (t.isSimilar(match)) {
                     return true;

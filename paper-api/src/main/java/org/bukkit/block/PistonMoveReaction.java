@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +62,7 @@ public enum PistonMoveReaction {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static PistonMoveReaction getById(int id) {
         return byId.get(id);
     }

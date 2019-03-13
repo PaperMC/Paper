@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player takes action on a resource pack request sent via
@@ -12,7 +13,7 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Status status;
 
-    public PlayerResourcePackStatusEvent(final Player who, Status resourcePackStatus) {
+    public PlayerResourcePackStatusEvent(@NotNull final Player who, @NotNull Status resourcePackStatus) {
         super(who);
         this.status = resourcePackStatus;
     }
@@ -22,15 +23,18 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
      *
      * @return the current status
      */
+    @NotNull
     public Status getStatus() {
         return status;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

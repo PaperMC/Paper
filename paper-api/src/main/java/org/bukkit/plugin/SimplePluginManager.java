@@ -34,6 +34,8 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.util.FileUtil;
 
 import com.google.common.collect.ImmutableSet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Handles all plugin management from the Server
@@ -51,7 +53,7 @@ public final class SimplePluginManager implements PluginManager {
     private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
     private boolean useTimings = false;
 
-    public SimplePluginManager(Server instance, SimpleCommandMap commandMap) {
+    public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
         server = instance;
         this.commandMap = commandMap;
 
@@ -66,7 +68,7 @@ public final class SimplePluginManager implements PluginManager {
      * @throws IllegalArgumentException Thrown when the given Class is not a
      *     valid PluginLoader
      */
-    public void registerInterface(Class<? extends PluginLoader> loader) throws IllegalArgumentException {
+    public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {
         PluginLoader instance;
 
         if (PluginLoader.class.isAssignableFrom(loader)) {
@@ -101,7 +103,8 @@ public final class SimplePluginManager implements PluginManager {
      * @param directory Directory to check for plugins
      * @return A list of all plugins loaded
      */
-    public Plugin[] loadPlugins(File directory) {
+    @NotNull
+    public Plugin[] loadPlugins(@NotNull File directory) {
         Validate.notNull(directory, "Directory cannot be null");
         Validate.isTrue(directory.isDirectory(), "Directory must be a directory");
 
@@ -309,7 +312,8 @@ public final class SimplePluginManager implements PluginManager {
      * @throws UnknownDependencyException If a required dependency could not
      *     be found
      */
-    public synchronized Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException {
+    @Nullable
+    public synchronized Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
         Validate.notNull(file, "File cannot be null");
 
         checkUpdate(file);
@@ -336,7 +340,7 @@ public final class SimplePluginManager implements PluginManager {
         return result;
     }
 
-    private void checkUpdate(File file) {
+    private void checkUpdate(@NotNull File file) {
         if (updateDirectory == null || !updateDirectory.isDirectory()) {
             return;
         }
@@ -355,10 +359,12 @@ public final class SimplePluginManager implements PluginManager {
      * @param name Name of the plugin to check
      * @return Plugin if it exists, otherwise null
      */
-    public synchronized Plugin getPlugin(String name) {
+    @Nullable
+    public synchronized Plugin getPlugin(@NotNull String name) {
         return lookupNames.get(name.replace(' ', '_'));
     }
 
+    @NotNull
     public synchronized Plugin[] getPlugins() {
         return plugins.toArray(new Plugin[plugins.size()]);
     }
@@ -371,7 +377,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param name Name of the plugin to check
      * @return true if the plugin is enabled, otherwise false
      */
-    public boolean isPluginEnabled(String name) {
+    public boolean isPluginEnabled(@NotNull String name) {
         Plugin plugin = getPlugin(name);
 
         return isPluginEnabled(plugin);
@@ -383,7 +389,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param plugin Plugin to check
      * @return true if the plugin is enabled, otherwise false
      */
-    public boolean isPluginEnabled(Plugin plugin) {
+    public boolean isPluginEnabled(@Nullable Plugin plugin) {
         if ((plugin != null) && (plugins.contains(plugin))) {
             return plugin.isEnabled();
         } else {
@@ -391,7 +397,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public void enablePlugin(final Plugin plugin) {
+    public void enablePlugin(@NotNull final Plugin plugin) {
         if (!plugin.isEnabled()) {
             List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
 
@@ -416,7 +422,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public void disablePlugin(final Plugin plugin) {
+    public void disablePlugin(@NotNull final Plugin plugin) {
         if (plugin.isEnabled()) {
             try {
                 plugin.getPluginLoader().disablePlugin(plugin);
@@ -471,7 +477,7 @@ public final class SimplePluginManager implements PluginManager {
      *
      * @param event Event details
      */
-    public void callEvent(Event event) {
+    public void callEvent(@NotNull Event event) {
         if (event.isAsynchronous()) {
             if (Thread.holdsLock(this)) {
                 throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
@@ -487,7 +493,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    private void fireEvent(Event event) {
+    private void fireEvent(@NotNull Event event) {
         HandlerList handlers = event.getHandlers();
         RegisteredListener[] listeners = handlers.getRegisteredListeners();
 
@@ -517,7 +523,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public void registerEvents(Listener listener, Plugin plugin) {
+    public void registerEvents(@NotNull Listener listener, @NotNull Plugin plugin) {
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register " + listener + " while not enabled");
         }
@@ -528,7 +534,7 @@ public final class SimplePluginManager implements PluginManager {
 
     }
 
-    public void registerEvent(Class<? extends Event> event, Listener listener, EventPriority priority, EventExecutor executor, Plugin plugin) {
+    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin) {
         registerEvent(event, listener, priority, executor, plugin, false);
     }
 
@@ -544,7 +550,7 @@ public final class SimplePluginManager implements PluginManager {
      * @param ignoreCancelled Do not call executor if event was already
      *     cancelled
      */
-    public void registerEvent(Class<? extends Event> event, Listener listener, EventPriority priority, EventExecutor executor, Plugin plugin, boolean ignoreCancelled) {
+    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled) {
         Validate.notNull(listener, "Listener cannot be null");
         Validate.notNull(priority, "Priority cannot be null");
         Validate.notNull(executor, "Executor cannot be null");
@@ -561,7 +567,8 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    private HandlerList getEventListeners(Class<? extends Event> type) {
+    @NotNull
+    private HandlerList getEventListeners(@NotNull Class<? extends Event> type) {
         try {
             Method method = getRegistrationClass(type).getDeclaredMethod("getHandlerList");
             method.setAccessible(true);
@@ -571,7 +578,8 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    private Class<? extends Event> getRegistrationClass(Class<? extends Event> clazz) {
+    @NotNull
+    private Class<? extends Event> getRegistrationClass(@NotNull Class<? extends Event> clazz) {
         try {
             clazz.getDeclaredMethod("getHandlerList");
             return clazz;
@@ -586,16 +594,17 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public Permission getPermission(String name) {
+    @Nullable
+    public Permission getPermission(@NotNull String name) {
         return permissions.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
-    public void addPermission(Permission perm) {
+    public void addPermission(@NotNull Permission perm) {
         addPermission(perm, true);
     }
 
     @Deprecated
-    public void addPermission(Permission perm, boolean dirty) {
+    public void addPermission(@NotNull Permission perm, boolean dirty) {
         String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
 
         if (permissions.containsKey(name)) {
@@ -606,19 +615,20 @@ public final class SimplePluginManager implements PluginManager {
         calculatePermissionDefault(perm, dirty);
     }
 
+    @NotNull
     public Set<Permission> getDefaultPermissions(boolean op) {
         return ImmutableSet.copyOf(defaultPerms.get(op));
     }
 
-    public void removePermission(Permission perm) {
+    public void removePermission(@NotNull Permission perm) {
         removePermission(perm.getName());
     }
 
-    public void removePermission(String name) {
+    public void removePermission(@NotNull String name) {
         permissions.remove(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 
-    public void recalculatePermissionDefaults(Permission perm) {
+    public void recalculatePermissionDefaults(@NotNull Permission perm) {
         if (perm != null && permissions.containsKey(perm.getName().toLowerCase(java.util.Locale.ENGLISH))) {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
@@ -627,7 +637,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    private void calculatePermissionDefault(Permission perm, boolean dirty) {
+    private void calculatePermissionDefault(@NotNull Permission perm, boolean dirty) {
         if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
             defaultPerms.get(true).add(perm);
             if (dirty) {
@@ -656,7 +666,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public void subscribeToPermission(String permission, Permissible permissible) {
+    public void subscribeToPermission(@NotNull String permission, @NotNull Permissible permissible) {
         String name = permission.toLowerCase(java.util.Locale.ENGLISH);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -668,7 +678,7 @@ public final class SimplePluginManager implements PluginManager {
         map.put(permissible, true);
     }
 
-    public void unsubscribeFromPermission(String permission, Permissible permissible) {
+    public void unsubscribeFromPermission(@NotNull String permission, @NotNull Permissible permissible) {
         String name = permission.toLowerCase(java.util.Locale.ENGLISH);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -681,7 +691,8 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public Set<Permissible> getPermissionSubscriptions(String permission) {
+    @NotNull
+    public Set<Permissible> getPermissionSubscriptions(@NotNull String permission) {
         String name = permission.toLowerCase(java.util.Locale.ENGLISH);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -692,7 +703,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
-    public void subscribeToDefaultPerms(boolean op, Permissible permissible) {
+    public void subscribeToDefaultPerms(boolean op, @NotNull Permissible permissible) {
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map == null) {
@@ -703,7 +714,7 @@ public final class SimplePluginManager implements PluginManager {
         map.put(permissible, true);
     }
 
-    public void unsubscribeFromDefaultPerms(boolean op, Permissible permissible) {
+    public void unsubscribeFromDefaultPerms(boolean op, @NotNull Permissible permissible) {
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map != null) {
@@ -715,6 +726,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    @NotNull
     public Set<Permissible> getDefaultPermSubscriptions(boolean op) {
         Map<Permissible, Boolean> map = defSubs.get(op);
 
@@ -725,6 +737,7 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    @NotNull
     public Set<Permission> getPermissions() {
         return new HashSet<Permission>(permissions.values());
     }

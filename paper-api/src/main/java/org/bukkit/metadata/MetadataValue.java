@@ -1,6 +1,8 @@
 package org.bukkit.metadata;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface MetadataValue {
 
@@ -9,6 +11,7 @@ public interface MetadataValue {
      *
      * @return the metadata value.
      */
+    @Nullable
     public Object value();
 
     /**
@@ -65,14 +68,15 @@ public interface MetadataValue {
      *
      * @return the value as a string.
      */
+    @NotNull
     public String asString();
 
     /**
      * Returns the {@link Plugin} that created this metadata item.
      *
-     * @return the plugin that owns this metadata value. This should never be
-     *     null.
+     * @return the plugin that owns this metadata value. Could be null if the plugin was already unloaded.
      */
+    @Nullable
     public Plugin getOwningPlugin();
 
     /**

@@ -13,6 +13,7 @@ import org.bukkit.event.HandlerList;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for damage events
@@ -27,11 +28,11 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private final DamageCause cause;
 
-    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final double damage) {
+    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damagee, cause, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
 
-    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final Map<DamageModifier, Double> modifiers, final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee);
         Validate.isTrue(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
         Validate.isTrue(!modifiers.containsKey(null), "Cannot have null DamageModifier");
@@ -60,7 +61,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @return the original damage
      * @throws IllegalArgumentException if type is null
      */
-    public double getOriginalDamage(DamageModifier type) throws IllegalArgumentException {
+    public double getOriginalDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         final Double damage = originals.get(type);
         if (damage != null) {
             return damage;
@@ -82,7 +83,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *     the particular DamageModifier, or to rephrase, when {@link
      *     #isApplicable(DamageModifier)} returns false
      */
-    public void setDamage(DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
+    public void setDamage(@NotNull DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
         if (!modifiers.containsKey(type)) {
             throw type == null ? new IllegalArgumentException("Cannot have null DamageModifier") : new UnsupportedOperationException(type + " is not applicable to " + getEntity());
         }
@@ -97,7 +98,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @throws IllegalArgumentException if type is null
      * @see DamageModifier#BASE
      */
-    public double getDamage(DamageModifier type) throws IllegalArgumentException {
+    public double getDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
         Validate.notNull(type, "Cannot have null DamageModifier");
         final Double damage = modifiers.get(type);
         return damage == null ? 0 : damage;
@@ -114,7 +115,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @return true if the modifier is supported by the caller, false otherwise
      * @throws IllegalArgumentException if type is null
      */
-    public boolean isApplicable(DamageModifier type) throws IllegalArgumentException {
+    public boolean isApplicable(@NotNull DamageModifier type) throws IllegalArgumentException {
         Validate.notNull(type, "Cannot have null DamageModifier");
         return modifiers.containsKey(type);
     }
@@ -185,15 +186,18 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @return A DamageCause value detailing the cause of the damage.
      */
+    @NotNull
     public DamageCause getCause() {
         return cause;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -16,6 +16,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a living entity, such as a monster or player
@@ -43,6 +45,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return a location at the eyes of the living entity
      */
+    @NotNull
     public Location getEyeLocation();
 
     /**
@@ -58,7 +61,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return list containing all blocks along the living entity's line of
      *     sight
      */
-    public List<Block> getLineOfSight(Set<Material> transparent, int maxDistance);
+    @NotNull
+    public List<Block> getLineOfSight(@Nullable Set<Material> transparent, int maxDistance);
 
     /**
      * Gets the block that the living entity has targeted.
@@ -73,7 +77,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *     by server by at least 100 blocks, no less)
      * @return block that the living entity has targeted
      */
-    public Block getTargetBlock(Set<Material> transparent, int maxDistance);
+    @NotNull
+    public Block getTargetBlock(@Nullable Set<Material> transparent, int maxDistance);
 
     /**
      * Gets the last two blocks along the living entity's line of sight.
@@ -88,7 +93,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return list containing the last 2 blocks along the living entity's
      *     line of sight
      */
-    public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance);
+    @NotNull
+    public List<Block> getLastTwoTargetBlocks(@Nullable Set<Material> transparent, int maxDistance);
 
     /**
      * Gets the block that the living entity has targeted.
@@ -103,6 +109,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return block that the living entity has targeted
      * @see #getTargetBlockExact(int, org.bukkit.FluidCollisionMode)
      */
+    @Nullable
     public Block getTargetBlockExact(int maxDistance);
 
     /**
@@ -118,7 +125,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return block that the living entity has targeted
      * @see #rayTraceBlocks(double, FluidCollisionMode)
      */
-    public Block getTargetBlockExact(int maxDistance, FluidCollisionMode fluidCollisionMode);
+    @Nullable
+    public Block getTargetBlockExact(int maxDistance, @NotNull FluidCollisionMode fluidCollisionMode);
 
     /**
      * Performs a ray trace that provides information on the targeted block.
@@ -134,6 +142,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *     is no targeted block in range
      * @see #rayTraceBlocks(double, FluidCollisionMode)
      */
+    @Nullable
     public RayTraceResult rayTraceBlocks(double maxDistance);
 
     /**
@@ -150,7 +159,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *     is no targeted block in range
      * @see World#rayTraceBlocks(Location, Vector, double, FluidCollisionMode)
      */
-    public RayTraceResult rayTraceBlocks(double maxDistance, FluidCollisionMode fluidCollisionMode);
+    @Nullable
+    public RayTraceResult rayTraceBlocks(double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode);
 
     /**
      * Returns the amount of air that the living entity has remaining, in
@@ -237,6 +247,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return killer player, or null if none found
      */
+    @Nullable
     public Player getKiller();
 
     /**
@@ -248,7 +259,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    public boolean addPotionEffect(PotionEffect effect);
+    public boolean addPotionEffect(@NotNull PotionEffect effect);
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
@@ -260,7 +271,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param force whether conflicting effects should be removed
      * @return whether the effect could be added
      */
-    public boolean addPotionEffect(PotionEffect effect, boolean force);
+    public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
 
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
@@ -269,7 +280,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effects the effects to add
      * @return whether all of the effects could be added
      */
-    public boolean addPotionEffects(Collection<PotionEffect> effects);
+    public boolean addPotionEffects(@NotNull Collection<PotionEffect> effects);
 
     /**
      * Returns whether the living entity already has an existing effect of
@@ -278,7 +289,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param type the potion type to check
      * @return whether the living entity has this potion effect active on them
      */
-    public boolean hasPotionEffect(PotionEffectType type);
+    public boolean hasPotionEffect(@NotNull PotionEffectType type);
 
     /**
      * Returns the active {@link PotionEffect} of the specified type.
@@ -288,14 +299,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param type the potion type to check
      * @return the effect active on this entity, or null if not active.
      */
-    public PotionEffect getPotionEffect(PotionEffectType type);
+    @Nullable
+    public PotionEffect getPotionEffect(@NotNull PotionEffectType type);
 
     /**
      * Removes any effects present of the given {@link PotionEffectType}.
      *
      * @param type the potion type to remove
      */
-    public void removePotionEffect(PotionEffectType type);
+    public void removePotionEffect(@NotNull PotionEffectType type);
 
     /**
      * Returns all currently active {@link PotionEffect}s on the living
@@ -303,6 +315,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return a collection of {@link PotionEffect}s
      */
+    @NotNull
     public Collection<PotionEffect> getActivePotionEffects();
 
     /**
@@ -314,7 +327,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param other the entity to determine line of sight to
      * @return true if there is a line of sight, false if not
      */
-    public boolean hasLineOfSight(Entity other);
+    public boolean hasLineOfSight(@NotNull Entity other);
 
     /**
      * Returns if the living entity despawns when away from players or not.
@@ -338,6 +351,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the living entity's inventory
      */
+    @Nullable
     public EntityEquipment getEquipment();
 
     /**
@@ -367,6 +381,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return the entity holding the leash
      * @throws IllegalStateException if not currently leashed
      */
+    @NotNull
     public Entity getLeashHolder() throws IllegalStateException;
 
     /**
@@ -376,10 +391,10 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Non-living entities excluding leashes will not persist as leash
      * holders.
      *
-     * @param holder the entity to leash this entity to
+     * @param holder the entity to leash this entity to, or null to unleash
      * @return whether the operation was successful
      */
-    public boolean setLeashHolder(Entity holder);
+    public boolean setLeashHolder(@Nullable Entity holder);
 
     /**
      * Checks to see if an entity is gliding, such as using an Elytra.

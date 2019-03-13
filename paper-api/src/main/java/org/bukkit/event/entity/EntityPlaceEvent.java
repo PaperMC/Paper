@@ -7,6 +7,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Triggered when a entity is created in the world by a player "placing" an item
@@ -27,7 +29,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
     private final Block block;
     private final BlockFace blockFace;
 
-    public EntityPlaceEvent(final Entity entity, final Player player, final Block block, final BlockFace blockFace) {
+    public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace) {
         super(entity);
         this.player = player;
         this.block = block;
@@ -39,6 +41,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
      *
      * @return the player placing the entity
      */
+    @Nullable
     public Player getPlayer() {
         return player;
     }
@@ -48,6 +51,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
      *
      * @return the block that the entity was placed on
      */
+    @NotNull
     public Block getBlock() {
         return block;
     }
@@ -57,6 +61,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
      *
      * @return the face of the block that the entity was placed on
      */
+    @NotNull
     public BlockFace getBlockFace() {
         return blockFace;
     }
@@ -71,11 +76,13 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

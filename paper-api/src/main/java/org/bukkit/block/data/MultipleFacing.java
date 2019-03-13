@@ -2,6 +2,8 @@ package org.bukkit.block.data;
 
 import java.util.Set;
 import org.bukkit.block.BlockFace;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class encompasses the 'north', 'east', 'south', 'west', 'up', 'down'
@@ -19,7 +21,7 @@ public interface MultipleFacing extends BlockData {
      * @param face to check
      * @return if face is enabled
      */
-    boolean hasFace(BlockFace face);
+    boolean hasFace(@NotNull BlockFace face);
 
     /**
      * Set whether this block has the specified face enabled.
@@ -27,13 +29,14 @@ public interface MultipleFacing extends BlockData {
      * @param face to set
      * @param has the face
      */
-    void setFace(BlockFace face, boolean has);
+    void setFace(@Nullable BlockFace face, boolean has);
 
     /**
      * Get all of the faces which are enabled on this block.
      *
      * @return all faces enabled
      */
+    @NotNull
     Set<BlockFace> getFaces();
 
     /**
@@ -41,5 +44,6 @@ public interface MultipleFacing extends BlockData {
      *
      * @return all allowed faces
      */
+    @NotNull
     Set<BlockFace> getAllowedFaces();
 }

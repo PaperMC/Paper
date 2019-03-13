@@ -1,5 +1,8 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a Skeleton.
  */
@@ -12,12 +15,14 @@ public interface Skeleton extends Monster {
      * @deprecated should check what class instance this is
      */
     @Deprecated
+    @NotNull
     public SkeletonType getSkeletonType();
 
     /**
      * @deprecated Must spawn a new subtype variant
      */
     @Deprecated
+    @Contract("_ -> fail")
     public void setSkeletonType(SkeletonType type);
 
     /*

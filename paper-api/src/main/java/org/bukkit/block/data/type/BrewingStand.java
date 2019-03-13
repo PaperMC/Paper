@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import java.util.Set;
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface to the 'has_bottle_0', 'has_bottle_1', 'has_bottle_2' flags on a
@@ -32,6 +33,7 @@ public interface BrewingStand extends BlockData {
      *
      * @return set of all bottles
      */
+    @NotNull
     Set<Integer> getBottles();
 
     /**

@@ -6,6 +6,7 @@ import java.util.Set;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event will sometimes fire synchronously, depending on how it was
@@ -38,7 +39,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      * @param players the players to receive the message. This may be a lazy
      *     or unmodifiable collection.
      */
-    public AsyncPlayerChatEvent(final boolean async, final Player who, final String message, final Set<Player> players) {
+    public AsyncPlayerChatEvent(final boolean async, @NotNull final Player who, @NotNull final String message, @NotNull final Set<Player> players) {
         super(who, async);
         this.message = message;
         recipients = players;
@@ -50,6 +51,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      *
      * @return Message the player is attempting to send
      */
+    @NotNull
     public String getMessage() {
         return message;
     }
@@ -60,7 +62,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      *
      * @param message New message that the player will send
      */
-    public void setMessage(String message) {
+    public void setMessage(@NotNull String message) {
         this.message = message;
     }
 
@@ -74,6 +76,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      * @return {@link String#format(String, Object...)} compatible format
      *     string
      */
+    @NotNull
     public String getFormat() {
         return format;
     }
@@ -92,7 +95,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      * @throws NullPointerException if format is null
      * @see String#format(String, Object...)
      */
-    public void setFormat(final String format) throws IllegalFormatException, NullPointerException {
+    public void setFormat(@NotNull final String format) throws IllegalFormatException, NullPointerException {
         // Oh for a better way to do this!
         try {
             String.format(format, player, message);
@@ -117,6 +120,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      *
      * @return All Players who will see this chat message
      */
+    @NotNull
     public Set<Player> getRecipients() {
         return recipients;
     }
@@ -129,11 +133,13 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

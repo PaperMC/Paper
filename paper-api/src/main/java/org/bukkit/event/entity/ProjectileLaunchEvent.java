@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a projectile is launched.
@@ -10,7 +11,7 @@ import org.bukkit.event.Cancellable;
 public class ProjectileLaunchEvent extends EntitySpawnEvent implements Cancellable {
     private boolean cancelled;
 
-    public ProjectileLaunchEvent(Entity what) {
+    public ProjectileLaunchEvent(@NotNull Entity what) {
         super(what);
     }
 
@@ -22,6 +23,7 @@ public class ProjectileLaunchEvent extends EntitySpawnEvent implements Cancellab
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public Projectile getEntity() {
         return (Projectile) entity;

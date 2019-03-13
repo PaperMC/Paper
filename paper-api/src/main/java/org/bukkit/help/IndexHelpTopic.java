@@ -5,6 +5,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.ChatPaginator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -22,15 +24,15 @@ public class IndexHelpTopic extends HelpTopic {
     protected String preamble;
     protected Collection<HelpTopic> allTopics;
 
-    public IndexHelpTopic(String name, String shortText, String permission, Collection<HelpTopic> topics) {
+    public IndexHelpTopic(@NotNull String name, @Nullable String shortText, @Nullable String permission, @NotNull Collection<HelpTopic> topics) {
         this(name, shortText, permission, topics, null);
     }
 
-    public IndexHelpTopic(String name, String shortText, String permission, Collection<HelpTopic> topics, String preamble) {
+    public IndexHelpTopic(@NotNull String name, @Nullable String shortText, @Nullable String permission, @NotNull Collection<HelpTopic> topics, @Nullable String preamble) {
         this.name = name;
-        this.shortText = shortText;
+        this.shortText = (shortText == null) ? "" : shortText;
         this.permission = permission;
-        this.preamble = preamble;
+        this.preamble = (preamble == null) ? "" : preamble;
         setTopicsCollection(topics);
     }
 
@@ -39,11 +41,11 @@ public class IndexHelpTopic extends HelpTopic {
      *
      * @param topics The topics to set.
      */
-    protected void setTopicsCollection(Collection<HelpTopic> topics) {
+    protected void setTopicsCollection(@NotNull Collection<HelpTopic> topics) {
         this.allTopics = topics;
     }
 
-    public boolean canSee(CommandSender sender) {
+    public boolean canSee(@NotNull CommandSender sender) {
         if (sender instanceof ConsoleCommandSender) {
             return true;
         }
@@ -54,11 +56,12 @@ public class IndexHelpTopic extends HelpTopic {
     }
 
     @Override
-    public void amendCanSee(String amendedPermission) {
+    public void amendCanSee(@Nullable String amendedPermission) {
         permission = amendedPermission;
     }
 
-    public String getFullText(CommandSender sender) {
+    @NotNull
+    public String getFullText(@NotNull CommandSender sender) {
         StringBuilder sb = new StringBuilder();
 
         if (preamble != null) {
@@ -70,7 +73,7 @@ public class IndexHelpTopic extends HelpTopic {
             if (topic.canSee(sender)) {
                 String lineStr = buildIndexLine(sender, topic).replace("\n", ". ");
                 if (sender instanceof Player && lineStr.length() > ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH) {
-                    sb.append(lineStr.substring(0, ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH - 3));
+                    sb.append(lineStr, 0, ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH - 3);
                     sb.append("...");
                 } else {
                     sb.append(lineStr);
@@ -88,7 +91,8 @@ public class IndexHelpTopic extends HelpTopic {
      * @param sender The command sender requesting the preamble.
      * @return The topic preamble.
      */
-    protected String buildPreamble(CommandSender sender) {
+    @NotNull
+    protected String buildPreamble(@NotNull CommandSender sender) {
         return ChatColor.GRAY + preamble;
     }
 
@@ -100,7 +104,8 @@ public class IndexHelpTopic extends HelpTopic {
      * @param topic  The topic to render into an index line.
      * @return The rendered index line.
      */
-    protected String buildIndexLine(CommandSender sender, HelpTopic topic) {
+    @NotNull
+    protected String buildIndexLine(@NotNull CommandSender sender, @NotNull HelpTopic topic) {
         StringBuilder line = new StringBuilder();
         line.append(ChatColor.GOLD);
         line.append(topic.getName());

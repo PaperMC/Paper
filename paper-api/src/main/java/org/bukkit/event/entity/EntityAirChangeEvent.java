@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the amount of air an entity has remaining changes.
@@ -15,7 +16,7 @@ public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
     //
     private boolean cancelled;
 
-    public EntityAirChangeEvent(Entity what, int amount) {
+    public EntityAirChangeEvent(@NotNull Entity what, int amount) {
         super(what);
         this.amount = amount;
     }
@@ -48,11 +49,13 @@ public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when leaves are decaying naturally.
@@ -13,7 +14,7 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
 
-    public LeavesDecayEvent(final Block block) {
+    public LeavesDecayEvent(@NotNull final Block block) {
         super(block);
     }
 
@@ -25,11 +26,13 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

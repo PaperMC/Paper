@@ -1,5 +1,7 @@
 package org.bukkit.plugin;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A registered service provider.
  *
@@ -12,31 +14,34 @@ public class RegisteredServiceProvider<T> implements Comparable<RegisteredServic
     private T provider;
     private ServicePriority priority;
 
-    public RegisteredServiceProvider(Class<T> service, T provider, ServicePriority priority, Plugin plugin) {
-
+    public RegisteredServiceProvider(@NotNull Class<T> service, @NotNull T provider, @NotNull ServicePriority priority, @NotNull Plugin plugin) {
         this.service = service;
         this.plugin = plugin;
         this.provider = provider;
         this.priority = priority;
     }
 
+    @NotNull
     public Class<T> getService() {
         return service;
     }
 
+    @NotNull
     public Plugin getPlugin() {
         return plugin;
     }
 
+    @NotNull
     public T getProvider() {
         return provider;
     }
 
+    @NotNull
     public ServicePriority getPriority() {
         return priority;
     }
 
-    public int compareTo(RegisteredServiceProvider<?> other) {
+    public int compareTo(@NotNull RegisteredServiceProvider<?> other) {
         if (priority.ordinal() == other.getPriority().ordinal()) {
             return 0;
         } else {

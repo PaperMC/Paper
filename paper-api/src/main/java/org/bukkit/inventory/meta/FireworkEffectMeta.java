@@ -2,6 +2,8 @@ package org.bukkit.inventory.meta;
 
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a meta that can store a single FireworkEffect. An example
@@ -14,7 +16,7 @@ public interface FireworkEffectMeta extends ItemMeta {
      *
      * @param effect the effect to set, or null to indicate none.
      */
-    void setEffect(FireworkEffect effect);
+    void setEffect(@Nullable FireworkEffect effect);
 
     /**
      * Checks if this meta has an effect.
@@ -28,7 +30,9 @@ public interface FireworkEffectMeta extends ItemMeta {
      *
      * @return the current effect, or null if none
      */
+    @Nullable
     FireworkEffect getEffect();
 
+    @NotNull
     FireworkEffectMeta clone();
 }

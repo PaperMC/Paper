@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import org.bukkit.block.Furnace;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Furnace.
@@ -12,6 +13,7 @@ public interface FurnaceInventory extends Inventory {
      *
      * @return The item
      */
+    @Nullable
     ItemStack getResult();
 
     /**
@@ -19,6 +21,7 @@ public interface FurnaceInventory extends Inventory {
      *
      * @return The item
      */
+    @Nullable
     ItemStack getFuel();
 
     /**
@@ -26,6 +29,7 @@ public interface FurnaceInventory extends Inventory {
      *
      * @return The item
      */
+    @Nullable
     ItemStack getSmelting();
 
     /**
@@ -33,21 +37,22 @@ public interface FurnaceInventory extends Inventory {
      *
      * @param stack The item
      */
-    void setFuel(ItemStack stack);
+    void setFuel(@Nullable ItemStack stack);
 
     /**
      * Set the current item in the result slot.
      *
      * @param stack The item
      */
-    void setResult(ItemStack stack);
+    void setResult(@Nullable ItemStack stack);
 
     /**
      * Set the item currently smelting.
      *
      * @param stack The item
      */
-    void setSmelting(ItemStack stack);
+    void setSmelting(@Nullable ItemStack stack);
 
+    @Nullable
     Furnace getHolder();
 }

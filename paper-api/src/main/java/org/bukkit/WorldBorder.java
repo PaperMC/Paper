@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface WorldBorder {
 
     /**
@@ -34,6 +36,7 @@ public interface WorldBorder {
      *
      * @return The current border center.
      */
+    @NotNull
     public Location getCenter();
 
     /**
@@ -49,7 +52,7 @@ public interface WorldBorder {
      *
      * @param location The new location of the border center. (Only x/z used)
      */
-    public void setCenter(Location location);
+    public void setCenter(@NotNull Location location);
 
     /**
      * Gets the current border damage buffer.
@@ -113,5 +116,5 @@ public interface WorldBorder {
      * @param location the location to check
      * @return if this location is inside the border or not
      */
-    public boolean isInside(Location location);
+    public boolean isInside(@NotNull Location location);
 }

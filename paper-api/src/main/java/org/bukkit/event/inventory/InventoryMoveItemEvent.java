@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when some entity or block (e.g. hopper) tries to move items directly
@@ -31,7 +32,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
     private ItemStack itemStack;
     private final boolean didSourceInitiate;
 
-    public InventoryMoveItemEvent(final Inventory sourceInventory, final ItemStack itemStack, final Inventory destinationInventory, final boolean didSourceInitiate) {
+    public InventoryMoveItemEvent(@NotNull final Inventory sourceInventory, @NotNull final ItemStack itemStack, @NotNull final Inventory destinationInventory, final boolean didSourceInitiate) {
         Validate.notNull(itemStack, "ItemStack cannot be null");
         this.sourceInventory = sourceInventory;
         this.itemStack = itemStack;
@@ -44,6 +45,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      *
      * @return Inventory that the ItemStack is being taken from
      */
+    @NotNull
     public Inventory getSource() {
         return sourceInventory;
     }
@@ -54,6 +56,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      *
      * @return ItemStack
      */
+    @NotNull
     public ItemStack getItem() {
         return itemStack.clone();
     }
@@ -65,7 +68,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      *
      * @param itemStack The ItemStack
      */
-    public void setItem(ItemStack itemStack) {
+    public void setItem(@NotNull ItemStack itemStack) {
         Validate.notNull(itemStack, "ItemStack cannot be null.  Cancel the event if you want nothing to be transferred.");
         this.itemStack = itemStack.clone();
     }
@@ -75,6 +78,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      *
      * @return Inventory that the ItemStack is being put into
      */
+    @NotNull
     public Inventory getDestination() {
         return destinationInventory;
     }
@@ -85,6 +89,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      *
      * @return Inventory that initiated the transfer
      */
+    @NotNull
     public Inventory getInitiator() {
         return didSourceInitiate ? sourceInventory : destinationInventory;
     }
@@ -97,11 +102,13 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

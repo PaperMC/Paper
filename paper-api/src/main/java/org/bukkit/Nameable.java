@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.Nullable;
+
 public interface Nameable {
 
     /**
@@ -11,6 +13,7 @@ public interface Nameable {
      *
      * @return name of the mob/block or null
      */
+    @Nullable
     public String getCustomName();
 
     /**
@@ -24,5 +27,5 @@ public interface Nameable {
      *
      * @param name the name to set
      */
-    public void setCustomName(String name);
+    public void setCustomName(@Nullable String name);
 }

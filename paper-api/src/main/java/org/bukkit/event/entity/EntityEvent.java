@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an Entity-related event
@@ -10,7 +11,7 @@ import org.bukkit.event.Event;
 public abstract class EntityEvent extends Event {
     protected Entity entity;
 
-    public EntityEvent(final Entity what) {
+    public EntityEvent(@NotNull final Entity what) {
         entity = what;
     }
 
@@ -19,6 +20,7 @@ public abstract class EntityEvent extends Event {
      *
      * @return Entity who is involved in this event
      */
+    @NotNull
     public Entity getEntity() {
         return entity;
     }
@@ -28,6 +30,7 @@ public abstract class EntityEvent extends Event {
      *
      * @return EntityType of the Entity involved in this event
      */
+    @NotNull
     public EntityType getEntityType() {
         return entity.getType();
     }

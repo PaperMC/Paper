@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Explosive;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity has made a decision to explode.
@@ -14,14 +15,14 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
     private float radius;
     private boolean fire;
 
-    public ExplosionPrimeEvent(final Entity what, final float radius, final boolean fire) {
+    public ExplosionPrimeEvent(@NotNull final Entity what, final float radius, final boolean fire) {
         super(what);
         this.cancel = false;
         this.radius = radius;
         this.fire = fire;
     }
 
-    public ExplosionPrimeEvent(final Explosive explosive) {
+    public ExplosionPrimeEvent(@NotNull final Explosive explosive) {
         this(explosive, explosive.getYield(), explosive.isIncendiary());
     }
 
@@ -69,11 +70,13 @@ public class ExplosionPrimeEvent extends EntityEvent implements Cancellable {
         this.fire = fire;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

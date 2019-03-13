@@ -50,6 +50,9 @@ import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the Bukkit core, for version and Server singleton handling
@@ -67,6 +70,7 @@ public final class Bukkit {
      *
      * @return Server instance being ran
      */
+    @NotNull
     public static Server getServer() {
         return server;
     }
@@ -78,7 +82,7 @@ public final class Bukkit {
      *
      * @param server Server instance
      */
-    public static void setServer(Server server) {
+    public static void setServer(@NotNull Server server) {
         if (Bukkit.server != null) {
             throw new UnsupportedOperationException("Cannot redefine singleton Server");
         }
@@ -92,6 +96,7 @@ public final class Bukkit {
      *
      * @return name of this server implementation
      */
+    @NotNull
     public static String getName() {
         return server.getName();
     }
@@ -101,6 +106,7 @@ public final class Bukkit {
      *
      * @return version of this server implementation
      */
+    @NotNull
     public static String getVersion() {
         return server.getVersion();
     }
@@ -110,6 +116,7 @@ public final class Bukkit {
      *
      * @return version of Bukkit
      */
+    @NotNull
     public static String getBukkitVersion() {
         return server.getBukkitVersion();
     }
@@ -141,6 +148,7 @@ public final class Bukkit {
      *
      * @return a view of currently online players.
      */
+    @NotNull
     public static Collection<? extends Player> getOnlinePlayers() {
         return server.getOnlinePlayers();
     }
@@ -179,6 +187,7 @@ public final class Bukkit {
      * @return the IP string that this server is bound to, otherwise empty
      *     string
      */
+    @NotNull
     public static String getIp() {
         return server.getIp();
     }
@@ -190,6 +199,7 @@ public final class Bukkit {
      * @deprecated not a standard server property
      */
     @Deprecated
+    @NotNull
     public static String getServerName() {
         return server.getServerName();
     }
@@ -202,6 +212,7 @@ public final class Bukkit {
      * @deprecated not a standard server property
      */
     @Deprecated
+    @NotNull
     public static String getServerId() {
         return server.getServerId();
     }
@@ -211,6 +222,7 @@ public final class Bukkit {
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
      */
+    @NotNull
     public static String getWorldType() {
         return server.getWorldType();
     }
@@ -265,6 +277,7 @@ public final class Bukkit {
      *
      * @return a set containing all whitelisted players
      */
+    @NotNull
     public static Set<OfflinePlayer> getWhitelistedPlayers() {
         return server.getWhitelistedPlayers();
     }
@@ -285,7 +298,7 @@ public final class Bukkit {
      * @param message the message
      * @return the number of players
      */
-    public static int broadcastMessage(String message) {
+    public static int broadcastMessage(@NotNull String message) {
         return server.broadcastMessage(message);
     }
 
@@ -297,6 +310,7 @@ public final class Bukkit {
      *
      * @return the name of the update folder
      */
+    @NotNull
     public static String getUpdateFolder() {
         return server.getUpdateFolder();
     }
@@ -307,6 +321,7 @@ public final class Bukkit {
      *
      * @return the update folder
      */
+    @NotNull
     public static File getUpdateFolderFile() {
         return server.getUpdateFolderFile();
     }
@@ -377,7 +392,8 @@ public final class Bukkit {
      * @return a player if one was found, null otherwise
      */
     @Deprecated
-    public static Player getPlayer(String name) {
+    @Nullable
+    public static Player getPlayer(@NotNull String name) {
         return server.getPlayer(name);
     }
 
@@ -390,7 +406,8 @@ public final class Bukkit {
      * @return a player object if one was found, null otherwise
      */
     @Deprecated
-    public static Player getPlayerExact(String name) {
+    @Nullable
+    public static Player getPlayerExact(@NotNull String name) {
         return server.getPlayerExact(name);
     }
 
@@ -407,7 +424,8 @@ public final class Bukkit {
      * @return list of all possible players
      */
     @Deprecated
-    public static List<Player> matchPlayer(String name) {
+    @NotNull
+    public static List<Player> matchPlayer(@NotNull String name) {
         return server.matchPlayer(name);
     }
 
@@ -417,7 +435,8 @@ public final class Bukkit {
      * @param id UUID of the player to retrieve
      * @return a player object if one was found, null otherwise
      */
-    public static Player getPlayer(UUID id) {
+    @Nullable
+    public static Player getPlayer(@NotNull UUID id) {
         return server.getPlayer(id);
     }
 
@@ -426,6 +445,7 @@ public final class Bukkit {
      *
      * @return a plugin manager for this Server instance
      */
+    @NotNull
     public static PluginManager getPluginManager() {
         return server.getPluginManager();
     }
@@ -435,6 +455,7 @@ public final class Bukkit {
      *
      * @return a scheduling service for this server
      */
+    @NotNull
     public static BukkitScheduler getScheduler() {
         return server.getScheduler();
     }
@@ -444,6 +465,7 @@ public final class Bukkit {
      *
      * @return s services manager
      */
+    @NotNull
     public static ServicesManager getServicesManager() {
         return server.getServicesManager();
     }
@@ -453,6 +475,7 @@ public final class Bukkit {
      *
      * @return a list of worlds
      */
+    @NotNull
     public static List<World> getWorlds() {
         return server.getWorlds();
     }
@@ -467,7 +490,8 @@ public final class Bukkit {
      * @param creator the options to use when creating the world
      * @return newly created or loaded world
      */
-    public static World createWorld(WorldCreator creator) {
+    @Nullable
+    public static World createWorld(@NotNull WorldCreator creator) {
         return server.createWorld(creator);
     }
 
@@ -478,7 +502,7 @@ public final class Bukkit {
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
      */
-    public static boolean unloadWorld(String name, boolean save) {
+    public static boolean unloadWorld(@NotNull String name, boolean save) {
         return server.unloadWorld(name, save);
     }
 
@@ -489,7 +513,7 @@ public final class Bukkit {
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
      */
-    public static boolean unloadWorld(World world, boolean save) {
+    public static boolean unloadWorld(@NotNull World world, boolean save) {
         return server.unloadWorld(world, save);
     }
 
@@ -499,7 +523,8 @@ public final class Bukkit {
      * @param name the name of the world to retrieve
      * @return a world with the given name, or null if none exists
      */
-    public static World getWorld(String name) {
+    @Nullable
+    public static World getWorld(@NotNull String name) {
         return server.getWorld(name);
     }
 
@@ -509,7 +534,8 @@ public final class Bukkit {
      * @param uid a unique-id of the world to retrieve
      * @return a world with the given Unique ID, or null if none exists
      */
-    public static World getWorld(UUID uid) {
+    @Nullable
+    public static World getWorld(@NotNull UUID uid) {
         return server.getWorld(uid);
     }
 
@@ -521,6 +547,7 @@ public final class Bukkit {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static MapView getMap(int id) {
         return server.getMap(id);
     }
@@ -531,7 +558,8 @@ public final class Bukkit {
      * @param world the world the map will belong to
      * @return a newly created map view
      */
-    public static MapView createMap(World world) {
+    @NotNull
+    public static MapView createMap(@NotNull World world) {
         return server.createMap(world);
     }
 
@@ -550,7 +578,8 @@ public final class Bukkit {
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      */
-    public static ItemStack createExplorerMap(World world, Location location, StructureType structureType) {
+    @NotNull
+    public static ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType) {
         return server.createExplorerMap(world, location, structureType);
     }
 
@@ -572,7 +601,8 @@ public final class Bukkit {
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      */
-    public static ItemStack createExplorerMap(World world, Location location, StructureType structureType, int radius, boolean findUnexplored) {
+    @NotNull
+    public static ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored) {
         return server.createExplorerMap(world, location, structureType, radius, findUnexplored);
     }
 
@@ -596,6 +626,7 @@ public final class Bukkit {
      *
      * @return Logger associated with this server
      */
+    @NotNull
     public static Logger getLogger() {
         return server.getLogger();
     }
@@ -606,7 +637,8 @@ public final class Bukkit {
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
      */
-    public static PluginCommand getPluginCommand(String name) {
+    @Nullable
+    public static PluginCommand getPluginCommand(@NotNull String name) {
         return server.getPluginCommand(name);
     }
 
@@ -627,7 +659,7 @@ public final class Bukkit {
      * @throws CommandException thrown when the executor for the given command
      *     fails with an unhandled exception
      */
-    public static boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException {
+    public static boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException {
         return server.dispatchCommand(sender, commandLine);
     }
 
@@ -638,7 +670,8 @@ public final class Bukkit {
      * @return true if the recipe was added, false if it wasn't for some
      *     reason
      */
-    public static boolean addRecipe(Recipe recipe) {
+    @Contract("null -> false")
+    public static boolean addRecipe(@Nullable Recipe recipe) {
         return server.addRecipe(recipe);
     }
 
@@ -649,7 +682,8 @@ public final class Bukkit {
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
      */
-    public static List<Recipe> getRecipesFor(ItemStack result) {
+    @NotNull
+    public static List<Recipe> getRecipesFor(@NotNull ItemStack result) {
         return server.getRecipesFor(result);
     }
 
@@ -658,6 +692,7 @@ public final class Bukkit {
      *
      * @return an iterator
      */
+    @NotNull
     public static Iterator<Recipe> recipeIterator() {
         return server.recipeIterator();
     }
@@ -681,6 +716,7 @@ public final class Bukkit {
      *
      * @return a map of aliases to command names
      */
+    @NotNull
     public static Map<String, String[]> getCommandAliases() {
         return server.getCommandAliases();
     }
@@ -746,7 +782,7 @@ public final class Bukkit {
      *     permissibles} must have to receive the broadcast
      * @return number of message recipients
      */
-    public static int broadcast(String message, String permission) {
+    public static int broadcast(@NotNull String message, @NotNull String permission) {
         return server.broadcast(message, permission);
     }
 
@@ -767,7 +803,8 @@ public final class Bukkit {
      * @see #getOfflinePlayer(java.util.UUID)
      */
     @Deprecated
-    public static OfflinePlayer getOfflinePlayer(String name) {
+    @NotNull
+    public static OfflinePlayer getOfflinePlayer(@NotNull String name) {
         return server.getOfflinePlayer(name);
     }
 
@@ -781,7 +818,8 @@ public final class Bukkit {
      * @param id the UUID of the player to retrieve
      * @return an offline player
      */
-    public static OfflinePlayer getOfflinePlayer(UUID id) {
+    @NotNull
+    public static OfflinePlayer getOfflinePlayer(@NotNull UUID id) {
         return server.getOfflinePlayer(id);
     }
 
@@ -790,6 +828,7 @@ public final class Bukkit {
      *
      * @return a set containing banned IP addresses
      */
+    @NotNull
     public static Set<String> getIPBans() {
         return server.getIPBans();
     }
@@ -799,7 +838,7 @@ public final class Bukkit {
      *
      * @param address the IP address to ban
      */
-    public static void banIP(String address) {
+    public static void banIP(@NotNull String address) {
         server.banIP(address);
     }
 
@@ -808,7 +847,7 @@ public final class Bukkit {
      *
      * @param address the IP address to unban
      */
-    public static void unbanIP(String address) {
+    public static void unbanIP(@NotNull String address) {
         server.unbanIP(address);
     }
 
@@ -817,6 +856,7 @@ public final class Bukkit {
      *
      * @return a set containing banned players
      */
+    @NotNull
     public static Set<OfflinePlayer> getBannedPlayers() {
         return server.getBannedPlayers();
     }
@@ -830,7 +870,8 @@ public final class Bukkit {
      * @param type the type of list to fetch, cannot be null
      * @return a ban list of the specified type
      */
-    public static BanList getBanList(BanList.Type type) {
+    @NotNull
+    public static BanList getBanList(@NotNull BanList.Type type) {
         return server.getBanList(type);
     }
 
@@ -839,6 +880,7 @@ public final class Bukkit {
      *
      * @return a set containing player operators
      */
+    @NotNull
     public static Set<OfflinePlayer> getOperators() {
         return server.getOperators();
     }
@@ -848,6 +890,7 @@ public final class Bukkit {
      *
      * @return the default game mode
      */
+    @NotNull
     public static GameMode getDefaultGameMode() {
         return server.getDefaultGameMode();
     }
@@ -857,7 +900,7 @@ public final class Bukkit {
      *
      * @param mode the new game mode
      */
-    public static void setDefaultGameMode(GameMode mode) {
+    public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
     }
 
@@ -867,6 +910,7 @@ public final class Bukkit {
      *
      * @return a console command sender
      */
+    @NotNull
     public static ConsoleCommandSender getConsoleSender() {
         return server.getConsoleSender();
     }
@@ -876,6 +920,7 @@ public final class Bukkit {
      *
      * @return folder that contains all worlds
      */
+    @NotNull
     public static File getWorldContainer() {
         return server.getWorldContainer();
     }
@@ -885,6 +930,7 @@ public final class Bukkit {
      *
      * @return an array containing all previous players
      */
+    @NotNull
     public static OfflinePlayer[] getOfflinePlayers() {
         return server.getOfflinePlayers();
     }
@@ -894,6 +940,7 @@ public final class Bukkit {
      *
      * @return messenger responsible for this server
      */
+    @NotNull
     public static Messenger getMessenger() {
         return server.getMessenger();
     }
@@ -903,6 +950,7 @@ public final class Bukkit {
      *
      * @return a help map for this server
      */
+    @NotNull
     public static HelpMap getHelpMap() {
         return server.getHelpMap();
     }
@@ -930,7 +978,8 @@ public final class Bukkit {
      *
      * @see InventoryType#isCreatable()
      */
-    public static Inventory createInventory(InventoryHolder owner, InventoryType type) {
+    @NotNull
+    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type) {
         return server.createInventory(owner, type);
     }
 
@@ -958,7 +1007,8 @@ public final class Bukkit {
      *
      * @see InventoryType#isCreatable()
      */
-    public static Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
+    @NotNull
+    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
         return server.createInventory(owner, type, title);
     }
 
@@ -971,7 +1021,8 @@ public final class Bukkit {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      */
-    public static Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException {
+    @NotNull
+    public static Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException {
         return server.createInventory(owner, size);
     }
 
@@ -986,7 +1037,8 @@ public final class Bukkit {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      */
-    public static Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
+    @NotNull
+    public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException {
         return server.createInventory(owner, size, title);
     }
 
@@ -997,7 +1049,8 @@ public final class Bukkit {
      * when the merchant inventory is viewed
      * @return a new merchant
      */
-    public static Merchant createMerchant(String title) {
+    @NotNull
+    public static Merchant createMerchant(@Nullable String title) {
         return server.createMerchant(title);
     }
 
@@ -1062,6 +1115,7 @@ public final class Bukkit {
      *
      * @return the servers MOTD
      */
+    @NotNull
     public static String getMotd() {
         return server.getMotd();
     }
@@ -1071,6 +1125,7 @@ public final class Bukkit {
      *
      * @return the shutdown message
      */
+    @Nullable
     public static String getShutdownMessage() {
         return server.getShutdownMessage();
     }
@@ -1080,6 +1135,7 @@ public final class Bukkit {
      *
      * @return the configured warning state
      */
+    @NotNull
     public static WarningState getWarningState() {
         return server.getWarningState();
     }
@@ -1090,6 +1146,7 @@ public final class Bukkit {
      * @return the item factory
      * @see ItemFactory
      */
+    @NotNull
     public static ItemFactory getItemFactory() {
         return server.getItemFactory();
     }
@@ -1101,6 +1158,7 @@ public final class Bukkit {
      *
      * @return the scoreboard manager or null if no worlds are loaded.
      */
+    @Nullable
     public static ScoreboardManager getScoreboardManager() {
         return server.getScoreboardManager();
     }
@@ -1112,6 +1170,7 @@ public final class Bukkit {
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
      */
+    @Nullable
     public static CachedServerIcon getServerIcon() {
         return server.getServerIcon();
     }
@@ -1130,7 +1189,8 @@ public final class Bukkit {
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
-    public static CachedServerIcon loadServerIcon(File file) throws IllegalArgumentException, Exception {
+    @NotNull
+    public static CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception {
         return server.loadServerIcon(file);
     }
 
@@ -1147,7 +1207,8 @@ public final class Bukkit {
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
-    public static CachedServerIcon loadServerIcon(BufferedImage image) throws IllegalArgumentException, Exception {
+    @NotNull
+    public static CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception {
         return server.loadServerIcon(image);
     }
 
@@ -1181,7 +1242,8 @@ public final class Bukkit {
      * @return a new ChunkData for the world
      * 
      */
-    public static ChunkGenerator.ChunkData createChunkData(World world) {
+    @NotNull
+    public static ChunkGenerator.ChunkData createChunkData(@NotNull World world) {
         return server.createChunkData(world);
     }
 
@@ -1195,7 +1257,8 @@ public final class Bukkit {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    public static BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+    @NotNull
+    public static BossBar createBossBar(@Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
         return server.createBossBar(title, color, style, flags);
     }
 
@@ -1213,7 +1276,8 @@ public final class Bukkit {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    public static KeyedBossBar createBossBar(NamespacedKey key, String title, BarColor color, BarStyle style, BarFlag... flags) {
+    @NotNull
+    public static KeyedBossBar createBossBar(@NotNull NamespacedKey key, @Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
         return server.createBossBar(key, title, color, style, flags);
     }
 
@@ -1231,6 +1295,7 @@ public final class Bukkit {
      *
      * @return a bossbar iterator
      */
+    @NotNull
     public static Iterator<KeyedBossBar> getBossBars() {
         return server.getBossBars();
     }
@@ -1250,7 +1315,8 @@ public final class Bukkit {
      * @param key unique bossbar key
      * @return bossbar or null if not exists
      */
-    public static KeyedBossBar getBossBar(NamespacedKey key) {
+    @Nullable
+    public static KeyedBossBar getBossBar(@NotNull NamespacedKey key) {
         return server.getBossBar(key);
     }
 
@@ -1269,7 +1335,7 @@ public final class Bukkit {
      * @param key unique bossbar key
      * @return true if removal succeeded or false
      */
-    public static boolean removeBossBar(NamespacedKey key) {
+    public static boolean removeBossBar(@NotNull NamespacedKey key) {
         return server.removeBossBar(key);
     }
 
@@ -1279,7 +1345,8 @@ public final class Bukkit {
      * @param uuid the UUID of the entity
      * @return the entity with the given UUID, or null if it isn't found
      */
-    public static Entity getEntity(UUID uuid) {
+    @Nullable
+    public static Entity getEntity(@NotNull UUID uuid) {
         return server.getEntity(uuid);
     }
 
@@ -1289,7 +1356,8 @@ public final class Bukkit {
      * @param key unique advancement key
      * @return advancement or null if not exists
      */
-    public static Advancement getAdvancement(NamespacedKey key) {
+    @Nullable
+    public static Advancement getAdvancement(@NotNull NamespacedKey key) {
         return server.getAdvancement(key);
     }
 
@@ -1299,6 +1367,7 @@ public final class Bukkit {
      *
      * @return an advancement iterator
      */
+    @NotNull
     public static Iterator<Advancement> advancementIterator() {
         return server.advancementIterator();
     }
@@ -1310,7 +1379,8 @@ public final class Bukkit {
      * @param material the material
      * @return new data instance
      */
-    public static BlockData createBlockData(Material material) {
+    @NotNull
+    public static BlockData createBlockData(@NotNull Material material) {
         return server.createBlockData(material);
     }
 
@@ -1322,7 +1392,8 @@ public final class Bukkit {
      * @param consumer consumer to run on new instance before returning
      * @return new data instance
      */
-    public static BlockData createBlockData(Material material, Consumer<BlockData> consumer) {
+    @NotNull
+    public static BlockData createBlockData(@NotNull Material material, @Nullable Consumer<BlockData> consumer) {
         return server.createBlockData(material, consumer);
     }
 
@@ -1334,7 +1405,8 @@ public final class Bukkit {
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
-    public static BlockData createBlockData(String data) throws IllegalArgumentException {
+    @NotNull
+    public static BlockData createBlockData(@NotNull String data) throws IllegalArgumentException {
         return server.createBlockData(data);
     }
 
@@ -1348,7 +1420,9 @@ public final class Bukkit {
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
-    public static BlockData createBlockData(Material material, String data) throws IllegalArgumentException {
+    @NotNull
+    @Contract("null, null -> fail")
+    public static BlockData createBlockData(@Nullable Material material, @Nullable String data) throws IllegalArgumentException {
         return server.createBlockData(material, data);
     }
 
@@ -1370,7 +1444,8 @@ public final class Bukkit {
      * @param clazz the class of the tag entries
      * @return the tag or null
      */
-    public static <T extends Keyed> Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz) {
+    @Nullable
+    public static <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz) {
         return server.getTag(registry, tag, clazz);
     }
 
@@ -1387,7 +1462,8 @@ public final class Bukkit {
      * @param clazz the class of the tag entries
      * @return all defined tags
      */
-    public static <T extends Keyed> Iterable<Tag<T>> getTags(String registry, Class<T> clazz) {
+    @NotNull
+    public static <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz) {
         return server.getTags(registry, clazz);
     }
 
@@ -1397,7 +1473,8 @@ public final class Bukkit {
      * @param key the name of the LootTable
      * @return the LootTable, or null if no LootTable is found with that name
      */
-    public static LootTable getLootTable(NamespacedKey key) {
+    @Nullable
+    public static LootTable getLootTable(@NotNull NamespacedKey key) {
         return server.getLootTable(key);
     }
 
@@ -1423,7 +1500,8 @@ public final class Bukkit {
      * @deprecated draft API
      */
     @Deprecated
-    public static List<Entity> selectEntities(CommandSender sender, String selector) throws IllegalArgumentException {
+    @NotNull
+    public static List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException {
         return server.selectEntities(sender, selector);
     }
 
@@ -1432,6 +1510,7 @@ public final class Bukkit {
      * @return the unsafe values instance
      */
     @Deprecated
+    @NotNull
     public static UnsafeValues getUnsafe() {
         return server.getUnsafe();
     }

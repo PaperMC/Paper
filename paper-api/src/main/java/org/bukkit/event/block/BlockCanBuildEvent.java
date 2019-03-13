@@ -5,6 +5,8 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when we try to place a block, to see if we can build it here or not.
@@ -25,7 +27,7 @@ public class BlockCanBuildEvent extends BlockEvent {
     private final Player player;
 
     @Deprecated
-    public BlockCanBuildEvent(final Block block, final BlockData type, final boolean canBuild) {
+    public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
         this(block, null, type, canBuild);
     }
 
@@ -36,7 +38,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      * @param type the id of the block to place
      * @param canBuild whether we can build
      */
-    public BlockCanBuildEvent(final Block block, final Player player, final BlockData type, final boolean canBuild) {
+    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
         super(block);
         this.player = player;
         this.buildable = canBuild;
@@ -70,6 +72,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      *
      * @return The Material that we are trying to place
      */
+    @NotNull
     public Material getMaterial() {
         return blockData.getMaterial();
     }
@@ -79,6 +82,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      *
      * @return The BlockData that we are trying to place
      */
+    @NotNull
     public BlockData getBlockData() {
         return blockData;
     }
@@ -90,15 +94,18 @@ public class BlockCanBuildEvent extends BlockEvent {
      *
      * @return The Player who placed the block involved in this event
      */
+    @Nullable
     public Player getPlayer() {
         return player;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.UUID;
 
 /**
@@ -13,6 +15,7 @@ public interface Animals extends Ageable {
      *
      * @return uuid if set, or null
      */
+    @Nullable
     UUID getBreedCause();
 
     /**
@@ -21,7 +24,7 @@ public interface Animals extends Ageable {
      *
      * @param uuid new uuid, or null
      */
-    void setBreedCause(UUID uuid);
+    void setBreedCause(@Nullable UUID uuid);
 
     /**
      * Get whether or not this entity is in love mode and will produce

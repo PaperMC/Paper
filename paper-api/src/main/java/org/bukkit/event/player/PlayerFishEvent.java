@@ -5,6 +5,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Thrown when a player is fishing
@@ -17,7 +19,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private final State state;
     private final FishHook hookEntity;
 
-    public PlayerFishEvent(final Player player, final Entity entity, final FishHook hookEntity, final State state) {
+    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @NotNull final State state) {
         super(player);
         this.entity = entity;
         this.hookEntity = hookEntity;
@@ -33,6 +35,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * @return Entity caught by the player, Entity if fishing, and null if
      *     bobber has gotten stuck in the ground or nothing has been caught
      */
+    @Nullable
     public Entity getCaught() {
         return entity;
     }
@@ -42,6 +45,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      *
      * @return the entity representing the fishing hook/bobber.
      */
+    @NotNull
     public FishHook getHook() {
         return hookEntity;
     }
@@ -83,15 +87,18 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      *
      * @return A State detailing the state of the fishing
      */
+    @NotNull
     public State getState() {
         return state;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -1,5 +1,7 @@
 package org.bukkit.block.data;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * 'half' denotes which half of a two block tall material this block is.
  * <br>
@@ -12,6 +14,7 @@ public interface Bisected extends BlockData {
      *
      * @return the 'half' value
      */
+    @NotNull
     Half getHalf();
 
     /**
@@ -19,7 +22,7 @@ public interface Bisected extends BlockData {
      *
      * @param half the new 'half' value
      */
-    void setHalf(Half half);
+    void setHalf(@NotNull Half half);
 
     /**
      * The half of a vertically bisected block.

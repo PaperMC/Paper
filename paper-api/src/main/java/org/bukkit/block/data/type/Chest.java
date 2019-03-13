@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Waterlogged;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'type' represents which part of a double chest this block is, or if it is a
@@ -14,6 +15,7 @@ public interface Chest extends Directional, Waterlogged {
      *
      * @return the 'type' value
      */
+    @NotNull
     Type getType();
 
     /**
@@ -21,7 +23,7 @@ public interface Chest extends Directional, Waterlogged {
      *
      * @param type the new 'type' value
      */
-    void setType(Type type);
+    void setType(@NotNull Type type);
 
     /**
      * Type of this chest block.

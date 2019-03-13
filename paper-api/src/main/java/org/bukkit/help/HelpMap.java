@@ -1,5 +1,8 @@
 package org.bukkit.help;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -24,13 +27,15 @@ public interface HelpMap {
      * @return A {@link HelpTopic} object matching the topic name or null if
      *     none can be found.
      */
-    public HelpTopic getHelpTopic(String topicName);
+    @Nullable
+    public HelpTopic getHelpTopic(@NotNull String topicName);
 
     /**
      * Returns a collection of all the registered help topics.
      *
      * @return All the registered help topics.
      */
+    @NotNull
     public Collection<HelpTopic> getHelpTopics();
     
     /**
@@ -38,7 +43,7 @@ public interface HelpMap {
      *
      * @param topic The new help topic to add.
      */
-    public void addTopic(HelpTopic topic);
+    public void addTopic(@NotNull HelpTopic topic);
 
     /**
      * Clears out the contents of the help index. Normally called during
@@ -63,7 +68,7 @@ public interface HelpMap {
      * @throws IllegalArgumentException Thrown if {@code commandClass} does
      *     not derive from a legal base class.
      */
-    public void registerHelpTopicFactory(Class<?> commandClass, HelpTopicFactory<?> factory);
+    public void registerHelpTopicFactory(@NotNull Class<?> commandClass, @NotNull HelpTopicFactory<?> factory);
 
     /**
      * Gets the list of plugins the server administrator has chosen to exclude
@@ -75,5 +80,6 @@ public interface HelpMap {
      *
      * @return A list of plugins that should be excluded from the help index.
      */
+    @NotNull
     public List<String> getIgnoredPlugins();
 }

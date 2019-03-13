@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a spell casting "Illager".
  */
@@ -41,6 +43,7 @@ public interface Spellcaster extends Illager {
      *
      * @return the current spell
      */
+    @NotNull
     Spell getSpell();
 
     /**
@@ -48,5 +51,5 @@ public interface Spellcaster extends Illager {
      *
      * @param spell the spell the entity should be using
      */
-    void setSpell(Spell spell);
+    void setSpell(@NotNull Spell spell);
 }

@@ -5,6 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds information for player movement events
@@ -15,7 +17,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private Location from;
     private Location to;
 
-    public PlayerMoveEvent(final Player player, final Location from, final Location to) {
+    public PlayerMoveEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player);
         this.from = from;
         this.to = to;
@@ -54,6 +56,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved from
      */
+    @NotNull
     public Location getFrom() {
         return from;
     }
@@ -63,7 +66,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @param from New location to mark as the players previous location
      */
-    public void setFrom(Location from) {
+    public void setFrom(@NotNull Location from) {
         validateLocation(from);
         this.from = from;
     }
@@ -73,6 +76,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved to
      */
+    @Nullable
     public Location getTo() {
         return to;
     }
@@ -82,21 +86,23 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @param to New Location this player will move to
      */
-    public void setTo(Location to) {
+    public void setTo(@NotNull Location to) {
         validateLocation(to);
         this.to = to;
     }
 
-    private void validateLocation(Location loc) {
+    private void validateLocation(@NotNull Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
         Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

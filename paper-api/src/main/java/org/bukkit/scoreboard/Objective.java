@@ -1,6 +1,8 @@
 package org.bukkit.scoreboard;
 
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An objective on a scoreboard that can show scores specific to entries. This
@@ -12,9 +14,10 @@ public interface Objective {
     /**
      * Gets the name of this Objective
      *
-     * @return this objective'ss name
+     * @return this objective's name
      * @throws IllegalStateException if this objective has been unregistered
      */
+    @NotNull
     String getName() throws IllegalStateException;
 
     /**
@@ -23,6 +26,7 @@ public interface Objective {
      * @return this objective's display name
      * @throws IllegalStateException if this objective has been unregistered
      */
+    @NotNull
     String getDisplayName() throws IllegalStateException;
 
     /**
@@ -34,7 +38,7 @@ public interface Objective {
      * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
      */
-    void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException;
+    void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Gets the criteria this objective tracks.
@@ -42,6 +46,7 @@ public interface Objective {
      * @return this objective's criteria
      * @throws IllegalStateException if this objective has been unregistered
      */
+    @NotNull
     String getCriteria() throws IllegalStateException;
 
     /**
@@ -59,6 +64,7 @@ public interface Objective {
      * @return Owning scoreboard, or null if it has been {@link #unregister()
      *     unregistered}
      */
+    @Nullable
     Scoreboard getScoreboard();
 
     /**
@@ -75,7 +81,7 @@ public interface Objective {
      * @param slot display slot to change, or null to not display
      * @throws IllegalStateException if this objective has been unregistered
      */
-    void setDisplaySlot(DisplaySlot slot) throws IllegalStateException;
+    void setDisplaySlot(@Nullable DisplaySlot slot) throws IllegalStateException;
 
     /**
      * Gets the display slot this objective is displayed at.
@@ -83,6 +89,7 @@ public interface Objective {
      * @return the display slot for this objective, or null if not displayed
      * @throws IllegalStateException if this objective has been unregistered
      */
+    @Nullable
     DisplaySlot getDisplaySlot() throws IllegalStateException;
 
     /**
@@ -91,7 +98,7 @@ public interface Objective {
      * @param renderType new render type
      * @throws IllegalStateException if this objective has been unregistered
      */
-    void setRenderType(RenderType renderType) throws IllegalStateException;
+    void setRenderType(@NotNull RenderType renderType) throws IllegalStateException;
 
     /**
      * Sets manner in which this objective will be rendered.
@@ -99,6 +106,7 @@ public interface Objective {
      * @return the render type
      * @throws IllegalStateException if this objective has been unregistered
      */
+    @NotNull
     RenderType getRenderType() throws IllegalStateException;
 
     /**
@@ -112,7 +120,8 @@ public interface Objective {
      * @see #getScore(String)
      */
     @Deprecated
-    Score getScore(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;
+    @NotNull
+    Score getScore(@NotNull OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Gets an entry's Score for an Objective on this Scoreboard.
@@ -123,5 +132,6 @@ public interface Objective {
      * @throws IllegalStateException if this objective has been unregistered
      * @throws IllegalArgumentException if entry is longer than 40 characters.
      */
-    Score getScore(String entry) throws IllegalArgumentException, IllegalStateException;
+    @NotNull
+    Score getScore(@NotNull String entry) throws IllegalArgumentException, IllegalStateException;
 }

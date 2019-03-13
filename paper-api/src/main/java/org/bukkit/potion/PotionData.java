@@ -1,6 +1,7 @@
 package org.bukkit.potion;
 
 import org.apache.commons.lang.Validate;
+import org.jetbrains.annotations.NotNull;
 
 public final class PotionData {
 
@@ -18,7 +19,7 @@ public final class PotionData {
      * @param upgraded whether the potion is upgraded PotionType#isUpgradable()
      * must be true
      */
-    public PotionData(PotionType type, boolean extended, boolean upgraded) {
+    public PotionData(@NotNull PotionType type, boolean extended, boolean upgraded) {
         Validate.notNull(type, "Potion Type must not be null");
         Validate.isTrue(!upgraded || type.isUpgradeable(), "Potion Type is not upgradable");
         Validate.isTrue(!extended || type.isExtendable(), "Potion Type is not extendable");
@@ -28,7 +29,7 @@ public final class PotionData {
         this.upgraded = upgraded;
     }
 
-    public PotionData(PotionType type) {
+    public PotionData(@NotNull PotionType type) {
         this(type, false, false);
     }
 
@@ -38,6 +39,7 @@ public final class PotionData {
      *
      * @return the potion type
      */
+    @NotNull
     public PotionType getType() {
         return type;
     }

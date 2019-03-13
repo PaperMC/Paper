@@ -1,6 +1,8 @@
 package org.bukkit.conversations;
 
 import org.bukkit.ChatColor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * ValidatingPrompt is the base class for any prompt that requires validation.
@@ -21,7 +23,8 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param input The input text from the user.
      * @return This prompt or the next Prompt in the prompt graph.
      */
-    public Prompt acceptInput(ConversationContext context, String input) {
+    @Nullable
+    public Prompt acceptInput(@NotNull ConversationContext context, @Nullable String input) {
         if (isInputValid(context, input)) {
             return acceptValidatedInput(context, input);
         } else {
@@ -40,7 +43,7 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param context Context information about the conversation.
      * @return True.
      */
-    public boolean blocksForInput(ConversationContext context) {
+    public boolean blocksForInput(@NotNull ConversationContext context) {
         return true;
     }
 
@@ -51,7 +54,7 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param input The player's raw console input.
      * @return True or false depending on the validity of the input.
      */
-    protected abstract boolean isInputValid(ConversationContext context, String input);
+    protected abstract boolean isInputValid(@NotNull ConversationContext context, @NotNull String input);
 
     /**
      * Override this method to accept and processes the validated input from
@@ -62,7 +65,8 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param input The validated input text from the user.
      * @return The next Prompt in the prompt graph.
      */
-    protected abstract Prompt acceptValidatedInput(ConversationContext context, String input);
+    @Nullable
+    protected abstract Prompt acceptValidatedInput(@NotNull ConversationContext context, @NotNull String input);
 
     /**
      * Optionally override this method to display an additional message if the
@@ -72,7 +76,8 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param invalidInput The invalid input provided by the user.
      * @return A message explaining how to correct the input.
      */
-    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
+    @Nullable
+    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) {
         return null;
     }
 }

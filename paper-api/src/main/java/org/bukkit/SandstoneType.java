@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the three different types of Sandstone
@@ -39,6 +40,7 @@ public enum SandstoneType {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static SandstoneType getByData(final byte data) {
         return BY_DATA.get(data);
     }

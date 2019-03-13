@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface ArmorStand extends LivingEntity {
 
@@ -11,6 +13,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the held item
      */
+    @NotNull
     ItemStack getItemInHand();
 
     /**
@@ -19,7 +22,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param item the item to hold
      */
-    void setItemInHand(ItemStack item);
+    void setItemInHand(@Nullable ItemStack item);
 
     /**
      * Returns the item currently being worn
@@ -27,6 +30,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the worn item
      */
+    @NotNull
     ItemStack getBoots();
 
     /**
@@ -35,7 +39,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param item the item to wear
      */
-    void setBoots(ItemStack item);
+    void setBoots(@Nullable ItemStack item);
 
     /**
      * Returns the item currently being worn
@@ -43,6 +47,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the worn item
      */
+    @NotNull
     ItemStack getLeggings();
 
     /**
@@ -51,7 +56,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param item the item to wear
      */
-    void setLeggings(ItemStack item);
+    void setLeggings(@Nullable ItemStack item);
 
     /**
      * Returns the item currently being worn
@@ -59,6 +64,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the worn item
      */
+    @NotNull
     ItemStack getChestplate();
 
     /**
@@ -67,7 +73,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param item the item to wear
      */
-    void setChestplate(ItemStack item);
+    void setChestplate(@Nullable ItemStack item);
 
     /**
      * Returns the item currently being worn
@@ -75,6 +81,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the worn item
      */
+    @NotNull
     ItemStack getHelmet();
 
     /**
@@ -83,7 +90,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param item the item to wear
      */
-    void setHelmet(ItemStack item);
+    void setHelmet(@Nullable ItemStack item);
 
     /**
      * Returns the armor stand's body's
@@ -91,6 +98,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getBodyPose();
 
     /**
@@ -99,7 +107,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setBodyPose(EulerAngle pose);
+    void setBodyPose(@NotNull EulerAngle pose);
 
     /**
      * Returns the armor stand's left arm's
@@ -107,6 +115,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getLeftArmPose();
 
     /**
@@ -115,7 +124,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setLeftArmPose(EulerAngle pose);
+    void setLeftArmPose(@NotNull EulerAngle pose);
 
     /**
      * Returns the armor stand's right arm's
@@ -123,6 +132,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getRightArmPose();
 
     /**
@@ -131,7 +141,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setRightArmPose(EulerAngle pose);
+    void setRightArmPose(@NotNull EulerAngle pose);
 
     /**
      * Returns the armor stand's left leg's
@@ -139,6 +149,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getLeftLegPose();
 
     /**
@@ -147,7 +158,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setLeftLegPose(EulerAngle pose);
+    void setLeftLegPose(@NotNull EulerAngle pose);
 
     /**
      * Returns the armor stand's right leg's
@@ -155,6 +166,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getRightLegPose();
 
     /**
@@ -163,7 +175,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setRightLegPose(EulerAngle pose);
+    void setRightLegPose(@NotNull EulerAngle pose);
 
     /**
      * Returns the armor stand's head's
@@ -171,6 +183,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @return the current pose
      */
+    @NotNull
     EulerAngle getHeadPose();
 
     /**
@@ -179,7 +192,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param pose the current pose
      */
-    void setHeadPose(EulerAngle pose);
+    void setHeadPose(@NotNull EulerAngle pose);
 
     /**
      * Returns whether the armor stand has

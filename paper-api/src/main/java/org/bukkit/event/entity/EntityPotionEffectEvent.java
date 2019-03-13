@@ -5,6 +5,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a potion effect is modified on an entity.
@@ -21,7 +24,8 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     private final Action action;
     private boolean override;
 
-    public EntityPotionEffectEvent(LivingEntity livingEntity, PotionEffect oldEffect, PotionEffect newEffect, Cause cause, Action action, boolean override) {
+    @Contract("_, null, null, _, _, _ -> fail")
+    public EntityPotionEffectEvent(@NotNull LivingEntity livingEntity, @Nullable PotionEffect oldEffect, @Nullable PotionEffect newEffect, @NotNull Cause cause, @NotNull Action action, boolean override) {
         super(livingEntity);
         this.oldEffect = oldEffect;
         this.newEffect = newEffect;
@@ -36,6 +40,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The old potion effect or null if the entity did not have the
      * changed effect type.
      */
+    @Nullable
     public PotionEffect getOldEffect() {
         return oldEffect;
     }
@@ -46,6 +51,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The new potion effect or null if the effect of the changed type
      * will be removed.
      */
+    @Nullable
     public PotionEffect getNewEffect() {
         return newEffect;
     }
@@ -55,6 +61,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return A Cause value why the effect has changed.
      */
+    @NotNull
     public Cause getCause() {
         return cause;
     }
@@ -64,6 +71,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return An action to be performed on the potion effect type.
      */
+    @NotNull
     public Action getAction() {
         return action;
     }
@@ -73,6 +81,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return The effect type which will be modified on the entity.
      */
+    @NotNull
     public PotionEffectType getModifiedType() {
         return (oldEffect == null) ? ((newEffect == null) ? null : newEffect.getType()) : oldEffect.getType();
     }
@@ -107,11 +116,13 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

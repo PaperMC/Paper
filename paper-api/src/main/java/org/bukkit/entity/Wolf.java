@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.DyeColor;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Wolf
@@ -31,6 +32,7 @@ public interface Wolf extends Animals, Tameable, Sittable {
      *
      * @return the color of the collar
      */
+    @NotNull
     public DyeColor getCollarColor();
 
     /**
@@ -38,5 +40,5 @@ public interface Wolf extends Animals, Tameable, Sittable {
      *
      * @param color the color to apply
      */
-    public void setCollarColor(DyeColor color);
+    public void setCollarColor(@NotNull DyeColor color);
 }

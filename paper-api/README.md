@@ -19,7 +19,7 @@ Bukkit is a Java program which uses [Maven 3](http://maven.apache.org/) for comp
 
 * Install Maven and Git using your preferred installation methods.
 * `git clone https://hub.spigotmc.org/stash/scm/spigot/bukkit.git`.
-* `mvn clean install`.
+* `mvn -P development clean install`.
  
 Some IDEs such as [NetBeans](https://netbeans.org/) can perform these steps for you. Any Maven capable Java IDE can be used to develop with Bukkit, however the current team's personal preference is to use NetBeans.
 
@@ -68,6 +68,7 @@ Code Requirements
 * All major additions should have documentation(e.g. javadocs).
 * Try to follow test driven development where available.
 * All code should be free of magic values. If this is not possible, it should be marked with a TODO comment indicating it should be addressed in the future.
+* All non-private methods and constructors must have specified nullability through [annotations](https://github.com/JetBrains/java-annotations)
 
 Bukkit/CraftBukkit employs [JUnit 4](http://www.vogella.com/articles/JUnit/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
 Bukkit is a large project and what seems simple to a PR author at the time of writing may easily be overlooked by other authors and updates. Including unit tests with your PR

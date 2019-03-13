@@ -1,5 +1,7 @@
 package org.bukkit.inventory.meta;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents an item that can be repaired at an anvil.
  */
@@ -27,5 +29,6 @@ public interface Repairable {
     void setRepairCost(int cost);
 
     @SuppressWarnings("javadoc")
+    @NotNull
     Repairable clone();
 }

@@ -2,6 +2,7 @@ package org.bukkit;
 
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a static, thread-safe snapshot of chunk of blocks.
@@ -30,6 +31,7 @@ public interface ChunkSnapshot {
      *
      * @return Parent World Name
      */
+    @NotNull
     String getWorldName();
 
     /**
@@ -40,6 +42,7 @@ public interface ChunkSnapshot {
      * @param z 0-15
      * @return block material type
      */
+    @NotNull
     Material getBlockType(int x, int y, int z);
 
     /**
@@ -50,6 +53,7 @@ public interface ChunkSnapshot {
      * @param z 0-15
      * @return block material type
      */
+    @NotNull
     BlockData getBlockData(int x, int y, int z);
 
     /**
@@ -101,6 +105,7 @@ public interface ChunkSnapshot {
      * @param z Z-coordinate (0-15)
      * @return Biome at given coordinate
      */
+    @NotNull
     Biome getBiome(int x, int z);
 
     /**

@@ -2,6 +2,8 @@ package org.bukkit.inventory.meta.tags;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This interface represents a map like object, capable of storing custom tags
@@ -28,7 +30,7 @@ public interface CustomItemTagContainer {
      * @throws IllegalArgumentException if no suitable adapter will be found for
      * the {@link ItemTagType#getPrimitiveType()}
      */
-    <T, Z> void setCustomTag(NamespacedKey key, ItemTagType<T, Z> type, Z value);
+    <T, Z> void setCustomTag(@NotNull NamespacedKey key, @NotNull ItemTagType<T, Z> type, @NotNull Z value);
 
     /**
      * Returns if the item meta has a custom tag registered matching the
@@ -56,7 +58,7 @@ public interface CustomItemTagContainer {
      * @throws NullPointerException if the type to cast the found object to is
      * null
      */
-    <T, Z> boolean hasCustomTag(NamespacedKey key, ItemTagType<T, Z> type);
+    <T, Z> boolean hasCustomTag(@NotNull NamespacedKey key, @NotNull ItemTagType<T, Z> type);
 
     /**
      * Returns the custom tag's value that is stored on the item.
@@ -75,7 +77,8 @@ public interface CustomItemTagContainer {
      * @throws IllegalArgumentException if no suitable adapter will be found for
      * the {@link ItemTagType#getPrimitiveType()}
      */
-    <T, Z> Z getCustomTag(NamespacedKey key, ItemTagType<T, Z> type);
+    @Nullable
+    <T, Z> Z getCustomTag(@NotNull NamespacedKey key, @NotNull ItemTagType<T, Z> type);
 
     /**
      * Removes a custom key from the item meta.
@@ -83,7 +86,7 @@ public interface CustomItemTagContainer {
      * @param key the key
      * @throws NullPointerException if the provided key is null
      */
-    void removeCustomTag(NamespacedKey key);
+    void removeCustomTag(@NotNull NamespacedKey key);
 
     /**
      * Returns if the container instance is empty, therefore has no entries
@@ -98,5 +101,6 @@ public interface CustomItemTagContainer {
      *
      * @return the tag context
      */
+    @NotNull
     ItemTagAdapterContext getAdapterContext();
 }

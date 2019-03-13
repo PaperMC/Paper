@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.inventory.LlamaInventory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Llama.
@@ -35,6 +36,7 @@ public interface Llama extends ChestedHorse {
      *
      * @return a {@link Color} representing the llama's color
      */
+    @NotNull
     Color getColor();
 
     /**
@@ -42,7 +44,7 @@ public interface Llama extends ChestedHorse {
      *
      * @param color a {@link Color} for this llama
      */
-    void setColor(Color color);
+    void setColor(@NotNull Color color);
 
     /**
      * Gets the llama's strength. A higher strength llama will have more
@@ -61,6 +63,7 @@ public interface Llama extends ChestedHorse {
      */
     void setStrength(int strength);
 
+    @NotNull
     @Override
     LlamaInventory getInventory();
 }

@@ -3,6 +3,7 @@ package org.bukkit.block.data.type;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Waterlogged;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'shape' represents the texture and bounding box shape of these stairs.
@@ -14,6 +15,7 @@ public interface Stairs extends Bisected, Directional, Waterlogged {
      *
      * @return the 'shape' value
      */
+    @NotNull
     Shape getShape();
 
     /**
@@ -21,7 +23,7 @@ public interface Stairs extends Bisected, Directional, Waterlogged {
      *
      * @param shape the new 'shape' value
      */
-    void setShape(Shape shape);
+    void setShape(@NotNull Shape shape);
 
     /**
      * The shape of a stair block - used for constructing corners.

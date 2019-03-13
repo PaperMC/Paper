@@ -5,6 +5,8 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The LazyMetadataValue class implements a type of metadata that is not
@@ -31,7 +33,7 @@ public class LazyMetadataValue extends MetadataValueAdapter {
      *     value.
      * @param lazyValue the lazy value assigned to this metadata value.
      */
-    public LazyMetadataValue(Plugin owningPlugin, Callable<Object> lazyValue) {
+    public LazyMetadataValue(@NotNull Plugin owningPlugin, @NotNull Callable<Object> lazyValue) {
         this(owningPlugin, CacheStrategy.CACHE_AFTER_FIRST_EVAL, lazyValue);
     }
 
@@ -44,7 +46,7 @@ public class LazyMetadataValue extends MetadataValueAdapter {
      *     value.
      * @param lazyValue the lazy value assigned to this metadata value.
      */
-    public LazyMetadataValue(Plugin owningPlugin, CacheStrategy cacheStrategy, Callable<Object> lazyValue) {
+    public LazyMetadataValue(@NotNull Plugin owningPlugin, @NotNull CacheStrategy cacheStrategy, @NotNull Callable<Object> lazyValue) {
         super(owningPlugin);
         Validate.notNull(cacheStrategy, "cacheStrategy cannot be null");
         Validate.notNull(lazyValue, "lazyValue cannot be null");
@@ -59,10 +61,11 @@ public class LazyMetadataValue extends MetadataValueAdapter {
      * 
      * @param owningPlugin the owning plugin
      */
-    protected LazyMetadataValue(Plugin owningPlugin) {
+    protected LazyMetadataValue(@NotNull Plugin owningPlugin) {
         super(owningPlugin);
     }
 
+    @Nullable
     public Object value() {
         eval();
         Object value = internalValue.get();

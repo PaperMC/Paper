@@ -3,6 +3,7 @@ package org.bukkit.loot;
 import org.bukkit.Keyed;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Random;
@@ -24,7 +25,8 @@ public interface LootTable extends Keyed {
      * @param context context within to populate loot
      * @return a list of ItemStacks
      */
-    Collection<ItemStack> populateLoot(Random random, LootContext context);
+    @NotNull
+    Collection<ItemStack> populateLoot(@NotNull Random random, @NotNull LootContext context);
 
     /**
      * Attempt to fill an inventory with this LootTable's loot.
@@ -33,5 +35,5 @@ public interface LootTable extends Keyed {
      * @param random the random instance to use to generate loot
      * @param context context within to populate loot
      */
-    void fillInventory(Inventory inventory, Random random, LootContext context);
+    void fillInventory(@NotNull Inventory inventory, @NotNull Random random, @NotNull LootContext context);
 }

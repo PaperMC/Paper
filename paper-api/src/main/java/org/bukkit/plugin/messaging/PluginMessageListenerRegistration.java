@@ -1,6 +1,7 @@
 package org.bukkit.plugin.messaging;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Contains information about a {@link Plugin}s registration to a plugin
@@ -12,7 +13,7 @@ public final class PluginMessageListenerRegistration {
     private final String channel;
     private final PluginMessageListener listener;
 
-    public PluginMessageListenerRegistration(Messenger messenger, Plugin plugin, String channel, PluginMessageListener listener) {
+    public PluginMessageListenerRegistration(@NotNull Messenger messenger, @NotNull Plugin plugin, @NotNull String channel, @NotNull PluginMessageListener listener) {
         if (messenger == null) {
             throw new IllegalArgumentException("Messenger cannot be null!");
         }
@@ -37,6 +38,7 @@ public final class PluginMessageListenerRegistration {
      *
      * @return Plugin channel.
      */
+    @NotNull
     public String getChannel() {
         return channel;
     }
@@ -46,6 +48,7 @@ public final class PluginMessageListenerRegistration {
      *
      * @return Registered listener.
      */
+    @NotNull
     public PluginMessageListener getListener() {
         return listener;
     }
@@ -55,6 +58,7 @@ public final class PluginMessageListenerRegistration {
      *
      * @return Registered plugin.
      */
+    @NotNull
     public Plugin getPlugin() {
         return plugin;
     }
@@ -77,16 +81,16 @@ public final class PluginMessageListenerRegistration {
             return false;
         }
         final PluginMessageListenerRegistration other = (PluginMessageListenerRegistration) obj;
-        if (this.messenger != other.messenger && (this.messenger == null || !this.messenger.equals(other.messenger))) {
+        if (this.messenger != other.messenger && !this.messenger.equals(other.messenger)) {
             return false;
         }
-        if (this.plugin != other.plugin && (this.plugin == null || !this.plugin.equals(other.plugin))) {
+        if (this.plugin != other.plugin && !this.plugin.equals(other.plugin)) {
             return false;
         }
-        if ((this.channel == null) ? (other.channel != null) : !this.channel.equals(other.channel)) {
+        if (!this.channel.equals(other.channel)) {
             return false;
         }
-        if (this.listener != other.listener && (this.listener == null || !this.listener.equals(other.listener))) {
+        if (this.listener != other.listener && !this.listener.equals(other.listener)) {
             return false;
         }
         return true;
@@ -95,10 +99,10 @@ public final class PluginMessageListenerRegistration {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 53 * hash + (this.messenger != null ? this.messenger.hashCode() : 0);
-        hash = 53 * hash + (this.plugin != null ? this.plugin.hashCode() : 0);
-        hash = 53 * hash + (this.channel != null ? this.channel.hashCode() : 0);
-        hash = 53 * hash + (this.listener != null ? this.listener.hashCode() : 0);
+        hash = 53 * hash + this.messenger.hashCode();
+        hash = 53 * hash + this.plugin.hashCode();
+        hash = 53 * hash + this.channel.hashCode();
+        hash = 53 * hash + this.listener.hashCode();
         return hash;
     }
 }

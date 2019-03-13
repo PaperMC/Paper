@@ -1,6 +1,8 @@
 package org.bukkit.inventory.meta;
 
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a spawn egg and it's spawned type.
@@ -14,6 +16,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * @deprecated different types are different items
      */
     @Deprecated
+    @Contract("-> fail")
     EntityType getSpawnedType();
 
     /**
@@ -24,8 +27,10 @@ public interface SpawnEggMeta extends ItemMeta {
      * @deprecated different types are different items
      */
     @Deprecated
+    @Contract("_ -> fail")
     void setSpawnedType(EntityType type);
 
+    @NotNull
     @Override
     SpawnEggMeta clone();
 }

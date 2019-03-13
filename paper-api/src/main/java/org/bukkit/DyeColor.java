@@ -3,6 +3,8 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * All supported color values for dyes and cloth
@@ -83,7 +85,7 @@ public enum DyeColor {
     private final static Map<Color, DyeColor> BY_COLOR;
     private final static Map<Color, DyeColor> BY_FIREWORK;
 
-    private DyeColor(final int woolData, final int dyeData, Color color, Color firework) {
+    private DyeColor(final int woolData, final int dyeData, @NotNull Color color, @NotNull Color firework) {
         this.woolData = (byte) woolData;
         this.dyeData = (byte) dyeData;
         this.color = color;
@@ -119,6 +121,7 @@ public enum DyeColor {
      *
      * @return The {@link Color} that this dye represents
      */
+    @NotNull
     public Color getColor() {
         return color;
     }
@@ -128,6 +131,7 @@ public enum DyeColor {
      *
      * @return The {@link Color} that this dye represents
      */
+    @NotNull
     public Color getFireworkColor() {
         return firework;
     }
@@ -142,6 +146,7 @@ public enum DyeColor {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static DyeColor getByWoolData(final byte data) {
         int i = 0xff & data;
         if (i >= BY_WOOL_DATA.length) {
@@ -160,6 +165,7 @@ public enum DyeColor {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static DyeColor getByDyeData(final byte data) {
         int i = 0xff & data;
         if (i >= BY_DYE_DATA.length) {
@@ -175,7 +181,8 @@ public enum DyeColor {
      * @return The {@link DyeColor} representing the given value, or null if
      *     it doesn't exist
      */
-    public static DyeColor getByColor(final Color color) {
+    @Nullable
+    public static DyeColor getByColor(@NotNull final Color color) {
         return BY_COLOR.get(color);
     }
 
@@ -186,7 +193,8 @@ public enum DyeColor {
      * @return The {@link DyeColor} representing the given value, or null if
      *     it doesn't exist
      */
-    public static DyeColor getByFireworkColor(final Color color) {
+    @Nullable
+    public static DyeColor getByFireworkColor(@NotNull final Color color) {
         return BY_FIREWORK.get(color);
     }
 
@@ -198,7 +206,8 @@ public enum DyeColor {
      * @deprecated legacy use only
      */
     @Deprecated
-    public static DyeColor legacyValueOf(String name) {
+    @NotNull
+    public static DyeColor legacyValueOf(@Nullable String name) {
         return "SILVER".equals(name) ? DyeColor.LIGHT_GRAY : DyeColor.valueOf(name);
     }
 

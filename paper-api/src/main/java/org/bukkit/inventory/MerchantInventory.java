@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a trading inventory between a player and a merchant.
  * <br>
@@ -26,5 +28,6 @@ public interface MerchantInventory extends Inventory {
      *
      * @return the currently active recipe
      */
+    @Nullable
     MerchantRecipe getSelectedRecipe();
 }

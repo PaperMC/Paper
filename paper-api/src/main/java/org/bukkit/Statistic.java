@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a countable statistic, which is tracked by the server.
  */
@@ -80,7 +82,7 @@ public enum Statistic {
         this(Type.UNTYPED);
     }
 
-    private Statistic(Type type) {
+    private Statistic(@NotNull Type type) {
         this.type = type;
     }
 
@@ -89,6 +91,7 @@ public enum Statistic {
      *
      * @return the type of this statistic
      */
+    @NotNull
     public Type getType() {
         return type;
     }

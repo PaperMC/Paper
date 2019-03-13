@@ -4,6 +4,8 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class DefaultPermissions {
     private static final String ROOT = "craftbukkit";
@@ -11,17 +13,20 @@ public final class DefaultPermissions {
 
     private DefaultPermissions() {}
 
-    public static Permission registerPermission(Permission perm) {
+    @NotNull
+    public static Permission registerPermission(@NotNull Permission perm) {
         return registerPermission(perm, true);
     }
 
-    public static Permission registerPermission(Permission perm, boolean withLegacy) {
+    @NotNull
+    public static Permission registerPermission(@NotNull Permission perm, boolean withLegacy) {
         Permission result = perm;
 
         try {
             Bukkit.getPluginManager().addPermission(perm);
         } catch (IllegalArgumentException ex) {
             result = Bukkit.getPluginManager().getPermission(perm.getName());
+            assert result != null;
         }
 
         if (withLegacy) {
@@ -33,39 +38,46 @@ public final class DefaultPermissions {
         return result;
     }
 
-    public static Permission registerPermission(Permission perm, Permission parent) {
+    @NotNull
+    public static Permission registerPermission(@NotNull Permission perm, @NotNull Permission parent) {
         parent.getChildren().put(perm.getName(), true);
         return registerPermission(perm);
     }
 
-    public static Permission registerPermission(String name, String desc) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc) {
         Permission perm = registerPermission(new Permission(name, desc));
         return perm;
     }
 
-    public static Permission registerPermission(String name, String desc, Permission parent) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc, @NotNull Permission parent) {
         Permission perm = registerPermission(name, desc);
         parent.getChildren().put(perm.getName(), true);
         return perm;
     }
 
-    public static Permission registerPermission(String name, String desc, PermissionDefault def) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc, @Nullable PermissionDefault def) {
         Permission perm = registerPermission(new Permission(name, desc, def));
         return perm;
     }
 
-    public static Permission registerPermission(String name, String desc, PermissionDefault def, Permission parent) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc, @Nullable PermissionDefault def, @NotNull Permission parent) {
         Permission perm = registerPermission(name, desc, def);
         parent.getChildren().put(perm.getName(), true);
         return perm;
     }
 
-    public static Permission registerPermission(String name, String desc, PermissionDefault def, Map<String, Boolean> children) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc, @Nullable PermissionDefault def, @Nullable Map<String, Boolean> children) {
         Permission perm = registerPermission(new Permission(name, desc, def, children));
         return perm;
     }
 
-    public static Permission registerPermission(String name, String desc, PermissionDefault def, Map<String, Boolean> children, Permission parent) {
+    @NotNull
+    public static Permission registerPermission(@NotNull String name, @Nullable String desc, @Nullable PermissionDefault def, @Nullable Map<String, Boolean> children, @NotNull Permission parent) {
         Permission perm = registerPermission(name, desc, def, children);
         parent.getChildren().put(perm.getName(), true);
         return perm;

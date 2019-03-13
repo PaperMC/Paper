@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is leaving a bed.
@@ -13,7 +14,7 @@ public class PlayerBedLeaveEvent extends PlayerEvent {
     private final Block bed;
     private boolean setBedSpawn;
 
-    public PlayerBedLeaveEvent(final Player who, final Block bed, boolean setBedSpawn) {
+    public PlayerBedLeaveEvent(@NotNull final Player who, @NotNull final Block bed, boolean setBedSpawn) {
         super(who);
         this.bed = bed;
         this.setBedSpawn = setBedSpawn;
@@ -24,6 +25,7 @@ public class PlayerBedLeaveEvent extends PlayerEvent {
      *
      * @return the bed block involved in this event
      */
+    @NotNull
     public Block getBed() {
         return bed;
     }
@@ -60,11 +62,13 @@ public class PlayerBedLeaveEvent extends PlayerEvent {
         this.setBedSpawn = setBedSpawn;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

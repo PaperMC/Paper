@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Interface to the inventory of an Anvil.
  */
@@ -11,6 +13,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @return the rename text
      */
+    @Nullable
     String getRenameText();
 
     /**

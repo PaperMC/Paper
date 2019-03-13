@@ -5,6 +5,7 @@ import java.util.Map;
 import org.bukkit.entity.HumanEntity;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the various type of game modes that {@link HumanEntity}s may
@@ -61,6 +62,7 @@ public enum GameMode {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static GameMode getByValue(final int value) {
         return BY_ID.get(value);
     }

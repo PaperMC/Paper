@@ -2,6 +2,7 @@ package org.bukkit.event.hanging;
 
 import org.bukkit.entity.Hanging;
 import org.bukkit.event.Event;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a hanging entity-related event.
@@ -9,7 +10,7 @@ import org.bukkit.event.Event;
 public abstract class HangingEvent extends Event {
     protected Hanging hanging;
 
-    protected HangingEvent(final Hanging painting) {
+    protected HangingEvent(@NotNull final Hanging painting) {
         this.hanging = painting;
     }
 
@@ -18,6 +19,7 @@ public abstract class HangingEvent extends Event {
      *
      * @return the hanging entity
      */
+    @NotNull
     public Hanging getEntity() {
         return hanging;
     }

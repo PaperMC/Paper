@@ -8,6 +8,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called if a block broken by a player drops an item.
@@ -36,7 +37,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
     private final BlockState blockState;
     private final List<Item> items;
 
-    public BlockDropItemEvent(Block block, BlockState blockState, Player player, List<Item> items) {
+    public BlockDropItemEvent(@NotNull Block block, @NotNull BlockState blockState, @NotNull Player player, @NotNull List<Item> items) {
         super(block);
         this.blockState = blockState;
         this.player = player;
@@ -48,6 +49,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
      *
      * @return The Player that is breaking the block involved in this event
      */
+    @NotNull
     public Player getPlayer() {
         return player;
     }
@@ -58,6 +60,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
      *
      * @return The BlockState of the block involved in this event
      */
+    @NotNull
     public BlockState getBlockState() {
         return blockState;
     }
@@ -70,6 +73,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
      *
      * @return The Item the block caused to drop
      */
+    @NotNull
     public List<Item> getItems() {
         return items;
     }
@@ -78,6 +82,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
      * @deprecated very temporary compatibility measure
      */
     @Deprecated
+    @NotNull
     public Item getItem() {
         return items.get(0);
     }
@@ -92,11 +97,13 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

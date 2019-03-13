@@ -3,6 +3,7 @@ package org.bukkit.event.inventory;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.InventoryView;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An abstract base class for events that describe an interaction between a
@@ -11,7 +12,7 @@ import org.bukkit.inventory.InventoryView;
 public abstract class InventoryInteractEvent extends InventoryEvent implements Cancellable {
     private Result result = Result.DEFAULT;
 
-    public InventoryInteractEvent(InventoryView transaction) {
+    public InventoryInteractEvent(@NotNull InventoryView transaction) {
         super(transaction);
     }
 
@@ -20,6 +21,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      *
      * @return The clicking player.
      */
+    @NotNull
     public HumanEntity getWhoClicked() {
         return getView().getPlayer();
     }
@@ -31,7 +33,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      * @see #isCancelled()
      * @param newResult the new {@link org.bukkit.event.Event.Result} for this event
      */
-    public void setResult(Result newResult) {
+    public void setResult(@NotNull Result newResult) {
         result = newResult;
     }
 
@@ -42,6 +44,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      *
      * @return the Result of this event.
      */
+    @NotNull
     public Result getResult() {
         return result;
     }

@@ -4,6 +4,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents additional information a {@link LootTable} can use to modify it's
@@ -19,7 +21,7 @@ public final class LootContext {
     private final Entity lootedEntity;
     private final HumanEntity killer;
 
-    private LootContext(Location location, float luck, int lootingModifier, Entity lootedEntity, HumanEntity killer) {
+    private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
         Validate.notNull(location, "LootContext location cannot be null");
         Validate.notNull(location.getWorld(), "LootContext World cannot be null");
         this.location = location;
@@ -34,6 +36,7 @@ public final class LootContext {
      *
      * @return the Location of where the loot will be generated
      */
+    @NotNull
     public Location getLocation() {
         return location;
     }
@@ -69,6 +72,7 @@ public final class LootContext {
      *
      * @return the looted entity or null
      */
+    @Nullable
     public Entity getLootedEntity() {
         return lootedEntity;
     }
@@ -79,6 +83,7 @@ public final class LootContext {
      *
      * @return the killer entity, or null.
      */
+    @Nullable
     public HumanEntity getKiller() {
         return killer;
     }
@@ -102,7 +107,7 @@ public final class LootContext {
          *
          * @param location the location the LootContext should use
          */
-        public Builder(Location location) {
+        public Builder(@NotNull Location location) {
             this.location = location;
         }
 
@@ -112,6 +117,7 @@ public final class LootContext {
          * @param luck the luck level
          * @return the Builder
          */
+        @NotNull
         public Builder luck(float luck) {
             this.luck = luck;
             return this;
@@ -126,6 +132,7 @@ public final class LootContext {
          * @param modifier the looting level modifier
          * @return the Builder
          */
+        @NotNull
         public Builder lootingModifier(int modifier) {
             this.lootingModifier = modifier;
             return this;
@@ -137,7 +144,8 @@ public final class LootContext {
          * @param lootedEntity the looted entity
          * @return the Builder
          */
-        public Builder lootedEntity(Entity lootedEntity) {
+        @NotNull
+        public Builder lootedEntity(@Nullable Entity lootedEntity) {
             this.lootedEntity = lootedEntity;
             return this;
         }
@@ -150,7 +158,8 @@ public final class LootContext {
          * @param killer the killer entity
          * @return the Builder
          */
-        public Builder killer(HumanEntity killer) {
+        @NotNull
+        public Builder killer(@Nullable HumanEntity killer) {
             this.killer = killer;
             return this;
         }
@@ -161,6 +170,7 @@ public final class LootContext {
          *
          * @return a new {@link LootContext} instance
          */
+        @NotNull
         public LootContext build() {
             return new LootContext(location, luck, lootingModifier, lootedEntity, killer);
         }

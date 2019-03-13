@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.Nullable;
+
 public interface ShulkerBullet extends Projectile {
 
     /**
@@ -7,6 +9,7 @@ public interface ShulkerBullet extends Projectile {
      *
      * @return the targeted entity
      */
+    @Nullable
     Entity getTarget();
 
     /**
@@ -14,5 +17,5 @@ public interface ShulkerBullet extends Projectile {
      *
      * @param target the entity to target
      */
-    void setTarget(Entity target);
+    void setTarget(@Nullable Entity target);
 }

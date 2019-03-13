@@ -2,6 +2,7 @@ package org.bukkit.block.data;
 
 import java.util.Set;
 import org.bukkit.block.BlockFace;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'facing' represents the face towards which the block is pointing.
@@ -16,6 +17,7 @@ public interface Directional extends BlockData {
      *
      * @return the 'facing' value
      */
+    @NotNull
     BlockFace getFacing();
 
     /**
@@ -23,12 +25,13 @@ public interface Directional extends BlockData {
      *
      * @param facing the new 'facing' value
      */
-    void setFacing(BlockFace facing);
+    void setFacing(@NotNull BlockFace facing);
 
     /**
      * Gets the faces which are applicable to this block.
      *
      * @return the allowed 'facing' values
      */
+    @NotNull
     Set<BlockFace> getFaces();
 }

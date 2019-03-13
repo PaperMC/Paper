@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents an achievement, which may be given to players.
  * @deprecated future versions of Minecraft do not have achievements
@@ -48,7 +50,7 @@ public enum Achievement {
         parent = null;
     }
 
-    private Achievement(Achievement parent) {
+    private Achievement(@Nullable Achievement parent) {
         this.parent = parent;
     }
 
@@ -66,6 +68,7 @@ public enum Achievement {
      * 
      * @return the parent achievement or null
      */
+    @Nullable
     public Achievement getParent() {
         return parent;
     }

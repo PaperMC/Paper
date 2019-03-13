@@ -1,6 +1,8 @@
 package org.bukkit.metadata;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A FixedMetadataValue is a special case metadata item that contains the same
@@ -24,7 +26,7 @@ public class FixedMetadataValue extends LazyMetadataValue {
      * @param owningPlugin the {@link Plugin} that created this metadata value
      * @param value the value assigned to this metadata value
      */
-    public FixedMetadataValue(Plugin owningPlugin, final Object value) {
+    public FixedMetadataValue(@NotNull Plugin owningPlugin, @Nullable final Object value) {
         super(owningPlugin);
         this.internalValue = value;
     }
@@ -34,6 +36,7 @@ public class FixedMetadataValue extends LazyMetadataValue {
 
     }
 
+    @Nullable
     @Override
     public Object value() {
         return internalValue;

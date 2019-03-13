@@ -1,6 +1,7 @@
 package org.bukkit.block.data;
 
 import org.bukkit.block.BlockFace;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'rotation' represents the current rotation of this block.
@@ -12,6 +13,7 @@ public interface Rotatable extends BlockData {
      *
      * @return the 'rotation' value
      */
+    @NotNull
     BlockFace getRotation();
 
     /**
@@ -19,5 +21,5 @@ public interface Rotatable extends BlockData {
      *
      * @param rotation the new 'rotation' value
      */
-    void setRotation(BlockFace rotation);
+    void setRotation(@NotNull BlockFace rotation);
 }

@@ -4,6 +4,8 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an EnderDragon switches controller phase.
@@ -15,12 +17,13 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
     private final EnderDragon.Phase currentPhase;
     private EnderDragon.Phase newPhase;
 
-    public EnderDragonChangePhaseEvent(EnderDragon enderDragon, EnderDragon.Phase currentPhase, EnderDragon.Phase newPhase) {
+    public EnderDragonChangePhaseEvent(@NotNull EnderDragon enderDragon, @Nullable EnderDragon.Phase currentPhase, @NotNull EnderDragon.Phase newPhase) {
         super(enderDragon);
         this.currentPhase = currentPhase;
         this.setNewPhase(newPhase);
     }
 
+    @NotNull
     @Override
     public EnderDragon getEntity() {
         return (EnderDragon) entity;
@@ -32,6 +35,7 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
      * 
      * @return the current dragon phase
      */
+    @Nullable
     public EnderDragon.Phase getCurrentPhase() {
         return currentPhase;
     }
@@ -41,6 +45,7 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
      * 
      * @return the new dragon phase
      */
+    @NotNull
     public EnderDragon.Phase getNewPhase() {
         return newPhase;
     }
@@ -50,7 +55,7 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
      * 
      * @param newPhase the new dragon phase
      */
-    public void setNewPhase(EnderDragon.Phase newPhase) {
+    public void setNewPhase(@NotNull EnderDragon.Phase newPhase) {
         Validate.notNull(newPhase, "New dragon phase cannot be null");
         this.newPhase = newPhase;
     }
@@ -65,11 +70,13 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

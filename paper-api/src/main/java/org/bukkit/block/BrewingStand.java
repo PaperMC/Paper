@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import org.bukkit.Nameable;
 import org.bukkit.inventory.BrewerInventory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a brewing stand.
@@ -36,9 +37,11 @@ public interface BrewingStand extends Container, Nameable {
      */
     void setFuelLevel(int level);
 
+    @NotNull
     @Override
     BrewerInventory getInventory();
 
+    @NotNull
     @Override
     BrewerInventory getSnapshotInventory();
 }

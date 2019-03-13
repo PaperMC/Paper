@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the various difficulty levels that are available.
@@ -60,6 +61,7 @@ public enum Difficulty {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static Difficulty getByValue(final int value) {
         return BY_ID.get(value);
     }

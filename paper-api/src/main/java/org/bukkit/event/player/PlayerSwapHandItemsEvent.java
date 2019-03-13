@@ -4,6 +4,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player swap items between main hand and off hand using the
@@ -17,7 +19,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
     private ItemStack offHandItem;
     private boolean cancelled;
 
-    public PlayerSwapHandItemsEvent(Player player, ItemStack mainHandItem, ItemStack offHandItem) {
+    public PlayerSwapHandItemsEvent(@NotNull Player player, @NotNull ItemStack mainHandItem, @NotNull ItemStack offHandItem) {
         super(player);
 
         this.mainHandItem = mainHandItem;
@@ -29,6 +31,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @return item in the main hand
      */
+    @Nullable
     public ItemStack getMainHandItem() {
         return mainHandItem;
     }
@@ -38,7 +41,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @param mainHandItem new item in the main hand
      */
-    public void setMainHandItem(ItemStack mainHandItem) {
+    public void setMainHandItem(@Nullable ItemStack mainHandItem) {
         this.mainHandItem = mainHandItem;
     }
 
@@ -47,6 +50,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @return item in the off hand
      */
+    @Nullable
     public ItemStack getOffHandItem() {
         return offHandItem;
     }
@@ -56,7 +60,7 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
      *
      * @param offHandItem new item in the off hand
      */
-    public void setOffHandItem(ItemStack offHandItem) {
+    public void setOffHandItem(@Nullable ItemStack offHandItem) {
         this.offHandItem = offHandItem;
     }
 
@@ -70,11 +74,13 @@ public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

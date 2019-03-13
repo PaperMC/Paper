@@ -1,5 +1,7 @@
 package org.bukkit.block.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 
 /**
@@ -15,6 +17,7 @@ public interface Rail extends BlockData {
      *
      * @return the 'shape' value
      */
+    @NotNull
     Shape getShape();
 
     /**
@@ -22,13 +25,14 @@ public interface Rail extends BlockData {
      *
      * @param shape the new 'shape' value
      */
-    void setShape(Shape shape);
+    void setShape(@NotNull Shape shape);
 
     /**
      * Gets the shapes which are applicable to this block.
      *
      * @return the allowed 'shape' values
      */
+    @NotNull
     Set<Shape> getShapes();
 
     /**

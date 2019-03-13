@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a flower pot.
@@ -14,6 +15,7 @@ public interface FlowerPot extends BlockState {
      *
      * @return item present, or null for empty.
      */
+    @Nullable
     MaterialData getContents();
 
     /**
@@ -24,5 +26,5 @@ public interface FlowerPot extends BlockState {
      *
      * @param item new item, or null for empty.
      */
-    void setContents(MaterialData item);
+    void setContents(@Nullable MaterialData item);
 }

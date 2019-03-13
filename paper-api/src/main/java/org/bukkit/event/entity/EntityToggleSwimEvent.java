@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Sent when an entity's swimming status is toggled.
@@ -13,7 +14,7 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final boolean isSwimming;
 
-    public EntityToggleSwimEvent(LivingEntity who, final boolean isSwimming) {
+    public EntityToggleSwimEvent(@NotNull LivingEntity who, final boolean isSwimming) {
         super(who);
         this.isSwimming = isSwimming;
     }
@@ -32,11 +33,13 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
         return isSwimming;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

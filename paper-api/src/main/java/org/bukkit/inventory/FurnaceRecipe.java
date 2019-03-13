@@ -6,6 +6,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a smelting recipe.
@@ -19,22 +20,22 @@ public class FurnaceRecipe implements Recipe, Keyed {
     private String group = "";
 
     @Deprecated
-    public FurnaceRecipe(ItemStack result, Material source) {
+    public FurnaceRecipe(@NotNull ItemStack result, @NotNull Material source) {
         this(NamespacedKey.randomKey(), result, source, 0, 0, 200);
     }
 
     @Deprecated
-    public FurnaceRecipe(ItemStack result, MaterialData source) {
+    public FurnaceRecipe(@NotNull ItemStack result, @NotNull MaterialData source) {
         this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), 0, 200);
     }
 
     @Deprecated
-    public FurnaceRecipe(ItemStack result, MaterialData source, float experience) {
+    public FurnaceRecipe(@NotNull ItemStack result, @NotNull MaterialData source, float experience) {
         this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), experience, 200);
     }
 
     @Deprecated
-    public FurnaceRecipe(ItemStack result, Material source, int data) {
+    public FurnaceRecipe(@NotNull ItemStack result, @NotNull Material source, int data) {
         this(NamespacedKey.randomKey(), result, source, data, 0, 200);
     }
 
@@ -47,12 +48,12 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param experience The experience given by this recipe
      * @param cookingTime The cooking time (in ticks)
      */
-    public FurnaceRecipe(NamespacedKey key, ItemStack result, Material source, float experience, int cookingTime) {
+    public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source, float experience, int cookingTime) {
         this(key, result, source, 0, experience, cookingTime);
     }
 
     @Deprecated
-    public FurnaceRecipe(NamespacedKey key, ItemStack result, Material source, int data, float experience, int cookingTime) {
+    public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source, int data, float experience, int cookingTime) {
         this(key, result, new RecipeChoice.MaterialChoice(Collections.singletonList(source)), experience, cookingTime);
     }
 
@@ -65,7 +66,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param experience The experience given by this recipe
      * @param cookingTime The cooking time (in ticks)
      */
-    public FurnaceRecipe(NamespacedKey key, ItemStack result, RecipeChoice input, float experience, int cookingTime) {
+    public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input, float experience, int cookingTime) {
         this.key = key;
         this.output = new ItemStack(result);
         this.ingredient = input;
@@ -79,7 +80,8 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
      */
-    public FurnaceRecipe setInput(MaterialData input) {
+    @NotNull
+    public FurnaceRecipe setInput(@NotNull MaterialData input) {
         return setInput(input.getItemType(), input.getData());
     }
 
@@ -89,7 +91,8 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
      */
-    public FurnaceRecipe setInput(Material input) {
+    @NotNull
+    public FurnaceRecipe setInput(@NotNull Material input) {
         return setInput(input, 0);
     }
 
@@ -103,7 +106,8 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public FurnaceRecipe setInput(Material input, int data) {
+    @NotNull
+    public FurnaceRecipe setInput(@NotNull Material input, int data) {
         this.ingredient = new RecipeChoice.MaterialChoice(Collections.singletonList(input));
         return this;
     }
@@ -113,6 +117,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      *
      * @return The input material.
      */
+    @NotNull
     public ItemStack getInput() {
         return this.ingredient.getItemStack();
     }
@@ -123,7 +128,8 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param input The input choice.
      * @return The changed recipe, so you can chain calls.
      */
-    public FurnaceRecipe setInputChoice(RecipeChoice input) {
+    @NotNull
+    public FurnaceRecipe setInputChoice(@NotNull RecipeChoice input) {
         this.ingredient = input;
         return this;
     }
@@ -133,6 +139,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      *
      * @return The input choice.
      */
+    @NotNull
     public RecipeChoice getInputChoice() {
         return this.ingredient.clone();
     }
@@ -142,6 +149,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      *
      * @return The resulting stack.
      */
+    @NotNull
     public ItemStack getResult() {
         return output.clone();
     }
@@ -183,6 +191,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
         return cookingTime;
     }
 
+    @NotNull
     @Override
     public NamespacedKey getKey() {
         return key;
@@ -194,6 +203,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      *
      * @return recipe group. An empty string denotes no group. May not be null.
      */
+    @NotNull
     public String getGroup() {
         return group;
     }
@@ -205,7 +215,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param group recipe group. An empty string denotes no group. May not be
      * null.
      */
-    public void setGroup(String group) {
+    public void setGroup(@NotNull String group) {
         Preconditions.checkArgument(group != null, "group");
         this.group = group;
     }

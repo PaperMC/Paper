@@ -1,6 +1,8 @@
 package org.bukkit.help;
 
 import org.bukkit.command.Command;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A HelpTopicFactory is used to create custom {@link HelpTopic} objects from
@@ -38,5 +40,6 @@ public interface HelpTopicFactory<TCommand extends Command> {
      * @return A new custom help topic or {@code null} to intentionally NOT
      *     create a topic.
      */
-    public HelpTopic createTopic(TCommand command);
+    @Nullable
+    public HelpTopic createTopic(@NotNull TCommand command);
 }

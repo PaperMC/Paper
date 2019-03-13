@@ -1,5 +1,7 @@
 package org.bukkit.util;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * EulerAngle is used to represent 3 angles, one for each
  * axis (x, y, z). The angles are in radians
@@ -63,6 +65,7 @@ public class EulerAngle {
      * @param x the angle in radians
      * @return the resultant EulerAngle
      */
+    @NotNull
     public EulerAngle setX(double x) {
         return new EulerAngle(x, y, z);
     }
@@ -74,6 +77,7 @@ public class EulerAngle {
      * @param y the angle in radians
      * @return the resultant EulerAngle
      */
+    @NotNull
     public EulerAngle setY(double y) {
         return new EulerAngle(x, y, z);
     }
@@ -85,6 +89,7 @@ public class EulerAngle {
      * @param z the angle in radians
      * @return the resultant EulerAngle
      */
+    @NotNull
     public EulerAngle setZ(double z) {
         return new EulerAngle(x, y, z);
     }
@@ -98,6 +103,7 @@ public class EulerAngle {
      * @param z the angle to add to the z axis in radians
      * @return the resultant EulerAngle
      */
+    @NotNull
     public EulerAngle add(double x, double y, double z) {
         return new EulerAngle(
                 this.x + x,
@@ -115,6 +121,7 @@ public class EulerAngle {
      * @param z the angle to subtract to the z axis in radians
      * @return the resultant EulerAngle
      */
+    @NotNull
     public EulerAngle subtract(double x, double y, double z) {
         return add(-x, -y, -z);
     }

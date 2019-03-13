@@ -6,6 +6,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player attempts to tab-complete a chat message.
@@ -20,7 +21,7 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
     private final String lastToken;
     private final Collection<String> completions;
 
-    public PlayerChatTabCompleteEvent(final Player who, final String message, final Collection<String> completions) {
+    public PlayerChatTabCompleteEvent(@NotNull final Player who, @NotNull final String message, @NotNull final Collection<String> completions) {
         super(who);
         Validate.notNull(message, "Message cannot be null");
         Validate.notNull(completions, "Completions cannot be null");
@@ -39,6 +40,7 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      *
      * @return the chat message
      */
+    @NotNull
     public String getChatMessage() {
         return message;
     }
@@ -51,6 +53,7 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      *
      * @return The last token for the chat message
      */
+    @NotNull
     public String getLastToken() {
         return lastToken;
     }
@@ -60,15 +63,18 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
      *
      * @return the current completions
      */
+    @NotNull
     public Collection<String> getTabCompletions() {
         return completions;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

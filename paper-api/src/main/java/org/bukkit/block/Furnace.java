@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import org.bukkit.Nameable;
 import org.bukkit.inventory.FurnaceInventory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a furnace.
@@ -61,9 +62,11 @@ public interface Furnace extends Container, Nameable {
      */
     public void setCookTimeTotal(int cookTimeTotal);
 
+    @NotNull
     @Override
     public FurnaceInventory getInventory();
 
+    @NotNull
     @Override
     public FurnaceInventory getSnapshotInventory();
 }

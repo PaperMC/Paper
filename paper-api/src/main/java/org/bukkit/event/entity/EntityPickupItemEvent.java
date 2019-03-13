@@ -4,6 +4,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a entity picks an item up from the ground
@@ -14,12 +15,13 @@ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final int remaining;
 
-    public EntityPickupItemEvent(final LivingEntity entity, final Item item, final int remaining) {
+    public EntityPickupItemEvent(@NotNull final LivingEntity entity, @NotNull final Item item, final int remaining) {
         super(entity);
         this.item = item;
         this.remaining = remaining;
     }
 
+    @NotNull
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) entity;
@@ -30,6 +32,7 @@ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
      *
      * @return Item
      */
+    @NotNull
     public Item getItem() {
         return item;
     }
@@ -51,11 +54,13 @@ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

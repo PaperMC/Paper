@@ -7,6 +7,8 @@ import java.util.List;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.Merchant;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a villager NPC
@@ -18,6 +20,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
      *
      * @return Current profession.
      */
+    @NotNull
     public Profession getProfession();
 
     /**
@@ -25,13 +28,14 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
      *
      * @param profession New profession.
      */
-    public void setProfession(Profession profession);
+    public void setProfession(@NotNull Profession profession);
 
     /**
      * Get the current {@link Career} for this Villager.
      *
      * @return the {@link Career}
      */
+    @NotNull
     public Career getCareer();
 
     /**
@@ -42,7 +46,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
      * @throws IllegalArgumentException when the new {@link Career} cannot be
      * used with this Villager's current {@link Profession}.
      */
-    public void setCareer(Career career);
+    public void setCareer(@Nullable Career career);
 
     /**
      * Set the new {@link Career} for this Villager.
@@ -53,7 +57,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
      * @throws IllegalArgumentException when the new {@link Career} cannot be
      * used with this Villager's current {@link Profession}.
      */
-    public void setCareer(Career career, boolean resetTrades);
+    public void setCareer(@Nullable Career career, boolean resetTrades);
 
     /**
      * Gets this villager's inventory.
@@ -63,6 +67,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
      *
      * {@inheritDoc}
      */
+    @NotNull
     @Override
     Inventory getInventory();
 
@@ -147,6 +152,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
          * @return an immutable list of careers for this profession, or an empty
          * map if this Profession has no careers.
          */
+        @NotNull
         public List<Career> getCareers() {
             return Career.getCareers(this);
         }
@@ -230,7 +236,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
         private static final Multimap<Profession, Career> careerMap = LinkedListMultimap.create();
         private final Profession profession;
 
-        private Career(Profession profession) {
+        private Career(@NotNull Profession profession) {
             this.profession = profession;
         }
 
@@ -239,6 +245,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
          *
          * @return the {@link Profession}.
          */
+        @NotNull
         public Profession getProfession() {
             return profession;
         }
@@ -251,7 +258,8 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
          * @return an immutable list of Careers that can be used by a
          * profession, or an empty map if the profession was not found
          */
-        public static List<Career> getCareers(Profession profession) {
+        @NotNull
+        public static List<Career> getCareers(@NotNull Profession profession) {
             return careerMap.containsKey(profession) ? ImmutableList.copyOf(careerMap.get(profession)) : ImmutableList.<Career>of();
         }
 

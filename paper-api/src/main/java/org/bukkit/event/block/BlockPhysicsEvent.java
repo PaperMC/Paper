@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a block physics check is called.
@@ -31,11 +32,11 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private final Block sourceBlock;
     private boolean cancel = false;
 
-    public BlockPhysicsEvent(final Block block, final BlockData changed) {
+    public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed) {
         this(block, changed, block);
     }
 
-    public BlockPhysicsEvent(final Block block, final BlockData changed, final Block sourceBlock) {
+    public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed, @NotNull final Block sourceBlock) {
         super(block);
         this.changed = changed;
         this.sourceBlock = sourceBlock;
@@ -48,6 +49,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
      *
      * @return The source block
      */
+    @NotNull
     public Block getSourceBlock() {
         return sourceBlock;
     }
@@ -57,6 +59,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
      *
      * @return Changed block's type
      */
+    @NotNull
     public Material getChangedType() {
         return changed.getMaterial();
     }
@@ -69,11 +72,13 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

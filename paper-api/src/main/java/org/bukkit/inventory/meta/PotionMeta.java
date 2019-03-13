@@ -4,6 +4,8 @@ import org.bukkit.Color;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionData;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -17,13 +19,14 @@ public interface PotionMeta extends ItemMeta {
      *
      * @param data PotionData to set the base potion state to
      */
-    void setBasePotionData(PotionData data);
+    void setBasePotionData(@NotNull PotionData data);
 
     /**
      * Returns the potion data about the base potion
      *
      * @return a PotionData object
      */
+    @NotNull
     PotionData getBasePotionData();
 
     /**
@@ -42,6 +45,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @return the immutable list of custom potion effects
      */
+    @NotNull
     List<PotionEffect> getCustomEffects();
 
     /**
@@ -52,7 +56,7 @@ public interface PotionMeta extends ItemMeta {
      * overwritten
      * @return true if the potion meta changed as a result of this call
      */
-    boolean addCustomEffect(PotionEffect effect, boolean overwrite);
+    boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite);
 
     /**
      * Removes a custom potion effect from this potion.
@@ -60,7 +64,7 @@ public interface PotionMeta extends ItemMeta {
      * @param type the potion effect type to remove
      * @return true if the potion meta changed as a result of this call
      */
-    boolean removeCustomEffect(PotionEffectType type);
+    boolean removeCustomEffect(@NotNull PotionEffectType type);
 
     /**
      * Checks for a specific custom potion effect type on this potion.
@@ -68,7 +72,7 @@ public interface PotionMeta extends ItemMeta {
      * @param type the potion effect type to check for
      * @return true if the potion has this effect
      */
-    boolean hasCustomEffect(PotionEffectType type);
+    boolean hasCustomEffect(@NotNull PotionEffectType type);
 
     /**
      * Moves a potion effect to the top of the potion effect list.
@@ -80,7 +84,7 @@ public interface PotionMeta extends ItemMeta {
      * @deprecated use {@link org.bukkit.potion.PotionType#PotionType}
      */
     @Deprecated
-    boolean setMainEffect(PotionEffectType type);
+    boolean setMainEffect(@NotNull PotionEffectType type);
 
     /**
      * Removes all custom potion effects from this potion.
@@ -105,6 +109,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @return the potion color that is set
      */
+    @Nullable
     Color getColor();
 
     /**
@@ -113,7 +118,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @param color the color to set
      */
-    void setColor(Color color);
+    void setColor(@Nullable Color color);
 
     @Override
     PotionMeta clone();

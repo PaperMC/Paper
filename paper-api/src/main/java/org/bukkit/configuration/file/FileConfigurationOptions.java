@@ -1,6 +1,8 @@
 package org.bukkit.configuration.file;
 
 import org.bukkit.configuration.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Various settings for controlling the input and output of a {@link
@@ -10,21 +12,24 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private String header = null;
     private boolean copyHeader = true;
 
-    protected FileConfigurationOptions(MemoryConfiguration configuration) {
+    protected FileConfigurationOptions(@NotNull MemoryConfiguration configuration) {
         super(configuration);
     }
 
+    @NotNull
     @Override
     public FileConfiguration configuration() {
         return (FileConfiguration) super.configuration();
     }
 
+    @NotNull
     @Override
     public FileConfigurationOptions copyDefaults(boolean value) {
         super.copyDefaults(value);
         return this;
     }
 
+    @NotNull
     @Override
     public FileConfigurationOptions pathSeparator(char value) {
         super.pathSeparator(value);
@@ -45,6 +50,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      *
      * @return Header
      */
+    @Nullable
     public String header() {
         return header;
     }
@@ -64,7 +70,8 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * @param value New header
      * @return This object, for chaining
      */
-    public FileConfigurationOptions header(String value) {
+    @NotNull
+    public FileConfigurationOptions header(@Nullable String value) {
         this.header = value;
         return this;
     }
@@ -110,6 +117,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * @param value Whether or not to copy the header
      * @return This object, for chaining
      */
+    @NotNull
     public FileConfigurationOptions copyHeader(boolean value) {
         copyHeader = value;
 

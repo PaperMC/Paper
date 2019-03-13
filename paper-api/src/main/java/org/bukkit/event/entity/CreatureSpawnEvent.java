@@ -1,7 +1,7 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a creature is spawned into a world.
@@ -11,11 +11,12 @@ import org.bukkit.entity.LivingEntity;
 public class CreatureSpawnEvent extends EntitySpawnEvent {
     private final SpawnReason spawnReason;
 
-    public CreatureSpawnEvent(final LivingEntity spawnee, final SpawnReason spawnReason) {
+    public CreatureSpawnEvent(@NotNull final LivingEntity spawnee, @NotNull final SpawnReason spawnReason) {
         super(spawnee);
         this.spawnReason = spawnReason;
     }
 
+    @NotNull
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) entity;
@@ -27,6 +28,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
      * @return A SpawnReason value detailing the reason for the creature being
      *     spawned
      */
+    @NotNull
     public SpawnReason getSpawnReason() {
         return spawnReason;
     }

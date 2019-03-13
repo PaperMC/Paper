@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class BlockMultiPlaceEvent extends BlockPlaceEvent {
     private final List<BlockState> states;
 
-    public BlockMultiPlaceEvent(List<BlockState> states, Block clicked, ItemStack itemInHand, Player thePlayer, boolean canBuild) {
+    public BlockMultiPlaceEvent(@NotNull List<BlockState> states, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild) {
         super(states.get(0).getBlock(), states.get(0), clicked, itemInHand, thePlayer, canBuild);
         this.states = ImmutableList.copyOf(states);
     }
@@ -30,6 +31,7 @@ public class BlockMultiPlaceEvent extends BlockPlaceEvent {
      *
      * @return immutable list of replaced BlockStates
      */
+    @NotNull
     public List<BlockState> getReplacedBlockStates() {
         return states;
     }

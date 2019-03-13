@@ -7,6 +7,8 @@ import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a 3-dimensional position in a world.
@@ -32,7 +34,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param y The y-coordinate of this new location
      * @param z The z-coordinate of this new location
      */
-    public Location(final World world, final double x, final double y, final double z) {
+    public Location(@Nullable final World world, final double x, final double y, final double z) {
         this(world, x, y, z, 0, 0);
     }
 
@@ -46,7 +48,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param yaw The absolute rotation on the x-plane, in degrees
      * @param pitch The absolute rotation on the y-plane, in degrees
      */
-    public Location(final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
+    public Location(@Nullable final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
         this.world = world;
         this.x = x;
         this.y = y;
@@ -60,7 +62,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      *
      * @param world New world that this location resides in
      */
-    public void setWorld(World world) {
+    public void setWorld(@Nullable World world) {
         this.world = world;
     }
 
@@ -69,6 +71,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      *
      * @return World that contains this location
      */
+    @Nullable
     public World getWorld() {
         return world;
     }
@@ -78,6 +81,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      *
      * @return Chunk at the represented location
      */
+    @NotNull
     public Chunk getChunk() {
         return world.getChunkAt(this);
     }
@@ -87,6 +91,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      *
      * @return Block at the represented location
      */
+    @NotNull
     public Block getBlock() {
         return world.getBlockAt(this);
     }
@@ -250,6 +255,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return a vector pointing the direction of this location's {@link
      *     #getPitch() pitch} and {@link #getYaw() yaw}
      */
+    @NotNull
     public Vector getDirection() {
         Vector vector = new Vector();
 
@@ -273,7 +279,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param vector the direction vector
      * @return the same location
      */
-    public Location setDirection(Vector vector) {
+    @NotNull
+    public Location setDirection(@NotNull Vector vector) {
         /*
          * Sin = Opp / Hyp
          * Cos = Adj / Hyp
@@ -310,7 +317,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
      */
-    public Location add(Location vec) {
+    @NotNull
+    public Location add(@NotNull Location vec) {
         if (vec == null || vec.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
@@ -328,7 +336,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param vec Vector to use
      * @return the same location
      */
-    public Location add(Vector vec) {
+    @NotNull
+    public Location add(@NotNull Vector vec) {
         this.x += vec.getX();
         this.y += vec.getY();
         this.z += vec.getZ();
@@ -344,6 +353,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param z Z coordinate
      * @return the same location
      */
+    @NotNull
     public Location add(double x, double y, double z) {
         this.x += x;
         this.y += y;
@@ -359,7 +369,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
      */
-    public Location subtract(Location vec) {
+    @NotNull
+    public Location subtract(@NotNull Location vec) {
         if (vec == null || vec.getWorld() != getWorld()) {
             throw new IllegalArgumentException("Cannot add Locations of differing worlds");
         }
@@ -377,7 +388,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param vec The vector to use
      * @return the same location
      */
-    public Location subtract(Vector vec) {
+    @NotNull
+    public Location subtract(@NotNull Vector vec) {
         this.x -= vec.getX();
         this.y -= vec.getY();
         this.z -= vec.getZ();
@@ -394,6 +406,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param z Z coordinate
      * @return the same location
      */
+    @NotNull
     public Location subtract(double x, double y, double z) {
         this.x -= x;
         this.y -= y;
@@ -439,7 +452,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
-    public double distance(Location o) {
+    public double distance(@NotNull Location o) {
         return Math.sqrt(distanceSquared(o));
     }
 
@@ -451,7 +464,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
      */
-    public double distanceSquared(Location o) {
+    public double distanceSquared(@NotNull Location o) {
         if (o == null) {
             throw new IllegalArgumentException("Cannot measure distance to a null location");
         } else if (o.getWorld() == null || getWorld() == null) {
@@ -471,6 +484,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @see Vector
      * @return the same location
      */
+    @NotNull
     public Location multiply(double m) {
         x *= m;
         y *= m;
@@ -484,6 +498,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @see Vector
      * @return the same location
      */
+    @NotNull
     public Location zero() {
         x = 0;
         y = 0;
@@ -546,11 +561,13 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @return New Vector containing the coordinates represented by this
      *     Location
      */
+    @NotNull
     public Vector toVector() {
         return new Vector(x, y, z);
     }
 
     @Override
+    @NotNull
     public Location clone() {
         try {
             return (Location) super.clone();
@@ -584,6 +601,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
     }
 
     @Utility
+    @NotNull
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<String, Object>();
         data.put("world", this.world.getName());
@@ -606,7 +624,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @throws IllegalArgumentException if the world don't exists
      * @see ConfigurationSerializable
      */
-    public static Location deserialize(Map<String, Object> args) {
+    @NotNull
+    public static Location deserialize(@NotNull Map<String, Object> args) {
         World world = Bukkit.getWorld((String) args.get("world"));
         if (world == null) {
             throw new IllegalArgumentException("unknown world");

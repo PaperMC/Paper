@@ -4,6 +4,7 @@ import java.util.List;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown whenever a LivingEntity dies
@@ -13,16 +14,17 @@ public class EntityDeathEvent extends EntityEvent {
     private final List<ItemStack> drops;
     private int dropExp = 0;
 
-    public EntityDeathEvent(final LivingEntity entity, final List<ItemStack> drops) {
+    public EntityDeathEvent(@NotNull final LivingEntity entity, @NotNull final List<ItemStack> drops) {
         this(entity, drops, 0);
     }
 
-    public EntityDeathEvent(final LivingEntity what, final List<ItemStack> drops, final int droppedExp) {
+    public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull final List<ItemStack> drops, final int droppedExp) {
         super(what);
         this.drops = drops;
         this.dropExp = droppedExp;
     }
 
+    @NotNull
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) entity;
@@ -57,15 +59,18 @@ public class EntityDeathEvent extends EntityEvent {
      *
      * @return Items to drop when the entity dies
      */
+    @NotNull
     public List<ItemStack> getDrops() {
         return drops;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

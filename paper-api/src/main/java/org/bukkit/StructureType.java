@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.Validate;
 import org.bukkit.map.MapCursor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -153,7 +155,7 @@ public class StructureType {
      * when creating explorer maps. Use null to indicate this structure should
      * not be compatible with explorer maps.
      */
-    private StructureType(String name, MapCursor.Type mapIcon) {
+    private StructureType(@NotNull String name, @Nullable MapCursor.Type mapIcon) {
         Validate.notEmpty(name, "Structure name cannot be empty");
         this.name = name;
         this.mapCursor = mapIcon;
@@ -165,6 +167,7 @@ public class StructureType {
      *
      * @return the name of this structure
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -175,6 +178,7 @@ public class StructureType {
      *
      * @return the {@link org.bukkit.map.MapCursor.Type} or null.
      */
+    @Nullable
     public MapCursor.Type getMapIcon() {
         return mapCursor;
     }
@@ -204,7 +208,8 @@ public class StructureType {
         return "StructureType{name=" + this.name + ", cursor=" + this.mapCursor + "}";
     }
 
-    private static <T extends StructureType> T register(T type) {
+    @NotNull
+    private static <T extends StructureType> T register(@NotNull T type) {
         Preconditions.checkNotNull(type, "Cannot register null StructureType.");
         Preconditions.checkArgument(!structureTypeMap.containsKey(type.getName()), "Cannot register same StructureType twice. %s", type.getName());
         StructureType.structureTypeMap.put(type.getName(), type);
@@ -216,6 +221,7 @@ public class StructureType {
      *
      * @return an immutable copy of registered structure types.
      */
+    @NotNull
     public static Map<String, StructureType> getStructureTypes() {
         return ImmutableMap.copyOf(structureTypeMap);
     }

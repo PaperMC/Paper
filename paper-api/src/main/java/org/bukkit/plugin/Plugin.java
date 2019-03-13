@@ -8,6 +8,8 @@ import org.bukkit.Server;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.generator.ChunkGenerator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Plugin
@@ -21,6 +23,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return The folder
      */
+    @NotNull
     public File getDataFolder();
 
     /**
@@ -28,6 +31,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return Contents of the plugin.yaml file
      */
+    @NotNull
     public PluginDescriptionFile getDescription();
 
     /**
@@ -39,6 +43,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return Plugin configuration
      */
+    @NotNull
     public FileConfiguration getConfig();
 
     /**
@@ -47,7 +52,8 @@ public interface Plugin extends TabExecutor {
      * @param filename Filename of the resource
      * @return File if found, otherwise null
      */
-    public InputStream getResource(String filename);
+    @Nullable
+    public InputStream getResource(@NotNull String filename);
 
     /**
      * Saves the {@link FileConfiguration} retrievable by {@link #getConfig()}.
@@ -76,7 +82,7 @@ public interface Plugin extends TabExecutor {
      * @throws IllegalArgumentException if the resource path is null, empty,
      *     or points to a nonexistent resource.
      */
-    public void saveResource(String resourcePath, boolean replace);
+    public void saveResource(@NotNull String resourcePath, boolean replace);
 
     /**
      * Discards any data in {@link #getConfig()} and reloads from disk.
@@ -88,6 +94,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return PluginLoader that controls this plugin
      */
+    @NotNull
     public PluginLoader getPluginLoader();
 
     /**
@@ -95,6 +102,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return Server running this plugin
      */
+    @NotNull
     public Server getServer();
 
     /**
@@ -146,7 +154,8 @@ public interface Plugin extends TabExecutor {
      *     generator was requested
      * @return ChunkGenerator for use in the default world generation
      */
-    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id);
+    @Nullable
+    public ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id);
 
     /**
      * Returns the plugin logger associated with this server's logger. The
@@ -155,6 +164,7 @@ public interface Plugin extends TabExecutor {
      *
      * @return Logger associated with this plugin
      */
+    @NotNull
     public Logger getLogger();
 
     /**
@@ -165,5 +175,6 @@ public interface Plugin extends TabExecutor {
      *
      * @return name of the plugin
      */
+    @NotNull
     public String getName();
 }

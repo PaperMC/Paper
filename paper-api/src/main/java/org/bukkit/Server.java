@@ -51,6 +51,9 @@ import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a server implementation.
@@ -78,6 +81,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return name of this server implementation
      */
+    @NotNull
     public String getName();
 
     /**
@@ -85,6 +89,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return version of this server implementation
      */
+    @NotNull
     public String getVersion();
 
     /**
@@ -92,6 +97,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return version of Bukkit
      */
+    @NotNull
     public String getBukkitVersion();
 
     /**
@@ -121,6 +127,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a view of currently online players.
      */
+    @NotNull
     public Collection<? extends Player> getOnlinePlayers();
 
     /**
@@ -151,6 +158,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the IP string that this server is bound to, otherwise empty
      *     string
      */
+    @NotNull
     public String getIp();
 
     /**
@@ -160,6 +168,7 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated not a standard server property
      */
     @Deprecated
+    @NotNull
     public String getServerName();
 
     /**
@@ -170,6 +179,7 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated not a standard server property
      */
     @Deprecated
+    @NotNull
     public String getServerId();
 
     /**
@@ -177,6 +187,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
      */
+    @NotNull
     public String getWorldType();
 
     /**
@@ -219,6 +230,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a set containing all whitelisted players
      */
+    @NotNull
     public Set<OfflinePlayer> getWhitelistedPlayers();
 
     /**
@@ -235,7 +247,7 @@ public interface Server extends PluginMessageRecipient {
      * @param message the message
      * @return the number of players
      */
-    public int broadcastMessage(String message);
+    public int broadcastMessage(@NotNull String message);
 
     /**
      * Gets the name of the update folder. The update folder is used to safely
@@ -245,6 +257,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the name of the update folder
      */
+    @NotNull
     public String getUpdateFolder();
 
     /**
@@ -253,6 +266,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the update folder
      */
+    @NotNull
     public File getUpdateFolderFile();
 
     /**
@@ -315,7 +329,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a player if one was found, null otherwise
      */
     @Deprecated
-    public Player getPlayer(String name);
+    @Nullable
+    public Player getPlayer(@NotNull String name);
 
     /**
      * Gets the player with the exact given name, case insensitive.
@@ -326,7 +341,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a player object if one was found, null otherwise
      */
     @Deprecated
-    public Player getPlayerExact(String name);
+    @Nullable
+    public Player getPlayerExact(@NotNull String name);
 
     /**
      * Attempts to match any players with the given name, and returns a list
@@ -341,7 +357,8 @@ public interface Server extends PluginMessageRecipient {
      * @return list of all possible players
      */
     @Deprecated
-    public List<Player> matchPlayer(String name);
+    @NotNull
+    public List<Player> matchPlayer(@NotNull String name);
 
     /**
      * Gets the player with the given UUID.
@@ -349,13 +366,15 @@ public interface Server extends PluginMessageRecipient {
      * @param id UUID of the player to retrieve
      * @return a player object if one was found, null otherwise
      */
-    public Player getPlayer(UUID id);
+    @Nullable
+    public Player getPlayer(@NotNull UUID id);
 
     /**
      * Gets the plugin manager for interfacing with plugins.
      *
      * @return a plugin manager for this Server instance
      */
+    @NotNull
     public PluginManager getPluginManager();
 
     /**
@@ -363,6 +382,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a scheduling service for this server
      */
+    @NotNull
     public BukkitScheduler getScheduler();
 
     /**
@@ -370,6 +390,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return s services manager
      */
+    @NotNull
     public ServicesManager getServicesManager();
 
     /**
@@ -377,6 +398,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a list of worlds
      */
+    @NotNull
     public List<World> getWorlds();
 
     /**
@@ -389,7 +411,8 @@ public interface Server extends PluginMessageRecipient {
      * @param creator the options to use when creating the world
      * @return newly created or loaded world
      */
-    public World createWorld(WorldCreator creator);
+    @Nullable
+    public World createWorld(@NotNull WorldCreator creator);
 
     /**
      * Unloads a world with the given name.
@@ -398,7 +421,7 @@ public interface Server extends PluginMessageRecipient {
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
      */
-    public boolean unloadWorld(String name, boolean save);
+    public boolean unloadWorld(@NotNull String name, boolean save);
 
     /**
      * Unloads the given world.
@@ -407,7 +430,7 @@ public interface Server extends PluginMessageRecipient {
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
      */
-    public boolean unloadWorld(World world, boolean save);
+    public boolean unloadWorld(@NotNull World world, boolean save);
 
     /**
      * Gets the world with the given name.
@@ -415,7 +438,8 @@ public interface Server extends PluginMessageRecipient {
      * @param name the name of the world to retrieve
      * @return a world with the given name, or null if none exists
      */
-    public World getWorld(String name);
+    @Nullable
+    public World getWorld(@NotNull String name);
 
     /**
      * Gets the world from the given Unique ID.
@@ -423,7 +447,8 @@ public interface Server extends PluginMessageRecipient {
      * @param uid a unique-id of the world to retrieve
      * @return a world with the given Unique ID, or null if none exists
      */
-    public World getWorld(UUID uid);
+    @Nullable
+    public World getWorld(@NotNull UUID uid);
 
     /**
      * Gets the map from the given item ID.
@@ -433,6 +458,7 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public MapView getMap(int id);
 
     /**
@@ -441,7 +467,8 @@ public interface Server extends PluginMessageRecipient {
      * @param world the world the map will belong to
      * @return a newly created map view
      */
-    public MapView createMap(World world);
+    @NotNull
+    public MapView createMap(@NotNull World world);
 
     /**
      * Create a new explorer map targeting the closest nearby structure of a
@@ -458,7 +485,8 @@ public interface Server extends PluginMessageRecipient {
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      */
-    public ItemStack createExplorerMap(World world, Location location, StructureType structureType);
+    @NotNull
+    public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType);
 
     /**
      * Create a new explorer map targeting the closest nearby structure of a
@@ -478,7 +506,8 @@ public interface Server extends PluginMessageRecipient {
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      */
-    public ItemStack createExplorerMap(World world, Location location, StructureType structureType, int radius, boolean findUnexplored);
+    @NotNull
+    public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
 
     /**
      * Reloads the server, refreshing settings and plugin information.
@@ -496,6 +525,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return Logger associated with this server
      */
+    @NotNull
     public Logger getLogger();
 
     /**
@@ -504,7 +534,8 @@ public interface Server extends PluginMessageRecipient {
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
      */
-    public PluginCommand getPluginCommand(String name);
+    @Nullable
+    public PluginCommand getPluginCommand(@NotNull String name);
 
     /**
      * Writes loaded players to disk.
@@ -521,7 +552,7 @@ public interface Server extends PluginMessageRecipient {
      * @throws CommandException thrown when the executor for the given command
      *     fails with an unhandled exception
      */
-    public boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException;
+    public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
 
     /**
      * Adds a recipe to the crafting manager.
@@ -530,7 +561,8 @@ public interface Server extends PluginMessageRecipient {
      * @return true if the recipe was added, false if it wasn't for some
      *     reason
      */
-    public boolean addRecipe(Recipe recipe);
+    @Contract("null -> false")
+    public boolean addRecipe(@Nullable Recipe recipe);
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -539,13 +571,15 @@ public interface Server extends PluginMessageRecipient {
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
      */
-    public List<Recipe> getRecipesFor(ItemStack result);
+    @NotNull
+    public List<Recipe> getRecipesFor(@NotNull ItemStack result);
 
     /**
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
      */
+    @NotNull
     public Iterator<Recipe> recipeIterator();
 
     /**
@@ -563,6 +597,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a map of aliases to command names
      */
+    @NotNull
     public Map<String, String[]> getCommandAliases();
 
     /**
@@ -614,7 +649,7 @@ public interface Server extends PluginMessageRecipient {
      *     permissibles} must have to receive the broadcast
      * @return number of message recipients
      */
-    public int broadcast(String message, String permission);
+    public int broadcast(@NotNull String message, @NotNull String permission);
 
     /**
      * Gets the player by the given name, regardless if they are offline or
@@ -633,7 +668,8 @@ public interface Server extends PluginMessageRecipient {
      * @see #getOfflinePlayer(java.util.UUID)
      */
     @Deprecated
-    public OfflinePlayer getOfflinePlayer(String name);
+    @NotNull
+    public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
     /**
      * Gets the player by the given UUID, regardless if they are offline or
@@ -645,13 +681,15 @@ public interface Server extends PluginMessageRecipient {
      * @param id the UUID of the player to retrieve
      * @return an offline player
      */
-    public OfflinePlayer getOfflinePlayer(UUID id);
+    @NotNull
+    public OfflinePlayer getOfflinePlayer(@NotNull UUID id);
 
     /**
      * Gets a set containing all current IPs that are banned.
      *
      * @return a set containing banned IP addresses
      */
+    @NotNull
     public Set<String> getIPBans();
 
     /**
@@ -659,20 +697,21 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param address the IP address to ban
      */
-    public void banIP(String address);
+    public void banIP(@NotNull String address);
 
     /**
      * Unbans the specified address from the server.
      *
      * @param address the IP address to unban
      */
-    public void unbanIP(String address);
+    public void unbanIP(@NotNull String address);
 
     /**
      * Gets a set containing all banned players.
      *
      * @return a set containing banned players
      */
+    @NotNull
     public Set<OfflinePlayer> getBannedPlayers();
 
     /**
@@ -684,13 +723,15 @@ public interface Server extends PluginMessageRecipient {
      * @param type the type of list to fetch, cannot be null
      * @return a ban list of the specified type
      */
-    public BanList getBanList(BanList.Type type);
+    @NotNull
+    public BanList getBanList(@NotNull BanList.Type type);
 
     /**
      * Gets a set containing all player operators.
      *
      * @return a set containing player operators
      */
+    @NotNull
     public Set<OfflinePlayer> getOperators();
 
     /**
@@ -698,6 +739,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the default game mode
      */
+    @NotNull
     public GameMode getDefaultGameMode();
 
     /**
@@ -705,7 +747,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param mode the new game mode
      */
-    public void setDefaultGameMode(GameMode mode);
+    public void setDefaultGameMode(@NotNull GameMode mode);
 
     /**
      * Gets a {@link ConsoleCommandSender} that may be used as an input source
@@ -713,6 +755,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a console command sender
      */
+    @NotNull
     public ConsoleCommandSender getConsoleSender();
 
     /**
@@ -720,6 +763,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return folder that contains all worlds
      */
+    @NotNull
     public File getWorldContainer();
 
     /**
@@ -727,6 +771,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return an array containing all previous players
      */
+    @NotNull
     public OfflinePlayer[] getOfflinePlayers();
 
     /**
@@ -734,6 +779,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return messenger responsible for this server
      */
+    @NotNull
     public Messenger getMessenger();
 
     /**
@@ -741,6 +787,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a help map for this server
      */
+    @NotNull
     public HelpMap getHelpMap();
 
     /**
@@ -766,7 +813,8 @@ public interface Server extends PluginMessageRecipient {
      *
      * @see InventoryType#isCreatable()
      */
-    Inventory createInventory(InventoryHolder owner, InventoryType type);
+    @NotNull
+    Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
 
     /**
      * Creates an empty inventory with the specified type and title. If the type
@@ -792,7 +840,8 @@ public interface Server extends PluginMessageRecipient {
      *
      * @see InventoryType#isCreatable()
      */
-    Inventory createInventory(InventoryHolder owner, InventoryType type, String title);
+    @NotNull
+    Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
 
     /**
      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
@@ -803,7 +852,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      */
-    Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException;
+    @NotNull
+    Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
 
     /**
      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
@@ -816,7 +866,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      */
-    Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException;
+    @NotNull
+    Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
 
     /**
      * Creates an empty merchant.
@@ -825,7 +876,8 @@ public interface Server extends PluginMessageRecipient {
      * when the merchant inventory is viewed
      * @return a new merchant
      */
-    Merchant createMerchant(String title);
+    @NotNull
+    Merchant createMerchant(@Nullable String title);
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a
@@ -878,6 +930,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the servers MOTD
      */
+    @NotNull
     String getMotd();
 
     /**
@@ -885,6 +938,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the shutdown message
      */
+    @Nullable
     String getShutdownMessage();
 
     /**
@@ -892,6 +946,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the configured warning state
      */
+    @NotNull
     public WarningState getWarningState();
 
     /**
@@ -900,6 +955,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the item factory
      * @see ItemFactory
      */
+    @NotNull
     ItemFactory getItemFactory();
 
     /**
@@ -909,6 +965,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return the scoreboard manager or null if no worlds are loaded.
      */
+    @Nullable
     ScoreboardManager getScoreboardManager();
 
     /**
@@ -918,6 +975,7 @@ public interface Server extends PluginMessageRecipient {
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
      */
+    @Nullable
     CachedServerIcon getServerIcon();
 
     /**
@@ -934,7 +992,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
-    CachedServerIcon loadServerIcon(File file) throws IllegalArgumentException, Exception;
+    @NotNull
+    CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception;
 
     /**
      * Creates a cached server-icon for the specific image.
@@ -949,7 +1008,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
-    CachedServerIcon loadServerIcon(BufferedImage image) throws IllegalArgumentException, Exception;
+    @NotNull
+    CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception;
 
     /**
      * Set the idle kick timeout. Any players idle for the specified amount of
@@ -977,7 +1037,8 @@ public interface Server extends PluginMessageRecipient {
      * @return a new ChunkData for the world
      * 
      */
-    public ChunkGenerator.ChunkData createChunkData(World world);
+    @NotNull
+    public ChunkGenerator.ChunkData createChunkData(@NotNull World world);
 
     /**
      * Creates a boss bar instance to display to players. The progress
@@ -989,7 +1050,8 @@ public interface Server extends PluginMessageRecipient {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags);
+    @NotNull
+    BossBar createBossBar(@Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags);
 
     /**
      * Creates a boss bar instance to display to players. The progress defaults
@@ -1005,7 +1067,8 @@ public interface Server extends PluginMessageRecipient {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    KeyedBossBar createBossBar(NamespacedKey key, String title, BarColor color, BarStyle style, BarFlag... flags);
+    @NotNull
+    KeyedBossBar createBossBar(@NotNull NamespacedKey key, @Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags);
 
     /**
      * Gets an unmodifiable iterator through all persistent bossbars.
@@ -1021,6 +1084,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return a bossbar iterator
      */
+    @NotNull
     Iterator<KeyedBossBar> getBossBars();
 
     /**
@@ -1038,7 +1102,8 @@ public interface Server extends PluginMessageRecipient {
      * @param key unique bossbar key
      * @return bossbar or null if not exists
      */
-    KeyedBossBar getBossBar(NamespacedKey key);
+    @Nullable
+    KeyedBossBar getBossBar(@NotNull NamespacedKey key);
 
     /**
      * Removes a {@link KeyedBossBar} specified by this key.
@@ -1055,7 +1120,7 @@ public interface Server extends PluginMessageRecipient {
      * @param key unique bossbar key
      * @return true if removal succeeded or false
      */
-    boolean removeBossBar(NamespacedKey key);
+    boolean removeBossBar(@NotNull NamespacedKey key);
 
     /**
      * Gets an entity on the server by its UUID
@@ -1063,7 +1128,8 @@ public interface Server extends PluginMessageRecipient {
      * @param uuid the UUID of the entity
      * @return the entity with the given UUID, or null if it isn't found
      */
-    Entity getEntity(UUID uuid);
+    @Nullable
+    Entity getEntity(@NotNull UUID uuid);
 
     /**
      * Get the advancement specified by this key.
@@ -1071,7 +1137,8 @@ public interface Server extends PluginMessageRecipient {
      * @param key unique advancement key
      * @return advancement or null if not exists
      */
-    Advancement getAdvancement(NamespacedKey key);
+    @Nullable
+    Advancement getAdvancement(@NotNull NamespacedKey key);
 
     /**
      * Get an iterator through all advancements. Advancements cannot be removed
@@ -1079,6 +1146,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @return an advancement iterator
      */
+    @NotNull
     Iterator<Advancement> advancementIterator();
 
     /**
@@ -1088,7 +1156,8 @@ public interface Server extends PluginMessageRecipient {
      * @param material the material
      * @return new data instance
      */
-    BlockData createBlockData(Material material);
+    @NotNull
+    BlockData createBlockData(@NotNull Material material);
 
     /**
      * Creates a new {@link BlockData} instance for the specified Material, with
@@ -1098,7 +1167,8 @@ public interface Server extends PluginMessageRecipient {
      * @param consumer consumer to run on new instance before returning
      * @return new data instance
      */
-    public BlockData createBlockData(Material material, Consumer<BlockData> consumer);
+    @NotNull
+    public BlockData createBlockData(@NotNull Material material, @Nullable Consumer<BlockData> consumer);
 
     /**
      * Creates a new {@link BlockData} instance with material and properties
@@ -1108,7 +1178,8 @@ public interface Server extends PluginMessageRecipient {
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
-    BlockData createBlockData(String data) throws IllegalArgumentException;
+    @NotNull
+    BlockData createBlockData(@NotNull String data) throws IllegalArgumentException;
 
     /**
      * Creates a new {@link BlockData} instance for the specified Material, with
@@ -1123,7 +1194,9 @@ public interface Server extends PluginMessageRecipient {
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
      */
-    BlockData createBlockData(Material material, String data) throws IllegalArgumentException;
+    @NotNull
+    @Contract("null, null -> fail")
+    BlockData createBlockData(@Nullable Material material, @Nullable String data) throws IllegalArgumentException;
 
     /**
      * Gets a tag which has already been defined within the server. Plugins are
@@ -1143,7 +1216,8 @@ public interface Server extends PluginMessageRecipient {
      * @param clazz the class of the tag entries
      * @return the tag or null
      */
-    <T extends Keyed> Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz);
+    @Nullable
+    <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz);
 
     /**
      * Gets a all tags which have been defined within the server.
@@ -1158,7 +1232,8 @@ public interface Server extends PluginMessageRecipient {
      * @param clazz the class of the tag entries
      * @return all defined tags
      */
-    <T extends Keyed> Iterable<Tag<T>> getTags(String registry, Class<T> clazz);
+    @NotNull
+    <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz);
 
     /**
      * Gets the specified {@link LootTable}.
@@ -1166,7 +1241,8 @@ public interface Server extends PluginMessageRecipient {
      * @param key the name of the LootTable
      * @return the LootTable, or null if no LootTable is found with that name
      */
-    LootTable getLootTable(NamespacedKey key);
+    @Nullable
+    LootTable getLootTable(@NotNull NamespacedKey key);
 
     /**
      * Selects entities using the given Vanilla selector.
@@ -1190,12 +1266,14 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated draft API
      */
     @Deprecated
-    List<Entity> selectEntities(CommandSender sender, String selector) throws IllegalArgumentException;
+    @NotNull
+    List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException;
 
     /**
      * @see UnsafeValues
      * @return the unsafe values instance
      */
     @Deprecated
+    @NotNull
     UnsafeValues getUnsafe();
 }

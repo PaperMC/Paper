@@ -1,5 +1,8 @@
 package org.bukkit.block;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a block (usually a container) that may be locked. When a lock is
  * active an item with a name corresponding to the key will be required to open
@@ -19,6 +22,7 @@ public interface Lockable {
      *
      * @return the key needed.
      */
+    @NotNull
     String getLock();
 
     /**
@@ -27,5 +31,5 @@ public interface Lockable {
      *
      * @param key the key required to access the container.
      */
-    void setLock(String key);
+    void setLock(@Nullable String key);
 }

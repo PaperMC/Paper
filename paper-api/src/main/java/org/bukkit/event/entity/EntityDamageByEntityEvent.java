@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.google.common.base.Function;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity is damaged by an entity
@@ -11,12 +12,12 @@ import org.bukkit.entity.Entity;
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
     private final Entity damager;
 
-    public EntityDamageByEntityEvent(final Entity damager, final Entity damagee, final DamageCause cause, final double damage) {
+    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         super(damagee, cause, damage);
         this.damager = damager;
     }
 
-    public EntityDamageByEntityEvent(final Entity damager, final Entity damagee, final DamageCause cause, final Map<DamageModifier, Double> modifiers, final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee, cause, modifiers, modifierFunctions);
         this.damager = damager;
     }
@@ -26,6 +27,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
      *
      * @return Entity that damaged the defender.
      */
+    @NotNull
     public Entity getDamager() {
         return damager;
     }

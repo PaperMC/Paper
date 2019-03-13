@@ -5,6 +5,7 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.block.structure.UsageMode;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BlockVector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a structure block that can save and load blocks from a file. They
@@ -17,6 +18,7 @@ public interface Structure extends BlockState {
      *
      * @return structure name
      */
+    @NotNull
     String getStructureName();
 
     /**
@@ -27,21 +29,22 @@ public interface Structure extends BlockState {
      *
      * @param name the case-sensitive name of this structure
      */
-    void setStructureName(String name);
+    void setStructureName(@NotNull String name);
 
     /**
      * Get the name of who created this structure.
      *
      * @return the name of whoever created this structure.
      */
+    @NotNull
     String getAuthor();
 
     /**
      * Set the name of whoever created this structure.
      *
-     * @param author whoever created this structure
+     * @param author whoever created this structure (not empty)
      */
-    void setAuthor(String author);
+    void setAuthor(@NotNull String author);
 
     /**
      * Set the name of whoever created this structure using a
@@ -49,7 +52,7 @@ public interface Structure extends BlockState {
      *
      * @param livingEntity the entity who created this structure
      */
-    void setAuthor(LivingEntity livingEntity);
+    void setAuthor(@NotNull LivingEntity livingEntity);
 
     /**
      * The relative position of the structure outline based on the position of
@@ -59,6 +62,7 @@ public interface Structure extends BlockState {
      * @return a Location which contains the relative distance this structure is
      * from the structure block.
      */
+    @NotNull
     BlockVector getRelativePosition();
 
     /**
@@ -68,7 +72,7 @@ public interface Structure extends BlockState {
      * @param vector the {@link BlockVector} containing the relative origin
      * coordinates of this structure.
      */
-    void setRelativePosition(BlockVector vector);
+    void setRelativePosition(@NotNull BlockVector vector);
 
     /**
      * The distance to the opposite corner of this structure. The maximum
@@ -79,6 +83,7 @@ public interface Structure extends BlockState {
      * @return a {@link BlockVector} which contains the total size of the
      * structure.
      */
+    @NotNull
     BlockVector getStructureSize();
 
     /**
@@ -88,20 +93,21 @@ public interface Structure extends BlockState {
      * @param vector the {@link BlockVector} containing the size of this
      * structure, based off of the origin coordinates.
      */
-    void setStructureSize(BlockVector vector);
+    void setStructureSize(@NotNull BlockVector vector);
 
     /**
      * Sets the mirroring of the structure.
      *
      * @param mirror the new mirroring method
      */
-    void setMirror(Mirror mirror);
+    void setMirror(@NotNull Mirror mirror);
 
     /**
      * How this structure is mirrored.
      *
      * @return the current mirroring method
      */
+    @NotNull
     Mirror getMirror();
 
     /**
@@ -109,13 +115,14 @@ public interface Structure extends BlockState {
      *
      * @param rotation the new rotation
      */
-    void setRotation(StructureRotation rotation);
+    void setRotation(@NotNull StructureRotation rotation);
 
     /**
      * Get how this structure is rotated.
      *
      * @return the new rotation
      */
+    @NotNull
     StructureRotation getRotation();
 
     /**
@@ -123,13 +130,14 @@ public interface Structure extends BlockState {
      *
      * @param mode the new mode to set.
      */
-    void setUsageMode(UsageMode mode);
+    void setUsageMode(@NotNull UsageMode mode);
 
     /**
      * Get the {@link UsageMode} of this structure block.
      *
      * @return the mode this block is currently in.
      */
+    @NotNull
     UsageMode getUsageMode();
 
     /**
@@ -220,7 +228,7 @@ public interface Structure extends BlockState {
      *
      * @param metadata the function to perform on the selected location
      */
-    void setMetadata(String metadata);
+    void setMetadata(@NotNull String metadata);
 
     /**
      * Get the metadata function this structure block will perform when
@@ -230,5 +238,6 @@ public interface Structure extends BlockState {
      *
      * @return the function that will be performed when this block is activated
      */
+    @NotNull
     String getMetadata();
 }

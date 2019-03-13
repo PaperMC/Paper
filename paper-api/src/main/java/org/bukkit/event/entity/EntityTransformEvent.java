@@ -5,6 +5,7 @@ import java.util.List;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity is about to be replaced by another entity.
@@ -17,7 +18,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
     private final List<Entity> convertedList;
     private final TransformReason transformReason;
 
-    public EntityTransformEvent(Entity original, List<Entity> convertedList, TransformReason transformReason) {
+    public EntityTransformEvent(@NotNull Entity original, @NotNull List<Entity> convertedList, @NotNull TransformReason transformReason) {
         super(original);
         this.convertedList = Collections.unmodifiableList(convertedList);
         this.converted = convertedList.get(0);
@@ -32,6 +33,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      * @return The transformed entity.
      * @see #getTransformedEntities()
      */
+    @NotNull
     public Entity getTransformedEntity() {
         return converted;
     }
@@ -41,6 +43,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      *
      * @return The transformed entities.
      */
+    @NotNull
     public List<Entity> getTransformedEntities() {
         return convertedList;
     }
@@ -50,6 +53,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      *
      * @return The reason for conversion that has occurred.
      */
+    @NotNull
     public TransformReason getTransformReason() {
         return transformReason;
     }
@@ -64,11 +68,13 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

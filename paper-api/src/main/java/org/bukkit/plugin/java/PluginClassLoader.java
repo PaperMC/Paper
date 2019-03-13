@@ -19,6 +19,8 @@ import java.util.jar.Manifest;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A ClassLoader for plugins, to allow shared classes across multiple plugins
@@ -40,7 +42,7 @@ final class PluginClassLoader extends URLClassLoader {
         ClassLoader.registerAsParallelCapable();
     }
 
-    PluginClassLoader(final JavaPluginLoader loader, final ClassLoader parent, final PluginDescriptionFile description, final File dataFolder, final File file) throws IOException, InvalidPluginException, MalformedURLException {
+    PluginClassLoader(@NotNull final JavaPluginLoader loader, @Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file) throws IOException, InvalidPluginException, MalformedURLException {
         super(new URL[] {file.toURI().toURL()}, parent);
         Validate.notNull(loader, "Loader cannot be null");
 
@@ -80,7 +82,7 @@ final class PluginClassLoader extends URLClassLoader {
         return findClass(name, true);
     }
 
-    Class<?> findClass(String name, boolean checkGlobal) throws ClassNotFoundException {
+    Class<?> findClass(@NotNull String name, boolean checkGlobal) throws ClassNotFoundException {
         if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
             throw new ClassNotFoundException(name);
         }
@@ -154,11 +156,12 @@ final class PluginClassLoader extends URLClassLoader {
         }
     }
 
+    @NotNull
     Set<String> getClasses() {
         return classes.keySet();
     }
 
-    synchronized void initialize(JavaPlugin javaPlugin) {
+    synchronized void initialize(@NotNull JavaPlugin javaPlugin) {
         Validate.notNull(javaPlugin, "Initializing plugin cannot be null");
         Validate.isTrue(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
         if (this.plugin != null || this.pluginInit != null) {

@@ -3,6 +3,7 @@ package org.bukkit.event.inventory;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a player in creative mode puts down or picks up
@@ -12,16 +13,17 @@ import org.bukkit.inventory.ItemStack;
 public class InventoryCreativeEvent extends InventoryClickEvent {
     private ItemStack item;
 
-    public InventoryCreativeEvent(InventoryView what, SlotType type, int slot, ItemStack newItem) {
+    public InventoryCreativeEvent(@NotNull InventoryView what, @NotNull SlotType type, int slot, @NotNull ItemStack newItem) {
         super(what, type, slot, ClickType.CREATIVE, InventoryAction.PLACE_ALL);
         this.item = newItem;
     }
 
+    @NotNull
     public ItemStack getCursor() {
         return item;
     }
 
-    public void setCursor(ItemStack item) {
+    public void setCursor(@NotNull ItemStack item) {
         this.item = item;
     }
 }

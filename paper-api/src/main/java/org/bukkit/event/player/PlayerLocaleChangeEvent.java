@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player changes their locale in the client settings.
@@ -12,7 +13,7 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
     //
     private final String locale;
 
-    public PlayerLocaleChangeEvent(Player who, String locale) {
+    public PlayerLocaleChangeEvent(@NotNull Player who, @NotNull String locale) {
         super(who);
         this.locale = locale;
     }
@@ -22,15 +23,18 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
      *
      * @return the player's new locale
      */
+    @NotNull
     public String getLocale() {
         return locale;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

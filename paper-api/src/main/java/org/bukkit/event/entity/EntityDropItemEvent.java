@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when an entity creates an item drop.
@@ -14,7 +15,7 @@ public class EntityDropItemEvent extends EntityEvent implements Cancellable {
     private final Item drop;
     private boolean cancel = false;
 
-    public EntityDropItemEvent(final Entity entity, final Item drop) {
+    public EntityDropItemEvent(@NotNull final Entity entity, @NotNull final Item drop) {
         super(entity);
         this.drop = drop;
     }
@@ -24,6 +25,7 @@ public class EntityDropItemEvent extends EntityEvent implements Cancellable {
      *
      * @return Item created by the entity
      */
+    @NotNull
     public Item getItemDrop() {
         return drop;
     }
@@ -38,11 +40,13 @@ public class EntityDropItemEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -1,5 +1,8 @@
 package org.bukkit.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Utils for casting number types to other number types
  */
@@ -24,7 +27,7 @@ public final class NumberConversions {
         return num * num;
     }
 
-    public static int toInt(Object object) {
+    public static int toInt(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).intValue();
         }
@@ -37,7 +40,7 @@ public final class NumberConversions {
         return 0;
     }
 
-    public static float toFloat(Object object) {
+    public static float toFloat(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).floatValue();
         }
@@ -50,7 +53,7 @@ public final class NumberConversions {
         return 0;
     }
 
-    public static double toDouble(Object object) {
+    public static double toDouble(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).doubleValue();
         }
@@ -63,7 +66,7 @@ public final class NumberConversions {
         return 0;
     }
 
-    public static long toLong(Object object) {
+    public static long toLong(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).longValue();
         }
@@ -76,7 +79,7 @@ public final class NumberConversions {
         return 0;
     }
 
-    public static short toShort(Object object) {
+    public static short toShort(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).shortValue();
         }
@@ -89,7 +92,7 @@ public final class NumberConversions {
         return 0;
     }
 
-    public static byte toByte(Object object) {
+    public static byte toByte(@Nullable Object object) {
         if (object instanceof Number) {
             return ((Number) object).byteValue();
         }
@@ -110,13 +113,13 @@ public final class NumberConversions {
         return Math.abs(f) <= Float.MAX_VALUE;
     }
 
-    public static void checkFinite(double d, String message) {
+    public static void checkFinite(double d, @NotNull String message) {
         if (!isFinite(d)) {
             throw new IllegalArgumentException(message);
         }
     }
 
-    public static void checkFinite(float d, String message) {
+    public static void checkFinite(float d, @NotNull String message) {
         if (!isFinite(d)) {
             throw new IllegalArgumentException(message);
         }

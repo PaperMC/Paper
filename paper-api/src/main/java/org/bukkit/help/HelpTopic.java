@@ -2,6 +2,8 @@ package org.bukkit.help;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * HelpTopic implementations are displayed to the user when the user uses the
@@ -16,11 +18,11 @@ import org.bukkit.entity.Player;
  * the methods in this class.
  */
 public abstract class HelpTopic {
-    protected String name;
-    protected String shortText;
-    protected String fullText;
-    protected String amendedPermission;
-    
+    protected String name = "";
+    protected String shortText = "";
+    protected String fullText = "";
+    protected String amendedPermission = null;
+
     /**
      * Determines if a {@link Player} is allowed to see this help topic.
      * <p>
@@ -30,7 +32,7 @@ public abstract class HelpTopic {
      * @param player The Player in question.
      * @return True of the Player can see this help topic, false otherwise.
      */
-    public abstract boolean canSee(CommandSender player);
+    public abstract boolean canSee(@NotNull CommandSender player);
 
     /**
      * Allows the server administrator to override the permission required to
@@ -43,7 +45,7 @@ public abstract class HelpTopic {
      * @param amendedPermission The permission node the server administrator
      *     wishes to apply to this topic.
      */
-    public void amendCanSee(String amendedPermission) {
+    public void amendCanSee(@Nullable String amendedPermission) {
         this.amendedPermission = amendedPermission;
     }
 
@@ -52,6 +54,7 @@ public abstract class HelpTopic {
      *
      * @return The topic name.
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -61,6 +64,7 @@ public abstract class HelpTopic {
      *
      * @return A brief topic description.
      */
+    @NotNull
     public String getShortText() {
         return shortText;
     }
@@ -77,7 +81,8 @@ public abstract class HelpTopic {
      *
      * @return A full topic description.
      */
-    public String getFullText(CommandSender forWho) {
+    @NotNull
+    public String getFullText(@NotNull CommandSender forWho) {
         return fullText;
     }
 
@@ -95,7 +100,7 @@ public abstract class HelpTopic {
      * @param amendedFullText The new topic full text to use, or null to leave
      *     alone.
      */
-    public void amendTopic(String amendedShortText, String amendedFullText) {
+    public void amendTopic(@Nullable String amendedShortText, @Nullable String amendedFullText) {
         shortText = applyAmendment(shortText, amendedShortText);
         fullText = applyAmendment(fullText, amendedFullText);
     }
@@ -111,7 +116,8 @@ public abstract class HelpTopic {
      * @return The application of the amending text to the existing text,
      *     according to the expected rules of amendTopic().
      */
-    protected String applyAmendment(String baseText, String amendment) {
+    @NotNull
+    protected String applyAmendment(@NotNull String baseText, @Nullable String amendment) {
         if (amendment == null) {
             return baseText;
         } else {

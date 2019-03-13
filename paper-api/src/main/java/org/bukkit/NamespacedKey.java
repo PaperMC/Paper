@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a String based key which consists of two components - a namespace
@@ -43,7 +44,7 @@ public final class NamespacedKey {
      * @deprecated should never be used by plugins, for internal use only!!
      */
     @Deprecated
-    public NamespacedKey(String namespace, String key) {
+    public NamespacedKey(@NotNull String namespace, @NotNull String key) {
         Preconditions.checkArgument(namespace != null && VALID_NAMESPACE.matcher(namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
         Preconditions.checkArgument(key != null && VALID_KEY.matcher(key).matches(), "Invalid key. Must be [a-z0-9/._-]: %s", key);
 
@@ -66,7 +67,7 @@ public final class NamespacedKey {
      * @param plugin the plugin to use for the namespace
      * @param key the key to create
      */
-    public NamespacedKey(Plugin plugin, String key) {
+    public NamespacedKey(@NotNull Plugin plugin, @NotNull String key) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         Preconditions.checkArgument(key != null, "Key cannot be null");
 
@@ -81,10 +82,12 @@ public final class NamespacedKey {
         Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
     }
 
+    @NotNull
     public String getNamespace() {
         return namespace;
     }
 
+    @NotNull
     public String getKey() {
         return key;
     }
@@ -121,6 +124,7 @@ public final class NamespacedKey {
      * @deprecated should never be used by plugins, for internal use only!!
      */
     @Deprecated
+    @NotNull
     public static NamespacedKey randomKey() {
         return new NamespacedKey(BUKKIT, UUID.randomUUID().toString());
     }
@@ -131,7 +135,8 @@ public final class NamespacedKey {
      * @param key the key to use
      * @return new key in the Minecraft namespace
      */
-    public static NamespacedKey minecraft(String key) {
+    @NotNull
+    public static NamespacedKey minecraft(@NotNull String key) {
         return new NamespacedKey(MINECRAFT, key);
     }
 }

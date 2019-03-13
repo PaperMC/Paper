@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Powerable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'mode' indicates what mode this comparator will operate in.
@@ -13,6 +14,7 @@ public interface Comparator extends Directional, Powerable {
      *
      * @return the 'mode' value
      */
+    @NotNull
     Mode getMode();
 
     /**
@@ -20,7 +22,7 @@ public interface Comparator extends Directional, Powerable {
      *
      * @param mode the new 'mode' value
      */
-    void setMode(Mode mode);
+    void setMode(@NotNull Mode mode);
 
     /**
      * The mode in which a comparator will operate in.

@@ -3,6 +3,8 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a block is destroyed as a result of being burnt by fire.
@@ -16,11 +18,11 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private final Block ignitingBlock;
 
     @Deprecated
-    public BlockBurnEvent(final Block block) {
+    public BlockBurnEvent(@NotNull final Block block) {
         this(block, null);
     }
 
-    public BlockBurnEvent(final Block block, final Block ignitingBlock) {
+    public BlockBurnEvent(@NotNull final Block block, @Nullable final Block ignitingBlock) {
         super(block);
         this.ignitingBlock = ignitingBlock;
     }
@@ -31,6 +33,7 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
      * @return The Block that ignited and burned this block, or null if no
      * source block exists
      */
+    @Nullable
     public Block getIgnitingBlock() {
         return ignitingBlock;
     }
@@ -43,11 +46,13 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

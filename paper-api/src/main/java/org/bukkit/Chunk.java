@@ -3,6 +3,7 @@ package org.bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a chunk of blocks
@@ -28,6 +29,7 @@ public interface Chunk {
      *
      * @return Parent World
      */
+    @NotNull
     World getWorld();
 
     /**
@@ -38,6 +40,7 @@ public interface Chunk {
      * @param z 0-15
      * @return the Block
      */
+    @NotNull
     Block getBlock(int x, int y, int z);
 
     /**
@@ -45,6 +48,7 @@ public interface Chunk {
      *
      * @return ChunkSnapshot
      */
+    @NotNull
     ChunkSnapshot getChunkSnapshot();
 
     /**
@@ -58,6 +62,7 @@ public interface Chunk {
      *     raw biome temperature and rainfall
      * @return ChunkSnapshot
      */
+    @NotNull
     ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain);
 
     /**
@@ -65,6 +70,7 @@ public interface Chunk {
      *
      * @return The entities.
      */
+    @NotNull
     Entity[] getEntities();
 
     /**
@@ -72,6 +78,7 @@ public interface Chunk {
      *
      * @return The tile entities.
      */
+    @NotNull
     BlockState[] getTileEntities();
 
     /**

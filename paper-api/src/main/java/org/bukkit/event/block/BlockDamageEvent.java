@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is damaged by a player.
@@ -18,7 +19,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private boolean cancel;
     private final ItemStack itemstack;
 
-    public BlockDamageEvent(final Player player, final Block block, final ItemStack itemInHand, final boolean instaBreak) {
+    public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final ItemStack itemInHand, final boolean instaBreak) {
         super(block);
         this.instaBreak = instaBreak;
         this.player = player;
@@ -31,6 +32,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
      *
      * @return The player damaging the block involved in this event
      */
+    @NotNull
     public Player getPlayer() {
         return player;
     }
@@ -60,6 +62,7 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
      *
      * @return The ItemStack for the item currently in the player's hand
      */
+    @NotNull
     public ItemStack getItemInHand() {
         return itemstack;
     }
@@ -72,11 +75,13 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

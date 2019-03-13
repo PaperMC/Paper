@@ -1,5 +1,8 @@
 package org.bukkit.attribute;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents an object which may contain attributes.
  */
@@ -12,5 +15,6 @@ public interface Attributable {
      * @param attribute the attribute to get
      * @return the attribute instance or null if not applicable to this object
      */
-    AttributeInstance getAttribute(Attribute attribute);
+    @Nullable
+    AttributeInstance getAttribute(@NotNull Attribute attribute);
 }

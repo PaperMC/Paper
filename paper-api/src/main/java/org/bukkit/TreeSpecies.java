@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the different species of trees regardless of size.
@@ -62,6 +63,7 @@ public enum TreeSpecies {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static TreeSpecies getByData(final byte data) {
         return BY_DATA.get(data);
     }

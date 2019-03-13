@@ -4,6 +4,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a Pig Zombie is angered by another entity.
@@ -17,7 +19,7 @@ public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
     private final Entity target;
     private int newAnger;
 
-    public PigZombieAngerEvent(final PigZombie pigZombie, final Entity target, final int newAnger) {
+    public PigZombieAngerEvent(@NotNull final PigZombie pigZombie, @Nullable final Entity target, final int newAnger) {
         super(pigZombie);
         this.target = target;
         this.newAnger = newAnger;
@@ -28,6 +30,7 @@ public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
      *
      * @return triggering entity, or null
      */
+    @Nullable
     public Entity getTarget() {
         return target;
     }
@@ -52,6 +55,7 @@ public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
         this.newAnger = newAnger;
     }
 
+    @NotNull
     @Override
     public PigZombie getEntity() {
         return (PigZombie) entity;
@@ -67,11 +71,13 @@ public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

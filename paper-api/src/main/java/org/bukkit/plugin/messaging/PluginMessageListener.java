@@ -1,6 +1,7 @@
 package org.bukkit.plugin.messaging;
 
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A listener for a specific Plugin Channel, which will receive notifications
@@ -16,5 +17,5 @@ public interface PluginMessageListener {
      * @param player Source of the message.
      * @param message The raw message that was sent.
      */
-    public void onPluginMessageReceived(String channel, Player player, byte[] message);
+    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, @NotNull byte[] message);
 }

@@ -4,6 +4,8 @@ import java.util.Random;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents various types of options that may be used to create a world.
@@ -22,7 +24,7 @@ public class WorldCreator {
      *
      * @param name Name of the world that will be created
      */
-    public WorldCreator(String name) {
+    public WorldCreator(@NotNull String name) {
         if (name == null) {
             throw new IllegalArgumentException("World name cannot be null");
         }
@@ -37,7 +39,8 @@ public class WorldCreator {
      * @param world World to copy options from
      * @return This object, for chaining
      */
-    public WorldCreator copy(World world) {
+    @NotNull
+    public WorldCreator copy(@NotNull World world) {
         if (world == null) {
             throw new IllegalArgumentException("World cannot be null");
         }
@@ -55,7 +58,8 @@ public class WorldCreator {
      * @param creator World creator to copy options from
      * @return This object, for chaining
      */
-    public WorldCreator copy(WorldCreator creator) {
+    @NotNull
+    public WorldCreator copy(@NotNull WorldCreator creator) {
         if (creator == null) {
             throw new IllegalArgumentException("Creator cannot be null");
         }
@@ -72,6 +76,7 @@ public class WorldCreator {
      *
      * @return World name
      */
+    @NotNull
     public String name() {
         return name;
     }
@@ -91,6 +96,7 @@ public class WorldCreator {
      * @param seed World seed
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator seed(long seed) {
         this.seed = seed;
 
@@ -102,6 +108,7 @@ public class WorldCreator {
      *
      * @return World environment
      */
+    @NotNull
     public World.Environment environment() {
         return environment;
     }
@@ -112,7 +119,8 @@ public class WorldCreator {
      * @param env World environment
      * @return This object, for chaining
      */
-    public WorldCreator environment(World.Environment env) {
+    @NotNull
+    public WorldCreator environment(@NotNull World.Environment env) {
         this.environment = env;
 
         return this;
@@ -123,6 +131,7 @@ public class WorldCreator {
      *
      * @return World type
      */
+    @NotNull
     public WorldType type() {
         return type;
     }
@@ -133,7 +142,8 @@ public class WorldCreator {
      * @param type World type
      * @return This object, for chaining
      */
-    public WorldCreator type(WorldType type) {
+    @NotNull
+    public WorldCreator type(@NotNull WorldType type) {
         this.type = type;
 
         return this;
@@ -147,6 +157,7 @@ public class WorldCreator {
      *
      * @return Chunk generator
      */
+    @Nullable
     public ChunkGenerator generator() {
         return generator;
     }
@@ -160,7 +171,8 @@ public class WorldCreator {
      * @param generator Chunk generator
      * @return This object, for chaining
      */
-    public WorldCreator generator(ChunkGenerator generator) {
+    @NotNull
+    public WorldCreator generator(@Nullable ChunkGenerator generator) {
         this.generator = generator;
 
         return this;
@@ -179,7 +191,8 @@ public class WorldCreator {
      * @param generator Name of the generator to use, in "plugin:id" notation
      * @return This object, for chaining
      */
-    public WorldCreator generator(String generator) {
+    @NotNull
+    public WorldCreator generator(@Nullable String generator) {
         this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
 
         return this;
@@ -200,7 +213,8 @@ public class WorldCreator {
      *     messages
      * @return This object, for chaining
      */
-    public WorldCreator generator(String generator, CommandSender output) {
+    @NotNull
+    public WorldCreator generator(@Nullable String generator, @Nullable CommandSender output) {
         this.generator = getGeneratorForName(name, generator, output);
 
         return this;
@@ -212,7 +226,8 @@ public class WorldCreator {
      * @param generatorSettings The settings that should be used by the generator
      * @return This object, for chaining
      */
-    public WorldCreator generatorSettings(String generatorSettings) {
+    @NotNull
+    public WorldCreator generatorSettings(@NotNull String generatorSettings) {
         this.generatorSettings = generatorSettings;
 
         return this;
@@ -223,6 +238,7 @@ public class WorldCreator {
      *
      * @return The settings that should be used by the generator
      */
+    @NotNull
     public String generatorSettings() {
         return generatorSettings;
     }
@@ -234,6 +250,7 @@ public class WorldCreator {
      * @param generate Whether to generate structures
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator generateStructures(boolean generate) {
         this.generateStructures = generate;
 
@@ -257,6 +274,7 @@ public class WorldCreator {
      *
      * @return Newly created or loaded world
      */
+    @Nullable
     public World createWorld() {
         return Bukkit.createWorld(this);
     }
@@ -267,7 +285,8 @@ public class WorldCreator {
      * @param name Name of the world to load or create
      * @return Resulting WorldCreator
      */
-    public static WorldCreator name(String name) {
+    @NotNull
+    public static WorldCreator name(@NotNull String name) {
         return new WorldCreator(name);
     }
 
@@ -287,7 +306,8 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting generator, or null
      */
-    public static ChunkGenerator getGeneratorForName(String world, String name, CommandSender output) {
+    @Nullable
+    public static ChunkGenerator getGeneratorForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         ChunkGenerator result = null;
 
         if (world == null) {

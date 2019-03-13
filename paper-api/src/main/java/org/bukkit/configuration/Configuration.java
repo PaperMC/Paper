@@ -1,5 +1,8 @@
 package org.bukkit.configuration;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 
 /**
@@ -20,7 +23,7 @@ public interface Configuration extends ConfigurationSection {
      * @param value Value to set the default to.
      * @throws IllegalArgumentException Thrown if path is null.
      */
-    public void addDefault(String path, Object value);
+    public void addDefault(@NotNull String path, @Nullable Object value);
 
     /**
      * Sets the default values of the given paths as provided.
@@ -32,7 +35,7 @@ public interface Configuration extends ConfigurationSection {
      * @param defaults A map of Path{@literal ->}Values to add to defaults.
      * @throws IllegalArgumentException Thrown if defaults is null.
      */
-    public void addDefaults(Map<String, Object> defaults);
+    public void addDefaults(@NotNull Map<String, Object> defaults);
 
     /**
      * Sets the default values of the given paths as provided.
@@ -49,7 +52,7 @@ public interface Configuration extends ConfigurationSection {
      * @param defaults A configuration holding a list of defaults to copy.
      * @throws IllegalArgumentException Thrown if defaults is null or this.
      */
-    public void addDefaults(Configuration defaults);
+    public void addDefaults(@NotNull Configuration defaults);
 
     /**
      * Sets the source of all default values for this {@link Configuration}.
@@ -60,7 +63,7 @@ public interface Configuration extends ConfigurationSection {
      * @param defaults New source of default values for this configuration.
      * @throws IllegalArgumentException Thrown if defaults is null or this.
      */
-    public void setDefaults(Configuration defaults);
+    public void setDefaults(@NotNull Configuration defaults);
 
     /**
      * Gets the source {@link Configuration} for this configuration.
@@ -71,6 +74,7 @@ public interface Configuration extends ConfigurationSection {
      *
      * @return Configuration source for default values, or null if none exist.
      */
+    @Nullable
     public Configuration getDefaults();
 
     /**
@@ -80,5 +84,6 @@ public interface Configuration extends ConfigurationSection {
      *
      * @return Options for this configuration
      */
+    @NotNull
     public ConfigurationOptions options();
 }

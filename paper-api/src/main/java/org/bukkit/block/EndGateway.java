@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.bukkit.Location;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of an end gateway.
@@ -15,6 +16,7 @@ public interface EndGateway extends BlockState {
      * 
      * @return the gateway exit location
      */
+    @Nullable
     Location getExitLocation();
 
     /**
@@ -26,7 +28,7 @@ public interface EndGateway extends BlockState {
      * @param location the new exit location
      * @throws IllegalArgumentException for differing worlds
      */
-    void setExitLocation(Location location);
+    void setExitLocation(@Nullable Location location);
 
     /**
      * Gets whether this gateway will teleport entities directly to

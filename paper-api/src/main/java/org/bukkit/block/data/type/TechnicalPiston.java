@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Directional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'type' represents the type of piston which this (technical) block corresponds
@@ -13,6 +14,7 @@ public interface TechnicalPiston extends Directional {
      *
      * @return the 'type' value
      */
+    @NotNull
     Type getType();
 
     /**
@@ -20,7 +22,7 @@ public interface TechnicalPiston extends Directional {
      *
      * @param type the new 'type' value
      */
-    void setType(Type type);
+    void setType(@NotNull Type type);
 
     /**
      * Different piston variants.

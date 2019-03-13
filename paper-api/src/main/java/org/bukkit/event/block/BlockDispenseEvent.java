@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an item is dispensed from a block.
@@ -18,7 +19,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     private ItemStack item;
     private Vector velocity;
 
-    public BlockDispenseEvent(final Block block, final ItemStack dispensed, final Vector velocity) {
+    public BlockDispenseEvent(@NotNull final Block block, @NotNull final ItemStack dispensed, @NotNull final Vector velocity) {
         super(block);
         this.item = dispensed;
         this.velocity = velocity;
@@ -31,6 +32,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      *
      * @return An ItemStack for the item being dispensed
      */
+    @NotNull
     public ItemStack getItem() {
         return item.clone();
     }
@@ -40,7 +42,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      *
      * @param item the item being dispensed
      */
-    public void setItem(ItemStack item) {
+    public void setItem(@NotNull ItemStack item) {
         this.item = item;
     }
 
@@ -52,6 +54,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      *
      * @return A Vector for the dispensed item's velocity
      */
+    @NotNull
     public Vector getVelocity() {
         return velocity.clone();
     }
@@ -61,7 +64,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      *
      * @param vel the velocity of the item being dispensed
      */
-    public void setVelocity(Vector vel) {
+    public void setVelocity(@NotNull Vector vel) {
         velocity = vel;
     }
 
@@ -73,11 +76,13 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

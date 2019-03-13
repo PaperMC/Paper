@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the moisture level of a soil block changes.
@@ -14,7 +15,7 @@ public class MoistureChangeEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private final BlockState newState;
 
-    public MoistureChangeEvent(final Block block, final BlockState newState) {
+    public MoistureChangeEvent(@NotNull final Block block, @NotNull final BlockState newState) {
         super(block);
         this.newState = newState;
         this.cancelled = false;
@@ -25,6 +26,7 @@ public class MoistureChangeEvent extends BlockEvent implements Cancellable {
      *
      * @return new block state
      */
+    @NotNull
     public BlockState getNewState() {
         return newState;
     }
@@ -39,11 +41,13 @@ public class MoistureChangeEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -5,6 +5,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable {
 
@@ -16,7 +18,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
     private final int oldLevel;
     private int newLevel;
 
-    public CauldronLevelChangeEvent(Block block, Entity entity, ChangeReason reason, int oldLevel, int newLevel) {
+    public CauldronLevelChangeEvent(@NotNull Block block, @Nullable Entity entity, @NotNull ChangeReason reason, int oldLevel, int newLevel) {
         super(block);
         this.entity = entity;
         this.reason = reason;
@@ -29,10 +31,12 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
      *
      * @return acting entity
      */
+    @Nullable
     public Entity getEntity() {
         return entity;
     }
 
+    @NotNull
     public ChangeReason getReason() {
         return reason;
     }
@@ -60,11 +64,13 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

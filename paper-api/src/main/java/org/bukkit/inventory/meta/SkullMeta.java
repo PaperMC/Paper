@@ -1,6 +1,8 @@
 package org.bukkit.inventory.meta;
 
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a skull that can have an owner.
@@ -14,6 +16,7 @@ public interface SkullMeta extends ItemMeta {
      * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
      */
     @Deprecated
+    @Nullable
     String getOwner();
 
     /**
@@ -25,22 +28,20 @@ public interface SkullMeta extends ItemMeta {
 
     /**
      * Sets the owner of the skull.
-     * <p>
-     * Plugins should check that hasOwner() returns true before calling this
-     * plugin.
      *
      * @param owner the new owner of the skull
      * @return true if the owner was successfully set
      * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
      */
     @Deprecated
-    boolean setOwner(String owner);
+    boolean setOwner(@Nullable String owner);
 
     /**
      * Gets the owner of the skull.
      *
      * @return the owner if the skull
      */
+    @Nullable
     OfflinePlayer getOwningPlayer();
 
     /**
@@ -52,7 +53,8 @@ public interface SkullMeta extends ItemMeta {
      * @param owner the new owner of the skull
      * @return true if the owner was successfully set
      */
-    boolean setOwningPlayer(OfflinePlayer owner);
+    boolean setOwningPlayer(@Nullable OfflinePlayer owner);
 
+    @NotNull
     SkullMeta clone();
 }

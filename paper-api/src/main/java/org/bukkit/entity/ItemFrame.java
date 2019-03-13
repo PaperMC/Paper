@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 import org.bukkit.Rotation;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Item Frame
@@ -13,6 +15,7 @@ public interface ItemFrame extends Hanging {
      *
      * @return a defensive copy the item in this item frame
      */
+    @NotNull
     public ItemStack getItem();
 
     /**
@@ -20,7 +23,7 @@ public interface ItemFrame extends Hanging {
      *
      * @param item the new item
      */
-    public void setItem(ItemStack item);
+    public void setItem(@Nullable ItemStack item);
 
     /**
      * Set the item in this frame
@@ -28,13 +31,14 @@ public interface ItemFrame extends Hanging {
      * @param item the new item
      * @param playSound whether or not to play the item placement sound
      */
-    public void setItem(ItemStack item, boolean playSound);
+    public void setItem(@Nullable ItemStack item, boolean playSound);
 
     /**
      * Get the rotation of the frame's item
      *
      * @return the direction
      */
+    @NotNull
     public Rotation getRotation();
 
     /**
@@ -43,5 +47,5 @@ public interface ItemFrame extends Hanging {
      * @param rotation the new rotation
      * @throws IllegalArgumentException if rotation is null
      */
-    public void setRotation(Rotation rotation) throws IllegalArgumentException;
+    public void setRotation(@NotNull Rotation rotation) throws IllegalArgumentException;
 }

@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import org.bukkit.Material;
 import org.bukkit.block.BrewingStand;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Brewing Stand.
@@ -13,6 +14,7 @@ public interface BrewerInventory extends Inventory {
      *
      * @return The ingredient.
      */
+    @Nullable
     ItemStack getIngredient();
 
     /**
@@ -20,13 +22,14 @@ public interface BrewerInventory extends Inventory {
      *
      * @param ingredient The ingredient
      */
-    void setIngredient(ItemStack ingredient);
+    void setIngredient(@Nullable ItemStack ingredient);
 
     /**
      * Get the current fuel for brewing.
      *
      * @return The fuel
      */
+    @Nullable
     ItemStack getFuel();
 
     /**
@@ -35,7 +38,8 @@ public interface BrewerInventory extends Inventory {
      *
      * @param fuel The fuel
      */
-    void setFuel(ItemStack fuel);
+    void setFuel(@Nullable ItemStack fuel);
 
+    @Nullable
     BrewingStand getHolder();
 }

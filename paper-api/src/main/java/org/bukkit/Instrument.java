@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 public enum Instrument {
 
@@ -76,6 +77,7 @@ public enum Instrument {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static Instrument getByType(final byte type) {
         return BY_DATA.get(type);
     }

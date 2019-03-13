@@ -4,6 +4,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player discovers a new recipe in the recipe book.
@@ -15,7 +16,7 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
     private boolean cancel = false;
     private final NamespacedKey recipe;
 
-    public PlayerRecipeDiscoverEvent(Player who, NamespacedKey recipe) {
+    public PlayerRecipeDiscoverEvent(@NotNull Player who, @NotNull NamespacedKey recipe) {
         super(who);
         this.recipe = recipe;
     }
@@ -25,6 +26,7 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
      *
      * @return the discovered recipe
      */
+    @NotNull
     public NamespacedKey getRecipe() {
         return recipe;
     }
@@ -39,11 +41,13 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

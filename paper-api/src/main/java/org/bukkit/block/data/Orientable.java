@@ -2,6 +2,7 @@ package org.bukkit.block.data;
 
 import java.util.Set;
 import org.bukkit.Axis;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'axis' represents the axis along whilst this block is oriented.
@@ -17,6 +18,7 @@ public interface Orientable extends BlockData {
      *
      * @return the 'axis' value
      */
+    @NotNull
     Axis getAxis();
 
     /**
@@ -24,12 +26,13 @@ public interface Orientable extends BlockData {
      *
      * @param axis the new 'axis' value
      */
-    void setAxis(Axis axis);
+    void setAxis(@NotNull Axis axis);
 
     /**
      * Gets the axes which are applicable to this block.
      *
      * @return the allowed 'axis' values
      */
+    @NotNull
     Set<Axis> getAxes();
 }

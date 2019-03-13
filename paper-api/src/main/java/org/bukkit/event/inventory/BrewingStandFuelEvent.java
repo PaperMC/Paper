@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is about to increase the fuel level of a brewing
@@ -18,7 +19,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private boolean consuming = true;
 
-    public BrewingStandFuelEvent(Block brewingStand, ItemStack fuel, int fuelPower) {
+    public BrewingStandFuelEvent(@NotNull Block brewingStand, @NotNull ItemStack fuel, int fuelPower) {
         super(brewingStand);
         this.fuel = fuel;
         this.fuelPower = fuelPower;
@@ -29,6 +30,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
      *
      * @return the fuel ItemStack
      */
+    @NotNull
     public ItemStack getFuel() {
         return fuel;
     }
@@ -81,11 +83,13 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

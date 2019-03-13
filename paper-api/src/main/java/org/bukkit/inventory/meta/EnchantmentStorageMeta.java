@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * EnchantmentMeta is specific to items that can <i>store</i> enchantments, as
@@ -25,7 +26,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      * @param ench enchantment to check
      * @return true if this enchantment is stored in this meta
      */
-    boolean hasStoredEnchant(Enchantment ench);
+    boolean hasStoredEnchant(@NotNull Enchantment ench);
 
     /**
      * Checks for the level of the stored enchantment.
@@ -34,13 +35,14 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      * @return The level that the specified stored enchantment has, or 0 if
      *     none
      */
-    int getStoredEnchantLevel(Enchantment ench);
+    int getStoredEnchantLevel(@NotNull Enchantment ench);
 
     /**
      * Gets a copy the stored enchantments in this ItemMeta.
      *
      * @return An immutable copy of the stored enchantments
      */
+    @NotNull
     Map<Enchantment, Integer> getStoredEnchants();
 
     /**
@@ -54,7 +56,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      *     otherwise
      * @throws IllegalArgumentException if enchantment is null
      */
-    boolean addStoredEnchant(Enchantment ench, int level, boolean ignoreLevelRestriction);
+    boolean addStoredEnchant(@NotNull Enchantment ench, int level, boolean ignoreLevelRestriction);
 
     /**
      * Remove the specified stored enchantment from this item meta.
@@ -64,7 +66,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      *     otherwise
      * @throws IllegalArgumentException if enchantment is null
      */
-    boolean removeStoredEnchant(Enchantment ench) throws IllegalArgumentException;
+    boolean removeStoredEnchant(@NotNull Enchantment ench) throws IllegalArgumentException;
 
     /**
      * Checks if the specified enchantment conflicts with any enchantments in
@@ -73,7 +75,8 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
      */
-    boolean hasConflictingStoredEnchant(Enchantment ench);
+    boolean hasConflictingStoredEnchant(@NotNull Enchantment ench);
 
+    @NotNull
     EnchantmentStorageMeta clone();
 }

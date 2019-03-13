@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the fluid level of a block changes due to changes in adjacent
@@ -17,7 +18,7 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
     //
     private BlockData newData;
 
-    public FluidLevelChangeEvent(Block theBlock, BlockData newData) {
+    public FluidLevelChangeEvent(@NotNull Block theBlock, @NotNull BlockData newData) {
         super(theBlock);
         this.newData = newData;
     }
@@ -27,6 +28,7 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
      *
      * @return new data
      */
+    @NotNull
     public BlockData getNewData() {
         return newData;
     }
@@ -37,7 +39,7 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
      *
      * @param newData the new data
      */
-    public void setNewData(BlockData newData) {
+    public void setNewData(@NotNull BlockData newData) {
         Preconditions.checkArgument(newData != null, "newData null");
         Preconditions.checkArgument(this.newData.getMaterial().equals(newData.getMaterial()), "Cannot change fluid type");
 
@@ -54,11 +56,13 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

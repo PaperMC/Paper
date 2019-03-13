@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a type of potion and its effect on an entity.
@@ -178,6 +180,7 @@ public abstract class PotionEffectType {
      * @param amplifier the effect's amplifier
      * @return a resulting potion effect
      */
+    @NotNull
     public PotionEffect createEffect(int duration, int amplifier) {
         return new PotionEffect(this, isInstant() ? 1 : (int) (duration * getDurationModifier()), amplifier);
     }
@@ -205,6 +208,7 @@ public abstract class PotionEffectType {
      *
      * @return The name of this effect type
      */
+    @NotNull
     public abstract String getName();
 
     /**
@@ -219,6 +223,7 @@ public abstract class PotionEffectType {
      *
      * @return the color
      */
+    @NotNull
     public abstract Color getColor();
 
     @Override
@@ -259,6 +264,7 @@ public abstract class PotionEffectType {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static PotionEffectType getById(int id) {
         if (id >= byId.length || id < 0)
             return null;
@@ -271,7 +277,8 @@ public abstract class PotionEffectType {
      * @param name Name of PotionEffectType to fetch
      * @return Resulting PotionEffectType, or null if not found.
      */
-    public static PotionEffectType getByName(String name) {
+    @Nullable
+    public static PotionEffectType getByName(@NotNull String name) {
         Validate.notNull(name, "name cannot be null");
         return byName.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
@@ -283,7 +290,7 @@ public abstract class PotionEffectType {
      *
      * @param type PotionType to register
      */
-    public static void registerPotionEffectType(PotionEffectType type) {
+    public static void registerPotionEffectType(@NotNull PotionEffectType type) {
         if (byId[type.id] != null || byName.containsKey(type.getName().toLowerCase(java.util.Locale.ENGLISH))) {
             throw new IllegalArgumentException("Cannot set already-set type");
         } else if (!acceptingNew) {
@@ -308,6 +315,7 @@ public abstract class PotionEffectType {
      *
      * @return Array of types.
      */
+    @NotNull
     public static PotionEffectType[] values() {
         return Arrays.copyOfRange(byId, 1, byId.length);
     }

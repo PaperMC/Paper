@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents events with a source block and a destination block, currently
@@ -18,13 +19,13 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
     protected BlockFace face;
     protected boolean cancel;
 
-    public BlockFromToEvent(final Block block, final BlockFace face) {
+    public BlockFromToEvent(@NotNull final Block block, @NotNull final BlockFace face) {
         super(block);
         this.face = face;
         this.cancel = false;
     }
 
-    public BlockFromToEvent(final Block block, final Block toBlock) {
+    public BlockFromToEvent(@NotNull final Block block, @NotNull final Block toBlock) {
         super(block);
         this.to = toBlock;
         this.face = BlockFace.SELF;
@@ -36,6 +37,7 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
      *
      * @return The BlockFace that the block is moving to
      */
+    @NotNull
     public BlockFace getFace() {
         return face;
     }
@@ -45,6 +47,7 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
      *
      * @return The faced Block
      */
+    @NotNull
     public Block getToBlock() {
         if (to == null) {
             to = block.getRelative(face);
@@ -60,11 +63,13 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

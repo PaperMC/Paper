@@ -1,5 +1,7 @@
 package org.bukkit.conversations;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A ConversationPrefix implementation prepends all output from the
  * conversation to the player. The ConversationPrefix can be used to display
@@ -13,5 +15,6 @@ public interface ConversationPrefix {
      * @param context Context information about the conversation.
      * @return The prefix text.
      */
-    String getPrefix(ConversationContext context);
+    @NotNull
+    String getPrefix(@NotNull ConversationContext context);
 }

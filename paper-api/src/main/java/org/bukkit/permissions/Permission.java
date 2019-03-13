@@ -10,6 +10,8 @@ import java.util.logging.Level;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a unique permission that may be attached to a {@link
@@ -23,35 +25,35 @@ public class Permission {
     private PermissionDefault defaultValue = DEFAULT_PERMISSION;
     private String description;
 
-    public Permission(String name) {
+    public Permission(@NotNull String name) {
         this(name, null, null, null);
     }
 
-    public Permission(String name, String description) {
+    public Permission(@NotNull String name, @Nullable String description) {
         this(name, description, null, null);
     }
 
-    public Permission(String name, PermissionDefault defaultValue) {
+    public Permission(@NotNull String name, @Nullable PermissionDefault defaultValue) {
         this(name, null, defaultValue, null);
     }
 
-    public Permission(String name, String description, PermissionDefault defaultValue) {
+    public Permission(@NotNull String name, @Nullable String description, @Nullable PermissionDefault defaultValue) {
         this(name, description, defaultValue, null);
     }
 
-    public Permission(String name, Map<String, Boolean> children) {
+    public Permission(@NotNull String name, @Nullable Map<String, Boolean> children) {
         this(name, null, null, children);
     }
 
-    public Permission(String name, String description, Map<String, Boolean> children) {
+    public Permission(@NotNull String name, @Nullable String description, @Nullable Map<String, Boolean> children) {
         this(name, description, null, children);
     }
 
-    public Permission(String name, PermissionDefault defaultValue, Map<String, Boolean> children) {
+    public Permission(@NotNull String name, @Nullable PermissionDefault defaultValue, @Nullable Map<String, Boolean> children) {
         this(name, null, defaultValue, children);
     }
 
-    public Permission(String name, String description, PermissionDefault defaultValue, Map<String, Boolean> children) {
+    public Permission(@NotNull String name, @Nullable String description, @Nullable PermissionDefault defaultValue, @Nullable Map<String, Boolean> children) {
         Validate.notNull(name, "Name cannot be null");
         this.name = name;
         this.description = (description == null) ? "" : description;
@@ -72,6 +74,7 @@ public class Permission {
      *
      * @return Fully qualified name
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -84,6 +87,7 @@ public class Permission {
      *
      * @return Permission children
      */
+    @NotNull
     public Map<String, Boolean> getChildren() {
         return children;
     }
@@ -93,6 +97,7 @@ public class Permission {
      *
      * @return Default value of this permission.
      */
+    @NotNull
     public PermissionDefault getDefault() {
         return defaultValue;
     }
@@ -107,7 +112,7 @@ public class Permission {
      *
      * @param value The new default to set
      */
-    public void setDefault(PermissionDefault value) {
+    public void setDefault(@NotNull PermissionDefault value) {
         if (defaultValue == null) {
             throw new IllegalArgumentException("Default value cannot be null");
         }
@@ -117,10 +122,11 @@ public class Permission {
     }
 
     /**
-     * Gets a brief description of this permission, if set
+     * Gets a brief description of this permission, may be empty
      *
      * @return Brief description of this permission
      */
+    @NotNull
     public String getDescription() {
         return description;
     }
@@ -133,7 +139,7 @@ public class Permission {
      *
      * @param value The new description to set
      */
-    public void setDescription(String value) {
+    public void setDescription(@Nullable String value) {
         if (value == null) {
             description = "";
         } else {
@@ -149,6 +155,7 @@ public class Permission {
      *
      * @return Set containing permissibles with this permission
      */
+    @NotNull
     public Set<Permissible> getPermissibles() {
         return Bukkit.getServer().getPluginManager().getPermissionSubscriptions(name);
     }
@@ -179,7 +186,8 @@ public class Permission {
      * @param value The value to set this permission to
      * @return Parent permission it created or loaded
      */
-    public Permission addParent(String name, boolean value) {
+    @NotNull
+    public Permission addParent(@NotNull String name, boolean value) {
         PluginManager pm = Bukkit.getServer().getPluginManager();
         String lname = name.toLowerCase(java.util.Locale.ENGLISH);
 
@@ -201,7 +209,7 @@ public class Permission {
      * @param perm Parent permission to register with
      * @param value The value to set this permission to
      */
-    public void addParent(Permission perm, boolean value) {
+    public void addParent(@NotNull Permission perm, boolean value) {
         perm.getChildren().put(getName(), value);
         perm.recalculatePermissibles();
     }
@@ -221,11 +229,12 @@ public class Permission {
      * </ul>
      *
      * @param data Map of permissions
-     * @param error An error message to show if a permission is invalid.
+     * @param error An error message to show if a permission is invalid. May contain "%s" format tag, which will be replaced with the name of invalid permission.
      * @param def Default permission value to use if missing
      * @return Permission object
      */
-    public static List<Permission> loadPermissions(Map<?, ?> data, String error, PermissionDefault def) {
+    @NotNull
+    public static List<Permission> loadPermissions(@NotNull Map<?, ?> data, @NotNull String error, @Nullable PermissionDefault def) {
         List<Permission> result = new ArrayList<Permission>();
 
         for (Map.Entry<?, ?> entry : data.entrySet()) {
@@ -256,7 +265,8 @@ public class Permission {
      * @param data Map of keys
      * @return Permission object
      */
-    public static Permission loadPermission(String name, Map<String, Object> data) {
+    @NotNull
+    public static Permission loadPermission(@NotNull String name, @NotNull Map<String, Object> data) {
         return loadPermission(name, data, DEFAULT_PERMISSION, null);
     }
 
@@ -279,7 +289,8 @@ public class Permission {
      * @param output A list to append any created child-Permissions to, may be null
      * @return Permission object
      */
-    public static Permission loadPermission(String name, Map<?, ?> data, PermissionDefault def, List<Permission> output) {
+    @NotNull
+    public static Permission loadPermission(@NotNull String name, @NotNull Map<?, ?> data, @Nullable PermissionDefault def, @Nullable List<Permission> output) {
         Validate.notNull(name, "Name cannot be null");
         Validate.notNull(data, "Data cannot be null");
 
@@ -318,7 +329,8 @@ public class Permission {
         return new Permission(name, desc, def, children);
     }
 
-    private static Map<String, Boolean> extractChildren(Map<?, ?> input, String name, PermissionDefault def, List<Permission> output) {
+    @NotNull
+    private static Map<String, Boolean> extractChildren(@NotNull Map<?, ?> input, @NotNull String name, @Nullable PermissionDefault def, @Nullable List<Permission> output) {
         Map<String, Boolean> children = new LinkedHashMap<String, Boolean>();
 
         for (Map.Entry<?, ?> entry : input.entrySet()) {

@@ -1,5 +1,8 @@
 package org.bukkit.command;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 /**
@@ -20,5 +23,6 @@ public interface TabCompleter {
      * @return A List of possible completions for the final argument, or null
      *     to default to the command executor
      */
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args);
+    @Nullable
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args);
 }

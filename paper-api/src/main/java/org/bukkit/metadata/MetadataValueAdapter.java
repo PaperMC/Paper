@@ -5,6 +5,8 @@ import java.lang.ref.WeakReference;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.NumberConversions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Optional base class for facilitating MetadataValue implementations.
@@ -16,11 +18,12 @@ import org.bukkit.util.NumberConversions;
 public abstract class MetadataValueAdapter implements MetadataValue {
     protected final WeakReference<Plugin> owningPlugin;
 
-    protected MetadataValueAdapter(Plugin owningPlugin) {
+    protected MetadataValueAdapter(@NotNull Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "owningPlugin cannot be null");
         this.owningPlugin = new WeakReference<Plugin>(owningPlugin);
     }
 
+    @Nullable
     public Plugin getOwningPlugin() {
         return owningPlugin.get();
     }
@@ -66,6 +69,7 @@ public abstract class MetadataValueAdapter implements MetadataValue {
         return value != null;
     }
 
+    @NotNull
     public String asString() {
         Object value = value();
 

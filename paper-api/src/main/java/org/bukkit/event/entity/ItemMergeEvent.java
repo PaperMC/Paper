@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Item;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 public class ItemMergeEvent extends EntityEvent implements Cancellable {
 
@@ -10,7 +11,7 @@ public class ItemMergeEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private final Item target;
 
-    public ItemMergeEvent(Item item, Item target) {
+    public ItemMergeEvent(@NotNull Item item, @NotNull Item target) {
         super(item);
         this.target = target;
     }
@@ -25,6 +26,7 @@ public class ItemMergeEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public Item getEntity() {
         return (Item) entity;
@@ -35,15 +37,18 @@ public class ItemMergeEvent extends EntityEvent implements Cancellable {
      *
      * @return The Item being merged with
      */
+    @NotNull
     public Item getTarget() {
         return target;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

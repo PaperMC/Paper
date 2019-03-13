@@ -6,6 +6,8 @@ import com.google.common.collect.Maps;
 
 import org.bukkit.block.BlockFace;
 import org.bukkit.potion.Potion;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A list of effects that the server is able to send to players.
@@ -203,11 +205,11 @@ public enum Effect {
     private final Class<?> data;
     private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
 
-    Effect(int id, Type type) {
+    Effect(int id, @NotNull Type type) {
         this(id, type, null);
     }
 
-    Effect(int id, Type type, Class<?> data) {
+    Effect(int id, @NotNull Type type, @Nullable Class<?> data) {
         this.id = id;
         this.type = type;
         this.data = data;
@@ -227,6 +229,7 @@ public enum Effect {
     /**
      * @return The type of the effect.
      */
+    @NotNull
     public Type getType() {
         return this.type;
     }
@@ -235,6 +238,7 @@ public enum Effect {
      * @return The class which represents data for this effect, or null if
      *     none
      */
+    @Nullable
     public Class<?> getData() {
         return this.data;
     }
@@ -247,6 +251,7 @@ public enum Effect {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static Effect getById(int id) {
         return BY_ID.get(id);
     }

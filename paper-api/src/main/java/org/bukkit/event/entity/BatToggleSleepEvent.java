@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Bat;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a bat attempts to sleep or wake up from its slumber.
@@ -17,7 +18,7 @@ public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final boolean awake;
 
-    public BatToggleSleepEvent(Bat what, boolean awake) {
+    public BatToggleSleepEvent(@NotNull Bat what, boolean awake) {
         super(what);
         this.awake = awake;
     }
@@ -41,11 +42,13 @@ public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
         return cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.projectiles.ProjectileSource;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a shootable entity.
@@ -12,6 +13,7 @@ public interface Projectile extends Entity {
      *
      * @return the {@link ProjectileSource} that shot this projectile
      */
+    @Nullable
     public ProjectileSource getShooter();
 
     /**
@@ -19,7 +21,7 @@ public interface Projectile extends Entity {
      *
      * @param source the {@link ProjectileSource} that shot this projectile
      */
-    public void setShooter(ProjectileSource source);
+    public void setShooter(@Nullable ProjectileSource source);
 
     /**
      * Determine if this projectile should bounce or not when it hits.

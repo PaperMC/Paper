@@ -1,5 +1,7 @@
 package org.bukkit.inventory.meta;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents an item that has durability and can take damage.
  */
@@ -26,5 +28,6 @@ public interface Damageable {
      */
     void setDamage(int damage);
 
+    @NotNull
     Damageable clone();
 }

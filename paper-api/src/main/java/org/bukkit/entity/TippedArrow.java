@@ -6,6 +6,8 @@ import org.bukkit.Color;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface TippedArrow extends Arrow {
 
@@ -14,13 +16,14 @@ public interface TippedArrow extends Arrow {
      *
      * @param data PotionData to set the base potion state to
      */
-    void setBasePotionData(PotionData data);
+    void setBasePotionData(@NotNull PotionData data);
 
     /**
      * Returns the potion data about the base potion
      *
      * @return a PotionData object
      */
+    @NotNull
     PotionData getBasePotionData();
 
     /**
@@ -28,6 +31,7 @@ public interface TippedArrow extends Arrow {
      *
      * @return arrow color
      */
+    @NotNull
     Color getColor();
 
     /**
@@ -35,7 +39,7 @@ public interface TippedArrow extends Arrow {
      *
      * @param color arrow color
      */
-    void setColor(Color color);
+    void setColor(@NotNull Color color);
 
     /**
      * Checks for the presence of custom potion effects.
@@ -53,6 +57,7 @@ public interface TippedArrow extends Arrow {
      *
      * @return the immutable list of custom potion effects
      */
+    @NotNull
     List<PotionEffect> getCustomEffects();
 
     /**
@@ -63,7 +68,7 @@ public interface TippedArrow extends Arrow {
      * overwritten
      * @return true if the effect was added as a result of this call
      */
-    boolean addCustomEffect(PotionEffect effect, boolean overwrite);
+    boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite);
 
     /**
      * Removes a custom potion effect from this arrow.
@@ -73,7 +78,7 @@ public interface TippedArrow extends Arrow {
      * @throws IllegalArgumentException if this operation would leave the Arrow
      * in a state with no Custom Effects and PotionType.UNCRAFTABLE
      */
-    boolean removeCustomEffect(PotionEffectType type);
+    boolean removeCustomEffect(@NotNull PotionEffectType type);
 
     /**
      * Checks for a specific custom potion effect type on this arrow.
@@ -81,7 +86,7 @@ public interface TippedArrow extends Arrow {
      * @param type the potion effect type to check for
      * @return true if the potion has this effect
      */
-    boolean hasCustomEffect(PotionEffectType type);
+    boolean hasCustomEffect(@Nullable PotionEffectType type);
 
     /**
      * Removes all custom potion effects from this arrow.

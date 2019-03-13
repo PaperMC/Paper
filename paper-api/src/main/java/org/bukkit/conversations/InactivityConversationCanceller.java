@@ -1,6 +1,7 @@
 package org.bukkit.conversations;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An InactivityConversationCanceller will cancel a {@link Conversation} after
@@ -18,23 +19,24 @@ public class InactivityConversationCanceller implements ConversationCanceller {
      * @param plugin The owning plugin.
      * @param timeoutSeconds The number of seconds of inactivity to wait.
      */
-    public InactivityConversationCanceller(Plugin plugin, int timeoutSeconds) {
+    public InactivityConversationCanceller(@NotNull Plugin plugin, int timeoutSeconds) {
         this.plugin = plugin;
         this.timeoutSeconds = timeoutSeconds;
     }
 
-    public void setConversation(Conversation conversation) {
+    public void setConversation(@NotNull Conversation conversation) {
         this.conversation = conversation;
         startTimer();
     }
 
-    public boolean cancelBasedOnInput(ConversationContext context, String input) {
+    public boolean cancelBasedOnInput(@NotNull ConversationContext context, @NotNull String input) {
         // Reset the inactivity timer
         stopTimer();
         startTimer();
         return false;
     }
 
+    @NotNull
     public ConversationCanceller clone() {
         return new InactivityConversationCanceller(plugin, timeoutSeconds);
     }
@@ -72,7 +74,7 @@ public class InactivityConversationCanceller implements ConversationCanceller {
      *
      * @param conversation The conversation being abandoned.
      */
-    protected void cancelling(Conversation conversation) {
+    protected void cancelling(@NotNull Conversation conversation) {
 
     }
 }

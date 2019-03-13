@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents some type of crafting recipe.
  */
@@ -10,5 +12,6 @@ public interface Recipe {
      *
      * @return The result stack
      */
+    @NotNull
     ItemStack getResult();
 }

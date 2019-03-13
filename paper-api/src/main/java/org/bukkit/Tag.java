@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 
 /**
@@ -196,13 +198,14 @@ public interface Tag<T extends Keyed> extends Keyed {
      * @param item to check
      * @return if it is tagged
      */
-    boolean isTagged(T item);
+    boolean isTagged(@NotNull T item);
 
     /**
      * Gets an immutable set of all tagged items.
      *
      * @return set of tagged items
      */
+    @NotNull
     Set<T> getValues();
 
 }

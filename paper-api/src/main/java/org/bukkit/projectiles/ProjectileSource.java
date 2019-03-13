@@ -2,6 +2,8 @@ package org.bukkit.projectiles;
 
 import org.bukkit.entity.Projectile;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a valid source of a projectile.
@@ -15,7 +17,8 @@ public interface ProjectileSource {
      * @param projectile class of the projectile to launch
      * @return the launched projectile
      */
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile);
+    @NotNull
+    public <T extends Projectile> T launchProjectile(@NotNull Class<? extends T> projectile);
 
     /**
      * Launches a {@link Projectile} from the ProjectileSource with an
@@ -26,5 +29,6 @@ public interface ProjectileSource {
      * @param velocity the velocity with which to launch
      * @return the launched projectile
      */
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity);
+    @NotNull
+    public <T extends Projectile> T launchProjectile(@NotNull Class<? extends T> projectile, @Nullable Vector velocity);
 }

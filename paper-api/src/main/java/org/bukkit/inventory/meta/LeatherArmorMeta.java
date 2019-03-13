@@ -3,6 +3,8 @@ package org.bukkit.inventory.meta;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents leather armor ({@link Material#LEATHER_BOOTS}, {@link
@@ -17,6 +19,7 @@ public interface LeatherArmorMeta extends ItemMeta {
      *
      * @return the color of the armor, never null
      */
+    @NotNull
     Color getColor();
 
     /**
@@ -25,7 +28,8 @@ public interface LeatherArmorMeta extends ItemMeta {
      * @param color the color to set. Setting it to null is equivalent to
      *     setting it to {@link ItemFactory#getDefaultLeatherColor()}.
      */
-    void setColor(Color color);
+    void setColor(@Nullable Color color);
 
+    @NotNull
     LeatherArmorMeta clone();
 }

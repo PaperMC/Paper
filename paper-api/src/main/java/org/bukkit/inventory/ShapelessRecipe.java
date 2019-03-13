@@ -12,6 +12,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a shapeless recipe, where the arrangement of the ingredients on
@@ -24,7 +25,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
     private String group = "";
 
     @Deprecated
-    public ShapelessRecipe(ItemStack result) {
+    public ShapelessRecipe(@NotNull ItemStack result) {
         this.key = NamespacedKey.randomKey();
         this.output = new ItemStack(result);
     }
@@ -43,7 +44,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @see ShapelessRecipe#addIngredient(int,MaterialData)
      * @see ShapelessRecipe#addIngredient(int,Material,int)
      */
-    public ShapelessRecipe(NamespacedKey key, ItemStack result) {
+    public ShapelessRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
         this.key = key;
         this.output = new ItemStack(result);
     }
@@ -54,7 +55,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapelessRecipe addIngredient(MaterialData ingredient) {
+    @NotNull
+    public ShapelessRecipe addIngredient(@NotNull MaterialData ingredient) {
         return addIngredient(1, ingredient);
     }
 
@@ -64,7 +66,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapelessRecipe addIngredient(Material ingredient) {
+    @NotNull
+    public ShapelessRecipe addIngredient(@NotNull Material ingredient) {
         return addIngredient(1, ingredient, 0);
     }
 
@@ -77,7 +80,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public ShapelessRecipe addIngredient(Material ingredient, int rawdata) {
+    @NotNull
+    public ShapelessRecipe addIngredient(@NotNull Material ingredient, int rawdata) {
         return addIngredient(1, ingredient, rawdata);
     }
 
@@ -88,7 +92,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapelessRecipe addIngredient(int count, MaterialData ingredient) {
+    @NotNull
+    public ShapelessRecipe addIngredient(int count, @NotNull MaterialData ingredient) {
         return addIngredient(count, ingredient.getItemType(), ingredient.getData());
     }
 
@@ -99,7 +104,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapelessRecipe addIngredient(int count, Material ingredient) {
+    @NotNull
+    public ShapelessRecipe addIngredient(int count, @NotNull Material ingredient) {
         return addIngredient(count, ingredient, 0);
     }
 
@@ -113,7 +119,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public ShapelessRecipe addIngredient(int count, Material ingredient, int rawdata) {
+    @NotNull
+    public ShapelessRecipe addIngredient(int count, @NotNull Material ingredient, int rawdata) {
         Validate.isTrue(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
 
         // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
@@ -127,7 +134,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
         return this;
     }
 
-    public ShapelessRecipe addIngredient(RecipeChoice ingredient) {
+    @NotNull
+    public ShapelessRecipe addIngredient(@NotNull RecipeChoice ingredient) {
         Validate.isTrue(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
 
         ingredients.add(ingredient);
@@ -140,7 +148,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
      */
-    public ShapelessRecipe removeIngredient(RecipeChoice ingredient) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(@NotNull RecipeChoice ingredient) {
         ingredients.remove(ingredient);
 
         return this;
@@ -154,7 +163,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
      */
-    public ShapelessRecipe removeIngredient(Material ingredient) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
         return removeIngredient(ingredient, 0);
     }
 
@@ -166,7 +176,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
      */
-    public ShapelessRecipe removeIngredient(MaterialData ingredient) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(@NotNull MaterialData ingredient) {
         return removeIngredient(ingredient.getItemType(), ingredient.getData());
     }
 
@@ -179,7 +190,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
      */
-    public ShapelessRecipe removeIngredient(int count, Material ingredient) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
         return removeIngredient(count, ingredient, 0);
     }
 
@@ -192,7 +204,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient to remove.
      * @return The changed recipe.
      */
-    public ShapelessRecipe removeIngredient(int count, MaterialData ingredient) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(int count, @NotNull MaterialData ingredient) {
         return removeIngredient(count, ingredient.getItemType(), ingredient.getData());
     }
 
@@ -207,7 +220,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public ShapelessRecipe removeIngredient(Material ingredient, int rawdata) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(@NotNull Material ingredient, int rawdata) {
         return removeIngredient(1, ingredient, rawdata);
     }
 
@@ -223,7 +237,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public ShapelessRecipe removeIngredient(int count, Material ingredient, int rawdata) {
+    @NotNull
+    public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient, int rawdata) {
         Iterator<RecipeChoice> iterator = ingredients.iterator();
         while (count > 0 && iterator.hasNext()) {
             ItemStack stack = iterator.next().getItemStack();
@@ -240,6 +255,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      *
      * @return The result stack.
      */
+    @NotNull
     public ItemStack getResult() {
         return output.clone();
     }
@@ -249,6 +265,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      *
      * @return The input list
      */
+    @NotNull
     public List<ItemStack> getIngredientList() {
         ArrayList<ItemStack> result = new ArrayList<ItemStack>(ingredients.size());
         for (RecipeChoice ingredient : ingredients) {
@@ -257,6 +274,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
         return result;
     }
 
+    @NotNull
     public List<RecipeChoice> getChoiceList() {
         List<RecipeChoice> result = new ArrayList<>(ingredients.size());
         for (RecipeChoice ingredient : ingredients) {
@@ -265,6 +283,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
         return result;
     }
 
+    @NotNull
     @Override
     public NamespacedKey getKey() {
         return key;
@@ -276,6 +295,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      *
      * @return recipe group. An empty string denotes no group. May not be null.
      */
+    @NotNull
     public String getGroup() {
         return group;
     }
@@ -287,7 +307,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @param group recipe group. An empty string denotes no group. May not be
      * null.
      */
-    public void setGroup(String group) {
+    public void setGroup(@NotNull String group) {
         Preconditions.checkArgument(group != null, "group");
         this.group = group;
     }

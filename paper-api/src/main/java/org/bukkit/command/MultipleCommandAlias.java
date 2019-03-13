@@ -1,12 +1,14 @@
 package org.bukkit.command;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a command that delegates to one or more other commands
  */
 public class MultipleCommandAlias extends Command {
     private Command[] commands;
 
-    public MultipleCommandAlias(String name, Command[] commands) {
+    public MultipleCommandAlias(@NotNull String name, @NotNull Command[] commands) {
         super(name);
         this.commands = commands;
     }
@@ -16,12 +18,13 @@ public class MultipleCommandAlias extends Command {
      *
      * @return commands associated with alias
      */
+    @NotNull
     public Command[] getCommands() {
         return commands;
     }
 
     @Override
-    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         boolean result = false;
 
         for (Command command : commands) {

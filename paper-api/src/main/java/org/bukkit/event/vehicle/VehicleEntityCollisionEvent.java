@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a vehicle collides with an entity.
@@ -15,11 +16,12 @@ public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implement
     private boolean cancelledPickup = false;
     private boolean cancelledCollision = false;
 
-    public VehicleEntityCollisionEvent(final Vehicle vehicle, final Entity entity) {
+    public VehicleEntityCollisionEvent(@NotNull final Vehicle vehicle, @NotNull final Entity entity) {
         super(vehicle);
         this.entity = entity;
     }
 
+    @NotNull
     public Entity getEntity() {
         return entity;
     }
@@ -48,11 +50,13 @@ public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implement
         cancelledCollision = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -4,6 +4,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Raised when a vehicle is destroyed, which could be caused by either a
@@ -15,7 +17,7 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private final Entity attacker;
     private boolean cancelled;
 
-    public VehicleDestroyEvent(final Vehicle vehicle, final Entity attacker) {
+    public VehicleDestroyEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker) {
         super(vehicle);
         this.attacker = attacker;
     }
@@ -25,6 +27,7 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
      *
      * @return the Entity that has destroyed the vehicle, potentially null
      */
+    @Nullable
     public Entity getAttacker() {
         return attacker;
     }
@@ -37,11 +40,13 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

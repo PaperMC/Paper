@@ -11,6 +11,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is successfully enchanted (currently at
@@ -26,7 +27,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private final Player enchanter;
     private int button;
 
-    public EnchantItemEvent(final Player enchanter, final InventoryView view, final Block table, final ItemStack item, final int level, final Map<Enchantment, Integer> enchants, final int i) {
+    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, final int i) {
         super(view);
         this.enchanter = enchanter;
         this.table = table;
@@ -42,6 +43,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @return enchanting player
      */
+    @NotNull
     public Player getEnchanter() {
         return enchanter;
     }
@@ -51,6 +53,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @return the block used for enchanting
      */
+    @NotNull
     public Block getEnchantBlock() {
         return table;
     }
@@ -60,6 +63,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @return ItemStack of item
      */
+    @NotNull
     public ItemStack getItem() {
         return item;
     }
@@ -89,6 +93,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      *
      * @return map of enchantment levels, keyed by enchantment
      */
+    @NotNull
     public Map<Enchantment, Integer> getEnchantsToAdd() {
         return enchants;
     }
@@ -110,11 +115,13 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

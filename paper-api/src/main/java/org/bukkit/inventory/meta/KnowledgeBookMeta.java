@@ -2,6 +2,7 @@ package org.bukkit.inventory.meta;
 
 import java.util.List;
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.NotNull;
 
 public interface KnowledgeBookMeta extends ItemMeta {
 
@@ -17,6 +18,7 @@ public interface KnowledgeBookMeta extends ItemMeta {
      *
      * @return list of all the recipes in the book
      */
+    @NotNull
     List<NamespacedKey> getRecipes();
 
     /**
@@ -25,15 +27,16 @@ public interface KnowledgeBookMeta extends ItemMeta {
      *
      * @param recipes A list of recipes to set the book to use
      */
-    void setRecipes(List<NamespacedKey> recipes);
+    void setRecipes(@NotNull List<NamespacedKey> recipes);
 
     /**
      * Adds new recipe to the end of the book.
      *
      * @param recipes A list of recipe keys
      */
-    void addRecipe(NamespacedKey... recipes);
+    void addRecipe(@NotNull NamespacedKey... recipes);
 
+    @NotNull
     @Override
     KnowledgeBookMeta clone();
 }

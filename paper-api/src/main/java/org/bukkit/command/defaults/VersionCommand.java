@@ -22,12 +22,14 @@ import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class VersionCommand extends BukkitCommand {
-    public VersionCommand(String name) {
+    public VersionCommand(@NotNull String name) {
         super(name);
 
         this.description = "Gets the version of this server including any plugins in use";
@@ -37,7 +39,7 @@ public class VersionCommand extends BukkitCommand {
     }
 
     @Override
-    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
         if (!testPermission(sender)) return true;
 
         if (args.length == 0) {
@@ -78,7 +80,7 @@ public class VersionCommand extends BukkitCommand {
         return true;
     }
 
-    private void describeToSender(Plugin plugin, CommandSender sender) {
+    private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
         PluginDescriptionFile desc = plugin.getDescription();
         sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
 
@@ -99,7 +101,8 @@ public class VersionCommand extends BukkitCommand {
         }
     }
 
-    private String getAuthors(final PluginDescriptionFile desc) {
+    @NotNull
+    private String getAuthors(@NotNull final PluginDescriptionFile desc) {
         StringBuilder result = new StringBuilder();
         List<String> authors = desc.getAuthors();
 
@@ -121,8 +124,9 @@ public class VersionCommand extends BukkitCommand {
         return result.toString();
     }
 
+    @NotNull
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
@@ -147,7 +151,7 @@ public class VersionCommand extends BukkitCommand {
     private boolean versionTaskStarted = false;
     private long lastCheck = 0;
 
-    private void sendVersion(CommandSender sender) {
+    private void sendVersion(@NotNull CommandSender sender) {
         if (hasVersion) {
             if (System.currentTimeMillis() - lastCheck > 21600000) {
                 lastCheck = System.currentTimeMillis();
@@ -214,7 +218,7 @@ public class VersionCommand extends BukkitCommand {
         }
     }
 
-    private void setVersionMessage(String msg) {
+    private void setVersionMessage(@NotNull String msg) {
         lastCheck = System.currentTimeMillis();
         versionMessage = msg;
         versionLock.lock();
@@ -230,7 +234,7 @@ public class VersionCommand extends BukkitCommand {
         }
     }
 
-    private static int getDistance(String repo, String hash) {
+    private static int getDistance(@NotNull String repo, @NotNull String hash) {
         try {
             BufferedReader reader = Resources.asCharSource(
                     new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/SPIGOT/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"),

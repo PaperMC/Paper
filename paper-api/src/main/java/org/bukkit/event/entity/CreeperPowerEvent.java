@@ -4,6 +4,8 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a Creeper is struck by lightning.
@@ -16,12 +18,12 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     private final PowerCause cause;
     private LightningStrike bolt;
 
-    public CreeperPowerEvent(final Creeper creeper, final LightningStrike bolt, final PowerCause cause) {
+    public CreeperPowerEvent(@NotNull final Creeper creeper, @NotNull final LightningStrike bolt, @NotNull final PowerCause cause) {
         this(creeper, cause);
         this.bolt = bolt;
     }
 
-    public CreeperPowerEvent(final Creeper creeper, final PowerCause cause) {
+    public CreeperPowerEvent(@NotNull final Creeper creeper, @NotNull final PowerCause cause) {
         super(creeper);
         this.cause = cause;
     }
@@ -34,6 +36,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
+    @NotNull
     @Override
     public Creeper getEntity() {
         return (Creeper) entity;
@@ -44,6 +47,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
      *
      * @return The Entity for the lightning bolt which is striking the Creeper
      */
+    @Nullable
     public LightningStrike getLightning() {
         return bolt;
     }
@@ -53,15 +57,18 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
      *
      * @return A PowerCause value detailing the cause of change in power.
      */
+    @NotNull
     public PowerCause getCause() {
         return cause;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

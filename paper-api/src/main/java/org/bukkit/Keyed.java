@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents an object which has a {@link NamespacedKey} attached to it.
  */
@@ -10,5 +12,6 @@ public interface Keyed {
      *
      * @return this object's key
      */
+    @NotNull
     NamespacedKey getKey();
 }

@@ -4,9 +4,9 @@ import java.util.Collection;
 
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.Location;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +14,9 @@ import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a block. This is a live object, and only one Block may exist for
@@ -42,6 +45,7 @@ public interface Block extends Metadatable {
      *
      * @return block specific data
      */
+    @NotNull
     BlockData getBlockData();
 
     /**
@@ -52,6 +56,7 @@ public interface Block extends Metadatable {
      * @param modZ Z-coordinate offset
      * @return Block at the given offsets
      */
+    @NotNull
     Block getRelative(int modX, int modY, int modZ);
 
     /**
@@ -63,7 +68,8 @@ public interface Block extends Metadatable {
      * @return Block at the given face
      * @see #getRelative(BlockFace, int)
      */
-    Block getRelative(BlockFace face);
+    @NotNull
+    Block getRelative(@NotNull BlockFace face);
 
     /**
      * Gets the block at the given distance of the given face
@@ -81,13 +87,15 @@ public interface Block extends Metadatable {
      * @param distance Distance to get the block at
      * @return Block at the given face
      */
-    Block getRelative(BlockFace face, int distance);
+    @NotNull
+    Block getRelative(@NotNull BlockFace face, int distance);
 
     /**
      * Gets the type of this block
      *
      * @return block type
      */
+    @NotNull
     Material getType();
 
     /**
@@ -121,6 +129,7 @@ public interface Block extends Metadatable {
      *
      * @return World containing this block
      */
+    @NotNull
     World getWorld();
 
     /**
@@ -149,6 +158,7 @@ public interface Block extends Metadatable {
      *
      * @return Location of block
      */
+    @NotNull
     Location getLocation();
 
     /**
@@ -160,13 +170,16 @@ public interface Block extends Metadatable {
      * @param loc the location to copy into
      * @return The Location object provided or null
      */
-    Location getLocation(Location loc);
+    @Contract("null -> null; !null -> !null")
+    @Nullable
+    Location getLocation(@Nullable Location loc);
 
     /**
      * Gets the chunk which contains this block
      *
      * @return Containing Chunk
      */
+    @NotNull
     Chunk getChunk();
 
     /**
@@ -174,7 +187,7 @@ public interface Block extends Metadatable {
      *
      * @param data new block specific data
      */
-    void setBlockData(BlockData data);
+    void setBlockData(@NotNull BlockData data);
 
     /**
      * Sets the complete data for this block
@@ -195,14 +208,14 @@ public interface Block extends Metadatable {
      * @param data new block specific data
      * @param applyPhysics false to cancel physics from the changed block
      */
-    void setBlockData(BlockData data, boolean applyPhysics);
+    void setBlockData(@NotNull BlockData data, boolean applyPhysics);
 
     /**
      * Sets the type of this block
      *
      * @param type Material to change this block to
      */
-    void setType(Material type);
+    void setType(@NotNull Material type);
 
     /**
      * Sets the type of this block
@@ -223,7 +236,7 @@ public interface Block extends Metadatable {
      * @param type Material to change this block to
      * @param applyPhysics False to cancel physics on the changed block.
      */
-    void setType(Material type, boolean applyPhysics);
+    void setType(@NotNull Material type, boolean applyPhysics);
 
     /**
      * Gets the face relation of this block compared to the given block.
@@ -241,7 +254,8 @@ public interface Block extends Metadatable {
      * @param block Block to compare against this block
      * @return BlockFace of this block which has the requested block, or null
      */
-    BlockFace getFace(Block block);
+    @Nullable
+    BlockFace getFace(@NotNull Block block);
 
     /**
      * Captures the current state of this block. You may then cast that state
@@ -252,6 +266,7 @@ public interface Block extends Metadatable {
      *
      * @return BlockState with the current state of this block.
      */
+    @NotNull
     BlockState getState();
 
     /**
@@ -259,6 +274,7 @@ public interface Block extends Metadatable {
      *
      * @return Biome type containing this block
      */
+    @NotNull
     Biome getBiome();
 
     /**
@@ -266,7 +282,7 @@ public interface Block extends Metadatable {
      *
      * @param bio new Biome type for this block
      */
-    void setBiome(Biome bio);
+    void setBiome(@NotNull Biome bio);
 
     /**
      * Returns true if the block is being powered by Redstone.
@@ -288,7 +304,7 @@ public interface Block extends Metadatable {
      * @param face The block face
      * @return True if the block face is powered.
      */
-    boolean isBlockFacePowered(BlockFace face);
+    boolean isBlockFacePowered(@NotNull BlockFace face);
 
     /**
      * Returns true if the block face is being indirectly powered by Redstone.
@@ -296,7 +312,7 @@ public interface Block extends Metadatable {
      * @param face The block face
      * @return True if the block face is indirectly powered.
      */
-    boolean isBlockFaceIndirectlyPowered(BlockFace face);
+    boolean isBlockFaceIndirectlyPowered(@NotNull BlockFace face);
 
     /**
      * Returns the redstone power being provided to this block face
@@ -305,7 +321,7 @@ public interface Block extends Metadatable {
      *     block itself
      * @return The power level.
      */
-    int getBlockPower(BlockFace face);
+    int getBlockPower(@NotNull BlockFace face);
 
     /**
      * Returns the redstone power being provided to this block
@@ -356,6 +372,7 @@ public interface Block extends Metadatable {
      *
      * @return reaction
      */
+    @NotNull
     PistonMoveReaction getPistonMoveReaction();
 
     /**
@@ -372,13 +389,14 @@ public interface Block extends Metadatable {
      * @param tool The tool or item in hand used for digging
      * @return true if the block was destroyed
      */
-    boolean breakNaturally(ItemStack tool);
+    boolean breakNaturally(@NotNull ItemStack tool);
 
     /**
      * Returns a list of items which would drop by destroying this block
      *
      * @return a list of dropped items for this type of block
      */
+    @NotNull
     Collection<ItemStack> getDrops();
 
     /**
@@ -388,7 +406,8 @@ public interface Block extends Metadatable {
      * @param tool The tool or item in hand used for digging
      * @return a list of dropped items for this type of block
      */
-    Collection<ItemStack> getDrops(ItemStack tool);
+    @NotNull
+    Collection<ItemStack> getDrops(@NotNull ItemStack tool);
 
     /**
      * Checks if this block is passable.
@@ -414,7 +433,8 @@ public interface Block extends Metadatable {
      * @param fluidCollisionMode the fluid collision mode
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
-    RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode);
+    @Nullable
+    RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode);
 
     /**
      * Gets the approximate bounding box for this block.
@@ -430,5 +450,6 @@ public interface Block extends Metadatable {
      *
      * @return the approximate bounding box of the block
      */
+    @NotNull
     BoundingBox getBoundingBox();
 }

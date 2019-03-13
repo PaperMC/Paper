@@ -11,6 +11,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a shaped (ie normal) crafting recipe.
@@ -23,7 +24,7 @@ public class ShapedRecipe implements Recipe, Keyed {
     private String group = "";
 
     @Deprecated
-    public ShapedRecipe(ItemStack result) {
+    public ShapedRecipe(@NotNull ItemStack result) {
         this.key = NamespacedKey.randomKey();
         this.output = new ItemStack(result);
     }
@@ -40,7 +41,7 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @see ShapedRecipe#setIngredient(char, Material, int)
      * @see ShapedRecipe#setIngredient(char, MaterialData)
      */
-    public ShapedRecipe(NamespacedKey key, ItemStack result) {
+    public ShapedRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
         Preconditions.checkArgument(key != null, "key");
 
         this.key = key;
@@ -58,9 +59,10 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @param shape The rows of the recipe (up to 3 rows).
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapedRecipe shape(final String... shape) {
+    @NotNull
+    public ShapedRecipe shape(@NotNull final String... shape) {
         Validate.notNull(shape, "Must provide a shape");
-        Validate.isTrue(shape.length > 0 && shape.length < 4, "Crafting recipes should be 1, 2, 3 rows, not ", shape.length);
+        Validate.isTrue(shape.length > 0 && shape.length < 4, "Crafting recipes should be 1, 2 or 3 rows, not ", shape.length);
 
         int lastLen = -1;
         for (String row : shape) {
@@ -94,7 +96,8 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapedRecipe setIngredient(char key, MaterialData ingredient) {
+    @NotNull
+    public ShapedRecipe setIngredient(char key, @NotNull MaterialData ingredient) {
         return setIngredient(key, ingredient.getItemType(), ingredient.getData());
     }
 
@@ -105,7 +108,8 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @param ingredient The ingredient.
      * @return The changed recipe, so you can chain calls.
      */
-    public ShapedRecipe setIngredient(char key, Material ingredient) {
+    @NotNull
+    public ShapedRecipe setIngredient(char key, @NotNull Material ingredient) {
         return setIngredient(key, ingredient, 0);
     }
 
@@ -119,7 +123,8 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    public ShapedRecipe setIngredient(char key, Material ingredient, int raw) {
+    @NotNull
+    public ShapedRecipe setIngredient(char key, @NotNull Material ingredient, int raw) {
         Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
@@ -131,7 +136,8 @@ public class ShapedRecipe implements Recipe, Keyed {
         return this;
     }
 
-    public ShapedRecipe setIngredient(char key, RecipeChoice ingredient) {
+    @NotNull
+    public ShapedRecipe setIngredient(char key, @NotNull RecipeChoice ingredient) {
         Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         ingredients.put(key, ingredient);
@@ -143,6 +149,7 @@ public class ShapedRecipe implements Recipe, Keyed {
      *
      * @return The mapping of character to ingredients.
      */
+    @NotNull
     public Map<Character, ItemStack> getIngredientMap() {
         HashMap<Character, ItemStack> result = new HashMap<Character, ItemStack>();
         for (Map.Entry<Character, RecipeChoice> ingredient : ingredients.entrySet()) {
@@ -155,6 +162,7 @@ public class ShapedRecipe implements Recipe, Keyed {
         return result;
     }
 
+    @NotNull
     public Map<Character, RecipeChoice> getChoiceMap() {
         Map<Character, RecipeChoice> result = new HashMap<>();
         for (Map.Entry<Character, RecipeChoice> ingredient : ingredients.entrySet()) {
@@ -171,7 +179,9 @@ public class ShapedRecipe implements Recipe, Keyed {
      * Get the shape.
      *
      * @return The recipe's shape.
+     * @throws NullPointerException when not set yet
      */
+    @NotNull
     public String[] getShape() {
         return rows.clone();
     }
@@ -181,10 +191,12 @@ public class ShapedRecipe implements Recipe, Keyed {
      *
      * @return The result stack.
      */
+    @NotNull
     public ItemStack getResult() {
         return output.clone();
     }
 
+    @NotNull
     @Override
     public NamespacedKey getKey() {
         return key;
@@ -196,6 +208,7 @@ public class ShapedRecipe implements Recipe, Keyed {
      *
      * @return recipe group. An empty string denotes no group. May not be null.
      */
+    @NotNull
     public String getGroup() {
         return group;
     }
@@ -207,7 +220,7 @@ public class ShapedRecipe implements Recipe, Keyed {
      * @param group recipe group. An empty string denotes no group. May not be
      * null.
      */
-    public void setGroup(String group) {
+    public void setGroup(@NotNull String group) {
         Preconditions.checkArgument(group != null, "group");
         this.group = group;
     }

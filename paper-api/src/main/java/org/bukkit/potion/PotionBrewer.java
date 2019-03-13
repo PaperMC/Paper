@@ -1,5 +1,7 @@
 package org.bukkit.potion;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 
 /**
@@ -16,7 +18,8 @@ public interface PotionBrewer {
      * @param amplifier The amplifier of the effect
      * @return The resulting potion effect
      */
-    public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier);
+    @NotNull
+    public PotionEffect createEffect(@NotNull PotionEffectType potion, int duration, int amplifier);
 
     /**
      * Returns a collection of {@link PotionEffect} that would be applied from
@@ -27,6 +30,7 @@ public interface PotionBrewer {
      * @deprecated Non-Functional
      */
     @Deprecated
+    @NotNull
     public Collection<PotionEffect> getEffectsFromDamage(int damage);
 
     /**
@@ -36,5 +40,6 @@ public interface PotionBrewer {
      * @param type The type of the potion
      * @return The list of effects
      */
-    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended);
+    @NotNull
+    public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
 }

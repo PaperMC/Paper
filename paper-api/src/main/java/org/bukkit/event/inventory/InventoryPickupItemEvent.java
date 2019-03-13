@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a hopper or hopper minecart picks up a dropped item.
@@ -15,7 +16,7 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
     private final Inventory inventory;
     private final Item item;
 
-    public InventoryPickupItemEvent(final Inventory inventory, final Item item) {
+    public InventoryPickupItemEvent(@NotNull final Inventory inventory, @NotNull final Item item) {
         super();
         this.inventory = inventory;
         this.item = item;
@@ -26,6 +27,7 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
      *
      * @return Inventory
      */
+    @NotNull
     public Inventory getInventory() {
         return inventory;
     }
@@ -35,6 +37,7 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
      *
      * @return Item
      */
+    @NotNull
     public Item getItem() {
         return item;
     }
@@ -47,11 +50,13 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

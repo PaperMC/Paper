@@ -5,6 +5,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This event will fire when a player is finishing consuming an item (food,
@@ -25,7 +27,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * @param player the player consuming
      * @param item the ItemStack being consumed
      */
-    public PlayerItemConsumeEvent(final Player player, final ItemStack item) {
+    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
         super(player);
 
         this.item = item;
@@ -38,6 +40,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      *
      * @return an ItemStack for the item being consumed
      */
+    @NotNull
     public ItemStack getItem() {
         return item.clone();
     }
@@ -47,7 +50,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      *
      * @param item the item being consumed
      */
-    public void setItem(ItemStack item) {
+    public void setItem(@Nullable ItemStack item) {
         if (item == null) {
             this.item = new ItemStack(Material.AIR);
         } else {
@@ -63,11 +66,13 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
         this.isCancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

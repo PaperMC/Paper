@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.loot.Lootable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Mob. Mobs are living entities with simple AI.
@@ -15,12 +16,13 @@ public interface Mob extends LivingEntity, Lootable {
      *
      * @param target New LivingEntity to target, or null to clear the target
      */
-    public void setTarget(LivingEntity target);
+    public void setTarget(@Nullable LivingEntity target);
 
     /**
      * Gets the current target of this Mob
      *
      * @return Current target of this creature, or null if none exists
      */
+    @Nullable
     public LivingEntity getTarget();
 }

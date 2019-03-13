@@ -8,9 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
 
 public class ReloadCommand extends BukkitCommand {
-    public ReloadCommand(String name) {
+    public ReloadCommand(@NotNull String name) {
         super(name);
         this.description = "Reloads the server configuration and plugins";
         this.usageMessage = "/reload";
@@ -19,7 +20,7 @@ public class ReloadCommand extends BukkitCommand {
     }
 
     @Override
-    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
         if (!testPermission(sender)) return true;
 
         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
@@ -30,8 +31,9 @@ public class ReloadCommand extends BukkitCommand {
         return true;
     }
 
+    @NotNull
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         return Collections.emptyList();
     }
 }

@@ -1,6 +1,8 @@
 package org.bukkit.inventory;
 
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An interface to a creatures inventory
@@ -13,6 +15,7 @@ public interface EntityEquipment {
      *
      * @return the currently held item
      */
+    @NotNull
     ItemStack getItemInMainHand();
 
     /**
@@ -20,7 +23,7 @@ public interface EntityEquipment {
      *
      * @param item The item to put into the entities hand
      */
-    void setItemInMainHand(ItemStack item);
+    void setItemInMainHand(@Nullable ItemStack item);
 
     /**
      * Gets a copy of the item the entity is currently holding
@@ -28,6 +31,7 @@ public interface EntityEquipment {
      *
      * @return the currently held item
      */
+    @NotNull
     ItemStack getItemInOffHand();
 
     /**
@@ -35,7 +39,7 @@ public interface EntityEquipment {
      *
      * @param item The item to put into the entities hand
      */
-    void setItemInOffHand(ItemStack item);
+    void setItemInOffHand(@Nullable ItemStack item);
 
     /**
      * Gets a copy of the item the entity is currently holding
@@ -47,6 +51,7 @@ public interface EntityEquipment {
      * @return the currently held item
      */
     @Deprecated
+    @NotNull
     ItemStack getItemInHand();
 
     /**
@@ -59,13 +64,14 @@ public interface EntityEquipment {
      * @param stack The item to put into the entities hand
      */
     @Deprecated
-    void setItemInHand(ItemStack stack);
+    void setItemInHand(@Nullable ItemStack stack);
 
     /**
      * Gets a copy of the helmet currently being worn by the entity
      *
      * @return The helmet being worn
      */
+    @Nullable
     ItemStack getHelmet();
 
     /**
@@ -73,13 +79,14 @@ public interface EntityEquipment {
      *
      * @param helmet The helmet to put on the entity
      */
-    void setHelmet(ItemStack helmet);
+    void setHelmet(@Nullable ItemStack helmet);
 
     /**
      * Gets a copy of the chest plate currently being worn by the entity
      *
      * @return The chest plate being worn
      */
+    @Nullable
     ItemStack getChestplate();
 
     /**
@@ -87,13 +94,14 @@ public interface EntityEquipment {
      *
      * @param chestplate The chest plate to put on the entity
      */
-    void setChestplate(ItemStack chestplate);
+    void setChestplate(@Nullable ItemStack chestplate);
 
     /**
      * Gets a copy of the leggings currently being worn by the entity
      *
      * @return The leggings being worn
      */
+    @Nullable
     ItemStack getLeggings();
 
     /**
@@ -101,13 +109,14 @@ public interface EntityEquipment {
      *
      * @param leggings The leggings to put on the entity
      */
-    void setLeggings(ItemStack leggings);
+    void setLeggings(@Nullable ItemStack leggings);
 
     /**
      * Gets a copy of the boots currently being worn by the entity
      *
      * @return The boots being worn
      */
+    @Nullable
     ItemStack getBoots();
 
     /**
@@ -115,21 +124,22 @@ public interface EntityEquipment {
      *
      * @param boots The boots to put on the entity
      */
-    void setBoots(ItemStack boots);
+    void setBoots(@Nullable ItemStack boots);
 
     /**
      * Gets a copy of all worn armor
      *
-     * @return The array of worn armor
+     * @return The array of worn armor. Individual items may be null.
      */
+    @NotNull
     ItemStack[] getArmorContents();
 
     /**
      * Sets the entities armor to the provided array of ItemStacks
      *
-     * @param items The items to set the armor as
+     * @param items The items to set the armor as. Individual items may be null.
      */
-    void setArmorContents(ItemStack[] items);
+    void setArmorContents(@NotNull ItemStack[] items);
 
     /**
      * Clears the entity of all armor and held items
@@ -319,5 +329,6 @@ public interface EntityEquipment {
      *
      * @return the entity this EntityEquipment belongs to
      */
+    @Nullable
     Entity getHolder();
 }

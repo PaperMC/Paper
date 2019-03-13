@@ -2,16 +2,19 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an Entity targets a {@link LivingEntity} and can only target
  * LivingEntity's.
  */
 public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
-    public EntityTargetLivingEntityEvent(final Entity entity, final LivingEntity target, final TargetReason reason) {
+    public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @Nullable final TargetReason reason) {
         super(entity, target, reason);
     }
 
+    @Nullable
     public LivingEntity getTarget() {
         return (LivingEntity) super.getTarget();
     }
@@ -26,7 +29,7 @@ public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
      *
      * @param target The entity to target
      */
-    public void setTarget(Entity target) {
+    public void setTarget(@Nullable Entity target) {
         if (target == null || target instanceof LivingEntity) {
             super.setTarget(target);
         }

@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Directional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Similar to {@link Bisected}, 'part' denotes which half of the bed this block
@@ -17,6 +18,7 @@ public interface Bed extends Directional {
      *
      * @return the 'part' value
      */
+    @NotNull
     Part getPart();
 
     /**
@@ -24,7 +26,7 @@ public interface Bed extends Directional {
      *
      * @param part the new 'part' value
      */
-    void setPart(Part part);
+    void setPart(@NotNull Part part);
 
     /**
      * Gets the value of the 'occupied' property.

@@ -7,6 +7,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 
 import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A container for a color palette. This class is immutable; the set methods
@@ -115,6 +116,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new Color object for the red, green, blue
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
+    @NotNull
     public static Color fromRGB(int red, int green, int blue) throws IllegalArgumentException {
         return new Color(red, green, blue);
     }
@@ -128,6 +130,7 @@ public final class Color implements ConfigurationSerializable {
      * @return a new Color object for the red, green, blue
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
      */
+    @NotNull
     public static Color fromBGR(int blue, int green, int red) throws IllegalArgumentException {
         return new Color(red, green, blue);
     }
@@ -141,6 +144,7 @@ public final class Color implements ConfigurationSerializable {
      * @throws IllegalArgumentException if any data is in the highest order 8
      *     bits
      */
+    @NotNull
     public static Color fromRGB(int rgb) throws IllegalArgumentException {
         Validate.isTrue((rgb >> 24) == 0, "Extrenuous data in: ", rgb);
         return fromRGB(rgb >> 16 & BIT_MASK, rgb >> 8 & BIT_MASK, rgb >> 0 & BIT_MASK);
@@ -155,6 +159,7 @@ public final class Color implements ConfigurationSerializable {
      * @throws IllegalArgumentException if any data is in the highest order 8
      *     bits
      */
+    @NotNull
     public static Color fromBGR(int bgr) throws IllegalArgumentException {
         Validate.isTrue((bgr >> 24) == 0, "Extrenuous data in: ", bgr);
         return fromBGR(bgr >> 16 & BIT_MASK, bgr >> 8 & BIT_MASK, bgr >> 0 & BIT_MASK);
@@ -185,6 +190,7 @@ public final class Color implements ConfigurationSerializable {
      * @param red the red component, from 0 to 255
      * @return a new color object with the red component
      */
+    @NotNull
     public Color setRed(int red) {
         return fromRGB(red, getGreen(), getBlue());
     }
@@ -204,6 +210,7 @@ public final class Color implements ConfigurationSerializable {
      * @param green the red component, from 0 to 255
      * @return a new color object with the red component
      */
+    @NotNull
     public Color setGreen(int green) {
         return fromRGB(getRed(), green, getBlue());
     }
@@ -223,6 +230,7 @@ public final class Color implements ConfigurationSerializable {
      * @param blue the red component, from 0 to 255
      * @return a new color object with the red component
      */
+    @NotNull
     public Color setBlue(int blue) {
         return fromRGB(getRed(), getGreen(), blue);
     }
@@ -251,7 +259,8 @@ public final class Color implements ConfigurationSerializable {
      * @return A new color with the changed rgb components
      */
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
-    public Color mixDyes(DyeColor... colors) {
+    @NotNull
+    public Color mixDyes(@NotNull DyeColor... colors) {
         Validate.noNullElements(colors, "Colors cannot be null");
 
         Color[] toPass = new Color[colors.length];
@@ -270,7 +279,8 @@ public final class Color implements ConfigurationSerializable {
      * @return A new color with the changed rgb components
      */
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
-    public Color mixColors(Color... colors) {
+    @NotNull
+    public Color mixColors(@NotNull Color... colors) {
         Validate.noNullElements(colors, "Colors cannot be null");
 
         int totalRed = this.getRed();
@@ -309,6 +319,7 @@ public final class Color implements ConfigurationSerializable {
         return asRGB() ^ Color.class.hashCode();
     }
 
+    @NotNull
     public Map<String, Object> serialize() {
         return ImmutableMap.<String, Object>of(
             "RED", getRed(),
@@ -318,7 +329,8 @@ public final class Color implements ConfigurationSerializable {
     }
 
     @SuppressWarnings("javadoc")
-    public static Color deserialize(Map<String, Object> map) {
+    @NotNull
+    public static Color deserialize(@NotNull Map<String, Object> map) {
         return fromRGB(
             asInt("RED", map),
             asInt("GREEN", map),
@@ -326,7 +338,7 @@ public final class Color implements ConfigurationSerializable {
         );
     }
 
-    private static int asInt(String string, Map<String, Object> map) {
+    private static int asInt(@NotNull String string, @NotNull Map<String, Object> map) {
         Object value = map.get(string);
         if (value == null) {
             throw new IllegalArgumentException(string + " not in map " + map);

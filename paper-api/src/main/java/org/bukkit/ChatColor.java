@@ -6,6 +6,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * All supported color values for chat
@@ -134,6 +137,7 @@ public enum ChatColor {
         return code;
     }
 
+    @NotNull
     @Override
     public String toString() {
         return toString;
@@ -164,6 +168,7 @@ public enum ChatColor {
      * @return Associative {@link org.bukkit.ChatColor} with the given code,
      *     or null if it doesn't exist
      */
+    @Nullable
     public static ChatColor getByChar(char code) {
         return BY_CHAR.get(code);
     }
@@ -175,7 +180,8 @@ public enum ChatColor {
      * @return Associative {@link org.bukkit.ChatColor} with the given code,
      *     or null if it doesn't exist
      */
-    public static ChatColor getByChar(String code) {
+    @Nullable
+    public static ChatColor getByChar(@NotNull String code) {
         Validate.notNull(code, "Code cannot be null");
         Validate.isTrue(code.length() > 0, "Code must have at least one char");
 
@@ -188,7 +194,9 @@ public enum ChatColor {
      * @param input String to strip of color
      * @return A copy of the input string, without any coloring
      */
-    public static String stripColor(final String input) {
+    @Contract("!null -> !null; null -> null")
+    @Nullable
+    public static String stripColor(@Nullable final String input) {
         if (input == null) {
             return null;
         }
@@ -206,7 +214,8 @@ public enum ChatColor {
      * @param textToTranslate Text containing the alternate color code character.
      * @return Text containing the ChatColor.COLOR_CODE color code character.
      */
-    public static String translateAlternateColorCodes(char altColorChar, String textToTranslate) {
+    @NotNull
+    public static String translateAlternateColorCodes(char altColorChar, @NotNull String textToTranslate) {
         char[] b = textToTranslate.toCharArray();
         for (int i = 0; i < b.length - 1; i++) {
             if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i+1]) > -1) {
@@ -223,7 +232,8 @@ public enum ChatColor {
      * @param input Input string to retrieve the colors from.
      * @return Any remaining ChatColors to pass onto the next line.
      */
-    public static String getLastColors(String input) {
+    @NotNull
+    public static String getLastColors(@NotNull String input) {
         String result = "";
         int length = input.length();
 

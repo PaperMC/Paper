@@ -1,6 +1,7 @@
 package org.bukkit.map;
 
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a renderer for a map.
@@ -42,7 +43,7 @@ public abstract class MapRenderer {
      *
      * @param map The MapView being initialized.
      */
-    public void initialize(MapView map) {}
+    public void initialize(@NotNull MapView map) {}
 
     /**
      * Render to the given map.
@@ -51,6 +52,6 @@ public abstract class MapRenderer {
      * @param canvas The canvas to use for rendering.
      * @param player The player who triggered the rendering.
      */
-    abstract public void render(MapView map, MapCanvas canvas, Player player);
+    abstract public void render(@NotNull MapView map, @NotNull MapCanvas canvas, @NotNull Player player);
 
 }

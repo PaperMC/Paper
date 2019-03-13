@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player has completed all criteria in an advancement.
@@ -13,7 +14,7 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
     //
     private final Advancement advancement;
 
-    public PlayerAdvancementDoneEvent(Player who, Advancement advancement) {
+    public PlayerAdvancementDoneEvent(@NotNull Player who, @NotNull Advancement advancement) {
         super(who);
         this.advancement = advancement;
     }
@@ -23,15 +24,18 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
      *
      * @return completed advancement
      */
+    @NotNull
     public Advancement getAdvancement() {
         return advancement;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

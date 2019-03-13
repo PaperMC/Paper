@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is broken by a player.
@@ -30,7 +31,7 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
     private boolean dropItems;
     private boolean cancel;
 
-    public BlockBreakEvent(final Block theBlock, final Player player) {
+    public BlockBreakEvent(@NotNull final Block theBlock, @NotNull final Player player) {
         super(theBlock, 0);
 
         this.player = player;
@@ -42,6 +43,7 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
      *
      * @return The Player that is breaking the block involved in this event
      */
+    @NotNull
     public Player getPlayer() {
         return player;
     }

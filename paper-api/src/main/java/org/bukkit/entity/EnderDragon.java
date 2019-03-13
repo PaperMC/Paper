@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents an Ender Dragon
  */
@@ -67,6 +69,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss {
      *
      * @return the current phase
      */
+    @NotNull
     Phase getPhase();
 
     /**
@@ -74,5 +77,5 @@ public interface EnderDragon extends ComplexLivingEntity, Boss {
      *
      * @param phase the next phase
      */
-    void setPhase(Phase phase);
+    void setPhase(@NotNull Phase phase);
 }

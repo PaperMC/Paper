@@ -1,5 +1,7 @@
 package org.bukkit.plugin;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a base {@link Plugin}
  * <p>
@@ -26,6 +28,7 @@ public abstract class PluginBase implements Plugin {
         return getName().equals(((Plugin) obj).getName());
     }
 
+    @NotNull
     public final String getName() {
         return getDescription().getName();
     }

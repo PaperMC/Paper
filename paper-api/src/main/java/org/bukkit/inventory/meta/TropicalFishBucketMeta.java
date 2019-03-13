@@ -2,6 +2,7 @@ package org.bukkit.inventory.meta;
 
 import org.bukkit.DyeColor;
 import org.bukkit.entity.TropicalFish;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a bucket of tropical fish.
@@ -16,6 +17,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @return pattern color
      */
+    @NotNull
     DyeColor getPatternColor();
 
     /**
@@ -26,7 +28,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @param color pattern color
      */
-    void setPatternColor(DyeColor color);
+    void setPatternColor(@NotNull DyeColor color);
 
     /**
      * Gets the color of the fish's body.
@@ -36,6 +38,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @return pattern color
      */
+    @NotNull
     DyeColor getBodyColor();
 
     /**
@@ -46,7 +49,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @param color body color
      */
-    void setBodyColor(DyeColor color);
+    void setBodyColor(@NotNull DyeColor color);
 
     /**
      * Gets the fish's pattern.
@@ -56,6 +59,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @return pattern
      */
+    @NotNull
     TropicalFish.Pattern getPattern();
 
     /**
@@ -66,7 +70,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      *
      * @param pattern new pattern
      */
-    void setPattern(TropicalFish.Pattern pattern);
+    void setPattern(@NotNull TropicalFish.Pattern pattern);
 
     /**
      * Checks for existence of a variant tag indicating a specific fish will be
@@ -76,5 +80,6 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      */
     boolean hasVariant();
 
+    @NotNull
     TropicalFishBucketMeta clone();
 }

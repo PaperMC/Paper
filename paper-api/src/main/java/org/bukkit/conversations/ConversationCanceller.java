@@ -1,5 +1,7 @@
 package org.bukkit.conversations;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A ConversationCanceller is a class that cancels an active {@link
  * Conversation}. A Conversation can have more than one ConversationCanceller.
@@ -11,7 +13,7 @@ public interface ConversationCanceller extends Cloneable {
      *
      * @param conversation A conversation.
      */
-    public void setConversation(Conversation conversation);
+    public void setConversation(@NotNull Conversation conversation);
 
     /**
      * Cancels a conversation based on user input.
@@ -20,7 +22,7 @@ public interface ConversationCanceller extends Cloneable {
      * @param input The input text from the user.
      * @return True to cancel the conversation, False otherwise.
      */
-    public boolean cancelBasedOnInput(ConversationContext context, String input);
+    public boolean cancelBasedOnInput(@NotNull ConversationContext context, @NotNull String input);
 
     /**
      * Allows the {@link ConversationFactory} to duplicate this
@@ -30,5 +32,6 @@ public interface ConversationCanceller extends Cloneable {
      *
      * @return A clone.
      */
+    @NotNull
     public ConversationCanceller clone();
 }

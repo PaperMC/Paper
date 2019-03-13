@@ -3,6 +3,7 @@ package org.bukkit.generator;
 import java.util.Random;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A block populator is responsible for generating a small area of blocks.
@@ -25,5 +26,5 @@ public abstract class BlockPopulator {
      * @param random The random generator to use
      * @param source The chunk to generate for
      */
-    public abstract void populate(World world, Random random, Chunk source);
+    public abstract void populate(@NotNull World world, @NotNull Random random, @NotNull Chunk source);
 }

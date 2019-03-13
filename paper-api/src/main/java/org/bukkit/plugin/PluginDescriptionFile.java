@@ -10,12 +10,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -179,12 +184,14 @@ public final class PluginDescriptionFile {
     private static final Pattern VALID_NAME = Pattern.compile("^[A-Za-z0-9 _.-]+$");
     private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
         @Override
+        @NotNull
         protected Yaml initialValue() {
             return new Yaml(new SafeConstructor() {
                 {
                     yamlConstructors.put(null, new AbstractConstruct() {
+                        @NotNull
                         @Override
-                        public Object construct(final Node node) {
+                        public Object construct(@NotNull final Node node) {
                             if (!node.getTag().startsWith("!@")) {
                                 // Unknown tag - will fail
                                 return SafeConstructor.undefinedConstructor.construct(node);
@@ -200,8 +207,9 @@ public final class PluginDescriptionFile {
                     });
                     for (final PluginAwareness.Flags flag : PluginAwareness.Flags.values()) {
                         yamlConstructors.put(new Tag("!@" + flag.name()), new AbstractConstruct() {
+                            @NotNull
                             @Override
-                            public PluginAwareness.Flags construct(final Node node) {
+                            public PluginAwareness.Flags construct(@NotNull final Node node) {
                                 return flag;
                             }
                         });
@@ -218,7 +226,7 @@ public final class PluginDescriptionFile {
     private List<String> softDepend = ImmutableList.of();
     private List<String> loadBefore = ImmutableList.of();
     private String version = null;
-    private Map<String, Map<String, Object>> commands = null;
+    private Map<String, Map<String, Object>> commands = ImmutableMap.of();
     private String description = null;
     private List<String> authors = null;
     private String website = null;
@@ -230,7 +238,7 @@ public final class PluginDescriptionFile {
     private Set<PluginAwareness> awareness = ImmutableSet.of();
     private String apiVersion = null;
 
-    public PluginDescriptionFile(final InputStream stream) throws InvalidDescriptionException {
+    public PluginDescriptionFile(@NotNull final InputStream stream) throws InvalidDescriptionException {
         loadMap(asMap(YAML.get().load(stream)));
     }
 
@@ -241,7 +249,7 @@ public final class PluginDescriptionFile {
      * @throws InvalidDescriptionException If the PluginDescriptionFile is
      *     invalid
      */
-    public PluginDescriptionFile(final Reader reader) throws InvalidDescriptionException {
+    public PluginDescriptionFile(@NotNull final Reader reader) throws InvalidDescriptionException {
         loadMap(asMap(YAML.get().load(reader)));
     }
 
@@ -252,7 +260,7 @@ public final class PluginDescriptionFile {
      * @param pluginVersion Version of this plugin
      * @param mainClass Full location of the main class of this plugin
      */
-    public PluginDescriptionFile(final String pluginName, final String pluginVersion, final String mainClass) {
+    public PluginDescriptionFile(@NotNull final String pluginName, @NotNull final String pluginVersion, @NotNull final String mainClass) {
         name = rawName = pluginName;
 
         if (!VALID_NAME.matcher(name).matches()) {
@@ -288,6 +296,7 @@ public final class PluginDescriptionFile {
      *
      * @return the name of the plugin
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -308,6 +317,7 @@ public final class PluginDescriptionFile {
      *
      * @return the version of the plugin
      */
+    @NotNull
     public String getVersion() {
         return version;
     }
@@ -334,6 +344,7 @@ public final class PluginDescriptionFile {
      *
      * @return the fully qualified main class for the plugin
      */
+    @NotNull
     public String getMain() {
         return main;
     }
@@ -353,6 +364,7 @@ public final class PluginDescriptionFile {
      *
      * @return description of this plugin, or null if not specified
      */
+    @Nullable
     public String getDescription() {
         return description;
     }
@@ -376,6 +388,7 @@ public final class PluginDescriptionFile {
      *
      * @return the phase when the plugin should be loaded
      */
+    @NotNull
     public PluginLoadOrder getLoad() {
         return order;
     }
@@ -411,6 +424,7 @@ public final class PluginDescriptionFile {
      *
      * @return an immutable list of the plugin's authors
      */
+    @NotNull
     public List<String> getAuthors() {
         return authors;
     }
@@ -430,6 +444,7 @@ public final class PluginDescriptionFile {
      *
      * @return description of this plugin, or null if not specified
      */
+    @Nullable
     public String getWebsite() {
         return website;
     }
@@ -460,6 +475,7 @@ public final class PluginDescriptionFile {
      *
      * @return immutable list of the plugin's dependencies
      */
+    @NotNull
     public List<String> getDepend() {
         return depend;
     }
@@ -489,6 +505,7 @@ public final class PluginDescriptionFile {
      *
      * @return immutable list of the plugin's preferred dependencies
      */
+    @NotNull
     public List<String> getSoftDepend() {
         return softDepend;
     }
@@ -518,6 +535,7 @@ public final class PluginDescriptionFile {
      * @return immutable list of plugins that should consider this plugin a
      *     soft-dependency
      */
+    @NotNull
     public List<String> getLoadBefore() {
         return loadBefore;
     }
@@ -537,6 +555,7 @@ public final class PluginDescriptionFile {
      *
      * @return the prefixed logging token, or null if not specified
      */
+    @Nullable
     public String getPrefix() {
         return prefix;
     }
@@ -589,8 +608,7 @@ public final class PluginDescriptionFile {
      *         standard one if no specific message is defined. Without the
      *         permission node, no {@link
      *         PluginCommand#setExecutor(CommandExecutor) CommandExecutor} or
-     *         {@link PluginCommand#setTabCompleter(TabCompleter)
-     *         TabCompleter} will be called.</td>
+     *         {@link PluginCommand#setTabCompleter(TabCompleter)} will be called.</td>
      *     <td><blockquote><pre>permission: inferno.flagrate</pre></blockquote></td>
      * </tr><tr>
      *     <td><code>permission-message</code></td>
@@ -612,9 +630,8 @@ public final class PluginDescriptionFile {
      *     <td>String</td>
      *     <td>This message is displayed to a player when the {@link
      *         PluginCommand#setExecutor(CommandExecutor)} {@linkplain
-     *         CommandExecutor#onCommand(CommandSender,Command,String,String[])
-     *         returns false}. &lt;command&gt; is a macro that is replaced
-     *         the command issued.</td>
+     *         CommandExecutor#onCommand(CommandSender, Command, String, String[]) returns false}.
+     *         &lt;command&gt; is a macro that is replaced the command issued.</td>
      *     <td><blockquote><pre>usage: Syntax error! Perhaps you meant /&lt;command&gt; PlayerName?</pre></blockquote>
      *         It is worth noting that to use a colon in a yaml, like
      *         <code>`usage: Usage: /god [player]'</code>, you need to
@@ -657,6 +674,7 @@ public final class PluginDescriptionFile {
      *
      * @return the commands this plugin will register
      */
+    @NotNull
     public Map<String, Map<String, Object>> getCommands() {
         return commands;
     }
@@ -769,6 +787,7 @@ public final class PluginDescriptionFile {
      * 
      * @return the permissions this plugin will register
      */
+    @NotNull
     public List<Permission> getPermissions() {
         if (permissions == null) {
             if (lazyPermissions == null) {
@@ -798,6 +817,7 @@ public final class PluginDescriptionFile {
      *
      * @return the default value for the plugin's permissions
      */
+    @NotNull
     public PermissionDefault getPermissionDefault() {
         return defaultPerm;
     }
@@ -837,6 +857,7 @@ public final class PluginDescriptionFile {
      *
      * @return a set containing every awareness for the plugin
      */
+    @NotNull
     public Set<PluginAwareness> getAwareness() {
         return awareness;
     }
@@ -848,6 +869,7 @@ public final class PluginDescriptionFile {
      *
      * @return a descriptive name of the plugin and respective version
      */
+    @NotNull
     public String getFullName() {
         return name + " v" + version;
     }
@@ -865,6 +887,7 @@ public final class PluginDescriptionFile {
      *
      * @return the version of the plugin
      */
+    @Nullable
     public String getAPIVersion() {
         return apiVersion;
     }
@@ -874,6 +897,7 @@ public final class PluginDescriptionFile {
      * @deprecated unused
      */
     @Deprecated
+    @Nullable
     public String getClassLoaderOf() {
         return classLoaderOf;
     }
@@ -883,11 +907,11 @@ public final class PluginDescriptionFile {
      *
      * @param writer Writer to output this file to
      */
-    public void save(Writer writer) {
+    public void save(@NotNull Writer writer) {
         YAML.get().dump(saveMap(), writer);
     }
 
-    private void loadMap(Map<?, ?> map) throws InvalidDescriptionException {
+    private void loadMap(@NotNull Map<?, ?> map) throws InvalidDescriptionException {
         try {
             name = rawName = map.get("name").toString();
 
@@ -1033,7 +1057,8 @@ public final class PluginDescriptionFile {
         }
     }
 
-    private static List<String> makePluginNameList(final Map<?, ?> map, final String key) throws InvalidDescriptionException {
+    @NotNull
+    private static List<String> makePluginNameList(@NotNull final Map<?, ?> map, @NotNull final String key) throws InvalidDescriptionException {
         final Object value = map.get(key);
         if (value == null) {
             return ImmutableList.of();
@@ -1052,6 +1077,7 @@ public final class PluginDescriptionFile {
         return builder.build();
     }
 
+    @NotNull
     private Map<String, Object> saveMap() {
         Map<String, Object> map = new HashMap<String, Object>();
 
@@ -1098,7 +1124,8 @@ public final class PluginDescriptionFile {
         return map;
     }
 
-    private Map<?, ?> asMap(Object object) throws InvalidDescriptionException {
+    @NotNull
+    private Map<?, ?> asMap(@NotNull Object object) throws InvalidDescriptionException {
         if (object instanceof Map) {
             return (Map<?, ?>) object;
         }
@@ -1110,6 +1137,7 @@ public final class PluginDescriptionFile {
      * @deprecated Internal use
      */
     @Deprecated
+    @NotNull
     public String getRawName() {
         return rawName;
     }

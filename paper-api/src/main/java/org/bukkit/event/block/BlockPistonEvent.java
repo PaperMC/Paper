@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a piston block is triggered
@@ -12,7 +13,7 @@ public abstract class BlockPistonEvent extends BlockEvent implements Cancellable
     private boolean cancelled;
     private final BlockFace direction;
 
-    public BlockPistonEvent(final Block block, final BlockFace direction) {
+    public BlockPistonEvent(@NotNull final Block block, @NotNull final BlockFace direction) {
         super(block);
         this.direction = direction;
     }
@@ -39,6 +40,7 @@ public abstract class BlockPistonEvent extends BlockEvent implements Cancellable
      *
      * @return direction of the piston
      */
+    @NotNull
     public BlockFace getDirection() {
         // Both are meh!
         // return ((PistonBaseMaterial) block.getType().getNewData(block.getData())).getFacing();

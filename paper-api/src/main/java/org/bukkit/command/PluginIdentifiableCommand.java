@@ -1,6 +1,7 @@
 package org.bukkit.command;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This interface is used by the help system to group commands into
@@ -15,5 +16,6 @@ public interface PluginIdentifiableCommand {
      *
      * @return Plugin that owns this PluginIdentifiableCommand.
      */
+    @NotNull
     public Plugin getPlugin();
 }

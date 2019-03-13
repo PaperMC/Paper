@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * An enum to specify a rotation based orientation, like that on a clock.
  * <p>
@@ -48,6 +50,7 @@ public enum Rotation {
      *
      * @return the relative rotation
      */
+    @NotNull
     public Rotation rotateClockwise() {
         return rotations[(this.ordinal() + 1) & 0x7];
     }
@@ -57,6 +60,7 @@ public enum Rotation {
      *
      * @return the relative rotation
      */
+    @NotNull
     public Rotation rotateCounterClockwise() {
         return rotations[(this.ordinal() - 1) & 0x7];
     }

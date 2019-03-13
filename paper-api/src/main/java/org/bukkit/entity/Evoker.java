@@ -1,5 +1,8 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents an Evoker "Illager".
  */
@@ -49,6 +52,7 @@ public interface Evoker extends Spellcaster {
      *
      */
     @Deprecated
+    @NotNull
     Spell getCurrentSpell();
 
     /**
@@ -59,5 +63,5 @@ public interface Evoker extends Spellcaster {
      * entities.
      */
     @Deprecated
-    void setCurrentSpell(Spell spell);
+    void setCurrentSpell(@Nullable Spell spell);
 }

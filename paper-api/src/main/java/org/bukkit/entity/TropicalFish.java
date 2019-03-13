@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.DyeColor;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Tropical fish.
@@ -12,6 +13,7 @@ public interface TropicalFish extends Fish {
      *
      * @return pattern color
      */
+    @NotNull
     DyeColor getPatternColor();
 
     /**
@@ -19,13 +21,14 @@ public interface TropicalFish extends Fish {
      *
      * @param color pattern color
      */
-    void setPatternColor(DyeColor color);
+    void setPatternColor(@NotNull DyeColor color);
 
     /**
      * Gets the color of the fish's body.
      *
      * @return pattern color
      */
+    @NotNull
     DyeColor getBodyColor();
 
     /**
@@ -33,13 +36,14 @@ public interface TropicalFish extends Fish {
      *
      * @param color body color
      */
-    void setBodyColor(DyeColor color);
+    void setBodyColor(@NotNull DyeColor color);
 
     /**
      * Gets the fish's pattern.
      *
      * @return pattern
      */
+    @NotNull
     Pattern getPattern();
 
     /**
@@ -47,7 +51,7 @@ public interface TropicalFish extends Fish {
      *
      * @param pattern new pattern
      */
-    void setPattern(Pattern pattern);
+    void setPattern(@NotNull Pattern pattern);
 
     /**
      * Enumeration of all different fish patterns. Refer to the

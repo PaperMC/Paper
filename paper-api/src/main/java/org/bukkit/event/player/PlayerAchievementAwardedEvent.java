@@ -4,6 +4,7 @@ import org.bukkit.Achievement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player earns an achievement.
@@ -37,6 +38,7 @@ public class PlayerAchievementAwardedEvent extends PlayerEvent implements Cancel
         this.isCancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;

@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Slime;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a Slime splits into smaller Slimes upon death
@@ -12,7 +13,7 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private int count;
 
-    public SlimeSplitEvent(final Slime slime, final int count) {
+    public SlimeSplitEvent(@NotNull final Slime slime, final int count) {
         super(slime);
         this.count = count;
     }
@@ -25,6 +26,7 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public Slime getEntity() {
         return (Slime) entity;
@@ -48,11 +50,13 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
         this.count = count;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

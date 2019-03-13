@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'mode' represents the different modes in which this structure block may
@@ -13,6 +14,7 @@ public interface StructureBlock extends BlockData {
      *
      * @return the 'mode' value
      */
+    @NotNull
     Mode getMode();
 
     /**
@@ -20,7 +22,7 @@ public interface StructureBlock extends BlockData {
      *
      * @param mode the new 'mode' value
      */
-    void setMode(Mode mode);
+    void setMode(@NotNull Mode mode);
 
     /**
      * Operating mode of a structure block.

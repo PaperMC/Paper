@@ -6,6 +6,8 @@ import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Triggered when a hanging entity is created in the world
@@ -17,7 +19,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     private final Block block;
     private final BlockFace blockFace;
 
-    public HangingPlaceEvent(final Hanging hanging, final Player player, final Block block, final BlockFace blockFace) {
+    public HangingPlaceEvent(@NotNull final Hanging hanging, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace) {
         super(hanging);
         this.player = player;
         this.block = block;
@@ -29,6 +31,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      *
      * @return the player placing the hanging entity
      */
+    @Nullable
     public Player getPlayer() {
         return player;
     }
@@ -38,6 +41,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      *
      * @return the block that the hanging entity was placed on
      */
+    @NotNull
     public Block getBlock() {
         return block;
     }
@@ -47,6 +51,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      *
      * @return the face of the block that the hanging entity was placed on
      */
+    @NotNull
     public BlockFace getBlockFace() {
         return blockFace;
     }
@@ -59,11 +64,13 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

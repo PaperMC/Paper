@@ -4,6 +4,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a villager's trade's maximum uses is increased, due to a player's
@@ -19,7 +20,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
     private MerchantRecipe recipe;
     private int bonus;
 
-    public VillagerReplenishTradeEvent(Villager what, MerchantRecipe recipe, int bonus) {
+    public VillagerReplenishTradeEvent(@NotNull Villager what, @NotNull MerchantRecipe recipe, int bonus) {
         super(what);
         this.recipe = recipe;
         this.bonus = bonus;
@@ -30,6 +31,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      *
      * @return the replenished recipe
      */
+    @NotNull
     public MerchantRecipe getRecipe() {
         return recipe;
     }
@@ -39,7 +41,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      *
      * @param recipe the replenished recipe
      */
-    public void setRecipe(MerchantRecipe recipe) {
+    public void setRecipe(@NotNull MerchantRecipe recipe) {
         this.recipe = recipe;
     }
 
@@ -73,16 +75,19 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public Villager getEntity() {
         return (Villager) super.getEntity();
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

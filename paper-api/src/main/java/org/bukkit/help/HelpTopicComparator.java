@@ -1,5 +1,7 @@
 package org.bukkit.help;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Comparator;
 
 /**
@@ -12,25 +14,27 @@ public class HelpTopicComparator implements Comparator<HelpTopic> {
 
     // Singleton implementations
     private static final TopicNameComparator tnc = new TopicNameComparator();
+    @NotNull
     public static TopicNameComparator topicNameComparatorInstance() {
         return tnc;
     }
 
     private static final HelpTopicComparator htc = new HelpTopicComparator();
+    @NotNull
     public static HelpTopicComparator helpTopicComparatorInstance() {
         return htc;
     }
 
     private HelpTopicComparator() {}
 
-    public int compare(HelpTopic lhs, HelpTopic rhs) {
+    public int compare(@NotNull HelpTopic lhs, @NotNull HelpTopic rhs) {
         return tnc.compare(lhs.getName(), rhs.getName());
     }
 
     public static class TopicNameComparator implements Comparator<String> {
         private TopicNameComparator(){}
 
-        public int compare(String lhs, String rhs) {
+        public int compare(@NotNull String lhs, @NotNull String rhs) {
             boolean lhsStartSlash = lhs.startsWith("/");
             boolean rhsStartSlash = rhs.startsWith("/");
 

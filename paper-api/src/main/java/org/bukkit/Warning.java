@@ -7,6 +7,8 @@ import java.lang.annotation.Target;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This designates the warning state for a specific item.
@@ -65,7 +67,7 @@ public @interface Warning {
          *     specifies false for {@link Warning#value()}, true otherwise.
          *     </ul>
          */
-        public boolean printFor(Warning warning) {
+        public boolean printFor(@Nullable Warning warning) {
             if (this == DEFAULT) {
                 return warning == null || warning.value();
             }
@@ -80,7 +82,8 @@ public @interface Warning {
          * @return {@link #DEFAULT} if not found, or the respective
          *     WarningState
          */
-        public static WarningState value(final String value) {
+        @NotNull
+        public static WarningState value(@Nullable final String value) {
             if (value == null) {
                 return DEFAULT;
             }

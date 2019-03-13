@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.Art;
 import org.bukkit.event.hanging.HangingBreakEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Painting.
@@ -13,6 +14,7 @@ public interface Painting extends Hanging {
      *
      * @return The art
      */
+    @NotNull
     public Art getArt();
 
     /**
@@ -22,7 +24,7 @@ public interface Painting extends Hanging {
      * @return False if the new art won't fit at the painting's current
      *     location
      */
-    public boolean setArt(Art art);
+    public boolean setArt(@NotNull Art art);
 
     /**
      * Set the art on this painting
@@ -35,5 +37,5 @@ public interface Painting extends Hanging {
      * @return False if force was false and the new art won't fit at the
      *     painting's current location
      */
-    public boolean setArt(Art art, boolean force);
+    public boolean setArt(@NotNull Art art, boolean force);
 }

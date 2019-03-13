@@ -1,6 +1,7 @@
 package org.bukkit.scheduler;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a task being executed by the scheduler
@@ -19,6 +20,7 @@ public interface BukkitTask {
      *
      * @return The Plugin that owns the task
      */
+    @NotNull
     public Plugin getOwner();
 
     /**

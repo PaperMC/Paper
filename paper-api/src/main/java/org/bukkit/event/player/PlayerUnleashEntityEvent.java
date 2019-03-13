@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.entity.EntityUnleashEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called prior to an entity being unleashed due to a player's action.
@@ -12,7 +13,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
     private final Player player;
     private boolean cancelled = false;
 
-    public PlayerUnleashEntityEvent(Entity entity, Player player) {
+    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
         super(entity, UnleashReason.PLAYER_UNLEASH);
         this.player = player;
     }
@@ -22,6 +23,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
      *
      * @return The player
      */
+    @NotNull
     public Player getPlayer() {
         return player;
     }

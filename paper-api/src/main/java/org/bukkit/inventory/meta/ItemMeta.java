@@ -13,6 +13,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This type represents the storage mechanism for auxiliary item data.
@@ -37,6 +39,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @return the display name that is set
      */
+    @NotNull
     String getDisplayName();
 
     /**
@@ -44,7 +47,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @param name the name to set
      */
-    void setDisplayName(String name);
+    void setDisplayName(@Nullable String name);
 
     /**
      * Checks for existence of a localized name.
@@ -61,6 +64,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @return the localized name that is set
      */
+    @NotNull
     String getLocalizedName();
 
     /**
@@ -68,7 +72,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @param name the name to set
      */
-    void setLocalizedName(String name);
+    void setLocalizedName(@Nullable String name);
 
     /**
      * Checks for existence of lore.
@@ -85,6 +89,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * 
      * @return a list of lore that is set
      */
+    @Nullable
     List<String> getLore();
 
     /**
@@ -93,7 +98,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @param lore the lore that will be set
      */
-    void setLore(List<String> lore);
+    void setLore(@Nullable List<String> lore);
 
     /**
      * Checks for the existence of any enchantments.
@@ -108,7 +113,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @param ench enchantment to check
      * @return true if this enchantment exists for this meta
      */
-    boolean hasEnchant(Enchantment ench);
+    boolean hasEnchant(@NotNull Enchantment ench);
 
     /**
      * Checks for the level of the specified enchantment.
@@ -116,7 +121,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @param ench enchantment to check
      * @return The level that the specified enchantment has, or 0 if none
      */
-    int getEnchantLevel(Enchantment ench);
+    int getEnchantLevel(@NotNull Enchantment ench);
 
     /**
      * Returns a copy the enchantments in this ItemMeta. <br> 
@@ -124,6 +129,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @return An immutable copy of the enchantments
      */
+    @NotNull
     Map<Enchantment, Integer> getEnchants();
 
     /**
@@ -136,7 +142,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @return true if the item meta changed as a result of this call, false
      *     otherwise
      */
-    boolean addEnchant(Enchantment ench, int level, boolean ignoreLevelRestriction);
+    boolean addEnchant(@NotNull Enchantment ench, int level, boolean ignoreLevelRestriction);
 
     /**
      * Removes the specified enchantment from this item meta.
@@ -145,7 +151,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @return true if the item meta changed as a result of this call, false
      *     otherwise
      */
-    boolean removeEnchant(Enchantment ench);
+    boolean removeEnchant(@NotNull Enchantment ench);
 
     /**
      * Checks if the specified enchantment conflicts with any enchantments in
@@ -154,27 +160,28 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
      */
-    boolean hasConflictingEnchant(Enchantment ench);
+    boolean hasConflictingEnchant(@NotNull Enchantment ench);
 
     /**
      * Set itemflags which should be ignored when rendering a ItemStack in the Client. This Method does silently ignore double set itemFlags.
      *
      * @param itemFlags The hideflags which shouldn't be rendered
      */
-    void addItemFlags(ItemFlag... itemFlags);
+    void addItemFlags(@NotNull ItemFlag... itemFlags);
 
     /**
      * Remove specific set of itemFlags. This tells the Client it should render it again. This Method does silently ignore double removed itemFlags.
      *
      * @param itemFlags Hideflags which should be removed
      */
-    void removeItemFlags(ItemFlag... itemFlags);
+    void removeItemFlags(@NotNull ItemFlag... itemFlags);
 
     /**
      * Get current set itemFlags. The collection returned is unmodifiable.
      *
      * @return A set of all itemFlags set
      */
+    @NotNull
     Set<ItemFlag> getItemFlags();
 
     /**
@@ -183,7 +190,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @param flag the flag to check
      * @return if it is present
      */
-    boolean hasItemFlag(ItemFlag flag);
+    boolean hasItemFlag(@NotNull ItemFlag flag);
 
     /**
      * Return if the unbreakable tag is true. An unbreakable item will not lose
@@ -215,6 +222,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @return an immutable {@link Multimap} of Attributes
      *         and their AttributeModifiers, or null if none exist
      */
+    @Nullable
     Multimap<Attribute, AttributeModifier> getAttributeModifiers();
 
     /**
@@ -231,7 +239,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *         respective Attributes and modifiers, or an empty map
      *         if no attributes are set.
      */
-    Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot);
+    @NotNull
+    Multimap<Attribute, AttributeModifier> getAttributeModifiers(@NotNull EquipmentSlot slot);
 
     /**
      * Return an immutable copy of all {@link AttributeModifier}s
@@ -242,7 +251,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *          or null if no AttributeModifiers exist for the Attribute.
      * @throws NullPointerException if Attribute is null
      */
-    Collection<AttributeModifier> getAttributeModifiers(Attribute attribute);
+    @Nullable
+    Collection<AttributeModifier> getAttributeModifiers(@NotNull Attribute attribute);
 
     /**
      * Add an Attribute and it's Modifier.
@@ -260,7 +270,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @throws NullPointerException if AttributeModifier is null
      * @throws IllegalArgumentException if AttributeModifier already exists
      */
-    boolean addAttributeModifier(Attribute attribute, AttributeModifier modifier);
+    boolean addAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
     /**
      * Set all {@link Attribute}s and their {@link AttributeModifier}s.
@@ -272,7 +282,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @param attributeModifiers the new Multimap containing the Attributes
      *                           and their AttributeModifiers
      */
-    void setAttributeModifiers(Multimap<Attribute, AttributeModifier> attributeModifiers);
+    void setAttributeModifiers(@Nullable Multimap<Attribute, AttributeModifier> attributeModifiers);
 
     /**
      * Remove all {@link AttributeModifier}s associated with the given
@@ -285,7 +295,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *                  removed.
      * @throws NullPointerException if Attribute is null
      */
-    boolean removeAttributeModifier(Attribute attribute);
+    boolean removeAttributeModifier(@NotNull Attribute attribute);
 
     /**
      * Remove all {@link Attribute}s and {@link AttributeModifier}s for a
@@ -298,7 +308,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @return true if all modifiers were removed that match the given
      *         EquipmentSlot.
      */
-    boolean removeAttributeModifier(EquipmentSlot slot);
+    boolean removeAttributeModifier(@NotNull EquipmentSlot slot);
 
     /**
      * Remove a specific {@link Attribute} and {@link AttributeModifier}.
@@ -313,7 +323,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * @throws NullPointerException if the Attribute is null
      * @throws NullPointerException if the AttributeModifier is null
      */
-    boolean removeAttributeModifier(Attribute attribute, AttributeModifier modifier);
+    boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
     /**
      * Returns a public custom tag container capable of storing tags on the
@@ -327,8 +337,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      *
      * @return the custom tag container
      */
+    @NotNull
     CustomItemTagContainer getCustomTagContainer();
 
     @SuppressWarnings("javadoc")
+    @NotNull
     ItemMeta clone();
 }

@@ -1,5 +1,9 @@
 package org.bukkit.block.banner;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +57,7 @@ public enum PatternType {
         }
     }
 
-    private PatternType(String key) {
+    private PatternType(@NotNull String key) {
         this.identifier = key;
     }
 
@@ -63,6 +67,7 @@ public enum PatternType {
      *
      * @return the pattern's identifier
      */
+    @NotNull
     public String getIdentifier() {
         return identifier;
     }
@@ -74,7 +79,9 @@ public enum PatternType {
      * @param identifier the identifier
      * @return the matched pattern type or null
      */
-    public static PatternType getByIdentifier(String identifier) {
+    @Contract("null -> null")
+    @Nullable
+    public static PatternType getByIdentifier(@Nullable String identifier) {
         return byString.get(identifier);
     }
 }

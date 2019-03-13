@@ -4,6 +4,7 @@ import org.bukkit.World;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for lightning striking
@@ -15,11 +16,11 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     private final Cause cause;
 
     @Deprecated
-    public LightningStrikeEvent(final World world, final LightningStrike bolt) {
+    public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt) {
         this(world, bolt, Cause.UNKNOWN);
     }
 
-    public LightningStrikeEvent(final World world, final LightningStrike bolt, final Cause cause) {
+    public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt, @NotNull final Cause cause) {
         super(world);
         this.bolt = bolt;
         this.cause = cause;
@@ -38,6 +39,7 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      *
      * @return lightning entity
      */
+    @NotNull
     public LightningStrike getLightning() {
         return bolt;
     }
@@ -47,15 +49,18 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      *
      * @return strike cause
      */
+    @NotNull
     public Cause getCause() {
         return cause;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

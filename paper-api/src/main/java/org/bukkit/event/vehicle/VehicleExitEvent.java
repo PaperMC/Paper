@@ -4,6 +4,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a living entity exits a vehicle.
@@ -13,7 +14,7 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
     private boolean cancelled;
     private final LivingEntity exited;
 
-    public VehicleExitEvent(final Vehicle vehicle, final LivingEntity exited) {
+    public VehicleExitEvent(@NotNull final Vehicle vehicle, @NotNull final LivingEntity exited) {
         super(vehicle);
         this.exited = exited;
     }
@@ -23,6 +24,7 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
      *
      * @return The entity.
      */
+    @NotNull
     public LivingEntity getExited() {
         return exited;
     }
@@ -35,11 +37,13 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -3,6 +3,8 @@ package org.bukkit.inventory;
 import java.util.List;
 
 import org.bukkit.entity.HumanEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a merchant. A merchant is a special type of inventory which can
@@ -15,6 +17,7 @@ public interface Merchant {
      *
      * @return an immutable list of trades
      */
+    @NotNull
     List<MerchantRecipe> getRecipes();
 
     /**
@@ -25,7 +28,7 @@ public interface Merchant {
      *
      * @param recipes a list of recipes
      */
-    void setRecipes(List<MerchantRecipe> recipes);
+    void setRecipes(@NotNull List<MerchantRecipe> recipes);
 
     /**
      * Get the recipe at a certain index of this merchant's trade list.
@@ -34,6 +37,7 @@ public interface Merchant {
      * @return the recipe
      * @throws IndexOutOfBoundsException
      */
+    @NotNull
     MerchantRecipe getRecipe(int i) throws IndexOutOfBoundsException;
 
     /**
@@ -43,7 +47,7 @@ public interface Merchant {
      * @param recipe the recipe
      * @throws IndexOutOfBoundsException
      */
-    void setRecipe(int i, MerchantRecipe recipe) throws IndexOutOfBoundsException;
+    void setRecipe(int i, @NotNull MerchantRecipe recipe) throws IndexOutOfBoundsException;
 
     /**
      * Get the number of trades this merchant currently has available.
@@ -65,5 +69,6 @@ public interface Merchant {
      *
      * @return the trader, or null
      */
+    @Nullable
     HumanEntity getTrader();
 }

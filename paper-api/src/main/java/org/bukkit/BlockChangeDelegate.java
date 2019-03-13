@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A delegate for handling block changes. This serves as a direct interface
@@ -18,7 +19,7 @@ public interface BlockChangeDelegate {
      * @param blockData Block data
      * @return true if the block was set successfully
      */
-    public boolean setBlockData(int x, int y, int z, BlockData blockData);
+    public boolean setBlockData(int x, int y, int z, @NotNull BlockData blockData);
 
     /**
      * Get the block data at the location.
@@ -28,6 +29,7 @@ public interface BlockChangeDelegate {
      * @param z Z coordinate
      * @return The block data
      */
+    @NotNull
     public BlockData getBlockData(int x, int y, int z);
 
     /**

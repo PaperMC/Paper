@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Waterlogged;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'type' represents what state the slab is in - either top, bottom, or a double
@@ -13,6 +14,7 @@ public interface Slab extends Waterlogged {
      *
      * @return the 'type' value
      */
+    @NotNull
     Type getType();
 
     /**
@@ -20,7 +22,7 @@ public interface Slab extends Waterlogged {
      *
      * @param type the new 'type' value
      */
-    void setType(Type type);
+    void setType(@NotNull Type type);
 
     /**
      * The type of the slab.

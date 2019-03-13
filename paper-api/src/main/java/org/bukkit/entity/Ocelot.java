@@ -1,6 +1,9 @@
 
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * A wild tameable cat
  */
@@ -11,6 +14,7 @@ public interface Ocelot extends Animals, Tameable, Sittable {
      *
      * @return Type of the cat.
      */
+    @NotNull
     public Type getCatType();
 
     /**
@@ -18,7 +22,7 @@ public interface Ocelot extends Animals, Tameable, Sittable {
      *
      * @param type New type of this cat.
      */
-    public void setCatType(Type type);
+    public void setCatType(@NotNull Type type);
 
     /**
      * Represents the various different cat types there are.
@@ -61,6 +65,7 @@ public interface Ocelot extends Animals, Tameable, Sittable {
          * @deprecated Magic value
          */
         @Deprecated
+        @Nullable
         public static Type getType(int id) {
             return (id >= types.length) ? null : types[id];
         }

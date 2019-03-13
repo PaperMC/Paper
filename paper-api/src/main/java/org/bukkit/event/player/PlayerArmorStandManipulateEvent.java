@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player interacts with an armor stand and will either swap, retrieve or place an item.
@@ -17,7 +18,7 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
     private final ItemStack armorStandItem;
     private final EquipmentSlot slot;
 
-    public PlayerArmorStandManipulateEvent(final Player who, final ArmorStand clickedEntity, final ItemStack playerItem, final ItemStack armorStandItem, final EquipmentSlot slot) {
+    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
         super(who, clickedEntity);
         this.playerItem = playerItem;
         this.armorStandItem = armorStandItem;
@@ -33,6 +34,7 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * In the case that the event is cancelled the original items will remain the same.
      * @return the item held by the player.
      */
+    @NotNull
     public ItemStack getPlayerItem() {
         return this.playerItem;
     }
@@ -46,6 +48,7 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * In the case that the event is cancelled the original items will remain the same.
      * @return the item held by the armor stand.
      */
+    @NotNull
     public ItemStack getArmorStandItem() {
         return this.armorStandItem;
     }
@@ -55,20 +58,24 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      *
      * @return the index of the item obtained or placed of the armor stand.
      */
+    @NotNull
     public EquipmentSlot getSlot() {
         return this.slot;
     }
 
+    @NotNull
     @Override
     public ArmorStand getRightClicked() {
         return (ArmorStand) this.clickedEntity;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

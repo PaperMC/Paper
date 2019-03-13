@@ -4,6 +4,9 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a skull block.
@@ -24,6 +27,7 @@ public interface Skull extends BlockState {
      * @deprecated See {@link #getOwningPlayer()}.
      */
     @Deprecated
+    @Nullable
     public String getOwner();
 
     /**
@@ -37,7 +41,8 @@ public interface Skull extends BlockState {
      * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
      */
     @Deprecated
-    public boolean setOwner(String name);
+    @Contract("null -> false")
+    public boolean setOwner(@Nullable String name);
 
     /**
      * Get the player which owns the skull. This player may appear as the
@@ -45,6 +50,7 @@ public interface Skull extends BlockState {
      *
      * @return owning player
      */
+    @Nullable
     public OfflinePlayer getOwningPlayer();
 
     /**
@@ -53,7 +59,7 @@ public interface Skull extends BlockState {
      *
      * @param player the owning player
      */
-    public void setOwningPlayer(OfflinePlayer player);
+    public void setOwningPlayer(@NotNull OfflinePlayer player);
 
     /**
      * Gets the rotation of the skull in the world (or facing direction if this
@@ -63,6 +69,7 @@ public interface Skull extends BlockState {
      * @deprecated use {@link BlockData}
      */
     @Deprecated
+    @NotNull
     public BlockFace getRotation();
 
     /**
@@ -73,7 +80,7 @@ public interface Skull extends BlockState {
      * @deprecated use {@link BlockData}
      */
     @Deprecated
-    public void setRotation(BlockFace rotation);
+    public void setRotation(@NotNull BlockFace rotation);
 
     /**
      * Gets the type of skull
@@ -82,6 +89,7 @@ public interface Skull extends BlockState {
      * @deprecated check {@link Material} instead
      */
     @Deprecated
+    @NotNull
     public SkullType getSkullType();
 
     /**
@@ -91,5 +99,6 @@ public interface Skull extends BlockState {
      * @deprecated check {@link Material} instead
      */
     @Deprecated
+    @Contract("_ -> fail")
     public void setSkullType(SkullType skullType);
 }

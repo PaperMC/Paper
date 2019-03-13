@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Fired when a player changes their currently held item
@@ -13,7 +14,7 @@ public class PlayerItemHeldEvent extends PlayerEvent implements Cancellable {
     private final int previous;
     private final int current;
 
-    public PlayerItemHeldEvent(final Player player, final int previous, final int current) {
+    public PlayerItemHeldEvent(@NotNull final Player player, final int previous, final int current) {
         super(player);
         this.previous = previous;
         this.current = current;
@@ -45,11 +46,13 @@ public class PlayerItemHeldEvent extends PlayerEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

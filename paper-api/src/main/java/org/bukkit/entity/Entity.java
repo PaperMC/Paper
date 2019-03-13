@@ -1,7 +1,7 @@
 package org.bukkit.entity;
 
-import org.bukkit.Location;
 import org.bukkit.EntityEffect;
+import org.bukkit.Location;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -18,6 +18,9 @@ import java.util.UUID;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a base entity in the world
@@ -29,6 +32,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return a new copy of Location containing the position of this entity
      */
+    @NotNull
     public Location getLocation();
 
     /**
@@ -40,20 +44,23 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param loc the location to copy into
      * @return The Location object provided or null
      */
-    public Location getLocation(Location loc);
+    @Contract("null -> null; !null -> !null")
+    @Nullable
+    public Location getLocation(@Nullable Location loc);
 
     /**
      * Sets this entity's velocity
      *
      * @param velocity New velocity to travel with
      */
-    public void setVelocity(Vector velocity);
+    public void setVelocity(@NotNull Vector velocity);
 
     /**
      * Gets this entity's current velocity
      *
      * @return Current traveling velocity of this entity
      */
+    @NotNull
     public Vector getVelocity();
 
     /**
@@ -78,6 +85,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return the entity's current bounding box
      */
+    @NotNull
     public BoundingBox getBoundingBox();
 
     /**
@@ -94,6 +102,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return World
      */
+    @NotNull
     public World getWorld();
 
     /**
@@ -103,7 +112,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param location New location to teleport this entity to
      * @return <code>true</code> if the teleport was successful
      */
-    public boolean teleport(Location location);
+    public boolean teleport(@NotNull Location location);
 
     /**
      * Teleports this entity to the given location. If this entity is riding a
@@ -113,7 +122,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param cause The cause of this teleportation
      * @return <code>true</code> if the teleport was successful
      */
-    public boolean teleport(Location location, TeleportCause cause);
+    public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause);
 
     /**
      * Teleports this entity to the target Entity. If this entity is riding a
@@ -122,7 +131,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param destination Entity to teleport this entity to
      * @return <code>true</code> if the teleport was successful
      */
-    public boolean teleport(Entity destination);
+    public boolean teleport(@NotNull Entity destination);
 
     /**
      * Teleports this entity to the target Entity. If this entity is riding a
@@ -132,7 +141,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param cause The cause of this teleportation
      * @return <code>true</code> if the teleport was successful
      */
-    public boolean teleport(Entity destination, TeleportCause cause);
+    public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
 
     /**
      * Returns a list of entities within a bounding box centered around this
@@ -143,6 +152,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param z 1/2 the size of the box along z axis
      * @return {@code List<Entity>} List of entities nearby
      */
+    @NotNull
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z);
 
     /**
@@ -200,6 +210,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return Server instance running this Entity
      */
+    @NotNull
     public Server getServer();
 
     /**
@@ -242,6 +253,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * {@link #getPassengers()}
      */
     @Deprecated
+    @Nullable
     public Entity getPassenger();
 
     /**
@@ -253,7 +265,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * {@link #getPassengers()}
      */
     @Deprecated
-    public boolean setPassenger(Entity passenger);
+    public boolean setPassenger(@NotNull Entity passenger);
 
     /**
      * Gets a list of passengers of this vehicle.
@@ -263,6 +275,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return list of entities corresponding to current passengers.
      */
+    @NotNull
     public List<Entity> getPassengers();
 
     /**
@@ -271,7 +284,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param passenger The passenger to add
      * @return false if it could not be done for whatever reason
      */
-    public boolean addPassenger(Entity passenger);
+    public boolean addPassenger(@NotNull Entity passenger);
 
     /**
      * Remove a passenger from the vehicle.
@@ -279,7 +292,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param passenger The passenger to remove
      * @return false if it could not be done for whatever reason
      */
-    public boolean removePassenger(Entity passenger);
+    public boolean removePassenger(@NotNull Entity passenger);
 
     /**
      * Check if a vehicle has passengers.
@@ -314,7 +327,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @param event a {@link EntityDamageEvent}
      */
-    public void setLastDamageCause(EntityDamageEvent event);
+    public void setLastDamageCause(@Nullable EntityDamageEvent event);
 
     /**
      * Retrieve the last {@link EntityDamageEvent} inflicted on this entity.
@@ -323,6 +336,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @return the last known {@link EntityDamageEvent} or null if hitherto
      *     unharmed
      */
+    @Nullable
     public EntityDamageEvent getLastDamageCause();
 
     /**
@@ -330,6 +344,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return unique id
      */
+    @NotNull
     public UUID getUniqueId();
 
     /**
@@ -360,13 +375,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @param type Effect to play.
      */
-    public void playEffect(EntityEffect type);
+    public void playEffect(@NotNull EntityEffect type);
 
     /**
      * Get the type of the entity.
      *
      * @return The entity type.
      */
+    @NotNull
     public EntityType getType();
 
     /**
@@ -391,6 +407,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return The current vehicle.
      */
+    @Nullable
     public Entity getVehicle();
 
     /**
@@ -496,6 +513,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      *
      * @return a set of tags for this entity
      */
+    @NotNull
     Set<String> getScoreboardTags();
 
     /**
@@ -506,7 +524,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param tag the tag to add
      * @return true if the tag was successfully added
      */
-    boolean addScoreboardTag(String tag);
+    boolean addScoreboardTag(@NotNull String tag);
 
     /**
      * Removes a given tag from this entity.
@@ -514,13 +532,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @param tag the tag to remove
      * @return true if the tag was successfully removed
      */
-    boolean removeScoreboardTag(String tag);
+    boolean removeScoreboardTag(@NotNull String tag);
 
     /**
      * Returns the reaction of the entity when moved by a piston.
      *
      * @return reaction
      */
+    @NotNull
     PistonMoveReaction getPistonMoveReaction();
 
     /**
@@ -537,5 +556,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
      * @see Hanging
      * @see Directional#getFacing()
      */
+    @NotNull
     BlockFace getFacing();
 }

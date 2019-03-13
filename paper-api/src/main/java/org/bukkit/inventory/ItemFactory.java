@@ -6,6 +6,8 @@ import org.bukkit.Server;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An instance of the ItemFactory can be obtained with {@link
@@ -23,7 +25,8 @@ public interface ItemFactory {
      * @return a new ItemMeta that could be applied to an item stack of the
      *     specified material
      */
-    ItemMeta getItemMeta(final Material material);
+    @Nullable
+    ItemMeta getItemMeta(@NotNull final Material material);
 
     /**
      * This method checks the item meta to confirm that it is applicable (no
@@ -39,7 +42,7 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if the meta was not created by this
      *     factory
      */
-    boolean isApplicable(final ItemMeta meta, final ItemStack stack) throws IllegalArgumentException;
+    boolean isApplicable(@Nullable final ItemMeta meta, @Nullable final ItemStack stack) throws IllegalArgumentException;
 
     /**
      * This method checks the item meta to confirm that it is applicable (no
@@ -55,7 +58,7 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if the meta was not created by this
      *     factory
      */
-    boolean isApplicable(final ItemMeta meta, final Material material) throws IllegalArgumentException;
+    boolean isApplicable(@Nullable final ItemMeta meta, @Nullable final Material material) throws IllegalArgumentException;
 
     /**
      * This method is used to compare two item meta data objects.
@@ -68,7 +71,7 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if either meta was not created by this
      *     factory
      */
-    boolean equals(final ItemMeta meta1, final ItemMeta meta2) throws IllegalArgumentException;
+    boolean equals(@Nullable final ItemMeta meta1, @Nullable final ItemMeta meta2) throws IllegalArgumentException;
 
     /**
      * Returns an appropriate item meta for the specified stack.
@@ -91,7 +94,8 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if the specified meta was not created
      *     by this factory
      */
-    ItemMeta asMetaFor(final ItemMeta meta, final ItemStack stack) throws IllegalArgumentException;
+    @Nullable
+    ItemMeta asMetaFor(@NotNull final ItemMeta meta, @NotNull final ItemStack stack) throws IllegalArgumentException;
 
     /**
      * Returns an appropriate item meta for the specified material.
@@ -113,13 +117,15 @@ public interface ItemFactory {
      * @throws IllegalArgumentException if the specified meta was not created
      *     by this factory
      */
-    ItemMeta asMetaFor(final ItemMeta meta, final Material material) throws IllegalArgumentException;
+    @Nullable
+    ItemMeta asMetaFor(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
 
     /**
      * Returns the default color for all leather armor.
      *
      * @return the default color for leather armor
      */
+    @NotNull
     Color getDefaultLeatherColor();
 
     /**
@@ -133,5 +139,6 @@ public interface ItemFactory {
      * @deprecated for internal use only
      */
     @Deprecated
-    Material updateMaterial(final ItemMeta meta, final Material material) throws IllegalArgumentException;
+    @NotNull
+    Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
 }

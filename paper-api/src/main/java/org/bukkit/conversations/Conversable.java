@@ -1,5 +1,7 @@
 package org.bukkit.conversations;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * The Conversable interface is used to indicate objects that can have
  * conversations.
@@ -20,7 +22,7 @@ public interface Conversable {
      *
      * @param input The input message into the conversation
      */
-    public void acceptConversationInput(String input);
+    public void acceptConversationInput(@NotNull String input);
 
     /**
      * Enters into a dialog with a Conversation object.
@@ -29,14 +31,14 @@ public interface Conversable {
      * @return True if the conversation should proceed, false if it has been
      *     enqueued
      */
-    public boolean beginConversation(Conversation conversation);
+    public boolean beginConversation(@NotNull Conversation conversation);
 
     /**
      * Abandons an active conversation.
      *
      * @param conversation The conversation to abandon
      */
-    public void abandonConversation(Conversation conversation);
+    public void abandonConversation(@NotNull Conversation conversation);
 
     /**
      * Abandons an active conversation.
@@ -44,12 +46,12 @@ public interface Conversable {
      * @param conversation The conversation to abandon
      * @param details Details about why the conversation was abandoned
      */
-    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details);
+    public void abandonConversation(@NotNull Conversation conversation, @NotNull ConversationAbandonedEvent details);
 
     /**
      * Sends this sender a message raw
      *
      * @param message Message to be displayed
      */
-    public void sendRawMessage(String message);
+    public void sendRawMessage(@NotNull String message);
 }

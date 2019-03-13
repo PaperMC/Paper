@@ -3,6 +3,8 @@ package org.bukkit.entity;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a minecart entity.
@@ -62,6 +64,7 @@ public interface Minecart extends Vehicle {
      *
      * @return The vector factor
      */
+    @NotNull
     public Vector getFlyingVelocityMod();
 
     /**
@@ -71,7 +74,7 @@ public interface Minecart extends Vehicle {
      *
      * @param flying velocity modifier vector
      */
-    public void setFlyingVelocityMod(Vector flying);
+    public void setFlyingVelocityMod(@NotNull Vector flying);
 
     /**
      * Gets the derailed velocity modifier. Used for minecarts that are on the
@@ -81,6 +84,7 @@ public interface Minecart extends Vehicle {
      *
      * @return derailed visible speed
      */
+    @NotNull
     public Vector getDerailedVelocityMod();
 
     /**
@@ -90,7 +94,7 @@ public interface Minecart extends Vehicle {
      *
      * @param derailed visible speed
      */
-    public void setDerailedVelocityMod(Vector derailed);
+    public void setDerailedVelocityMod(@NotNull Vector derailed);
 
     /**
      * Sets the display block for this minecart.
@@ -98,7 +102,7 @@ public interface Minecart extends Vehicle {
      *
      * @param material the material to set as display block.
      */
-    public void setDisplayBlock(MaterialData material);
+    public void setDisplayBlock(@Nullable MaterialData material);
 
     /**
      * Gets the display block for this minecart.
@@ -106,6 +110,7 @@ public interface Minecart extends Vehicle {
      *
      * @return the block displayed by this minecart.
      */
+    @NotNull
     public MaterialData getDisplayBlock();
 
     /**
@@ -114,7 +119,7 @@ public interface Minecart extends Vehicle {
      *
      * @param blockData the material to set as display block.
      */
-    public void setDisplayBlockData(BlockData blockData);
+    public void setDisplayBlockData(@Nullable BlockData blockData);
 
     /**
      * Gets the display block for this minecart.
@@ -122,6 +127,7 @@ public interface Minecart extends Vehicle {
      *
      * @return the block displayed by this minecart.
      */
+    @NotNull
     public BlockData getDisplayBlockData();
 
     /**

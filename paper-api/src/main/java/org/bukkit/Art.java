@@ -5,6 +5,8 @@ import java.util.HashMap;
 import org.apache.commons.lang.Validate;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the art on a painting
@@ -84,6 +86,7 @@ public enum Art {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static Art getById(int id) {
         return BY_ID.get(id);
     }
@@ -96,7 +99,8 @@ public enum Art {
      * @param name The name
      * @return The painting
      */
-    public static Art getByName(String name) {
+    @Nullable
+    public static Art getByName(@NotNull String name) {
         Validate.notNull(name, "Name cannot be null");
 
         return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH));

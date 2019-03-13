@@ -10,6 +10,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an event that is called when a player interacts with an object or
@@ -33,11 +35,11 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private Result useItemInHand;
     private EquipmentSlot hand;
 
-    public PlayerInteractEvent(final Player who, final Action action, final ItemStack item, final Block clickedBlock, final BlockFace clickedFace) {
+    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
         this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
     }
 
-    public PlayerInteractEvent(final Player who, final Action action, final ItemStack item, final Block clickedBlock, final BlockFace clickedFace, final EquipmentSlot hand) {
+    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
         super(who);
         this.action = action;
         this.item = item;
@@ -54,6 +56,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return Action returns the type of interaction
      */
+    @NotNull
     public Action getAction() {
         return action;
     }
@@ -88,6 +91,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return ItemStack the item used
      */
+    @Nullable
     public ItemStack getItem() {
         return this.item;
     }
@@ -98,6 +102,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return Material the material of the item used
      */
+    @NotNull
     public Material getMaterial() {
         if (!hasItem()) {
             return Material.AIR;
@@ -143,6 +148,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return Block returns the block clicked with this item.
      */
+    @Nullable
     public Block getClickedBlock() {
         return blockClicked;
     }
@@ -152,6 +158,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return BlockFace returns the face of the block that was clicked
      */
+    @NotNull
     public BlockFace getBlockFace() {
         return blockFace;
     }
@@ -163,6 +170,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action to take with the interacted block
      */
+    @NotNull
     public Result useInteractedBlock() {
         return useClickedBlock;
     }
@@ -170,7 +178,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * @param useInteractedBlock the action to take with the interacted block
      */
-    public void setUseInteractedBlock(Result useInteractedBlock) {
+    public void setUseInteractedBlock(@NotNull Result useInteractedBlock) {
         this.useClickedBlock = useInteractedBlock;
     }
 
@@ -182,6 +190,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action to take with the item in hand
      */
+    @NotNull
     public Result useItemInHand() {
         return useItemInHand;
     }
@@ -189,7 +198,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     /**
      * @param useItemInHand the action to take with the item in hand
      */
-    public void setUseItemInHand(Result useItemInHand) {
+    public void setUseItemInHand(@NotNull Result useItemInHand) {
         this.useItemInHand = useItemInHand;
     }
 
@@ -199,15 +208,18 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the hand used to interact. May be null.
      */
+    @Nullable
     public EquipmentSlot getHand() {
         return hand;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

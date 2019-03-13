@@ -6,6 +6,7 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a lingering potion applies it's effects. Happens
@@ -16,7 +17,7 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
     private final List<LivingEntity> affectedEntities;
     private boolean cancelled = false;
 
-    public AreaEffectCloudApplyEvent(final AreaEffectCloud entity, final List<LivingEntity> affectedEntities) {
+    public AreaEffectCloudApplyEvent(@NotNull final AreaEffectCloud entity, @NotNull final List<LivingEntity> affectedEntities) {
         super(entity);
         this.affectedEntities = affectedEntities;
     }
@@ -32,6 +33,7 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
     }
 
     @Override
+    @NotNull
     public AreaEffectCloud getEntity() {
         return (AreaEffectCloud) entity;
     }
@@ -46,15 +48,18 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
      *
      * @return the affected entity list
      */
+    @NotNull
     public List<LivingEntity> getAffectedEntities() {
         return affectedEntities;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

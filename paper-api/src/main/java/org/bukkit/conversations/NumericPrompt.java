@@ -1,6 +1,8 @@
 package org.bukkit.conversations;
 
 import org.apache.commons.lang.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * NumericPrompt is the base class for any prompt that requires a {@link
@@ -12,7 +14,7 @@ public abstract class NumericPrompt extends ValidatingPrompt {
     }
 
     @Override
-    protected boolean isInputValid(ConversationContext context, String input) {
+    protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
         return NumberUtils.isNumber(input) && isNumberValid(context, NumberUtils.createNumber(input));
     }
 
@@ -24,12 +26,13 @@ public abstract class NumericPrompt extends ValidatingPrompt {
      * @param input The number the player provided.
      * @return The validity of the player's input.
      */
-    protected boolean isNumberValid(ConversationContext context, Number input) {
+    protected boolean isNumberValid(@NotNull ConversationContext context, @NotNull Number input) {
         return true;
     }
 
+    @Nullable
     @Override
-    protected Prompt acceptValidatedInput(ConversationContext context, String input) {
+    protected Prompt acceptValidatedInput(@NotNull ConversationContext context, @NotNull String input) {
         try {
             return acceptValidatedInput(context, NumberUtils.createNumber(input));
         } catch (NumberFormatException e) {
@@ -45,10 +48,12 @@ public abstract class NumericPrompt extends ValidatingPrompt {
      * @param input The user's response as a {@link Number}.
      * @return The next {@link Prompt} in the prompt graph.
      */
-    protected abstract Prompt acceptValidatedInput(ConversationContext context, Number input);
+    @Nullable
+    protected abstract Prompt acceptValidatedInput(@NotNull ConversationContext context, @NotNull Number input);
 
+    @Nullable
     @Override
-    protected String getFailedValidationText(ConversationContext context, String invalidInput) {
+    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) {
         if (NumberUtils.isNumber(invalidInput)) {
             return getFailedValidationText(context, NumberUtils.createNumber(invalidInput));
         } else {
@@ -64,7 +69,8 @@ public abstract class NumericPrompt extends ValidatingPrompt {
      * @param invalidInput The invalid input provided by the user.
      * @return A message explaining how to correct the input.
      */
-    protected String getInputNotNumericText(ConversationContext context, String invalidInput) {
+    @Nullable
+    protected String getInputNotNumericText(@NotNull ConversationContext context, @NotNull String invalidInput) {
         return null;
     }
 
@@ -76,7 +82,8 @@ public abstract class NumericPrompt extends ValidatingPrompt {
      * @param invalidInput The invalid input provided by the user.
      * @return A message explaining how to correct the input.
      */
-    protected String getFailedValidationText(ConversationContext context, Number invalidInput) {
+    @Nullable
+    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull Number invalidInput) {
         return null;
     }
 }

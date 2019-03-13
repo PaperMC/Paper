@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is formed by entities.
@@ -16,7 +17,7 @@ import org.bukkit.entity.Entity;
 public class EntityBlockFormEvent extends BlockFormEvent {
     private final Entity entity;
 
-    public EntityBlockFormEvent(final Entity entity, final Block block, final BlockState blockstate) {
+    public EntityBlockFormEvent(@NotNull final Entity entity, @NotNull final Block block, @NotNull final BlockState blockstate) {
         super(block, blockstate);
 
         this.entity = entity;
@@ -27,6 +28,7 @@ public class EntityBlockFormEvent extends BlockFormEvent {
      *
      * @return Entity involved in event
      */
+    @NotNull
     public Entity getEntity() {
         return entity;
     }

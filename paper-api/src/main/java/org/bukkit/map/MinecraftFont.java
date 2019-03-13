@@ -1,5 +1,7 @@
 package org.bukkit.map;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents the built-in Minecraft font.
  */
@@ -280,6 +282,7 @@ public class MinecraftFont extends MapFont {
     /**
      * A static non-malleable MinecraftFont.
      */
+    @NotNull
     public static final MinecraftFont Font = new MinecraftFont(false);
 
     /**

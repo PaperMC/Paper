@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the different types of grass.
@@ -49,6 +50,7 @@ public enum GrassSpecies {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static GrassSpecies getByData(final byte data) {
         return BY_DATA.get(data);
     }

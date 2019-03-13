@@ -1,6 +1,7 @@
 package org.bukkit.event.inventory;
 
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents the different kinds of inventories available in Bukkit.
@@ -97,11 +98,11 @@ public enum InventoryType {
     private final String title;
     private final boolean isCreatable;
 
-    private InventoryType(int defaultSize, String defaultTitle) {
+    private InventoryType(int defaultSize, @NotNull String defaultTitle) {
         this(defaultSize, defaultTitle, true);
     }
 
-    private InventoryType(int defaultSize, String defaultTitle, boolean isCreatable) {
+    private InventoryType(int defaultSize, @NotNull String defaultTitle, boolean isCreatable) {
         size = defaultSize;
         title = defaultTitle;
         this.isCreatable = isCreatable;
@@ -111,6 +112,7 @@ public enum InventoryType {
         return size;
     }
 
+    @NotNull
     public String getDefaultTitle() {
         return title;
     }

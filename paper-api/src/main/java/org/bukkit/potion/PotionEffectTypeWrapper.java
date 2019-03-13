@@ -1,6 +1,7 @@
 package org.bukkit.potion;
 
 import org.bukkit.Color;
+import org.jetbrains.annotations.NotNull;
 
 public class PotionEffectTypeWrapper extends PotionEffectType {
     protected PotionEffectTypeWrapper(int id) {
@@ -12,6 +13,7 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
         return getType().getDurationModifier();
     }
 
+    @NotNull
     @Override
     public String getName() {
         return getType().getName();
@@ -22,6 +24,7 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
      *
      * @return The potion effect type
      */
+    @NotNull
     public PotionEffectType getType() {
         return PotionEffectType.getById(getId());
     }
@@ -31,6 +34,7 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
         return getType().isInstant();
     }
 
+    @NotNull
     @Override
     public Color getColor() {
         return getType().getColor();

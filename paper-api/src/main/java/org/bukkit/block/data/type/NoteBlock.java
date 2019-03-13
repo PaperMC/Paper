@@ -3,6 +3,7 @@ package org.bukkit.block.data.type;
 import org.bukkit.Instrument;
 import org.bukkit.Note;
 import org.bukkit.block.data.Powerable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'instrument' is the type of sound made when this note block is activated.
@@ -16,6 +17,7 @@ public interface NoteBlock extends Powerable {
      *
      * @return the 'instrument' value
      */
+    @NotNull
     Instrument getInstrument();
 
     /**
@@ -23,13 +25,14 @@ public interface NoteBlock extends Powerable {
      *
      * @param instrument the new 'instrument' value
      */
-    void setInstrument(Instrument instrument);
+    void setInstrument(@NotNull Instrument instrument);
 
     /**
      * Gets the value of the 'note' property.
      *
      * @return the 'note' value
      */
+    @NotNull
     Note getNote();
 
     /**
@@ -37,5 +40,5 @@ public interface NoteBlock extends Powerable {
      *
      * @param note the new 'note' value
      */
-    void setNote(Note note);
+    void setNote(@NotNull Note note);
 }

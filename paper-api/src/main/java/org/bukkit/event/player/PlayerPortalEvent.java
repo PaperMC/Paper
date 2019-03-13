@@ -4,6 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.TravelAgent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player is about to teleport because it is in contact with a
@@ -16,12 +18,12 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
     protected boolean useTravelAgent = true;
     protected TravelAgent travelAgent;
 
-    public PlayerPortalEvent(final Player player, final Location from, final Location to, final TravelAgent pta) {
+    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TravelAgent pta) {
         super(player, from, to);
         this.travelAgent = pta;
     }
 
-    public PlayerPortalEvent(Player player, Location from, Location to, TravelAgent pta, TeleportCause cause) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TravelAgent pta, @NotNull TeleportCause cause) {
         super(player, from, to, cause);
         this.travelAgent = pta;
     }
@@ -63,6 +65,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      *
      * @return the Travel Agent used (or not) in this event
      */
+    @NotNull
     public TravelAgent getPortalTravelAgent() {
         return this.travelAgent;
     }
@@ -72,15 +75,17 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      *
      * @param travelAgent the Travel Agent used (or not) in this event
      */
-    public void setPortalTravelAgent(TravelAgent travelAgent) {
+    public void setPortalTravelAgent(@NotNull TravelAgent travelAgent) {
         this.travelAgent = travelAgent;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

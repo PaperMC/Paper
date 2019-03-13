@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.boss.BossBar;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the Boss Entity.
@@ -12,5 +13,6 @@ public interface Boss extends Entity {
      *
      * @return the {@link BossBar} of the entity
      */
+    @Nullable
     BossBar getBossBar();
 }

@@ -18,6 +18,8 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieVillager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A list of all Effects that can happen to entities.
@@ -153,7 +155,7 @@ public enum EntityEffect {
     private final Class<? extends Entity> applicable;
     private final static Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
 
-    EntityEffect(final int data, Class<? extends Entity> clazz) {
+    EntityEffect(final int data, @NotNull Class<? extends Entity> clazz) {
         this.data = (byte) data;
         this.applicable = clazz;
     }
@@ -174,6 +176,7 @@ public enum EntityEffect {
      *
      * @return applicable class
      */
+    @NotNull
     public Class<? extends Entity> getApplicable() {
         return applicable;
     }
@@ -187,6 +190,7 @@ public enum EntityEffect {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static EntityEffect getByData(final byte data) {
         return BY_DATA.get(data);
     }

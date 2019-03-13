@@ -6,6 +6,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player statistic is incremented.
@@ -23,7 +25,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
     private final EntityType entityType;
     private final Material material;
 
-    public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue) {
+    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue) {
         super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
@@ -32,7 +34,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.material = null;
     }
 
-    public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue, EntityType entityType) {
+    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull EntityType entityType) {
         super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
@@ -41,7 +43,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.material = null;
     }
 
-    public PlayerStatisticIncrementEvent(Player player, Statistic statistic, int initialValue, int newValue, Material material) {
+    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull Material material) {
         super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
@@ -55,6 +57,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      *
      * @return the incremented statistic
      */
+    @NotNull
     public Statistic getStatistic() {
         return statistic;
     }
@@ -83,6 +86,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      *
      * @return the EntityType of the statistic
      */
+    @Nullable
     public EntityType getEntityType() {
         return entityType;
     }
@@ -93,6 +97,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      *
      * @return the Material of the statistic
      */
+    @Nullable
     public Material getMaterial() {
         return material;
     }
@@ -105,11 +110,13 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.isCancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

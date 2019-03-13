@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents when a player has an item repaired via the Mending enchantment.
@@ -21,7 +22,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private int repairAmount;
     private boolean cancelled;
 
-    public PlayerItemMendEvent(Player who, ItemStack item, ExperienceOrb experienceOrb, int repairAmount) {
+    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         super(who);
         this.item = item;
         this.experienceOrb = experienceOrb;
@@ -35,6 +36,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return the item to be repaired
      */
+    @NotNull
     public ItemStack getItem() {
         return item;
     }
@@ -44,6 +46,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return the experience orb
      */
+    @NotNull
     public ExperienceOrb getExperienceOrb() {
         return experienceOrb;
     }
@@ -81,11 +84,13 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

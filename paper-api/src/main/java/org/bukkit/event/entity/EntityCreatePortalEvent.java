@@ -6,6 +6,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a Living Entity creates a portal in a world.
@@ -16,13 +17,14 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
     private boolean cancelled = false;
     private PortalType type = PortalType.CUSTOM;
 
-    public EntityCreatePortalEvent(final LivingEntity what, final List<BlockState> blocks, final PortalType type) {
+    public EntityCreatePortalEvent(@NotNull final LivingEntity what, @NotNull final List<BlockState> blocks, @NotNull final PortalType type) {
         super(what);
 
         this.blocks = blocks;
         this.type = type;
     }
 
+    @NotNull
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) entity;
@@ -33,6 +35,7 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
      *
      * @return List of blocks that will be changed.
      */
+    @NotNull
     public List<BlockState> getBlocks() {
         return blocks;
     }
@@ -50,15 +53,18 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
      *
      * @return Type of portal.
      */
+    @NotNull
     public PortalType getPortalType() {
         return type;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

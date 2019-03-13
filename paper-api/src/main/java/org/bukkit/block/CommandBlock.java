@@ -1,5 +1,8 @@
 package org.bukkit.block;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a captured state of a command block.
  */
@@ -12,6 +15,7 @@ public interface CommandBlock extends BlockState {
      *
      * @return Command that this CommandBlock will run when powered.
      */
+    @NotNull
     public String getCommand();
 
     /**
@@ -21,7 +25,7 @@ public interface CommandBlock extends BlockState {
      *
      * @param command Command that this CommandBlock will run when powered.
      */
-    public void setCommand(String command);
+    public void setCommand(@Nullable String command);
 
     /**
      * Gets the name of this CommandBlock.  The name is used with commands
@@ -30,6 +34,7 @@ public interface CommandBlock extends BlockState {
      *
      * @return Name of this CommandBlock.
      */
+    @NotNull
     public String getName();
 
     /**
@@ -39,5 +44,5 @@ public interface CommandBlock extends BlockState {
      *
      * @param name New name for this CommandBlock.
      */
-    public void setName(String name);
+    public void setName(@Nullable String name);
 }

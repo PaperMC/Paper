@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is successfully burned as fuel in a furnace.
@@ -16,7 +17,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private boolean burning;
 
-    public FurnaceBurnEvent(final Block furnace, final ItemStack fuel, final int burnTime) {
+    public FurnaceBurnEvent(@NotNull final Block furnace, @NotNull final ItemStack fuel, final int burnTime) {
         super(furnace);
         this.fuel = fuel;
         this.burnTime = burnTime;
@@ -29,6 +30,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
      *
      * @return the fuel ItemStack
      */
+    @NotNull
     public ItemStack getFuel() {
         return fuel;
     }
@@ -77,11 +79,13 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

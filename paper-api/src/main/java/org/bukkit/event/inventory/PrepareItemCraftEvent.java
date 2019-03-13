@@ -4,13 +4,15 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PrepareItemCraftEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();
     private boolean repair;
     private CraftingInventory matrix;
 
-    public PrepareItemCraftEvent(CraftingInventory what, InventoryView view, boolean isRepair) {
+    public PrepareItemCraftEvent(@NotNull CraftingInventory what, @NotNull InventoryView view, boolean isRepair) {
         super(view);
         this.matrix = what;
         this.repair = isRepair;
@@ -23,6 +25,7 @@ public class PrepareItemCraftEvent extends InventoryEvent {
      *
      * @return The recipe being crafted.
      */
+    @Nullable
     public Recipe getRecipe() {
         return matrix.getRecipe();
     }
@@ -30,6 +33,7 @@ public class PrepareItemCraftEvent extends InventoryEvent {
     /**
      * @return The crafting inventory on which the recipe was formed.
      */
+    @NotNull
     @Override
     public CraftingInventory getInventory() {
         return matrix;
@@ -45,11 +49,13 @@ public class PrepareItemCraftEvent extends InventoryEvent {
         return repair;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

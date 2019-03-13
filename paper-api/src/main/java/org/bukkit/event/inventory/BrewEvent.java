@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.BrewerInventory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the brewing of the contents inside the Brewing Stand is
@@ -16,7 +17,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
     private int fuelLevel;
     private boolean cancelled;
 
-    public BrewEvent(Block brewer, BrewerInventory contents, int fuelLevel) {
+    public BrewEvent(@NotNull Block brewer, @NotNull BrewerInventory contents, int fuelLevel) {
         super(brewer);
         this.contents = contents;
         this.fuelLevel = fuelLevel;
@@ -27,6 +28,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      *
      * @return the contents
      */
+    @NotNull
     public BrewerInventory getContents() {
         return contents;
     }
@@ -48,11 +50,13 @@ public class BrewEvent extends BlockEvent implements Cancellable {
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

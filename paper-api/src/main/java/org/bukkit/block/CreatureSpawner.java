@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a creature spawner.
@@ -12,6 +13,7 @@ public interface CreatureSpawner extends BlockState {
      *
      * @return The creature type.
      */
+    @NotNull
     public EntityType getSpawnedType();
 
     /**
@@ -19,7 +21,7 @@ public interface CreatureSpawner extends BlockState {
      *
      * @param creatureType The creature type.
      */
-    public void setSpawnedType(EntityType creatureType);
+    public void setSpawnedType(@NotNull EntityType creatureType);
 
     /**
      * Set the spawner mob type.
@@ -29,7 +31,7 @@ public interface CreatureSpawner extends BlockState {
      * {@link #setSpawnedType(org.bukkit.entity.EntityType)}.
      */
     @Deprecated
-    public void setCreatureTypeByName(String creatureType);
+    public void setCreatureTypeByName(@NotNull String creatureType);
 
     /**
      * Get the spawner's creature type.
@@ -38,6 +40,7 @@ public interface CreatureSpawner extends BlockState {
      * @deprecated magic value, use {@link #getSpawnedType()}.
      */
     @Deprecated
+    @NotNull
     public String getCreatureTypeName();
 
     /**

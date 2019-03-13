@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is almost about to enter the bed.
@@ -51,14 +52,14 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     private final BedEnterResult bedEnterResult;
     private Result useBed = Result.DEFAULT;
 
-    public PlayerBedEnterEvent(Player who, Block bed, BedEnterResult bedEnterResult) {
+    public PlayerBedEnterEvent(@NotNull Player who, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
         super(who);
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
     }
 
     @Deprecated
-    public PlayerBedEnterEvent(Player who, Block bed) {
+    public PlayerBedEnterEvent(@NotNull Player who, @NotNull Block bed) {
         this(who, bed, BedEnterResult.OK);
     }
 
@@ -67,6 +68,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      *
      * @return the bed enter result representing the default outcome of this event
      */
+    @NotNull
     public BedEnterResult getBedEnterResult() {
         return bedEnterResult;
     }
@@ -80,6 +82,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @return the action to take with the interacted bed
      * @see #setUseBed(org.bukkit.event.Event.Result)
      */
+    @NotNull
     public Result useBed() {
         return useBed;
     }
@@ -99,7 +102,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * @param useBed the action to take with the interacted bed
      * @see #useBed()
      */
-    public void setUseBed(Result useBed) {
+    public void setUseBed(@NotNull Result useBed) {
         this.useBed = useBed;
     }
 
@@ -139,15 +142,18 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      *
      * @return the bed block involved in this event
      */
+    @NotNull
     public Block getBed() {
         return bed;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

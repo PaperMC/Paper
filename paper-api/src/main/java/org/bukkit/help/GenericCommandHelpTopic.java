@@ -5,6 +5,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.ConsoleCommandSender;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Lacking an alternative, the help system will create instances of
@@ -16,7 +17,7 @@ public class GenericCommandHelpTopic extends HelpTopic {
 
     protected Command command;
 
-    public GenericCommandHelpTopic(Command command) {
+    public GenericCommandHelpTopic(@NotNull Command command) {
         this.command = command;
 
         if (command.getLabel().startsWith("/")) {
@@ -58,7 +59,7 @@ public class GenericCommandHelpTopic extends HelpTopic {
         fullText = sb.toString();
     }
 
-    public boolean canSee(CommandSender sender) {
+    public boolean canSee(@NotNull CommandSender sender) {
         if (!command.isRegistered()) {
             // Unregistered commands should not show up in the help
             return false;

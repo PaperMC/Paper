@@ -1,6 +1,8 @@
 package org.bukkit.conversations;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +23,7 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
      * @param fixedSet A fixed set of strings, one of which the user must
      *     type.
      */
-    public FixedSetPrompt(String... fixedSet) {
+    public FixedSetPrompt(@NotNull String... fixedSet) {
         super();
         this.fixedSet = Arrays.asList(fixedSet);
     }
@@ -29,7 +31,7 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
     private FixedSetPrompt() {}
 
     @Override
-    protected boolean isInputValid(ConversationContext context, String input) {
+    protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
         return fixedSet.contains(input);
     }
 
@@ -40,6 +42,7 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
      * @return the options formatted like "[bar, cheese, panda]" if bar,
      *     cheese, and panda were the options used
      */
+    @NotNull
     protected String formatFixedSet() {
         return "[" + StringUtils.join(fixedSet, ", ") + "]";
     }

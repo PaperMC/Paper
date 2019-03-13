@@ -8,9 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 public class PluginsCommand extends BukkitCommand {
-    public PluginsCommand(String name) {
+    public PluginsCommand(@NotNull String name) {
         super(name);
         this.description = "Gets a list of plugins running on the server";
         this.usageMessage = "/plugins";
@@ -19,18 +20,20 @@ public class PluginsCommand extends BukkitCommand {
     }
 
     @Override
-    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
         if (!testPermission(sender)) return true;
 
         sender.sendMessage("Plugins " + getPluginList());
         return true;
     }
 
+    @NotNull
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         return Collections.emptyList();
     }
 
+    @NotNull
     private String getPluginList() {
         StringBuilder pluginList = new StringBuilder();
         Plugin[] plugins = Bukkit.getPluginManager().getPlugins();

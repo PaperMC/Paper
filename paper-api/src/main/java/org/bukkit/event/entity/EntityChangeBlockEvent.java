@@ -6,6 +6,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when any Entity, excluding players, changes a block.
@@ -16,7 +17,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private final BlockData to;
 
-    public EntityChangeBlockEvent(final Entity what, final Block block, final BlockData to) {
+    public EntityChangeBlockEvent(@NotNull final Entity what, @NotNull final Block block, @NotNull final BlockData to) {
         super(what);
         this.block = block;
         this.cancel = false;
@@ -28,6 +29,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      *
      * @return the block that is changing
      */
+    @NotNull
     public Block getBlock() {
         return block;
     }
@@ -45,6 +47,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      *
      * @return the material that the block is changing into
      */
+    @NotNull
     public Material getTo() {
         return to.getMaterial();
     }
@@ -54,15 +57,18 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      *
      * @return the data for the block that would be changed into
      */
+    @NotNull
     public BlockData getBlockData() {
         return to;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

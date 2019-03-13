@@ -2,6 +2,7 @@ package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Powerable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'face' represents the face to which a lever or button is stuck.
@@ -16,6 +17,7 @@ public interface Switch extends Directional, Powerable {
      *
      * @return the 'face' value
      */
+    @NotNull
     Face getFace();
 
     /**
@@ -23,7 +25,7 @@ public interface Switch extends Directional, Powerable {
      *
      * @param face the new 'face' value
      */
-    void setFace(Face face);
+    void setFace(@NotNull Face face);
 
     /**
      * The face to which a switch type block is stuck.

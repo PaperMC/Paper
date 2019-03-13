@@ -1,5 +1,8 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Date;
 
 /**
@@ -47,6 +50,7 @@ public interface BanEntry {
      *
      * @return the target name or IP address
      */
+    @NotNull
     public String getTarget();
 
     /**
@@ -54,6 +58,7 @@ public interface BanEntry {
      *
      * @return the creation date
      */
+    @NotNull
     public Date getCreated();
 
     /**
@@ -62,7 +67,7 @@ public interface BanEntry {
      * @param created the new created date, cannot be null
      * @see #save() saving changes
      */
-    public void setCreated(Date created);
+    public void setCreated(@NotNull Date created);
 
     /**
      * Gets the source of this ban.
@@ -72,6 +77,7 @@ public interface BanEntry {
      *
      * @return the source of the ban
      */
+    @NotNull
     public String getSource();
 
     /**
@@ -83,13 +89,14 @@ public interface BanEntry {
      * @param source the new source where null values become empty strings
      * @see #save() saving changes
      */
-    public void setSource(String source);
+    public void setSource(@NotNull String source);
 
     /**
      * Gets the date this ban expires on, or null for no defined end date.
      *
      * @return the expiration date
      */
+    @Nullable
     public Date getExpiration();
 
     /**
@@ -100,13 +107,14 @@ public interface BanEntry {
      *     eternity
      * @see #save() saving changes
      */
-    public void setExpiration(Date expiration);
+    public void setExpiration(@Nullable Date expiration);
 
     /**
      * Gets the reason for this ban.
      *
      * @return the ban reason, or null if not set
      */
+    @Nullable
     public String getReason();
 
     /**
@@ -116,7 +124,7 @@ public interface BanEntry {
      *     default
      * @see #save() saving changes
      */
-    public void setReason(String reason);
+    public void setReason(@Nullable String reason);
 
     /**
      * Saves the ban entry, overwriting any previous data in the ban list.

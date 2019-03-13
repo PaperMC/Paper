@@ -1,6 +1,7 @@
 package org.bukkit.event.server;
 
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when either the server startup or reload has completed.
@@ -22,7 +23,7 @@ public class ServerLoadEvent extends ServerEvent {
      *
      * @param type the context in which the server was loaded
      */
-    public ServerLoadEvent(LoadType type) {
+    public ServerLoadEvent(@NotNull LoadType type) {
         this.type = type;
     }
 
@@ -31,15 +32,18 @@ public class ServerLoadEvent extends ServerEvent {
      *
      * @return the context in which the server was loaded
      */
+    @NotNull
     public LoadType getType() {
         return type;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

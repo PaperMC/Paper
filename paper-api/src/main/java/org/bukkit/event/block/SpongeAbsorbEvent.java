@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import java.util.List;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a sponge absorbs water from the world.
@@ -22,7 +23,7 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private final List<BlockState> blocks;
 
-    public SpongeAbsorbEvent(Block block, List<BlockState> waterblocks) {
+    public SpongeAbsorbEvent(@NotNull Block block, @NotNull List<BlockState> waterblocks) {
         super(block);
         this.blocks = waterblocks;
     }
@@ -35,6 +36,7 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
      *
      * @return list of the to be removed blocks.
      */
+    @NotNull
     public List<BlockState> getBlocks() {
         return blocks;
     }
@@ -49,11 +51,13 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

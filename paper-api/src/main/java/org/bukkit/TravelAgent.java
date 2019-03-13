@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * The Travel Agent handles the creation and the research of Nether and End
  * portals when Entities try to use one.
@@ -17,6 +19,7 @@ public interface TravelAgent {
      *     location
      * @return this travel agent
      */
+    @NotNull
     public TravelAgent setSearchRadius(int radius);
 
     /**
@@ -32,6 +35,7 @@ public interface TravelAgent {
      * @param radius the radius in which to create a portal from the location
      * @return this travel agent
      */
+    @NotNull
     public TravelAgent setCreationRadius(int radius);
 
     /**
@@ -68,7 +72,8 @@ public interface TravelAgent {
      *     location passed to the method if unsuccessful
      * @see #createPortal(Location)
      */
-    public Location findOrCreate(Location location);
+    @NotNull
+    public Location findOrCreate(@NotNull Location location);
 
     /**
      * Attempt to find a portal near the given location.
@@ -76,7 +81,8 @@ public interface TravelAgent {
      * @param location the desired location of the portal
      * @return the location of the nearest portal to the location
      */
-    public Location findPortal(Location location);
+    @NotNull
+    public Location findPortal(@NotNull Location location);
 
     /**
      * Attempt to create a portal near the given location.
@@ -90,5 +96,5 @@ public interface TravelAgent {
      * @param location the desired location of the portal
      * @return true if a portal was successfully created
      */
-    public boolean createPortal(Location location);
+    public boolean createPortal(@NotNull Location location);
 }

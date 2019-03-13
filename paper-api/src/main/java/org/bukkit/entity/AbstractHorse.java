@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 import org.bukkit.inventory.AbstractHorseInventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Horse-like creature.
@@ -19,6 +21,7 @@ public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameab
      * @deprecated different variants are different classes
      */
     @Deprecated
+    @NotNull
     public Horse.Variant getVariant();
 
     /**
@@ -26,6 +29,7 @@ public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameab
      * @deprecated you are required to spawn a different entity
      */
     @Deprecated
+    @Contract("_ -> fail")
     public void setVariant(Horse.Variant variant);
 
     /**
@@ -98,6 +102,7 @@ public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameab
      */
     public void setJumpStrength(double strength);
 
+    @NotNull
     @Override
     public AbstractHorseInventory getInventory();
 }

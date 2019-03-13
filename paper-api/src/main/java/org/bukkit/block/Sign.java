@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a captured state of either a SignPost or a WallSign.
  */
@@ -10,6 +12,7 @@ public interface Sign extends BlockState {
      *
      * @return Array of Strings containing each line of text
      */
+    @NotNull
     public String[] getLines();
 
     /**
@@ -21,6 +24,7 @@ public interface Sign extends BlockState {
      * @throws IndexOutOfBoundsException Thrown when the line does not exist
      * @return Text on the given line
      */
+    @NotNull
     public String getLine(int index) throws IndexOutOfBoundsException;
 
     /**
@@ -33,7 +37,7 @@ public interface Sign extends BlockState {
      * @param line New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
      */
-    public void setLine(int index, String line) throws IndexOutOfBoundsException;
+    public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
 
     /**
      * Marks whether this sign can be edited by players.

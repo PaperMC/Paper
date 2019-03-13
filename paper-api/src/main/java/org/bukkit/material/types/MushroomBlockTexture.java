@@ -5,6 +5,8 @@ import java.util.Map;
 import org.bukkit.block.BlockFace;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the different textured blocks of mushroom.
@@ -70,7 +72,7 @@ public enum MushroomBlockTexture {
     private final Byte data;
     private final BlockFace capFace;
 
-    private MushroomBlockTexture(final int data, final BlockFace capFace) {
+    private MushroomBlockTexture(final int data, @Nullable final BlockFace capFace) {
         this.data = (byte) data;
         this.capFace = capFace;
     }
@@ -91,6 +93,7 @@ public enum MushroomBlockTexture {
      *
      * @return The cap face
      */
+    @Nullable
     public BlockFace getCapFace() {
         return capFace;
     }
@@ -104,6 +107,7 @@ public enum MushroomBlockTexture {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static MushroomBlockTexture getByData(final byte data) {
         return BY_DATA.get(data);
     }
@@ -117,7 +121,8 @@ public enum MushroomBlockTexture {
      *
      * @see BlockFace
      */
-    public static MushroomBlockTexture getCapByFace(final BlockFace face) {
+    @Nullable
+    public static MushroomBlockTexture getCapByFace(@Nullable final BlockFace face) {
         return BY_BLOCKFACE.get(face);
     }
 

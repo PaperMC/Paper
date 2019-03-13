@@ -1,5 +1,8 @@
 package org.bukkit.map;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a cursor on a map.
  */
@@ -33,7 +36,7 @@ public final class MapCursor {
      * @param type The type (color/style) of the map cursor.
      * @param visible Whether the cursor is visible by default.
      */
-    public MapCursor(byte x, byte y, byte direction, Type type, boolean visible) {
+    public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible) {
         this(x, y, direction, type, visible, null);
     }
 
@@ -49,7 +52,7 @@ public final class MapCursor {
      * @deprecated Magic value
      */
     @Deprecated
-    public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, String caption) {
+    public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
         this.x = x;
         this.y = y;
         setDirection(direction);
@@ -68,7 +71,7 @@ public final class MapCursor {
      * @param visible Whether the cursor is visible by default.
      * @param caption cursor caption
      */
-    public MapCursor(byte x, byte y, byte direction, Type type, boolean visible, String caption) {
+    public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible, @Nullable String caption) {
         this.x = x;
         this.y = y;
         setDirection(direction);
@@ -109,7 +112,9 @@ public final class MapCursor {
      *
      * @return The type (color/style) of the map cursor.
      */
+    @NotNull
     public Type getType() {
+        // It should be impossible to set type to something without appropriate Type, so this shouldn't return null
         return Type.byValue(type);
     }
 
@@ -168,7 +173,7 @@ public final class MapCursor {
      *
      * @param type The type (color/style) of the map cursor.
      */
-    public void setType(Type type) {
+    public void setType(@NotNull Type type) {
         setRawType(type.value);
     }
 
@@ -200,6 +205,7 @@ public final class MapCursor {
      *
      * @return caption
      */
+    @Nullable
     public String getCaption() {
         return caption;
     }
@@ -209,7 +215,7 @@ public final class MapCursor {
      *
      * @param caption new caption
      */
-    public void setCaption(String caption) {
+    public void setCaption(@Nullable String caption) {
         this.caption = caption;
     }
 
@@ -271,6 +277,7 @@ public final class MapCursor {
          * @deprecated Magic value
          */
         @Deprecated
+        @Nullable
         public static Type byValue(byte value) {
             for (Type t : values()) {
                 if (t.value == value) return t;

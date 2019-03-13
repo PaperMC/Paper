@@ -18,6 +18,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Command, which executes various tasks upon user input
@@ -28,22 +30,22 @@ public abstract class Command {
     private String label;
     private List<String> aliases;
     private List<String> activeAliases;
-    private CommandMap commandMap = null;
-    protected String description = "";
+    private CommandMap commandMap;
+    protected String description;
     protected String usageMessage;
     private String permission;
     private String permissionMessage;
 
-    protected Command(String name) {
+    protected Command(@NotNull String name) {
         this(name, "", "/" + name, new ArrayList<String>());
     }
 
-    protected Command(String name, String description, String usageMessage, List<String> aliases) {
+    protected Command(@NotNull String name, @NotNull String description, @NotNull String usageMessage, @NotNull List<String> aliases) {
         this.name = name;
         this.nextLabel = name;
         this.label = name;
-        this.description = description;
-        this.usageMessage = usageMessage;
+        this.description = (description == null) ? "" : description;
+        this.usageMessage = (usageMessage == null) ? "/" + name : usageMessage;
         this.aliases = aliases;
         this.activeAliases = new ArrayList<String>(aliases);
     }
@@ -56,7 +58,7 @@ public abstract class Command {
      * @param args All arguments passed to the command, split via ' '
      * @return true if the command was successful, otherwise false
      */
-    public abstract boolean execute(CommandSender sender, String commandLabel, String[] args);
+    public abstract boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args);
 
     /**
      * Executed on tab completion for this command, returning a list of
@@ -69,7 +71,8 @@ public abstract class Command {
      *     will never be null. List may be immutable.
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    @NotNull
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         return tabComplete0(sender, alias, args, null);
     }
 
@@ -85,11 +88,13 @@ public abstract class Command {
      *     will never be null. List may be immutable.
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+    @NotNull
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args, @Nullable Location location) throws IllegalArgumentException {
         return tabComplete(sender, alias, args);
     }
 
-    private List<String> tabComplete0(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+    @NotNull
+    private List<String> tabComplete0(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args, @Nullable Location location) throws IllegalArgumentException {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");
@@ -119,6 +124,7 @@ public abstract class Command {
      *
      * @return Name of this command
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -134,9 +140,9 @@ public abstract class Command {
      * @return returns true if the name change happened instantly or false if
      *     the command was already registered
      */
-    public boolean setName(String name) {
+    public boolean setName(@NotNull String name) {
         if (!isRegistered()) {
-            this.name = name;
+            this.name = (name == null) ? "" : name;
             return true;
         }
         return false;
@@ -148,6 +154,7 @@ public abstract class Command {
      *
      * @return Permission name, or null if none
      */
+    @Nullable
     public String getPermission() {
         return permission;
     }
@@ -158,7 +165,7 @@ public abstract class Command {
      *
      * @param permission Permission name or null
      */
-    public void setPermission(String permission) {
+    public void setPermission(@Nullable String permission) {
         this.permission = permission;
     }
 
@@ -172,7 +179,7 @@ public abstract class Command {
      * @param target User to test
      * @return true if they can use it, otherwise false
      */
-    public boolean testPermission(CommandSender target) {
+    public boolean testPermission(@NotNull CommandSender target) {
         if (testPermissionSilent(target)) {
             return true;
         }
@@ -197,7 +204,7 @@ public abstract class Command {
      * @param target User to test
      * @return true if they can use it, otherwise false
      */
-    public boolean testPermissionSilent(CommandSender target) {
+    public boolean testPermissionSilent(@NotNull CommandSender target) {
         if ((permission == null) || (permission.length() == 0)) {
             return true;
         }
@@ -216,6 +223,7 @@ public abstract class Command {
      *
      * @return Label of this command
      */
+    @NotNull
     public String getLabel() {
         return label;
     }
@@ -231,7 +239,10 @@ public abstract class Command {
      * @return returns true if the name change happened instantly or false if
      *     the command was already registered
      */
-    public boolean setLabel(String name) {
+    public boolean setLabel(@NotNull String name) {
+        if (name == null) {
+            name = "";
+        }
         this.nextLabel = name;
         if (!isRegistered()) {
             this.label = name;
@@ -248,7 +259,7 @@ public abstract class Command {
      * @return true if the registration was successful (the current registered
      *     CommandMap was the passed CommandMap or null) false otherwise
      */
-    public boolean register(CommandMap commandMap) {
+    public boolean register(@NotNull CommandMap commandMap) {
         if (allowChangesFrom(commandMap)) {
             this.commandMap = commandMap;
             return true;
@@ -266,7 +277,7 @@ public abstract class Command {
      *     registered CommandMap was the passed CommandMap or null) false
      *     otherwise
      */
-    public boolean unregister(CommandMap commandMap) {
+    public boolean unregister(@NotNull CommandMap commandMap) {
         if (allowChangesFrom(commandMap)) {
             this.commandMap = null;
             this.activeAliases = new ArrayList<String>(this.aliases);
@@ -277,7 +288,7 @@ public abstract class Command {
         return false;
     }
 
-    private boolean allowChangesFrom(CommandMap commandMap) {
+    private boolean allowChangesFrom(@NotNull CommandMap commandMap) {
         return (null == this.commandMap || this.commandMap == commandMap);
     }
 
@@ -295,6 +306,7 @@ public abstract class Command {
      *
      * @return List of aliases
      */
+    @NotNull
     public List<String> getAliases() {
         return activeAliases;
     }
@@ -305,6 +317,7 @@ public abstract class Command {
      *
      * @return Permission check failed message
      */
+    @Nullable
     public String getPermissionMessage() {
         return permissionMessage;
     }
@@ -314,6 +327,7 @@ public abstract class Command {
      *
      * @return Description of this command
      */
+    @NotNull
     public String getDescription() {
         return description;
     }
@@ -323,6 +337,7 @@ public abstract class Command {
      *
      * @return One or more example usages
      */
+    @NotNull
     public String getUsage() {
         return usageMessage;
     }
@@ -336,7 +351,8 @@ public abstract class Command {
      * @param aliases aliases to register to this command
      * @return this command object, for chaining
      */
-    public Command setAliases(List<String> aliases) {
+    @NotNull
+    public Command setAliases(@NotNull List<String> aliases) {
         this.aliases = aliases;
         if (!isRegistered()) {
             this.activeAliases = new ArrayList<String>(aliases);
@@ -352,8 +368,9 @@ public abstract class Command {
      * @param description new command description
      * @return this command object, for chaining
      */
-    public Command setDescription(String description) {
-        this.description = description;
+    @NotNull
+    public Command setDescription(@NotNull String description) {
+        this.description = description == null ? "" : "";
         return this;
     }
 
@@ -364,7 +381,8 @@ public abstract class Command {
      *     default message, or an empty string to indicate no message
      * @return this command object, for chaining
      */
-    public Command setPermissionMessage(String permissionMessage) {
+    @NotNull
+    public Command setPermissionMessage(@Nullable String permissionMessage) {
         this.permissionMessage = permissionMessage;
         return this;
     }
@@ -375,16 +393,17 @@ public abstract class Command {
      * @param usage new example usage
      * @return this command object, for chaining
      */
-    public Command setUsage(String usage) {
-        this.usageMessage = usage;
+    @NotNull
+    public Command setUsage(@NotNull String usage) {
+        this.usageMessage = (usage == null) ? "" : usage;
         return this;
     }
 
-    public static void broadcastCommandMessage(CommandSender source, String message) {
+    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message) {
         broadcastCommandMessage(source, message, true);
     }
 
-    public static void broadcastCommandMessage(CommandSender source, String message, boolean sendToSource) {
+    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message, boolean sendToSource) {
         String result = source.getName() + ": " + message;
 
         if (source instanceof BlockCommandSender) {

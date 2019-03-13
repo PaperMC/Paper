@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a players level changes
@@ -11,7 +12,7 @@ public class PlayerLevelChangeEvent extends PlayerEvent {
     private final int oldLevel;
     private final int newLevel;
 
-    public PlayerLevelChangeEvent(final Player player, final int oldLevel, final int newLevel) {
+    public PlayerLevelChangeEvent(@NotNull final Player player, final int oldLevel, final int newLevel) {
         super(player);
         this.oldLevel = oldLevel;
         this.newLevel = newLevel;
@@ -35,11 +36,13 @@ public class PlayerLevelChangeEvent extends PlayerEvent {
         return newLevel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

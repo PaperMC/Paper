@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player joins a server
@@ -10,7 +11,7 @@ public class PlayerJoinEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private String joinMessage;
 
-    public PlayerJoinEvent(final Player playerJoined, final String joinMessage) {
+    public PlayerJoinEvent(@NotNull final Player playerJoined, @NotNull final String joinMessage) {
         super(playerJoined);
         this.joinMessage = joinMessage;
     }
@@ -20,6 +21,7 @@ public class PlayerJoinEvent extends PlayerEvent {
      *
      * @return string join message
      */
+    @NotNull
     public String getJoinMessage() {
         return joinMessage;
     }
@@ -29,15 +31,17 @@ public class PlayerJoinEvent extends PlayerEvent {
      *
      * @param joinMessage join message
      */
-    public void setJoinMessage(String joinMessage) {
+    public void setJoinMessage(@NotNull String joinMessage) {
         this.joinMessage = joinMessage;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

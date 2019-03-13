@@ -1,5 +1,7 @@
 package org.bukkit.configuration.serialization;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,5 +32,6 @@ public @interface SerializableAs {
      *
      * @return Name to serialize the class as.
      */
+    @NotNull
     public String value();
 }

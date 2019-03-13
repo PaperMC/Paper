@@ -3,6 +3,8 @@ package org.bukkit.permissions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds information about a permission attachment on a {@link Permissible}
@@ -14,14 +16,14 @@ public class PermissionAttachment {
     private final Permissible permissible;
     private final Plugin plugin;
 
-    public PermissionAttachment(Plugin plugin, Permissible Permissible) {
+    public PermissionAttachment(@NotNull Plugin plugin, @NotNull Permissible permissible) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
         } else if (!plugin.isEnabled()) {
             throw new IllegalArgumentException("Plugin " + plugin.getDescription().getFullName() + " is disabled");
         }
 
-        this.permissible = Permissible;
+        this.permissible = permissible;
         this.plugin = plugin;
     }
 
@@ -30,6 +32,7 @@ public class PermissionAttachment {
      *
      * @return Plugin responsible for this permission attachment
      */
+    @NotNull
     public Plugin getPlugin() {
         return plugin;
     }
@@ -40,7 +43,7 @@ public class PermissionAttachment {
      *
      * @param ex Object to be called when this is removed
      */
-    public void setRemovalCallback(PermissionRemovedExecutor ex) {
+    public void setRemovalCallback(@Nullable PermissionRemovedExecutor ex) {
         removed = ex;
     }
 
@@ -50,6 +53,7 @@ public class PermissionAttachment {
      *
      * @return Object to be called when this is removed
      */
+    @Nullable
     public PermissionRemovedExecutor getRemovalCallback() {
         return removed;
     }
@@ -59,6 +63,7 @@ public class PermissionAttachment {
      *
      * @return Permissible containing this attachment
      */
+    @NotNull
     public Permissible getPermissible() {
         return permissible;
     }
@@ -72,6 +77,7 @@ public class PermissionAttachment {
      *
      * @return Copy of all permissions and values expressed by this attachment
      */
+    @NotNull
     public Map<String, Boolean> getPermissions() {
         return new LinkedHashMap<String, Boolean>(permissions);
     }
@@ -82,7 +88,7 @@ public class PermissionAttachment {
      * @param name Name of the permission
      * @param value New value of the permission
      */
-    public void setPermission(String name, boolean value) {
+    public void setPermission(@NotNull String name, boolean value) {
         permissions.put(name.toLowerCase(java.util.Locale.ENGLISH), value);
         permissible.recalculatePermissions();
     }
@@ -93,7 +99,7 @@ public class PermissionAttachment {
      * @param perm Permission to set
      * @param value New value of the permission
      */
-    public void setPermission(Permission perm, boolean value) {
+    public void setPermission(@NotNull Permission perm, boolean value) {
         setPermission(perm.getName(), value);
     }
 
@@ -105,7 +111,7 @@ public class PermissionAttachment {
      *
      * @param name Name of the permission to remove
      */
-    public void unsetPermission(String name) {
+    public void unsetPermission(@NotNull String name) {
         permissions.remove(name.toLowerCase(java.util.Locale.ENGLISH));
         permissible.recalculatePermissions();
     }
@@ -118,7 +124,7 @@ public class PermissionAttachment {
      *
      * @param perm Permission to remove
      */
-    public void unsetPermission(Permission perm) {
+    public void unsetPermission(@NotNull Permission perm) {
         unsetPermission(perm.getName());
     }
 

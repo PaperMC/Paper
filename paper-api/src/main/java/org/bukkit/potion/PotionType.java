@@ -1,5 +1,8 @@
 package org.bukkit.potion;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * This enum reflects and matches each potion state that can be obtained from
  * the Creative mode inventory
@@ -32,12 +35,13 @@ public enum PotionType {
     private final boolean upgradeable;
     private final boolean extendable;
 
-    PotionType(PotionEffectType effect, boolean upgradeable, boolean extendable) {
+    PotionType(@Nullable PotionEffectType effect, boolean upgradeable, boolean extendable) {
         this.effect = effect;
         this.upgradeable = upgradeable;
         this.extendable = extendable;
     }
 
+    @Nullable
     public PotionEffectType getEffectType() {
         return effect;
     }
@@ -83,6 +87,8 @@ public enum PotionType {
      * @deprecated Non-functional
      */
     @Deprecated
+    @Nullable
+    @Contract("_ -> null")
     public static PotionType getByDamageValue(int damage) {
         return null;
     }
@@ -91,7 +97,8 @@ public enum PotionType {
      * @deprecated Misleading
      */
     @Deprecated
-    public static PotionType getByEffect(PotionEffectType effectType) {
+    @Nullable
+    public static PotionType getByEffect(@Nullable PotionEffectType effectType) {
         if (effectType == null)
             return WATER;
         for (PotionType type : PotionType.values()) {

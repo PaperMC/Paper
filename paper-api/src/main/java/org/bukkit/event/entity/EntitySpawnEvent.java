@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity is spawned into a world.
@@ -15,7 +16,7 @@ public class EntitySpawnEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean canceled;
 
-    public EntitySpawnEvent(final Entity spawnee) {
+    public EntitySpawnEvent(@NotNull final Entity spawnee) {
         super(spawnee);
     }
 
@@ -34,15 +35,18 @@ public class EntitySpawnEvent extends EntityEvent implements Cancellable {
      *
      * @return The location at which the entity is spawning
      */
+    @NotNull
     public Location getLocation() {
         return getEntity().getLocation();
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

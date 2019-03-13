@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a single part of a {@link ComplexLivingEntity}
  */
@@ -10,5 +12,6 @@ public interface ComplexEntityPart extends Entity {
      *
      * @return Parent complex entity
      */
+    @NotNull
     public ComplexLivingEntity getParent();
 }

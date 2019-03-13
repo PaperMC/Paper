@@ -1,5 +1,7 @@
 package org.bukkit.conversations;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * StringPrompt is the base class for any prompt that accepts an arbitrary
  * string from the user.
@@ -12,7 +14,7 @@ public abstract class StringPrompt implements Prompt {
      * @param context Context information about the conversation.
      * @return True.
      */
-    public boolean blocksForInput(ConversationContext context) {
+    public boolean blocksForInput(@NotNull ConversationContext context) {
         return true;
     }
 }

@@ -1,6 +1,8 @@
 package org.bukkit.conversations;
 
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -21,7 +23,7 @@ public class ConversationContext {
      * @param initialSessionData Any initial values to put in the sessionData
      *     map.
      */
-    public ConversationContext(Plugin plugin, Conversable forWhom, Map<Object, Object> initialSessionData) {
+    public ConversationContext(@Nullable Plugin plugin, @NotNull Conversable forWhom, @NotNull Map<Object, Object> initialSessionData) {
         this.plugin = plugin;
         this.forWhom = forWhom;
         this.sessionData = initialSessionData;
@@ -32,6 +34,7 @@ public class ConversationContext {
      *
      * @return The owning plugin.
      */
+    @Nullable
     public Plugin getPlugin() {
         return plugin;
     }
@@ -41,6 +44,7 @@ public class ConversationContext {
      *
      * @return The subject of the conversation.
      */
+    @NotNull
     public Conversable getForWhom() {
         return forWhom;
     }
@@ -52,6 +56,7 @@ public class ConversationContext {
      *
      * @return The full sessionData map.
      */
+    @NotNull
     public Map<Object, Object> getAllSessionData() {
         return sessionData;
     }
@@ -64,7 +69,8 @@ public class ConversationContext {
      * @param key The session data key.
      * @return The requested session data.
      */
-    public Object getSessionData(Object key) {
+    @Nullable
+    public Object getSessionData(@NotNull Object key) {
         return sessionData.get(key);
     }
 
@@ -76,7 +82,7 @@ public class ConversationContext {
      * @param key The session data key.
      * @param value The session data value.
      */
-    public void setSessionData(Object key, Object value) {
+    public void setSessionData(@NotNull Object key, @Nullable Object value) {
         sessionData.put(key, value);
     }
 }

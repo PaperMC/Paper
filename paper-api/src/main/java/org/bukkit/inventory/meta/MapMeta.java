@@ -1,7 +1,10 @@
 package org.bukkit.inventory.meta;
 
 import org.bukkit.Color;
+import org.bukkit.UndefinedNullability;
 import org.bukkit.map.MapView;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a map that can be scalable.
@@ -71,6 +74,7 @@ public interface MapMeta extends ItemMeta {
      * @return the map view, or null if the item hasMapView(), but this map does
      * not exist on the server
      */
+    @Nullable
     MapView getMapView();
 
     /**
@@ -83,7 +87,7 @@ public interface MapMeta extends ItemMeta {
      *
      * @param map the map to set
      */
-    void setMapView(MapView map);
+    void setMapView(@UndefinedNullability("implementation defined") MapView map);
 
     /**
      * Checks to see if this map is scaling.
@@ -114,6 +118,7 @@ public interface MapMeta extends ItemMeta {
      *
      * @return the location name that is set
      */
+    @Nullable
     String getLocationName();
 
     /**
@@ -122,7 +127,7 @@ public interface MapMeta extends ItemMeta {
      *
      * @param name the name to set
      */
-    void setLocationName(String name);
+    void setLocationName(@Nullable String name);
 
     /**
      * Checks for existence of a map color.
@@ -140,6 +145,7 @@ public interface MapMeta extends ItemMeta {
      *
      * @return the map color that is set
      */
+    @Nullable
     Color getColor();
 
     /**
@@ -148,7 +154,8 @@ public interface MapMeta extends ItemMeta {
      *
      * @param color the color to set
      */
-    void setColor(Color color);
+    void setColor(@Nullable Color color);
 
+    @NotNull
     MapMeta clone();
 }

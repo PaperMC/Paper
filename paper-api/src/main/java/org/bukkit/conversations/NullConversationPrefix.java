@@ -1,5 +1,7 @@
 package org.bukkit.conversations;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * NullConversationPrefix is a {@link ConversationPrefix} implementation that
  * displays nothing in front of conversation output.
@@ -12,7 +14,8 @@ public class NullConversationPrefix implements ConversationPrefix {
      * @param context Context information about the conversation.
      * @return An empty string.
      */
-    public String getPrefix(ConversationContext context) {
+    @NotNull
+    public String getPrefix(@NotNull ConversationContext context) {
         return "";
     }
 }

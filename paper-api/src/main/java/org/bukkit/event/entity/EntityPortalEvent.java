@@ -4,6 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.TravelAgent;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a non-player entity is about to teleport because it is in
@@ -16,7 +18,7 @@ public class EntityPortalEvent extends EntityTeleportEvent {
     protected boolean useTravelAgent = true;
     protected TravelAgent travelAgent;
 
-    public EntityPortalEvent(final Entity entity, final Location from, final Location to, final TravelAgent pta) {
+    public EntityPortalEvent(@NotNull final Entity entity, @NotNull final Location from, @Nullable final Location to, @NotNull final TravelAgent pta) {
         super(entity, from, to);
         this.travelAgent = pta;
     }
@@ -58,6 +60,7 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      *
      * @return the Travel Agent used (or not) in this event
      */
+    @NotNull
     public TravelAgent getPortalTravelAgent() {
         return this.travelAgent;
     }
@@ -67,15 +70,17 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      *
      * @param travelAgent the Travel Agent used (or not) in this event
      */
-    public void setPortalTravelAgent(TravelAgent travelAgent) {
+    public void setPortalTravelAgent(@NotNull TravelAgent travelAgent) {
         this.travelAgent = travelAgent;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

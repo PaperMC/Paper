@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.attribute.Attribute;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an {@link Entity} that has health and can take damage.
@@ -20,7 +21,7 @@ public interface Damageable extends Entity {
      * @param amount Amount of damage to deal
      * @param source Entity which to attribute this damage from
      */
-    void damage(double amount, Entity source);
+    void damage(double amount, @Nullable Entity source);
 
     /**
      * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead.

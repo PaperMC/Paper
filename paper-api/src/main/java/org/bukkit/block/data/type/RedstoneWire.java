@@ -3,6 +3,7 @@ package org.bukkit.block.data.type;
 import java.util.Set;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.AnaloguePowerable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'north', 'east', 'south', 'west' represent the types of connections this
@@ -16,7 +17,8 @@ public interface RedstoneWire extends AnaloguePowerable {
      * @param face to check
      * @return connection type
      */
-    Connection getFace(BlockFace face);
+    @NotNull
+    Connection getFace(@NotNull BlockFace face);
 
     /**
      * Sets the type of connection on the specified face.
@@ -24,13 +26,14 @@ public interface RedstoneWire extends AnaloguePowerable {
      * @param face to set
      * @param connection the connection type
      */
-    void setFace(BlockFace face, Connection connection);
+    void setFace(@NotNull BlockFace face, @NotNull Connection connection);
 
     /**
      * Gets all of this faces which may be set on this block.
      *
      * @return all allowed faces
      */
+    @NotNull
     Set<BlockFace> getAllowedFaces();
 
     /**

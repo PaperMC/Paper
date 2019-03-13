@@ -6,6 +6,8 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable {
 
@@ -24,6 +26,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Player name or null if we have not seen a name for this player yet
      */
+    @Nullable
     public String getName();
 
     /**
@@ -31,6 +34,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Player UUID
      */
+    @NotNull
     public UUID getUniqueId();
 
     /**
@@ -62,6 +66,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Online player
      */
+    @Nullable
     public Player getPlayer();
 
     /**
@@ -101,6 +106,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Bed Spawn Location if bed exists, otherwise null.
      */
+    @Nullable
     public Location getBedSpawnLocation();
 
 }

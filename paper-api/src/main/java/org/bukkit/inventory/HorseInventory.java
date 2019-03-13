@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * An interface to the inventory of a Horse.
  */
@@ -10,6 +12,7 @@ public interface HorseInventory extends AbstractHorseInventory {
      *
      * @return the armor item
      */
+    @Nullable
     ItemStack getArmor();
 
     /**
@@ -17,5 +20,5 @@ public interface HorseInventory extends AbstractHorseInventory {
      *
      * @param stack the new item
      */
-    void setArmor(ItemStack stack);
+    void setArmor(@Nullable ItemStack stack);
 }

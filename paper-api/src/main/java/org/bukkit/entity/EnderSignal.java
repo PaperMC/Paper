@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an EnderSignal, which is created upon throwing an ender eye.
@@ -12,6 +13,7 @@ public interface EnderSignal extends Entity {
      *
      * @return the {@link Location} this EnderSignal is moving towards.
      */
+    @NotNull
     public Location getTargetLocation();
 
     /**
@@ -22,7 +24,7 @@ public interface EnderSignal extends Entity {
      *
      * @param location the new target location
      */
-    public void setTargetLocation(Location location);
+    public void setTargetLocation(@NotNull Location location);
 
     /**
      * Gets if the EnderSignal should drop an item on death.<br>

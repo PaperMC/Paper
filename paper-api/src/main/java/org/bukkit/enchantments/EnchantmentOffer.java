@@ -1,6 +1,7 @@
 package org.bukkit.enchantments;
 
 import org.apache.commons.lang.Validate;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A class for the available enchantment offers in the enchantment table.
@@ -11,7 +12,7 @@ public class EnchantmentOffer {
     private int enchantmentLevel;
     private int cost;
 
-    public EnchantmentOffer(Enchantment enchantment, int enchantmentLevel, int cost) {
+    public EnchantmentOffer(@NotNull Enchantment enchantment, int enchantmentLevel, int cost) {
         this.enchantment = enchantment;
         this.enchantmentLevel = enchantmentLevel;
         this.cost = cost;
@@ -22,6 +23,7 @@ public class EnchantmentOffer {
      *
      * @return type of enchantment
      */
+    @NotNull
     public Enchantment getEnchantment() {
         return enchantment;
     }
@@ -31,7 +33,7 @@ public class EnchantmentOffer {
      *
      * @param enchantment type of the enchantment
      */
-    public void setEnchantment(Enchantment enchantment) {
+    public void setEnchantment(@NotNull Enchantment enchantment) {
         Validate.notNull(enchantment, "The enchantment may not be null!");
 
         this.enchantment = enchantment;

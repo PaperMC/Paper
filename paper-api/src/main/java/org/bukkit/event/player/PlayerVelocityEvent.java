@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the velocity of a player changes.
@@ -13,7 +14,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
     private boolean cancel = false;
     private Vector velocity;
 
-    public PlayerVelocityEvent(final Player player, final Vector velocity) {
+    public PlayerVelocityEvent(@NotNull final Player player, @NotNull final Vector velocity) {
         super(player);
         this.velocity = velocity;
     }
@@ -31,6 +32,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
      *
      * @return Vector the player will get
      */
+    @NotNull
     public Vector getVelocity() {
         return velocity;
     }
@@ -40,15 +42,17 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
      *
      * @param velocity The velocity vector that will be sent to the player
      */
-    public void setVelocity(Vector velocity) {
+    public void setVelocity(@NotNull Vector velocity) {
         this.velocity = velocity;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

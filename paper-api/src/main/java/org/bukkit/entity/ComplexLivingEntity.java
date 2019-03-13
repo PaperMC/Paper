@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 
 /**
@@ -12,5 +14,6 @@ public interface ComplexLivingEntity extends LivingEntity {
      *
      * @return List of parts
      */
+    @NotNull
     public Set<ComplexEntityPart> getParts();
 }

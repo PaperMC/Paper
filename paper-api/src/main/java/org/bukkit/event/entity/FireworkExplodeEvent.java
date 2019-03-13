@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Firework;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a firework explodes.
@@ -12,7 +13,7 @@ public class FireworkExplodeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;
 
-    public FireworkExplodeEvent(final Firework what) {
+    public FireworkExplodeEvent(@NotNull final Firework what) {
         super(what);
     }
 
@@ -33,16 +34,19 @@ public class FireworkExplodeEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    @NotNull
     @Override
     public Firework getEntity() {
         return (Firework) super.getEntity();
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -2,6 +2,7 @@ package org.bukkit.util.noise;
 
 import java.util.Random;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Generates noise using the "classic" perlin generator
@@ -45,7 +46,7 @@ public class PerlinNoiseGenerator extends NoiseGenerator {
      *
      * @param world World to construct this generator for
      */
-    public PerlinNoiseGenerator(World world) {
+    public PerlinNoiseGenerator(@NotNull World world) {
         this(new Random(world.getSeed()));
     }
 
@@ -63,7 +64,7 @@ public class PerlinNoiseGenerator extends NoiseGenerator {
      *
      * @param rand Random to construct with
      */
-    public PerlinNoiseGenerator(Random rand) {
+    public PerlinNoiseGenerator(@NotNull Random rand) {
         offsetX = rand.nextDouble() * 256;
         offsetY = rand.nextDouble() * 256;
         offsetZ = rand.nextDouble() * 256;
@@ -123,6 +124,7 @@ public class PerlinNoiseGenerator extends NoiseGenerator {
      *
      * @return Singleton
      */
+    @NotNull
     public static PerlinNoiseGenerator getInstance() {
         return instance;
     }

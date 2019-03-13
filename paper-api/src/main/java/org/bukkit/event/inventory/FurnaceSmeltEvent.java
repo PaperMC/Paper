@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is successfully smelted in a furnace.
@@ -15,7 +16,7 @@ public class FurnaceSmeltEvent extends BlockEvent implements Cancellable {
     private ItemStack result;
     private boolean cancelled;
 
-    public FurnaceSmeltEvent(final Block furnace, final ItemStack source, final ItemStack result) {
+    public FurnaceSmeltEvent(@NotNull final Block furnace, @NotNull final ItemStack source, @NotNull final ItemStack result) {
         super(furnace);
         this.source = source;
         this.result = result;
@@ -27,6 +28,7 @@ public class FurnaceSmeltEvent extends BlockEvent implements Cancellable {
      *
      * @return smelting source ItemStack
      */
+    @NotNull
     public ItemStack getSource() {
         return source;
     }
@@ -36,6 +38,7 @@ public class FurnaceSmeltEvent extends BlockEvent implements Cancellable {
      *
      * @return smelting result ItemStack
      */
+    @NotNull
     public ItemStack getResult() {
         return result;
     }
@@ -45,7 +48,7 @@ public class FurnaceSmeltEvent extends BlockEvent implements Cancellable {
      *
      * @param result new result ItemStack
      */
-    public void setResult(ItemStack result) {
+    public void setResult(@NotNull ItemStack result) {
         this.result = result;
     }
 
@@ -57,11 +60,13 @@ public class FurnaceSmeltEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

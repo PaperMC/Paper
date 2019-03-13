@@ -1,6 +1,8 @@
 package org.bukkit.material;
 
 import org.bukkit.DyeColor;
+import org.bukkit.UndefinedNullability;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An object that can be colored.
@@ -15,6 +17,7 @@ public interface Colorable {
      *
      * @return The DyeColor of this object.
      */
+    @Nullable
     public DyeColor getColor();
 
     /**
@@ -24,7 +27,8 @@ public interface Colorable {
      * object has a special default color (e.g Shulkers).
      *
      * @param color The color of the object, as a DyeColor.
+     * @throws NullPointerException if argument is null and this implementation does not support null
      */
-    public void setColor(DyeColor color);
+    public void setColor(@UndefinedNullability("defined by subclass") DyeColor color);
 
 }

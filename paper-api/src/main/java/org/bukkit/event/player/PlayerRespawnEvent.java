@@ -4,6 +4,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player respawns.
@@ -13,7 +14,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
     private Location respawnLocation;
     private final boolean isBedSpawn;
 
-    public PlayerRespawnEvent(final Player respawnPlayer, final Location respawnLocation, final boolean isBedSpawn) {
+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
         super(respawnPlayer);
         this.respawnLocation = respawnLocation;
         this.isBedSpawn = isBedSpawn;
@@ -24,6 +25,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
      *
      * @return Location current respawn location
      */
+    @NotNull
     public Location getRespawnLocation() {
         return this.respawnLocation;
     }
@@ -33,7 +35,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
      *
      * @param respawnLocation new location for the respawn
      */
-    public void setRespawnLocation(Location respawnLocation) {
+    public void setRespawnLocation(@NotNull Location respawnLocation) {
         Validate.notNull(respawnLocation, "Respawn location can not be null");
         Validate.notNull(respawnLocation.getWorld(), "Respawn world can not be null");
 
@@ -49,11 +51,13 @@ public class PlayerRespawnEvent extends PlayerEvent {
         return this.isBedSpawn;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

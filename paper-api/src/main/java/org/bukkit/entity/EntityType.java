@@ -14,6 +14,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 
 public enum EntityType {
 
@@ -309,11 +311,11 @@ public enum EntityType {
         NAME_MAP.put("ender_crystal", ENDER_CRYSTAL);
     }
 
-    private EntityType(String name, Class<? extends Entity> clazz, int typeId) {
+    private EntityType(@Nullable String name, @Nullable Class<? extends Entity> clazz, int typeId) {
         this(name, clazz, typeId, true);
     }
 
-    private EntityType(String name, Class<? extends Entity> clazz, int typeId, boolean independent) {
+    private EntityType(@Nullable String name, @Nullable Class<? extends Entity> clazz, int typeId, boolean independent) {
         this.name = name;
         this.clazz = clazz;
         this.typeId = (short) typeId;
@@ -329,10 +331,12 @@ public enum EntityType {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public String getName() {
         return name;
     }
 
+    @Nullable
     public Class<? extends Entity> getEntityClass() {
         return clazz;
     }
@@ -354,7 +358,9 @@ public enum EntityType {
      * @deprecated Magic value
      */
     @Deprecated
-    public static EntityType fromName(String name) {
+    @Contract("null -> null")
+    @Nullable
+    public static EntityType fromName(@Nullable String name) {
         if (name == null) {
             return null;
         }
@@ -368,6 +374,7 @@ public enum EntityType {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static EntityType fromId(int id) {
         if (id > Short.MAX_VALUE) {
             return null;

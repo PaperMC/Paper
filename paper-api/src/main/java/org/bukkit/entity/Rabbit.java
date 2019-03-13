@@ -1,16 +1,19 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface Rabbit extends Animals {
 
     /**
      * @return The type of rabbit.
      */
+    @NotNull
     public Type getRabbitType();
 
     /**
      * @param type Sets the type of rabbit for this entity.
      */
-    public void setRabbitType(Type type);
+    public void setRabbitType(@NotNull Type type);
 
     /**
      * Represents the various types a Rabbit might be.

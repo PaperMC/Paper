@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a plugin loader, which handles direct access to specific types
@@ -25,7 +26,8 @@ public interface PluginLoader {
      * @throws UnknownDependencyException If a required dependency could not
      *     be found
      */
-    public Plugin loadPlugin(File file) throws InvalidPluginException, UnknownDependencyException;
+    @NotNull
+    public Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException;
 
     /**
      * Loads a PluginDescriptionFile from the specified file
@@ -36,13 +38,15 @@ public interface PluginLoader {
      * @throws InvalidDescriptionException If the plugin description file
      *     could not be created
      */
-    public PluginDescriptionFile getPluginDescription(File file) throws InvalidDescriptionException;
+    @NotNull
+    public PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException;
 
     /**
      * Returns a list of all filename filters expected by this PluginLoader
      *
      * @return The filters
      */
+    @NotNull
     public Pattern[] getPluginFileFilters();
 
     /**
@@ -53,7 +57,8 @@ public interface PluginLoader {
      * @param plugin The plugin to use when creating registered listeners
      * @return The registered listeners.
      */
-    public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(Listener listener, Plugin plugin);
+    @NotNull
+    public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull Plugin plugin);
 
     /**
      * Enables the specified plugin
@@ -63,7 +68,7 @@ public interface PluginLoader {
      *
      * @param plugin Plugin to enable
      */
-    public void enablePlugin(Plugin plugin);
+    public void enablePlugin(@NotNull Plugin plugin);
 
     /**
      * Disables the specified plugin
@@ -72,5 +77,5 @@ public interface PluginLoader {
      *
      * @param plugin Plugin to disable
      */
-    public void disablePlugin(Plugin plugin);
+    public void disablePlugin(@NotNull Plugin plugin);
 }

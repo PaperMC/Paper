@@ -4,6 +4,7 @@ import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Powerable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'hinge' indicates which hinge this door is attached to and will rotate around
@@ -16,6 +17,7 @@ public interface Door extends Bisected, Directional, Openable, Powerable {
      *
      * @return the 'hinge' value
      */
+    @NotNull
     Hinge getHinge();
 
     /**
@@ -23,7 +25,7 @@ public interface Door extends Bisected, Directional, Openable, Powerable {
      *
      * @param hinge the new 'hinge' value
      */
-    void setHinge(Hinge hinge);
+    void setHinge(@NotNull Hinge hinge);
 
     /**
      * The hinge of a door.

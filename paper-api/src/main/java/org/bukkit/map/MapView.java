@@ -3,6 +3,8 @@ package org.bukkit.map;
 import java.util.List;
 import org.bukkit.World;
 import org.bukkit.inventory.meta.MapMeta;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a map item.
@@ -33,6 +35,7 @@ public interface MapView {
          * @deprecated Magic value
          */
         @Deprecated
+        @Nullable
         public static Scale valueOf(byte value) {
             switch (value) {
             case 0: return CLOSEST;
@@ -76,6 +79,7 @@ public interface MapView {
      *
      * @return The scale of the map.
      */
+    @NotNull
     public Scale getScale();
 
     /**
@@ -83,7 +87,7 @@ public interface MapView {
      *
      * @param scale The scale to set.
      */
-    public void setScale(Scale scale);
+    public void setScale(@NotNull Scale scale);
 
     /**
      * Get the center X position of this map.
@@ -120,6 +124,7 @@ public interface MapView {
      *
      * @return The World this map is associated with.
      */
+    @Nullable
     public World getWorld();
 
     /**
@@ -128,13 +133,14 @@ public interface MapView {
      *
      * @param world The World to associate this map with.
      */
-    public void setWorld(World world);
+    public void setWorld(@NotNull World world);
 
     /**
      * Get a list of MapRenderers currently in effect.
      *
      * @return A {@code List<MapRenderer>} containing each map renderer.
      */
+    @NotNull
     public List<MapRenderer> getRenderers();
 
     /**
@@ -142,7 +148,7 @@ public interface MapView {
      *
      * @param renderer The MapRenderer to add.
      */
-    public void addRenderer(MapRenderer renderer);
+    public void addRenderer(@NotNull MapRenderer renderer);
 
     /**
      * Remove a renderer from this map.
@@ -150,7 +156,7 @@ public interface MapView {
      * @param renderer The MapRenderer to remove.
      * @return True if the renderer was successfully removed.
      */
-    public boolean removeRenderer(MapRenderer renderer);
+    public boolean removeRenderer(@Nullable MapRenderer renderer);
 
     /**
      * Whether the map will show a smaller position cursor (true), or no

@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the two types of coal
@@ -38,6 +39,7 @@ public enum CoalType {
      * @deprecated Magic value
      */
     @Deprecated
+    @Nullable
     public static CoalType getByData(final byte data) {
         return BY_DATA.get(data);
     }

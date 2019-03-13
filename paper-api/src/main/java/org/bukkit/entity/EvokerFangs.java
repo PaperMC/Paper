@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents Evoker Fangs.
  */
@@ -10,6 +12,7 @@ public interface EvokerFangs extends Entity {
      *
      * @return the {@link LivingEntity} which summoned the fangs
      */
+    @Nullable
     LivingEntity getOwner();
 
     /**
@@ -17,5 +20,5 @@ public interface EvokerFangs extends Entity {
      *
      * @param owner the {@link LivingEntity} which summoned the fangs
      */
-    void setOwner(LivingEntity owner);
+    void setOwner(@Nullable LivingEntity owner);
 }

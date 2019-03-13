@@ -1,6 +1,8 @@
 package org.bukkit.entity;
 
 import org.bukkit.block.Block;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an arrow.
@@ -74,6 +76,7 @@ public interface Arrow extends Projectile {
      *
      * @return the attached block or null if not attached
      */
+    @Nullable
     public Block getAttachedBlock();
 
     /**
@@ -81,6 +84,7 @@ public interface Arrow extends Projectile {
      *
      * @return the pickup status of this arrow.
      */
+    @NotNull
     public PickupStatus getPickupStatus();
 
     /**
@@ -88,7 +92,7 @@ public interface Arrow extends Projectile {
      *
      * @param status new pickup status of this arrow.
      */
-    public void setPickupStatus(PickupStatus status);
+    public void setPickupStatus(@NotNull PickupStatus status);
 
     /**
      * Represents the pickup status of this arrow.

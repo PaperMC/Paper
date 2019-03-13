@@ -2,6 +2,7 @@ package org.bukkit.util.permissions;
 
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.NotNull;
 
 public final class CommandPermissions {
     private static final String ROOT = "bukkit.command";
@@ -9,7 +10,8 @@ public final class CommandPermissions {
 
     private CommandPermissions() {}
 
-    public static Permission registerPermissions(Permission parent) {
+    @NotNull
+    public static Permission registerPermissions(@NotNull Permission parent) {
         Permission commands = DefaultPermissions.registerPermission(ROOT, "Gives the user the ability to use all CraftBukkit commands", parent);
 
         DefaultPermissions.registerPermission(PREFIX + "help", "Allows the user to view the vanilla help menu", PermissionDefault.TRUE, commands);

@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.entity.AbstractHorse;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a horse jumps.
@@ -12,7 +13,7 @@ public class HorseJumpEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private float power;
 
-    public HorseJumpEvent(final AbstractHorse horse, final float power) {
+    public HorseJumpEvent(@NotNull final AbstractHorse horse, final float power) {
         super(horse);
         this.power = power;
     }
@@ -29,6 +30,7 @@ public class HorseJumpEvent extends EntityEvent implements Cancellable {
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public AbstractHorse getEntity() {
         return (AbstractHorse) entity;
@@ -73,11 +75,13 @@ public class HorseJumpEvent extends EntityEvent implements Cancellable {
         this.power = power;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }

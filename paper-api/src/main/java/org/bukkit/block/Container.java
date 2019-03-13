@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a container block.
@@ -19,6 +20,7 @@ public interface Container extends BlockState, InventoryHolder, Lockable {
      *
      * @return the inventory
      */
+    @NotNull
     @Override
     Inventory getInventory();
 
@@ -32,5 +34,6 @@ public interface Container extends BlockState, InventoryHolder, Lockable {
      *
      * @return the captured inventory snapshot
      */
+    @NotNull
     Inventory getSnapshotInventory();
 }
