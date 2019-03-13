@@ -168,7 +168,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return false;
         }
 
-        if (getHandle().a(blockposition) != EntityHuman.EnumBedResult.OK) {
+        if (getHandle().a(blockposition, force) != EntityHuman.EnumBedResult.OK) {
             return false;
         }
 
