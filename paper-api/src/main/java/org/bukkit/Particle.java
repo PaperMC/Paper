@@ -71,7 +71,7 @@ public enum Particle {
         dataType = Void.class;
     }
 
-    Particle(@NotNull Class<?> data) {
+    Particle(/*@NotNull*/ Class<?> data) {
         dataType = data;
     }
 

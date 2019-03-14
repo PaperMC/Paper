@@ -21,7 +21,7 @@ public enum WorldType {
     private final static Map<String, WorldType> BY_NAME = Maps.newHashMap();
     private final String name;
 
-    private WorldType(@NotNull String name) {
+    private WorldType(/*@NotNull*/ String name) {
         this.name = name;
     }
 

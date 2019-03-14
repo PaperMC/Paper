@@ -2957,15 +2957,15 @@ public enum Material implements Keyed {
         this(id, stack, durability, MaterialData.class);
     }
 
-    private Material(final int id, @NotNull final Class<?> data) {
+    private Material(final int id, /*@NotNull*/ final Class<?> data) {
         this(id, 64, data);
     }
 
-    private Material(final int id, final int stack, @NotNull final Class<?> data) {
+    private Material(final int id, final int stack, /*@NotNull*/ final Class<?> data) {
         this(id, stack, 0, data);
     }
 
-    private Material(final int id, final int stack, final int durability, @NotNull final Class<?> data) {
+    private Material(final int id, final int stack, final int durability, /*@NotNull*/ final Class<?> data) {
         this.id = id;
         this.durability = (short) durability;
         this.maxStack = stack;

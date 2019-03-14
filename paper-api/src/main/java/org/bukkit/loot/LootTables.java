@@ -119,7 +119,7 @@ public enum LootTables implements Keyed {
 
     private final String location;
 
-    private LootTables(@NotNull String location) {
+    private LootTables(/*@NotNull*/ String location) {
         this.location = location;
     }
 

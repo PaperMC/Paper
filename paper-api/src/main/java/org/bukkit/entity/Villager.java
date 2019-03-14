@@ -236,7 +236,7 @@ public interface Villager extends Ageable, NPC, InventoryHolder, Merchant {
         private static final Multimap<Profession, Career> careerMap = LinkedListMultimap.create();
         private final Profession profession;
 
-        private Career(@NotNull Profession profession) {
+        private Career(/*@NotNull*/ Profession profession) {
             this.profession = profession;
         }
 

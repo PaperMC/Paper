@@ -82,7 +82,7 @@ public enum Statistic {
         this(Type.UNTYPED);
     }
 
-    private Statistic(@NotNull Type type) {
+    private Statistic(/*@NotNull*/ Type type) {
         this.type = type;
     }
 

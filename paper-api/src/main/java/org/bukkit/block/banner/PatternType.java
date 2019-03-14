@@ -57,7 +57,7 @@ public enum PatternType {
         }
     }
 
-    private PatternType(@NotNull String key) {
+    private PatternType(/*@NotNull*/ String key) {
         this.identifier = key;
     }
 

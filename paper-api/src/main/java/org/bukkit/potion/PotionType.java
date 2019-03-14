@@ -35,7 +35,7 @@ public enum PotionType {
     private final boolean upgradeable;
     private final boolean extendable;
 
-    PotionType(@Nullable PotionEffectType effect, boolean upgradeable, boolean extendable) {
+    PotionType(/*@Nullable*/ PotionEffectType effect, boolean upgradeable, boolean extendable) {
         this.effect = effect;
         this.upgradeable = upgradeable;
         this.extendable = extendable;

@@ -98,11 +98,11 @@ public enum InventoryType {
     private final String title;
     private final boolean isCreatable;
 
-    private InventoryType(int defaultSize, @NotNull String defaultTitle) {
+    private InventoryType(int defaultSize, /*@NotNull*/ String defaultTitle) {
         this(defaultSize, defaultTitle, true);
     }
 
-    private InventoryType(int defaultSize, @NotNull String defaultTitle, boolean isCreatable) {
+    private InventoryType(int defaultSize, /*@NotNull*/ String defaultTitle, boolean isCreatable) {
         size = defaultSize;
         title = defaultTitle;
         this.isCreatable = isCreatable;

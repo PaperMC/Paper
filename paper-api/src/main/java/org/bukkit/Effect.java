@@ -205,11 +205,11 @@ public enum Effect {
     private final Class<?> data;
     private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
 
-    Effect(int id, @NotNull Type type) {
+    Effect(int id, /*@NotNull*/ Type type) {
         this(id, type, null);
     }
 
-    Effect(int id, @NotNull Type type, @Nullable Class<?> data) {
+    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?> data) {
         this.id = id;
         this.type = type;
         this.data = data;
