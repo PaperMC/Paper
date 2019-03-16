@@ -34,7 +34,6 @@ public class SyntheticEventTest {
         int callCount = 0;
 
         public void accept(E evt) {
-            System.out.println("Invk " + evt);
             callCount++;
         }
     }
