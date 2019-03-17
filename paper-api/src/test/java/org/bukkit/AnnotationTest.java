@@ -29,7 +29,13 @@ public class AnnotationTest {
         "Lorg/jetbrains/annotations/Nullable;",
         "Lorg/jetbrains/annotations/NotNull;",
         "Lorg/jetbrains/annotations/Contract;",
-        "Lorg/bukkit/UndefinedNullability;"
+        "Lorg/bukkit/UndefinedNullability;",
+        // Paper start
+        "Lorg/checkerframework/checker/nullness/qual/MonotonicNonNull;",
+        "Lorg/checkerframework/checker/nullness/qual/NonNull;",
+        "Lorg/checkerframework/checker/nullness/qual/Nullable;",
+        "Lorg/checkerframework/checker/nullness/qual/PolyNull;",
+        // Paper end
     };
 
     private static final String[] EXCLUDED_CLASSES = {
@@ -40,7 +46,17 @@ public class AnnotationTest {
         "org/bukkit/util/io/Wrapper",
         "org/bukkit/plugin/java/PluginClassLoader",
         // Generic functional interface
-        "org/bukkit/util/Consumer"
+        "org/bukkit/util/Consumer",
+        // Paper start
+        // Timings history is broken in terms of nullability due to guavas Function defining that the param is NonNull
+        "co/aikar/timings/TimingHistory$2",
+        "co/aikar/timings/TimingHistory$2$1",
+        "co/aikar/timings/TimingHistory$2$1$1",
+        "co/aikar/timings/TimingHistory$2$1$2",
+        "co/aikar/timings/TimingHistory$3",
+        "co/aikar/timings/TimingHistory$4",
+        "co/aikar/timings/TimingHistoryEntry$1"
+        // Paper end
     };
 
     @Test
@@ -61,20 +77,60 @@ public class AnnotationTest {
                 continue;
             }
 
+            // Paper start - skip class if it's @NullMarked
+            if (isClassNullMarked(clazz, foundClasses)) {
+                continue;
+            }
+            // Paper end - skip class if it's @NullMarked
+
             for (MethodNode method : clazz.methods) {
                 if (!isMethodIncluded(clazz, method, foundClasses)) {
                     continue;
                 }
 
                 if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
+                    // Paper start - Allow use of TYPE_USE annotations
+                    boolean warn = true;
+                    if (isWellAnnotated(method.visibleTypeAnnotations)) {
+                        warn = false;
+                    } else if (method.invisibleTypeAnnotations != null) {
+                        dance: for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
+                            final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
+                                warn = false;
+                                break dance; // cha cha real smooth
+                            }
+                        }
+                    }
+                    if (warn)
+                    // Paper end
                     warn(errors, clazz, method, "return value");
                 }
 
                 Type[] paramTypes = Type.getArgumentTypes(method.desc);
                 List<ParameterNode> parameters = method.parameters;
 
+                dancing: // Paper
                 for (int i = 0; i < paramTypes.length; i++) {
                     if (mustBeAnnotated(paramTypes[i]) ^ isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
+                        // Paper start
+                        if (method.invisibleTypeAnnotations != null) {
+                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
+                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
+                                    continue dancing;
+                                }
+                            }
+                        }
+                        if (method.visibleTypeAnnotations != null) {
+                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.visibleTypeAnnotations) {
+                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
+                                    continue dancing;
+                                }
+                            }
+                        }
+                        // Paper end - Allow use of TYPE_USE annotations
                         ParameterNode paramNode = parameters == null ? null : parameters.get(i);
                         String paramName = paramNode == null ? null : paramNode.name;
 
@@ -91,17 +147,37 @@ public class AnnotationTest {
 
         Collections.sort(errors);
 
-        System.out.println(errors.size() + " missing annotation(s):");
+        StringBuilder builder = new StringBuilder()
+            .append("There ")
+            .append(errors.size() != 1 ? "are " : "is ")
+            .append(errors.size())
+            .append(" missing annotation")
+            .append(errors.size() != 1 ? "s:\n" : ":\n");
+
         for (String message : errors) {
-            System.out.print("\t");
-            System.out.println(message);
+            builder.append("\t").append(message).append("\n");
         }
 
-        fail("There " + errors.size() + " are missing annotation(s)");
+        fail(builder.toString());
     }
 
     private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
         if (from.isDirectory()) {
+            // Paper start - skip packages with @NullMarked
+            final File packageInfo = new File(from, "package-info.class");
+            if (packageInfo.exists()) {
+                try (final FileInputStream in = new FileInputStream(packageInfo)) {
+                    final ClassReader cr = new ClassReader(in);
+
+                    final ClassNode node = new ClassNode();
+                    cr.accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
+                    if (isClassNullMarked0(node)) {
+                        return; // skip packages with @NullMarked
+                    }
+                }
+            }
+            // Paper end - skip packages with @NullMarked
             final File[] files = from.listFiles();
             assert files != null;
 
@@ -125,6 +201,23 @@ public class AnnotationTest {
         }
     }
 
+    // Paper start - skip class if it's @NullMarked
+    private static boolean isClassNullMarked(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
+        if (clazz.nestHostClass != null) {
+            final ClassNode nestHostNode = allClasses.get(clazz.nestHostClass);
+            if (nestHostNode != null) {
+                return isClassNullMarked0(nestHostNode);
+            }
+        }
+
+        return isClassNullMarked0(clazz);
+    }
+
+    private static boolean isClassNullMarked0(@NotNull ClassNode clazz) {
+        return clazz.visibleAnnotations != null && clazz.visibleAnnotations.stream().anyMatch(node -> "Lorg/jspecify/annotations/NullMarked;".equals(node.desc));
+    }
+    // Paper end - skip class if it's @NullMarked
+
     private static boolean isClassIncluded(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
         // Exclude private, synthetic or deprecated classes and annotations, since their members can't be null
         if ((clazz.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED | Opcodes.ACC_ANNOTATION)) != 0) {
@@ -140,6 +233,11 @@ public class AnnotationTest {
             // Exceptions are excluded
             return false;
         }
+        // Paper start
+        if (isInternal(clazz.invisibleAnnotations)) {
+            return false;
+        }
+        // Paper end
 
         for (String excludedClass : EXCLUDED_CLASSES) {
             if (excludedClass.equals(clazz.name)) {
@@ -152,7 +250,7 @@ public class AnnotationTest {
 
     private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
         // Exclude private, synthetic and deprecated methods
-        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0) {
+        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0 || (method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC)) == 0) { // Paper - ignore package-private
             return false;
         }
 
@@ -170,11 +268,30 @@ public class AnnotationTest {
         if ("<init>".equals(method.name) && isAnonymous(clazz)) {
             return false;
         }
+        // Paper start
+        if (isInternal(method.invisibleAnnotations)) {
+            return false;
+        }
+        // Paper end
 
         return true;
     }
+    // Paper start
+    private static boolean isInternal(List<? extends AnnotationNode> annotations) {
+        if (annotations == null) {
+            return false;
+        }
+        for (AnnotationNode node : annotations) {
+            if (node.desc.equals("Lorg/jetbrains/annotations/ApiStatus$Internal;")) {
+                return true;
+            }
+        }
 
-    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
+        return false;
+    }
+    // Paper end
+
+    private static boolean isWellAnnotated(@Nullable List<? extends AnnotationNode> annotations) { // Paper
         if (annotations == null) {
             return false;
         }

@@ -83,6 +83,11 @@ public final class TestServer {
         UnsafeValues unsafeValues = mock(withSettings().stubOnly());
         when(instance.getUnsafe()).thenReturn(unsafeValues);
 
+        // Paper start - testing changes
+        when(instance.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.testing.EmptyTag());
+        when(instance.getScoreboardCriteria(anyString())).thenReturn(null);
+        // Paper end - testing changes
+
         Bukkit.setServer(instance);
     }
 

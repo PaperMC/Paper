@@ -11,6 +11,18 @@ java {
 val annotationsVersion = "24.1.0"
 val bungeeCordChatVersion = "1.20-R0.2"
 
+// Paper start - configure mockito agent that is needed in newer java versions
+val mockitoAgent = configurations.register("mockitoAgent")
+abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+    @get:CompileClasspath
+    abstract val fileCollection: ConfigurableFileCollection
+
+    override fun asArguments(): Iterable<String> {
+        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
+    }
+}
+// Paper end - configure mockito agent that is needed in newer java versions
+
 dependencies {
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
@@ -46,6 +58,7 @@ dependencies {
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
+    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
 }
 
 configure<PublishingExtension> {
@@ -107,7 +120,18 @@ tasks.withType<Javadoc> {
 
 tasks.test {
     useJUnitPlatform()
+    // Paper start - configure mockito agent that is needed in newer java versions
+    val provider = objects.newInstance<MockitoAgentProvider>()
+    provider.fileCollection.from(mockitoAgent)
+    jvmArgumentProviders.add(provider)
+    // Paper end - configure mockito agent that is needed in newer java versions
 }
+
+// Paper start - compile tests with -parameters for better junit parameterized test names
+tasks.compileTestJava {
+    options.compilerArgs.add("-parameters")
+}
+// Paper end
 
 // Paper start
 val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
