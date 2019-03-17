@@ -370,7 +370,7 @@ public abstract class Command {
      */
     @NotNull
     public Command setDescription(@NotNull String description) {
-        this.description = description == null ? "" : "";
+        this.description = (description == null) ? "" : description;
         return this;
     }
 
