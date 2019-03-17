@@ -160,7 +160,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "00ed8e5c39debc3ed194ad7c5645cc45";
+        return "7dd4b3ec31629620c41553e5c142e454";
     }
 
     @Override

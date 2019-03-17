@@ -21,9 +21,9 @@ public class GameRuleTest {
 
     @Test
     public void testMinecraftRules() {
-        TreeMap<String, GameRules.b> minecraftRules = GameRules.getGameRules();
+        TreeMap<String, GameRules.GameRuleDefinition> minecraftRules = GameRules.getGameRules();
 
-        for (Map.Entry<String, GameRules.b> entry : minecraftRules.entrySet()) {
+        for (Map.Entry<String, GameRules.GameRuleDefinition> entry : minecraftRules.entrySet()) {
             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());
 
             Assert.assertNotNull(bukkitRule);
