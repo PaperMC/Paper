@@ -461,6 +461,43 @@ public abstract class ConfigurationSectionTest {
     }
 
     @Test
+    public void testGetObject_String_Class() {
+        ConfigurationSection section = getConfigurationSection();
+
+        section.set("set", Integer.valueOf(1));
+        section.addDefault("default", Integer.valueOf(2));
+        section.addDefault("defaultAndSet", Boolean.TRUE);
+        section.set("defaultAndSet", Integer.valueOf(3));
+
+        assertEquals(Integer.valueOf(1), section.getObject("set", Integer.class));
+        assertNull(section.getObject("set", Boolean.class));
+        assertEquals(Integer.valueOf(2), section.getObject("default", Number.class));
+        assertNull(section.getObject("default", Boolean.class));
+        assertEquals(Integer.valueOf(3), section.getObject("defaultAndSet", Integer.class));
+        assertEquals(Boolean.TRUE, section.getObject("defaultAndSet", Boolean.class));
+        assertEquals(Integer.valueOf(3), section.getObject("defaultAndSet", Object.class));
+        assertNull(section.getObject("defaultAndSet", String.class));
+        assertNull(section.getObject("doesntExist", Boolean.class));
+        assertNull(section.getString("doesntExist"));
+    }
+
+    @Test
+    public void testGetObject_String_Class_T() {
+        ConfigurationSection section = getConfigurationSection();
+
+        section.set("set", Integer.valueOf(1));
+        section.addDefault("default", Integer.valueOf(2));
+
+        assertEquals(Integer.valueOf(1), section.getObject("set", Integer.class, null));
+        assertEquals(Integer.valueOf(1), section.getObject("set", Integer.class, Integer.valueOf(4)));
+        assertNull(section.getObject("set", Boolean.class, null));
+        assertNull(section.getObject("default", Integer.class, null));
+        assertNull(section.getObject("doesntExist", Boolean.class, null));
+        assertEquals(Boolean.TRUE, section.getObject("doesntExist", Boolean.class, Boolean.TRUE));
+        assertNull(section.getString("doesntExist"));
+    }
+
+    @Test
     public void testGetVector_String() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";

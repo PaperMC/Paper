@@ -634,6 +634,53 @@ public interface ConfigurationSection {
 
     // Bukkit
     /**
+     * Gets the requested object at the given path.
+     *
+     * If the Object does not exist but a default value has been specified, this
+     * will return the default value. If the Object does not exist and no
+     * default value was specified, this will return null.
+     *
+     * <b>Note:</b> For example #getObject(path, String.class) is <b>not</b>
+     * equivalent to {@link #getString(String) #getString(path)} because
+     * {@link #getString(String) #getString(path)} converts internally all
+     * Objects to Strings. However, #getObject(path, Boolean.class) is
+     * equivalent to {@link #getBoolean(String) #getBoolean(path)} for example.
+     *
+     * @param <T> the type of the requested object
+     * @param path the path to the object.
+     * @param clazz the type of the requested object
+     * @return Requested object
+     */
+    @Nullable
+    public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz);
+
+    /**
+     * Gets the requested object at the given path, returning a default value if
+     * not found
+     *
+     * If the Object does not exist then the specified default value will
+     * returned regardless of if a default has been identified in the root
+     * {@link Configuration}.
+     *
+     * <b>Note:</b> For example #getObject(path, String.class, def) is
+     * <b>not</b> equivalent to
+     * {@link #getString(String, String) #getString(path, def)} because
+     * {@link #getString(String, String) #getString(path, def)} converts
+     * internally all Objects to Strings. However, #getObject(path,
+     * Boolean.class, def) is equivalent to {@link #getBoolean(String, boolean) #getBoolean(path,
+     * def)} for example.
+     *
+     * @param <T> the type of the requested object
+     * @param path the path to the object.
+     * @param clazz the type of the requested object
+     * @param def the default object to return if the object is not present at
+     * the path
+     * @return Requested object
+     */
+    @Nullable
+    public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz, @Nullable T def);
+
+    /**
      * Gets the requested {@link ConfigurationSerializable} object at the given
      * path.
      *

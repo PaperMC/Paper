@@ -653,18 +653,30 @@ public class MemorySection implements ConfigurationSection {
     // Bukkit
     @Nullable
     @Override
-    public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz) {
-        Validate.notNull(clazz, "ConfigurationSerializable class cannot be null");
+    public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz) {
+        Validate.notNull(clazz, "Class cannot be null");
         Object def = getDefault(path);
-        return getSerializable(path, clazz, (def != null && clazz.isInstance(def)) ? clazz.cast(def) : null);
+        return getObject(path, clazz, (def != null && clazz.isInstance(def)) ? clazz.cast(def) : null);
+    }
+
+    @Nullable
+    @Override
+    public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz, @Nullable T def) {
+        Validate.notNull(clazz, "Class cannot be null");
+        Object val = get(path, def);
+        return (val != null && clazz.isInstance(val)) ? clazz.cast(val) : def;
+    }
+
+    @Nullable
+    @Override
+    public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz) {
+        return getObject(path, clazz);
     }
 
     @Nullable
     @Override
     public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz, @Nullable T def) {
-        Validate.notNull(clazz, "ConfigurationSerializable class cannot be null");
-        Object val = get(path);
-        return (val != null && clazz.isInstance(val)) ? clazz.cast(val) : def;
+        return getObject(path, clazz, def);
     }
 
     @Nullable
