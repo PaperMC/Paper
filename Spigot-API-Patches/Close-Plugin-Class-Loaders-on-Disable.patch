@@ -7,14 +7,13 @@ This should close more memory leaks from /reload and disabling plugins,
 by closing the class loader and the jar file.
 
 diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
-index e7981a1d..d34756f1 100644
+index da7839aa9..fbd65e8b0 100644
 --- a/src/main/java/org/bukkit/plugin/PluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
 @@ -0,0 +0,0 @@ public interface PluginLoader {
       * @param plugin Plugin to disable
       */
-     public void disablePlugin(Plugin plugin);
-+
+     public void disablePlugin(@NotNull Plugin plugin);
 +    // Paper start - close Classloader on disable
 +    /**
 +     * Disables the specified plugin
@@ -25,18 +24,18 @@ index e7981a1d..d34756f1 100644
 +     * @param closeClassloader if the classloader for the Plugin should be closed
 +     */
 +    // provide default to allow other PluginLoader implementations to work
-+    default public void disablePlugin(Plugin plugin, boolean closeClassloader) {
++    default public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
 +        disablePlugin(plugin);
 +    }
 +    // Paper end - close Classloader on disable
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
-index e5638d56..b72d5a9b 100644
+index a468467b4..ba4ed7ed7 100644
 --- a/src/main/java/org/bukkit/plugin/PluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/PluginManager.java
 @@ -0,0 +0,0 @@ public interface PluginManager {
       */
-     public void disablePlugin(Plugin plugin);
+     public void disablePlugin(@NotNull Plugin plugin);
  
 +    // Paper start - close Classloader on disable
 +    /**
@@ -47,14 +46,14 @@ index e5638d56..b72d5a9b 100644
 +     * @param plugin Plugin to disable
 +     * @param closeClassloader if the classloader for the Plugin should be closed
 +     */
-+    public void disablePlugin(Plugin plugin, boolean closeClassloader);
++    public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader);
 +    // Paper end - close Classloader on disable
 +
      /**
       * Gets a {@link Permission} from its fully qualified name
       *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 5034215a..d925423d 100644
+index 12e17709c..7d4ca43b5 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
@@ -75,13 +74,12 @@ index 5034215a..d925423d 100644
          }
      }
  
--    public void disablePlugin(final Plugin plugin) {
 +    // Paper start - close Classloader on disable
-+    public void disablePlugin(Plugin plugin) {
+     public void disablePlugin(@NotNull final Plugin plugin) {
 +        disablePlugin(plugin, false);
 +    }
 +
-+    public void disablePlugin(final Plugin plugin, boolean closeClassloader) {
++    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
 +        // Paper end - close Classloader on disable
          if (plugin.isEnabled()) {
              try {
@@ -100,7 +98,7 @@ index 5034215a..d925423d 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 77207f14..c7782e7d 100644
+index b9bf2124b..095448fe7 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -113,15 +111,14 @@ index 77207f14..c7782e7d 100644
                  // Paper end
              }
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
-         }
      }
  
+     public void disablePlugin(@NotNull Plugin plugin) {
 +    // Paper start - close Classloader on disable
-     public void disablePlugin(Plugin plugin) {
 +        disablePlugin(plugin, false); // Retain old behavior unless requested
 +    }
 +
-+    public void disablePlugin(Plugin plugin, boolean closeClassloader) {
++    public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
 +        // Paper end - close Class Loader on disable
          Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
  

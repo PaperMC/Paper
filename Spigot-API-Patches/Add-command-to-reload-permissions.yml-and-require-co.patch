@@ -6,7 +6,7 @@ Subject: [PATCH] Add command to reload permissions.yml and require confirm to
 
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 22704949..2d588c6b 100644
+index e27bdb7bf..d009aebd6 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -0,0 +0,0 @@ public final class Bukkit {
@@ -22,24 +22,24 @@ index 22704949..2d588c6b 100644
 +    }
      // Paper end
  
-     public static Server.Spigot spigot()
+     @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index f4f4f291..18e5dd48 100644
+index ab0438b81..e7e7dab8c 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient {
- 
+     @NotNull
      Spigot spigot();
      // Spigot end
 +
 +    void reloadPermissions(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index 0ab7e295..f331a442 100644
+index 1104c6037..ba118dbfe 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 @@ -0,0 +0,0 @@ public class ReloadCommand extends BukkitCommand {
-     public ReloadCommand(String name) {
+     public ReloadCommand(@NotNull String name) {
          super(name);
          this.description = "Reloads the server configuration and plugins";
 -        this.usageMessage = "/reload";
@@ -49,8 +49,8 @@ index 0ab7e295..f331a442 100644
      }
  
      @Override
-     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-+
+-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
++    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
          if (!testPermission(sender)) return true;
  
 +        // Paper start - Reload permissions.yml & require confirm
@@ -77,22 +77,20 @@ index 0ab7e295..f331a442 100644
          Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
          Bukkit.reload();
 @@ -0,0 +0,0 @@ public class ReloadCommand extends BukkitCommand {
-     }
- 
+     @NotNull
      @Override
--    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
 -        return Collections.emptyList();
-+    public java.util.List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
 +        return java.util.Collections.singletonList("permissions"); // Paper
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index b7627e39..5034215a 100644
+index 4c55f5f8c..12e17709c 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
      public void useTimings(boolean use) {
-         co.aikar.timings.Timings.setTimingsEnabled(use); // Spigot
+         co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
      }
 +
 +    // Paper start

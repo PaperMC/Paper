@@ -6,12 +6,20 @@ Subject: [PATCH] Expand Explosions API
 Add Entity as a Source capability, and add more API choices, and on Location.
 
 diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
-index 162a76e8..056a4d6b 100644
+index 3387fb477..56be7e5fa 100644
 --- a/src/main/java/org/bukkit/Location.java
 +++ b/src/main/java/org/bukkit/Location.java
+@@ -0,0 +0,0 @@ import java.util.Map;
+ 
+ import org.bukkit.block.Block;
+ import org.bukkit.configuration.serialization.ConfigurationSerializable;
++import org.bukkit.entity.Entity; // Paper
+ import org.bukkit.util.NumberConversions;
+ import org.bukkit.util.Vector;
+ import org.jetbrains.annotations.NotNull;
 @@ -0,0 +0,0 @@ public class Location implements Cloneable, ConfigurationSerializable {
-         }
-         return world.getNearbyEntitiesByType(clazz, this, xRadius, yRadius, zRadius, predicate);
+         centerLoc.setZ(getBlockZ() + 0.5);
+         return centerLoc;
      }
 +
 +    /**
@@ -62,7 +70,7 @@ index 162a76e8..056a4d6b 100644
 +     * @param power The power of explosion, where 4F is TNT
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public boolean createExplosion(Entity source, float power) {
++    public boolean createExplosion(@Nullable Entity source, float power) {
 +        return world.createExplosion(source, this, power, true, true);
 +    }
 +
@@ -77,7 +85,7 @@ index 162a76e8..056a4d6b 100644
 +     * @param setFire Whether or not to set blocks on fire
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public boolean createExplosion(Entity source, float power, boolean setFire) {
++    public boolean createExplosion(@Nullable Entity source, float power, boolean setFire) {
 +        return world.createExplosion(source, this, power, setFire, true);
 +    }
 +
@@ -91,19 +99,19 @@ index 162a76e8..056a4d6b 100644
 +     * @param breakBlocks Whether or not to have blocks be destroyed
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public boolean createExplosion(Entity source, float power, boolean setFire, boolean breakBlocks) {
++    public boolean createExplosion(@NotNull Entity source, float power, boolean setFire, boolean breakBlocks) {
 +        return world.createExplosion(source, source.getLocation(), power, setFire, breakBlocks);
 +    }
      // Paper end
      @Override
      public boolean equals(Object obj) {
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 6b7eeeac..c73b7065 100644
+index bec405feb..dcc47cde5 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -0,0 +0,0 @@ public interface World extends PluginMessageRecipient, Metadatable {
       */
-     public boolean createExplosion(Location loc, float power, boolean setFire);
+     public boolean createExplosion(@NotNull Location loc, float power, boolean setFire);
  
 +    // Paper start
 +    /**
@@ -117,7 +125,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param breakBlocks Whether or not to have blocks be destroyed
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public boolean createExplosion(Entity source, Location loc, float power, boolean setFire, boolean breakBlocks);
++    public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks);
 +
 +    /**
 +     * Creates explosion at given location with given power and optionally
@@ -131,7 +139,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param setFire Whether or not to set blocks on fire
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Entity source, Location loc, float power, boolean setFire) {
++    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire) {
 +        return createExplosion(source, loc, power, setFire, true);
 +    }
 +    /**
@@ -143,7 +151,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param power The power of explosion, where 4F is TNT
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Entity source, Location loc, float power) {
++    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power) {
 +        return createExplosion(source, loc, power, true, true);
 +    }
 +    /**
@@ -156,7 +164,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param breakBlocks Whether or not to have blocks be destroyed
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Entity source, float power, boolean setFire, boolean breakBlocks) {
++    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire, boolean breakBlocks) {
 +        return createExplosion(source, source.getLocation(), power, setFire, breakBlocks);
 +    }
 +    /**
@@ -170,7 +178,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param setFire Whether or not to set blocks on fire
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Entity source, float power, boolean setFire) {
++    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire) {
 +        return createExplosion(source, source.getLocation(), power, setFire, true);
 +    }
 +
@@ -182,7 +190,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param power The power of explosion, where 4F is TNT
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Entity source, float power) {
++    public default boolean createExplosion(@NotNull Entity source, float power) {
 +        return createExplosion(source, source.getLocation(), power, true, true);
 +    }
 +
@@ -196,7 +204,7 @@ index 6b7eeeac..c73b7065 100644
 +     * @param breakBlocks Whether or not to have blocks be destroyed
 +     * @return false if explosion was canceled, otherwise true
 +     */
-+    public default boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks) {
++    public default boolean createExplosion(@NotNull Location loc, float power, boolean setFire, boolean breakBlocks) {
 +        return createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks);
 +    }
 +    // Paper end

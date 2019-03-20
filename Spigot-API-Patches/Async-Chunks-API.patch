@@ -8,7 +8,7 @@ Adds API's to load or generate chunks asynchronously.
 Also adds utility methods to Entity to teleport asynchronously.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 807bd7fc..51cf7fd3 100644
+index c5da4d387..1b0744ed9 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -0,0 +0,0 @@ public interface World extends PluginMessageRecipient, Metadatable {
@@ -33,11 +33,11 @@ index 807bd7fc..51cf7fd3 100644
 +     */
 +    @Deprecated
 +    public static interface ChunkLoadCallback extends java.util.function.Consumer<Chunk> {
-+        public void onLoad(Chunk chunk);
++        public void onLoad(@NotNull Chunk chunk);
 +
 +        // backwards compat to old api
 +        @Override
-+        default void accept(Chunk chunk) {
++        default void accept(@NotNull Chunk chunk) {
 +            onLoad(chunk);
 +        }
 +    }
@@ -62,7 +62,7 @@ index 807bd7fc..51cf7fd3 100644
 +     *           will be executed synchronously
 +     */
 +    @Deprecated
-+    public default void getChunkAtAsync(int x, int z, ChunkLoadCallback cb) {
++    public default void getChunkAtAsync(int x, int z, @NotNull ChunkLoadCallback cb) {
 +        getChunkAtAsync(x, z, true).thenAccept(cb::onLoad);
 +    }
 +
@@ -85,7 +85,7 @@ index 807bd7fc..51cf7fd3 100644
 +     *           will be executed synchronously
 +     */
 +    @Deprecated
-+    public default void getChunkAtAsync(Location loc, ChunkLoadCallback cb) {
++    public default void getChunkAtAsync(@NotNull Location loc, @NotNull ChunkLoadCallback cb) {
 +        getChunkAtAsync(loc, true).thenAccept(cb::onLoad);
 +    }
 +
@@ -108,7 +108,7 @@ index 807bd7fc..51cf7fd3 100644
 +     *           will be executed synchronously
 +     */
 +    @Deprecated
-+    public default void getChunkAtAsync(Block block, ChunkLoadCallback cb) {
++    public default void getChunkAtAsync(@NotNull Block block, @NotNull ChunkLoadCallback cb) {
 +        getChunkAtAsync(block, true).thenAccept(cb::onLoad);
 +    }
 +
@@ -130,7 +130,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(int x, int z, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(int x, int z, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync(x, z, true).thenAccept(cb);
 +    }
 +
@@ -153,7 +153,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(int x, int z, boolean gen, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(int x, int z, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync(x, z, gen).thenAccept(cb);
 +    }
 +
@@ -174,7 +174,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(Location loc, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(@NotNull Location loc, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true, cb);
 +    }
 +
@@ -196,7 +196,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(Location loc, boolean gen, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(@NotNull Location loc, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen, cb);
 +    }
 +
@@ -217,7 +217,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(Block block, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(@NotNull Block block, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, cb);
 +    }
 +
@@ -239,7 +239,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param cb Callback to receive the chunk when it is loaded.
 +     *           will be executed synchronously
 +     */
-+    public default void getChunkAtAsync(Block block, boolean gen, java.util.function.Consumer<Chunk> cb) {
++    public default void getChunkAtAsync(@NotNull Block block, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
 +        getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, cb);
 +    }
 +
@@ -258,7 +258,8 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param loc Location to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(Location loc) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Location loc) {
 +        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true);
 +    }
 +
@@ -278,7 +279,8 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param gen Should the chunk generate
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(Location loc, boolean gen) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Location loc, boolean gen) {
 +        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen);
 +    }
 +
@@ -297,7 +299,8 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param block Block to load the corresponding chunk from
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(Block block) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Block block) {
 +        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true);
 +    }
 +
@@ -317,7 +320,8 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param gen Should the chunk generate
 +     * @return Future that will resolve when the chunk is loaded
 +     */
-+    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(Block block, boolean gen) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(@NotNull Block block, boolean gen) {
 +        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen);
 +    }
 +
@@ -338,6 +342,7 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param z Z Coord
 +     * @return Future that will resolve when the chunk is loaded
 +     */
++    @NotNull
 +    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z) {
 +        return getChunkAtAsync(x, z, true);
 +    }
@@ -360,17 +365,18 @@ index 807bd7fc..51cf7fd3 100644
 +     * @param gen Should we generate a chunk if it doesn't exists or not
 +     * @return Future that will resolve when the chunk is loaded
 +     */
++    @NotNull
 +    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen);
      // Paper end
  
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 2dd7a03c..59787c47 100644
+index a7f81d17d..73b75ffda 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -0,0 +0,0 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
       */
-     public boolean teleport(Entity destination, TeleportCause cause);
+     public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
  
 +    // Paper start
 +    /**
@@ -378,7 +384,8 @@ index 2dd7a03c..59787c47 100644
 +     * @param loc Location to teleport to
 +     * @return A future that will be completed with the result of the teleport
 +     */
-+    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(@NotNull Location loc) {
 +        return teleportAsync(loc, TeleportCause.PLUGIN);
 +    }
 +    /**
@@ -387,7 +394,8 @@ index 2dd7a03c..59787c47 100644
 +     * @param cause Reason for teleport
 +     * @return A future that will be completed with the result of the teleport
 +     */
-+    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, TeleportCause cause) {
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause) {
 +        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
 +        loc.getWorld().getChunkAtAsync(loc).thenAccept((chunk) -> future.complete(teleport(loc, cause)));
 +        return future;
