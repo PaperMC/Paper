@@ -1,4 +1,4 @@
-From 8c74a2e04e4a744068d564312cd647bc53898a59 Mon Sep 17 00:00:00 2001
+From fe6d16006ce532f553e149aa9943ba4776afad0b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 1 May 2016 15:19:49 -0400
 Subject: [PATCH] LootTable API
@@ -12,13 +12,14 @@ Provides methods to determine players looted state for an object
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
 new file mode 100644
-index 00000000..9095df61
+index 000000000..92d7b853a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.block.Block;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Represents an Inventory that can generate loot, such as Chests inside of Fortresses and Mineshafts
@@ -29,17 +30,19 @@ index 00000000..9095df61
 +     * Gets the block that is lootable
 +     * @return The Block
 +     */
++    @NotNull
 +    Block getBlock();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
 new file mode 100644
-index 00000000..a389f74c
+index 000000000..b387894fe
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Represents an Inventory that can generate loot, such as Minecarts inside of Mineshafts
@@ -50,20 +53,23 @@ index 00000000..a389f74c
 +     * Gets the entity that is lootable
 +     * @return The Entity
 +     */
++    @NotNull
 +    Entity getEntity();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 new file mode 100644
-index 00000000..2fc3e8a1
+index 000000000..97815eeb2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,116 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.loot.Lootable;
 +
 +import java.util.UUID;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Represents an Inventory that contains a Loot Table associated to it that will
@@ -95,7 +101,7 @@ index 00000000..2fc3e8a1
 +     * @param player The player to check
 +     * @return Whether or not this player has looted this block
 +     */
-+    default boolean hasPlayerLooted(Player player) {
++    default boolean hasPlayerLooted(@NotNull Player player) {
 +        return hasPlayerLooted(player.getUniqueId());
 +    }
 +
@@ -104,7 +110,7 @@ index 00000000..2fc3e8a1
 +     * @param player The player to check
 +     * @return Whether or not this player has looted this block
 +     */
-+    boolean hasPlayerLooted(UUID player);
++    boolean hasPlayerLooted(@NotNull UUID player);
 +
 +    /**
 +     * Gets the timestamp, in milliseconds, of when the player last looted this object
@@ -112,7 +118,8 @@ index 00000000..2fc3e8a1
 +     * @param player The player to check
 +     * @return Timestamp last looted, or null if player has not looted this object
 +     */
-+    default Long getLastLooted(Player player) {
++    @Nullable
++    default Long getLastLooted(@NotNull Player player) {
 +        return getLastLooted(player.getUniqueId());
 +    }
 +
@@ -122,7 +129,8 @@ index 00000000..2fc3e8a1
 +     * @param player The player to check
 +     * @return Timestamp last looted, or null if player has not looted this object
 +     */
-+    Long getLastLooted(UUID player);
++    @Nullable
++    Long getLastLooted(@NotNull UUID player);
 +
 +    /**
 +     * Change the state of whether or not a player has looted this block
@@ -130,7 +138,7 @@ index 00000000..2fc3e8a1
 +     * @param looted true to add player to looted list, false to remove
 +     * @return The previous state of whether the player had looted this or not
 +     */
-+    default boolean setHasPlayerLooted(Player player, boolean looted) {
++    default boolean setHasPlayerLooted(@NotNull Player player, boolean looted) {
 +        return setHasPlayerLooted(player.getUniqueId(), looted);
 +    }
 +
@@ -140,7 +148,7 @@ index 00000000..2fc3e8a1
 +     * @param looted true to add player to looted list, false to remove
 +     * @return The previous state of whether the player had looted this or not
 +     */
-+    boolean setHasPlayerLooted(UUID player, boolean looted);
++    boolean setHasPlayerLooted(@NotNull UUID player, boolean looted);
 +
 +    /**
 +     * Returns Whether or not this object has been filled and now has a pending refill
@@ -172,35 +180,39 @@ index 00000000..2fc3e8a1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
 new file mode 100644
-index 00000000..2169493d
+index 000000000..fd184f13f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,45 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
 +
 +public class LootableInventoryReplenishEvent extends PlayerEvent implements Cancellable {
-+    private final LootableInventory inventory;
++    @NotNull private final LootableInventory inventory;
 +
-+    public LootableInventoryReplenishEvent(Player player, LootableInventory inventory) {
++    public LootableInventoryReplenishEvent(@NotNull Player player, @NotNull LootableInventory inventory) {
 +        super(player);
 +        this.inventory = inventory;
 +    }
 +
++    @NotNull
 +    public LootableInventory getInventory() {
 +        return inventory;
 +    }
 +
 +    private static final HandlerList handlers = new HandlerList();
 +
++    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
++    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
@@ -218,7 +230,7 @@ index 00000000..2169493d
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/block/Chest.java b/src/main/java/org/bukkit/block/Chest.java
-index 815d79a5..b68ab881 100644
+index c553891e0..eb475ec84 100644
 --- a/src/main/java/org/bukkit/block/Chest.java
 +++ b/src/main/java/org/bukkit/block/Chest.java
 @@ -1,5 +1,6 @@
@@ -228,7 +240,7 @@ index 815d79a5..b68ab881 100644
  import org.bukkit.Nameable;
  import org.bukkit.inventory.Inventory;
  import org.bukkit.loot.Lootable;
-@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
+@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  /**
   * Represents a captured state of a chest.
   */
@@ -238,7 +250,7 @@ index 815d79a5..b68ab881 100644
      /**
       * Gets the inventory of the chest block represented by this block state.
 diff --git a/src/main/java/org/bukkit/block/Dispenser.java b/src/main/java/org/bukkit/block/Dispenser.java
-index 2741625d..6d180117 100644
+index 74cd194c9..07af1a3f0 100644
 --- a/src/main/java/org/bukkit/block/Dispenser.java
 +++ b/src/main/java/org/bukkit/block/Dispenser.java
 @@ -1,5 +1,6 @@
@@ -248,7 +260,7 @@ index 2741625d..6d180117 100644
  import org.bukkit.Nameable;
  import org.bukkit.loot.Lootable;
  import org.bukkit.projectiles.BlockProjectileSource;
-@@ -7,7 +8,7 @@ import org.bukkit.projectiles.BlockProjectileSource;
+@@ -8,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a captured state of a dispenser.
   */
@@ -258,7 +270,7 @@ index 2741625d..6d180117 100644
      /**
       * Gets the BlockProjectileSource object for the dispenser.
 diff --git a/src/main/java/org/bukkit/block/Dropper.java b/src/main/java/org/bukkit/block/Dropper.java
-index 2e8c3f71..47737b59 100644
+index 2e8c3f711..47737b590 100644
 --- a/src/main/java/org/bukkit/block/Dropper.java
 +++ b/src/main/java/org/bukkit/block/Dropper.java
 @@ -1,12 +1,13 @@
@@ -277,7 +289,7 @@ index 2e8c3f71..47737b59 100644
      /**
       * Tries to drop a randomly selected item from the dropper's inventory,
 diff --git a/src/main/java/org/bukkit/block/Hopper.java b/src/main/java/org/bukkit/block/Hopper.java
-index 73fce5f3..221123e8 100644
+index 73fce5f33..221123e8c 100644
 --- a/src/main/java/org/bukkit/block/Hopper.java
 +++ b/src/main/java/org/bukkit/block/Hopper.java
 @@ -1,9 +1,10 @@
@@ -293,7 +305,7 @@ index 73fce5f3..221123e8 100644
 -public interface Hopper extends Container, Nameable, Lootable { }
 +public interface Hopper extends Container, Nameable, LootableBlockInventory { } // Paper
 diff --git a/src/main/java/org/bukkit/block/ShulkerBox.java b/src/main/java/org/bukkit/block/ShulkerBox.java
-index 8e061e4a..1c02c6e1 100644
+index 5a6bed64a..8c8811d4d 100644
 --- a/src/main/java/org/bukkit/block/ShulkerBox.java
 +++ b/src/main/java/org/bukkit/block/ShulkerBox.java
 @@ -1,5 +1,6 @@
@@ -303,7 +315,7 @@ index 8e061e4a..1c02c6e1 100644
  import org.bukkit.DyeColor;
  import org.bukkit.Nameable;
  import org.bukkit.loot.Lootable;
-@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
+@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  /**
   * Represents a captured state of a ShulkerBox.
   */
@@ -313,7 +325,7 @@ index 8e061e4a..1c02c6e1 100644
      /**
       * Get the {@link DyeColor} corresponding to this ShulkerBox
 diff --git a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
-index 8ced5403..86588550 100644
+index 8ced54039..865885501 100644
 --- a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
 +++ b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
 @@ -1,5 +1,6 @@
@@ -333,7 +345,7 @@ index 8ced5403..86588550 100644
      /**
       * Checks whether or not this Minecart will pick up 
 diff --git a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
-index 9ea403e6..238d118f 100644
+index 9ea403e6f..238d118f7 100644
 --- a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
 +++ b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
 @@ -1,5 +1,6 @@
@@ -351,11 +363,11 @@ index 9ea403e6..238d118f 100644
 +public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
  }
 diff --git a/src/main/java/org/bukkit/loot/Lootable.java b/src/main/java/org/bukkit/loot/Lootable.java
-index f4b3d021..9f1c830f 100644
+index 24a3d989d..901db8524 100644
 --- a/src/main/java/org/bukkit/loot/Lootable.java
 +++ b/src/main/java/org/bukkit/loot/Lootable.java
-@@ -33,6 +33,34 @@ public interface Lootable {
-      */
+@@ -36,6 +36,34 @@ public interface Lootable {
+     @Nullable
      LootTable getLootTable();
  
 +    // Paper start
@@ -365,7 +377,7 @@ index f4b3d021..9f1c830f 100644
 +     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
 +     * @param seed the seed to used to generate loot. Default is 0.
 +     */
-+    default void setLootTable(LootTable table, long seed) {
++    default void setLootTable(@Nullable LootTable table, long seed) {
 +        setLootTable(table);
 +        setSeed(seed);
 +    }
@@ -390,5 +402,5 @@ index f4b3d021..9f1c830f 100644
       * Set the seed used when this Loot Table generates loot.
       *
 -- 
-2.20.1
+2.21.0
 

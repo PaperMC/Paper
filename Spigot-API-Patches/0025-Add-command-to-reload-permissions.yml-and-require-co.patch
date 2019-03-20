@@ -1,4 +1,4 @@
-From 0e952a407295877a6c5dd1afc482fc75ef8ba8f9 Mon Sep 17 00:00:00 2001
+From 9ffedfc9f2e8b401d42cf593c943f35d508d828e Mon Sep 17 00:00:00 2001
 From: William <admin@domnian.com>
 Date: Fri, 18 Mar 2016 03:28:07 -0400
 Subject: [PATCH] Add command to reload permissions.yml and require confirm to
@@ -6,10 +6,10 @@ Subject: [PATCH] Add command to reload permissions.yml and require confirm to
 
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 22704949..2d588c6b 100644
+index e27bdb7bf..d009aebd6 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1466,6 +1466,13 @@ public final class Bukkit {
+@@ -1548,6 +1548,13 @@ public final class Bukkit {
      public static org.bukkit.command.CommandMap getCommandMap() {
          return server.getCommandMap();
      }
@@ -22,24 +22,24 @@ index 22704949..2d588c6b 100644
 +    }
      // Paper end
  
-     public static Server.Spigot spigot()
+     @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index f4f4f291..18e5dd48 100644
+index ab0438b81..e7e7dab8c 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1279,4 +1279,6 @@ public interface Server extends PluginMessageRecipient {
- 
+@@ -1366,4 +1366,6 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
      Spigot spigot();
      // Spigot end
 +
 +    void reloadPermissions(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index 0ab7e295..f331a442 100644
+index 1104c6037..ba118dbfe 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-@@ -13,15 +13,36 @@ public class ReloadCommand extends BukkitCommand {
-     public ReloadCommand(String name) {
+@@ -14,15 +14,35 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
          super(name);
          this.description = "Reloads the server configuration and plugins";
 -        this.usageMessage = "/reload";
@@ -49,8 +49,8 @@ index 0ab7e295..f331a442 100644
      }
  
      @Override
-     public boolean execute(CommandSender sender, String currentAlias, String[] args) {
-+
+-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
++    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
          if (!testPermission(sender)) return true;
  
 +        // Paper start - Reload permissions.yml & require confirm
@@ -76,23 +76,21 @@ index 0ab7e295..f331a442 100644
          Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
          Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
          Bukkit.reload();
-@@ -31,7 +52,7 @@ public class ReloadCommand extends BukkitCommand {
-     }
- 
+@@ -34,6 +54,6 @@ public class ReloadCommand extends BukkitCommand {
+     @NotNull
      @Override
--    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
 -        return Collections.emptyList();
-+    public java.util.List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
 +        return java.util.Collections.singletonList("permissions"); // Paper
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index b7627e39..5034215a 100644
+index 4c55f5f8c..12e17709c 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -764,4 +764,13 @@ public final class SimplePluginManager implements PluginManager {
+@@ -777,4 +777,13 @@ public final class SimplePluginManager implements PluginManager {
      public void useTimings(boolean use) {
-         co.aikar.timings.Timings.setTimingsEnabled(use); // Spigot
+         co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
      }
 +
 +    // Paper start
@@ -105,5 +103,5 @@ index b7627e39..5034215a 100644
 +
  }
 -- 
-2.20.1
+2.21.0
 

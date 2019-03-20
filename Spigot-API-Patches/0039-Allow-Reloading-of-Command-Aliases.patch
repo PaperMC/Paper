@@ -1,4 +1,4 @@
-From a7f30eb6aff66658a5731d0ee906374a2a823788 Mon Sep 17 00:00:00 2001
+From ad0c8ca9e48518bfdc7f2d0b624298e45ab22aae Mon Sep 17 00:00:00 2001
 From: willies952002 <admin@domnian.com>
 Date: Mon, 28 Nov 2016 10:16:39 -0500
 Subject: [PATCH] Allow Reloading of Command Aliases
@@ -6,10 +6,10 @@ Subject: [PATCH] Allow Reloading of Command Aliases
 Reload the aliases stored in commands.yml
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 2d588c6b..5715057a 100644
+index d009aebd6..8e0cbbf15 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1473,6 +1473,15 @@ public final class Bukkit {
+@@ -1555,6 +1555,15 @@ public final class Bukkit {
      public static void reloadPermissions() {
          server.reloadPermissions();
      }
@@ -24,12 +24,12 @@ index 2d588c6b..5715057a 100644
 +    }
      // Paper end
  
-     public static Server.Spigot spigot()
+     @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 18e5dd48..259a0fbe 100644
+index e7e7dab8c..8f61619a3 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1281,4 +1281,6 @@ public interface Server extends PluginMessageRecipient {
+@@ -1368,4 +1368,6 @@ public interface Server extends PluginMessageRecipient {
      // Spigot end
  
      void reloadPermissions(); // Paper
@@ -37,13 +37,13 @@ index 18e5dd48..259a0fbe 100644
 +    boolean reloadCommandAliases(); // Paper
  }
 diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
-index 30d60247..938959aa 100644
+index bd2c7a696..864c263bb 100644
 --- a/src/main/java/org/bukkit/command/CommandMap.java
 +++ b/src/main/java/org/bukkit/command/CommandMap.java
-@@ -123,4 +123,13 @@ public interface CommandMap {
-      * @throws IllegalArgumentException if either sender or cmdLine are null
+@@ -128,4 +128,14 @@ public interface CommandMap {
       */
-     public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) throws IllegalArgumentException;
+     @Nullable
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) throws IllegalArgumentException;
 +
 +    // Paper start - Expose Known Commands
 +    /**
@@ -51,30 +51,32 @@ index 30d60247..938959aa 100644
 +     *
 +     * @return known commands
 +     */
++    @NotNull
 +    public java.util.Map<String, Command> getKnownCommands();
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 65ad78c4..41e95692 100644
+index f52d91d19..d7ca4fa3f 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -279,4 +279,10 @@ public class SimpleCommandMap implements CommandMap {
+@@ -285,4 +285,11 @@ public class SimpleCommandMap implements CommandMap {
              }
          }
      }
 +
 +    // Paper start - Expose Known Commands
++    @NotNull
 +    public Map<String, Command> getKnownCommands() {
 +        return knownCommands;
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-index f331a442..a977045d 100644
+index ba118dbfe..607323a83 100644
 --- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
-@@ -13,7 +13,7 @@ public class ReloadCommand extends BukkitCommand {
-     public ReloadCommand(String name) {
+@@ -14,7 +14,7 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
          super(name);
          this.description = "Reloads the server configuration and plugins";
 -        this.usageMessage = "/reload [permissions]"; // Paper
@@ -97,5 +99,5 @@ index f331a442..a977045d 100644
                  confirmed = true;
              } else {
 -- 
-2.20.1
+2.21.0
 

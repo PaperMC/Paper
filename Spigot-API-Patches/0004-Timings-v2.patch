@@ -1,4 +1,4 @@
-From 2853582c3382e794163a9c8a02e139eac9a8ea8e Mon Sep 17 00:00:00 2001
+From d207bdace7d156b6b41a793c67dc8c457f397ab7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,13 +6,15 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 00000000..98079dc0
+index 000000000..f6d616732
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,85 @@
 +package co.aikar.timings;
 +
 +import static co.aikar.timings.TimingsManager.*;
++
++import org.jetbrains.annotations.NotNull;
 +
 +public class FullServerTickHandler extends TimingHandler {
 +    private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null);
@@ -26,6 +28,7 @@ index 00000000..98079dc0
 +        TIMING_MAP.put(IDENTITY, this);
 +    }
 +
++    @NotNull
 +    @Override
 +    public Timing startTiming() {
 +        if (TimingsManager.needsFullReset) {
@@ -94,10 +97,10 @@ index 00000000..98079dc0
 +}
 diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
 new file mode 100644
-index 00000000..8c43e206
+index 000000000..8e0cd40e8
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,67 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -123,7 +126,11 @@ index 00000000..8c43e206
 + */
 +package co.aikar.timings;
 +
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
 +public final class NullTimingHandler implements Timing {
++    @NotNull
 +    @Override
 +    public Timing startTiming() {
 +        return this;
@@ -134,6 +141,7 @@ index 00000000..8c43e206
 +
 +    }
 +
++    @NotNull
 +    @Override
 +    public Timing startTimingIfSync() {
 +        return this;
@@ -149,6 +157,7 @@ index 00000000..8c43e206
 +
 +    }
 +
++    @Nullable
 +    @Override
 +    public TimingHandler getTimingHandler() {
 +        return null;
@@ -161,10 +170,10 @@ index 00000000..8c43e206
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 00000000..feddcdbd
+index 000000000..68f7866e1
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,83 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -198,6 +207,8 @@ index 00000000..feddcdbd
 +import org.bukkit.plugin.Plugin;
 +
 +import java.lang.reflect.Method;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public class TimedEventExecutor implements EventExecutor {
 +
@@ -212,7 +223,7 @@ index 00000000..feddcdbd
 +     * @param method EventHandler method
 +     * @param eventClass Owning class
 +     */
-+    public TimedEventExecutor(EventExecutor executor, Plugin plugin, Method method, Class<? extends Event> eventClass) {
++    public TimedEventExecutor(@NotNull EventExecutor executor, @NotNull Plugin plugin, @Nullable Method method, @NotNull Class<? extends Event> eventClass) {
 +        this.executor = executor;
 +        String id;
 +
@@ -236,7 +247,7 @@ index 00000000..feddcdbd
 +    }
 +
 +    @Override
-+    public void execute(Listener listener, Event event) throws EventException {
++    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
 +        if (event.isAsynchronous() || !Timings.timingsEnabled || !Bukkit.isPrimaryThread()) {
 +            executor.execute(listener, event);
 +            return;
@@ -248,10 +259,10 @@ index 00000000..feddcdbd
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 00000000..b2260104
+index 000000000..a562796ce
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,82 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -277,6 +288,9 @@ index 00000000..b2260104
 + */
 +package co.aikar.timings;
 +
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
 +/**
 + * Provides an ability to time sections of code within the Minecraft Server
 + */
@@ -286,6 +300,7 @@ index 00000000..b2260104
 +     *
 +     * @return Timing
 +     */
++    @NotNull
 +    Timing startTiming();
 +
 +    /**
@@ -302,6 +317,7 @@ index 00000000..b2260104
 +     *
 +     * @return Timing
 +     */
++    @NotNull
 +    Timing startTimingIfSync();
 +
 +    /**
@@ -323,6 +339,7 @@ index 00000000..b2260104
 +     *
 +     * @return TimingHandler
 +     */
++    @Nullable
 +    TimingHandler getTimingHandler();
 +
 +    @Override
@@ -330,10 +347,10 @@ index 00000000..b2260104
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingData.java b/src/main/java/co/aikar/timings/TimingData.java
 new file mode 100644
-index 00000000..f222d6b7
+index 000000000..a5d13a1e4
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingData.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,122 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -360,6 +377,7 @@ index 00000000..f222d6b7
 +package co.aikar.timings;
 +
 +import java.util.List;
++import org.jetbrains.annotations.NotNull;
 +
 +import static co.aikar.util.JSONUtil.toArray;
 +
@@ -418,6 +436,7 @@ index 00000000..f222d6b7
 +        return new TimingData(this);
 +    }
 +
++    @NotNull
 +    List<Object> export() {
 +        List<Object> list = toArray(
 +            id,
@@ -456,7 +475,7 @@ index 00000000..f222d6b7
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 00000000..521c985e
+index 000000000..6bf8cb688
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
 @@ -0,0 +1,200 @@
@@ -487,10 +506,9 @@ index 00000000..521c985e
 +
 +import co.aikar.util.LoadingIntMap;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-+import org.bukkit.Bukkit;
-+
 +import java.util.concurrent.atomic.AtomicInteger;
-+import java.util.logging.Level;
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
 +
 +class TimingHandler implements Timing {
 +
@@ -512,7 +530,7 @@ index 00000000..521c985e
 +    private boolean enabled;
 +    private TimingHandler parent;
 +
-+    TimingHandler(TimingIdentifier id) {
++    TimingHandler(@NotNull TimingIdentifier id) {
 +        if (id.name.startsWith("##")) {
 +            verbose = true;
 +            this.name = id.name.substring(3);
@@ -545,6 +563,7 @@ index 00000000..521c985e
 +        }
 +    }
 +
++    @NotNull
 +    @Override
 +    public Timing startTimingIfSync() {
 +        startTiming();
@@ -556,6 +575,7 @@ index 00000000..521c985e
 +        stopTiming();
 +    }
 +
++    @NotNull
 +    public Timing startTiming() {
 +        if (enabled && Bukkit.isPrimaryThread() && ++timingDepth == 1) {
 +            start = System.nanoTime();
@@ -600,8 +620,6 @@ index 00000000..521c985e
 +
 +    /**
 +     * Reset this timer, setting all values to zero.
-+     *
-+     * @param full
 +     */
 +    void reset(boolean full) {
 +        record.reset();
@@ -615,6 +633,7 @@ index 00000000..521c985e
 +        checkEnabled();
 +    }
 +
++    @NotNull
 +    @Override
 +    public TimingHandler getTimingHandler() {
 +        return this;
@@ -631,8 +650,7 @@ index 00000000..521c985e
 +    }
 +
 +    /**
-+     * This is simply for the Closeable interface so it can be used with
-+     * try-with-resources ()
++     * This is simply for the Closeable interface so it can be used with try-with-resources ()
 +     */
 +    @Override
 +    public void close() {
@@ -651,6 +669,7 @@ index 00000000..521c985e
 +        return enabled;
 +    }
 +
++    @NotNull
 +    TimingData[] cloneChildren() {
 +        final TimingData[] clonedChildren = new TimingData[children.size()];
 +        int i = 0;
@@ -662,10 +681,10 @@ index 00000000..521c985e
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 00000000..e08a25f5
+index 000000000..8726bb9a2
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,357 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -711,6 +730,8 @@ index 00000000..e08a25f5
 +import java.util.List;
 +import java.util.Map;
 +import java.util.Set;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +import static co.aikar.timings.TimingsManager.FULL_SERVER_TICK;
 +import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
@@ -726,8 +747,9 @@ index 00000000..e08a25f5
 +    public static long activatedEntityTicks;
 +    private static int worldIdPool = 1;
 +    static Map<String, Integer> worldMap = LoadingMap.newHashMap(new Function<String, Integer>() {
++        @NotNull
 +        @Override
-+        public Integer apply(String input) {
++        public Integer apply(@Nullable String input) {
 +            return worldIdPool++;
 +        }
 +    });
@@ -770,6 +792,7 @@ index 00000000..e08a25f5
 +        // Information about all loaded chunks/entities
 +        //noinspection unchecked
 +        this.worlds = toObjectMapper(Bukkit.getWorlds(), new Function<World, JSONPair>() {
++            @NotNull
 +            @Override
 +            public JSONPair apply(World world) {
 +                Map<RegionId, RegionData> regions = LoadingMap.newHashMap(RegionData.LOADER);
@@ -798,6 +821,7 @@ index 00000000..e08a25f5
 +                return pair(
 +                    worldMap.get(world.getName()),
 +                    toArrayMapper(regions.values(),new Function<RegionData, Object>() {
++                        @NotNull
 +                        @Override
 +                        public Object apply(RegionData input) {
 +                            return toArray(
@@ -805,6 +829,7 @@ index 00000000..e08a25f5
 +                                input.regionId.z,
 +                                toObjectMapper(input.entityCounts.entrySet(),
 +                                    new Function<Map.Entry<EntityType, Counter>, JSONPair>() {
++                                        @NotNull
 +                                        @Override
 +                                        public JSONPair apply(Map.Entry<EntityType, Counter> entry) {
 +                                            entityTypeSet.add(entry.getKey());
@@ -817,6 +842,7 @@ index 00000000..e08a25f5
 +                                ),
 +                                toObjectMapper(input.tileEntityCounts.entrySet(),
 +                                    new Function<Map.Entry<Material, Counter>, JSONPair>() {
++                                        @NotNull
 +                                        @Override
 +                                        public JSONPair apply(Map.Entry<Material, Counter> entry) {
 +                                            tileEntityTypeSet.add(entry.getKey());
@@ -838,12 +864,13 @@ index 00000000..e08a25f5
 +        final RegionId regionId;
 +        @SuppressWarnings("Guava")
 +        static Function<RegionId, RegionData> LOADER = new Function<RegionId, RegionData>() {
++            @NotNull
 +            @Override
-+            public RegionData apply(RegionId id) {
++            public RegionData apply(@NotNull RegionId id) {
 +                return new RegionData(id);
 +            }
 +        };
-+        RegionData(RegionId id) {
++        RegionData(@NotNull RegionId id) {
 +            this.regionId = id;
 +        }
 +
@@ -914,6 +941,7 @@ index 00000000..e08a25f5
 +        activatedEntityTicks = 0;
 +    }
 +
++    @NotNull
 +    Object export() {
 +        return createObject(
 +            pair("s", startTime),
@@ -922,6 +950,7 @@ index 00000000..e08a25f5
 +            pair("tm", totalTime),
 +            pair("w", worlds),
 +            pair("h", toArrayMapper(entries, new Function<TimingHistoryEntry, Object>() {
++                @Nullable
 +                @Override
 +                public Object apply(TimingHistoryEntry entry) {
 +                    TimingData record = entry.data;
@@ -932,6 +961,7 @@ index 00000000..e08a25f5
 +                }
 +            })),
 +            pair("mp", toArrayMapper(minuteReports, new Function<MinuteReport, Object>() {
++                @NotNull
 +                @Override
 +                public Object apply(MinuteReport input) {
 +                    return input.export();
@@ -951,6 +981,7 @@ index 00000000..e08a25f5
 +        final double freeMemory = TimingsManager.FULL_SERVER_TICK.avgFreeMemory;
 +        final double loadAvg = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
 +
++        @NotNull
 +        List<Object> export() {
 +            return toArray(
 +                time,
@@ -1013,10 +1044,10 @@ index 00000000..e08a25f5
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 new file mode 100644
-index 00000000..0e114eb3
+index 000000000..86d5ac6bd
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,58 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1045,6 +1076,7 @@ index 00000000..0e114eb3
 +import com.google.common.base.Function;
 +
 +import java.util.List;
++import org.jetbrains.annotations.NotNull;
 +
 +import static co.aikar.util.JSONUtil.toArrayMapper;
 +
@@ -1052,16 +1084,18 @@ index 00000000..0e114eb3
 +    final TimingData data;
 +    private final TimingData[] children;
 +
-+    TimingHistoryEntry(TimingHandler handler) {
++    TimingHistoryEntry(@NotNull TimingHandler handler) {
 +        this.data = handler.record.clone();
 +        children = handler.cloneChildren();
 +    }
 +
++    @NotNull
 +    List<Object> export() {
 +        List<Object> result = data.export();
 +        if (children.length > 0) {
 +            result.add(
 +                toArrayMapper(children, new Function<TimingData, Object>() {
++                    @NotNull
 +                    @Override
 +                    public Object apply(TimingData child) {
 +                        return child.export();
@@ -1074,10 +1108,10 @@ index 00000000..0e114eb3
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 00000000..d3258a09
+index 000000000..4d140f344
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,111 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1112,6 +1146,8 @@ index 00000000..d3258a09
 +import java.util.Objects;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.atomic.AtomicInteger;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * <p>Used as a basis for fast HashMap key comparisons for the Timing Map.</p>
@@ -1129,15 +1165,17 @@ index 00000000..d3258a09
 +    final TimingHandler groupHandler;
 +    private final int hashCode;
 +
-+    TimingIdentifier(String group, String name, Timing groupHandler) {
++    TimingIdentifier(@Nullable String group, @NotNull String name, @Nullable Timing groupHandler) {
 +        this.group = group != null ? group: DEFAULT_GROUP.name;
 +        this.name = name;
 +        this.groupHandler = groupHandler != null ? groupHandler.getTimingHandler() : null;
 +        this.hashCode = (31 * this.group.hashCode()) + this.name.hashCode();
 +    }
 +
-+    static TimingGroup getGroup(String groupName) {
++    @NotNull
++    static TimingGroup getGroup(@Nullable String groupName) {
 +        if (groupName == null) {
++            //noinspection ConstantConditions
 +            return DEFAULT_GROUP;
 +        }
 +
@@ -1187,10 +1225,10 @@ index 00000000..d3258a09
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 00000000..f907649b
+index 000000000..0b34e0d01
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,293 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1225,6 +1263,8 @@ index 00000000..f907649b
 +
 +import java.util.Queue;
 +import java.util.logging.Level;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +@SuppressWarnings({"UnusedDeclaration", "WeakerAccess", "SameParameterValue"})
 +public final class Timings {
@@ -1245,7 +1285,8 @@ index 00000000..f907649b
 +     * @param name   Name of Timing
 +     * @return Handler
 +     */
-+    public static Timing of(Plugin plugin, String name) {
++    @NotNull
++    public static Timing of(@NotNull Plugin plugin, @NotNull String name) {
 +        Timing pluginHandler = null;
 +        if (plugin != null) {
 +            pluginHandler = ofSafe(plugin.getName(), "Combined Total", TimingsManager.PLUGIN_GROUP_HANDLER);
@@ -1265,7 +1306,8 @@ index 00000000..f907649b
 +     * @param groupHandler Parent handler to mirror .start/stop calls to
 +     * @return Timing Handler
 +     */
-+    public static Timing of(Plugin plugin, String name, Timing groupHandler) {
++    @NotNull
++    public static Timing of(@NotNull Plugin plugin, @NotNull String name, @Nullable Timing groupHandler) {
 +        Preconditions.checkNotNull(plugin, "Plugin can not be null");
 +        return TimingsManager.getHandler(plugin.getName(), name, groupHandler);
 +    }
@@ -1281,7 +1323,8 @@ index 00000000..f907649b
 +     * @param name   Name of Timing
 +     * @return Timing Handler
 +     */
-+    public static Timing ofStart(Plugin plugin, String name) {
++    @NotNull
++    public static Timing ofStart(@NotNull Plugin plugin, @NotNull String name) {
 +        return ofStart(plugin, name, null);
 +    }
 +
@@ -1297,7 +1340,8 @@ index 00000000..f907649b
 +     * @param groupHandler Parent handler to mirror .start/stop calls to
 +     * @return Timing Handler
 +     */
-+    public static Timing ofStart(Plugin plugin, String name, Timing groupHandler) {
++    @NotNull
++    public static Timing ofStart(@NotNull Plugin plugin, @NotNull String name, @Nullable Timing groupHandler) {
 +        Timing timing = of(plugin, name, groupHandler);
 +        timing.startTiming();
 +        return timing;
@@ -1431,7 +1475,7 @@ index 00000000..f907649b
 +     * If sender is null, ConsoleCommandSender will be used.
 +     * @param sender The sender to send to, or null to use the ConsoleCommandSender
 +     */
-+    public static void generateReport(CommandSender sender) {
++    public static void generateReport(@Nullable CommandSender sender) {
 +        if (sender == null) {
 +            sender = Bukkit.getConsoleSender();
 +        }
@@ -1443,7 +1487,7 @@ index 00000000..f907649b
 +     * Use with {@link org.bukkit.command.BufferedCommandSender} to get full response when done!
 +     * @param sender The listener to send responses too.
 +     */
-+    public static void generateReport(TimingsReportListener sender) {
++    public static void generateReport(@NotNull TimingsReportListener sender) {
 +        Validate.notNull(sender);
 +        TimingsExport.requestingReport.add(sender);
 +    }
@@ -1454,12 +1498,13 @@ index 00000000..f907649b
 +    These do not have isPrimaryThread() checks in the startTiming/stopTiming
 +    =================
 +    */
-+
-+    static TimingHandler ofSafe(String name) {
++    @NotNull
++    static TimingHandler ofSafe(@NotNull String name) {
 +        return ofSafe(null, name, null);
 +    }
 +
-+    static Timing ofSafe(Plugin plugin, String name) {
++    @NotNull
++    static Timing ofSafe(@Nullable Plugin plugin, @NotNull String name) {
 +        Timing pluginHandler = null;
 +        if (plugin != null) {
 +            pluginHandler = ofSafe(plugin.getName(), "Combined Total", TimingsManager.PLUGIN_GROUP_HANDLER);
@@ -1467,20 +1512,22 @@ index 00000000..f907649b
 +        return ofSafe(plugin != null ? plugin.getName() : "Minecraft - Invalid Plugin", name, pluginHandler);
 +    }
 +
-+    static TimingHandler ofSafe(String name, Timing groupHandler) {
++    @NotNull
++    static TimingHandler ofSafe(@NotNull String name, @Nullable Timing groupHandler) {
 +        return ofSafe(null, name, groupHandler);
 +    }
 +
-+    static TimingHandler ofSafe(String groupName, String name, Timing groupHandler) {
++    @NotNull
++    static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
 +        return TimingsManager.getHandler(groupName, name, groupHandler);
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 00000000..56b10e89
+index 000000000..c0d8f2016
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,122 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1515,13 +1562,15 @@ index 00000000..56b10e89
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +
 +public class TimingsCommand extends BukkitCommand {
 +    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste", "verbon", "verboff");
 +    private long lastResetAttempt = 0;
 +
-+    public TimingsCommand(String name) {
++    public TimingsCommand(@NotNull String name) {
 +        super(name);
 +        this.description = "Manages Spigot Timings data to see performance of the server.";
 +        this.usageMessage = "/timings <reset|report|on|off|verbon|verboff>";
@@ -1529,7 +1578,7 @@ index 00000000..56b10e89
 +    }
 +
 +    @Override
-+    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
++    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
 +        if (!testPermission(sender)) {
 +            return true;
 +        }
@@ -1587,8 +1636,9 @@ index 00000000..56b10e89
 +        return true;
 +    }
 +
++    @NotNull
 +    @Override
-+    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
++    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
 +        Validate.notNull(sender, "Sender cannot be null");
 +        Validate.notNull(args, "Arguments cannot be null");
 +        Validate.notNull(alias, "Alias cannot be null");
@@ -1602,7 +1652,7 @@ index 00000000..56b10e89
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 00000000..4a69074a
+index 000000000..4a69074a8
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
 @@ -0,0 +1,350 @@
@@ -1958,10 +2008,10 @@ index 00000000..4a69074a
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 00000000..127651ff
+index 000000000..0109065d3
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,189 @@
+@@ -0,0 +1,193 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1995,13 +2045,14 @@ index 00000000..127651ff
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.PluginClassLoader;
 +
-+import javax.annotation.Nullable;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.logging.Level;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public final class TimingsManager {
 +    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
@@ -2098,7 +2149,8 @@ index 00000000..127651ff
 +        historyStart = System.currentTimeMillis();
 +    }
 +
-+    static TimingHandler getHandler(String group, String name, Timing parent) {
++    @NotNull
++    static TimingHandler getHandler(@Nullable String group, @NotNull String name, @Nullable Timing parent) {
 +        return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
 +    }
 +
@@ -2112,7 +2164,8 @@ index 00000000..127651ff
 +     * @param command    Command to get timings for
 +     * @return TimingHandler
 +     */
-+    public static Timing getCommandTiming(String pluginName, Command command) {
++    @NotNull
++    public static Timing getCommandTiming(@Nullable String pluginName, @NotNull Command command) {
 +        Plugin plugin = null;
 +        final Server server = Bukkit.getServer();
 +        if (!(  server == null || pluginName == null ||
@@ -2139,6 +2192,7 @@ index 00000000..127651ff
 +     * @param clazz Class to check
 +     * @return Plugin if created by a plugin
 +     */
++    @Nullable
 +    public static Plugin getPluginByClassloader(@Nullable Class<?> clazz) {
 +        if (clazz == null) {
 +            return null;
@@ -2153,10 +2207,10 @@ index 00000000..127651ff
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 new file mode 100644
-index 00000000..e7c389c0
+index 000000000..bf3e059fe
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,75 @@
 +package co.aikar.timings;
 +
 +import com.google.common.collect.Lists;
@@ -2168,6 +2222,8 @@ index 00000000..e7c389c0
 +import org.bukkit.command.RemoteConsoleCommandSender;
 +
 +import java.util.List;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +@SuppressWarnings("WeakerAccess")
 +public class TimingsReportListener implements MessageCommandSender {
@@ -2175,16 +2231,16 @@ index 00000000..e7c389c0
 +    private final Runnable onDone;
 +    private String timingsURL;
 +
-+    public TimingsReportListener(CommandSender senders) {
++    public TimingsReportListener(@NotNull CommandSender senders) {
 +        this(senders, null);
 +    }
-+    public TimingsReportListener(CommandSender sender, Runnable onDone) {
++    public TimingsReportListener(@NotNull CommandSender sender, @Nullable Runnable onDone) {
 +        this(Lists.newArrayList(sender), onDone);
 +    }
-+    public TimingsReportListener(List<CommandSender> senders) {
++    public TimingsReportListener(@NotNull List<CommandSender> senders) {
 +        this(senders, null);
 +    }
-+    public TimingsReportListener(List<CommandSender> senders, Runnable onDone) {
++    public TimingsReportListener(@NotNull List<CommandSender> senders, @Nullable Runnable onDone) {
 +        Validate.notNull(senders);
 +        Validate.notEmpty(senders);
 +
@@ -2192,6 +2248,7 @@ index 00000000..e7c389c0
 +        this.onDone = onDone;
 +    }
 +
++    @Nullable
 +    public String getTimingsURL() {
 +        return timingsURL;
 +    }
@@ -2200,7 +2257,7 @@ index 00000000..e7c389c0
 +        done(null);
 +    }
 +
-+    public void done(String url) {
++    public void done(@Nullable String url) {
 +        this.timingsURL = url;
 +        if (onDone != null) {
 +            onDone.run();
@@ -2213,7 +2270,7 @@ index 00000000..e7c389c0
 +    }
 +
 +    @Override
-+    public void sendMessage(String message) {
++    public void sendMessage(@NotNull String message) {
 +        senders.forEach((sender) -> sender.sendMessage(message));
 +    }
 +
@@ -2231,10 +2288,10 @@ index 00000000..e7c389c0
 +}
 diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 new file mode 100644
-index 00000000..5edaba12
+index 000000000..632c49615
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,53 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2261,10 +2318,11 @@ index 00000000..5edaba12
 +package co.aikar.timings;
 +
 +import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
 +
 +class UnsafeTimingHandler extends TimingHandler {
 +
-+    UnsafeTimingHandler(TimingIdentifier id) {
++    UnsafeTimingHandler(@NotNull TimingIdentifier id) {
 +        super(id);
 +    }
 +
@@ -2274,6 +2332,7 @@ index 00000000..5edaba12
 +        }
 +    }
 +
++    @NotNull
 +    @Override
 +    public Timing startTiming() {
 +        checkThread();
@@ -2288,40 +2347,43 @@ index 00000000..5edaba12
 +}
 diff --git a/src/main/java/co/aikar/util/Counter.java b/src/main/java/co/aikar/util/Counter.java
 new file mode 100644
-index 00000000..23ac07f2
+index 000000000..80155072d
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/Counter.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,38 @@
 +package co.aikar.util;
 +
 +import com.google.common.collect.ForwardingMap;
 +
 +import java.util.HashMap;
 +import java.util.Map;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public class Counter <T> extends ForwardingMap<T, Long> {
 +    private final Map<T, Long> counts = new HashMap<>();
 +
-+    public long decrement(T key) {
++    public long decrement(@Nullable T key) {
 +        return increment(key, -1);
 +    }
-+    public long increment(T key) {
++    public long increment(@Nullable T key) {
 +        return increment(key, 1);
 +    }
-+    public long decrement(T key, long amount) {
++    public long decrement(@Nullable T key, long amount) {
 +        return decrement(key, -amount);
 +    }
-+    public long increment(T key, long amount) {
++    public long increment(@Nullable T key, long amount) {
 +        Long count = this.getCount(key);
 +        count += amount;
 +        this.counts.put(key, count);
 +        return count;
 +    }
 +
-+    public long getCount(T key) {
++    public long getCount(@Nullable T key) {
 +        return this.counts.getOrDefault(key, 0L);
 +    }
 +
++    @NotNull
 +    @Override
 +    protected Map<T, Long> delegate() {
 +        return this.counts;
@@ -2329,15 +2391,17 @@ index 00000000..23ac07f2
 +}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 00000000..96274975
+index 000000000..e43599b47
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/JSONUtil.java
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,140 @@
 +package co.aikar.util;
 +
 +import com.google.common.base.Function;
 +import com.google.common.collect.Lists;
 +import com.google.common.collect.Maps;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +import org.json.simple.JSONArray;
 +import org.json.simple.JSONObject;
 +
@@ -2360,11 +2424,13 @@ index 00000000..96274975
 +     * @param obj Value to use
 +     * @return JSONPair
 +     */
-+    public static JSONPair pair(String key, Object obj) {
++    @NotNull
++    public static JSONPair pair(@NotNull String key, @Nullable Object obj) {
 +        return new JSONPair(key, obj);
 +    }
 +
-+    public static JSONPair pair(long key, Object obj) {
++    @NotNull
++    public static JSONPair pair(long key, @Nullable Object obj) {
 +        return new JSONPair(String.valueOf(key), obj);
 +    }
 +
@@ -2374,7 +2440,8 @@ index 00000000..96274975
 +     * @param data JSONPairs
 +     * @return Map
 +     */
-+    public static Map createObject(JSONPair... data) {
++    @NotNull
++    public static Map createObject(@NotNull JSONPair... data) {
 +        return appendObjectData(new LinkedHashMap(), data);
 +    }
 +
@@ -2385,7 +2452,8 @@ index 00000000..96274975
 +     * @param data Data to append
 +     * @return Map
 +     */
-+    public static Map appendObjectData(Map parent, JSONPair... data) {
++    @NotNull
++    public static Map appendObjectData(@NotNull Map parent, @NotNull JSONPair... data) {
 +        for (JSONPair JSONPair : data) {
 +            parent.put(JSONPair.key, JSONPair.val);
 +        }
@@ -2398,7 +2466,8 @@ index 00000000..96274975
 +     * @param data Data to build JSON array from
 +     * @return List
 +     */
-+    public static List toArray(Object... data) {
++    @NotNull
++    public static List toArray(@NotNull Object... data) {
 +        return Lists.newArrayList(data);
 +    }
 +
@@ -2410,11 +2479,13 @@ index 00000000..96274975
 +     * @param <E> Element Type
 +     * @return List
 +     */
-+    public static <E> List toArrayMapper(E[] collection, Function<E, Object> mapper) {
++    @NotNull
++    public static <E> List toArrayMapper(@NotNull E[] collection, @NotNull Function<E, Object> mapper) {
 +        return toArrayMapper(Lists.newArrayList(collection), mapper);
 +    }
 +
-+    public static <E> List toArrayMapper(Iterable<E> collection, Function<E, Object> mapper) {
++    @NotNull
++    public static <E> List toArrayMapper(@NotNull Iterable<E> collection, @NotNull Function<E, Object> mapper) {
 +        List array = Lists.newArrayList();
 +        for (E e : collection) {
 +            Object object = mapper.apply(e);
@@ -2433,11 +2504,13 @@ index 00000000..96274975
 +     * @param <E> Element Type
 +     * @return Map
 +     */
-+    public static <E> Map toObjectMapper(E[] collection, Function<E, JSONPair> mapper) {
++    @NotNull
++    public static <E> Map toObjectMapper(@NotNull E[] collection, @NotNull Function<E, JSONPair> mapper) {
 +        return toObjectMapper(Lists.newArrayList(collection), mapper);
 +    }
 +
-+    public static <E> Map toObjectMapper(Iterable<E> collection, Function<E, JSONPair> mapper) {
++    @NotNull
++    public static <E> Map toObjectMapper(@NotNull Iterable<E> collection, @NotNull Function<E, JSONPair> mapper) {
 +        Map object = Maps.newLinkedHashMap();
 +        for (E e : collection) {
 +            JSONPair JSONPair = mapper.apply(e);
@@ -2456,7 +2529,7 @@ index 00000000..96274975
 +        final String key;
 +        final Object val;
 +
-+        JSONPair(String key, Object val) {
++        JSONPair(@NotNull String key, @NotNull Object val) {
 +            this.key = key;
 +            this.val = val;
 +        }
@@ -2464,10 +2537,10 @@ index 00000000..96274975
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 00000000..24eae4be
+index 000000000..63a899c7d
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingIntMap.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,76 @@
 +/*
 + * Copyright (c) 2015. Starlis LLC / dba Empire Minecraft
 + *
@@ -2479,6 +2552,8 @@ index 00000000..24eae4be
 +
 +import com.google.common.base.Function;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Allows you to pass a Loader function that when a key is accessed that doesn't exist,
@@ -2497,22 +2572,23 @@ index 00000000..24eae4be
 +public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {
 +    private final Function<Integer, V> loader;
 +
-+    public LoadingIntMap(Function<Integer, V> loader) {
++    public LoadingIntMap(@NotNull Function<Integer, V> loader) {
 +        super();
 +        this.loader = loader;
 +    }
 +
-+    public LoadingIntMap(int expectedSize, Function<Integer, V> loader) {
++    public LoadingIntMap(int expectedSize, @NotNull Function<Integer, V> loader) {
 +        super(expectedSize);
 +        this.loader = loader;
 +    }
 +
-+    public LoadingIntMap(int expectedSize, float loadFactor, Function<Integer, V> loader) {
++    public LoadingIntMap(int expectedSize, float loadFactor, @NotNull Function<Integer, V> loader) {
 +        super(expectedSize, loadFactor);
 +        this.loader = loader;
 +    }
 +
 +
++    @Nullable
 +    @Override
 +    public V get(int key) {
 +        V res = super.get(key);
@@ -2531,20 +2607,22 @@ index 00000000..24eae4be
 +     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
++        @Nullable
 +        @Override
-+        public T apply(Object input) {
++        public T apply(@Nullable Object input) {
 +            return apply();
 +        }
 +
++        @Nullable
 +        public abstract T apply();
 +    }
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 00000000..dfefda35
+index 000000000..aedbb0332
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
-@@ -0,0 +1,343 @@
+@@ -0,0 +1,368 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2570,6 +2648,7 @@ index 00000000..dfefda35
 + */
 +package co.aikar.util;
 +
++import com.google.common.base.Preconditions;
 +import java.lang.reflect.Constructor;
 +import java.util.AbstractMap;
 +import java.util.Collection;
@@ -2578,6 +2657,8 @@ index 00000000..dfefda35
 +import java.util.Map;
 +import java.util.Set;
 +import java.util.function.Function;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Allows you to pass a Loader function that when a key is accessed that doesn't exists,
@@ -2603,7 +2684,7 @@ index 00000000..dfefda35
 +     * @param backingMap Map to wrap
 +     * @param loader Loader
 +     */
-+    public LoadingMap(Map<K, V> backingMap, java.util.function.Function<K, V> loader) {
++    public LoadingMap(@NotNull Map<K, V> backingMap, @NotNull java.util.function.Function<K, V> loader) {
 +        this.backingMap = backingMap;
 +        this.loader = loader;
 +    }
@@ -2617,7 +2698,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> of(Map<K, V> backingMap, Function<K, V> loader) {
++    @NotNull
++    public static <K, V> Map<K, V> of(@NotNull Map<K, V> backingMap, @NotNull Function<K, V> loader) {
 +        return new LoadingMap<>(backingMap, loader);
 +    }
 +
@@ -2636,8 +2718,9 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newAutoMap(Map<K, V> backingMap, final Class<? extends K> keyClass,
-+                                              final Class<? extends V> valueClass) {
++    @NotNull
++    public static <K, V> Map<K, V> newAutoMap(@NotNull Map<K, V> backingMap, @Nullable final Class<? extends K> keyClass,
++                                              @NotNull final Class<? extends V> valueClass) {
 +        return new LoadingMap<>(backingMap, new AutoInstantiatingLoader<>(keyClass, valueClass));
 +    }
 +    /**
@@ -2654,8 +2737,9 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newAutoMap(Map<K, V> backingMap,
-+                                              final Class<? extends V> valueClass) {
++    @NotNull
++    public static <K, V> Map<K, V> newAutoMap(@NotNull Map<K, V> backingMap,
++                                              @NotNull final Class<? extends V> valueClass) {
 +        return newAutoMap(backingMap, null, valueClass);
 +    }
 +
@@ -2670,7 +2754,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashAutoMap(@Nullable final Class<? extends K> keyClass, @NotNull final Class<? extends V> valueClass) {
 +        return newAutoMap(new HashMap<>(), keyClass, valueClass);
 +    }
 +
@@ -2684,7 +2769,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashAutoMap(@NotNull final Class<? extends V> valueClass) {
 +        return newHashAutoMap(null, valueClass);
 +    }
 +
@@ -2701,7 +2787,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashAutoMap(@Nullable final Class<? extends K> keyClass, @NotNull final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newAutoMap(new HashMap<>(initialCapacity, loadFactor), keyClass, valueClass);
 +    }
 +
@@ -2717,7 +2804,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return  Map that auto instantiates on .get()
 +     */
-+    public static <K, V> Map<K, V> newHashAutoMap(final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashAutoMap(@NotNull final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {
 +        return newHashAutoMap(null, valueClass, initialCapacity, loadFactor);
 +    }
 +
@@ -2729,7 +2817,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashMap(@NotNull Function<K, V> loader) {
 +        return new LoadingMap<>(new HashMap<>(), loader);
 +    }
 +
@@ -2742,7 +2831,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashMap(@NotNull Function<K, V> loader, int initialCapacity) {
 +        return new LoadingMap<>(new HashMap<>(initialCapacity), loader);
 +    }
 +    /**
@@ -2755,7 +2845,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> newHashMap(Function<K, V> loader, int initialCapacity, float loadFactor) {
++    @NotNull
++    public static <K, V> Map<K, V> newHashMap(@NotNull Function<K, V> loader, int initialCapacity, float loadFactor) {
 +        return new LoadingMap<>(new HashMap<>(initialCapacity, loadFactor), loader);
 +    }
 +
@@ -2767,7 +2858,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader) {
++    @NotNull
++    public static <K, V> Map<K, V> newIdentityHashMap(@NotNull Function<K, V> loader) {
 +        return new LoadingMap<>(new IdentityHashMap<>(), loader);
 +    }
 +
@@ -2780,7 +2872,8 @@ index 00000000..dfefda35
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> newIdentityHashMap(Function<K, V> loader, int initialCapacity) {
++    @NotNull
++    public static <K, V> Map<K, V> newIdentityHashMap(@NotNull Function<K, V> loader, int initialCapacity) {
 +        return new LoadingMap<>(new IdentityHashMap<>(initialCapacity), loader);
 +    }
 +
@@ -2791,13 +2884,14 @@ index 00000000..dfefda35
 +    public boolean isEmpty() {return backingMap.isEmpty();}
 +
 +    @Override
-+    public boolean containsKey(Object key) {return backingMap.containsKey(key);}
++    public boolean containsKey(@Nullable Object key) {return backingMap.containsKey(key);}
 +
 +    @Override
-+    public boolean containsValue(Object value) {return backingMap.containsValue(value);}
++    public boolean containsValue(@Nullable Object value) {return backingMap.containsValue(value);}
 +
++    @Nullable
 +    @Override
-+    public V get(Object key) {
++    public V get(@Nullable Object key) {
 +        V v = backingMap.get(key);
 +        if (v != null) {
 +            return v;
@@ -2805,33 +2899,39 @@ index 00000000..dfefda35
 +        return backingMap.computeIfAbsent((K) key, loader);
 +    }
 +
-+    public V put(K key, V value) {return backingMap.put(key, value);}
++    @Nullable
++    public V put(@Nullable K key, @Nullable V value) {return backingMap.put(key, value);}
 +
++    @Nullable
 +    @Override
-+    public V remove(Object key) {return backingMap.remove(key);}
++    public V remove(@Nullable Object key) {return backingMap.remove(key);}
 +
-+    public void putAll(Map<? extends K, ? extends V> m) {backingMap.putAll(m);}
++    public void putAll(@NotNull Map<? extends K, ? extends V> m) {backingMap.putAll(m);}
 +
 +    @Override
 +    public void clear() {backingMap.clear();}
 +
++    @NotNull
 +    @Override
 +    public Set<K> keySet() {return backingMap.keySet();}
 +
++    @NotNull
 +    @Override
 +    public Collection<V> values() {return backingMap.values();}
 +
 +    @Override
-+    public boolean equals(Object o) {return backingMap.equals(o);}
++    public boolean equals(@Nullable Object o) {return backingMap.equals(o);}
 +
 +    @Override
 +    public int hashCode() {return backingMap.hashCode();}
 +
++    @NotNull
 +    @Override
 +    public Set<Entry<K, V>> entrySet() {
 +        return backingMap.entrySet();
 +    }
 +
++    @NotNull
 +    public LoadingMap<K, V> clone() {
 +        return new LoadingMap<>(backingMap, loader);
 +    }
@@ -2840,7 +2940,7 @@ index 00000000..dfefda35
 +        final Constructor<? extends V> constructor;
 +        private final Class<? extends V> valueClass;
 +
-+        AutoInstantiatingLoader(Class<? extends K> keyClass, Class<? extends V> valueClass) {
++        AutoInstantiatingLoader(@Nullable Class<? extends K> keyClass, @NotNull Class<? extends V> valueClass) {
 +            try {
 +                this.valueClass = valueClass;
 +                if (keyClass != null) {
@@ -2854,8 +2954,9 @@ index 00000000..dfefda35
 +            }
 +        }
 +
++        @NotNull
 +        @Override
-+        public V apply(K input) {
++        public V apply(@Nullable K input) {
 +            try {
 +                return (constructor != null ? constructor.newInstance(input) : valueClass.newInstance());
 +            } catch (Exception e) {
@@ -2880,20 +2981,22 @@ index 00000000..dfefda35
 +     * @param <T> Type
 +     */
 +    public abstract static class Feeder <T> implements Function<T, T> {
++        @Nullable
 +        @Override
-+        public T apply(Object input) {
++        public T apply(@Nullable Object input) {
 +            return apply();
 +        }
 +
++        @Nullable
 +        public abstract T apply();
 +    }
 +}
 diff --git a/src/main/java/co/aikar/util/MRUMapCache.java b/src/main/java/co/aikar/util/MRUMapCache.java
 new file mode 100644
-index 00000000..df592d85
+index 000000000..5989ee212
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/MRUMapCache.java
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,111 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2923,6 +3026,8 @@ index 00000000..df592d85
 +import java.util.Collection;
 +import java.util.Map;
 +import java.util.Set;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Implements a Most Recently Used cache in front of a backing map, to quickly access the last accessed result.
@@ -2934,7 +3039,7 @@ index 00000000..df592d85
 +    final Map<K, V> backingMap;
 +    Object cacheKey;
 +    V cacheValue;
-+    public MRUMapCache(final Map<K, V> backingMap) {
++    public MRUMapCache(@NotNull final Map<K, V> backingMap) {
 +        this.backingMap = backingMap;
 +    }
 +
@@ -2942,15 +3047,16 @@ index 00000000..df592d85
 +
 +    public boolean isEmpty() {return backingMap.isEmpty();}
 +
-+    public boolean containsKey(Object key) {
++    public boolean containsKey(@Nullable Object key) {
 +        return key != null && key.equals(cacheKey) || backingMap.containsKey(key);
 +    }
 +
-+    public boolean containsValue(Object value) {
++    public boolean containsValue(@Nullable Object value) {
 +        return value != null && value == cacheValue || backingMap.containsValue(value);
 +    }
 +
-+    public V get(Object key) {
++    @Nullable
++    public V get(@Nullable Object key) {
 +        if (cacheKey != null && cacheKey.equals(key)) {
 +            return cacheValue;
 +        }
@@ -2958,19 +3064,21 @@ index 00000000..df592d85
 +        return cacheValue = backingMap.get(key);
 +    }
 +
-+    public V put(K key, V value) {
++    @Nullable
++    public V put(@Nullable K key, @Nullable V value) {
 +        cacheKey = key;
 +        return cacheValue = backingMap.put(key, value);
 +    }
 +
-+    public V remove(Object key) {
++    @Nullable
++    public V remove(@Nullable Object key) {
 +        if (key != null && key.equals(cacheKey)) {
 +            cacheKey = null;
 +        }
 +        return backingMap.remove(key);
 +    }
 +
-+    public void putAll(Map<? extends K, ? extends V> m) {backingMap.putAll(m);}
++    public void putAll(@NotNull Map<? extends K, ? extends V> m) {backingMap.putAll(m);}
 +
 +    public void clear() {
 +        cacheKey = null;
@@ -2978,10 +3086,13 @@ index 00000000..df592d85
 +        backingMap.clear();
 +    }
 +
++    @NotNull
 +    public Set<K> keySet() {return backingMap.keySet();}
 +
++    @NotNull
 +    public Collection<V> values() {return backingMap.values();}
 +
++    @NotNull
 +    public Set<Map.Entry<K, V>> entrySet() {return backingMap.entrySet();}
 +
 +    /**
@@ -2992,15 +3103,16 @@ index 00000000..df592d85
 +     * @param <V> Value Type of the Map
 +     * @return Map
 +     */
-+    public static <K, V> Map<K, V> of(Map<K, V> map) {
++    @NotNull
++    public static <K, V> Map<K, V> of(@NotNull Map<K, V> map) {
 +        return new MRUMapCache<K, V>(map);
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index d8014f14..14e425d1 100644
+index 27988a66b..cffa0c65f 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -572,7 +572,6 @@ public final class Bukkit {
+@@ -602,7 +602,6 @@ public final class Bukkit {
       */
      public static void reload() {
          server.reload();
@@ -3009,54 +3121,55 @@ index d8014f14..14e425d1 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index fac90a48..9d2326ca 100644
+index 12660040b..9f7f760af 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1193,12 +1193,27 @@ public interface Server extends PluginMessageRecipient {
-     // Spigot start
-     public class Spigot
-     {
--
-+        @Deprecated
-         public org.bukkit.configuration.file.YamlConfiguration getConfig()
-         {
+@@ -1278,6 +1278,26 @@ public interface Server extends PluginMessageRecipient {
              throw new UnsupportedOperationException( "Not supported yet." );
          }
  
++        // Paper start
++        @NotNull
 +        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
 +        {
 +            throw new UnsupportedOperationException( "Not supported yet." );
 +        }
 +
++        @NotNull
 +        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
 +        {
 +            throw new UnsupportedOperationException("Not supported yet.");
 +        }
 +
++        @NotNull
 +        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
 +        {
 +            throw new UnsupportedOperationException("Not supported yet.");
 +        }
++        // Paper end
 +
          /**
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
-index 00000000..fd452bce
+index 000000000..f9a00aecc
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/BufferedCommandSender.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,21 @@
 +package org.bukkit.command;
++
++import org.jetbrains.annotations.NotNull;
 +
 +public class BufferedCommandSender implements MessageCommandSender {
 +    private final StringBuffer buffer = new StringBuffer();
 +    @Override
-+    public void sendMessage(String message) {
++    public void sendMessage(@NotNull String message) {
 +        buffer.append(message);
 +        buffer.append("\n");
 +    }
 +
++    @NotNull
 +    public String getBuffer() {
 +        return buffer.toString();
 +    }
@@ -3066,29 +3179,29 @@ index 00000000..fd452bce
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 33e8681d..db7f4428 100644
+index b354b617f..01ea1ca67 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
-@@ -33,7 +33,8 @@ public abstract class Command {
+@@ -35,7 +35,8 @@ public abstract class Command {
      protected String usageMessage;
      private String permission;
      private String permissionMessage;
 -    public org.spigotmc.CustomTimingsHandler timings; // Spigot
-+    public co.aikar.timings.Timing timings; // Spigot
-+    public String getTimingName() {return getName();} // Spigot
++    public co.aikar.timings.Timing timings; // Paper
++    @NotNull public String getTimingName() {return getName();} // Paper
  
-     protected Command(String name) {
+     protected Command(@NotNull String name) {
          this(name, "", "/" + name, new ArrayList<String>());
-@@ -47,7 +48,6 @@ public abstract class Command {
-         this.usageMessage = usageMessage;
+@@ -49,7 +50,6 @@ public abstract class Command {
+         this.usageMessage = (usageMessage == null) ? "/" + name : usageMessage;
          this.aliases = aliases;
          this.activeAliases = new ArrayList<String>(aliases);
 -        this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
      }
  
      /**
-@@ -236,7 +236,6 @@ public abstract class Command {
-     public boolean setLabel(String name) {
+@@ -247,7 +247,6 @@ public abstract class Command {
+         }
          this.nextLabel = name;
          if (!isRegistered()) {
 -            this.timings = new org.spigotmc.CustomTimingsHandler("** Command: " + name); // Spigot
@@ -3096,33 +3209,34 @@ index 33e8681d..db7f4428 100644
              return true;
          }
 diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-index 50257883..9c80f464 100644
+index 2035880ee..b8c97a4bf 100644
 --- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 +++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-@@ -9,6 +9,7 @@ public class FormattedCommandAlias extends Command {
+@@ -10,6 +10,7 @@ public class FormattedCommandAlias extends Command {
  
-     public FormattedCommandAlias(String alias, String[] formatStrings) {
+     public FormattedCommandAlias(@NotNull String alias, @NotNull String[] formatStrings) {
          super(alias);
 +        timings = co.aikar.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot
          this.formatStrings = formatStrings;
      }
  
-@@ -113,6 +114,9 @@ public class FormattedCommandAlias extends Command {
+@@ -114,6 +115,10 @@ public class FormattedCommandAlias extends Command {
          return formatString;
      }
  
-+    @Override // Spigot
-+    public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Spigot
++    @NotNull
++    @Override // Paper
++    public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Paper
 +
      private static boolean inRange(int i, int j, int k) {
          return i >= j && i <= k;
      }
 diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
 new file mode 100644
-index 00000000..5527e7c8
+index 000000000..ca1893e9f
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,114 @@
 +package org.bukkit.command;
 +
 +import org.apache.commons.lang.NotImplementedException;
@@ -3134,6 +3248,7 @@ index 00000000..5527e7c8
 +import org.bukkit.plugin.Plugin;
 +
 +import java.util.Set;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * For when all you care about is just messaging
@@ -3141,17 +3256,19 @@ index 00000000..5527e7c8
 +public interface MessageCommandSender extends CommandSender {
 +
 +    @Override
-+    default void sendMessage(String[] messages) {
++    default void sendMessage(@NotNull String[] messages) {
 +        for (String message : messages) {
 +            sendMessage(message);
 +        }
 +    }
 +
++    @NotNull
 +    @Override
 +    default Server getServer() {
 +        return Bukkit.getServer();
 +    }
 +
++    @NotNull
 +    @Override
 +    default String getName() {
 +        throw new NotImplementedException();
@@ -3168,47 +3285,51 @@ index 00000000..5527e7c8
 +    }
 +
 +    @Override
-+    default boolean isPermissionSet(String name) {
++    default boolean isPermissionSet(@NotNull String name) {
 +        throw new NotImplementedException();
 +    }
 +
 +    @Override
-+    default boolean isPermissionSet(Permission perm) {
++    default boolean isPermissionSet(@NotNull Permission perm) {
 +        throw new NotImplementedException();
 +    }
 +
 +    @Override
-+    default boolean hasPermission(String name) {
++    default boolean hasPermission(@NotNull String name) {
 +        throw new NotImplementedException();
 +    }
 +
 +    @Override
-+    default boolean hasPermission(Permission perm) {
++    default boolean hasPermission(@NotNull Permission perm) {
++        throw new NotImplementedException();
++    }
++
++    @NotNull
++    @Override
++    default PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value) {
++        throw new NotImplementedException();
++    }
++
++    @NotNull
++    @Override
++    default PermissionAttachment addAttachment(@NotNull Plugin plugin) {
++        throw new NotImplementedException();
++    }
++
++    @NotNull
++    @Override
++    default PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value, int ticks) {
++        throw new NotImplementedException();
++    }
++
++    @NotNull
++    @Override
++    default PermissionAttachment addAttachment(@NotNull Plugin plugin, int ticks) {
 +        throw new NotImplementedException();
 +    }
 +
 +    @Override
-+    default PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-+        throw new NotImplementedException();
-+    }
-+
-+    @Override
-+    default PermissionAttachment addAttachment(Plugin plugin) {
-+        throw new NotImplementedException();
-+    }
-+
-+    @Override
-+    default PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-+        throw new NotImplementedException();
-+    }
-+
-+    @Override
-+    default PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-+        throw new NotImplementedException();
-+    }
-+
-+    @Override
-+    default void removeAttachment(PermissionAttachment attachment) {
++    default void removeAttachment(@NotNull PermissionAttachment attachment) {
 +        throw new NotImplementedException();
 +    }
 +
@@ -3217,11 +3338,13 @@ index 00000000..5527e7c8
 +        throw new NotImplementedException();
 +    }
 +
++    @NotNull
 +    @Override
 +    default Set<PermissionAttachmentInfo> getEffectivePermissions() {
 +        throw new NotImplementedException();
 +    }
 +
++    @NotNull
 +    @Override
 +    default Spigot spigot() {
 +        throw new NotImplementedException();
@@ -3229,27 +3352,27 @@ index 00000000..5527e7c8
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index d9183db2..43e52a77 100644
+index 1586f6480..f7ec2e55f 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -29,7 +29,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
          register("bukkit", new VersionCommand("version"));
          register("bukkit", new ReloadCommand("reload"));
          register("bukkit", new PluginsCommand("plugins"));
 -        register("bukkit", new TimingsCommand("timings"));
-+        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Spigot
++        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
      }
  
      public void setFallbackCommands() {
-@@ -58,6 +58,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -60,6 +60,7 @@ public class SimpleCommandMap implements CommandMap {
       * {@inheritDoc}
       */
-     public boolean register(String label, String fallbackPrefix, Command command) {
-+        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Spigot
+     public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
++        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
          fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -133,6 +134,12 @@ public class SimpleCommandMap implements CommandMap {
+@@ -135,6 +136,12 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3264,10 +3387,10 @@ index d9183db2..43e52a77 100644
              // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
-index bba914d7..00000000
+index 1e6e7033d..000000000
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 +++ /dev/null
-@@ -1,253 +0,0 @@
+@@ -1,255 +0,0 @@
 -package org.bukkit.command.defaults;
 -
 -import java.io.File;
@@ -3288,6 +3411,7 @@ index bba914d7..00000000
 -import org.bukkit.util.StringUtil;
 -
 -import com.google.common.collect.ImmutableList;
+-import org.jetbrains.annotations.NotNull;
 -
 -// Spigot start
 -import java.io.ByteArrayOutputStream;
@@ -3306,7 +3430,7 @@ index bba914d7..00000000
 -    private static final List<String> TIMINGS_SUBCOMMANDS = ImmutableList.of("report", "reset", "on", "off", "paste"); // Spigot
 -    public static long timingStart = 0; // Spigot
 -
--    public TimingsCommand(String name) {
+-    public TimingsCommand(@NotNull String name) {
 -        super(name);
 -        this.description = "Manages Spigot Timings data to see performance of the server."; // Spigot
 -        this.usageMessage = "/timings <reset|report|on|off|paste>"; // Spigot
@@ -3314,7 +3438,7 @@ index bba914d7..00000000
 -    }
 -
 -    // Spigot start - redesigned Timings Command
--    public void executeSpigotTimings(CommandSender sender, String[] args) {
+-    public void executeSpigotTimings(@NotNull CommandSender sender, @NotNull String[] args) {
 -        if ( "on".equals( args[0] ) )
 -        {
 -            ( (SimplePluginManager) Bukkit.getPluginManager() ).useTimings( true );
@@ -3377,7 +3501,7 @@ index bba914d7..00000000
 -    // Spigot end
 -
 -    @Override
--    public boolean execute(CommandSender sender, String currentAlias, String[] args) {
+-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
 -        if (!testPermission(sender)) return true;
 -        if (args.length < 1)  { // Spigot
 -            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
@@ -3458,8 +3582,9 @@ index bba914d7..00000000
 -        return true;
 -    }
 -
+-    @NotNull
 -    @Override
--    public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+-    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
 -        Validate.notNull(sender, "Sender cannot be null");
 -        Validate.notNull(args, "Arguments cannot be null");
 -        Validate.notNull(alias, "Alias cannot be null");
@@ -3477,7 +3602,7 @@ index bba914d7..00000000
 -        private final CommandSender sender;
 -        private final ByteArrayOutputStream bout;
 -
--        public PasteThread(CommandSender sender, ByteArrayOutputStream bout)
+-        public PasteThread(@NotNull CommandSender sender, @NotNull ByteArrayOutputStream bout)
 -        {
 -            super( "Timings paste thread" );
 -            this.sender = sender;
@@ -3522,11 +3647,11 @@ index bba914d7..00000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 71fe947b..75f21146 100644
+index 97504e6f9..777994f7a 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1551,6 +1551,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-         public void sendMessage(net.md_5.bungee.api.ChatMessageType position, net.md_5.bungee.api.chat.BaseComponent... components) {
+@@ -1566,6 +1566,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
 +
@@ -3536,12 +3661,12 @@ index 71fe947b..75f21146 100644
 +        }
      }
  
-     @Override
+     @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 92db0663..0185934b 100644
+index 76137a800..fe5725519 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -294,7 +294,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -297,7 +297,6 @@ public final class SimplePluginManager implements PluginManager {
              }
          }
  
@@ -3549,35 +3674,35 @@ index 92db0663..0185934b 100644
          return result.toArray(new Plugin[result.size()]);
      }
  
-@@ -331,7 +330,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -335,7 +334,7 @@ public final class SimplePluginManager implements PluginManager {
  
          if (result != null) {
              plugins.add(result);
 -            lookupNames.put(result.getDescription().getName(), result);
-+            lookupNames.put(result.getDescription().getName().toLowerCase(java.util.Locale.ENGLISH), result); // Spigot
++            lookupNames.put(result.getDescription().getName().toLowerCase(java.util.Locale.ENGLISH), result); // Paper
          }
  
          return result;
-@@ -357,7 +356,7 @@ public final class SimplePluginManager implements PluginManager {
-      * @return Plugin if it exists, otherwise null
+@@ -362,7 +361,7 @@ public final class SimplePluginManager implements PluginManager {
       */
-     public synchronized Plugin getPlugin(String name) {
+     @Nullable
+     public synchronized Plugin getPlugin(@NotNull String name) {
 -        return lookupNames.get(name.replace(' ', '_'));
-+        return lookupNames.get(name.replace(' ', '_').toLowerCase(java.util.Locale.ENGLISH)); // Spigot
++        return lookupNames.get(name.replace(' ', '_').toLowerCase(java.util.Locale.ENGLISH)); // Paper
      }
  
-     public synchronized Plugin[] getPlugins() {
-@@ -555,7 +554,8 @@ public final class SimplePluginManager implements PluginManager {
+     @NotNull
+@@ -561,7 +560,8 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
  
 -        if (useTimings) {
-+        executor = new co.aikar.timings.TimedEventExecutor(executor, plugin, null, event); // Spigot
-+        if (false) { // Spigot - RL handles useTimings check now
++        executor = new co.aikar.timings.TimedEventExecutor(executor, plugin, null, event); // Paper
++        if (false) { // Spigot - RL handles useTimings check now // Paper
              getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -731,7 +731,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -744,7 +744,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
      public boolean useTimings() {
@@ -3586,27 +3711,19 @@ index 92db0663..0185934b 100644
      }
  
      /**
-@@ -740,6 +740,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -753,6 +753,6 @@ public final class SimplePluginManager implements PluginManager {
       * @param use True if per event timing code should be used
       */
      public void useTimings(boolean use) {
 -        useTimings = use;
-+        co.aikar.timings.Timings.setTimingsEnabled(use); // Spigot
++        co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 2d4c75ab..54594546 100644
+index 56f933360..5b29076fe 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -41,7 +41,6 @@ import org.bukkit.plugin.PluginLoader;
- import org.bukkit.plugin.RegisteredListener;
- import org.bukkit.plugin.TimedRegisteredListener;
- import org.bukkit.plugin.UnknownDependencyException;
--import org.spigotmc.CustomTimingsHandler; // Spigot
- import org.yaml.snakeyaml.error.YAMLException;
- 
- /**
-@@ -52,7 +51,6 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -54,7 +54,6 @@ public final class JavaPluginLoader implements PluginLoader {
      private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
@@ -3614,14 +3731,15 @@ index 2d4c75ab..54594546 100644
  
      /**
       * This class was not meant to be constructed explicitly
-@@ -292,26 +290,20 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -299,26 +298,20 @@ public final class JavaPluginLoader implements PluginLoader {
                  }
              }
  
 -            final CustomTimingsHandler timings = new CustomTimingsHandler("Plugin: " + plugin.getDescription().getFullName() + " Event: " + listener.getClass().getName() + "::" + method.getName()+"("+eventClass.getSimpleName()+")", pluginParentTimer); // Spigot
 -            EventExecutor executor = new EventExecutor() {
-+            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Spigot
-                 public void execute(Listener listener, Event event) throws EventException {
+-                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
++            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
++                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                      try {
                          if (!eventClass.isAssignableFrom(event.getClass())) {
                              return;
@@ -3639,15 +3757,15 @@ index 2d4c75ab..54594546 100644
                      }
                  }
 -            };
-+            }, plugin, method, eventClass); // Spigot
++            }, plugin, method, eventClass); // Paper
              if (false) { // Spigot - RL handles useTimings check now
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 7a8abe75..bc33ff33 100644
+index 541d8ee6b..c39fcac5a 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -23,7 +23,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -25,7 +25,8 @@ import org.jetbrains.annotations.Nullable;
  /**
   * A ClassLoader for plugins, to allow shared classes across multiple plugins
   */
@@ -3658,22 +3776,33 @@ index 7a8abe75..bc33ff33 100644
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final PluginDescriptionFile description;
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 5ca863b3..04804706 100644
+index 5ca863b36..612958a33 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
 +++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
-@@ -12,4 +12,6 @@ import org.bukkit.event.server.ServerListPingEvent;
+@@ -2,6 +2,7 @@ package org.bukkit.util;
+ 
+ import org.bukkit.Server;
+ import org.bukkit.event.server.ServerListPingEvent;
++import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * This is a cached version of a server-icon. It's internal representation
+@@ -12,4 +13,9 @@ import org.bukkit.event.server.ServerListPingEvent;
   * @see Server#loadServerIcon(java.io.File)
   * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
   */
 -public interface CachedServerIcon {}
 +public interface CachedServerIcon {
-+    public String getData(); // Spigot
++
++    @Nullable
++    public String getData(); // Paper
++
 +}
 diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 8d982974..e9f76006 100644
+index 6a8f7f551..3cbe5c2bb 100644
 --- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
 +++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-@@ -1,165 +1,105 @@
+@@ -1,3 +1,26 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -3699,25 +3828,20 @@ index 8d982974..e9f76006 100644
 + */
  package org.spigotmc;
  
+ import java.io.PrintStream;
+@@ -5,155 +28,84 @@ import java.util.Queue;
+ import java.util.concurrent.ConcurrentLinkedQueue;
+ import org.bukkit.Bukkit;
+ import org.bukkit.World;
 -import org.bukkit.command.defaults.TimingsCommand;
--import org.bukkit.event.HandlerList;
-+import org.bukkit.Bukkit;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
 +import org.bukkit.plugin.AuthorNagException;
- import org.bukkit.plugin.Plugin;
--import org.bukkit.plugin.RegisteredListener;
--import org.bukkit.plugin.TimedRegisteredListener;
--import java.io.PrintStream;
--import java.util.Collection;
--import java.util.HashSet;
--import java.util.List;
--import java.util.Queue;
--import java.util.concurrent.ConcurrentLinkedQueue;
++import org.bukkit.plugin.Plugin;
 +import co.aikar.timings.Timing;
 +import co.aikar.timings.Timings;
 +import co.aikar.timings.TimingsManager;
- 
--import org.bukkit.Bukkit;
--import org.bukkit.World;
++
 +import java.lang.reflect.InvocationTargetException;
 +import java.lang.reflect.Method;
 +import java.util.logging.Level;
@@ -3749,17 +3873,17 @@ index 8d982974..e9f76006 100644
 -    private long totalTime = 0;
 -    private long curTickTotal = 0;
 -    private long violations = 0;
-+    public CustomTimingsHandler(String name) {
++    public CustomTimingsHandler(@NotNull String name) {
 +        if (sunReflectAvailable == null) {
 +            String javaVer = System.getProperty("java.version");
 +            String[] elements = javaVer.split("\\.");
  
--    public CustomTimingsHandler(String name)
+-    public CustomTimingsHandler(@NotNull String name)
 -    {
 -        this( name, null );
 -    }
 -
--    public CustomTimingsHandler(String name, CustomTimingsHandler parent)
+-    public CustomTimingsHandler(@NotNull String name, @Nullable CustomTimingsHandler parent)
 -    {
 -        this.name = name;
 -        this.parent = parent;
@@ -3774,7 +3898,7 @@ index 8d982974..e9f76006 100644
 -     *
 -     * @param printStream
 -     */
--    public static void printTimings(PrintStream printStream)
+-    public static void printTimings(@NotNull PrintStream printStream)
 -    {
 -        printStream.println( "Minecraft" );
 -        for ( CustomTimingsHandler timings : HANDLERS )
@@ -3922,5 +4046,5 @@ index 8d982974..e9f76006 100644
 +
  }
 -- 
-2.20.1
+2.21.0
 

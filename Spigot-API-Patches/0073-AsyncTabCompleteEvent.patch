@@ -1,4 +1,4 @@
-From e45cd02ad7224199d008068ce464d820e036130c Mon Sep 17 00:00:00 2001
+From aaede4321cd33af05db4d80ad1e75d17782fd65b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 26 Nov 2017 13:17:09 -0500
 Subject: [PATCH] AsyncTabCompleteEvent
@@ -13,10 +13,10 @@ completion, such as offline players.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 new file mode 100644
-index 00000000..3c51aaf9
+index 000000000..619ed3716
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,177 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -53,6 +53,8 @@ index 00000000..3c51aaf9
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Allows plugins to compute tab completion results asynchronously. If this event provides completions, then the standard synchronous process will not be fired to populate the results. However, the synchronous TabCompleteEvent will fire with the Async results.
@@ -60,16 +62,17 @@ index 00000000..3c51aaf9
 + * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
 + */
 +public class AsyncTabCompleteEvent extends Event implements Cancellable {
-+    private final CommandSender sender;
-+    private final String buffer;
++    @NotNull private final CommandSender sender;
++    @NotNull private final String buffer;
 +    private final boolean isCommand;
++    @Nullable
 +    private final Location loc;
-+    private List<String> completions;
++    @NotNull private List<String> completions;
 +    private boolean cancelled;
 +    private boolean handled = false;
 +    private boolean fireSyncHandler = true;
 +
-+    public AsyncTabCompleteEvent(CommandSender sender, List<String> completions, String buffer, boolean isCommand, Location loc) {
++    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull List<String> completions, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
 +        super(true);
 +        this.sender = sender;
 +        this.completions = completions;
@@ -83,6 +86,7 @@ index 00000000..3c51aaf9
 +     *
 +     * @return the {@link CommandSender} instance
 +     */
++    @NotNull
 +    public CommandSender getSender() {
 +        return sender;
 +    }
@@ -97,6 +101,7 @@ index 00000000..3c51aaf9
 +     *
 +     * @return a list of offered completions
 +     */
++    @NotNull
 +    public List<String> getCompletions() {
 +        return completions;
 +    }
@@ -111,7 +116,7 @@ index 00000000..3c51aaf9
 +     *
 +     * @param completions the new completions
 +     */
-+    public void setCompletions(List<String> completions) {
++    public void setCompletions(@NotNull List<String> completions) {
 +        Validate.notNull(completions);
 +        this.completions = new ArrayList<>(completions);
 +    }
@@ -121,6 +126,7 @@ index 00000000..3c51aaf9
 +     *
 +     * @return command buffer, as entered
 +     */
++    @NotNull
 +    public String getBuffer() {
 +        return buffer;
 +    }
@@ -135,6 +141,7 @@ index 00000000..3c51aaf9
 +    /**
 +     * @return The position looked at by the sender, or null if none
 +     */
++    @Nullable
 +    public Location getLocation() {
 +        return loc;
 +    }
@@ -177,16 +184,18 @@ index 00000000..3c51aaf9
 +        this.cancelled = cancelled;
 +    }
 +
++    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
++    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-index a6229839..f0bc3563 100644
+index d1a9956a1..f96c4ba53 100644
 --- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
 +++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
 @@ -1,5 +1,6 @@
@@ -196,21 +205,29 @@ index a6229839..f0bc3563 100644
  import java.util.List;
  import org.apache.commons.lang.Validate;
  import org.bukkit.command.CommandSender;
-@@ -28,6 +29,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -8,6 +9,7 @@ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.event.player.PlayerCommandSendEvent;
+ import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Called when a {@link CommandSender} of any description (ie: player or
+@@ -29,6 +31,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
      private boolean cancelled;
  
-     public TabCompleteEvent(CommandSender sender, String buffer, List<String> completions) {
+     public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
 +        // Paper start
 +        this(sender, buffer, completions, sender instanceof org.bukkit.command.ConsoleCommandSender || buffer.startsWith("/"), null);
 +    }
-+    public TabCompleteEvent(CommandSender sender, String buffer, List<String> completions, boolean isCommand, org.bukkit.Location location) {
++    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @Nullable org.bukkit.Location location) {
 +        this.isCommand = isCommand;
 +        this.loc = location;
 +        // Paper end
          Validate.notNull(sender, "sender");
          Validate.notNull(buffer, "buffer");
          Validate.notNull(completions, "completions");
-@@ -65,14 +73,34 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -69,14 +78,35 @@ public class TabCompleteEvent extends Event implements Cancellable {
          return completions;
      }
  
@@ -227,6 +244,7 @@ index a6229839..f0bc3563 100644
 +    /**
 +     * @return The position looked at by the sender, or null if none
 +     */
++    @Nullable
 +    public org.bukkit.Location getLocation() {
 +        return loc;
 +    }
@@ -239,7 +257,7 @@ index a6229839..f0bc3563 100644
 +     *
       * @param completions the new completions
       */
-     public void setCompletions(List<String> completions) {
+     public void setCompletions(@NotNull List<String> completions) {
          Validate.notNull(completions);
 -        this.completions = completions;
 +        this.completions = new ArrayList<>(completions); // Paper
@@ -247,5 +265,5 @@ index a6229839..f0bc3563 100644
  
      @Override
 -- 
-2.20.1
+2.21.0
 

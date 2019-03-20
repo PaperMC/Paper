@@ -1,4 +1,4 @@
-From ab1ab274192f3fbc229d5480bf989597e383f1c2 Mon Sep 17 00:00:00 2001
+From ab3fa3cb5c5e5389c8fb4900b9e5fb6800e11be1 Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Thu, 21 Sep 2017 19:41:20 +0200
 Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
@@ -14,10 +14,10 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 00000000..d052b2f5
+index 000000000..76f2cb9cd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,41 @@
 +package com.destroystokyo.paper.utils;
 +
 +import org.bukkit.plugin.PluginDescriptionFile;
@@ -25,13 +25,15 @@ index 00000000..d052b2f5
 +import java.util.logging.Level;
 +import java.util.logging.LogManager;
 +import java.util.logging.Logger;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
 + */
 +public class PaperPluginLogger extends Logger {
 +
-+    public static Logger getLogger(PluginDescriptionFile description) {
++    @NotNull
++    public static Logger getLogger(@NotNull PluginDescriptionFile description) {
 +        Logger logger = new PaperPluginLogger(description);
 +        if (!LogManager.getLogManager().addLogger(logger)) {
 +            // Disable this if it's going to happen across reloads anyways...
@@ -42,12 +44,12 @@ index 00000000..d052b2f5
 +        return logger;
 +    }
 +
-+    private PaperPluginLogger(PluginDescriptionFile description) {
++    private PaperPluginLogger(@NotNull PluginDescriptionFile description) {
 +        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
 +    }
 +
 +    @Override
-+    public void setParent(Logger parent) {
++    public void setParent(@NotNull Logger parent) {
 +        if (getParent() != null) {
 +            warning("Ignoring attempt to change parent of plugin logger");
 +        } else {
@@ -58,10 +60,10 @@ index 00000000..d052b2f5
 +
 +}
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index a81dae43..15f22ade 100644
+index 9a3427882..96ebe72ca 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-@@ -42,7 +42,7 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -44,7 +44,7 @@ public abstract class JavaPlugin extends PluginBase {
      private boolean naggable = true;
      private FileConfiguration newConfig = null;
      private File configFile = null;
@@ -70,7 +72,7 @@ index a81dae43..15f22ade 100644
  
      public JavaPlugin() {
          final ClassLoader classLoader = this.getClass().getClassLoader();
-@@ -267,8 +267,11 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -278,8 +278,11 @@ public abstract class JavaPlugin extends PluginBase {
          this.dataFolder = dataFolder;
          this.classLoader = classLoader;
          this.configFile = new File(dataFolder, "config.yml");
@@ -85,10 +87,10 @@ index a81dae43..15f22ade 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index bc33ff33..213f6234 100644
+index c39fcac5a..0df1926fa 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -36,6 +36,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -38,6 +38,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
      final JavaPlugin plugin;
      private JavaPlugin pluginInit;
      private IllegalStateException pluginState;
@@ -96,7 +98,7 @@ index bc33ff33..213f6234 100644
  
      static {
          ClassLoader.registerAsParallelCapable();
-@@ -53,6 +54,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -55,6 +56,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          this.manifest = jar.getManifest();
          this.url = file.toURI().toURL();
  
@@ -105,7 +107,7 @@ index bc33ff33..213f6234 100644
          try {
              Class<?> jarClass;
              try {
-@@ -169,6 +172,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -172,6 +175,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          pluginState = new IllegalStateException("Initial initialization");
          this.pluginInit = javaPlugin;
  
@@ -114,5 +116,5 @@ index bc33ff33..213f6234 100644
      }
  }
 -- 
-2.20.1
+2.21.0
 

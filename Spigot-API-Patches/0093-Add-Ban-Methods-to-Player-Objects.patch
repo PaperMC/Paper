@@ -1,4 +1,4 @@
-From b2247dff46727c6576f4943354996ff552e21791 Mon Sep 17 00:00:00 2001
+From 86cd792a0e247654f4bfc56f712a1b2ea4a05ae6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Apr 2018 10:28:50 -0400
 Subject: [PATCH] Add Ban Methods to Player Objects
@@ -8,10 +8,10 @@ Allows a more logical API for banning players.
 player.banPlayer("Breaking the rules");
 
 diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
-index d8279071..658eac26 100644
+index cf8a2cb8a..919d1b66a 100644
 --- a/src/main/java/org/bukkit/OfflinePlayer.java
 +++ b/src/main/java/org/bukkit/OfflinePlayer.java
-@@ -39,6 +39,56 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+@@ -43,6 +43,61 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
       * @return true if banned, otherwise false
       */
      public boolean isBanned();
@@ -23,7 +23,8 @@ index d8279071..658eac26 100644
 +     * @param reason Reason for Ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayer(String reason) {
++    @NotNull
++    public default BanEntry banPlayer(@Nullable String reason) {
 +        return banPlayer(reason, null, null);
 +    }
 +
@@ -33,7 +34,8 @@ index d8279071..658eac26 100644
 +     * @param source Source of the ban, or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayer(String reason, String source) {
++    @NotNull
++    public default BanEntry banPlayer(@Nullable String reason, @Nullable String source) {
 +        return banPlayer(reason, null, source);
 +    }
 +
@@ -43,7 +45,8 @@ index d8279071..658eac26 100644
 +     * @param expires When to expire the ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayer(String reason, java.util.Date expires) {
++    @NotNull
++    public default BanEntry banPlayer(@Nullable String reason, @Nullable java.util.Date expires) {
 +        return banPlayer(reason, expires, null);
 +    }
 +
@@ -54,10 +57,12 @@ index d8279071..658eac26 100644
 +     * @param source Source of the ban or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayer(String reason, java.util.Date expires, String source) {
++    @NotNull
++    public default BanEntry banPlayer(@Nullable String reason, @Nullable java.util.Date expires, @Nullable String source) {
 +        return banPlayer(reason, expires, source, true);
 +    }
-+    public default BanEntry banPlayer(String reason, java.util.Date expires, String source, boolean kickIfOnline) {
++    @NotNull
++    public default BanEntry banPlayer(@Nullable String reason, @Nullable java.util.Date expires, @Nullable String source, boolean kickIfOnline) {
 +        BanEntry banEntry = Bukkit.getServer().getBanList(BanList.Type.NAME).addBan(getName(), reason, expires, source);
 +        if (kickIfOnline && isOnline()) {
 +            getPlayer().kickPlayer(reason);
@@ -69,10 +74,10 @@ index d8279071..658eac26 100644
      /**
       * Checks if this player is whitelisted or not
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 5dc04f47..ddf226a4 100644
+index 06154a5c5..a840b49d4 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1,10 +1,14 @@
+@@ -1,10 +1,15 @@
  package org.bukkit.entity;
  
  import java.net.InetSocketAddress;
@@ -84,11 +89,12 @@ index 5dc04f47..ddf226a4 100644
 +import org.bukkit.BanEntry;
 +import org.bukkit.BanList;
 +import org.bukkit.Bukkit;
- import org.bukkit.ChatColor;
++import org.bukkit.ChatColor;
  import org.bukkit.Effect;
  import org.bukkit.GameMode;
-@@ -417,6 +421,139 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-     public void sendMap(MapView map);
+ import org.bukkit.Instrument;
+@@ -424,6 +429,162 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     public void sendMap(@NotNull MapView map);
  
      // Paper start
 +    /**
@@ -97,7 +103,9 @@ index 5dc04f47..ddf226a4 100644
 +     * @param reason Reason for ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerFull(String reason) {
++    // For reference, Bukkit defines this as nullable, while they impl isn't, we'll follow API.
++    @Nullable
++    public default BanEntry banPlayerFull(@Nullable String reason) {
 +        return banPlayerFull(reason, null, null);
 +    }
 +
@@ -108,7 +116,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param source Source of ban, or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerFull(String reason, String source) {
++    @Nullable
++    public default BanEntry banPlayerFull(@Nullable String reason, @Nullable String source) {
 +        return banPlayerFull(reason, null, source);
 +    }
 +
@@ -119,7 +128,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param expires When to expire the ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerFull(String reason, Date expires) {
++    @Nullable
++    public default BanEntry banPlayerFull(@Nullable String reason, @Nullable Date expires) {
 +        return banPlayerFull(reason, expires, null);
 +    }
 +
@@ -131,7 +141,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param source Source of the ban, or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerFull(String reason, Date expires, String source) {
++    @Nullable
++    public default BanEntry banPlayerFull(@Nullable String reason, @Nullable Date expires, @Nullable String source) {
 +        banPlayer(reason, expires, source);
 +        return banPlayerIP(reason, expires, source, true);
 +    }
@@ -144,7 +155,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param kickPlayer Whether or not to kick the player afterwards
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, boolean kickPlayer) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, boolean kickPlayer) {
 +        return banPlayerIP(reason, null, null, kickPlayer);
 +    }
 +
@@ -156,7 +168,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param kickPlayer Whether or not to kick the player afterwards
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, String source, boolean kickPlayer) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable String source, boolean kickPlayer) {
 +        return banPlayerIP(reason, null, source, kickPlayer);
 +    }
 +
@@ -168,7 +181,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param kickPlayer Whether or not to kick the player afterwards
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, Date expires, boolean kickPlayer) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable Date expires, boolean kickPlayer) {
 +        return banPlayerIP(reason, expires, null, kickPlayer);
 +    }
 +
@@ -179,7 +193,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param reason Reason for ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason) {
 +        return banPlayerIP(reason, null, null);
 +    }
 +
@@ -190,7 +205,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param source Source of ban, or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, String source) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable String source) {
 +        return banPlayerIP(reason, null, source);
 +    }
 +
@@ -201,7 +217,8 @@ index 5dc04f47..ddf226a4 100644
 +     * @param expires When to expire the ban
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, Date expires) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable Date expires) {
 +        return banPlayerIP(reason, expires, null);
 +    }
 +
@@ -213,10 +230,22 @@ index 5dc04f47..ddf226a4 100644
 +     * @param source Source of the banm or null for default
 +     * @return Ban Entry
 +     */
-+    public default BanEntry banPlayerIP(String reason, Date expires, String source) {
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable Date expires, @Nullable String source) {
 +        return banPlayerIP(reason, expires, source, true);
 +    }
-+    public default BanEntry banPlayerIP(String reason, Date expires, String source, boolean kickPlayer) {
++
++    /**
++     * Bans the IP address currently used by the player.
++     * Does not ban the Profile, use {@link #banPlayerFull(String, Date, String)}
++     * @param reason Reason for Ban
++     * @param expires When to expire the ban
++     * @param source Source of the banm or null for default
++     * @param kickPlayer if the targeted player should be kicked
++     * @return Ban Entry
++     */
++    @Nullable
++    public default BanEntry banPlayerIP(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer) {
 +        BanEntry banEntry = Bukkit.getServer().getBanList(BanList.Type.IP).addBan(getAddress().getAddress().getHostAddress(), reason, expires, source);
 +        if (kickPlayer && isOnline()) {
 +            getPlayer().kickPlayer(reason);
@@ -228,5 +257,5 @@ index 5dc04f47..ddf226a4 100644
      /**
       * Sends an Action Bar message to the client.
 -- 
-2.20.1
+2.21.0
 

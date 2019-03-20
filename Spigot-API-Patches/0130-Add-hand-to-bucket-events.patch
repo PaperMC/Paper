@@ -1,0 +1,113 @@
+From 9e361e0c92767cb7d2ad6bb92c87aa209063aaa6 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 2 Aug 2018 08:44:20 -0500
+Subject: [PATCH] Add hand to bucket events
+
+
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
+index cdf2e2016..5e93f1bbb 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -18,6 +19,12 @@ public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
+         super(who, blockClicked, blockFace, bucket, itemInHand);
+     }
+ 
++    // Paper start - add EquipmentSlot
++    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
+index d0ccba060..280ca87bb 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+@@ -18,13 +19,21 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
+     private final Block blockClicked;
+     private final BlockFace blockFace;
+     private final Material bucket;
++    private final EquipmentSlot hand; // Paper - add EquipmentSlot
+ 
+     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
++        // Paper start - add EquipmentSlot
++        this(who, blockClicked, blockFace, bucket, itemInHand, null);
++    }
++
++    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @Nullable  final EquipmentSlot hand) {
++        // Paper end
+         super(who);
+         this.blockClicked = blockClicked;
+         this.blockFace = blockFace;
+         this.itemStack = itemInHand;
+         this.bucket = bucket;
++        this.hand = hand == null ? player.getInventory().getItemInMainHand().equals(itemInHand) ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND : hand; // Paper - add EquipmentSlot
+     }
+ 
+     /**
+@@ -76,6 +85,18 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
+         return blockFace;
+     }
+ 
++    // Paper start
++    /**
++     * The hand used to perform this action.
++     *
++     * @return the hand used
++     */
++    @NotNull
++    public EquipmentSlot getHand() {
++        return hand;
++    }
++    // Paper end
++
+     public boolean isCancelled() {
+         return cancelled;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
+index cc1b03eb2..15be7128b 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -18,6 +19,13 @@ public class PlayerBucketFillEvent extends PlayerBucketEvent {
+         super(who, blockClicked, blockFace, bucket, itemInHand);
+     }
+ 
++
++    // Paper start - add EquipmentSlot
++    public PlayerBucketFillEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+-- 
+2.21.0
+

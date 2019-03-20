@@ -1,4 +1,4 @@
-From 05f491b4b41e5682ea37eec688ab9f37d0a4d4e3 Mon Sep 17 00:00:00 2001
+From 881a02abeb1dd87d2aa9ac12483907e236dbeab9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 18 Jan 2018 01:00:27 -0500
 Subject: [PATCH] Optimize Hoppers
@@ -7,21 +7,21 @@ Adds data about what Item related methods were used in InventoryMoveItem event
 so that the server can improve the performance of this event.
 
 diff --git a/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
-index 06ec99ae..b44cc45b 100644
+index 2bb57d23..f0a16d3c 100644
 --- a/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
 +++ b/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
-@@ -30,6 +30,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
+@@ -31,6 +31,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      private final Inventory destinationInventory;
      private ItemStack itemStack;
      private final boolean didSourceInitiate;
 +    public boolean calledGetItem; // Paper
 +    public boolean calledSetItem; // Paper
  
-     public InventoryMoveItemEvent(final Inventory sourceInventory, final ItemStack itemStack, final Inventory destinationInventory, final boolean didSourceInitiate) {
+     public InventoryMoveItemEvent(@NotNull final Inventory sourceInventory, @NotNull final ItemStack itemStack, @NotNull final Inventory destinationInventory, final boolean didSourceInitiate) {
          Validate.notNull(itemStack, "ItemStack cannot be null");
-@@ -55,7 +57,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
-      * @return ItemStack
+@@ -58,7 +60,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
       */
+     @NotNull
      public ItemStack getItem() {
 -        return itemStack.clone();
 +        calledGetItem = true; // Paper - record this method was used for auto detection of mode
@@ -29,14 +29,14 @@ index 06ec99ae..b44cc45b 100644
      }
  
      /**
-@@ -67,6 +70,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
+@@ -70,6 +73,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
       */
-     public void setItem(ItemStack itemStack) {
+     public void setItem(@NotNull ItemStack itemStack) {
          Validate.notNull(itemStack, "ItemStack cannot be null.  Cancel the event if you want nothing to be transferred.");
 +        calledSetItem = true; // Paper - record this method was used for auto detection of mode
          this.itemStack = itemStack.clone();
      }
  
 -- 
-2.20.1
+2.21.0
 

@@ -1,4 +1,4 @@
-From 62f34963ecb11533fab2828dfd058a95235bdb67 Mon Sep 17 00:00:00 2001
+From 0b00d6b950008cb1c68ae0758344a9e270ae766a Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Wed, 11 Oct 2017 15:55:38 +0200
 Subject: [PATCH] Add extended PaperServerListPingEvent
@@ -8,10 +8,10 @@ and allows full control of the response sent to the client.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
 new file mode 100644
-index 00000000..b2a8476c
+index 000000000..0cc5dd573
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
-@@ -0,0 +1,320 @@
+@@ -0,0 +1,323 @@
 +package com.destroystokyo.paper.event.server;
 +
 +import static java.util.Objects.requireNonNull;
@@ -30,8 +30,8 @@ index 00000000..b2a8476c
 +import java.util.NoSuchElementException;
 +import java.util.UUID;
 +
-+import javax.annotation.Nonnull;
-+import javax.annotation.Nullable;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Extended version of {@link ServerListPingEvent} that allows full control
@@ -39,13 +39,13 @@ index 00000000..b2a8476c
 + */
 +public class PaperServerListPingEvent extends ServerListPingEvent implements Cancellable {
 +
-+    @Nonnull private final StatusClient client;
++    @NotNull private final StatusClient client;
 +
 +    private int numPlayers;
 +    private boolean hidePlayers;
-+    @Nonnull private final List<PlayerProfile> playerSample = new ArrayList<>();
++    @NotNull private final List<PlayerProfile> playerSample = new ArrayList<>();
 +
-+    @Nonnull private String version;
++    @NotNull private String version;
 +    private int protocolVersion;
 +
 +    @Nullable private CachedServerIcon favicon;
@@ -55,8 +55,8 @@ index 00000000..b2a8476c
 +    private boolean originalPlayerCount = true;
 +    private Object[] players;
 +
-+    public PaperServerListPingEvent(@Nonnull StatusClient client, String motd, int numPlayers, int maxPlayers,
-+            @Nonnull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
++    public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull String motd, int numPlayers, int maxPlayers,
++            @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
 +        super(client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
 +        this.client = client;
 +        this.numPlayers = numPlayers;
@@ -70,7 +70,7 @@ index 00000000..b2a8476c
 +     *
 +     * @return The client
 +     */
-+    @Nonnull
++    @NotNull
 +    public StatusClient getClient() {
 +        return this.client;
 +    }
@@ -157,7 +157,7 @@ index 00000000..b2a8476c
 +     *
 +     * @return The mutable player sample list
 +     */
-+    @Nonnull
++    @NotNull
 +    public List<PlayerProfile> getPlayerSample() {
 +        return this.playerSample;
 +    }
@@ -167,7 +167,7 @@ index 00000000..b2a8476c
 +     *
 +     * @return The server version
 +     */
-+    @Nonnull
++    @NotNull
 +    public String getVersion() {
 +        return version;
 +    }
@@ -177,7 +177,7 @@ index 00000000..b2a8476c
 +     *
 +     * @param version The server version
 +     */
-+    public void setVersion(@Nonnull String version) {
++    public void setVersion(@NotNull String version) {
 +        this.version = requireNonNull(version, "version");
 +    }
 +
@@ -263,7 +263,7 @@ index 00000000..b2a8476c
 +     *     the removed player (based on their {@link UUID}).</li>
 +     * </ul>
 +     */
-+    @Nonnull
++    @NotNull
 +    @Override
 +    public Iterator<Player> iterator() {
 +        if (this.players == null) {
@@ -273,11 +273,13 @@ index 00000000..b2a8476c
 +        return new PlayerIterator();
 +    }
 +
++    @NotNull
 +    protected Object[] getOnlinePlayers() {
 +        return Bukkit.getOnlinePlayers().toArray();
 +    }
 +
-+    protected Player getBukkitPlayer(Object player) {
++    @NotNull
++    protected Player getBukkitPlayer(@NotNull Object player) {
 +        return (Player) player;
 +    }
 +
@@ -298,6 +300,7 @@ index 00000000..b2a8476c
 +            return false;
 +        }
 +
++        @NotNull
 +        @Override
 +        public Player next() {
 +            if (!hasNext()) {
@@ -334,7 +337,7 @@ index 00000000..b2a8476c
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/network/StatusClient.java b/src/main/java/com/destroystokyo/paper/network/StatusClient.java
 new file mode 100644
-index 00000000..517d1523
+index 000000000..517d15238
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/network/StatusClient.java
 @@ -0,0 +1,13 @@
@@ -352,14 +355,13 @@ index 00000000..517d1523
 +
 +}
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 04804706..44563482 100644
+index 612958a33..bb4f7702c 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
 +++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
-@@ -14,4 +14,10 @@ import org.bukkit.event.server.ServerListPingEvent;
-  */
- public interface CachedServerIcon {
-     public String getData(); // Spigot
-+
+@@ -18,4 +18,9 @@ public interface CachedServerIcon {
+     @Nullable
+     public String getData(); // Paper
+ 
 +    // Paper start
 +    default boolean isEmpty() {
 +        return getData() == null;
@@ -367,5 +369,5 @@ index 04804706..44563482 100644
 +    // Paper end
  }
 -- 
-2.20.1
+2.21.0
 
