@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 public class PacketPlayOutChat implements Packet<PacketListenerPlayOut> {
-
+    private static final int MAX_LENGTH = Short.MAX_VALUE * 8 + 8; // Paper
     private IChatBaseComponent a;
     public net.md_5.bungee.api.chat.BaseComponent[] components; // Spigot
     private ChatMessageType b;
@@ -32,9 +32,9 @@ public class PacketPlayOutChat implements Packet<PacketListenerPlayOut> {
             //packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components)); // Paper - comment, replaced with below
             // Paper start - don't nest if we don't need to so that we can preserve formatting
             if (this.components.length == 1) {
-                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.components[0]));
+                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.components[0]), MAX_LENGTH); // Paper - use proper max length
             } else {
-                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.components));
+                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(this.components), MAX_LENGTH); // Paper - use proper max length
             }
             // Paper end
         } else {
