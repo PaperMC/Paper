@@ -392,6 +392,12 @@ public class EntityTrackerEntry {
         return PacketPlayOutEntity.a(this.xLoc, this.yLoc, this.zLoc);
     }
 
+    // Paper start - Add broadcast method
+    void broadcast(Packet<?> packet) {
+        this.getPacketConsumer().accept(packet);
+    }
+    // Paper end
+
     private void broadcastIncludingSelf(Packet<?> packet) {
         this.f.accept(packet);
         if (this.tracker instanceof EntityPlayer) {
