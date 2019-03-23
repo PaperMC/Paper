@@ -15,6 +15,9 @@ import org.bukkit.util.StringUtil;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URL;
@@ -24,9 +27,6 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class VersionCommand extends BukkitCommand {
     public VersionCommand(@NotNull String name) {
@@ -241,9 +241,9 @@ public class VersionCommand extends BukkitCommand {
                     Charsets.UTF_8
             ).openBufferedStream();
             try {
-                JSONObject obj = (JSONObject) new JSONParser().parse(reader);
-                return ((Number) obj.get("totalCount")).intValue();
-            } catch (ParseException ex) {
+                JsonObject obj = new Gson().fromJson(reader, JsonObject.class);
+                return obj.get("totalCount").getAsInt();
+            } catch (JsonSyntaxException ex) {
                 ex.printStackTrace();
                 return -1;
             } finally {
