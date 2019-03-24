@@ -1,4 +1,4 @@
-From ec5ec4fe48cee79e40cd54657e888b273607e223 Mon Sep 17 00:00:00 2001
+From a186f2f777fab6c95fb2351c8c5cfa3937cf01fd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 24 Mar 2019 00:24:52 -0400
 Subject: [PATCH] Entity#getEntitySpawnReason
@@ -9,8 +9,21 @@ Pre existing entities will return NATURAL if it was a non
 persistenting Living Entity, SPAWNER for spawners,
 or DEFAULT since data was not stored.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 51df075b4..53ae5d509 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -1131,7 +1131,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             while (iterator.hasNext()) {
+                 Entity entity1 = (Entity) iterator.next();
+ 
+-                a(entity1, generatoraccess);
++                a(entity1, generatoraccess, reason); // Paper
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3c2e79b14f..0c58a4766a 100644
+index 3c2e79b14..0c58a4766 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -63,6 +63,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -58,8 +71,34 @@ index 3c2e79b14f..0c58a4766a 100644
              // Paper end
  
          } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index b2d2de7f8..af38e5396 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -117,7 +117,7 @@ public abstract class MobSpawnerAbstract {
+                         }
+                     }
+                     // Paper end
+-                    Entity entity = ChunkRegionLoader.a(nbttagcompound, world, d3, d4, d5, false);
++                    Entity entity = ChunkRegionLoader.spawnEntity(nbttagcompound, world, d3, d4, d5, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER); // Paper
+ 
+                     if (entity == null) {
+                         this.i();
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index b1630137e..df416e3b5 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -196,7 +196,7 @@ public abstract class PlayerList {
+ 
+         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
+             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
+-            Entity entity = ChunkRegionLoader.a(nbttagcompound1.getCompound("Entity"), worldserver, true);
++            Entity entity = ChunkRegionLoader.spawnEntity(nbttagcompound1.getCompound("Entity"), worldserver, true, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT); // Paper
+ 
+             if (entity != null) {
+                 UUID uuid = nbttagcompound1.a("Attach");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0624848ccd..9faed93039 100644
+index 0624848cc..9faed9303 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1084,6 +1084,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -71,7 +110,7 @@ index 0624848ccd..9faed93039 100644
              return regionLimited.addEntity(entity, spawnReason);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index d4a8fb16b8..51f70c5eec 100644
+index d4a8fb16b..51f70c5ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -845,5 +845,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {

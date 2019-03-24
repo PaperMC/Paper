@@ -1,4 +1,4 @@
-From c00cbd11cd310d1b03883c60261ced22e8ae6cae Mon Sep 17 00:00:00 2001
+From 01abbf425677bc6dbfe5159b84545fb3bbd1a036 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 24 Mar 2019 01:01:32 -0400
 Subject: [PATCH] Only count Natural Spawned mobs towards natural spawn mob
@@ -17,7 +17,7 @@ This should fully solve all of the issues around it so that only natural
 influences natural spawns.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index f259c4e514..fa1d88aa84 100644
+index f259c4e51..fa1d88aa8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -594,4 +594,14 @@ public class PaperWorldConfig {
@@ -36,7 +36,7 @@ index f259c4e514..fa1d88aa84 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
-index a10a5bc138..346176cf98 100644
+index a10a5bc13..a5a63f800 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 @@ -7,6 +7,7 @@ import net.minecraft.server.IAnimal;
@@ -47,13 +47,17 @@ index a10a5bc138..346176cf98 100644
  
  import java.util.ArrayList;
  import java.util.Collection;
-@@ -90,7 +91,8 @@ public class PaperWorldEntityList extends ArrayList<Entity> {
+@@ -90,7 +91,12 @@ public class PaperWorldEntityList extends ArrayList<Entity> {
      }
  
      public void updateEntityCount(Entity entity, int amt) {
 -        if (!(entity instanceof IAnimal)) return;
 +        // Only count natural spawns so that mob
-+        if (!(entity instanceof IAnimal) || (entity.spawnReason != SpawnReason.NATURAL && !world.paperConfig.countAllMobsForSpawning)) return;
++        if (!(entity instanceof IAnimal) || (
++            !world.paperConfig.countAllMobsForSpawning &&
++            entity.spawnReason != SpawnReason.NATURAL &&
++            entity.spawnReason != SpawnReason.CHUNK_GEN
++        )) return;
  
          if (entity instanceof EntityInsentient) {
              EntityInsentient entityinsentient = (EntityInsentient) entity;
