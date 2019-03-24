@@ -48,6 +48,13 @@ public final class SpawnerCreature {
             EnumCreatureType enumcreaturetype = entity.getEntityType().e();
 
             if (enumcreaturetype != EnumCreatureType.MISC) {
+                // Paper start - Only count natural spawns
+                if (!entity.world.paperConfig.countAllMobsForSpawning &&
+                    !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
+                        entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+                    continue;
+                }
+                // Paper end
                 BlockPosition blockposition = entity.getChunkCoordinates();
                 long j = ChunkCoordIntPair.pair(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 

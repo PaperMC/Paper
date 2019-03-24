@@ -457,6 +457,16 @@ public class PaperWorldConfig {
         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
     }
 
+    public boolean countAllMobsForSpawning = false;
+    private void countAllMobsForSpawning() {
+        countAllMobsForSpawning = getBoolean("count-all-mobs-for-spawning", false);
+        if (countAllMobsForSpawning) {
+            log("Counting all mobs for spawning. Mob farms may reduce natural spawns elsewhere in world.");
+        } else {
+            log("Using improved mob spawn limits (Only Natural Spawns impact spawn limits for more natural spawns)");
+        }
+    }
+
     public boolean antiXray;
     public EngineMode engineMode;
     public int maxChunkSectionIndex;
