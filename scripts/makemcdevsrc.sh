@@ -9,7 +9,7 @@ cd "$basedir"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/Minecraft/$minecraftversion"
-nms="$decompiledir/forge/net/minecraft/server"
+nms="$decompiledir/spigot/net/minecraft/server"
 papernms="Paper-Server/src/main/java/net/minecraft/server"
 mcdevsrc="${decompiledir}/src/net/minecraft/server"
 rm -rf "${mcdevsrc}"

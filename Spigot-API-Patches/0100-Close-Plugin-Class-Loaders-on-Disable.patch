@@ -1,0 +1,145 @@
+From 01b125b0fe0165e700c81c3211f8510da00461a5 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 May 2018 21:33:35 -0400
+Subject: [PATCH] Close Plugin Class Loaders on Disable
+
+This should close more memory leaks from /reload and disabling plugins,
+by closing the class loader and the jar file.
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
+index da7839aa9..fbd65e8b0 100644
+--- a/src/main/java/org/bukkit/plugin/PluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
+@@ -78,4 +78,18 @@ public interface PluginLoader {
+      * @param plugin Plugin to disable
+      */
+     public void disablePlugin(@NotNull Plugin plugin);
++    // Paper start - close Classloader on disable
++    /**
++     * Disables the specified plugin
++     * <p>
++     * Attempting to disable a plugin that is not enabled will have no effect
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader if the classloader for the Plugin should be closed
++     */
++    // provide default to allow other PluginLoader implementations to work
++    default public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
++        disablePlugin(plugin);
++    }
++    // Paper end - close Classloader on disable
+ }
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index a468467b4..ba4ed7ed7 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -162,6 +162,18 @@ public interface PluginManager {
+      */
+     public void disablePlugin(@NotNull Plugin plugin);
+ 
++    // Paper start - close Classloader on disable
++    /**
++     * Disables the specified plugin
++     * <p>
++     * Attempting to disable a plugin that is not enabled will have no effect
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader if the classloader for the Plugin should be closed
++     */
++    public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader);
++    // Paper end - close Classloader on disable
++
+     /**
+      * Gets a {@link Permission} from its fully qualified name
+      *
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 12e17709c..7d4ca43b5 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -419,17 +419,29 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    // Paper start - close Classloader on disable
+     public void disablePlugins() {
++        disablePlugins(false);
++    }
++
++    public void disablePlugins(boolean closeClassloaders) {
++        // Paper end - close Classloader on disable
+         Plugin[] plugins = getPlugins();
+         for (int i = plugins.length - 1; i >= 0; i--) {
+-            disablePlugin(plugins[i]);
++            disablePlugin(plugins[i], closeClassloaders); // Paper - close Classloader on disable
+         }
+     }
+ 
++    // Paper start - close Classloader on disable
+     public void disablePlugin(@NotNull final Plugin plugin) {
++        disablePlugin(plugin, false);
++    }
++
++    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
++        // Paper end - close Classloader on disable
+         if (plugin.isEnabled()) {
+             try {
+-                plugin.getPluginLoader().disablePlugin(plugin);
++                plugin.getPluginLoader().disablePlugin(plugin, closeClassloader); // Paper - close Classloader on disable
+             } catch (Throwable ex) {
+                 handlePluginException("Error occurred (in the plugin loader) while disabling "
+                         + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+@@ -475,7 +487,7 @@ public final class SimplePluginManager implements PluginManager {
+ 
+     public void clearPlugins() {
+         synchronized (this) {
+-            disablePlugins();
++            disablePlugins(true); // Paper - close Classloader on disable
+             plugins.clear();
+             lookupNames.clear();
+             HandlerList.unregisterAll();
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index b9bf2124b..095448fe7 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -328,7 +328,7 @@ public final class JavaPluginLoader implements PluginLoader {
+             } catch (Throwable ex) {
+                 server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
+                 // Paper start - Disable plugins that fail to load
+-                disablePlugin(jPlugin);
++                server.getPluginManager().disablePlugin(jPlugin, true); // Paper - close Classloader on disable - She's dead jim
+                 return;
+                 // Paper end
+             }
+@@ -340,6 +340,12 @@ public final class JavaPluginLoader implements PluginLoader {
+     }
+ 
+     public void disablePlugin(@NotNull Plugin plugin) {
++    // Paper start - close Classloader on disable
++        disablePlugin(plugin, false); // Retain old behavior unless requested
++    }
++
++    public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
++        // Paper end - close Class Loader on disable
+         Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
+ 
+         if (plugin.isEnabled()) {
+@@ -366,6 +372,16 @@ public final class JavaPluginLoader implements PluginLoader {
+                 for (String name : names) {
+                     removeClass(name);
+                 }
++                // Paper start - close Class Loader on disable
++                try {
++                    if (closeClassloader) {
++                        loader.close();
++                    }
++                } catch (IOException e) {
++                    server.getLogger().log(Level.WARNING, "Error closing the Plugin Class Loader for " + plugin.getDescription().getFullName());
++                    e.printStackTrace();
++                }
++                // Paper end
+             }
+         }
+     }
+-- 
+2.21.0
+

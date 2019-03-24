@@ -1,0 +1,103 @@
+From ad0c8ca9e48518bfdc7f2d0b624298e45ab22aae Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Mon, 28 Nov 2016 10:16:39 -0500
+Subject: [PATCH] Allow Reloading of Command Aliases
+
+Reload the aliases stored in commands.yml
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d009aebd6..8e0cbbf15 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1555,6 +1555,15 @@ public final class Bukkit {
+     public static void reloadPermissions() {
+         server.reloadPermissions();
+     }
++
++    /**
++     * Reload the Command Aliases in commands.yml
++     *
++     * @return Whether the reload was successful
++     */
++    public static boolean reloadCommandAliases() {
++        return server.reloadCommandAliases();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index e7e7dab8c..8f61619a3 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1368,4 +1368,6 @@ public interface Server extends PluginMessageRecipient {
+     // Spigot end
+ 
+     void reloadPermissions(); // Paper
++
++    boolean reloadCommandAliases(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/CommandMap.java b/src/main/java/org/bukkit/command/CommandMap.java
+index bd2c7a696..864c263bb 100644
+--- a/src/main/java/org/bukkit/command/CommandMap.java
++++ b/src/main/java/org/bukkit/command/CommandMap.java
+@@ -128,4 +128,14 @@ public interface CommandMap {
+      */
+     @Nullable
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) throws IllegalArgumentException;
++
++    // Paper start - Expose Known Commands
++    /**
++     * Return a Map of known commands
++     *
++     * @return known commands
++     */
++    @NotNull
++    public java.util.Map<String, Command> getKnownCommands();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index f52d91d19..d7ca4fa3f 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -285,4 +285,11 @@ public class SimpleCommandMap implements CommandMap {
+             }
+         }
+     }
++
++    // Paper start - Expose Known Commands
++    @NotNull
++    public Map<String, Command> getKnownCommands() {
++        return knownCommands;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index ba118dbfe..607323a83 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -14,7 +14,7 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload [permissions]"; // Paper
++        this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+@@ -30,6 +30,13 @@ public class ReloadCommand extends BukkitCommand {
+                 Bukkit.getServer().reloadPermissions();
+                 Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
+                 return true;
++            } else if ("commands".equalsIgnoreCase(args[0])) {
++                if (Bukkit.getServer().reloadCommandAliases()) {
++                    Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Command aliases successfully reloaded.");
++                } else {
++                    Command.broadcastCommandMessage(sender, ChatColor.RED + "An error occurred while trying to reload command aliases.");
++                }
++                return true;
+             } else if ("confirm".equalsIgnoreCase(args[0])) {
+                 confirmed = true;
+             } else {
+-- 
+2.21.0
+

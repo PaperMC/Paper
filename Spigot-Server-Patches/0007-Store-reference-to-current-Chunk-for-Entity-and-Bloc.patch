@@ -1,4 +1,4 @@
-From 02e9001365c48007078e30a3e7566cecc2a53414 Mon Sep 17 00:00:00 2001
+From 2fae759524a8a56cb30d347edcaa0e1c77d52aac Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,10 +8,10 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4870a4bb5..085d3d3e8 100644
+index 417c015e56..b728a44f5f 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -32,7 +32,7 @@ public class Chunk implements IChunkAccess {
+@@ -36,7 +36,7 @@ public class Chunk implements IChunkAccess {
      private final BiomeBase[] f;
      private final boolean[] g;
      private final Map<BlockPosition, NBTTagCompound> h;
@@ -20,7 +20,7 @@ index 4870a4bb5..085d3d3e8 100644
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
      public final int locX;
-@@ -62,7 +62,30 @@ public class Chunk implements IChunkAccess {
+@@ -66,7 +66,30 @@ public class Chunk implements IChunkAccess {
      // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
      private int neighbors = 0x1 << 12;
      public long chunkKey;
@@ -51,7 +51,7 @@ index 4870a4bb5..085d3d3e8 100644
      public boolean areNeighborsLoaded(final int radius) {
          switch (radius) {
              case 2:
-@@ -93,7 +116,7 @@ public class Chunk implements IChunkAccess {
+@@ -97,7 +120,7 @@ public class Chunk implements IChunkAccess {
          this.g = new boolean[256];
          this.h = Maps.newHashMap();
          this.heightMap = Maps.newEnumMap(HeightMap.Type.class);
@@ -60,9 +60,9 @@ index 4870a4bb5..085d3d3e8 100644
          this.p = Maps.newHashMap();
          this.q = Maps.newHashMap();
          this.r = new ShortList[16];
-@@ -653,6 +676,9 @@ public class Chunk implements IChunkAccess {
-         entity.af = k;
-         entity.ag = this.locZ;
+@@ -657,6 +680,9 @@ public class Chunk implements IChunkAccess {
+         entity.chunkY = k;
+         entity.chunkZ = this.locZ;
          this.entitySlices[k].add(entity);
 +        // Paper start
 +        entity.setCurrentChunk(this);
@@ -70,7 +70,7 @@ index 4870a4bb5..085d3d3e8 100644
      }
  
      public void a(HeightMap.Type heightmap_type, long[] along) {
-@@ -671,8 +697,12 @@ public class Chunk implements IChunkAccess {
+@@ -675,8 +701,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
@@ -85,7 +85,7 @@ index 4870a4bb5..085d3d3e8 100644
      }
  
      public boolean c(BlockPosition blockposition) {
-@@ -873,6 +903,7 @@ public class Chunk implements IChunkAccess {
+@@ -885,6 +915,7 @@ public class Chunk implements IChunkAccess {
                      }
                  }
                  // Spigot End
@@ -94,19 +94,19 @@ index 4870a4bb5..085d3d3e8 100644
                  // Do not pass along players, as doing so can get them stuck outside of time.
                  // (which for example disables inventory icon updates and prevents block breaking)
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3e5c2d8e7..fde9d4d51 100644
+index c87d11da5b..faf4d0c0db 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -134,7 +134,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -132,7 +132,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      private static final DataWatcherObject<Boolean> aF = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Boolean> aG = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Boolean> aH = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
 -    public boolean inChunk;
 +    public boolean inChunk; public boolean isAddedToChunk() { return inChunk; } // Paper - OBFHELPER
-     public int ae; public int getChunkX() { return ae; } // Paper - OBFHELPER
-     public int af; public int getChunkY() { return af; } // Paper - OBFHELPER
-     public int ag; public int getChunkZ() { return ag; } // Paper - OBFHELPER
-@@ -1762,6 +1762,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
+     public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
+     public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
+@@ -1776,6 +1776,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      // Paper start
@@ -147,7 +147,7 @@ index 3e5c2d8e7..fde9d4d51 100644
      private String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 7390061bf..c69209497 100644
+index 7390061bf0..c69209497b 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -41,6 +41,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -167,7 +167,7 @@ index 7390061bf..c69209497 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 2c57a4f03..153efb9b9 100644
+index a3435c11ed..8fb0ecf525 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -9,6 +9,7 @@ import java.util.UUID;
@@ -192,5 +192,5 @@ index 2c57a4f03..153efb9b9 100644
          /**
           * Order is *EXTREMELY* important -- keep it right! =D
 -- 
-2.19.1
+2.20.1
 

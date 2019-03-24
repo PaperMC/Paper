@@ -12,7 +12,8 @@ gitcmd="git -c commit.gpgsign=false"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/Minecraft/$minecraftversion/forge"
-
+# replace for now
+decompiledir="$workdir/Minecraft/$minecraftversion/spigot"
 export importedmcdev=""
 function import {
     export importedmcdev="$importedmcdev $1"
@@ -45,7 +46,7 @@ function importLibrary {
             exit 1
         fi
         export MODLOG="$MODLOG  Imported $file from $lib\n";
-        cp "$base" "$target" || exit 1
+        sed 's/\r$//' "$base" > "$target" || exit 1
     done
 }
 

@@ -1,25 +1,24 @@
-From feba81e8881b93a60a312a9e37516b0434a55fe6 Mon Sep 17 00:00:00 2001
+From f89c7debb7c660439d856aca963f8056cf86404f Mon Sep 17 00:00:00 2001
 From: Alfie Cleveland <alfeh@me.com>
 Date: Fri, 25 Nov 2016 13:22:40 +0000
 Subject: [PATCH] Optimise removeQueue
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index d9ea222c2b..e3ac9eb7d5 100644
+index fcb5f590d..6b9bbc77c 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -5,8 +5,10 @@ import com.mojang.authlib.GameProfile;
+@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
  import io.netty.buffer.Unpooled;
  import io.netty.util.concurrent.Future;
- import io.netty.util.concurrent.GenericFutureListener;
 +import java.util.ArrayDeque; // Paper
- import java.util.ArrayList;
  import java.util.Collection;
 +import java.util.Deque; // Paper
  import java.util.Iterator;
  import java.util.List;
  import java.util.Random;
-@@ -43,7 +45,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -40,7 +42,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public final PlayerInteractManager playerInteractManager;
      public double d;
      public double e;
@@ -28,18 +27,18 @@ index d9ea222c2b..e3ac9eb7d5 100644
      private final AdvancementDataPlayer cf;
      private final ServerStatisticManager cg;
      private float ch = Float.MIN_VALUE;
-@@ -351,13 +353,20 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -349,13 +351,20 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          while (!this.removeQueue.isEmpty()) {
              int i = Math.min(this.removeQueue.size(), Integer.MAX_VALUE);
              int[] aint = new int[i];
--            Iterator iterator = this.removeQueue.iterator();
-+            //Iterator iterator = this.removeQueue.iterator(); // Paper
+-            Iterator<Integer> iterator = this.removeQueue.iterator();
++            //Iterator<Integer> iterator = this.removeQueue.iterator(); // Paper
              int j = 0;
  
 -            while (iterator.hasNext() && j < i) {
 +            // Paper start
 +            /* while (iterator.hasNext() && j < i) {
-                 aint[j++] = ((Integer) iterator.next()).intValue();
+                 aint[j++] = (Integer) iterator.next();
                  iterator.remove();
 +            } */
 +
@@ -51,10 +50,10 @@ index d9ea222c2b..e3ac9eb7d5 100644
  
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(aint));
          }
-@@ -1137,7 +1146,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1153,7 +1162,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.lastHealthSent = -1.0F;
-         this.co = -1;
-         // this.cy.a((RecipeBook) entityplayer.cy); // CraftBukkit
+         this.lastFoodSent = -1;
+         // this.recipeBook.a((RecipeBook) entityplayer.recipeBook); // CraftBukkit
 -        this.removeQueue.addAll(entityplayer.removeQueue);
 +        // Paper start - Optimize remove queue - vanilla copies player objects, but CB doesn't. This method currently only
 +        // Applies to the same player, so we need to not duplicate our removal queue. The rest of this method does "resetting"
@@ -68,5 +67,5 @@ index d9ea222c2b..e3ac9eb7d5 100644
          this.cC = entityplayer.cC;
          this.setShoulderEntityLeft(entityplayer.getShoulderEntityLeft());
 -- 
-2.19.0
+2.21.0
 

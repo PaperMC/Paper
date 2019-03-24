@@ -1,4 +1,4 @@
-From 68a9bbb09750538538bbcd3188803b142ba3f4e0 Mon Sep 17 00:00:00 2001
+From 83ac8b89abec618036297a83e2c283b749110729 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 14:32:43 -0600
 Subject: [PATCH] Show 'Paper' in client crashes, server lists, and Mojang
@@ -6,29 +6,23 @@ Subject: [PATCH] Show 'Paper' in client crashes, server lists, and Mojang
 
 
 diff --git a/src/main/java/net/minecraft/server/EULA.java b/src/main/java/net/minecraft/server/EULA.java
-index b64cac252..cc333de50 100644
+index 220ca7bca..e13e17bdd 100644
 --- a/src/main/java/net/minecraft/server/EULA.java
 +++ b/src/main/java/net/minecraft/server/EULA.java
-@@ -49,13 +49,12 @@ public class EULA {
-                 Properties properties = new Properties();
+@@ -52,7 +52,7 @@ public class EULA {
+ 
                  fileoutputstream = new FileOutputStream(this.b);
                  properties.setProperty("eula", "false");
 -                properties.store(fileoutputstream, "By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
 +                properties.store(fileoutputstream, "By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).\nYou also agree that tacos are tasty, and the best food in the world.");  // Paper - fix lag);
              } catch (Exception exception) {
-                 a.warn("Failed to save {}", this.b, exception);
+                 EULA.a.warn("Failed to save {}", this.b, exception);
              } finally {
-                 IOUtils.closeQuietly(fileoutputstream);
-             }
--
-         }
-     }
- }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2d812b024..8a6589d95 100644
+index 7e89d7158..df85f35f3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1213,7 +1213,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1209,7 +1209,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
      }
  
      public String getServerModName() {
@@ -38,10 +32,10 @@ index 2d812b024..8a6589d95 100644
  
      public CrashReport b(CrashReport crashreport) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b34a3564c..3a8e3ee81 100644
+index 18619e675..bce04674f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -159,7 +159,7 @@ import org.bukkit.event.server.TabCompleteEvent;
+@@ -164,7 +164,7 @@ import org.bukkit.event.server.TabCompleteEvent;
  import net.md_5.bungee.api.chat.BaseComponent;
  
  public final class CraftServer implements Server {
@@ -51,21 +45,20 @@ index b34a3564c..3a8e3ee81 100644
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 31c7404c3..1ce1a2435 100644
+index 24620a8b8..56aa64bdf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -200,13 +200,24 @@ public class Main {
-                     deadline.add(Calendar.DAY_OF_YEAR, -7);
+@@ -200,12 +200,25 @@ public class Main {
+                     deadline.add(Calendar.DAY_OF_YEAR, -21);
                      if (buildDate.before(deadline.getTime())) {
                          System.err.println("*** Error, this build is outdated ***");
--                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/ ***");
-+                        System.err.println("*** Please download a new build as per instructions from https://paperci.emc.gs/ ***"); // Paper
+-                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
++                        System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads ***"); // Paper
                          System.err.println("*** Server will start in 20 seconds ***");
                          Thread.sleep(TimeUnit.SECONDS.toMillis(20));
                      }
                  }
  
--                System.err.println("*** WARNING: This is a development build. It is not meant for production server usage! Please keep backups and update frequently.");
 +                // Paper start - Log Java and OS versioning to help with debugging plugin issues
 +                java.lang.management.RuntimeMXBean runtimeMX = java.lang.management.ManagementFactory.getRuntimeMXBean();
 +                java.lang.management.OperatingSystemMXBean osMX = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
@@ -78,11 +71,12 @@ index 31c7404c3..1ce1a2435 100644
 +                    System.out.println("Unable to read system info");
 +                }
 +                // Paper end
- 
++
                  System.out.println("Loading libraries, please wait...");
                  MinecraftServer.main(options);
+             } catch (Throwable t) {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 94a3d4237..91b8aa6a1 100644
+index 9511f247a..8e32c4e2c 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -19,7 +19,7 @@ public class WatchdogThread extends Thread
@@ -94,19 +88,25 @@ index 94a3d4237..91b8aa6a1 100644
          this.timeoutTime = timeoutTime;
          this.restart = restart;
      }
-@@ -56,9 +56,9 @@ public class WatchdogThread extends Thread
+@@ -61,14 +61,14 @@ public class WatchdogThread extends Thread
              {
                  Logger log = Bukkit.getServer().getLogger();
-                 log.log( Level.SEVERE, "The server has stopped responding!" );
--                log.log( Level.SEVERE, "Please report this to http://www.spigotmc.org/" );
-+                log.log( Level.SEVERE, "Please report this to https://github.com/PaperMC/Paper/issues" );
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Spigot bug." );
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
+                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
+                 log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
+                 log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
+                 log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
+-                log.log( Level.SEVERE, "If you are unsure or still think this is a Spigot bug, please report to https://www.spigotmc.org/" );
++                log.log( Level.SEVERE, "If you are unsure or still think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" );
                  log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
 -                log.log( Level.SEVERE, "Spigot version: " + Bukkit.getServer().getVersion() );
 +                log.log( Level.SEVERE, "Paper version: " + Bukkit.getServer().getVersion() );
                  //
-                 if(net.minecraft.server.World.haveWeSilencedAPhysicsCrash)
+                 if ( net.minecraft.server.World.lastPhysicsProblem != null )
                  {
-@@ -68,7 +68,7 @@ public class WatchdogThread extends Thread
+@@ -78,7 +78,7 @@ public class WatchdogThread extends Thread
                  }
                  //
                  log.log( Level.SEVERE, "------------------------------" );
@@ -116,5 +116,5 @@ index 94a3d4237..91b8aa6a1 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 -- 
-2.19.1
+2.20.1
 

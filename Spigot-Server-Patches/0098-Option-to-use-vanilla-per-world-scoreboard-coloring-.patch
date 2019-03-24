@@ -1,14 +1,21 @@
-From 96c24465ced08e0ea6b29a38191a7e68b5673ba7 Mon Sep 17 00:00:00 2001
+From fc795917307bbed324521bca9996db6dcbfc7976 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Wed, 6 Apr 2016 01:04:23 -0500
 Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
 
+This change is basically a bandaid to fix CB's complete and utter lack
+of support for vanilla scoreboard name modifications.
+
+In the future, finding a way to merge the vanilla expectations in with
+bukkit's concept of a display name would be preferable. There was a PR
+for this on CB at one point but I can't find it. We may need to do this
+ourselves at some point in the future.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6fe3c0ea8a..cf523a3e48 100644
+index 276dd98fd..973ea8bca 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -250,4 +250,9 @@ public class PaperWorldConfig {
+@@ -255,4 +255,9 @@ public class PaperWorldConfig {
          keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 8)) * 16);
          log( "Keep Spawn Loaded Range: " + (keepLoadedRange/16));
      }
@@ -18,23 +25,11 @@ index 6fe3c0ea8a..cf523a3e48 100644
 +        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7275c4d21a..83de2d63a5 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2259,6 +2259,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         return this.getFlag(5);
-     }
- 
-+    @Nullable public ScoreboardTeamBase getTeam() { return this.be(); } // Paper - OBFHELPER
-     @Nullable
-     public ScoreboardTeamBase be() {
-         if (!this.world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { return null; } // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 4df7b4a249..ba690d5bd0 100644
+index 72c06cdb8..5516726e8 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -1634,7 +1634,15 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -1610,7 +1610,16 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
                      return;
                  }
  
@@ -42,8 +37,9 @@ index 4df7b4a249..ba690d5bd0 100644
 +                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
 +                String displayName = event.getPlayer().getDisplayName();
 +                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
++                    IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getScoreboardTeam(),((CraftPlayer) player).getHandle().getDisplayName());
 +                    // Explicitly add a RESET here, vanilla uses components for this now...
-+                    displayName = CraftChatMessage.fromComponent(ScoreboardTeam.a(this.player.getTeam(),((CraftPlayer) player).getHandle().getDisplayName())) + org.bukkit.ChatColor.RESET;
++                    displayName = CraftChatMessage.fromComponent(nameFromTeam, EnumChatFormat.WHITE) + org.bukkit.ChatColor.RESET;
 +                }
 +
 +                s = String.format(event.getFormat(), displayName, event.getMessage());
@@ -51,6 +47,19 @@ index 4df7b4a249..ba690d5bd0 100644
                  minecraftServer.console.sendMessage(s);
                  if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
                      for (Object recipient : minecraftServer.getPlayerList().players) {
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 6e62ea90d..523694899 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -176,7 +176,7 @@ public abstract class PlayerList {
+         }
+ 
+         chatmessage.a(EnumChatFormat.YELLOW);
+-        this.onPlayerJoin(entityplayer, CraftChatMessage.fromComponent(chatmessage));
++        this.onPlayerJoin(entityplayer, CraftChatMessage.fromComponent(chatmessage, EnumChatFormat.WHITE)); // Paper
+         // CraftBukkit end
+         worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
+         playerconnection.a(entityplayer.locX, entityplayer.locY, entityplayer.locZ, entityplayer.yaw, entityplayer.pitch);
 -- 
-2.19.0
+2.21.0
 

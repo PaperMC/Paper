@@ -1,4 +1,4 @@
-From 4b04c2b61a16280bc65656261c939ee5bb665606 Mon Sep 17 00:00:00 2001
+From 2eb12d8fcb6b1715e3583e9b3333f5032a7b240d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 4 Mar 2016 18:18:37 -0600
 Subject: [PATCH] Chunk save queue improvements
@@ -26,7 +26,7 @@ Then finally, Sleeping will by default be removed, but due to known issues with 
 But if sleeps are to remain enabled, we at least lower the sleep interval so it doesn't have as much negative impact.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index aa920c469..4aad68a57 100644
+index cc69ff3a4..f80b385ff 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -217,4 +217,10 @@ public class PaperConfig {
@@ -41,11 +41,11 @@ index aa920c469..4aad68a57 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-index d9608121b..d7a670093 100644
+index b0c004b1f..d2cece265 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 +++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-@@ -19,6 +19,7 @@ public class ChunkCoordIntPair {
-         this.z = (int)(i >> 32);
+@@ -20,6 +20,7 @@ public class ChunkCoordIntPair {
+         this.z = (int) (i >> 32);
      }
  
 +    public long asLong() { return a(); } // Paper
@@ -53,18 +53,18 @@ index d9608121b..d7a670093 100644
          return a(this.x, this.z);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 43f77a398..4a0f3989e 100644
+index 35976a26f..21ee154a5 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -22,6 +22,7 @@ import java.util.function.Consumer;
+@@ -20,6 +20,7 @@ import java.util.Map.Entry;
+ import java.util.function.Consumer;
  import java.util.function.Function;
- import java.util.function.Predicate;
  import javax.annotation.Nullable;
 +import java.util.concurrent.ConcurrentLinkedQueue; // Paper
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  // Spigot start
-@@ -31,8 +32,28 @@ import org.spigotmc.SupplierUtils;
+@@ -29,8 +30,28 @@ import org.spigotmc.SupplierUtils;
  
  public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
  
@@ -94,16 +94,16 @@ index 43f77a398..4a0f3989e 100644
      private final File c;
      private final DataFixer d;
      private PersistentStructureLegacy e;
-@@ -82,7 +103,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-     @Nullable
-     private NBTTagCompound a(DimensionManager dimensionmanager, @Nullable PersistentCollection persistentcollection, int i, int j, @Nullable GeneratorAccess generatoraccess) throws IOException {
+@@ -86,7 +107,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             return null;
+         }
+         // CraftBukkit end
 -        NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.b.get(new ChunkCoordIntPair(i, j))); // Spigot
 +        NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.saveMap.get(ChunkCoordIntPair.asLong(i, j))); // Spigot // Paper
  
          if (nbttagcompound != null) {
              return nbttagcompound;
-@@ -310,7 +331,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -314,7 +335,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                  };
              }
  
@@ -112,7 +112,7 @@ index 43f77a398..4a0f3989e 100644
              // Spigot end
          } catch (Exception exception) {
              ChunkRegionLoader.a.error("Failed to save chunk", exception);
-@@ -319,7 +340,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -323,7 +344,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      protected void a(ChunkCoordIntPair chunkcoordintpair, Supplier<NBTTagCompound> nbttagcompound) { // Spigot
@@ -122,11 +122,12 @@ index 43f77a398..4a0f3989e 100644
          FileIOThread.a().a(this);
      }
  
-@@ -329,19 +351,24 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -333,20 +355,24 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
      }
  
      private boolean processSaveQueueEntry(boolean logCompletion) {
--        Iterator iterator = this.b.entrySet().iterator();
+-        Iterator<Entry<ChunkCoordIntPair, Supplier<NBTTagCompound>>> iterator = this.b.entrySet().iterator(); // Spigot
+-
 -        if (!iterator.hasNext()) {
 +        // Paper start - Chunk queue improvements
 +        QueuedChunk chunk = queue.poll();
@@ -138,7 +139,7 @@ index 43f77a398..4a0f3989e 100644
  
              return false;
          } else {
--            Entry entry = (Entry) iterator.next();
+-            Entry<ChunkCoordIntPair, NBTTagCompound> entry = (Entry) iterator.next();
 -
 -            iterator.remove();
 -            ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) entry.getKey();
@@ -154,7 +155,7 @@ index 43f77a398..4a0f3989e 100644
  
              if (nbttagcompound == null) {
                  return true;
-@@ -350,6 +377,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -355,6 +381,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                      // CraftBukkit start
                      RegionFileCache.write(this.c, chunkcoordintpair.x, chunkcoordintpair.z, SupplierUtils.getIfExists(nbttagcompound)); // Spigot
  
@@ -171,15 +172,15 @@ index 43f77a398..4a0f3989e 100644
                      NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
                      dataoutputstream.close();
 diff --git a/src/main/java/net/minecraft/server/FileIOThread.java b/src/main/java/net/minecraft/server/FileIOThread.java
-index a3aba244a..97917551a 100644
+index 8c3537ab8..3c688f546 100644
 --- a/src/main/java/net/minecraft/server/FileIOThread.java
 +++ b/src/main/java/net/minecraft/server/FileIOThread.java
-@@ -35,20 +35,21 @@ public class FileIOThread implements Runnable {
-         for(int i = 0; i < this.c.size(); ++i) {
-             IAsyncChunkSaver iasyncchunksaver = (IAsyncChunkSaver)this.c.get(i);
+@@ -38,20 +38,21 @@ public class FileIOThread implements Runnable {
+             IAsyncChunkSaver iasyncchunksaver = (IAsyncChunkSaver) this.c.get(i);
              boolean flag;
--            synchronized(iasyncchunksaver) {
-+            //synchronized(iasyncchunksaver) { // Paper - remove synchronized
+ 
+-            synchronized (iasyncchunksaver) {
++            //synchronized (iasyncchunksaver) { // Paper - remove synchronized
                  flag = iasyncchunksaver.a();
 -            }
 +            //} // Paper
@@ -193,13 +194,13 @@ index a3aba244a..97917551a 100644
              try {
 -                Thread.sleep(this.f ? 0L : 10L);
 +                Thread.sleep(this.f ? 0L : 1L); // Paper
-             } catch (InterruptedException interruptedexception1) {
-                 interruptedexception1.printStackTrace();
+             } catch (InterruptedException interruptedexception) {
+                 interruptedexception.printStackTrace();
 -            }
 +            }} // Paper
          }
  
          if (this.c.isEmpty()) {
 -- 
-2.19.1
+2.20.1
 

@@ -12,7 +12,7 @@ How To (Server Admins)
 ------
 Paperclip is a jar file that you can download and run just like a normal jar file.
 
-Download a copy of paperclip.jar from [our build server, here](https://papermc.io/ci/job/Paper/).
+Download Paper from our [downloads page](https://papermc.io/downloads).
 
 Run the Paperclip jar directly from your server. Just like old times
 
@@ -36,7 +36,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>com.destroystokyo.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.13.1-R0.1-SNAPSHOT</version>
+    <version>1.13.2-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
  </dependency>
  ```

@@ -1,0 +1,107 @@
+From 9ffedfc9f2e8b401d42cf593c943f35d508d828e Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:28:07 -0400
+Subject: [PATCH] Add command to reload permissions.yml and require confirm to
+ reload
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index e27bdb7bf..d009aebd6 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1548,6 +1548,13 @@ public final class Bukkit {
+     public static org.bukkit.command.CommandMap getCommandMap() {
+         return server.getCommandMap();
+     }
++
++    /**
++     * Reload the Permissions in permissions.yml
++     */
++    public static void reloadPermissions() {
++        server.reloadPermissions();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index ab0438b81..e7e7dab8c 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1366,4 +1366,6 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
+     Spigot spigot();
+     // Spigot end
++
++    void reloadPermissions(); // Paper
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 1104c6037..ba118dbfe 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -14,15 +14,35 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload";
++        this.usageMessage = "/reload [permissions]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+ 
+     @Override
+-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
++    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
+         if (!testPermission(sender)) return true;
+ 
++        // Paper start - Reload permissions.yml & require confirm
++        boolean confirmed = System.getProperty("LetMeReload") != null;
++        if (args.length == 1) {
++            if (args[0].equalsIgnoreCase("permissions")) {
++                Bukkit.getServer().reloadPermissions();
++                Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Permissions successfully reloaded.");
++                return true;
++            } else if ("confirm".equalsIgnoreCase(args[0])) {
++                confirmed = true;
++            } else {
++                Command.broadcastCommandMessage(sender, ChatColor.RED + "Usage: " + usageMessage);
++                return true;
++            }
++        }
++        if (!confirmed) {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type " + ChatColor.YELLOW + "/reload confirm");
++            return true;
++        }
++        // Paper end
++
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+         Bukkit.reload();
+@@ -34,6 +54,6 @@ public class ReloadCommand extends BukkitCommand {
+     @NotNull
+     @Override
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+-        return Collections.emptyList();
++        return java.util.Collections.singletonList("permissions"); // Paper
+     }
+ }
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 4c55f5f8c..12e17709c 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -777,4 +777,13 @@ public final class SimplePluginManager implements PluginManager {
+     public void useTimings(boolean use) {
+         co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
+     }
++
++    // Paper start
++    public void clearPermissions() {
++        permissions.clear();
++        defaultPerms.get(true).clear();
++        defaultPerms.get(false).clear();
++    }
++    // Paper end
++
+ }
+-- 
+2.21.0
+

@@ -1,4 +1,4 @@
-From 266ec4e2b78a094c01dd21b0cbfb5a7a0af1dd88 Mon Sep 17 00:00:00 2001
+From 102ffd1fa2fb10d7aaeb220c7c71bd3b0c3b4c10 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 13 Sep 2014 23:14:43 -0400
 Subject: [PATCH] Configurable Keep Spawn Loaded range per world
@@ -6,10 +6,10 @@ Subject: [PATCH] Configurable Keep Spawn Loaded range per world
 This lets you disable it for some worlds and lower it for others.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 17755108a..6fe3c0ea8 100644
+index 058cd8cc8..276dd98fd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -244,4 +244,10 @@ public class PaperWorldConfig {
+@@ -249,4 +249,10 @@ public class PaperWorldConfig {
          grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
          log("Grass Spread Tick Rate: " + grassUpdateRate);
      }
@@ -21,12 +21,12 @@ index 17755108a..6fe3c0ea8 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5e7a68c4b..18635e820 100644
+index f488c37f7..e53e25626 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -490,13 +490,21 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-             ArrayList arraylist = Lists.newArrayList();
-             Set set = Sets.newConcurrentHashSet();
+@@ -486,13 +486,21 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             List<ChunkCoordIntPair> list = Lists.newArrayList();
+             Set<ChunkCoordIntPair> set = Sets.newConcurrentHashSet();
  
 -            for (int i = -192; i <= 192 && this.isRunning(); i += 16) {
 -                for (int j = -192; j <= 192 && this.isRunning(); j += 16) {
@@ -35,20 +35,20 @@ index 5e7a68c4b..18635e820 100644
 +            for (int i = -radius; i <= radius && this.isRunning(); i += 16) {
 +                for (int j = -radius; j <= radius && this.isRunning(); j += 16) {
 +                    // Paper end
-                     arraylist.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
+                     list.add(new ChunkCoordIntPair(blockposition.getX() + i >> 4, blockposition.getZ() + j >> 4));
                  }
 +            } // Paper
 +            if (this.isRunning()) { // Paper
-+                int expected = arraylist.size(); // Paper
++                int expected = list.size(); // Paper
 +
  
-                 CompletableFuture completablefuture = worldserver.getChunkProviderServer().a((Iterable) arraylist, (chunk) -> {
+                 CompletableFuture completablefuture = worldserver.getChunkProvider().a((Iterable) list, (chunk) -> {
                      set.add(chunk.getPos());
 +                    if (set.size() < expected && set.size() % 25 == 0) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
                  });
  
                  while (!completablefuture.isDone()) {
-@@ -511,11 +519,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -507,11 +515,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
  
                          throw new RuntimeException(executionexception.getCause());
                      } catch (TimeoutException timeoutexception) {
@@ -63,10 +63,10 @@ index 5e7a68c4b..18635e820 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7d83c0236..466ea22be 100644
+index f4b5e3ba4..2ed87dd9c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -2902,8 +2902,9 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2852,8 +2852,9 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          int k = i * 16 + 8 - blockposition.getX();
          int l = j * 16 + 8 - blockposition.getZ();
          boolean flag = true;
@@ -78,10 +78,10 @@ index 7d83c0236..466ea22be 100644
  
      public LongSet ag() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d277a640c..8ce32dcff 100644
+index 8f31492cb..b64f3594a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1001,7 +1001,7 @@ public final class CraftServer implements Server {
+@@ -1006,7 +1006,7 @@ public final class CraftServer implements Server {
          System.out.println("Preparing start region for level " + (console.worldServer.size() - 1) + " (Seed: " + internal.getSeed() + ")");
  
          if (internal.getWorld().getKeepSpawnInMemory()) {
@@ -91,10 +91,10 @@ index d277a640c..8ce32dcff 100644
              for (int j = -short1; j <= short1; j += 16) {
                  for (int k = -short1; k <= short1; k += 16) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 088e7f1f1..6afe4d463 100644
+index f118d382c..274e8626d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1428,8 +1428,9 @@ public class CraftWorld implements World {
+@@ -1419,8 +1419,9 @@ public class CraftWorld implements World {
          int chunkCoordX = chunkcoordinates.getX() >> 4;
          int chunkCoordZ = chunkcoordinates.getZ() >> 4;
          // Cycle through the 25x25 Chunks around it to load/unload the chunks.
@@ -107,5 +107,5 @@ index 088e7f1f1..6afe4d463 100644
                      loadChunk(chunkCoordX + x, chunkCoordZ + z);
                  } else {
 -- 
-2.19.1
+2.20.1
 
