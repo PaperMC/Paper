@@ -43,7 +43,21 @@
              iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
          });
      }
-@@ -211,11 +224,34 @@
+@@ -201,7 +214,12 @@
+     }
+ 
+     public static <T extends Projectile> T spawnProjectileUsingShoot(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
+-        return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
++    // Paper start - fixes and addition to spawn reason API
++        return spawnProjectileUsingShootDelayed(projectile, world, projectileStack, velocityX, velocityY, velocityZ, power, divergence).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
++        return Projectile.spawnProjectileDelayed(projectile, world, projectileStack, (iprojectile) -> {
++    // Paper end - fixes and addition to spawn reason API
+             projectile.shoot(velocityX, velocityY, velocityZ, power, divergence);
+         });
+     }
+@@ -211,11 +229,45 @@
          });
      }
  
@@ -64,6 +78,17 @@
 +            this.attemptSpawn();
 +            return projectile();
 +        }
++
++        public boolean attemptSpawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            if (!world.addFreshEntity(projectile, reason)) return false;
++            projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            this.attemptSpawn(reason);
++            return projectile();
++        }
 +    }
 +    // Paper end - delayed projectile spawning
 +
@@ -81,7 +106,7 @@
      }
  
      public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
-@@ -232,6 +268,17 @@
+@@ -232,6 +284,17 @@
  
      }
  
@@ -99,7 +124,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult movingobjectpositionentity = (EntityHitResult) hitResult;
-@@ -309,6 +356,11 @@
+@@ -309,6 +372,11 @@
      protected void onHitEntity(EntityHitResult entityHitResult) {}
  
      protected void onHitBlock(BlockHitResult blockHitResult) {
@@ -111,7 +136,7 @@
          BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
  
          iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);
-@@ -320,6 +372,15 @@
+@@ -320,6 +388,15 @@
          } else {
              Entity entity1 = this.getOwner();
  

@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +293,31 @@
+@@ -258,7 +293,32 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -124,7 +124,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
-+
+ 
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -143,9 +143,10 @@
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
- 
++
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +326,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -179,8 +180,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-     }
- 
++    }
++
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    public void resendItemInHands() {
@@ -226,9 +227,9 @@
 +        }
 +
 +        return blockposition;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -347,6 +348,15 @@
              CompoundTag nbttagcompound1 = new CompoundTag();
              CompoundTag nbttagcompound2 = new CompoundTag();
  
+@@ -564,7 +714,7 @@
+                 ServerLevel worldserver = (ServerLevel) world;
+                 CompoundTag nbttagcompound = ((CompoundTag) nbt.get()).getCompound("RootVehicle");
+                 Entity entity = EntityType.loadEntityRecursive(nbttagcompound.getCompound("Entity"), worldserver, EntitySpawnReason.LOAD, (entity1) -> {
+-                    return !worldserver.addWithUUID(entity1) ? null : entity1;
++                    return !worldserver.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // CraftBukkit - decompile error // Paper - Entity#getEntitySpawnReason
+                 });
+ 
+                 if (entity == null) {
 @@ -598,12 +748,12 @@
  
                  if (!this.isPassenger()) {
@@ -461,15 +471,17 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -865,6 +1053,20 @@
-                 CriteriaTriggers.LOCATION.trigger(this);
-             }
+@@ -863,8 +1051,22 @@
  
+             if (this.tickCount % 20 == 0) {
+                 CriteriaTriggers.LOCATION.trigger(this);
++            }
++
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
-+            }
-+
+             }
+ 
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
@@ -526,7 +538,7 @@
 +        // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
 +        this.dropFromLootTable(this.serverLevel(), damageSource, this.lastHurtByPlayerTime > 0);
 +        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
- 
++
 +        loot.addAll(this.drops);
 +        this.drops.clear(); // SPIGOT-5188: make sure to clear
 +
@@ -552,7 +564,7 @@
 +        }
 +
 +        net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
-+
+ 
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
 +            Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
 +
@@ -1498,8 +1510,8 @@
 +        } else {
 +            // Adds timeOffset to the beginning of this day.
 +            return this.level().getDayTime() - (this.level().getDayTime() % 24000) + this.timeOffset;
-+        }
-+    }
+         }
+     }
 +
 +    public WeatherType weather = null;
 +
@@ -1514,14 +1526,14 @@
 +
 +        if (plugin) {
 +            this.weather = type;
-         }
++        }
 +
 +        if (type == WeatherType.DOWNFALL) {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0));
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
 +        }
-     }
++    }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;
