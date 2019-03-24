@@ -24,6 +24,14 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
         return cancel;
     }
 
+    /**
+     * @deprecated This does nothing, the server and the client doesn't work
+     * correctly when the server try to bypass this. A current workaround
+     * exists. If you want to cancel the switch from the ground state to the
+     * swimming state you need to disable the sprinting flag for the player after
+     * the cancel action.
+     */
+    @Deprecated // Paper
     @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;

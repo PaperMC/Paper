@@ -5,6 +5,6 @@ package org.bukkit.block;
  *
  * @see BrushableBlock
  */
-@Deprecated(since = "1.20")
+@Deprecated(since = "1.20", forRemoval = true)
 public interface SuspiciousSand extends BrushableBlock {
 }

@@ -248,14 +248,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see TrimMaterial
      */
-    @ApiStatus.Experimental
     Registry<TrimMaterial> TRIM_MATERIAL = Objects.requireNonNull(Bukkit.getRegistry(TrimMaterial.class), "No registry present for TrimMaterial. This is a bug.");
     /**
      * Trim patterns.
      *
      * @see TrimPattern
      */
-    @ApiStatus.Experimental
     Registry<TrimPattern> TRIM_PATTERN = Objects.requireNonNull(Bukkit.getRegistry(TrimPattern.class), "No registry present for TrimPattern. This is a bug.");
     /**
      * Damage types.
@@ -385,8 +383,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param input non-null input
      * @return registered object or null if does not exist
+     * @deprecated this method's behavior is broken and not useful. If you want to get an object
+     * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
     @Nullable
+    @Deprecated(forRemoval = true) // Paper
     default T match(@NotNull String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
 

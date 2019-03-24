@@ -157,7 +157,7 @@ public interface AbstractArrow extends Projectile {
      *
      * @return The firing ItemStack
      */
-    @NotNull
+    @Nullable // Paper
     @ApiStatus.Experimental
     public ItemStack getWeapon();
 

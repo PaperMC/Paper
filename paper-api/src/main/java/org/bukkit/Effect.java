@@ -357,9 +357,9 @@ public enum Effect {
      * Gets the ID for this effect.
      *
      * @return ID of this effect
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public int getId() {
         return this.id;
     }
@@ -386,9 +386,9 @@ public enum Effect {
      *
      * @param id ID of the Effect to return
      * @return Effect with the given ID
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
     public static Effect getById(int id) {
         return BY_ID.get(id);

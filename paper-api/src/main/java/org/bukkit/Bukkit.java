@@ -883,9 +883,8 @@ public final class Bukkit {
      *
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
-     * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
     public static MapView getMap(int id) {
         return server.getMap(id);
@@ -964,8 +963,14 @@ public final class Bukkit {
      * Returns the primary logger associated with this server instance.
      *
      * @return Logger associated with this server
+     * @see org.bukkit.plugin.Plugin#getSLF4JLogger()
+     * @apiNote This logger is for the Minecraft server software, not for specific plugins. You should
+     * use a logger for a specific plugin, either via {@link org.bukkit.plugin.Plugin#getSLF4JLogger()}
+     * or {@link org.bukkit.plugin.Plugin#getLogger()} or create a specific logger for a class via slf4j.
+     * That way, log messages contain contextual information about the source of the message.
      */
     @NotNull
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper - internalize Bukkit#getLogger
     public static Logger getLogger() {
         return server.getLogger();
     }
@@ -1362,10 +1367,8 @@ public final class Bukkit {
      * @param name the name the player to retrieve
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
-     * @deprecated Persistent storage of users should be by UUID as names are no longer
-     *             unique past a single session.
      */
-    @Deprecated(since = "1.7.5")
+    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public static OfflinePlayer getOfflinePlayer(@NotNull String name) {
         return server.getOfflinePlayer(name);
@@ -1978,7 +1981,7 @@ public final class Bukkit {
      *
      * @return the scoreboard manager or null if no worlds are loaded.
      */
-    @Nullable
+    @NotNull // Paper
     public static ScoreboardManager getScoreboardManager() {
         return server.getScoreboardManager();
     }

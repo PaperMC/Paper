@@ -44,8 +44,10 @@ public class ShapelessRecipe extends CraftingRecipe {
      *
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
+     * @deprecated use {@link #addIngredient(RecipeChoice)}
      */
     @NotNull
+    @Deprecated
     public ShapelessRecipe addIngredient(@NotNull MaterialData ingredient) {
         return addIngredient(1, ingredient);
     }
@@ -81,8 +83,10 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param count How many to add (can't be more than 9!)
      * @param ingredient The ingredient to add.
      * @return The changed recipe, so you can chain calls.
+     * @deprecated use {@link #addIngredient(int, Material)}
      */
     @NotNull
+    @Deprecated // Paper
     public ShapelessRecipe addIngredient(int count, @NotNull MaterialData ingredient) {
         return addIngredient(count, ingredient.getItemType(), ingredient.getData());
     }
@@ -199,8 +203,10 @@ public class ShapelessRecipe extends CraftingRecipe {
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
+     * @deprecated use {@link #removeIngredient(Material)}
      */
     @NotNull
+    @Deprecated // Paper
     public ShapelessRecipe removeIngredient(@NotNull MaterialData ingredient) {
         return removeIngredient(ingredient.getItemType(), ingredient.getData());
     }
@@ -227,8 +233,10 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove.
      * @return The changed recipe.
+     * @deprecated use {@link #removeIngredient(int, Material)}
      */
     @NotNull
+    @Deprecated // Paper
     public ShapelessRecipe removeIngredient(int count, @NotNull MaterialData ingredient) {
         return removeIngredient(count, ingredient.getItemType(), ingredient.getData());
     }
@@ -278,7 +286,9 @@ public class ShapelessRecipe extends CraftingRecipe {
      * Get the list of ingredients used for this recipe.
      *
      * @return The input list
+     * @deprecated Use {@link #getChoiceList()} instead for more complete data.
      */
+    @Deprecated // Paper
     @NotNull
     public List<ItemStack> getIngredientList() {
         ArrayList<ItemStack> result = new ArrayList<ItemStack>(ingredients.size());

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents the different growth states of crops
  */
+@Deprecated(forRemoval = true, since = "1.13")
 public enum CropState {
 
     /**

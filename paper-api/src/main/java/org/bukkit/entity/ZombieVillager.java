@@ -13,15 +13,15 @@ public interface ZombieVillager extends Zombie {
      * Sets the villager profession of this zombie.
      */
     @Override
-    void setVillagerProfession(@Nullable Villager.Profession profession);
+    void setVillagerProfession(@NotNull Villager.Profession profession); // Paper
 
     /**
      * Returns the villager profession of this zombie.
      *
-     * @return the profession or null
+     * @return the profession
      */
     @Override
-    @Nullable
+    @NotNull // Paper
     Villager.Profession getVillagerProfession();
 
     /**

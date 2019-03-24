@@ -68,7 +68,9 @@ public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, 
      * Get the input material.
      *
      * @return The input material.
+     * @deprecated Use {@link #getInputChoice()} instead for more complete data.
      */
+    @Deprecated // Paper
     @NotNull
     public ItemStack getInput() {
         return this.ingredient.getItemStack();

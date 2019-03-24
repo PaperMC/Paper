@@ -37,7 +37,7 @@ public interface EquippableComponent extends ConfigurationSerializable {
      *
      * @return the sound
      */
-    @Nullable
+    @NotNull // Paper
     Sound getEquipSound();
 
     /**

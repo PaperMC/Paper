@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * LivingEntity's.
  */
 public class EntityTargetLivingEntityEvent extends EntityTargetEvent {
-    public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @Nullable final TargetReason reason) {
+    public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @NotNull final TargetReason reason) { // Paper
         super(entity, target, reason);
     }
 

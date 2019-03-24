@@ -84,6 +84,10 @@ public interface LightningStrike extends Entity {
     public void setCausingPlayer(@Nullable Player player);
 
     // Spigot start
+    /**
+     * @deprecated Unsupported api
+     */
+    @Deprecated // Paper
     public class Spigot extends Entity.Spigot {
 
         /**
@@ -98,8 +102,12 @@ public interface LightningStrike extends Entity {
         }
     }
 
+    /**
+     * @deprecated Unsupported api
+     */
     @NotNull
     @Override
+    @Deprecated // Paper
     Spigot spigot();
     // Spigot end
 }

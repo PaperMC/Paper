@@ -46,7 +46,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y The y-coordinate of this new location
      * @param z The z-coordinate of this new location
      */
-    public Location(@Nullable final World world, final double x, final double y, final double z) {
+    public Location(@UndefinedNullability final World world, final double x, final double y, final double z) { // Paper
         this(world, x, y, z, 0, 0);
     }
 
@@ -60,7 +60,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yaw The absolute rotation on the x-plane, in degrees
      * @param pitch The absolute rotation on the y-plane, in degrees
      */
-    public Location(@Nullable final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
+    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) { // Paper
         if (world != null) {
             this.world = new WeakReference<>(world);
         }
@@ -102,7 +102,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @throws IllegalArgumentException when world is unloaded
      * @see #isWorldLoaded()
      */
-    @Nullable
+    @UndefinedNullability // Paper
     public World getWorld() {
         if (this.world == null) {
             return null;

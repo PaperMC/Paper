@@ -8,7 +8,7 @@ import org.bukkit.inventory.meta.SpawnEggMeta;
  * Represents a spawn egg that can be used to spawn mobs
  * @deprecated use {@link SpawnEggMeta}
  */
-@Deprecated(since = "1.11")
+@Deprecated(since = "1.13", forRemoval = true)
 public class SpawnEgg extends MaterialData {
 
     public SpawnEgg() {

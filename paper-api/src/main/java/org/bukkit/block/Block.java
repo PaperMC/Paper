@@ -526,7 +526,7 @@ public interface Block extends Metadatable, Translatable {
      * @return a list of dropped items for this type of block
      */
     @NotNull
-    Collection<ItemStack> getDrops(@NotNull ItemStack tool, @Nullable Entity entity);
+    Collection<ItemStack> getDrops(@Nullable ItemStack tool, @Nullable Entity entity); // Paper
 
     /**
      * Returns if the given item is a preferred choice to break this Block.

@@ -716,7 +716,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * This may have unexpected results if the entity is not in water.
      *
      * @param swimming True if the entity is swimming.
+     * @deprecated This does nothing and is immediately reverted by the server, in the next tick <!-- Paper - future note: should wait a mojang input client/server side -->
      */
+    @Deprecated // Paper
     public void setSwimming(boolean swimming);
 
     /**
@@ -981,7 +983,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated entity groupings are now managed by tags, not categories
      */
     @NotNull
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true) @org.jetbrains.annotations.Contract("-> fail") // Paper
     public EntityCategory getCategory();
 
     /**

@@ -34,7 +34,7 @@ public class HopperInventorySearchEvent extends BlockEvent {
         DESTINATION;
     }
 
-    public HopperInventorySearchEvent(@NotNull Inventory inventory, @NotNull ContainerType containerType, @NotNull Block hopper, @NotNull Block searchBlock) {
+    public HopperInventorySearchEvent(@Nullable Inventory inventory, @NotNull ContainerType containerType, @NotNull Block hopper, @NotNull Block searchBlock) { // Paper
         super(hopper);
         this.inventory = inventory;
         this.containerType = containerType;

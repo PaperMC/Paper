@@ -656,7 +656,9 @@ public abstract class ChunkGenerator {
          * @param y the y location in the chunk from minHeight (inclusive) - maxHeight (exclusive)
          * @param z the z location in the chunk from 0-15 inclusive
          * @param material the type to set the block to
+         * @deprecated use {@link #setBlock(int, int, int, BlockData)}
          */
+        @Deprecated // Paper
         public void setBlock(int x, int y, int z, @NotNull MaterialData material);
 
         /**
@@ -700,7 +702,9 @@ public abstract class ChunkGenerator {
          * @param yMax maximum y location (exclusive) in the chunk to set
          * @param zMax maximum z location (exclusive) in the chunk to set
          * @param material the type to set the blocks to
+         * @deprecated use {@link #setRegion(int, int, int, int, int, int, BlockData)}
          */
+        @Deprecated // Paper
         public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, @NotNull MaterialData material);
 
         /**
@@ -741,8 +745,10 @@ public abstract class ChunkGenerator {
          * @param y the y location in the chunk from minHeight (inclusive) - maxHeight (exclusive)
          * @param z the z location in the chunk from 0-15 inclusive
          * @return the type and data of the block or the MaterialData for air if x, y or z are outside the chunk's bounds
+         * @deprecated use {@link #getBlockData(int, int, int)}
          */
         @NotNull
+        @Deprecated // Paper
         public MaterialData getTypeAndData(int x, int y, int z);
 
         /**

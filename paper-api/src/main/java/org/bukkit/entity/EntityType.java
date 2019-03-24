@@ -417,9 +417,9 @@ public enum EntityType implements Keyed, Translatable {
      *
      * @param name the entity type's name
      * @return the matching entity type or null
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Contract("null -> null")
     @Nullable
     public static EntityType fromName(@Nullable String name) {

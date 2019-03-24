@@ -69,6 +69,12 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Location> LIKED_NOTEBLOCK_POSITION = new MemoryKey<>(NamespacedKey.minecraft("liked_noteblock"), Location.class);
     public static final MemoryKey<Integer> LIKED_NOTEBLOCK_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("liked_noteblock_cooldown_ticks"), Integer.class);
     public static final MemoryKey<Integer> ITEM_PICKUP_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("item_pickup_cooldown_ticks"), Integer.class);
+    /**
+     * @deprecated this constant uses the wrong generic type, the sniffer now stores different positions
+     * from possibly different worlds. Use the relevant methods in {@link org.bukkit.entity.Sniffer} directly
+     * for now.
+     */
+    @Deprecated // Paper
     public static final MemoryKey<Location> SNIFFER_EXPLORED_POSITIONS = new MemoryKey<>(NamespacedKey.minecraft("sniffer_explored_positions"), Location.class);
 
     /**

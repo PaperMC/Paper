@@ -3551,9 +3551,14 @@ public interface BlockType extends Keyed, Translatable {
      * state as well. This method will return true if there is at least one
      * state in which additional interact handling is performed for the
      * block type.
+     * 
+     * @deprecated This method is not comprehensive and does not accurately reflect what block types are
+     * interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
+     * checks being true.
      *
      * @return true if this block type can be interacted with.
      */
+    @Deprecated // Paper
     boolean isInteractable();
 
     /**

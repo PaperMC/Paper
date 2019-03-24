@@ -163,9 +163,9 @@ public final class MapCursor {
      * Get the type of this cursor.
      *
      * @return The type (color/style) of the map cursor.
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public byte getRawType() {
         return type.getValue();
     }
@@ -220,9 +220,9 @@ public final class MapCursor {
      * Set the type of this cursor.
      *
      * @param type The type (color/style) of the map cursor.
-     * @deprecated Magic value
+     * @deprecated use {@link #setType(Type)}
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public void setRawType(byte type) {
         Type enumType = Type.byValue(type);
         Preconditions.checkArgument(enumType != null, "Unknown type by id %s", type);
@@ -332,9 +332,9 @@ public final class MapCursor {
          * Gets the internal value of the cursor.
          *
          * @return the value
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.6.2")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         byte getValue();
 
         /**
@@ -342,9 +342,9 @@ public final class MapCursor {
          *
          * @param value the value
          * @return the matching type
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.6.2")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         @Nullable
         static Type byValue(byte value) {
             for (Type t : values()) {

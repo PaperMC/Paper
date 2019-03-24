@@ -43,7 +43,10 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
      * {@link Player#setBedSpawnLocation(Location)}.
      *
      * @return true if the spawn location will be changed
+     * @deprecated the respawn point is now set when the player enter the bed and
+     * this option doesn't work since MC 1.15.
      */
+    @Deprecated(forRemoval = true) // Paper - Unused
     public boolean shouldSetSpawnLocation() {
         return setBedSpawn;
     }
@@ -59,7 +62,10 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
      * {@link Player#setBedSpawnLocation(Location)}.
      *
      * @param setBedSpawn true to change the new spawn location
+     * @deprecated the respawn point is now set when the player enter the bed and
+     * this option doesn't work since MC 1.15.
      */
+    @Deprecated(forRemoval = true) // Paper - Unused
     public void setSpawnLocation(boolean setBedSpawn) {
         this.setBedSpawn = setBedSpawn;
     }

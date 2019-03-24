@@ -107,8 +107,10 @@ public class ShapedRecipe extends CraftingRecipe {
      * @return The changed recipe, so you can chain calls.
      * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
+     * @deprecated use {@link #setIngredient(char, RecipeChoice)}
      */
     @NotNull
+    @Deprecated // Paper
     public ShapedRecipe setIngredient(char key, @NotNull MaterialData ingredient) {
         return setIngredient(key, ingredient.getItemType(), ingredient.getData());
     }
@@ -191,7 +193,9 @@ public class ShapedRecipe extends CraftingRecipe {
      * Get a copy of the ingredients map.
      *
      * @return The mapping of character to ingredients.
+     * @deprecated Use {@link #getChoiceMap()} instead for more complete data.
      */
+    @Deprecated // Paper
     @NotNull
     public Map<Character, ItemStack> getIngredientMap() {
         HashMap<Character, ItemStack> result = new HashMap<Character, ItemStack>();

@@ -12,12 +12,19 @@ import org.jetbrains.annotations.NotNull;
 public class SpawnerSpawnEvent extends EntitySpawnEvent {
     private final CreatureSpawner spawner;
 
-    public SpawnerSpawnEvent(@NotNull final Entity spawnee, @NotNull final CreatureSpawner spawner) {
+    public SpawnerSpawnEvent(@NotNull final Entity spawnee, @org.jetbrains.annotations.Nullable final CreatureSpawner spawner) { // Paper
         super(spawnee);
         this.spawner = spawner;
     }
 
-    @NotNull
+    /**
+     * Gets the spawner tile state, or null
+     * when the entity is spawned from a minecart
+     * spawner.
+     *
+     * @return the spawner tile state
+     */
+    @org.jetbrains.annotations.Nullable // Paper
     public CreatureSpawner getSpawner() {
         return spawner;
     }

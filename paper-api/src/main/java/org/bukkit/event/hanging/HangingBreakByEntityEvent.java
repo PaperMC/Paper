@@ -11,22 +11,21 @@ import org.jetbrains.annotations.Nullable;
 public class HangingBreakByEntityEvent extends HangingBreakEvent {
     private final Entity remover;
 
-    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @Nullable final Entity remover) {
+    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover) { // Paper
         this(hanging, remover, HangingBreakEvent.RemoveCause.ENTITY);
     }
 
-    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @Nullable final Entity remover, @NotNull final HangingBreakEvent.RemoveCause cause) {
+    public HangingBreakByEntityEvent(@NotNull final Hanging hanging, @NotNull final Entity remover, @NotNull final HangingBreakEvent.RemoveCause cause) { // Paper
         super(hanging, cause);
         this.remover = remover;
     }
 
     /**
      * Gets the entity that removed the hanging entity.
-     * May be null, for example when broken by an explosion.
      *
      * @return the entity that removed the hanging entity
      */
-    @Nullable
+    @NotNull // Paper
     public Entity getRemover() {
         return remover;
     }

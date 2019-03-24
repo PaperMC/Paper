@@ -96,9 +96,9 @@ public enum DyeColor {
      *
      * @return A byte containing the wool data value of this color
      * @see #getDyeData()
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public byte getWoolData() {
         return woolData;
     }
@@ -142,9 +142,9 @@ public enum DyeColor {
      * @return The {@link DyeColor} representing the given value, or null if
      *     it doesn't exist
      * @see #getByDyeData(byte)
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
     public static DyeColor getByWoolData(final byte data) {
         int i = 0xff & data;
@@ -202,9 +202,9 @@ public enum DyeColor {
      *
      * @param name dye name
      * @return dye color
-     * @deprecated legacy use only
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.13")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @NotNull
     public static DyeColor legacyValueOf(@Nullable String name) {
         return "SILVER".equals(name) ? DyeColor.LIGHT_GRAY : DyeColor.valueOf(name);

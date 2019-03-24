@@ -67,8 +67,10 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      *
      * @param input The input material.
      * @return The changed recipe, so you can chain calls.
+     * @deprecated use {@link #setInputChoice(RecipeChoice)}
      */
     @NotNull
+    @Deprecated
     public FurnaceRecipe setInput(@NotNull MaterialData input) {
         return setInput(input.getItemType(), input.getData());
     }

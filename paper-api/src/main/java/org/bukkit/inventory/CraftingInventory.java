@@ -21,8 +21,7 @@ public interface CraftingInventory extends Inventory {
      *
      * @return The contents. Individual entries may be null.
      */
-    @NotNull
-    ItemStack[] getMatrix();
+    @Nullable ItemStack @NotNull [] getMatrix(); // Paper - make array elements nullable instead array
 
     /**
      * Set the item in the result slot of the crafting inventory.
@@ -38,7 +37,7 @@ public interface CraftingInventory extends Inventory {
      * @throws IllegalArgumentException if the length of contents is greater
      *     than the size of the crafting matrix.
      */
-    void setMatrix(@NotNull ItemStack[] contents);
+    void setMatrix(@Nullable ItemStack @NotNull [] contents); // Paper - make array elements nullable instead array
 
     /**
      * Get the current recipe formed on the crafting inventory, if any.

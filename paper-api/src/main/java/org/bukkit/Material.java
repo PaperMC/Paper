@@ -4838,20 +4838,20 @@ public enum Material implements Keyed, Translatable {
      * Do not use for any reason.
      *
      * @return ID of this material
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @ApiStatus.Internal // Paper
     public int getId() {
         Preconditions.checkArgument(legacy, "Cannot get ID of Modern Material");
         return id;
     }
 
     /**
-     * Do not use for any reason.
+     * Checks if this constant is a legacy material.
      *
      * @return legacy status
      */
-    @Deprecated(since = "1.13")
+    // @Deprecated(since = "1.13") // Paper - this is useful, don't deprecate
     public boolean isLegacy() {
         return legacy;
     }
@@ -4927,8 +4927,10 @@ public enum Material implements Keyed, Translatable {
      * Gets the MaterialData class associated with this Material
      *
      * @return MaterialData associated with this Material
+     * @deprecated use {@link #createBlockData()}
      */
     @NotNull
+    @Deprecated // Paper
     public Class<? extends MaterialData> getData() {
         Preconditions.checkArgument(legacy, "Cannot get data class of Modern Material");
         return ctor.getDeclaringClass();
@@ -5384,7 +5386,11 @@ public enum Material implements Keyed, Translatable {
      * material.
      *
      * @return true if this material can be interacted with.
+     * @deprecated This method is not comprehensive and does not accurately reflect what block types are
+     * interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
+     * checks being true.
      */
+    @Deprecated // Paper
     public boolean isInteractable() {
         BlockType type = asBlockType();
         return type != null && type.isInteractable();

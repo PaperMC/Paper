@@ -123,9 +123,9 @@ public interface InventoryView {
          * Gets the id of this view.
          *
          * @return the id of this view
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.6.2")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         public int getId() {
             return id;
         }
@@ -195,10 +195,10 @@ public interface InventoryView {
     /**
      * Get the item on the cursor of one of the viewing players.
      *
-     * @return The item on the player's cursor, or null if they aren't holding
-     *     one.
+     * @return The item on the player's cursor, or an empty stack
+     * if they aren't holding one.
      */
-    @Nullable
+    @NotNull // Paper - fix nullability
     public ItemStack getCursor();
 
     /**
@@ -296,8 +296,10 @@ public interface InventoryView {
      * made using {@link #setTitle(String)}.
      *
      * @return the original title
+     * @deprecated changing the title is not supported
      */
     @NotNull
+    @Deprecated(since = "1.21.1") // Paper
     public String getOriginalTitle();
 
     /**
@@ -309,6 +311,9 @@ public interface InventoryView {
      * exception.
      *
      * @param title The new title.
+     * @deprecated changing the title is not supported. This method has
+     * poorly defined and broken behaviors. It should not be used.
      */
+    @Deprecated(since = "1.21.1") // Paper
     public void setTitle(@NotNull String title);
 }

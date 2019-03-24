@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @deprecated Deprecated, see usage methods for replacement(s)
  */
-@Deprecated(since = "1.19")
+@Deprecated(since = "1.19", forRemoval = true)
 public enum TreeSpecies {
 
     /**

@@ -218,7 +218,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         MILK,
         /**
          * When a player gets bad omen after killing a patrol captain.
+         *
+         * @deprecated no longer used, player now gets an ominous bottle instead
          */
+        @Deprecated(since = "1.21") // Paper
         PATROL_CAPTAIN,
         /**
          * When a potion effect is modified through the plugin methods.

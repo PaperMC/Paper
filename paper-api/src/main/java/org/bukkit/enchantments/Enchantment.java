@@ -263,7 +263,7 @@ public abstract class Enchantment implements Keyed, Translatable {
      * @deprecated enchantment groupings are now managed by tags, not categories
      */
     @NotNull
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true) @org.jetbrains.annotations.Contract("-> fail") // Paper
     public abstract EnchantmentTarget getItemTarget();
 
     /**

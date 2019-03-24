@@ -25,15 +25,19 @@ public interface Enderman extends Monster {
      * Gets the id and data of the block that the Enderman is carrying.
      *
      * @return MaterialData containing the id and data of the block
+     * @deprecated use {@link #getCarriedBlock()}
      */
     @NotNull
+    @Deprecated(forRemoval = true, since = "1.13")
     public MaterialData getCarriedMaterial();
 
     /**
      * Sets the id and data of the block that the Enderman is carrying.
      *
      * @param material data to set the carried block to
+     * @deprecated use {@link #setCarriedBlock(BlockData)}
      */
+    @Deprecated(forRemoval = true, since = "1.13")
     public void setCarriedMaterial(@NotNull MaterialData material);
 
     /**

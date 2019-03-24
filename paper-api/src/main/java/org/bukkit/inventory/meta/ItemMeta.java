@@ -187,6 +187,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Checks for existence of a localized name.
      *
+     * @deprecated Use {@link ItemMeta#displayName()} and check if it is instanceof a {@link net.kyori.adventure.text.TranslatableComponent}.
      * @return true if this has a localized name
      * @deprecated meta no longer exists
      */
@@ -199,6 +200,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Plugins should check that hasLocalizedName() returns <code>true</code>
      * before calling this method.
      *
+     * @deprecated Use {@link ItemMeta#displayName()} and cast it to a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @return the localized name that is set
      * @deprecated meta no longer exists
      */
@@ -209,6 +211,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Sets the localized name.
      *
+     * @deprecated Use {@link ItemMeta#displayName(Component)} with a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @param name the name to set
      * @deprecated meta no longer exists
      */
@@ -802,7 +805,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return component
      */
-    @Nullable
+    @NotNull // Paper
     JukeboxPlayableComponent getJukeboxPlayable();
 
     /**

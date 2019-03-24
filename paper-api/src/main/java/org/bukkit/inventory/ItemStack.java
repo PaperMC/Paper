@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
+import org.bukkit.UndefinedNullability;
 import org.bukkit.Utility;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
@@ -82,7 +83,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param data the data value or null
      * @deprecated this method uses an ambiguous data byte object
      */
-    @Deprecated(since = "1.4.5")
+    @Deprecated(since = "1.4.5", forRemoval = true)
     public ItemStack(@NotNull Material type, final int amount, final short damage, @Nullable final Byte data) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
         if (type.isLegacy()) {
@@ -179,8 +180,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Gets the MaterialData for this stack of items
      *
      * @return MaterialData for this item
+     * @deprecated cast to {@link org.bukkit.inventory.meta.BlockDataMeta} and use {@link org.bukkit.inventory.meta.BlockDataMeta#getBlockData(Material)}
      */
     @Nullable
+    @Deprecated(forRemoval = true, since = "1.13")
     public MaterialData getData() {
         Material mat = Bukkit.getUnsafe().toLegacy(getType());
         if (data == null && mat != null && mat.getData() != null) {
@@ -194,7 +197,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Sets the MaterialData for this stack of items
      *
      * @param data New MaterialData for this item
+     * @deprecated cast to {@link org.bukkit.inventory.meta.BlockDataMeta} and use {@link org.bukkit.inventory.meta.BlockDataMeta#setBlockData(org.bukkit.block.data.BlockData)}
      */
+    @Deprecated(forRemoval = true, since = "1.13")
     public void setData(@Nullable MaterialData data) {
         if (data == null) {
             this.data = data;
@@ -574,7 +579,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @return a copy of the current ItemStack's ItemData
      */
-    @Nullable
+    @UndefinedNullability // Paper
     public ItemMeta getItemMeta() {
         return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
     }

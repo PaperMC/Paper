@@ -161,8 +161,7 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @return An array of ItemStacks from the inventory. Individual items may be null.
      */
-    @NotNull
-    public ItemStack[] getContents();
+    public @Nullable ItemStack @NotNull [] getContents(); // Paper - make array elements nullable instead array
 
     /**
      * Completely replaces the inventory's contents. Removes all existing
@@ -173,7 +172,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * @throws IllegalArgumentException If the array has more items than the
      *     inventory.
      */
-    public void setContents(@NotNull ItemStack[] items) throws IllegalArgumentException;
+    public void setContents(@Nullable ItemStack @NotNull [] items) throws IllegalArgumentException; // Paper - make array elements nullable instead array
 
     /**
      * Return the contents from the section of the inventory where items can
@@ -186,8 +185,7 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @return inventory storage contents. Individual items may be null.
      */
-    @NotNull
-    public ItemStack[] getStorageContents();
+    public @Nullable ItemStack @NotNull [] getStorageContents(); // Paper - make array elements nullable instead array
 
     /**
      * Put the given ItemStacks into the storage slots
@@ -196,7 +194,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * @throws IllegalArgumentException If the array has more items than the
      * inventory.
      */
-    public void setStorageContents(@NotNull ItemStack[] items) throws IllegalArgumentException;
+    public void setStorageContents(@Nullable ItemStack @NotNull [] items) throws IllegalArgumentException; // Paper - make array elements nullable instead array
 
     /**
      * Checks if the inventory contains any ItemStacks with the given

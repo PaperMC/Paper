@@ -197,9 +197,9 @@ public final class MapPalette {
      *
      * @param image The image to convert.
      * @return A byte[] containing the pixels of the image.
-     * @deprecated Magic value
+     * @deprecated use color-related methods
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     @NotNull
     public static byte[] imageToBytes(@NotNull Image image) {
         BufferedImage temp = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
@@ -225,9 +225,9 @@ public final class MapPalette {
      * @param b The blue component of the color.
      * @param g The green component of the color.
      * @return The index in the palette.
-     * @deprecated Magic value
+     * @deprecated use color-related methods
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public static byte matchColor(int r, int g, int b) {
         return matchColor(new Color(r, g, b));
     }
@@ -238,9 +238,9 @@ public final class MapPalette {
      *
      * @param color The Color to match.
      * @return The index in the palette.
-     * @deprecated Magic value
+     * @deprecated use color-related methods
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public static byte matchColor(@NotNull Color color) {
         if (color.getAlpha() < 128) return 0;
 
@@ -268,9 +268,9 @@ public final class MapPalette {
      *
      * @param index The index in the palette.
      * @return The Color of the palette entry.
-     * @deprecated Magic value
+     * @deprecated use color directly
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     @NotNull
     public static Color getColor(byte index) {
         // Minecraft has 143 colors, some of which have negative byte representations
@@ -311,9 +311,9 @@ public final class MapPalette {
          * @param color The Color to match.
          * @return The index in the palette.
          * @throws IllegalStateException if {@link #isCached()} returns false
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.19")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         byte matchColor(@NotNull Color color);
     }
 }

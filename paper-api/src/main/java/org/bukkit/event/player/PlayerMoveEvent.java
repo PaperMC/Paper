@@ -78,7 +78,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved to
      */
-    @Nullable
+    @NotNull // Paper
     public Location getTo() {
         return to;
     }

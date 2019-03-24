@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents the two types of coal
  */
+@Deprecated(forRemoval = true, since = "1.13")
 public enum CoalType {
     COAL(0x0),
     CHARCOAL(0x1);

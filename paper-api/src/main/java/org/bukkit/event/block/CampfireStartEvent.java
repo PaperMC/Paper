@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a Campfire starts to cook.
  */
+@org.jetbrains.annotations.ApiStatus.Experimental // Paper
 public class CampfireStartEvent extends InventoryBlockStartEvent {
 
     private static final HandlerList handlers = new HandlerList();

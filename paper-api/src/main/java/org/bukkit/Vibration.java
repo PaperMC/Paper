@@ -13,6 +13,14 @@ public class Vibration {
     private final Destination destination;
     private final int arrivalTime;
 
+    // Paper start
+    public Vibration(@NotNull Destination destination, @NotNull int arrivalTime) {
+        this.destination = destination;
+        this.arrivalTime = arrivalTime;
+        this.origin = new Location(null, 0, 0, 0); // Dummy origin because getter expects null
+    }
+
+    @Deprecated(forRemoval = true) // Paper end
     public Vibration(@NotNull Location origin, @NotNull Destination destination, int arrivalTime) {
         this.origin = origin;
         this.destination = destination;
@@ -22,9 +30,11 @@ public class Vibration {
     /**
      * Get the origin of the vibration.
      *
+     * @deprecated unused as of 1.19
      * @return origin
      */
     @NotNull
+    @Deprecated(forRemoval = true) // Paper
     public Location getOrigin() {
         return origin;
     }

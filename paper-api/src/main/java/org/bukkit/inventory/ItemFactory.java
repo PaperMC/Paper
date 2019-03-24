@@ -29,7 +29,7 @@ public interface ItemFactory {
      * @return a new ItemMeta that could be applied to an item stack of the
      *     specified material
      */
-    @Nullable
+    @org.bukkit.UndefinedNullability // Paper
     ItemMeta getItemMeta(@NotNull final Material material);
 
     /**

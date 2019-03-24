@@ -74,12 +74,14 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
 
     /**
      * Create a key in a specific namespace.
+     * <p>
+     * For most plugin related code, you should prefer using the
+     * {@link NamespacedKey#NamespacedKey(Plugin, String)} constructor.
      *
      * @param namespace namespace
      * @param key key
-     * @apiNote should never be used by plugins, for internal use only!!
+     * @see #NamespacedKey(Plugin, String)
      */
-    @ApiStatus.Internal
     public NamespacedKey(@NotNull String namespace, @NotNull String key) {
         Preconditions.checkArgument(namespace != null && isValidNamespace(namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
         Preconditions.checkArgument(key != null && isValidKey(key), "Invalid key. Must be [a-z0-9/._-]: %s", key);

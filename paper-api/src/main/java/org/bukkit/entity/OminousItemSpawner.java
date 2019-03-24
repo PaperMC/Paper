@@ -15,7 +15,7 @@ public interface OminousItemSpawner extends Entity {
      *
      * @return the item
      */
-    @Nullable
+    @org.jetbrains.annotations.NotNull // Paper
     ItemStack getItem();
 
     /**

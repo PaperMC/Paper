@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated(since = "1.13")
+@Deprecated(since = "1.13", forRemoval = true)
 public class MaterialData implements Cloneable {
     private final Material type;
     private byte data = 0;

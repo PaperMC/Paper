@@ -418,9 +418,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually refreshed
      *
-     * @deprecated This method is not guaranteed to work suitably across all client implementations.
      */
-    @Deprecated(since = "1.8")
+    // @Deprecated(since = "1.8") // Paper
     public boolean refreshChunk(int x, int z);
 
     /**
@@ -3850,6 +3849,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
 
     // Spigot start
+    @Deprecated(forRemoval = true) // Paper
     public class Spigot {
 
         /**
@@ -3883,7 +3883,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         }
     }
 
+    /**
+     * @deprecated Unsupported api
+     */
     @NotNull
+    @Deprecated // Paper
     Spigot spigot();
     // Spigot end
 
@@ -4101,9 +4105,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * Gets the dimension ID of this environment
          *
          * @return dimension ID
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.6.2")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         public int getId() {
             return id;
         }
@@ -4113,9 +4117,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          *
          * @param id The ID of the environment
          * @return The environment
-         * @deprecated Magic value
+         * @apiNote Internal Use Only
          */
-        @Deprecated(since = "1.6.2")
+        @org.jetbrains.annotations.ApiStatus.Internal // Paper
         @Nullable
         public static Environment getEnvironment(int id) {
             return lookup.get(id);

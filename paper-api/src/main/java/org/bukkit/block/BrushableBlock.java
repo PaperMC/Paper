@@ -15,7 +15,7 @@ public interface BrushableBlock extends Lootable, TileState {
      *
      * @return the item
      */
-    @Nullable
+    @org.jetbrains.annotations.NotNull // Paper
     public ItemStack getItem();
 
     /**

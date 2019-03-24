@@ -278,9 +278,9 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * Returns the unique ID of this type.
      *
      * @return Unique ID
-     * @deprecated Magic value
+     * @deprecated use {@link #key()}
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     public abstract int getId();
 
     /**
@@ -316,9 +316,9 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      *
      * @param id Unique ID to fetch
      * @return Resulting type, or null if not found.
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
     public static PotionEffectType getById(int id) {
         PotionEffectType type = ID_MAP.get(id);

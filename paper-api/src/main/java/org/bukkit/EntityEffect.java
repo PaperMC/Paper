@@ -345,9 +345,9 @@ public enum EntityEffect {
      * Gets the data value of this EntityEffect, may not be unique.
      *
      * @return The data value
-     * @deprecated Magic value
+     * @apiNote Internal Use Only
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public byte getData() {
         return data;
     }

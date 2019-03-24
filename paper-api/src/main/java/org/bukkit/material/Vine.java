@@ -11,7 +11,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated(since = "1.14.1")
+@Deprecated(since = "1.13", forRemoval = true)
 public class Vine extends MaterialData {
     private static final int VINE_NORTH = 0x4;
     private static final int VINE_EAST = 0x8;

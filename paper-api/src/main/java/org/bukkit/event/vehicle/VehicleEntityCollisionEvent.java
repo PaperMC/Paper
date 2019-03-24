@@ -36,18 +36,22 @@ public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implement
         this.cancelled = cancel;
     }
 
+    @Deprecated(forRemoval = true) // Paper - Unused
     public boolean isPickupCancelled() {
         return cancelledPickup;
     }
 
+    @Deprecated(forRemoval = true) // Paper - Unused
     public void setPickupCancelled(boolean cancel) {
         cancelledPickup = cancel;
     }
 
+    @Deprecated(forRemoval = true) // Paper - Unused
     public boolean isCollisionCancelled() {
         return cancelledCollision;
     }
 
+    @Deprecated(forRemoval = true) // Paper - Unused
     public void setCollisionCancelled(boolean cancel) {
         cancelledCollision = cancel;
     }

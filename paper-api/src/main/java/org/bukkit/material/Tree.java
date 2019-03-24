@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated(since = "1.14.1")
+@Deprecated(since = "1.13", forRemoval = true)
 public class Tree extends Wood {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_LOG;
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.UP;

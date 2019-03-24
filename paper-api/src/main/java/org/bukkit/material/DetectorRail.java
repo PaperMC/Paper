@@ -8,7 +8,7 @@ import org.bukkit.Material;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated(since = "1.14.1")
+@Deprecated(since = "1.13", forRemoval = true)
 public class DetectorRail extends ExtendedRails implements PressureSensor {
     public DetectorRail() {
         super(Material.LEGACY_DETECTOR_RAIL);

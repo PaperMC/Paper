@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a brewing stand starts to brew.
  */
+@org.jetbrains.annotations.ApiStatus.Experimental // Paper
 public class BrewingStartEvent extends InventoryBlockStartEvent {
 
     private static final HandlerList handlers = new HandlerList();
