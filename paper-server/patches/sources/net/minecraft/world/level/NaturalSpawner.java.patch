@@ -14,7 +14,21 @@
  
  public final class NaturalSpawner {
  
-@@ -107,15 +112,31 @@
+@@ -82,6 +87,13 @@
+             MobCategory enumcreaturetype = entity.getType().getCategory();
+ 
+             if (enumcreaturetype != MobCategory.MISC) {
++                // Paper start - Only count natural spawns
++                if (!entity.level().paperConfig().entities.spawning.countAllMobsForSpawning &&
++                    !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
++                        entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
++                    continue;
++                }
++                // Paper end - Only count natural spawns
+                 BlockPos blockposition = entity.blockPosition();
+ 
+                 chunkSource.query(ChunkPos.asLong(blockposition), (chunk) -> {
+@@ -107,15 +119,31 @@
          return (Biome) chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
      }
  
@@ -48,7 +62,7 @@
                  list.add(enumcreaturetype);
              }
          }
-@@ -164,9 +185,9 @@
+@@ -164,9 +192,9 @@
          StructureManager structuremanager = world.structureManager();
          ChunkGenerator chunkgenerator = world.getChunkSource().getGenerator();
          int i = pos.getY();
@@ -60,7 +74,7 @@
              BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
              int j = 0;
              int k = 0;
-@@ -195,7 +216,7 @@
+@@ -195,7 +223,7 @@
                              if (entityhuman != null) {
                                  double d2 = entityhuman.distanceToSqr(d0, (double) i, d1);
  
@@ -69,7 +83,7 @@
                                      if (biomesettingsmobs_c == null) {
                                          Optional<MobSpawnSettings.SpawnerData> optional = NaturalSpawner.getRandomSpawnMobAt(world, structuremanager, chunkgenerator, group, world.random, blockposition_mutableblockposition);
  
-@@ -207,7 +228,13 @@
+@@ -207,7 +235,13 @@
                                          j1 = biomesettingsmobs_c.minCount + world.random.nextInt(1 + biomesettingsmobs_c.maxCount - biomesettingsmobs_c.minCount);
                                      }
  
@@ -84,7 +98,7 @@
                                          Mob entityinsentient = NaturalSpawner.getMobForSpawn(world, biomesettingsmobs_c.type);
  
                                          if (entityinsentient == null) {
-@@ -217,10 +244,15 @@
+@@ -217,10 +251,15 @@
                                          entityinsentient.moveTo(d0, (double) i, d1, world.random.nextFloat() * 360.0F, 0.0F);
                                          if (NaturalSpawner.isValidPositionForMob(world, entityinsentient, d2)) {
                                              groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.NATURAL, groupdataentity);
@@ -104,7 +118,7 @@
                                              if (j >= entityinsentient.getMaxSpawnClusterSize()) {
                                                  return;
                                              }
-@@ -250,10 +282,31 @@
+@@ -250,10 +289,31 @@
          return squaredDistance <= 576.0D ? false : (world.getSharedSpawnPos().closerToCenterThan(new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D), 24.0D) ? false : Objects.equals(new ChunkPos(pos), chunk.getPos()) || world.isNaturalSpawningAllowed((BlockPos) pos));
      }
  
@@ -138,7 +152,7 @@
      }
  
      @Nullable
-@@ -268,6 +321,7 @@
+@@ -268,6 +328,7 @@
              NaturalSpawner.LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception exception) {
              NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
@@ -146,7 +160,7 @@
          }
  
          return null;
-@@ -356,6 +410,7 @@
+@@ -356,6 +417,7 @@
                                      entity = biomesettingsmobs_c.type.create(world.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception exception) {
                                      NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
@@ -154,7 +168,7 @@
                                      continue;
                                  }
  
-@@ -369,7 +424,7 @@
+@@ -369,7 +431,7 @@
  
                                      if (entityinsentient.checkSpawnRules(world, EntitySpawnReason.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(world)) {
                                          groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupdataentity);
@@ -163,7 +177,7 @@
                                          flag = true;
                                      }
                                  }
-@@ -482,10 +537,12 @@
+@@ -482,10 +544,12 @@
              return this.unmodifiableMobCategoryCounts;
          }
  
