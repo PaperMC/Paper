@@ -857,5 +857,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
         // TODO remove impl here
         return getLocation().getChunk();
     }
+
+    /**
+     * @return The {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity. <!-- Paper - added "initially" to clarify that the SpawnReason doesn't change after the Entity was initially spawned" -->
+     */
+    @NotNull
+    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
     // Paper end
 }
