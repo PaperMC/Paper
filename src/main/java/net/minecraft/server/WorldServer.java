@@ -925,6 +925,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     // CraftBukkit start
     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
+        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
         // Paper start
         if (entity.valid) {
             MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());

@@ -262,7 +262,7 @@ public abstract class PlayerList {
             // CraftBukkit start
             WorldServer finalWorldServer = worldserver1;
             Entity entity = EntityTypes.a(nbttagcompound1.getCompound("Entity"), finalWorldServer, (entity1) -> {
-                return !finalWorldServer.addEntitySerialized(entity1) ? null : entity1;
+                return !finalWorldServer.addEntitySerialized(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
                 // CraftBukkit end
             });
 

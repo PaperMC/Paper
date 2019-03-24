@@ -165,6 +165,7 @@ public abstract class MobSpawnerAbstract {
                                 // Spigot End
                             }
                         entity.spawnedViaMobSpawner = true; // Paper
+                            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper
                             flag = true; // Paper
                             // Spigot Start
                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
