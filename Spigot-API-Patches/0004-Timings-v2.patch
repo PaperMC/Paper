@@ -1,4 +1,4 @@
-From d207bdace7d156b6b41a793c67dc8c457f397ab7 Mon Sep 17 00:00:00 2001
+From 5c0ebe352e7ae47be75b657d8ff45ed1751a9dd0 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 000000000..f6d616732
+index 000000000..64531fcce
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,84 @@
 +package co.aikar.timings;
 +
 +import static co.aikar.timings.TimingsManager.*;
@@ -65,8 +65,7 @@ index 000000000..f6d616732
 +        long start = System.nanoTime();
 +        TimingsManager.tick();
 +        long diff = System.nanoTime() - start;
-+        CURRENT = TIMINGS_TICK;
-+        TIMINGS_TICK.addDiff(diff);
++        TIMINGS_TICK.addDiff(diff, null);
 +        // addDiff for TIMINGS_TICK incremented this, bring it back down to 1 per tick.
 +        record.setCurTickCount(record.getCurTickCount()-1);
 +
@@ -259,10 +258,10 @@ index 000000000..68f7866e1
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 000000000..a562796ce
+index 000000000..a21e5ead5
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,83 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -330,8 +329,9 @@ index 000000000..a562796ce
 +    void stopTimingIfSync();
 +
 +    /**
-+     * Stops timing and disregards current timing data.
++     * @deprecated Doesn't do anything - Removed
 +     */
++    @Deprecated
 +    void abort();
 +
 +    /**
@@ -475,10 +475,10 @@ index 000000000..a5d13a1e4
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 000000000..6bf8cb688
+index 000000000..4e6994098
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,201 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -506,16 +506,23 @@ index 000000000..6bf8cb688
 +
 +import co.aikar.util.LoadingIntMap;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++
++import java.util.ArrayDeque;
++import java.util.Deque;
 +import java.util.concurrent.atomic.AtomicInteger;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
 +import org.bukkit.Bukkit;
 +import org.jetbrains.annotations.NotNull;
 +
 +class TimingHandler implements Timing {
 +
 +    private static AtomicInteger idPool = new AtomicInteger(1);
++    static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
 +    final int id = idPool.getAndIncrement();
 +
-+    final String name;
++    final TimingIdentifier identifier;
 +    private final boolean verbose;
 +
 +    private final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData::new);
@@ -528,17 +535,10 @@ index 000000000..6bf8cb688
 +    private boolean added;
 +    private boolean timed;
 +    private boolean enabled;
-+    private TimingHandler parent;
 +
 +    TimingHandler(@NotNull TimingIdentifier id) {
-+        if (id.name.startsWith("##")) {
-+            verbose = true;
-+            this.name = id.name.substring(3);
-+        } else {
-+            this.name = id.name;
-+            verbose = false;
-+        }
-+
++        this.identifier = id;
++        this.verbose = id.name.startsWith("##");
 +        this.record = new TimingData(this.id);
 +        this.groupHandler = id.groupHandler;
 +
@@ -579,33 +579,34 @@ index 000000000..6bf8cb688
 +    public Timing startTiming() {
 +        if (enabled && Bukkit.isPrimaryThread() && ++timingDepth == 1) {
 +            start = System.nanoTime();
-+            parent = TimingsManager.CURRENT;
-+            TimingsManager.CURRENT = this;
++            TIMING_STACK.addLast(this);
 +        }
 +        return this;
 +    }
 +
 +    public void stopTiming() {
 +        if (enabled && timingDepth > 0 && Bukkit.isPrimaryThread() && --timingDepth == 0 && start != 0) {
-+            addDiff(System.nanoTime() - start);
++            TimingHandler last = TIMING_STACK.removeLast();
++            if (last != this) {
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to Paper! ( " + this.identifier + ":" + last +")", new Throwable());
++                TIMING_STACK.addLast(last); // Add it back
++            }
++            addDiff(System.nanoTime() - start, TIMING_STACK.peekLast());
++
 +            start = 0;
 +        }
 +    }
 +
 +    @Override
-+    public void abort() {
-+        if (enabled && timingDepth > 0) {
-+            start = 0;
-+        }
++    public final void abort() {
++
 +    }
 +
-+    void addDiff(long diff) {
-+        if (TimingsManager.CURRENT == this) {
-+            TimingsManager.CURRENT = parent;
-+            if (parent != null) {
-+                parent.children.get(id).add(diff);
-+            }
++    void addDiff(long diff, TimingHandler parent) {
++        if (parent != null) {
++            parent.children.get(id).add(diff);
 +        }
++
 +        record.add(diff);
 +        if (!added) {
 +            added = true;
@@ -613,7 +614,7 @@ index 000000000..6bf8cb688
 +            TimingsManager.HANDLERS.add(this);
 +        }
 +        if (groupHandler != null) {
-+            groupHandler.addDiff(diff);
++            groupHandler.addDiff(diff, parent);
 +            groupHandler.children.get(id).add(diff);
 +        }
 +    }
@@ -681,10 +682,10 @@ index 000000000..6bf8cb688
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 000000000..8726bb9a2
+index 000000000..043695239
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,357 @@
+@@ -0,0 +1,354 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -779,15 +780,12 @@ index 000000000..8726bb9a2
 +        }
 +        this.totalTicks = ticks;
 +        this.totalTime = FULL_SERVER_TICK.record.getTotalTime();
-+        synchronized (TimingsManager.HANDLERS) {
-+            this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
++        this.entries = new TimingHistoryEntry[TimingsManager.HANDLERS.size()];
 +
-+            int i = 0;
-+            for (TimingHandler handler : TimingsManager.HANDLERS) {
-+                entries[i++] = new TimingHistoryEntry(handler);
-+            }
++        int i = 0;
++        for (TimingHandler handler : TimingsManager.HANDLERS) {
++            entries[i++] = new TimingHistoryEntry(handler);
 +        }
-+
 +
 +        // Information about all loaded chunks/entities
 +        //noinspection unchecked
@@ -1108,10 +1106,10 @@ index 000000000..86d5ac6bd
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 000000000..4d140f344
+index 000000000..df142a89b
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,116 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1195,6 +1193,11 @@ index 000000000..4d140f344
 +    @Override
 +    public int hashCode() {
 +        return hashCode;
++    }
++
++    @Override
++    public String toString() {
++        return "TimingIdentifier{id=" + group + ":" + name +'}';
 +    }
 +
 +    static class TimingGroup {
@@ -1652,10 +1655,10 @@ index 000000000..c0d8f2016
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 000000000..4a69074a8
+index 000000000..65d312b02
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,350 @@
+@@ -0,0 +1,355 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1820,9 +1823,14 @@ index 000000000..4a69074a8
 +                        if (!id.isTimed() && !id.isSpecial()) {
 +                            continue;
 +                        }
++
++                        String name = id.identifier.name;
++                        if (name.startsWith("##")) {
++                            name = name.substring(3);
++                        }
 +                        handlers.put(id.id, toArray(
 +                            group.id,
-+                            id.name
++                            name
 +                        ));
 +                    }
 +                }
@@ -2008,10 +2016,10 @@ index 000000000..4a69074a8
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 000000000..0109065d3
+index 000000000..ef824d701
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,188 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -2064,11 +2072,10 @@ index 000000000..0109065d3
 +    public static List<String> hiddenConfigs = new ArrayList<String>();
 +    public static boolean privacy = false;
 +
-+    static final List<TimingHandler> HANDLERS = Collections.synchronizedList(new ArrayList<>(1024));
++    static final List<TimingHandler> HANDLERS = new ArrayList<>(1024);
 +    static final List<TimingHistory.MinuteReport> MINUTE_REPORTS = new ArrayList<>(64);
 +
 +    static EvictingQueue<TimingHistory> HISTORY = EvictingQueue.create(12);
-+    static TimingHandler CURRENT;
 +    static long timingStart = 0;
 +    static long historyStart = 0;
 +    static boolean needsFullReset = false;
@@ -2091,14 +2098,12 @@ index 000000000..0109065d3
 +        if (Timings.timingsEnabled) {
 +            boolean violated = FULL_SERVER_TICK.isViolated();
 +
-+            synchronized (HANDLERS) {
-+                for (TimingHandler handler : HANDLERS) {
-+                    if (handler.isSpecial()) {
-+                        // We manually call this
-+                        continue;
-+                    }
-+                    handler.processTick(violated);
++            for (TimingHandler handler : HANDLERS) {
++                if (handler.isSpecial()) {
++                    // We manually call this
++                    continue;
 +                }
++                handler.processTick(violated);
 +            }
 +
 +            TimingHistory.playerTicks += Bukkit.getOnlinePlayers().size();
@@ -2135,10 +2140,8 @@ index 000000000..0109065d3
 +        } else {
 +            // Soft resets only need to act on timings that have done something
 +            // Handlers can only be modified on main thread.
-+            synchronized (HANDLERS) {
-+                for (TimingHandler timings : HANDLERS) {
-+                    timings.reset(false);
-+                }
++            for (TimingHandler timings : HANDLERS) {
++                timings.reset(false);
 +            }
 +        }
 +
@@ -2391,7 +2394,7 @@ index 000000000..80155072d
 +}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 000000000..e43599b47
+index 000000000..190bf0598
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/JSONUtil.java
 @@ -0,0 +1,140 @@
@@ -2441,7 +2444,7 @@ index 000000000..e43599b47
 +     * @return Map
 +     */
 +    @NotNull
-+    public static Map createObject(@NotNull JSONPair... data) {
++    public static Map<String, Object> createObject(@NotNull JSONPair... data) {
 +        return appendObjectData(new LinkedHashMap(), data);
 +    }
 +
@@ -2453,7 +2456,7 @@ index 000000000..e43599b47
 +     * @return Map
 +     */
 +    @NotNull
-+    public static Map appendObjectData(@NotNull Map parent, @NotNull JSONPair... data) {
++    public static Map<String, Object> appendObjectData(@NotNull Map parent, @NotNull JSONPair... data) {
 +        for (JSONPair JSONPair : data) {
 +            parent.put(JSONPair.key, JSONPair.val);
 +        }
@@ -3179,7 +3182,7 @@ index 000000000..f9a00aecc
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index b354b617f..01ea1ca67 100644
+index dafc4ed93..c2c19ed42 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -35,7 +35,8 @@ public abstract class Command {
