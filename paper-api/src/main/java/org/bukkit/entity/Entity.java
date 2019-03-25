@@ -106,6 +106,19 @@ public interface Entity extends Metadatable, CommandSender, Nameable {
     public World getWorld();
 
     /**
+     * Sets the entity's rotation.
+     * <p>
+     * Note that if the entity is affected by AI, it may override this rotation.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     * @throws UnsupportedOperationException if used for players
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void setRotation(float yaw, float pitch);
+
+    /**
      * Teleports this entity to the given location. If this entity is riding a
      * vehicle, it will be dismounted prior to teleportation.
      *
