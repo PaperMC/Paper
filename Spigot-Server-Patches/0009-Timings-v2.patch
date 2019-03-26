@@ -1,4 +1,4 @@
-From f2743e61a346316b3627c75f8d6beb3c30a8cd75 Mon Sep 17 00:00:00 2001
+From b2b00bd52cd8c46f44492517c2455e3e5ea22e43 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -6,7 +6,7 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 000000000..66d02e048
+index 000000000..7a2a27cdb
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
 @@ -0,0 +1,132 @@
@@ -63,7 +63,7 @@ index 000000000..66d02e048
 +     */
 +    public static Timing getPluginTaskTimings(BukkitTask bukkitTask, long period) {
 +        if (!bukkitTask.isSync()) {
-+            return null;
++            return NullTimingHandler.NULL;
 +        }
 +        Plugin plugin;
 +
@@ -1653,12 +1653,15 @@ index 646128f16..d75cc42e1 100644
  
      private boolean isReady(final int currentTick) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index 3f55381c1..17ba052f8 100644
+index 3f55381c1..0d9a46680 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.scheduler;
+@@ -1,9 +1,11 @@
+ package org.bukkit.craftbukkit.scheduler;
  
  import java.util.function.Consumer;
++
++import co.aikar.timings.NullTimingHandler;
  import org.bukkit.Bukkit;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 -import org.spigotmc.CustomTimingsHandler; // Spigot
@@ -1667,7 +1670,7 @@ index 3f55381c1..17ba052f8 100644
  import org.bukkit.plugin.Plugin;
  import org.bukkit.scheduler.BukkitTask;
  
-@@ -26,12 +26,12 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -26,12 +28,12 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
       */
      private volatile long period;
      private long nextRun;
@@ -1683,7 +1686,7 @@ index 3f55381c1..17ba052f8 100644
      CraftTask() {
          this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
-@@ -40,7 +40,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -40,7 +42,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
  
@@ -1692,16 +1695,16 @@ index 3f55381c1..17ba052f8 100644
          this.plugin = plugin;
          if (task instanceof Runnable) {
              this.rTask = (Runnable) task;
-@@ -57,7 +57,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -57,7 +59,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          }
          this.id = id;
          this.period = period;
 -        this.timings = this.isSync() ? SpigotTimings.getPluginTaskTimings(this, period) : null; // Spigot
-+        timings = task != null ? MinecraftTimings.getPluginTaskTimings(this, period) : null; // Paper
++        timings = task != null ? MinecraftTimings.getPluginTaskTimings(this, period) : NullTimingHandler.NULL; // Paper
      }
  
      @Override
-@@ -77,11 +77,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -77,11 +79,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
  
      @Override
      public void run() {
@@ -1715,7 +1718,7 @@ index 3f55381c1..17ba052f8 100644
      }
  
      long getPeriod() {
-@@ -108,7 +110,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -108,7 +112,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          this.next = next;
      }
  
@@ -1724,7 +1727,7 @@ index 3f55381c1..17ba052f8 100644
          return (rTask != null) ? rTask.getClass() : ((cTask != null) ? cTask.getClass() : null);
      }
  
-@@ -132,9 +134,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -132,9 +136,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          return true;
      }
  
