@@ -1,4 +1,4 @@
-From aaba994557e85de97413e978b93bdd9b1c63d969 Mon Sep 17 00:00:00 2001
+From 5ecd59c7f8a08d76faaa561f750665fd4ed6f18d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -160,7 +160,7 @@ index 00000000..8c43e206
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 00000000..feddcdbd
+index 00000000..34e52ec4
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 @@ -0,0 +1,81 @@
@@ -240,9 +240,9 @@ index 00000000..feddcdbd
 +            executor.execute(listener, event);
 +            return;
 +        }
-+        timings.startTiming();
-+        executor.execute(listener, event);
-+        timings.stopTiming();
++        try (Timing ignored = timings.startTiming()) {
++            executor.execute(listener, event);
++        }
 +    }
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
@@ -456,10 +456,10 @@ index 00000000..f222d6b7
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 00000000..d9375833
+index 00000000..1b813cf7
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,202 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -564,10 +564,16 @@ index 00000000..d9375833
 +
 +    public void stopTiming() {
 +        if (enabled && timingDepth > 0 && Bukkit.isPrimaryThread() && --timingDepth == 0 && start != 0) {
-+            TimingHandler last = TIMING_STACK.removeLast();
-+            if (last != this) {
-+                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to Paper! ( " + this.identifier + ":" + last +")", new Throwable());
-+                TIMING_STACK.addLast(last); // Add it back
++            TimingHandler last;
++            while ((last = TIMING_STACK.removeLast()) != this) {
++                last.timingDepth = 0;
++                String reportTo;
++                if ("minecraft".equals(last.identifier.group)) {
++                    reportTo = "Paper! This is a potential bug in Paper";
++                } else {
++                    reportTo = "the plugin " + last.identifier.group + "(Look for errors above this in the logs)";
++                }
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to " + reportTo + " (" + last.identifier +" did not stopTiming)", new Throwable());
 +            }
 +            addDiff(System.nanoTime() - start, TIMING_STACK.peekLast());
 +
@@ -3225,10 +3231,18 @@ index 00000000..5527e7c8
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 1b5b37bf..bdc0de8c 100644
+index 1b5b37bf..22fe0663 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -10,6 +10,7 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.regex.Pattern;
+ 
++import co.aikar.timings.Timing;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Location;
+ import org.bukkit.Server;
+@@ -31,7 +32,7 @@ public class SimpleCommandMap implements CommandMap {
          register("bukkit", new VersionCommand("version"));
          register("bukkit", new ReloadCommand("reload"));
          register("bukkit", new PluginsCommand("plugins"));
@@ -3237,7 +3251,7 @@ index 1b5b37bf..bdc0de8c 100644
      }
  
      public void setFallbackCommands() {
-@@ -60,6 +60,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -60,6 +61,7 @@ public class SimpleCommandMap implements CommandMap {
       * {@inheritDoc}
       */
      public boolean register(String label, String fallbackPrefix, Command command) {
@@ -3245,7 +3259,7 @@ index 1b5b37bf..bdc0de8c 100644
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
          fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -135,6 +136,12 @@ public class SimpleCommandMap implements CommandMap {
+@@ -135,16 +137,22 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3256,8 +3270,24 @@ index 1b5b37bf..bdc0de8c 100644
 +        // Paper end
 +
          try {
-             target.timings.startTiming(); // Spigot
-             // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
+-            target.timings.startTiming(); // Spigot
+-            // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
+-            target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
+-            target.timings.stopTiming(); // Spigot
++            try (Timing ignored = target.timings.startTiming()) { // Paper - use try with resources
++                // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
++                target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
++            }
+         } catch (CommandException ex) {
+-            target.timings.stopTiming(); // Spigot
++            //target.timings.stopTiming(); // Spigot // Paper
+             throw ex;
+         } catch (Throwable ex) {
+-            target.timings.stopTiming(); // Spigot
++            //target.timings.stopTiming(); // Spigot // Paper
+             throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
+         }
+ 
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
 index bba914d7..00000000

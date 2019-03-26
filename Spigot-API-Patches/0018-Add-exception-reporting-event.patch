@@ -1,4 +1,4 @@
-From b8567d82eae818cbf98656b6107c703d49d19916 Mon Sep 17 00:00:00 2001
+From ac7d29681dd2be932b84ca9bb270906521656edc Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 20:24:35 -0600
 Subject: [PATCH] Add exception reporting event
@@ -458,28 +458,28 @@ index 00000000..5582999f
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index bdc0de8c..4aea03c6 100644
+index 22fe0663..154b7d91 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -10,6 +10,9 @@ import java.util.List;
- import java.util.Map;
+@@ -11,6 +11,9 @@ import java.util.Map;
  import java.util.regex.Pattern;
  
+ import co.aikar.timings.Timing;
 +import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 +import com.destroystokyo.paper.exception.ServerCommandException;
 +import com.destroystokyo.paper.exception.ServerTabCompleteException;
  import org.apache.commons.lang.Validate;
  import org.bukkit.Location;
  import org.bukkit.Server;
-@@ -148,11 +151,14 @@ public class SimpleCommandMap implements CommandMap {
-             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
-             target.timings.stopTiming(); // Spigot
+@@ -149,11 +152,14 @@ public class SimpleCommandMap implements CommandMap {
+                 target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
+             }
          } catch (CommandException ex) {
 +            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
-             target.timings.stopTiming(); // Spigot
+             //target.timings.stopTiming(); // Spigot // Paper
              throw ex;
          } catch (Throwable ex) {
-             target.timings.stopTiming(); // Spigot
+             //target.timings.stopTiming(); // Spigot // Paper
 -            throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
 +            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
 +            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
@@ -487,7 +487,7 @@ index bdc0de8c..4aea03c6 100644
          }
  
          // return true as command was handled
-@@ -225,7 +231,9 @@ public class SimpleCommandMap implements CommandMap {
+@@ -226,7 +232,9 @@ public class SimpleCommandMap implements CommandMap {
          } catch (CommandException ex) {
              throw ex;
          } catch (Throwable ex) {
@@ -592,5 +592,5 @@ index 80c152ba..b88f31ca 100644
          }
      }
 -- 
-2.17.0 (Apple Git-106)
+2.21.0
 
