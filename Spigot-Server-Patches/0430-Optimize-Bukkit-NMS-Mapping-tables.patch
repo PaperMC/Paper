@@ -1,0 +1,258 @@
+From 17c3e01aba9c7b56fdf6380dad0cfe3f9e23722f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 25 Mar 2019 21:07:58 -0400
+Subject: [PATCH] Optimize Bukkit <-> NMS Mapping tables
+
+Use O(1) patterns for mapping conversions to improve plugin performance.
+Use optimized collections for legacy conversion
+
+Log Legacy/API build up time
+
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 2e460a7f6..10ee1421d 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -23,6 +23,8 @@ public class Block implements IMaterial {
+     protected final SoundEffectType stepSound;
+     protected final Material material;
+     // Paper start
++    private static int ID_POOL = 0;
++    public int internalId = ID_POOL++;
+     public co.aikar.timings.Timing timing;
+     public co.aikar.timings.Timing getTiming() {
+         if (timing == null) {
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 21a05b2b2..0098843db 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -230,6 +230,13 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             }
+         }
+ 
++        // Paper start - preload legacy data here
++        long legacyStart = System.nanoTime();
++        LOGGER.info("Loading API Data");
++        int dataVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
++        LOGGER.info("Loaded API Data (time: " + ((System.nanoTime() - legacyStart) / 1000000) + "ms|dataVersion=" +dataVersion + ")");
++        // Paper end
++
+             // CraftBukkit start
+             // this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - moved up
+             server.loadPlugins();
+diff --git a/src/main/java/net/minecraft/server/IDynamicTexture.java b/src/main/java/net/minecraft/server/IDynamicTexture.java
+index 1ce4982e4..38a88bc39 100644
+--- a/src/main/java/net/minecraft/server/IDynamicTexture.java
++++ b/src/main/java/net/minecraft/server/IDynamicTexture.java
+@@ -1,3 +1,5 @@
+ package net.minecraft.server;
+ 
+-public interface IDynamicTexture {}
++public interface IDynamicTexture {
++     float a(ItemStack itemstack, World world, EntityLiving entityliving); // Paper - restore client method
++}
+diff --git a/src/main/java/net/minecraft/server/Item.java b/src/main/java/net/minecraft/server/Item.java
+index e719769b7..ac84bbecd 100644
+--- a/src/main/java/net/minecraft/server/Item.java
++++ b/src/main/java/net/minecraft/server/Item.java
+@@ -32,11 +32,15 @@ public class Item implements IMaterial {
+     private final int maxStackSize;
+     private final int durability;
+     private final Item craftingResult;
++    // Paper start
++    private static int ID_POOL = 0;
++    public int internalId = ID_POOL++;
++    // Paper end
+     @Nullable
+     private String name;
+ 
+     public static int getId(Item item) {
+-        return item == null ? 0 : IRegistry.ITEM.a((Object) item);
++        return item == null ? 0 : IRegistry.ITEM.a(item); // Paper - decompile fix
+     }
+ 
+     public static Item getById(int i) {
+@@ -1069,7 +1073,7 @@ public class Item implements IMaterial {
+             ((ItemBlock) item).a(Item.f, item);
+         }
+ 
+-        IRegistry.ITEM.a(minecraftkey, (Object) item);
++        IRegistry.ITEM.a(minecraftkey, item); // Paper - decompile fix
+     }
+ 
+     public boolean a(Tag<Item> tag) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftLegacy.java b/src/main/java/org/bukkit/craftbukkit/util/CraftLegacy.java
+index c6aae8071..2602695d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftLegacy.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftLegacy.java
+@@ -8,6 +8,9 @@ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Set;
++
++import it.unimi.dsi.fastutil.bytes.Byte2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ import net.minecraft.server.Block;
+ import net.minecraft.server.BlockStateList;
+ import net.minecraft.server.Blocks;
+@@ -42,14 +45,14 @@ import org.bukkit.material.MaterialData;
+ @Deprecated
+ public class CraftLegacy {
+ 
+-    private static final Map<Byte, Material> SPAWN_EGGS = new HashMap<>();
++    private static final Map<Byte, Material> SPAWN_EGGS = new Byte2ObjectOpenHashMap<>(); // Paper
+     private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable"));
+     private static final Map<MaterialData, Item> materialToItem = new HashMap<>(16384);
+-    private static final Map<Item, MaterialData> itemToMaterial = new HashMap<>(1024);
++    private static final Int2ObjectOpenHashMap<MaterialData> itemToMaterial = new Int2ObjectOpenHashMap<>(1024); // Paper
+     private static final Map<MaterialData, IBlockData> materialToData = new HashMap<>(4096);
+     private static final Map<IBlockData, MaterialData> dataToMaterial = new HashMap<>(4096);
+     private static final Map<MaterialData, Block> materialToBlock = new HashMap<>(4096);
+-    private static final Map<Block, MaterialData> blockToMaterial = new HashMap<>(1024);
++    private static final Int2ObjectOpenHashMap<MaterialData> blockToMaterial = new Int2ObjectOpenHashMap<>(1024); // Paper
+ 
+     public static Material toLegacy(Material material) {
+         if (material == null || material.isLegacy()) {
+@@ -71,15 +74,15 @@ public class CraftLegacy {
+             mappedData = dataToMaterial.get(blockData);
+             // Fallback to any block
+             if (mappedData == null) {
+-                mappedData = blockToMaterial.get(block);
++                mappedData = blockToMaterial.get(block.internalId); // Paper
+                 // Fallback to matching item
+                 if (mappedData == null) {
+-                    mappedData = itemToMaterial.get(block.getItem());
++                    mappedData = itemToMaterial.get(block.getItem().internalId); // Paper
+                 }
+             }
+         } else {
+             Item item = CraftMagicNumbers.getItem(material);
+-            mappedData = itemToMaterial.get(item);
++            mappedData = itemToMaterial.get(item.internalId); // Paper
+         }
+ 
+         return (mappedData == null) ? new MaterialData(Material.LEGACY_AIR) : mappedData;
+@@ -147,14 +150,10 @@ public class CraftLegacy {
+     public static MaterialData toLegacy(IBlockData blockData) {
+         MaterialData mappedData;
+ 
+-        // Try exact match first
+-        mappedData = dataToMaterial.get(blockData);
+-        // Fallback to any block
+-        if (mappedData == null) {
+-            mappedData = blockToMaterial.get(blockData.getBlock());
+-        }
+-
+-        return (mappedData == null) ? new MaterialData(Material.LEGACY_AIR) : mappedData;
++        return dataToMaterial.computeIfAbsent(blockData, k -> {
++            MaterialData materialData = blockToMaterial.get(blockData.getBlock().internalId);
++            return materialData != null ? materialData : new MaterialData(Material.LEGACY_AIR);
++        });
+     }
+ 
+     public static Material fromLegacy(Material material) {
+@@ -366,14 +365,14 @@ public class CraftLegacy {
+                     }
+ 
+                     materialToData.put(matData, blockData);
+-                    if (!dataToMaterial.containsKey(blockData)) {
+-                        dataToMaterial.put(blockData, matData);
+-                    }
++                    //if (!dataToMaterial.containsKey(blockData)) {
++                        dataToMaterial.putIfAbsent(blockData, matData);
++                    //}
+ 
+                     materialToBlock.put(matData, block);
+-                    if (!blockToMaterial.containsKey(block)) {
+-                        blockToMaterial.put(block, matData);
+-                    }
++                    //if (!blockToMaterial.containsKey(block.internalId)) { // Paper
++                        blockToMaterial.putIfAbsent(block.internalId, matData); // Paper
++                    //}
+                 }
+             }
+ 
+@@ -411,14 +410,14 @@ public class CraftLegacy {
+                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
+                 Item newMaterial = IRegistry.ITEM.get(new MinecraftKey(newId));
+ 
+-                if (newMaterial == Items.AIR) {
++                if (newMaterial == Items.AIR || newMaterial == null) { // Paper
+                     continue;
+                 }
+ 
+                 materialToItem.put(matData, newMaterial);
+-                if (!itemToMaterial.containsKey(newMaterial)) {
+-                    itemToMaterial.put(newMaterial, matData);
+-                }
++                //if (!itemToMaterial.containsKey(newMaterial.internalId)) { // Paper
++                    itemToMaterial.putIfAbsent(newMaterial.internalId, matData); // Paper
++                //} // Paper
+             }
+ 
+             for (Map.Entry<Byte, Material> entry : SPAWN_EGGS.entrySet()) {
+@@ -426,7 +425,7 @@ public class CraftLegacy {
+                 Item newMaterial = CraftMagicNumbers.getItem(entry.getValue());
+ 
+                 materialToItem.put(matData, newMaterial);
+-                itemToMaterial.put(newMaterial, matData);
++                itemToMaterial.put(newMaterial.internalId, matData); // Paper
+             }
+         }
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 72e83454f..058739f22 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -68,18 +68,27 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+ 
+     // ========================================================================
+-    private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
+-    private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
+-    private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
+-    private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
+-
++    // Paper start - optimize Bukkit <-> NMS Mappings
++    private static final java.util.List<Material> BLOCK_MATERIAL = new java.util.ArrayList<>();
++    private static final java.util.List<Material> ITEM_MATERIAL = new java.util.ArrayList<>();
++    private static final Map<Material, Item> MATERIAL_ITEM = new java.util.EnumMap<>(Material.class);
++    private static final Map<Material, Block> MATERIAL_BLOCK = new java.util.EnumMap<>(Material.class);
++
++    static <T> void ensureListSize(java.util.List<T> list, int len) {
++        for (int i = list.size(); i <= len; i++) {
++            list.add(null);
++        }
++    }
++    // Paper end
+     static {
+         for (Block block : (Iterable<Block>) IRegistry.BLOCK) { // Eclipse fail
+-            BLOCK_MATERIAL.put(block, Material.getMaterial(IRegistry.BLOCK.getKey(block).getKey().toUpperCase(Locale.ROOT)));
++            ensureListSize(BLOCK_MATERIAL, block.internalId); // Paper
++            BLOCK_MATERIAL.set(block.internalId, Material.getMaterial(IRegistry.BLOCK.getKey(block).getKey().toUpperCase(Locale.ROOT))); // Paper
+         }
+ 
+         for (Item item : (Iterable<Item>) IRegistry.ITEM) { // Eclipse fail
+-            ITEM_MATERIAL.put(item, Material.getMaterial(IRegistry.ITEM.getKey(item).getKey().toUpperCase(Locale.ROOT)));
++            ensureListSize(ITEM_MATERIAL, item.internalId); // Paper
++            ITEM_MATERIAL.set(item.internalId, Material.getMaterial(IRegistry.ITEM.getKey(item).getKey().toUpperCase(Locale.ROOT))); // Paper
+         }
+ 
+         for (Material material : Material.values()) {
+@@ -91,11 +100,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+ 
+     public static Material getMaterial(Block block) {
+-        return BLOCK_MATERIAL.get(block);
++        return BLOCK_MATERIAL.get(block.internalId); // Paper
+     }
+ 
+     public static Material getMaterial(Item item) {
+-        return ITEM_MATERIAL.getOrDefault(item, Material.AIR);
++        Material material = ITEM_MATERIAL.get(item.internalId);
++        return material != null ? material : Material.AIR; // Paper
+     }
+ 
+     public static Item getItem(Material material) {
+-- 
+2.21.0
+
