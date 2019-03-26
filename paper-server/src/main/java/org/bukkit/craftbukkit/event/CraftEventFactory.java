@@ -388,7 +388,7 @@ public class CraftEventFactory {
             event = CraftEventFactory.callProjectileLaunchEvent(entity);
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle){
             event = CraftEventFactory.callVehicleCreateEvent(entity);
-        } else {
+        } else if (!(entity instanceof EntityPlayer)) {
             event = CraftEventFactory.callEntitySpawnEvent(entity);
         }
 
