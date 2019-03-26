@@ -1,4 +1,4 @@
-From f7754e7d136f3f3a688bc358e4e53cba5f1d44fb Mon Sep 17 00:00:00 2001
+From 7a646006087774fb9c2558e741c74f3e3e0a6819 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -475,10 +475,10 @@ index 000000000..a5d13a1e4
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 000000000..2a727994a
+index 000000000..bb46cb633
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,208 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -520,7 +520,7 @@ index 000000000..2a727994a
 +class TimingHandler implements Timing {
 +
 +    private static AtomicInteger idPool = new AtomicInteger(1);
-+    static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
++    private static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
 +    final int id = idPool.getAndIncrement();
 +
 +    final TimingIdentifier identifier;
@@ -587,10 +587,16 @@ index 000000000..2a727994a
 +
 +    public void stopTiming() {
 +        if (enabled && timingDepth > 0 && Bukkit.isPrimaryThread() && --timingDepth == 0 && start != 0) {
-+            TimingHandler last = TIMING_STACK.removeLast();
-+            if (last != this) {
-+                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to Paper! ( " + this.identifier + ":" + last +")", new Throwable());
-+                TIMING_STACK.addLast(last); // Add it back
++            TimingHandler last;
++            while ((last = TIMING_STACK.removeLast()) != this) {
++                last.timingDepth = 0;
++                String reportTo;
++                if ("minecraft".equals(last.identifier.group)) {
++                    reportTo = "Paper! This is a potential bug in Paper";
++                } else {
++                    reportTo = "the plugin " + last.identifier.group + "(Look for errors above this in the logs)";
++                }
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to " + reportTo + " (" + last.identifier +" did not stopTiming)", new Throwable());
 +            }
 +            addDiff(System.nanoTime() - start, TIMING_STACK.peekLast());
 +
@@ -3356,7 +3362,7 @@ index 000000000..ca1893e9f
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 1586f6480..f7ec2e55f 100644
+index 1586f6480..6a786b8c5 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -31,7 +31,7 @@ public class SimpleCommandMap implements CommandMap {
@@ -3376,7 +3382,7 @@ index 1586f6480..f7ec2e55f 100644
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
          fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -135,6 +136,12 @@ public class SimpleCommandMap implements CommandMap {
+@@ -135,16 +136,22 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3387,8 +3393,22 @@ index 1586f6480..f7ec2e55f 100644
 +        // Paper end
 +
          try {
-             target.timings.startTiming(); // Spigot
+-            target.timings.startTiming(); // Spigot
++            try (co.aikar.timings.Timing ignored = target.timings.startTiming()) { // Paper - use try with resources
              // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
+             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
+-            target.timings.stopTiming(); // Spigot
++            } // target.timings.stopTiming(); // Spigot // Paper
+         } catch (CommandException ex) {
+-            target.timings.stopTiming(); // Spigot
++            //target.timings.stopTiming(); // Spigot // Paper
+             throw ex;
+         } catch (Throwable ex) {
+-            target.timings.stopTiming(); // Spigot
++            //target.timings.stopTiming(); // Spigot // Paper
+             throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
+         }
+ 
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
 index 1e6e7033d..000000000
