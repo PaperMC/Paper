@@ -29,6 +29,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -289,6 +290,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public World getWorld() {
         return entity.world.getWorld();
+    }
+
+    @Override
+    public void setRotation(float yaw, float pitch) {
+        NumberConversions.checkFinite(pitch, "pitch not finite");
+        NumberConversions.checkFinite(yaw, "yaw not finite");
+
+        yaw = Location.normalizeYaw(yaw);
+        pitch = Location.normalizePitch(pitch);
+
+        entity.yaw = yaw;
+        entity.pitch = pitch;
+        entity.lastYaw = yaw;
+        entity.lastPitch = pitch;
+        entity.setHeadRotation(yaw);
     }
 
     public boolean teleport(Location location) {

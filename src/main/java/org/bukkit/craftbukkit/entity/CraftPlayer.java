@@ -567,6 +567,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void setRotation(float yaw, float pitch) {
+        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
+    }
+
+    @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         Preconditions.checkArgument(location != null, "location");
         Preconditions.checkArgument(location.getWorld() != null, "location.world");
