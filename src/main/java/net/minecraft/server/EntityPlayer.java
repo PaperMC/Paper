@@ -560,6 +560,46 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         });
     }
 
+    // Paper start - process inventory
+    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
+        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
+        if (inv == null) {
+            // remainder of items left in toKeep - plugin added stuff on death that wasn't in the initial loot?
+            if (!itemsToKeep.isEmpty()) {
+                for (org.bukkit.inventory.ItemStack itemStack : itemsToKeep) {
+                    event.getEntity().getInventory().addItem(itemStack);
+                }
+            }
+
+            return;
+        }
+
+        for (int i = 0; i < inv.size(); ++i) {
+            ItemStack item = inv.get(i);
+            if (EnchantmentManager.shouldNotDrop(item) || itemsToKeep.isEmpty() || item.isEmpty()) {
+                inv.set(i, ItemStack.NULL_ITEM);
+                continue;
+            }
+
+            final org.bukkit.inventory.ItemStack bukkitStack = item.getBukkitStack();
+            boolean keep = false;
+            final Iterator<org.bukkit.inventory.ItemStack> iterator = itemsToKeep.iterator();
+            while (iterator.hasNext()) {
+                final org.bukkit.inventory.ItemStack itemStack = iterator.next();
+                if (bukkitStack.equals(itemStack)) {
+                    iterator.remove();
+                    keep = true;
+                    break;
+                }
+            }
+
+            if (!keep) {
+                inv.set(i, ItemStack.NULL_ITEM);
+            }
+        }
+    }
+    // Paper end
+
     @Override
     public void die(DamageSource damagesource) {
         boolean flag = this.world.getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES);
@@ -649,7 +689,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.dropExperience();
         // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
         if (!event.getKeepInventory()) {
-            this.inventory.clear();
+            // Paper start - replace logic
+            for (NonNullList<ItemStack> inv : this.inventory.getComponents()) {
+                processKeep(event, inv);
+            }
+            processKeep(event, null);
+            // Paper end
         }
 
         this.setSpectatorTarget(this); // Remove spectated target
