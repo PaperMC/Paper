@@ -1,4 +1,4 @@
-From b7cc5833617773b0957b9f7dd8d0c6785275f828 Mon Sep 17 00:00:00 2001
+From 8bc8f28b66ce5f9a6f903c800d2a3f18bc753ae4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -11,7 +11,7 @@ Subject: [PATCH] Optimize Hoppers
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 10efe6b3d9..6feea98b6b 100644
+index 10efe6b3d..6feea98b6 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -420,6 +420,15 @@ public class PaperWorldConfig {
@@ -31,10 +31,10 @@ index 10efe6b3d9..6feea98b6b 100644
      private void disableSprintInterruptionOnAttack() {
          disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 4c2705b731..e4a8ab8591 100644
+index 76e0f6417..f34ac392e 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -470,8 +470,9 @@ public final class ItemStack {
+@@ -479,8 +479,9 @@ public final class ItemStack {
          return this.getItem().a(this, entityhuman, entityliving, enumhand);
      }
  
@@ -47,7 +47,7 @@ index 4c2705b731..e4a8ab8591 100644
          itemstack.d(this.B());
          if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4565a56b3f..38c0201acb 100644
+index 4565a56b3..38c0201ac 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1048,6 +1048,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
@@ -59,7 +59,7 @@ index 4565a56b3f..38c0201acb 100644
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 29fe031d85..d67fd92d9d 100644
+index 29fe031d8..d67fd92d9 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -52,6 +52,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -79,7 +79,7 @@ index 29fe031d85..d67fd92d9d 100644
              this.world.b(this.position, this);
              if (!this.f.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 559eedfa66..7303a6fdda 100644
+index 559eedfa6..7303a6fdd 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -189,6 +189,154 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
