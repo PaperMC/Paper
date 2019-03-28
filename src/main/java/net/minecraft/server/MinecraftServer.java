@@ -1117,6 +1117,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         });
         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
         // Paper end
+        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.ticks+1).callEvent(); // Paper
 
         ++this.ticks;
         this.b(booleansupplier);
@@ -1158,6 +1159,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
             this.executeAll();
         }
+        // Paper end
+
+        // Paper start
+        long endTime = System.nanoTime();
+        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
+        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.ticks, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
         // Paper end
 
         this.methodProfiler.enter("tallying");
