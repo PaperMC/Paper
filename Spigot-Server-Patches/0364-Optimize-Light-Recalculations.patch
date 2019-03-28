@@ -1,36 +1,13 @@
-From 68e14a1e03878d225c0026275611d94a77947081 Mon Sep 17 00:00:00 2001
+From 74a659caa33a7279b1be97385ce24e7e55082a65 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 28 Sep 2018 20:46:29 -0400
 Subject: [PATCH] Optimize Light Recalculations
 
-The server triggers light recalculations even if the new block
-is the same as the old block. At this time, BlockData Properties
-do not impact light calculations.
-
-So the only way light should change, is if the block itself
-changes from 1 block to another.
-
-Also optimizes to not repeatedly look up the same chunk for
+Optimizes to not repeatedly look up the same chunk for
 light lookups.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index e04204055..0b54b7d78 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -523,6 +523,11 @@ public class PaperWorldConfig {
-         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
-     }
- 
-+    public boolean optimizeLight = true;
-+    private void optimizeLight() {
-+        this.optimizeLight = getBoolean("optimize-light", optimizeLight);
-+    }
-+
-     public boolean antiXray;
-     public boolean asynchronous;
-     public EngineMode engineMode;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index fb00e7a9c..fdf062b8b 100644
+index fb00e7a9c..fabfc315c 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -353,7 +353,7 @@ public class Chunk implements IChunkAccess {
@@ -42,15 +19,6 @@ index fb00e7a9c..fdf062b8b 100644
              }
  
              this.x = true;
-@@ -563,7 +563,7 @@ public class Chunk implements IChunkAccess {
-             } else {
-                 if (flag1) {
-                     this.initLighting();
--                } else {
-+                } else if (!world.paperConfig.optimizeLight || block != block1) { // Paper - Optimize light recalculations
-                     this.runOrQueueLightUpdate(() -> { // Paper - Queue light update
-                     int i1 = iblockdata.b(this.world, blockposition);
-                     int j1 = iblockdata1.b(this.world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 739fbecac..739448d8b 100644
 --- a/src/main/java/net/minecraft/server/World.java
