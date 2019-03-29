@@ -1,0 +1,56 @@
+From b5f9f16cf0a99f16d1749a3982d87ea482fd7099 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Mar 2019 01:25:11 -0400
+Subject: [PATCH] Optimize Persistent Data Loading
+
+removes Mineshaft loading legacy as we had pre 1.13.2 to avoid managing
+that very large data file from legacy systems.
+
+Previous to 1.13.2 these data files were never loaded to begin with, so they
+effectively do not contain valid/relevant data.
+
+These files take a long time to convert on large worlds and crashes the server.
+
+Additionally, cache the result of a file being missing so we don't keep spam checking it.
+
+diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
+index 8d51af286..e86d382c8 100644
+--- a/src/main/java/net/minecraft/server/WorldPersistentData.java
++++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
+@@ -39,6 +39,7 @@ public class WorldPersistentData {
+ 
+     @Nullable
+     public <T extends PersistentBase> T a(Function<String, T> function, String s) {
++        if ("Mineshaft_index".equals(s) || "Mineshaft".equals(s)) return null; // Paper - mineshaft is useless data
+         T persistentbase = (T) this.data.get(s); // Paper - decompile fix
+ 
+         if (persistentbase == null && this.e != null) {
+@@ -49,14 +50,15 @@ public class WorldPersistentData {
+                     persistentbase = function.apply(s); // Paper - decompile fix
+                     persistentbase.a(a(this.e, this.b, s, 1631).getCompound("data"));
+                     this.data.put(s, persistentbase);
+-                }
++                } else this.data.put(s, NO_RESULT); // Paper
+             } catch (Exception exception) {
+                 WorldPersistentData.a.error("Error loading saved data: {}", s, exception);
+             }
+         }
+ 
+-        return persistentbase;
++        return persistentbase == NO_RESULT ? null : persistentbase; // Paper
+     }
++    private static final PersistentBase NO_RESULT = new ForcedChunk("chunks"); // Paper
+ 
+     public void a(String s, PersistentBase persistentbase) {
+         this.data.put(s, persistentbase);
+@@ -126,6 +128,7 @@ public class WorldPersistentData {
+     }
+ 
+     public static NBTTagCompound a(IDataManager idatamanager, DimensionManager dimensionmanager, String s, int i) throws IOException {
++        if ("Mineshaft".equals(s) || "Mineshaft_index".equals(s)) return new NBTTagCompound(); // Paper
+         File file = idatamanager.getDataFile(dimensionmanager, s);
+         FileInputStream fileinputstream = new FileInputStream(file);
+         Throwable throwable = null;
+-- 
+2.21.0
+
