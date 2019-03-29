@@ -1,0 +1,59 @@
+From cf5f8e02586978e6848722244bb52034752afb3f Mon Sep 17 00:00:00 2001
+From: JOO200 <git@johanneszangl.de>
+Date: Fri, 29 Mar 2019 20:55:51 +0100
+Subject: [PATCH] Add EndGatewayCreationEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 09eabf12..adb9fc39 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -21,8 +21,8 @@ public class EnderDragonBattle {
+     private static final Logger a = LogManager.getLogger();
+     private static final Predicate<Entity> b = IEntitySelector.a.and(IEntitySelector.a(0.0D, 128.0D, 0.0D, 192.0D));
+     public final BossBattleServer bossBattle;
+-    private final WorldServer d;
+-    private final List<Integer> e;
++    private final WorldServer d; public final WorldServer getWorldServer() { return this.d; } // Paper - OBFHELPER
++    private final List<Integer> e; public final List<Integer> getSpawnableGateways() { return this.e; } // Paper - OBFHELPER
+     private final ShapeDetector f;
+     private int g;
+     private int h;
+@@ -372,7 +372,7 @@ public class EnderDragonBattle {
+             this.bossBattle.setProgress(0.0F);
+             this.bossBattle.setVisible(false);
+             this.a(true);
+-            this.m();
++            this.m(entityenderdragon);  // Paper - pass EnderDragon to EndGatewayCreationEvent
+             if (!this.l) {
+                 this.d.setTypeUpdate(this.d.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, WorldGenEndTrophy.a), Blocks.DRAGON_EGG.getBlockData());
+             }
+@@ -382,13 +382,21 @@ public class EnderDragonBattle {
+         }
+ 
+     }
+-
+-    private void m() {
+-        if (!this.e.isEmpty()) {
+-            int i = (Integer) this.e.remove(this.e.size() - 1);
++    // Paper start - implement EndGatewayCreationEvent
++    private void m(EntityEnderDragon entityEnderDragon) {
++        if (!this.getSpawnableGateways().isEmpty()) {
++            int i = (Integer) this.getSpawnableGateways().get(this.getSpawnableGateways().size() - 1);
+             int j = (int) (96.0D * Math.cos(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+             int k = (int) (96.0D * Math.sin(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+ 
++            org.bukkit.Location loc = net.minecraft.server.MCUtil.toLocation(this.getWorldServer(), j, 75, k);
++            if(!new com.destroystokyo.paper.event.block.EndGatewayCreationEvent
++                (loc.getBlock(), (org.bukkit.entity.EnderDragon)entityEnderDragon.getBukkitEntity()).callEvent()) {
++                return;
++            }
++            this.getSpawnableGateways().remove(i);
++            // Paper end - implement EndGatewayCreationEvent
++
+             this.a(new BlockPosition(j, 75, k));
+         }
+     }
+-- 
+2.18.0.windows.1
+
