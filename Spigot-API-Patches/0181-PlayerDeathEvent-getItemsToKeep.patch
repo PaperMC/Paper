@@ -1,4 +1,4 @@
-From 9552cb45732ed2d11f179cdf766996d3c0843001 Mon Sep 17 00:00:00 2001
+From f3ebc45b923294990f9db2b1514d34d7c9a4840f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 11 Mar 2013 20:04:34 -0400
 Subject: [PATCH] PlayerDeathEvent#getItemsToKeep
@@ -8,10 +8,10 @@ Exposes a mutable array on items a player should keep on death
 Example Usage: https://gist.github.com/aikar/5bb202de6057a051a950ce1f29feb0b4
 
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-index 5b0ef1eb1..b30818177 100644
+index 5b0ef1eb..af6070d1 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-@@ -18,6 +18,22 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+@@ -18,6 +18,40 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      private boolean keepLevel = false;
      private boolean keepInventory = false;
  
@@ -19,9 +19,27 @@ index 5b0ef1eb1..b30818177 100644
 +    private List<ItemStack> itemsToKeep = new java.util.ArrayList<>();
 +
 +    /**
-+     * A mutable collection to add items that the player should keep on death (Similar to KeepInventory game rule)
++     * A mutable collection to add items that the player should retain in their inventory on death (Similar to KeepInventory game rule)
 +     *
 +     * You <b>MUST</b> remove the item from the .getDrops() collection too or it will duplicate!
++     * <pre>
++     *    \@EventHandler(ignoreCancelled = true)
++     *     public void onPlayerDeath(PlayerDeathEvent event) {
++     *         for (Iterator<ItemStack> iterator = event.getDrops().iterator(); iterator.hasNext(); ) {
++     *             ItemStack drop = iterator.next();
++     *             List<String> lore = drop.getLore();
++     *             if (lore != null && !lore.isEmpty()) {
++     *                 if (lore.get(0).contains("(SOULBOUND)")) {
++     *                     iterator.remove();
++     *                     event.getItemsToKeep().add(drop);
++     *                 }
++     *             }
++     *         }
++     *     }
++     * </pre>
++     *
++     * Adding an item to this list that the player did not previously have will give them the item on death.
++     * An example case could be a "Note" that "You died at X/Y/Z coordinates"
 +     *
 +     * @return The list to hold items to keep
 +     */
