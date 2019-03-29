@@ -51,7 +51,7 @@ index 12268f87b..e1f7e06ab 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index c20511588..d148ce497 100644
+index c20511588..82f7af46f 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile {
@@ -96,7 +96,7 @@ index c20511588..d148ce497 100644
              if (k1 >= 256) {
                  // Spigot start
 -                if (!ENABLE_EXTENDED_SAVE) return;
-+                if (!USE_SPIGOT_OVERSIZED_METHOD) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
++                if (!USE_SPIGOT_OVERSIZED_METHOD && !RegionFileCache.isOverzealous()) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
                  org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
 +                if (!ENABLE_EXTENDED_SAVE) return;
                  // Spigot end
@@ -227,36 +227,31 @@ index c20511588..d148ce497 100644
 +            int length = out.size();
 +
 +            RegionFile.this.a(this.b, this.c, bytes, length); // Paper - change to bytes/length
-+            // Paper end
 +        }
 +    }
 +
++    private static final byte[] compressionBuffer = new byte[1024 * 64]; // 64k fits most standard chunks input size even, ideally 1 pass through zlib
++    private static final java.util.zip.Deflater deflater = new java.util.zip.Deflater();
++    // since file IO is single threaded, no benefit to using per-region file buffers/synchronization, we can change that later if it becomes viable.
 +    private static DirectByteArrayOutputStream compressData(byte[] buf, int length) throws IOException {
-+        final java.util.zip.Deflater deflater;
-+        if (length > 1024 * 512) {
-+            deflater = new java.util.zip.Deflater(9);
-+        } else if (length > 1024 * 128) {
-+            deflater = new java.util.zip.Deflater(8);
-+        } else {
-+            deflater = new java.util.zip.Deflater(6);
-+        }
++        synchronized (deflater) {
++            deflater.setInput(buf, 0, length);
++            deflater.finish();
 +
-+
-+        deflater.setInput(buf, 0, length);
-+        deflater.finish();
-+
-+        DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
-+        byte[] buffer = new byte[1024 * (length > 1024 * 124 ? 32 : 16)];
-+        while (!deflater.finished()) {
-+            out.write(buffer, 0, deflater.deflate(buffer));
++            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
++            while (!deflater.finished()) {
++                out.write(compressionBuffer, 0, deflater.deflate(compressionBuffer));
++            }
++            out.close();
++            deflater.reset();
++            return out;
          }
-+        out.close();
-+        deflater.end();
-+        return out;
      }
++    // Paper end
++
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 8c8b7cbab..a17e76d83 100644
+index 8c8b7cbab..17e76815a 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public class RegionFileCache {
@@ -276,7 +271,8 @@ index 8c8b7cbab..a17e76d83 100644
 +    }
 +
 +    private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
-+    private static final int OVERZEALOUS_THRESHOLD = 1024 * 2;
++    private static final int OVERZEALOUS_TOTAL_THRESHOLD = 1024 * 64;
++    private static final int OVERZEALOUS_THRESHOLD = 1024;
 +    private static int SIZE_THRESHOLD = DEFAULT_SIZE_THRESHOLD;
 +    private static void resetFilterThresholds() {
 +        SIZE_THRESHOLD = Math.max(1024 * 4, Integer.getInteger("Paper.FilterThreshhold", DEFAULT_SIZE_THRESHOLD));
@@ -284,6 +280,11 @@ index 8c8b7cbab..a17e76d83 100644
 +    static {
 +        resetFilterThresholds();
 +    }
++
++    static boolean isOverzealous() {
++        return SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD;
++    }
++
 +    private static void writeRegion(File file, int x, int z, NBTTagCompound nbttagcompound) throws IOException {
 +        RegionFile regionfile = getRegionFile(file, x, z);
 +
@@ -333,11 +334,15 @@ index 8c8b7cbab..a17e76d83 100644
 +    private static void filterChunkList(NBTTagCompound level, NBTTagCompound extra, String key) {
 +        NBTTagList list = level.getList(key, 10);
 +        NBTTagList newList = extra.getList(key, 10);
++        int totalSize = 0;
 +        for (Iterator<NBTBase> iterator = list.list.iterator(); iterator.hasNext(); ) {
 +            NBTBase object = iterator.next();
-+            if (getNBTSize(object) > SIZE_THRESHOLD) {
++            int nbtSize = getNBTSize(object);
++            if (nbtSize > SIZE_THRESHOLD || (SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD && totalSize > OVERZEALOUS_TOTAL_THRESHOLD)) {
 +                newList.add(object);
 +                iterator.remove();
++            } else  {
++                totalSize += nbtSize;
 +            }
 +        }
 +        level.set(key, list);
