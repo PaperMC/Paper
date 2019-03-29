@@ -1,4 +1,4 @@
-From 0c66385b2ab612b92641c37518e15ba12530b3ff Mon Sep 17 00:00:00 2001
+From bd0b04c85e7127c741ae442a8183085f7a1d1d72 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
@@ -31,7 +31,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
-index 2162d3ad..8b5aeb1b 100644
+index 2162d3ad3..8b5aeb1b0 100644
 --- a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 +++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 @@ -39,6 +39,7 @@ public class NBTCompressedStreamTools {
@@ -51,7 +51,7 @@ index 2162d3ad..8b5aeb1b 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index d58cda9a..56783ab5 100644
+index d58cda9aa..542a35d13 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -83,6 +83,7 @@ public class RegionFile {
@@ -87,7 +87,7 @@ index d58cda9a..56783ab5 100644
              if (k1 >= 256) {
                  // Spigot start
 -                if (!ENABLE_EXTENDED_SAVE) return;
-+                if (!USE_SPIGOT_OVERSIZED_METHOD) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
++                if (!USE_SPIGOT_OVERSIZED_METHOD && !RegionFileCache.isOverzealous()) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
                  org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
 +                if (!ENABLE_EXTENDED_SAVE) return;
                  // Spigot end
@@ -204,7 +204,7 @@ index d58cda9a..56783ab5 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -364,8 +470,40 @@ public class RegionFile {
+@@ -364,8 +470,36 @@ public class RegionFile {
              this.c = j;
          }
  
@@ -219,36 +219,32 @@ index d58cda9a..56783ab5 100644
 +            int length = out.size();
 +
 +            RegionFile.this.a(this.b, this.c, bytes, length); // Paper - change to bytes/length
-+            // Paper end
+         }
+     }
++
++    private static final byte[] compressionBuffer = new byte[1024 * 64]; // 64k fits most standard chunks input size even, ideally 1 pass through zlib
++    private static final java.util.zip.Deflater deflater = new java.util.zip.Deflater();
++    // since file IO is single threaded, no benefit to using per-region file buffers/synchronization, we can change that later if it becomes viable.
++    private static DirectByteArrayOutputStream compressData(byte[] buf, int length) throws IOException {
++        synchronized (deflater) {
++            deflater.setInput(buf, 0, length);
++            deflater.finish();
++
++
++            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
++            while (!deflater.finished()) {
++                out.write(compressionBuffer, 0, deflater.deflate(compressionBuffer));
++            }
++            out.close();
++            deflater.reset();
++            return out;
 +        }
 +    }
++    // Paper end
 +
-+    private static DirectByteArrayOutputStream compressData(byte[] buf, int length) throws IOException {
-+        final java.util.zip.Deflater deflater;
-+        if (length > 1024 * 512) {
-+            deflater = new java.util.zip.Deflater(9);
-+        } else if (length > 1024 * 128) {
-+            deflater = new java.util.zip.Deflater(8);
-+        } else {
-+            deflater = new java.util.zip.Deflater(6);
-+        }
-+
-+
-+        deflater.setInput(buf, 0, length);
-+        deflater.finish();
-+
-+        DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
-+        byte[] buffer = new byte[1024 * (length > 1024 * 124 ? 32 : 16)];
-+        while (!deflater.finished()) {
-+            out.write(buffer, 0, deflater.deflate(buffer));
-         }
-+        out.close();
-+        deflater.end();
-+        return out;
-     }
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 15a09ab3..c260a797 100644
+index 15a09ab36..daa7e997a 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -15,6 +15,7 @@ public class RegionFileCache {
@@ -259,7 +255,7 @@ index 15a09ab3..c260a797 100644
      public static synchronized RegionFile a(File file, int i, int j) {
          File file1 = new File(file, "region");
          File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
-@@ -73,6 +74,129 @@ public class RegionFileCache {
+@@ -73,6 +74,139 @@ public class RegionFileCache {
              itr.remove();
          }
      }
@@ -268,7 +264,8 @@ index 15a09ab3..c260a797 100644
 +    }
 +
 +    private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
-+    private static final int OVERZEALOUS_THRESHOLD = 1024 * 2;
++    private static final int OVERZEALOUS_TOTAL_THRESHOLD = 1024 * 64;
++    private static final int OVERZEALOUS_THRESHOLD = 1024;
 +    private static int SIZE_THRESHOLD = DEFAULT_SIZE_THRESHOLD;
 +    private static void resetFilterThresholds() {
 +        SIZE_THRESHOLD = Math.max(1024 * 4, Integer.getInteger("Paper.FilterThreshhold", DEFAULT_SIZE_THRESHOLD));
@@ -276,6 +273,11 @@ index 15a09ab3..c260a797 100644
 +    static {
 +        resetFilterThresholds();
 +    }
++
++    static boolean isOverzealous() {
++        return SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD;
++    }
++
 +    private static void writeRegion(File file, int x, int z, NBTTagCompound nbttagcompound) throws IOException {
 +        RegionFile regionfile = getRegionFile(file, x, z);
 +
@@ -329,11 +331,15 @@ index 15a09ab3..c260a797 100644
 +    private static void filterChunkList(NBTTagCompound level, NBTTagCompound extra, String key) {
 +        NBTTagList list = level.getList(key, 10);
 +        NBTTagList newList = extra.getList(key, 10);
++        int totalSize = 0;
 +        for (Iterator<NBTBase> iterator = list.list.iterator(); iterator.hasNext(); ) {
 +            NBTBase object = iterator.next();
-+            if (getNBTSize(object) > SIZE_THRESHOLD) {
++            int nbtSize = getNBTSize(object);
++            if (nbtSize > SIZE_THRESHOLD || (SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD && totalSize > OVERZEALOUS_TOTAL_THRESHOLD)) {
 +                newList.add(object);
 +                iterator.remove();
++            } else  {
++                totalSize += nbtSize;
 +            }
 +        }
 +        level.set(key, list);
@@ -389,7 +395,7 @@ index 15a09ab3..c260a797 100644
      // Paper End
  
      public static synchronized void a() {
-@@ -97,6 +221,12 @@ public class RegionFileCache {
+@@ -97,6 +231,12 @@ public class RegionFileCache {
      // CraftBukkit start - call sites hoisted for synchronization
      public static NBTTagCompound d(File file, int i, int j) throws IOException { // Paper - remove synchronization
          RegionFile regionfile = a(file, i, j);
@@ -402,7 +408,7 @@ index 15a09ab3..c260a797 100644
  
          DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
  
-@@ -108,11 +238,14 @@ public class RegionFileCache {
+@@ -108,11 +248,14 @@ public class RegionFileCache {
      }
  
      public static void e(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException { // Paper - remove synchronization
@@ -423,5 +429,5 @@ index 15a09ab3..c260a797 100644
      // CraftBukkit end
  
 -- 
-2.20.1
+2.21.0
 
