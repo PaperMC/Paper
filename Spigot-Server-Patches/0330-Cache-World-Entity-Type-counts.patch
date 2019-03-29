@@ -1,4 +1,4 @@
-From d0ac0272da649db7ffd5c1edec1356600a145029 Mon Sep 17 00:00:00 2001
+From 9d9e5c193ef5fcd158c15e8064ab4fb8c46ad35e Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Cache World Entity Type counts
@@ -7,7 +7,7 @@ Optimizes mob spawning by keeping a count of entities by type
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 new file mode 100644
-index 000000000..d3e6c9e74
+index 000000000..a10a5bc13
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 @@ -0,0 +1,121 @@
@@ -107,7 +107,7 @@ index 000000000..d3e6c9e74
 +
 +        if (entity instanceof EntityInsentient) {
 +            EntityInsentient entityinsentient = (EntityInsentient) entity;
-+            if (amt > 0 && entityinsentient.isPersistent()) {
++            if (amt > 0 && entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
 +                return;
 +            }
 +        }
@@ -145,14 +145,14 @@ index 2d2edbd33..47d3609c3 100644
      public float length;
      public float J;
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index ee5078370..693973e97 100644
+index ee5078370..06b18555b 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -259,6 +259,7 @@ public abstract class EntityInsentient extends EntityLiving {
  
      public void tick() {
          super.tick();
-+        if (hasBeenCounted == this.isPersistent()) this.world.entityList.updateEntityCount(this, hasBeenCounted ? -1 : 1); // Paper - adjust count if persistence state changes
++        if (isTypeNotPersistent() && hasBeenCounted == this.isPersistent()) this.world.entityList.updateEntityCount(this, hasBeenCounted ? -1 : 1); // Paper - adjust count if persistence state changes
          if (!this.world.isClientSide) {
              this.dl();
              if (this.ticksLived % 5 == 0) {
@@ -183,7 +183,7 @@ index e62616552..bfbe4d3e3 100644
                      if (l1 <= k) {
                          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index bd8d9ef48..80bf95028 100644
+index bd8d9ef48..c25c82bf1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -45,7 +45,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -224,15 +224,6 @@ index bd8d9ef48..80bf95028 100644
  
          if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
          // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
-@@ -2423,7 +2428,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-             // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
-             if (entity instanceof EntityInsentient) {
-                 EntityInsentient entityinsentient = (EntityInsentient) entity;
--                if (entityinsentient.isTypeNotPersistent() && entityinsentient.isPersistent()) {
-+                if (/*entityinsentient.isTypeNotPersistent() && */ entityinsentient.isPersistent()) { // Paper - while this code is inused, remove isTypeNotPersistent() as vanilla does not check that. Patch this method incase anything reflects into it.
-                     continue;
-                 }
-             }
 -- 
 2.21.0
 
