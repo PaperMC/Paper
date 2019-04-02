@@ -64,6 +64,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -279,7 +280,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         if (meta.hasEnchants()) {
-            this.enchantments = new HashMap<Enchantment, Integer>(meta.enchantments);
+            this.enchantments = new LinkedHashMap<Enchantment, Integer>(meta.enchantments);
         }
 
         if (meta.hasAttributeModifiers()) {
@@ -368,7 +369,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
         }
 
         NBTTagList ench = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
-        Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
+        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
 
         for (int i = 0; i < ench.size(); i++) {
             String id = ((NBTTagCompound) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
@@ -516,7 +517,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             return null;
         }
 
-        Map<Enchantment, Integer> enchantments = new HashMap<Enchantment, Integer>(ench.size());
+        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
         for (Map.Entry<?, ?> entry : ench.entrySet()) {
             // Doctor older enchants
             String enchantKey = entry.getKey().toString();
@@ -757,7 +758,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
         Validate.notNull(ench, "Enchantment cannot be null");
         if (enchantments == null) {
-            enchantments = new HashMap<Enchantment, Integer>(4);
+            enchantments = new LinkedHashMap<Enchantment, Integer>(4);
         }
 
         if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
@@ -1077,7 +1078,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
                 clone.lore = new ArrayList<String>(this.lore);
             }
             if (this.enchantments != null) {
-                clone.enchantments = new HashMap<Enchantment, Integer>(this.enchantments);
+                clone.enchantments = new LinkedHashMap<Enchantment, Integer>(this.enchantments);
             }
             if (this.hasAttributeModifiers()) {
                 clone.attributeModifiers = HashMultimap.create(this.attributeModifiers);
@@ -1182,7 +1183,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable {
             return;
         }
 
-        Map<String, List<Object>> mods = new HashMap<>();
+        Map<String, List<Object>> mods = new LinkedHashMap<>();
         for (Map.Entry<Attribute, AttributeModifier> entry : modifiers.entries()) {
             if (entry.getKey() == null) {
                 continue;
