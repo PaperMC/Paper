@@ -9,7 +9,7 @@ gitcmd="git -c commit.gpgsign=false"
 
 function update {
     cd "$workdir/$1"
-    $gitcmd fetch && $gitcmd reset --hard origin/master
+    $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/master
     cd ../
     $gitcmd add $1
 }
