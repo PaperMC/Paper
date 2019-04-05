@@ -1,26 +1,34 @@
-From 6df42e32054107780e490a3e22433d369da2de84 Mon Sep 17 00:00:00 2001
+From 49b42c949cd1c28bcf4fb9ff73e86810e4ed5d90 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 23:58:50 -0600
 Subject: [PATCH] Configurable top of nether void damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1ed58f4bba..39d565db1f 100644
+index 1ed58f4bb..6eddceb06 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -124,4 +124,10 @@ public class PaperWorldConfig {
+@@ -124,4 +124,18 @@ public class PaperWorldConfig {
          if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
          if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
      }
 +
-+    public boolean netherVoidTopDamage;
-+    private void netherVoidTopDamage() {
-+        netherVoidTopDamage = getBoolean( "nether-ceiling-void-damage", false );
-+        log("Top of the nether void damage: " + netherVoidTopDamage);
++    public int netherVoidTopDamageHeight;
++    private void netherVoidTopDamageHeight() {
++        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 128);
++        log("Top of the nether void damage height: " + netherVoidTopDamageHeight);
++
++        if (PaperConfig.version < 18) {
++            boolean legacy = getBoolean("nether-ceiling-void-damage", false);
++            if (legacy) {
++                netherVoidTopDamageHeight = 128;
++                set("nether-ceiling-void-damage-height", netherVoidTopDamageHeight);
++            }
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 22f757756c..d3551ca681 100644
+index bff44d535..040ecb2c1 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -461,9 +461,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -34,7 +42,7 @@ index 22f757756c..d3551ca681 100644
              this.aa();
          }
 +        */
-+        this.checkAndDoHeightDamage();
++        this.performVoidDamage();
 +        // Paper end
  
          if (!this.world.isClientSide) {
@@ -44,9 +52,9 @@ index 22f757756c..d3551ca681 100644
      }
  
 +    // Paper start
-+    protected void checkAndDoHeightDamage() {
-+        if (this.locY < -64.0D || (this.world.paperConfig.netherVoidTopDamage && this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= 128.0D)) {
-+            this.kill();
++    protected void performVoidDamage() {
++        if (this.locY < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= world.paperConfig.netherVoidTopDamageHeight)) {
++            this.doVoidDamage();
 +        }
 +    }
 +    // Paper end
@@ -58,12 +66,12 @@ index 22f757756c..d3551ca681 100644
          this.fireTicks = 0;
      }
  
-+    protected final void kill() { this.aa(); } // Paper - OBFHELPER
++    protected final void doVoidDamage() { this.aa(); } // Paper - OBFHELPER
      protected void aa() {
          this.die();
      }
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-index 9000d2d7b2..a8a64d054c 100644
+index 205251bcd..0f531e7d4 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
 @@ -193,9 +193,15 @@ public abstract class EntityMinecartAbstract extends Entity implements INamableT
@@ -77,11 +85,11 @@ index 9000d2d7b2..a8a64d054c 100644
              this.aa();
          }
 +        */
-+        this.checkAndDoHeightDamage();
++        this.performVoidDamage();
 +        // Paper end
  
          int i;
  
 -- 
-2.20.1
+2.21.0
 
