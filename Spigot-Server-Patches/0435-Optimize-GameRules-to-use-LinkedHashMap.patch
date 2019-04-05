@@ -1,0 +1,66 @@
+From 14952f6e3e04fbfb6be1ae4e959b0cefe58681b5 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 4 Apr 2019 17:55:05 -0700
+Subject: [PATCH] Optimize GameRules to use LinkedHashMap
+
+Previously TreeMap was used which has poor get(K) performance.
+
+diff --git a/src/main/java/net/minecraft/server/GameRules.java b/src/main/java/net/minecraft/server/GameRules.java
+index fd2a4f1b8c..0bd5e02a28 100644
+--- a/src/main/java/net/minecraft/server/GameRules.java
++++ b/src/main/java/net/minecraft/server/GameRules.java
+@@ -17,7 +17,17 @@ import javax.annotation.Nullable;
+ 
+ public class GameRules {
+ 
+-    private static final TreeMap<String, GameRules.GameRuleDefinition> a = SystemUtils.a(new TreeMap(), (treemap) -> { // Paper - decompile fix
++    // Paper start - Optimize GameRules
++    private static final int RULES_SIZE = 256;
++
++    private static <K, V> java.util.LinkedHashMap<K, V> linkedMapOf(final int capacity, final TreeMap<K, V> map) {
++        final java.util.LinkedHashMap<K, V> ret = new java.util.LinkedHashMap<>(capacity);
++        ret.putAll(map);
++        return ret;
++    }
++
++    private static final java.util.LinkedHashMap<String, GameRuleDefinition> a = GameRules.linkedMapOf(RULES_SIZE, SystemUtils.a(new TreeMap(), (treemap) -> { // Paper - decompile fix
++        // Paper end
+         treemap.put("doFireTick", new GameRules.GameRuleDefinition("true", GameRules.EnumGameRuleType.BOOLEAN_VALUE));
+         treemap.put("mobGriefing", new GameRules.GameRuleDefinition("true", GameRules.EnumGameRuleType.BOOLEAN_VALUE));
+         treemap.put("keepInventory", new GameRules.GameRuleDefinition("false", GameRules.EnumGameRuleType.BOOLEAN_VALUE));
+@@ -51,8 +61,8 @@ public class GameRules {
+         treemap.put("doLimitedCrafting", new GameRules.GameRuleDefinition("false", GameRules.EnumGameRuleType.BOOLEAN_VALUE));
+         treemap.put("maxCommandChainLength", new GameRules.GameRuleDefinition("65536", GameRules.EnumGameRuleType.NUMERICAL_VALUE));
+         treemap.put("announceAdvancements", new GameRules.GameRuleDefinition("true", GameRules.EnumGameRuleType.BOOLEAN_VALUE));
+-    });
+-    private final TreeMap<String, GameRules.GameRuleValue> b = new TreeMap();
++    })); // Paper - Optimize GameRules
++    private final java.util.LinkedHashMap<String, GameRuleValue> b = new java.util.LinkedHashMap<>(RULES_SIZE); // Paper - Optimize GameRules
+ 
+     public GameRules() {
+         Iterator iterator = GameRules.a.entrySet().iterator();
+@@ -116,7 +126,7 @@ public class GameRules {
+         return (GameRules.GameRuleValue) this.b.get(s);
+     }
+ 
+-    public static TreeMap<String, GameRules.GameRuleDefinition> getGameRules() {
++    public static java.util.LinkedHashMap<String, GameRuleDefinition> getGameRules() { // Paper - Optimize GameRules
+         return GameRules.a;
+     }
+ 
+diff --git a/src/test/java/org/bukkit/GameRuleTest.java b/src/test/java/org/bukkit/GameRuleTest.java
+index 1ed0f4cf2b..40edb8d668 100644
+--- a/src/test/java/org/bukkit/GameRuleTest.java
++++ b/src/test/java/org/bukkit/GameRuleTest.java
+@@ -21,7 +21,7 @@ public class GameRuleTest {
+ 
+     @Test
+     public void testMinecraftRules() {
+-        TreeMap<String, GameRules.GameRuleDefinition> minecraftRules = GameRules.getGameRules();
++        Map<String, GameRules.GameRuleDefinition> minecraftRules = GameRules.getGameRules(); // Paper - Optimize GameRules
+ 
+         for (Map.Entry<String, GameRules.GameRuleDefinition> entry : minecraftRules.entrySet()) {
+             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());
+-- 
+2.21.0
+
