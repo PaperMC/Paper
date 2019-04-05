@@ -1,0 +1,256 @@
+From aa255726ab6b97638ee7418a6927b85bcdcd9a3b Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 5 Apr 2019 02:22:54 -0700
+Subject: [PATCH] Store launch item for projectiles
+
+null indicates there was no launch item
+
+diff --git a/src/main/java/net/minecraft/server/DispenseBehaviorProjectile.java b/src/main/java/net/minecraft/server/DispenseBehaviorProjectile.java
+index f06d164a5..4dd3709a0 100644
+--- a/src/main/java/net/minecraft/server/DispenseBehaviorProjectile.java
++++ b/src/main/java/net/minecraft/server/DispenseBehaviorProjectile.java
+@@ -14,6 +14,7 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
+         IPosition iposition = BlockDispenser.a(isourceblock);
+         EnumDirection enumdirection = (EnumDirection) isourceblock.e().get(BlockDispenser.FACING);
+         IProjectile iprojectile = this.a(world, iposition, itemstack);
++        iprojectile.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+         // iprojectile.shoot((double) enumdirection.getAdjacentX(), (double) ((float) enumdirection.getAdjacentY() + 0.1F), (double) enumdirection.getAdjacentZ(), this.getPower(), this.a());
+         // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 6aa518f17..8e3bac4ff 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -33,6 +33,20 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+     private double damage;
+     public int knockbackStrength;
+ 
++    // Paper start - Store items that projectiles were launched with
++    private ItemStack launchItem;
++
++    @Override
++    public void setLaunchItem(final ItemStack item) {
++        this.launchItem = item;
++    }
++
++    @Override
++    public ItemStack getLaunchItem() {
++        return this.launchItem;
++    }
++    // Paper end
++
+     // Spigot Start
+     @Override
+     public void inactiveTick()
+diff --git a/src/main/java/net/minecraft/server/EntityLlamaSpit.java b/src/main/java/net/minecraft/server/EntityLlamaSpit.java
+index 58e1ed795..28848b896 100644
+--- a/src/main/java/net/minecraft/server/EntityLlamaSpit.java
++++ b/src/main/java/net/minecraft/server/EntityLlamaSpit.java
+@@ -10,6 +10,21 @@ public class EntityLlamaSpit extends Entity implements IProjectile {
+     public EntityLiving shooter; // CraftBukkit - type
+     private NBTTagCompound b;
+ 
++
++    // Paper start - Store items that projectiles were launched with
++    private ItemStack launchItem;
++
++    @Override
++    public void setLaunchItem(final ItemStack item) {
++        this.launchItem = item;
++    }
++
++    @Override
++    public ItemStack getLaunchItem() {
++        return this.launchItem;
++    }
++    // Paper end
++
+     public EntityLlamaSpit(World world) {
+         super(EntityTypes.LLAMA_SPIT, world);
+         this.setSize(0.25F, 0.25F);
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index 60ab1c751..7092bfafb 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -16,6 +16,20 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+     public Entity d;
+     private int aw;
+ 
++    // Paper start - Store items that projectiles were launched with
++    private ItemStack launchItem;
++
++    @Override
++    public void setLaunchItem(final ItemStack item) {
++        this.launchItem = item;
++    }
++
++    @Override
++    public ItemStack getLaunchItem() {
++        return this.launchItem;
++    }
++    // Paper end
++
+     protected EntityProjectile(EntityTypes<?> entitytypes, World world) {
+         super(entitytypes, world);
+         this.blockX = -1;
+diff --git a/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java b/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java
+index 6e2ee04c7..fb949cd17 100644
+--- a/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java
++++ b/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java
+@@ -145,6 +145,7 @@ public abstract class EntitySkeletonAbstract extends EntityMonster implements IR
+ 
+     public void a(EntityLiving entityliving, float f) {
+         EntityArrow entityarrow = this.a(f);
++        entityarrow.setLaunchItem(this.getItemInMainHand().cloneItemStack()); // Paper - Store items that projectiles were launched with
+         double d0 = entityliving.locX - this.locX;
+         double d1 = entityliving.getBoundingBox().minY + (double) (entityliving.length / 3.0F) - entityarrow.locY;
+         double d2 = entityliving.locZ - this.locZ;
+diff --git a/src/main/java/net/minecraft/server/EntityWitch.java b/src/main/java/net/minecraft/server/EntityWitch.java
+index 955e0e19b..fc738c888 100644
+--- a/src/main/java/net/minecraft/server/EntityWitch.java
++++ b/src/main/java/net/minecraft/server/EntityWitch.java
+@@ -185,6 +185,7 @@ public class EntityWitch extends EntityMonster implements IRangedEntity {
+             }
+             potion = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
+             EntityPotion entitypotion = new EntityPotion(this.world, this, potion);
++            entitypotion.setLaunchItem(potion.cloneItemStack()); // Paper - Store items that projectiles were launched with
+             // Paper end
+ 
+             entitypotion.pitch -= -20.0F;
+diff --git a/src/main/java/net/minecraft/server/IProjectile.java b/src/main/java/net/minecraft/server/IProjectile.java
+index c0434812b..4825f106b 100644
+--- a/src/main/java/net/minecraft/server/IProjectile.java
++++ b/src/main/java/net/minecraft/server/IProjectile.java
+@@ -3,4 +3,10 @@ package net.minecraft.server;
+ public interface IProjectile {
+ 
+     void shoot(double d0, double d1, double d2, float f, float f1);
++
++    // Paper start - Store items that projectiles were launched with
++    void setLaunchItem(final ItemStack item);
++
++    ItemStack getLaunchItem();
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemBow.java b/src/main/java/net/minecraft/server/ItemBow.java
+index f8dbc3c40..b6417709d 100644
+--- a/src/main/java/net/minecraft/server/ItemBow.java
++++ b/src/main/java/net/minecraft/server/ItemBow.java
+@@ -69,6 +69,7 @@ public class ItemBow extends Item {
+                     if (!world.isClientSide) {
+                         ItemArrow itemarrow = (ItemArrow) ((ItemArrow) (itemstack1.getItem() instanceof ItemArrow ? itemstack1.getItem() : Items.ARROW));
+                         EntityArrow entityarrow = itemarrow.a(world, itemstack1, (EntityLiving) entityhuman);
++                        entityarrow.setLaunchItem(itemstack1.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+                         entityarrow.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, f * 3.0F, 1.0F);
+                         if (f == 1.0F) {
+diff --git a/src/main/java/net/minecraft/server/ItemEgg.java b/src/main/java/net/minecraft/server/ItemEgg.java
+index 5f3926d83..916e6ed2e 100644
+--- a/src/main/java/net/minecraft/server/ItemEgg.java
++++ b/src/main/java/net/minecraft/server/ItemEgg.java
+@@ -18,6 +18,7 @@ public class ItemEgg extends Item {
+         */ // Paper end
+         if (!world.isClientSide) {
+             EntityEgg entityegg = new EntityEgg(world, entityhuman);
++            entityegg.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entityegg.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemEnderPearl.java b/src/main/java/net/minecraft/server/ItemEnderPearl.java
+index 719210da1..b7be3678b 100644
+--- a/src/main/java/net/minecraft/server/ItemEnderPearl.java
++++ b/src/main/java/net/minecraft/server/ItemEnderPearl.java
+@@ -12,6 +12,7 @@ public class ItemEnderPearl extends Item {
+         // CraftBukkit start - change order
+         if (!world.isClientSide) {
+             EntityEnderPearl entityenderpearl = new EntityEnderPearl(world, entityhuman);
++            entityenderpearl.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entityenderpearl.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemExpBottle.java b/src/main/java/net/minecraft/server/ItemExpBottle.java
+index 23b06169e..de50f7e62 100644
+--- a/src/main/java/net/minecraft/server/ItemExpBottle.java
++++ b/src/main/java/net/minecraft/server/ItemExpBottle.java
+@@ -17,6 +17,7 @@ public class ItemExpBottle extends Item {
+         */ // Paper end
+         if (!world.isClientSide) {
+             EntityThrownExpBottle entitythrownexpbottle = new EntityThrownExpBottle(world, entityhuman);
++            entitythrownexpbottle.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entitythrownexpbottle.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.7F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemLingeringPotion.java b/src/main/java/net/minecraft/server/ItemLingeringPotion.java
+index 8d882b81b..5111f4e51 100644
+--- a/src/main/java/net/minecraft/server/ItemLingeringPotion.java
++++ b/src/main/java/net/minecraft/server/ItemLingeringPotion.java
+@@ -21,6 +21,7 @@ public class ItemLingeringPotion extends ItemPotion {
+             }
+             // Paper end
+             EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack1);
++            entitypotion.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entitypotion.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.5F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemSnowball.java b/src/main/java/net/minecraft/server/ItemSnowball.java
+index 95194ccdc..d416c1503 100644
+--- a/src/main/java/net/minecraft/server/ItemSnowball.java
++++ b/src/main/java/net/minecraft/server/ItemSnowball.java
+@@ -19,6 +19,7 @@ public class ItemSnowball extends Item {
+         */
+         if (!world.isClientSide) {
+             EntitySnowball entitysnowball = new EntitySnowball(world, entityhuman);
++            entitysnowball.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entitysnowball.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 1.5F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemSplashPotion.java b/src/main/java/net/minecraft/server/ItemSplashPotion.java
+index 2bddefb80..fcd0326ed 100644
+--- a/src/main/java/net/minecraft/server/ItemSplashPotion.java
++++ b/src/main/java/net/minecraft/server/ItemSplashPotion.java
+@@ -21,6 +21,7 @@ public class ItemSplashPotion extends ItemPotion {
+             }
+             // Paper end
+             EntityPotion entitypotion = new EntityPotion(world, entityhuman, itemstack1);
++            entitypotion.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+             entitypotion.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.5F, 1.0F);
+             // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemTrident.java b/src/main/java/net/minecraft/server/ItemTrident.java
+index 40b8eb203..e672ee264 100644
+--- a/src/main/java/net/minecraft/server/ItemTrident.java
++++ b/src/main/java/net/minecraft/server/ItemTrident.java
+@@ -40,6 +40,7 @@ public class ItemTrident extends Item {
+                         // itemstack.damage(1, entityhuman); // CraftBukkit - moved down
+                         if (k == 0) {
+                             EntityThrownTrident entitythrowntrident = new EntityThrownTrident(world, entityhuman, itemstack);
++                            entitythrowntrident.setLaunchItem(itemstack.cloneItemStack()); // Paper - Store items that projectiles were launched with
+ 
+                             entitythrowntrident.a(entityhuman, entityhuman.pitch, entityhuman.yaw, 0.0F, 2.5F + (float) k * 0.5F, 1.0F);
+                             if (entityhuman.abilities.canInstantlyBuild) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+index 7c1625519..d93372c34 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+@@ -1,7 +1,9 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.Projectile;
++import org.bukkit.inventory.ItemStack;
+ 
+ public abstract class AbstractProjectile extends CraftEntity implements Projectile {
+ 
+@@ -20,4 +22,8 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
+         this.doesBounce = doesBounce;
+     }
+ 
++    @Override
++    public ItemStack getLaunchedItem() {
++        return CraftItemStack.asCraftMirror(((net.minecraft.server.IProjectile)this.getHandle()).getLaunchItem().cloneItemStack());
++    }
+ }
+-- 
+2.21.0
+
