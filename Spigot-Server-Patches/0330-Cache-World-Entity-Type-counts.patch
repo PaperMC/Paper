@@ -1,4 +1,4 @@
-From 9d9e5c193ef5fcd158c15e8064ab4fb8c46ad35e Mon Sep 17 00:00:00 2001
+From c71ea4c5adceb23f7c3ce0bc7dbc61194f96e0c0 Mon Sep 17 00:00:00 2001
 From: Colin Godsey <crgodsey@gmail.com>
 Date: Wed, 8 Aug 2018 10:10:06 -0600
 Subject: [PATCH] Cache World Entity Type counts
@@ -7,7 +7,7 @@ Optimizes mob spawning by keeping a count of entities by type
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 new file mode 100644
-index 000000000..a10a5bc13
+index 0000000000..a10a5bc138
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldEntityList.java
 @@ -0,0 +1,121 @@
@@ -133,7 +133,7 @@ index 000000000..a10a5bc13
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 2d2edbd33..47d3609c3 100644
+index 2d2edbd335..47d3609c34 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -122,6 +122,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -145,19 +145,19 @@ index 2d2edbd33..47d3609c3 100644
      public float length;
      public float J;
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index ee5078370..06b18555b 100644
+index ee5078370c..856ddf2a74 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -259,6 +259,7 @@ public abstract class EntityInsentient extends EntityLiving {
  
      public void tick() {
          super.tick();
-+        if (isTypeNotPersistent() && hasBeenCounted == this.isPersistent()) this.world.entityList.updateEntityCount(this, hasBeenCounted ? -1 : 1); // Paper - adjust count if persistence state changes
++        if (isTypeNotPersistent() && hasBeenCounted == this.isPersistent()) ((com.destroystokyo.paper.PaperWorldEntityList) this.world.entityList).updateEntityCount(this, hasBeenCounted ? -1 : 1); // Paper - adjust count if persistence state changes
          if (!this.world.isClientSide) {
              this.dl();
              if (this.ticksLived % 5 == 0) {
 diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
-index 79e52f7ba..42f6a6a93 100644
+index 79e52f7bac..42f6a6a93a 100644
 --- a/src/main/java/net/minecraft/server/EnumCreatureType.java
 +++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
 @@ -16,6 +16,8 @@ public enum EnumCreatureType {
@@ -170,7 +170,7 @@ index 79e52f7ba..42f6a6a93 100644
          return this.e;
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index e62616552..bfbe4d3e3 100644
+index e626165520..d125fae03b 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -114,7 +114,7 @@ public final class SpawnerCreature {
@@ -178,12 +178,12 @@ index e62616552..bfbe4d3e3 100644
                  if ((!enumcreaturetype.c() || flag1) && (enumcreaturetype.c() || flag) && (!enumcreaturetype.d() || flag2)) {
                      k = limit * i / SpawnerCreature.b; // CraftBukkit - use per-world limits
 -                    int l1 = worldserver.a(enumcreaturetype.a(), k);
-+                    int l1 = worldserver.entityList.getCreatureCount(enumcreaturetype); // Paper - entity count cache
++                    int l1 = ((com.destroystokyo.paper.PaperWorldEntityList) worldserver.entityList).getCreatureCount(enumcreaturetype); // Paper - entity count cache
  
                      if (l1 <= k) {
                          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index bd8d9ef48..c25c82bf1 100644
+index bd8d9ef489..17f9cd74fe 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -45,7 +45,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -191,7 +191,7 @@ index bd8d9ef48..c25c82bf1 100644
      private int b = 63;
      // Spigot start - guard entity list from removals
 -    public final List<Entity> entityList = new java.util.ArrayList<Entity>()
-+    public final com.destroystokyo.paper.PaperWorldEntityList entityList = new com.destroystokyo.paper.PaperWorldEntityList(this);
++    public final List<Entity> entityList = new com.destroystokyo.paper.PaperWorldEntityList(this);
 +        /* // Paper start
      {
          @Override
@@ -220,7 +220,7 @@ index bd8d9ef48..c25c82bf1 100644
              this.getChunkAt(i, j).b(entity);
          }
          entity.shouldBeRemoved = true; // Paper
-+        entityList.updateEntityCount(entity, -1); // Paper
++        ((com.destroystokyo.paper.PaperWorldEntityList) entityList).updateEntityCount(entity, -1); // Paper
  
          if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
          // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
