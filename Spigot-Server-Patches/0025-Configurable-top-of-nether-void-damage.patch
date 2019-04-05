@@ -1,21 +1,22 @@
-From 49b42c949cd1c28bcf4fb9ff73e86810e4ed5d90 Mon Sep 17 00:00:00 2001
+From f7b834bdab10e17a64f8bc34a000dd44ce295b40 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 23:58:50 -0600
 Subject: [PATCH] Configurable top of nether void damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1ed58f4bb..6eddceb06 100644
+index 1ed58f4bb..a797a5767 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -124,4 +124,18 @@ public class PaperWorldConfig {
+@@ -124,4 +124,19 @@ public class PaperWorldConfig {
          if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
          if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
      }
 +
 +    public int netherVoidTopDamageHeight;
++    public boolean doNetherTopVoidDamage() { return netherVoidTopDamageHeight > 0; }
 +    private void netherVoidTopDamageHeight() {
-+        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 128);
++        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 0);
 +        log("Top of the nether void damage height: " + netherVoidTopDamageHeight);
 +
 +        if (PaperConfig.version < 18) {
@@ -28,7 +29,7 @@ index 1ed58f4bb..6eddceb06 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index bff44d535..040ecb2c1 100644
+index bff44d535..6804b7274 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -461,9 +461,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -47,13 +48,16 @@ index bff44d535..040ecb2c1 100644
  
          if (!this.world.isClientSide) {
              this.setFlag(0, this.fireTicks > 0);
-@@ -473,6 +479,14 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -473,6 +479,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          this.world.methodProfiler.exit();
      }
  
 +    // Paper start
 +    protected void performVoidDamage() {
-+        if (this.locY < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= world.paperConfig.netherVoidTopDamageHeight)) {
++        if (this.locY < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++            && world.paperConfig.doNetherTopVoidDamage()
++            && this.locY >= world.paperConfig.netherVoidTopDamageHeight)) {
++
 +            this.doVoidDamage();
 +        }
 +    }
@@ -62,7 +66,7 @@ index bff44d535..040ecb2c1 100644
      protected void E() {
          if (this.portalCooldown > 0) {
              --this.portalCooldown;
-@@ -540,6 +554,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -540,6 +557,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          this.fireTicks = 0;
      }
  
