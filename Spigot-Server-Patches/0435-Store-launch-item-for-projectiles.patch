@@ -1,4 +1,4 @@
-From aa255726ab6b97638ee7418a6927b85bcdcd9a3b Mon Sep 17 00:00:00 2001
+From f63182f1bc8f7550558900967f7f17a8160078c3 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 5 Apr 2019 02:22:54 -0700
 Subject: [PATCH] Store launch item for projectiles
@@ -18,7 +18,7 @@ index f06d164a5..4dd3709a0 100644
          // iprojectile.shoot((double) enumdirection.getAdjacentX(), (double) ((float) enumdirection.getAdjacentY() + 0.1F), (double) enumdirection.getAdjacentZ(), this.getPower(), this.a());
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
-index 6aa518f17..8e3bac4ff 100644
+index 6aa518f17..f450bf836 100644
 --- a/src/main/java/net/minecraft/server/EntityArrow.java
 +++ b/src/main/java/net/minecraft/server/EntityArrow.java
 @@ -33,6 +33,20 @@ public abstract class EntityArrow extends Entity implements IProjectile {
@@ -42,8 +42,34 @@ index 6aa518f17..8e3bac4ff 100644
      // Spigot Start
      @Override
      public void inactiveTick()
+@@ -446,7 +460,11 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+         if (this.shooter != null) {
+             nbttagcompound.a("OwnerUUID", this.shooter);
+         }
+-
++        // Paper start - Store launch item for projectiles
++        if (this.launchItem != null) {
++            nbttagcompound.set("Paper.LaunchItem", this.launchItem.save(new NBTTagCompound()));
++        }
++        // Paper end
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+@@ -474,7 +492,11 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+         if (nbttagcompound.b("OwnerUUID")) {
+             this.shooter = nbttagcompound.a("OwnerUUID");
+         }
+-
++        // Paper start - Store launch item for projectiles
++        if (nbttagcompound.hasKeyOfType("Paper.LaunchItem", 10)) {
++            this.launchItem = ItemStack.loadFromCompound(nbttagcompound.getCompound("Paper.LaunchItem"));
++        }
++        // Paper end
+     }
+ 
+     public void setShooter(@Nullable Entity entity) {
 diff --git a/src/main/java/net/minecraft/server/EntityLlamaSpit.java b/src/main/java/net/minecraft/server/EntityLlamaSpit.java
-index 58e1ed795..28848b896 100644
+index 58e1ed795..9b1e988e5 100644
 --- a/src/main/java/net/minecraft/server/EntityLlamaSpit.java
 +++ b/src/main/java/net/minecraft/server/EntityLlamaSpit.java
 @@ -10,6 +10,21 @@ public class EntityLlamaSpit extends Entity implements IProjectile {
@@ -68,8 +94,34 @@ index 58e1ed795..28848b896 100644
      public EntityLlamaSpit(World world) {
          super(EntityTypes.LLAMA_SPIT, world);
          this.setSize(0.25F, 0.25F);
+@@ -160,7 +175,11 @@ public class EntityLlamaSpit extends Entity implements IProjectile {
+         if (nbttagcompound.hasKeyOfType("Owner", 10)) {
+             this.b = nbttagcompound.getCompound("Owner");
+         }
+-
++        // Paper start - Store launch item for projectiles
++        if (nbttagcompound.hasKeyOfType("Paper.LaunchItem", 10)) {
++            this.launchItem = ItemStack.loadFromCompound(nbttagcompound.getCompound("Paper.LaunchItem"));
++        }
++        // Paper end
+     }
+ 
+     protected void b(NBTTagCompound nbttagcompound) {
+@@ -171,7 +190,11 @@ public class EntityLlamaSpit extends Entity implements IProjectile {
+             nbttagcompound1.a("OwnerUUID", uuid);
+             nbttagcompound.set("Owner", nbttagcompound1);
+         }
+-
++        // Paper start - Store launch item for projectiles
++        if (this.launchItem != null) {
++            nbttagcompound.set("Paper.LaunchItem", this.launchItem.save(new NBTTagCompound()));
++        }
++        // Paper end
+     }
+ 
+     private void f() {
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
-index 60ab1c751..7092bfafb 100644
+index 60ab1c751..29b070a44 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
 +++ b/src/main/java/net/minecraft/server/EntityProjectile.java
 @@ -16,6 +16,20 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
@@ -93,6 +145,32 @@ index 60ab1c751..7092bfafb 100644
      protected EntityProjectile(EntityTypes<?> entitytypes, World world) {
          super(entitytypes, world);
          this.blockX = -1;
+@@ -229,7 +243,11 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         if (this.shooterId != null) {
+             nbttagcompound.set("owner", GameProfileSerializer.a(this.shooterId));
+         }
+-
++        // Paper start - Store launch item for projectiles
++        if (this.launchItem != null) {
++            nbttagcompound.set("Paper.LaunchItem", this.launchItem.save(new NBTTagCompound()));
++        }
++        // Paper end
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+@@ -243,7 +261,11 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             this.shooterId = GameProfileSerializer.b(nbttagcompound.getCompound("owner"));
+         }
+         if (this instanceof EntityEnderPearl && this.world != null && this.world.paperConfig.disableEnderpearlExploit) { this.shooterId = null; } // Paper - Don't store shooter name for pearls to block enderpearl travel exploit
+-
++        // Paper start - Store launch item for projectiles
++        if (nbttagcompound.hasKeyOfType("Paper.LaunchItem", 10)) {
++            this.launchItem = ItemStack.loadFromCompound(nbttagcompound.getCompound("Paper.LaunchItem"));
++        }
++        // Paper end
+     }
+ 
+     @Nullable
 diff --git a/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java b/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java
 index 6e2ee04c7..fb949cd17 100644
 --- a/src/main/java/net/minecraft/server/EntitySkeletonAbstract.java
@@ -216,6 +294,18 @@ index 2bddefb80..fcd0326ed 100644
  
              entitypotion.a(entityhuman, entityhuman.pitch, entityhuman.yaw, -20.0F, 0.5F, 1.0F);
              // Paper start
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index d8ebcf0a3..f5007708a 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -141,6 +141,7 @@ public final class ItemStack {
+         this.E();
+     }
+ 
++    public static ItemStack loadFromCompound(final NBTTagCompound compound) {  return ItemStack.a(compound); } // Paper - OBFHELPER
+     public static ItemStack a(NBTTagCompound nbttagcompound) {
+         try {
+             return new ItemStack(nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/ItemTrident.java b/src/main/java/net/minecraft/server/ItemTrident.java
 index 40b8eb203..e672ee264 100644
 --- a/src/main/java/net/minecraft/server/ItemTrident.java
