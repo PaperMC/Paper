@@ -5,7 +5,7 @@ Subject: [PATCH] Configurable top of nether void damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1ed58f4bb..6eddceb06 100644
+index 1ed58f4bb..a797a5767 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -14,8 +14,9 @@ index 1ed58f4bb..6eddceb06 100644
      }
 +
 +    public int netherVoidTopDamageHeight;
++    public boolean doNetherTopVoidDamage() { return netherVoidTopDamageHeight > 0; }
 +    private void netherVoidTopDamageHeight() {
-+        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 128);
++        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 0);
 +        log("Top of the nether void damage height: " + netherVoidTopDamageHeight);
 +
 +        if (PaperConfig.version < 18) {
@@ -28,7 +29,7 @@ index 1ed58f4bb..6eddceb06 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index bff44d535..040ecb2c1 100644
+index bff44d535..6804b7274 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -53,7 +54,10 @@ index bff44d535..040ecb2c1 100644
  
 +    // Paper start
 +    protected void performVoidDamage() {
-+        if (this.locY < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER && this.locY >= world.paperConfig.netherVoidTopDamageHeight)) {
++        if (this.locY < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++            && world.paperConfig.doNetherTopVoidDamage()
++            && this.locY >= world.paperConfig.netherVoidTopDamageHeight)) {
++
 +            this.doVoidDamage();
 +        }
 +    }
