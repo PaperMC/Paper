@@ -60,7 +60,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
         ChunkData data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
         Preconditions.checkArgument(data instanceof CraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
-        ChunkSection[] sections = ((CraftChunkData) data).getRawChunkData();
+        CraftChunkData craftData = (CraftChunkData) data;
+        ChunkSection[] sections = craftData.getRawChunkData();
 
         ChunkSection[] csect = ichunkaccess.getSections();
         int scnt = Math.min(csect.length, sections.length);
@@ -77,6 +78,20 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
         // Set biome grid
         ichunkaccess.a(biomegrid.biome);
+
+        if (craftData.getTiles() != null) {
+            for (BlockPosition pos : craftData.getTiles()) {
+                int tx = pos.getX();
+                int ty = pos.getY();
+                int tz = pos.getZ();
+                Block block = craftData.getTypeId(tx, ty, tz).getBlock();
+
+                if (block.isTileEntity()) {
+                    TileEntity tile = ((ITileEntity) block).a(world);
+                    ichunkaccess.a(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), tile);
+                }
+            }
+        }
     }
 
     @Override
