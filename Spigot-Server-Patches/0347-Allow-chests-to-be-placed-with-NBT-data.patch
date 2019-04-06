@@ -1,31 +1,23 @@
-From 5137342b191814dba8b79fd8c1286a5dacfd191f Mon Sep 17 00:00:00 2001
+From ebd98949f3593794792e66a108d3ad296b7c40be Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Sat, 8 Sep 2018 18:43:31 -0500
 Subject: [PATCH] Allow chests to be placed with NBT data
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index f34ac392e..d8ebcf0a3 100644
+index f34ac392e1..eb130c0121 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -241,6 +241,15 @@ public final class ItemStack {
+@@ -241,6 +241,7 @@ public final class ItemStack {
                      enuminteractionresult = EnumInteractionResult.FAIL; // cancel placement
                      // PAIL: Remove this when MC-99075 fixed
                      placeEvent.getPlayer().updateInventory();
-+
-+                    // Paper start
-+                    for (Map.Entry<BlockPosition, TileEntity> e : world.capturedTileEntities.entrySet()) {
-+                        if (e.getValue() instanceof TileEntityLootable) {
-+                            ((TileEntityLootable) e.getValue()).setLootTable(null);
-+                        }
-+                    }
-+                    // Paper end
-+
++                    world.capturedTileEntities.clear(); // Paper - clear out tile entities as chests and such will pop loot
                      // revert back all captured blocks
                      for (BlockState blockstate : blocks) {
                          blockstate.update(true, false);
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index c46b761cc..2e0f782f6 100644
+index c46b761cc5..2e0f782f65 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -305,7 +305,7 @@ public class TileEntityChest extends TileEntityLootable { // Paper - Remove ITic
