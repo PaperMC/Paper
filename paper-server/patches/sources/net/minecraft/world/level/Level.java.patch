@@ -281,7 +281,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-+    @Override
+     @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -334,7 +334,7 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-     @Override
++    @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
@@ -611,7 +611,7 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +860,29 @@
+@@ -510,13 +860,32 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -622,9 +622,12 @@
  
 +    @Nullable
 +    public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
-+        if (this.capturedTileEntities.containsKey(blockposition)) {
-+            return this.capturedTileEntities.get(blockposition);
++        // Paper start - Perf: Optimize capturedTileEntities lookup
++        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
++        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(blockposition)) != null) {
++            return blockEntity;
 +        }
++        // Paper end - Perf: Optimize capturedTileEntities lookup
 +        // CraftBukkit end
 +        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
 +    }
@@ -642,7 +645,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +1009,7 @@
+@@ -643,7 +1012,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -651,7 +654,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1278,7 @@
+@@ -912,7 +1281,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
