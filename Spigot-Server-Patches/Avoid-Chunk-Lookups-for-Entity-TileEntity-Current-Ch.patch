@@ -9,53 +9,43 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 
 Use that local value instead to reduce lookups in many hot places.
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 3ca579e38..1c1f39524 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-         ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
-     }
- 
-+    public void removeEntity(Entity entity) { b(entity); } // Paper - OBFHELPER
-     public void b(Entity entity) {
-         this.a(entity, entity.chunkY);
-     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 08ad88c14..9befa890b 100644
+index d87b08a49e..c7712d2e71 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-         int j;
-         // Paper start - Set based removal lists
-         for (Entity e : this.g) {
-+            /*
-             j = e.getChunkZ();
-             int k = e.getChunkX();
+         int i = entity.chunkX;
+         int j = entity.chunkZ;
  
-             if (e.inChunk && this.isChunkLoaded(k, j, true)) {
-                 this.getChunkAt(k, j).b(e);
--            }
-+            }*/
-+            Chunk chunk = e.inChunk ? e.getCurrentChunk() : null;
-+            if (chunk != null) chunk.removeEntity(e);
-         }
+-        if (entity.inChunk && this.isChunkLoaded(i, j, true)) {
+-            this.getChunkAt(i, j).b(entity);
+-        }
++        Chunk chunk = entity.getCurrentChunk(); // Paper
++        if (chunk != null) chunk.removeEntity(entity); // Paper
  
-         for (Entity e : this.g) {
+         // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
+         int index = this.entityList.indexOf(entity);
 @@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-             this.methodProfiler.exit();
-             this.methodProfiler.enter("remove");
-             if (entity.dead) {
-+                // Paper start
-+                /*
+             int k = entity.chunkX;
+ 
+             j = entity.chunkZ;
+-            if (entity.inChunk && this.isChunkLoaded(k, j, true)) {
+-                this.getChunkAt(k, j).b(entity);
+-            }
++            Chunk chunk = entity.getCurrentChunk(); // Paper
++            if (chunk != null) chunk.removeEntity(entity); // Paper
+         //} // Paper - merge
+ 
+         //for (Entity e : this.g) { // Paper - merge
+@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  j = entity.chunkX;
                  int l = entity.chunkZ;
  
-                 if (entity.inChunk && this.isChunkLoaded(j, l, true)) {
-                     this.getChunkAt(j, l).b(entity);
+-                if (entity.inChunk && this.isChunkLoaded(j, l, true)) {
+-                    this.getChunkAt(j, l).b(entity);
 -                }
-+                }*/
-+                Chunk chunk = entity.inChunk ? entity.getCurrentChunk() : null;
++                // Paper start
++                Chunk chunk = entity.getCurrentChunk();
 +                if (chunk != null) chunk.removeEntity(entity);
 +                // Paper end
  
