@@ -904,12 +904,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
             return null;
         } else {
             // CraftBukkit start
-            if (capturedTileEntities.containsKey(blockposition)) {
-                return capturedTileEntities.get(blockposition);
+            TileEntity tileentity = null; // Paper
+            if (!capturedTileEntities.isEmpty() && (tileentity = capturedTileEntities.get(blockposition)) != null) { // Paper
+                return tileentity; // Paper
             }
             // CraftBukkit end
 
-            TileEntity tileentity = null;
+            //TileEntity tileentity = null; // Paper - move up
 
             if (this.tickingTileEntities) {
                 tileentity = this.E(blockposition);
