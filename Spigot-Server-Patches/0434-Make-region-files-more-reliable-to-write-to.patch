@@ -1,4 +1,4 @@
-From 9cb7285df76b6bef983544eb9ccd85b308d3174e Mon Sep 17 00:00:00 2001
+From 02b4c29fffa41faa34fe06a20db138134040b9bc Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 1 Apr 2019 18:57:32 -0700
 Subject: [PATCH] Make region files more reliable to write to
@@ -11,9 +11,9 @@ Now the saving process has been changed to follow this chain of events:
 overwrite and corrupt the current data
 2. Write the chunk data first (the order of the fields in
 the chunk data isn't relevant though)
-3. Flush to disk
+3. Flush to disk (if the launch flag is used)
 4. Write to the region header last
-5. Flush to disk
+5. Flush to disk (if the launch flag is used)
 6. Then we free the previous space allocated
 
 With this chain of events it is impossible for a chunk write to corrupt
@@ -27,12 +27,17 @@ Note that when Mojang finally decides to change their region format
 to deal with oversized chunks this patch must be changed to deal with
 whatever system they decide to impose.
 
+If the paper.flush-on-save startup flag is set to true, then the
+steps 3 and 5 will make a call to sync() on the region file's fd,
+effectively flushing to disk.
+
 We also make use of two flushes to disk per chunk save (to ensure
 ordering and ensure data has gone to disk), so this will negatively
-affect save performance.
+affect save performance if the startup flag is used (especially on
+HDDs).
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 82f7af46f..2e2844133 100644
+index 82f7af46f..e5659980b 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -29,7 +29,7 @@ public class RegionFile {
@@ -145,11 +150,15 @@ index 82f7af46f..2e2844133 100644
      }
  
      public void close() throws IOException {
-@@ -331,6 +336,36 @@ public class RegionFile {
+@@ -331,6 +336,40 @@ public class RegionFile {
      }
  
      // Paper start
++    private static final boolean FLUSH_ON_SAVE = Boolean.getBoolean("paper.flush-on-save");
 +    private void syncRegionFile() throws IOException {
++        if (!FLUSH_ON_SAVE) {
++            return;
++        }
 +        this.getDataFile().getFD().sync(); // rethrow exception as we want to avoid corrupting a regionfile
 +    }
 +
