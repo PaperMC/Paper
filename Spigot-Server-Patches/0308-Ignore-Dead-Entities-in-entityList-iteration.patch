@@ -1,4 +1,4 @@
-From 0e53985f8b0afb2bffb0b17aa5a014b9023db2c3 Mon Sep 17 00:00:00 2001
+From 38b302a381c2e999cda2d6add7bf213adb295912 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Jul 2018 12:18:27 -0400
 Subject: [PATCH] Ignore Dead Entities in entityList iteration
@@ -11,7 +11,7 @@ This will ensure that dead entities are skipped from iteration since
 they shouldn't of been in the list in the first place.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f38179e98..8e1bda4de 100644
+index f38179e983..8e1bda4de9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -176,6 +176,7 @@ public class PaperCommand extends Command {
@@ -23,7 +23,7 @@ index f38179e98..8e1bda4de 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 72e43622e..71ea64fe7 100644
+index ead5af991c..cf69a4d8a4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -121,6 +121,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -35,7 +35,7 @@ index 72e43622e..71ea64fe7 100644
      public float length;
      public float J;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f93adc860..814950bde 100644
+index 1cbe6e17b7..5d60b36678 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1046,6 +1046,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -46,15 +46,15 @@ index f93adc860..814950bde 100644
          new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
      }
  
-@@ -1114,6 +1115,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-         if (entity.inChunk && this.isChunkLoaded(i, j, true)) {
-             this.getChunkAt(i, j).b(entity);
-         }
+@@ -1113,6 +1114,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+ 
+         Chunk chunk = entity.getCurrentChunk(); // Paper
+         if (chunk != null) chunk.removeEntity(entity); // Paper
 +        entity.shouldBeRemoved = true; // Paper
  
          if (!guardEntityList) { // Spigot - It will get removed after the tick if we are ticking // Paper - always remove from current chunk above
          // CraftBukkit start - Decrement loop variable field if we've already ticked this entity
-@@ -2324,6 +2326,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2316,6 +2318,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -62,7 +62,7 @@ index f93adc860..814950bde 100644
  
              if (oclass.isAssignableFrom(entity.getClass()) && predicate.test((T) entity)) { // CraftBukkit - decompile error
                  list.add((T) entity); // CraftBukkit - decompile error
-@@ -2410,6 +2413,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2402,6 +2405,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
@@ -71,7 +71,7 @@ index f93adc860..814950bde 100644
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 609b91126..4594bab46 100644
+index 609b911265..4594bab465 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -634,6 +634,7 @@ public class CraftWorld implements World {

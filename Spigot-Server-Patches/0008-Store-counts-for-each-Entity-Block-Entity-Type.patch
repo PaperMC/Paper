@@ -1,4 +1,4 @@
-From fcea42cc3d3d4bc1e4ade7725e589b16b6a018e3 Mon Sep 17 00:00:00 2001
+From dbaafc47c5209214b5bd44396640cbf5da05c453 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:13:59 -0400
 Subject: [PATCH] Store counts for each Entity/Block Entity Type
@@ -6,7 +6,7 @@ Subject: [PATCH] Store counts for each Entity/Block Entity Type
 Opens door for future patches to optimize performance
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index b728a44f5..23dee9b56 100644
+index 95a51ab745..554fbeb071 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -67,15 +67,19 @@ public class Chunk implements IChunkAccess {
@@ -37,22 +37,22 @@ index b728a44f5..23dee9b56 100644
              }
              return removed;
          }
-@@ -682,6 +687,7 @@ public class Chunk implements IChunkAccess {
-         this.entitySlices[k].add(entity);
-         // Paper start
-         entity.setCurrentChunk(this);
-+        entityCounts.increment(entity.getMinecraftKeyString());
-         // Paper end
-     }
+@@ -675,6 +680,7 @@ public class Chunk implements IChunkAccess {
+             k = this.entitySlices.length - 1;
+         }
  
-@@ -706,6 +712,7 @@ public class Chunk implements IChunkAccess {
++        if (!entity.inChunk || entity.getCurrentChunk() != this) entityCounts.increment(entity.getMinecraftKeyString()); // Paper
+         entity.inChunk = true;
+         entity.setCurrentChunk(this); // Paper
+         entity.chunkX = this.locX;
+@@ -705,6 +711,7 @@ public class Chunk implements IChunkAccess {
+         if (!this.entitySlices[i].remove(entity)) {
              return;
          }
-         entity.setCurrentChunk(null);
 +        entityCounts.decrement(entity.getMinecraftKeyString());
          // Paper end
      }
  
 -- 
-2.20.1
+2.21.0
 

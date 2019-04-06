@@ -1,11 +1,12 @@
-From e0215644ebfdb7159fa274af4d916829b42e89f9 Mon Sep 17 00:00:00 2001
+From a16143b109a5099f59c969c98ed7299fbf4cf84c Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 02:39:54 -0600
 Subject: [PATCH] Change implementation of (tile)entity removal list
 
+use sets for faster removal
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 5ff06d247..7e1df0e5b 100644
+index a80acbb6a5..09cf98ccdd 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -68,11 +68,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -22,36 +23,34 @@ index 5ff06d247..7e1df0e5b 100644
      public final List<EntityHuman> players = Lists.newArrayList();
      public final List<Entity> k = Lists.newArrayList();
      protected final IntHashMap<Entity> entitiesById = new IntHashMap<>();
-@@ -1095,20 +1095,20 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1095,20 +1095,21 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          this.entityList.removeAll(this.g);
  
          int j;
-+        // Paper start - Set based removal lists
-+        for (Entity e : this.g) {
-+            j = e.getChunkZ();
-+            int k = e.getChunkX();
- 
+-
 -        for (i = 0; i < this.g.size(); ++i) {
 -            entity = (Entity) this.g.get(i);
--            int k = entity.chunkX;
--
--            j = entity.chunkZ;
--            if (entity.inChunk && this.isChunkLoaded(k, j, true)) {
--                this.getChunkAt(k, j).b(entity);
-+            if (e.inChunk && this.isChunkLoaded(k, j, true)) {
-+                this.getChunkAt(k, j).b(e);
++        // Paper start - Set based removal lists
++        for (Iterator<Entity> it = this.g.iterator(); it.hasNext() ; ) {
++            entity = it.next(); // Paper
+             int k = entity.chunkX;
+ 
+             j = entity.chunkZ;
+             if (entity.inChunk && this.isChunkLoaded(k, j, true)) {
+                 this.getChunkAt(k, j).b(entity);
              }
-         }
+-        }
++        //} // Paper - merge
  
 -        for (i = 0; i < this.g.size(); ++i) {
 -            this.c((Entity) this.g.get(i));
-+        for (Entity e : this.g) {
-+            this.c(e);
++        //for (Entity e : this.g) { // Paper - merge
++            this.c(entity); // Paper use entity
          }
 +        // Paper end
  
          this.g.clear();
          this.p_();
 -- 
-2.20.1
+2.21.0
 

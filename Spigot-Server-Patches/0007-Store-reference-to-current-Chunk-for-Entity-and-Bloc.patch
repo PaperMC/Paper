@@ -1,4 +1,4 @@
-From 3da86d2abcd148f2ceed99d9ebafd5ea70e9f9d9 Mon Sep 17 00:00:00 2001
+From b9facb273ca6721a832a5e9c4f7cf69ab6e5bbf6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,7 +8,7 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 417c015e5..b728a44f5 100644
+index 417c015e56..95a51ab745 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -36,7 +36,7 @@ public class Chunk implements IChunkAccess {
@@ -60,41 +60,39 @@ index 417c015e5..b728a44f5 100644
          this.p = Maps.newHashMap();
          this.q = Maps.newHashMap();
          this.r = new ShortList[16];
-@@ -657,6 +680,9 @@ public class Chunk implements IChunkAccess {
+@@ -653,6 +676,7 @@ public class Chunk implements IChunkAccess {
+         }
+ 
+         entity.inChunk = true;
++        entity.setCurrentChunk(this); // Paper
+         entity.chunkX = this.locX;
          entity.chunkY = k;
          entity.chunkZ = this.locZ;
-         this.entitySlices[k].add(entity);
-+        // Paper start
-+        entity.setCurrentChunk(this);
-+        // Paper end
+@@ -663,6 +687,7 @@ public class Chunk implements IChunkAccess {
+         ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
-     public void a(HeightMap.Type heightmap_type, long[] along) {
-@@ -675,8 +701,12 @@ public class Chunk implements IChunkAccess {
++    public void removeEntity(Entity entity) { this.b(entity); } // Paper - OBFHELPER
+     public void b(Entity entity) {
+         this.a(entity, entity.chunkY);
+     }
+@@ -675,8 +700,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
 -
 -        this.entitySlices[i].remove(entity);
 +        // Paper start
++        if (entity.currentChunk != null && entity.currentChunk.get() == this) entity.setCurrentChunk(null);
 +        if (!this.entitySlices[i].remove(entity)) {
 +            return;
 +        }
-+        entity.setCurrentChunk(null);
 +        // Paper end
      }
  
      public boolean c(BlockPosition blockposition) {
-@@ -885,6 +915,7 @@ public class Chunk implements IChunkAccess {
-                     }
-                 }
-                 // Spigot End
-+                entity.setCurrentChunk(null); // Paper
- 
-                 // Do not pass along players, as doing so can get them stuck outside of time.
-                 // (which for example disables inventory icon updates and prevents block breaking)
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index d9c9748ce..3b8d09953 100644
+index d9c9748cec..bdb4ca7643 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -132,7 +132,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -110,7 +108,7 @@ index d9c9748ce..3b8d09953 100644
      }
  
      // Paper start
-+    private java.lang.ref.WeakReference<Chunk> currentChunk = null;
++    java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +
 +    public void setCurrentChunk(Chunk chunk) {
 +        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
@@ -147,7 +145,7 @@ index d9c9748ce..3b8d09953 100644
      private String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 7390061bf..c69209497 100644
+index 7390061bf0..c69209497b 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -41,6 +41,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -167,7 +165,7 @@ index 7390061bf..c69209497 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 9cdd0331f..7edbbb106 100644
+index 9cdd0331f4..7edbbb106b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -9,6 +9,7 @@ import java.util.UUID;

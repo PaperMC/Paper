@@ -1,4 +1,4 @@
-From 68d160bf273d31d81e6687a9f64783f89adcd41e Mon Sep 17 00:00:00 2001
+From 06645204746e6de3a180b5ae5c68b24645b7ba54 Mon Sep 17 00:00:00 2001
 From: CullanP <cullanpage@gmail.com>
 Date: Thu, 3 Mar 2016 02:13:38 -0600
 Subject: [PATCH] Avoid hopper searches if there are no items
@@ -14,7 +14,7 @@ And since minecart hoppers are used _very_ rarely near we can avoid alot of sear
 Combined, this adds up a lot.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 2afd6befa..d1b6344ce 100644
+index a9aa13fbf8..cb56d067b9 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -95,6 +95,10 @@ public class Chunk implements IChunkAccess {
@@ -28,19 +28,21 @@ index 2afd6befa..d1b6344ce 100644
      // Paper end
      public boolean areNeighborsLoaded(final int radius) {
          switch (radius) {
-@@ -689,6 +693,11 @@ public class Chunk implements IChunkAccess {
+@@ -690,6 +694,13 @@ public class Chunk implements IChunkAccess {
+         entity.chunkY = k;
          entity.chunkZ = this.locZ;
          this.entitySlices[k].add(entity);
-         // Paper start
++        // Paper start
 +        if (entity instanceof EntityItem) {
 +            itemCounts[k]++;
 +        } else if (entity instanceof IInventory) {
 +            inventoryEntityCounts[k]++;
 +        }
-         entity.setCurrentChunk(this);
-         entityCounts.increment(entity.getMinecraftKeyString());
-         // Paper end
-@@ -714,6 +723,11 @@ public class Chunk implements IChunkAccess {
++        // Paper end
+     }
+ 
+     public void a(HeightMap.Type heightmap_type, long[] along) {
+@@ -714,6 +725,11 @@ public class Chunk implements IChunkAccess {
          if (!this.entitySlices[i].remove(entity)) {
              return;
          }
@@ -49,10 +51,10 @@ index 2afd6befa..d1b6344ce 100644
 +        } else if (entity instanceof IInventory) {
 +            inventoryEntityCounts[i]--;
 +        }
-         entity.setCurrentChunk(null);
          entityCounts.decrement(entity.getMinecraftKeyString());
          // Paper end
-@@ -961,6 +975,15 @@ public class Chunk implements IChunkAccess {
+     }
+@@ -959,6 +975,15 @@ public class Chunk implements IChunkAccess {
              if (!this.entitySlices[k].isEmpty()) {
                  Iterator iterator = this.entitySlices[k].iterator();
  
@@ -68,7 +70,7 @@ index 2afd6befa..d1b6344ce 100644
                  while (iterator.hasNext()) {
                      Entity entity1 = (Entity) iterator.next();
  
-@@ -997,7 +1020,18 @@ public class Chunk implements IChunkAccess {
+@@ -995,7 +1020,18 @@ public class Chunk implements IChunkAccess {
          i = MathHelper.clamp(i, 0, this.entitySlices.length - 1);
          j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
  
@@ -88,7 +90,7 @@ index 2afd6befa..d1b6344ce 100644
  
              while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
-index bbcbb6232..f6916fd45 100644
+index bbcbb62325..f6916fd455 100644
 --- a/src/main/java/net/minecraft/server/IEntitySelector.java
 +++ b/src/main/java/net/minecraft/server/IEntitySelector.java
 @@ -11,6 +11,7 @@ public final class IEntitySelector {
@@ -100,5 +102,5 @@ index bbcbb6232..f6916fd45 100644
          return entity instanceof IInventory && entity.isAlive();
      };
 -- 
-2.20.1
+2.21.0
 

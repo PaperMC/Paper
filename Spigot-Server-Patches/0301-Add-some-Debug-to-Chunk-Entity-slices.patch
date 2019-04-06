@@ -1,4 +1,4 @@
-From 96241e585235ed412e893f10f2cc1a9df400f679 Mon Sep 17 00:00:00 2001
+From 100f05b6d3e0b894381d9f32dbadabdc77a97d9d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 23 Jul 2018 22:44:23 -0400
 Subject: [PATCH] Add some Debug to Chunk Entity slices
@@ -9,61 +9,55 @@ This should hopefully avoid duplicate entities ever being created
 if the entity was to end up in 2 different chunk slices
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 42b76b212..7dd59ee03 100644
+index 5d187e5d7d..01abe5e376 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -714,8 +714,27 @@ public class Chunk implements IChunkAccess {
-         entity.chunkX = this.locX;
-         entity.chunkY = k;
-         entity.chunkZ = this.locZ;
--        this.entitySlices[k].add(entity);
-+
-         // Paper start
-+        List<Entity> entitySlice = this.entitySlices[k];
-+        boolean inThis = entitySlice.contains(entity);
+@@ -709,6 +709,25 @@ public class Chunk implements IChunkAccess {
+         if (k >= this.entitySlices.length) {
+             k = this.entitySlices.length - 1;
+         }
++        // Paper - remove from any old list if its in one
++        List<Entity> nextSlice = this.entitySlices[k]; // the next list to be added to
 +        List<Entity> currentSlice = entity.entitySlice;
-+        if (inThis || (currentSlice != null && currentSlice.contains(entity))) {
-+            if (currentSlice == entitySlice || inThis) {
-+                return;
-+            } else {
-+                Chunk chunk = entity.getCurrentChunk();
-+                if (chunk != null) {
-+                    chunk.removeEntity(entity);
-+                } else {
-+                    removeEntity(entity);
-+                }
-+                currentSlice.remove(entity); // Just incase the above did not remove from this target slice
-+            }
++        if (nextSlice == currentSlice) {
++            if (World.DEBUG_ENTITIES) MinecraftServer.LOGGER.warn("Entity was already in this chunk!" + entity, new Throwable());
++            return; // ??? silly plugins
 +        }
-+        entity.entitySlice = entitySlice;
-+        entitySlice.add(entity);
-+
++        if (currentSlice != null && currentSlice.contains(entity)) {
++            // Still in an old chunk...
++            if (World.DEBUG_ENTITIES) MinecraftServer.LOGGER.warn("Entity is still in another chunk!" + entity, new Throwable());
++            Chunk chunk = entity.getCurrentChunk();
++            if (chunk != null) {
++                chunk.removeEntity(entity);
++            } else {
++                removeEntity(entity);
++            }
++            currentSlice.remove(entity); // Just incase the above did not remove from the previous slice
++        }
++        // Paper end
+ 
+         if (!entity.inChunk || entity.getCurrentChunk() != this) entityCounts.increment(entity.getMinecraftKeyString()); // Paper
+         entity.inChunk = true;
+@@ -718,6 +737,7 @@ public class Chunk implements IChunkAccess {
+         entity.chunkZ = this.locZ;
+         this.entitySlices[k].add(entity);
+         // Paper start
++        entity.entitySlice = this.entitySlices[k]; // Paper
          this.markDirty();
          if (entity instanceof EntityItem) {
              itemCounts[k]++;
-@@ -745,9 +764,10 @@ public class Chunk implements IChunkAccess {
-             i = this.entitySlices.length - 1;
+@@ -746,6 +766,9 @@ public class Chunk implements IChunkAccess {
          }
          // Paper start
--        if (!this.entitySlices[i].remove(entity)) {
--            return;
-+        if (entity.entitySlice == null || !entity.entitySlice.contains(entity) || entitySlices[i] == entity.entitySlice) {
+         if (entity.currentChunk != null && entity.currentChunk.get() == this) entity.setCurrentChunk(null);
++        if (entitySlices[i] == entity.entitySlice) {
 +            entity.entitySlice = null;
++        }
+         if (!this.entitySlices[i].remove(entity)) {
+             return;
          }
-+        if (!this.entitySlices[i].remove(entity)) { return; }
-         this.markDirty();
-         if (entity instanceof EntityItem) {
-             itemCounts[i]--;
-@@ -1028,6 +1048,7 @@ public class Chunk implements IChunkAccess {
-                 }
-                 // Spigot End
-                 entity.setCurrentChunk(null); // Paper
-+                entity.entitySlice = null; // Paper
- 
-                 // Do not pass along players, as doing so can get them stuck outside of time.
-                 // (which for example disables inventory icon updates and prevents block breaking)
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index a211cb945..72e43622e 100644
+index 539273afbc..ead5af991c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -62,6 +62,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
