@@ -1,4 +1,4 @@
-From 39d1fdb91886c053e524bfc65ee8ce80ad364bb4 Mon Sep 17 00:00:00 2001
+From 199ec5e113fd5ba5d362cc12be1144b26fe9fccc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -3698,10 +3698,10 @@ index 5ca863b3..04804706 100644
 +    public String getData(); // Spigot
 +}
 diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 8d982974..7e89b97b 100644
+index 8d982974..40aa8a19 100644
 --- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
 +++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-@@ -1,165 +1,76 @@
+@@ -1,165 +1,104 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -3744,7 +3744,6 @@ index 8d982974..7e89b97b 100644
 +import co.aikar.timings.Timing;
 +import co.aikar.timings.Timings;
 +import co.aikar.timings.TimingsManager;
-+import sun.reflect.Reflection;
  
 -import org.bukkit.Bukkit;
 -import org.bukkit.World;
@@ -3765,6 +3764,8 @@ index 8d982974..7e89b97b 100644
 +@Deprecated
 +public final class CustomTimingsHandler {
 +    private final Timing handler;
++    private static Boolean sunReflectAvailable;
++    private static Method getCallerClass;
  
 -    private static Queue<CustomTimingsHandler> HANDLERS = new ConcurrentLinkedQueue<CustomTimingsHandler>();
 -    /*========================================================================*/
@@ -3777,24 +3778,25 @@ index 8d982974..7e89b97b 100644
 -    private long curTickTotal = 0;
 -    private long violations = 0;
 +    public CustomTimingsHandler(String name) {
-+        Timing timing;
++        if (sunReflectAvailable == null) {
++            String javaVer = System.getProperty("java.version");
++            String[] elements = javaVer.split("\\.");
  
 -    public CustomTimingsHandler(String name)
 -    {
 -        this( name, null );
 -    }
-+        Plugin plugin = null;
-+        try {
-+             plugin = TimingsManager.getPluginByClassloader(Reflection.getCallerClass(2));
-+        } catch (Exception ignored) {}
- 
+-
 -    public CustomTimingsHandler(String name, CustomTimingsHandler parent)
 -    {
 -        this.name = name;
 -        this.parent = parent;
 -        HANDLERS.add( this );
 -    }
--
++            int major = Integer.parseInt(elements.length >= 2 ? elements[1] : javaVer);
++            if (major <= 8) {
++                sunReflectAvailable = true;
+ 
 -    /**
 -     * Prints the timings and extra data to the given stream.
 -     *
@@ -3810,21 +3812,18 @@ index 8d982974..7e89b97b 100644
 -            if ( count == 0 )
 -            {
 -                continue;
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        if (plugin != null) {
-+            timing = Timings.of(plugin, "(Deprecated API) " + name);
-+        } else {
-+            try {
-+                final Method ofSafe = TimingsManager.class.getMethod("getHandler", String.class, String.class, Timing.class, boolean.class);
-+                timing = (Timing) ofSafe.invoke("Minecraft", "(Deprecated API) " + name, null, true);
-+            } catch (Exception e) {
-+                Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+                timing = Timings.NULL_HANDLER;
++                try {
++                    Class<?> reflection = Class.forName("sun.reflect.Reflection");
++                    getCallerClass = reflection.getMethod("getCallerClass", int.class);
++                } catch (ClassNotFoundException | NoSuchMethodException ignored) {
++                }
++            } else {
++                sunReflectAvailable = false;
              }
 -            long avg = time / count;
 -
 -            printStream.println( "    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations );
-         }
+-        }
 -        printStream.println( "# Version " + Bukkit.getVersion() );
 -        int entities = 0;
 -        int livingEntities = 0;
@@ -3832,11 +3831,10 @@ index 8d982974..7e89b97b 100644
 -        {
 -            entities += world.getEntities().size();
 -            livingEntities += world.getLivingEntities().size();
--        }
+         }
 -        printStream.println( "# Entities " + entities );
 -        printStream.println( "# LivingEntities " + livingEntities );
-+        handler = timing;
-     }
+-    }
  
 -    /**
 -     * Resets all timings.
@@ -3848,12 +3846,15 @@ index 8d982974..7e89b97b 100644
 -            for ( CustomTimingsHandler timings : HANDLERS )
 -            {
 -                timings.reset();
--            }
--        }
++        Class calling = null;
++        if (sunReflectAvailable) {
++            try {
++                calling = (Class) getCallerClass.invoke(null, 2);
++            } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
+             }
+         }
 -        TimingsCommand.timingStart = System.nanoTime();
 -    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
  
 -    /**
 -     * Ticked every tick by CraftBukkit to count the number of times a timer
@@ -3874,7 +3875,8 @@ index 8d982974..7e89b97b 100644
 -            }
 -        }
 -    }
--
++        Timing timing;
+ 
 -    /**
 -     * Starts timing to track a section of code.
 -     */
@@ -3890,7 +3892,11 @@ index 8d982974..7e89b97b 100644
 -            }
 -        }
 -    }
--
++        Plugin plugin = null;
++        try {
++            plugin = TimingsManager.getPluginByClassloader(calling);
++        } catch (Exception ignored) {}
+ 
 -    /**
 -     * Stops timing a section of code.
 -     */
@@ -3910,10 +3916,22 @@ index 8d982974..7e89b97b 100644
 -            if ( parent != null )
 -            {
 -                parent.stopTiming();
--            }
--        }
--    }
--
++        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
++        if (plugin != null) {
++            timing = Timings.of(plugin, "(Deprecated API) " + name);
++        } else {
++            try {
++                final Method ofSafe = TimingsManager.class.getMethod("getHandler", String.class, String.class, Timing.class);
++                ofSafe.setAccessible(true);
++                timing = (Timing) ofSafe.invoke(null, "Minecraft", "(Deprecated API) " + name, null);
++            } catch (Exception e) {
++                Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
++                timing = Timings.NULL_HANDLER;
+             }
+         }
++        handler = timing;
+     }
+ 
 -    /**
 -     * Reset this timer, setting all values to zero.
 -     */
@@ -3926,6 +3944,9 @@ index 8d982974..7e89b97b 100644
 -        start = 0;
 -        timingDepth = 0;
 -    }
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
++
  }
 -- 
 2.21.0
