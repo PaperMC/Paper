@@ -1,4 +1,4 @@
-From c9d95cbf8d5ef37223484c7ced54dad5a840e484 Mon Sep 17 00:00:00 2001
+From 43d96e4be29752e4c7f7d11df974daa7bd2a5a4b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -43,7 +43,7 @@ reading or writing to the chunk will be safe, so plugins still
 should not be touching chunks asynchronously!
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 359c538f3..942520088 100644
+index 07d7976d2..c25db284f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -376,4 +376,57 @@ public class PaperConfig {
@@ -458,7 +458,7 @@ index 000000000..8f18c2869
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 9f28d7775..fb00e7a9c 100644
+index 4ae0acbf1..4f64072a7 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -190,6 +190,7 @@ public class Chunk implements IChunkAccess {
@@ -949,7 +949,7 @@ index f5a6387f2..f45685099 100644
      private final MinecraftServer d;
      private final java.nio.file.Path e;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index be555f82d..3e81ebdb8 100644
+index 3d90fdb64..d6d0dd6d8 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -207,7 +207,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -2072,7 +2072,7 @@ index 284e96710..8b08efe1f 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 4c971ddfb..1c66c833b 100644
+index 0d45e2157..97a0fbd55 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -41,7 +41,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -2343,10 +2343,10 @@ index 0ff3fe03d..e71a40580 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index fac42f8e5..59b1628e5 100644
+index d4d8fbb55..af065bd70 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1021,8 +1021,12 @@ public final class CraftServer implements Server {
+@@ -1022,8 +1022,12 @@ public final class CraftServer implements Server {
          if (internal.getWorld().getKeepSpawnInMemory()) {
              short short1 = internal.paperConfig.keepLoadedRange; // Paper
              long i = System.currentTimeMillis();
@@ -2361,7 +2361,7 @@ index fac42f8e5..59b1628e5 100644
                      long l = System.currentTimeMillis();
  
                      if (l < i) {
-@@ -1038,7 +1042,7 @@ public final class CraftServer implements Server {
+@@ -1039,7 +1043,7 @@ public final class CraftServer implements Server {
                      }
  
                      BlockPosition chunkcoordinates = internal.getSpawn();
@@ -2471,7 +2471,7 @@ index 68e30185a..7905420ca 100644
  
          if (!event.isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 9c917370a..a299092a5 100644
+index 9e553866e..04c0adf7c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -21,6 +21,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
