@@ -56,6 +56,7 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
         if (time < 0) {
             getHandle().conversionTime = -1;
             getHandle().getDataWatcher().set(EntityZombieVillager.CONVERTING, false);
+            getHandle().persistent = false; // CraftBukkit - SPIGOT-4684 update persistence
         } else {
             getHandle().startConversion((UUID) null, time);
         }
