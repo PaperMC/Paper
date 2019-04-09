@@ -1,0 +1,52 @@
+From c1c18414a7be093239a0f2a0d83d4a5ad102bbd4 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 9 Apr 2019 13:32:11 -0700
+Subject: [PATCH] Fix broken sleep behaviour caused by CraftBukkit
+
+CB will return false for everyoneDeeplySleeping() if there is a spectator
+online in the world at all (unless the player is marked "afk" by a plugin)
+There are no grounds for this change from vanilla.
+
+CB will also return true if there is one player in deep sleep, which is
+different from the vanilla behaviour of checking if all sleeping players
+are in deep sleep. The difference in behaviour is that the server will
+no longer wait until all players are deeply sleeping, which doesn't
+have grounds for a change either.
+
+The solution is to revert all changes CB has done except for the fauxSleeping
+change.
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index ee071ba2f..8dfc4499f 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -408,22 +408,19 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+             Iterator iterator = this.players.iterator();
+ 
+             // CraftBukkit - This allows us to assume that some people are in bed but not really, allowing time to pass in spite of AFKers
+-            boolean foundActualSleepers = false;
++            //boolean foundActualSleepers = false; // Paper - This just breaks vanilla's timed behaviour
+ 
+             EntityHuman entityhuman;
+ 
+             do {
+                 if (!iterator.hasNext()) {
+-                    return foundActualSleepers;
++                    return true; // Paper - Revert to vanilla, CB just breaks vanilla's timed behaviour
+                 }
+ 
+                 entityhuman = (EntityHuman) iterator.next();
+ 
+-                // CraftBukkit start
+-                if (entityhuman.isDeeplySleeping()) {
+-                    foundActualSleepers = true;
+-                }
+-            } while (!entityhuman.isSpectator() || entityhuman.isDeeplySleeping() || entityhuman.fauxSleeping);
++                // Paper - foundActualSleepers just breaks the timed delay of vanilla
++            } while (entityhuman.isSpectator() || entityhuman.isDeeplySleeping() || entityhuman.fauxSleeping); // Paper - we should let everyone sleep if there are spectators
+             // CraftBukkit end
+ 
+             return false;
+-- 
+2.21.0
+
