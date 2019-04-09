@@ -1,4 +1,4 @@
-From 43d96e4be29752e4c7f7d11df974daa7bd2a5a4b Mon Sep 17 00:00:00 2001
+From 4264c88f47d8e2d1a7f18daaf66d8ceda35ff6d9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 16:55:04 -0400
 Subject: [PATCH] Async Chunk Loading and Generation
@@ -562,7 +562,7 @@ index 2021c0d02..154ab09e0 100644
  
      public void putAll(Map<? extends Long, ? extends Chunk> map) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 186cfda7e..781e06877 100644
+index 186cfda7e..7c405609b 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -33,12 +33,12 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -696,6 +696,24 @@ index 186cfda7e..781e06877 100644
      private ReportedException a(int i, int j, Throwable throwable) {
          CrashReport crashreport = CrashReport.a(throwable, "Exception generating new chunk");
          CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Chunk to be generated");
+@@ -186,7 +257,7 @@ public class ChunkProviderServer implements IChunkProvider {
+         Long2ObjectMap long2objectmap = this.chunks;
+         Chunk chunk;
+ 
+-        synchronized (this.chunks) {
++        //synchronized (this.chunks) { // Paper - Elide unnecessary synchronization
+             Chunk chunk1 = (Chunk) this.chunks.get(k);
+ 
+             if (chunk1 != null) {
+@@ -205,7 +276,7 @@ public class ChunkProviderServer implements IChunkProvider {
+ 
+             this.chunks.put(k, chunk);
+             //this.lastChunk = chunk; // Paper
+-        }
++        //} // // Paper - Elide unnecessary synchronization
+ 
+         this.asyncTaskHandler.postToMainThread(chunk::addEntities);
+         return chunk;
 @@ -289,11 +360,13 @@ public class ChunkProviderServer implements IChunkProvider {
      }
  
@@ -1087,10 +1105,10 @@ index d2ee4e578..236fbafeb 100644
              i = SystemUtils.getMonotonicNanos();
 diff --git a/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
 new file mode 100644
-index 000000000..851756d65
+index 000000000..6447170a8
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/PaperAsyncChunkProvider.java
-@@ -0,0 +1,658 @@
+@@ -0,0 +1,656 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1613,16 +1631,14 @@ index 000000000..851756d65
 +                    chunkLoader.loadEntities(pendingLevel, chunk);
 +                    pendingLevel = null;
 +                }
-+                synchronized (chunks) {
-+                    final Chunk other = chunks.get(key);
-+                    if (other != null) {
-+                        this.chunk = other;
-+                        completeFutures(other);
-+                        return other;
-+                    }
-+                    if (chunk != null) {
-+                        chunks.put(key, chunk);
-+                    }
++                final Chunk other = chunks.get(key);
++                if (other != null) {
++                    this.chunk = other;
++                    completeFutures(other);
++                    return other;
++                }
++                if (chunk != null) {
++                    chunks.put(key, chunk);
 +                }
 +
 +                chunk.addEntities();
