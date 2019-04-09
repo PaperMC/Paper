@@ -1,0 +1,45 @@
+From 08207756e4a12b1935bed0692773e66152c753ef Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 1 Jan 2019 02:22:01 -0800
+Subject: [PATCH] Add Heightmap API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 40ee34675..5ef95e936 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -136,6 +136,31 @@ public class CraftWorld implements World {
+         return world.getHighestBlockYAt(HeightMap.Type.LIGHT_BLOCKING, new BlockPosition(x, 0, z)).getY();
+     }
+ 
++    // Paper start - Implement heightmap api
++    @Override
++    public int getHighestBlockYAt(final int x, final int z, final HeightmapType heightmap) throws UnsupportedOperationException {
++        loadChunk(x >> 4, z >> 4);
++
++        final BlockPosition pos = new BlockPosition(x, 0, z);
++
++        switch (heightmap) {
++            case LIGHT_BLOCKING:
++                return world.getHighestBlockYAt(HeightMap.Type.LIGHT_BLOCKING, pos).getY();
++            case ANY:
++                return world.getHighestBlockYAt(HeightMap.Type.WORLD_SURFACE, pos).getY();
++            case SOLID:
++                return world.getHighestBlockYAt(HeightMap.Type.OCEAN_FLOOR, pos).getY();
++            case SOLID_OR_LIQUID:
++                return world.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, pos).getY();
++            case SOLID_OR_LIQUID_NO_LEAVES:
++                return world.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, pos).getY();
++            default:
++                throw new UnsupportedOperationException();
++        }
++
++    }
++    // Paper end
++
+     public Location getSpawnLocation() {
+         BlockPosition spawn = world.getSpawn();
+         return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ());
+-- 
+2.21.0
+
