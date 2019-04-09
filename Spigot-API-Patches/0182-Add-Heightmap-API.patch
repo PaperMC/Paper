@@ -1,14 +1,80 @@
-From 0d512270b6b6c64204c066ed51777e3d97caef24 Mon Sep 17 00:00:00 2001
+From fff0e005ac2d705e63adbe7925f57204dbce7646 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 1 Dec 2018 19:00:36 -0800
 Subject: [PATCH] Add Heightmap API
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/HeightmapType.java b/src/main/java/com/destroystokyo/paper/HeightmapType.java
+new file mode 100644
+index 00000000..4cd9b5ed
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/HeightmapType.java
+@@ -0,0 +1,35 @@
++package com.destroystokyo.paper;
++
++import org.bukkit.World;
++
++/**
++ * Enumeration of different heightmap types maintained by the server. Generally using these maps is much faster
++ * than using an iterative search for a block in a given x, z coordinate.
++ */
++public enum HeightmapType {
++
++    /**
++     * The highest block used for lighting in the world. Also the block returned by {@link World#getHighestBlockYAt(int, int)}}
++     */
++    LIGHT_BLOCKING,
++
++    /**
++     * References the highest block in the world.
++     */
++    ANY,
++
++    /**
++     * References the highest solid block in a world.
++     */
++    SOLID,
++
++    /**
++     * References the highest solid or liquid block in a world.
++     */
++    SOLID_OR_LIQUID,
++
++    /**
++     * References the highest solid or liquid block in a world, excluding leaves.
++     */
++    SOLID_OR_LIQUID_NO_LEAVES;
++}
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index b4f3e8ce..4ec661b7 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -612,6 +612,20 @@ public class Location implements Cloneable, ConfigurationSerializable {
+         return centerLoc;
+     }
+ 
++    // Paper start - Add heightmap api
++    @NotNull
++    public Location toHighestLocation() {
++        return this.toHighestLocation(com.destroystokyo.paper.HeightmapType.LIGHT_BLOCKING);
++    }
++
++    @NotNull
++    public Location toHighestLocation(@NotNull final com.destroystokyo.paper.HeightmapType heightmap) {
++        final Location ret = this.clone();
++        ret.setY(this.getWorld().getHighestBlockYAt(this, heightmap));
++        return ret;
++    }
++    // Paper end
++
+     /**
+      * Creates explosion at this location with given power
+      *
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 3d8ff98a..df983965 100644
+index 3d8ff98a..4dc813f3 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -154,6 +154,100 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -154,6 +154,68 @@ public interface World extends PluginMessageRecipient, Metadatable {
      @NotNull
      public Block getHighestBlockAt(@NotNull Location location);
  
@@ -17,27 +83,27 @@ index 3d8ff98a..df983965 100644
 +     * Returns the highest block's y-coordinate at the specified block coordinates that match the specified heightmap's conditions.
 +     * @param x The block's x-coordinate.
 +     * @param z The block's z-coordinate.
-+     * @param heightmap The specified heightmap to use. See {@link HeightmapType}
++     * @param heightmap The specified heightmap to use. See {@link com.destroystokyo.paper.HeightmapType}
 +     * @return The highest block's y-coordinate at (x, z) that matches the specified heightmap's conditions.
 +     * @throws UnsupportedOperationException If the heightmap type is not supported.
 +     * @implNote Implementations are recommended to use an iterative search as a fallback before resorting to
 +     *           throwing an {@code UnsupportedOperationException}.
-+     * @see HeightmapType
++     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    public int getHighestBlockYAt(int x, int z, @NotNull HeightmapType heightmap) throws UnsupportedOperationException;
++    public int getHighestBlockYAt(int x, int z, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException;
 +
 +    /**
 +     * Returns the highest block's y-coordinate at the specified block coordinates that match the specified heightmap's conditions.
 +     * Note that the y-coordinate of the specified location is ignored.
 +     * @param location The specified block coordinates.
-+     * @param heightmap The specified heightmap to use. See {@link HeightmapType}
++     * @param heightmap The specified heightmap to use. See {@link com.destroystokyo.paper.HeightmapType}
 +     * @return The highest block's y-coordinate at {@code location} that matches the specified heightmap's conditions.
 +     * @throws UnsupportedOperationException If the heightmap type is not supported.
 +     * @implNote Implementations are recommended to use an iterative search as a fallback before resorting to
 +     *           throwing an {@code UnsupportedOperationException}.
-+     * @see HeightmapType
++     * @see com.destroystokyo.paper.HeightmapType
 +     */
-+    default int getHighestBlockYAt(@NotNull Location location, @NotNull HeightmapType heightmap) throws UnsupportedOperationException {
++    default int getHighestBlockYAt(@NotNull Location location, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightmap);
 +    }
 +
@@ -45,15 +111,15 @@ index 3d8ff98a..df983965 100644
 +     * Returns the highest {@link Block} at the specified block coordinates that match the specified heightmap's conditions.
 +     * @param x The block's x-coordinate.
 +     * @param z The block's z-coordinate.
-+     * @param heightmap The specified heightmap to use. See {@link HeightmapType}
++     * @param heightmap The specified heightmap to use. See {@link com.destroystokyo.paper.HeightmapType}
 +     * @return The highest {@link Block} at (x, z) that matches the specified heightmap's conditions.
 +     * @throws UnsupportedOperationException If the heightmap type is not supported.
 +     * @implNote Implementations are recommended to use an iterative search as a fallback before resorting to
 +     *           throwing an {@code UnsupportedOperationException}.
-+     * @see HeightmapType
++     * @see com.destroystokyo.paper.HeightmapType
 +     */
 +    @NotNull
-+    default Block getHighestBlockAt(int x, int z, @NotNull HeightmapType heightmap) throws UnsupportedOperationException {
++    default Block getHighestBlockAt(int x, int z, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getBlockAt(x, this.getHighestBlockYAt(x, z, heightmap), z);
 +    }
 +
@@ -61,48 +127,16 @@ index 3d8ff98a..df983965 100644
 +     * Returns the highest {@link Block} at the specified block coordinates that match the specified heightmap's conditions.
 +     * Note that the y-coordinate of the specified location is ignored.
 +     * @param location The specified block coordinates.
-+     * @param heightmap The specified heightmap to use. See {@link HeightmapType}
++     * @param heightmap The specified heightmap to use. See {@link com.destroystokyo.paper.HeightmapType}
 +     * @return The highest {@link Block} at {@code location} that matches the specified heightmap's conditions.
 +     * @throws UnsupportedOperationException If the heightmap type is not supported.
 +     * @implNote Implementations are recommended to use an iterative search as a fallback before resorting to
 +     *           throwing an {@code UnsupportedOperationException}.
-+     * @see HeightmapType
++     * @see com.destroystokyo.paper.HeightmapType
 +     */
 +    @NotNull
-+    default Block getHighestBlockAt(@NotNull Location location, @NotNull HeightmapType heightmap) throws UnsupportedOperationException {
++    default Block getHighestBlockAt(@NotNull Location location, @NotNull com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
 +        return this.getHighestBlockAt(location.getBlockX(), location.getBlockZ(), heightmap);
-+    }
-+
-+    /**
-+     * Enumeration of different heightmap types maintained by the server. Generally using these maps is much faster
-+     * than using an iterative search for a block in a given x, z coordinate.
-+     */
-+    public static enum HeightmapType {
-+
-+        /**
-+         * The highest block used for lighting in the world. Also the block returned by {@link World#getHighestBlockYAt(int, int)}}
-+         */
-+        LIGHT_BLOCKING,
-+
-+        /**
-+         * References the highest block in the world.
-+         */
-+        ANY,
-+
-+        /**
-+         * References the highest solid block in a world.
-+         */
-+        SOLID,
-+
-+        /**
-+         * References the highest solid or liquid block in a world.
-+         */
-+        SOLID_OR_LIQUID,
-+
-+        /**
-+         * References the highest solid or liquid block in a world, excluding leaves.
-+         */
-+        SOLID_OR_LIQUID_NO_LEAVES;
 +    }
 +    // Paper end
 +
