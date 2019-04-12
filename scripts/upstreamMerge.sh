@@ -13,7 +13,7 @@ function getRef {
 }
 function update {
     cd "$workdir/$1"
-    $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/master
+    $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/$2
     refRemote=$(git rev-parse HEAD)
     cd ../
     $gitcmd add $1
@@ -24,9 +24,9 @@ function update {
     fi
 }
 
-update Bukkit
-update CraftBukkit
-update Spigot
+update Bukkit master
+update CraftBukkit master
+update Spigot master
 
 if [[ "$2" = "all" || "$2" = "a" ]] ; then
 	update BuildData
