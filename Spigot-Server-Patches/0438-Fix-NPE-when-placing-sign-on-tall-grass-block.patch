@@ -1,0 +1,29 @@
+From dbeb05b1241e3ca0585e875689a5f9e3e58d2e35 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 13 Apr 2019 15:13:19 -0500
+Subject: [PATCH] Fix NPE when placing sign on tall grass block
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index eb130c012..cea34865c 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -305,7 +305,14 @@ public final class ItemStack {
+                     // SPIGOT-4678
+                     if (this.item instanceof ItemSign && ItemSign.openSign) {
+                         ItemSign.openSign = false;
+-                        entityhuman.openSign((TileEntitySign) world.getTileEntity(new BlockActionContext(itemactioncontext).getClickPosition()));
++                        // Paper start
++                        BlockPosition pos = new BlockActionContext(itemactioncontext).getClickPosition();
++                        TileEntity te = world.getTileEntity(pos);
++                        if (te == null) {
++                            te = world.getTileEntity(pos.shift(itemactioncontext.getClickedFace().opposite()));
++                        }
++                        entityhuman.openSign((TileEntitySign) te);
++                        // Paper end
+                     }
+ 
+                     // SPIGOT-1288 - play sound stripped from ItemBlock
+-- 
+2.20.1
+
