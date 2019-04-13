@@ -251,7 +251,7 @@ public class EntityIronGolem extends EntityGolem implements IEntityAngerable {
         BlockPosition blockposition1 = blockposition.down();
         IBlockData iblockdata = iworldreader.getType(blockposition1);
 
-        if (!iblockdata.a((IBlockAccess) iworldreader, blockposition1, (Entity) this)) {
+        if (!iblockdata.a((IBlockAccess) iworldreader, blockposition1, (Entity) this) && !world.paperConfig.ironGolemsCanSpawnInAir) { // Paper
             return false;
         } else {
             for (int i = 1; i < 3; ++i) {

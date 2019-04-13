@@ -380,6 +380,11 @@ public class PaperWorldConfig {
         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
     }
 
+    public boolean ironGolemsCanSpawnInAir = false;
+    private void ironGolemsCanSpawnInAir() {
+        ironGolemsCanSpawnInAir = getBoolean("iron-golems-can-spawn-in-air", ironGolemsCanSpawnInAir);
+    }
+
     public boolean armorStandEntityLookups = true;
     private void armorStandEntityLookups() {
         armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
