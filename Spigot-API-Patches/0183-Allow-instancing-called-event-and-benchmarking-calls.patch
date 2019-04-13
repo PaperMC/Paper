@@ -1,0 +1,51 @@
+From 17d7f6a11475aea2ca1221514a8d0051d859c9a3 Mon Sep 17 00:00:00 2001
+From: MrIvanPlays <pekov.ivan@abv.bg>
+Date: Sat, 13 Apr 2019 12:34:51 +0300
+Subject: [PATCH] Allow instancing called event and benchmarking calls
+
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index ba4ed7ed..b138e6b5 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -110,7 +110,7 @@ public interface PluginManager {
+      *     <i>Note: This is best-effort basis, and should not be used to test
+      *     synchronized state. This is an indicator for flawed flow logic.</i>
+      */
+-    public void callEvent(@NotNull Event event) throws IllegalStateException;
++    public <T extends Event> T callEvent(@NotNull T event) throws IllegalStateException; // Paper - allow getting instance of the event when calling
+ 
+     /**
+      * Registers all the events in the given listener class
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 9ec042fd..a5edd022 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -506,8 +506,9 @@ public final class SimplePluginManager implements PluginManager {
+      *
+      * @param event Event details
+      */
+-    public void callEvent(@NotNull Event event) {
++    public <T extends Event> T callEvent(@NotNull T event) { // Paper - allow getting instance of the event when calling
+         // Paper - replace callEvent by merging to below method
++        long start = System.nanoTime(); // Paper - benchmark event calls
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+ 
+@@ -541,6 +542,13 @@ public final class SimplePluginManager implements PluginManager {
+                 // Paper end
+             }
+         }
++        // Paper start - handle event calls benchmark
++        long elapsed = System.nanoTime() - start;
++        if (elapsed > 250000000) { // only report slow events
++            server.getLogger().warning("Event '" + event.getEventName() + "' call took " + elapsed / 1000000 + " ms ( " + elapsed + " nanoseconds ) to process!");
++        }
++        // Paper end
++        return event; // Paper - allow getting instance of the event when calling
+     }
+ 
+     public void registerEvents(@NotNull Listener listener, @NotNull Plugin plugin) {
+-- 
+2.21.0.windows.1
+
