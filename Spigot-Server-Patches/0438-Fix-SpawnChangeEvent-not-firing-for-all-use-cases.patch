@@ -1,0 +1,50 @@
+From dc8bb891e88b09fe7eeae7427525fb359789951a Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 13 Apr 2019 15:46:57 -0500
+Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d20f6ac7e..f29e205eb 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -2842,8 +2842,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         return blockposition;
+     }
+ 
++    public void setSpawn(BlockPosition blockposition) { v(blockposition); } // Paper - OBFHELPER
+     public void v(BlockPosition blockposition) {
++        BlockPosition prevPos = getSpawn(); // Paper
+         this.worldData.setSpawn(blockposition);
++        new org.bukkit.event.world.SpawnChangeEvent(world, MCUtil.toLocation(this, prevPos)).callEvent(); // Paper
+     }
+ 
+     public boolean a(EntityHuman entityhuman, BlockPosition blockposition) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 457aa5a3f..522b3e41e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -172,12 +172,16 @@ public class CraftWorld implements World {
+ 
+     public boolean setSpawnLocation(int x, int y, int z) {
+         try {
+-            Location previousLocation = getSpawnLocation();
+-            world.worldData.setSpawn(new BlockPosition(x, y, z));
++            // Paper start - move to World#v(BlockPosition)
++            //Location previousLocation = getSpawnLocation();
++            //world.worldData.setSpawn(new BlockPosition(x, y, z));
+ 
+             // Notify anyone who's listening.
+-            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+-            server.getPluginManager().callEvent(event);
++            //SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
++            //server.getPluginManager().callEvent(event);
++
++            world.setSpawn(new BlockPosition(x, y, z));
++            // Paper end
+ 
+             return true;
+         } catch (Exception e) {
+-- 
+2.20.1
+
