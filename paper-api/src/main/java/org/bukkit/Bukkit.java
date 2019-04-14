@@ -1497,9 +1497,7 @@ public final class Bukkit {
      * no further guarantees are made.
      * @throws IllegalArgumentException if the selector is malformed in any way
      * or a parameter is null
-     * @deprecated draft API
      */
-    @Deprecated
     @NotNull
     public static List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException {
         return server.selectEntities(sender, selector);
