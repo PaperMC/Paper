@@ -1,0 +1,38 @@
+From f560ea0c9401e8a2d36c3d01bf9a7084c867bf70 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 14 Apr 2019 20:59:16 +0100
+Subject: [PATCH] Don't drop items into the world if BlockPlaceEvent is
+ cancelled
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 53e0688d96..c5f5fa4e74 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -187,12 +187,15 @@ public final class ItemStack {
+                 }
+             }
+         }
++        world.captureDrops = new java.util.ArrayList<>(); // Paper - Don't drop items if block place is cancelled
+         EnumInteractionResult enuminteractionresult = this.getItem().a(entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
+         int newData = this.getData();
+         int newCount = this.getCount();
+         this.setCount(oldCount);
+         this.setData(oldData);
+         world.captureBlockStates = false;
++        List<EntityItem> drops = world.captureDrops; // Paper - Don't drop items if block place is cancelled
++        world.captureDrops = null; // Paper - Don't drop items if block place is cancelled
+         if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
+             world.captureTreeGeneration = false;
+             Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
+@@ -254,6 +257,7 @@ public final class ItemStack {
+                     this.setData(newData);
+                     this.setCount(newCount);
+                 }
++                if (drops != null) drops.forEach(world::addEntity); // Paper - Don't drop items if block place is cancelled
+ 
+                 for (Map.Entry<BlockPosition, TileEntity> e : world.capturedTileEntities.entrySet()) {
+                     world.setTileEntity(e.getKey(), e.getValue());
+-- 
+2.21.0
+
