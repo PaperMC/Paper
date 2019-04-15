@@ -129,10 +129,14 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
          */
         IN_GROUND,
         /**
-         * When a player fails to catch anything while fishing usually due to
-         * poor aiming or timing.
+         * When a player fails to catch a bite while fishing usually due to
+         * poor timing.
          */
         FAILED_ATTEMPT,
+        /**
+         * When a player reels in their hook without receiving any bites.
+         */
+        REEL_IN,
         /**
          * Called when there is a bite on the hook and it is ready to be reeled
          * in.
