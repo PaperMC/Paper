@@ -1,4 +1,4 @@
-From a5bd0235ffaaae6207d3ac887c2b8ccc2b60d39d Mon Sep 17 00:00:00 2001
+From ea03a714afb61798851be72f35684477ce4e5710 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Mon, 15 Apr 2019 02:24:52 +0100
 Subject: [PATCH] Handle bad chunks more gracefully
@@ -15,16 +15,17 @@ Should Mojang choose to alter this behavior in the future, this change
 will simply defer to whatever that new behavior is.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 17e76815ad..2eb7888027 100644
+index 17e76815ad..369aaa84c4 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -171,8 +171,20 @@ public class RegionFileCache {
      private static NBTTagCompound readOversizedChunk(RegionFile regionfile, int i, int j) throws IOException {
          synchronized (regionfile) {
              try (DataInputStream datainputstream = regionfile.getReadStream(i & 31, j & 31)) {
-+                // Paper start - Handle bad chunks more gracefully - also handle similarly with oversized data
-                 NBTTagCompound oversizedData = regionfile.getOversizedData(i, j);
+-                NBTTagCompound oversizedData = regionfile.getOversizedData(i, j);
 -                NBTTagCompound chunk = NBTCompressedStreamTools.readNBT(datainputstream);
++                // Paper start - Handle bad chunks more gracefully - also handle similarly with oversized data
++                NBTTagCompound oversizedData = null;
 +
 +                try {
 +                    oversizedData = regionfile.getOversizedData(i, j);
