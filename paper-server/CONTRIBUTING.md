@@ -21,6 +21,7 @@ If a PR is for both Bukkit and CraftBukkit it should include a link to the appro
 * Submit a pull request to the relevant repository in the Spigot organization.
     * Make sure your pull request meets our [code requirements.](README.md)
 * If you are fixing a JIRA ticket, be sure to update the ticket with a link to the pull request.
+    * All bug fixes must be accompanied by a JIRA ticket.
 * Ensure all changes (including in patches) have our Minimal Diff Policy in mind.
 
 ##### Pull Request Feedback
