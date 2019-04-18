@@ -147,17 +147,41 @@ public class ItemMetaTest extends AbstractTestingBase {
     }
 
     @Test
-    public void testTaggedButNotMeta() {
-        CraftItemStack craft = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
-        craft.handle.setDamage(0);
+    public void testNoDamageEquality() {
+        CraftItemStack noTag = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
 
-        assertThat("Should have NBT tag", CraftItemStack.hasItemMeta(craft.handle), is(true));
-        assertThat("NBT Tag should contain Damage", craft.handle.getTag().get("Damage"), instanceOf(NBTTagInt.class));
-        assertThat("But we should not have meta", craft.hasItemMeta(), is(false));
+        CraftItemStack noDamage = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
+        noDamage.handle.setDamage(0);
 
-        ItemStack pureBukkit = new ItemStack(Material.SHEARS);
-        assertThat("Bukkit and craft stacks should be similar", craft.isSimilar(pureBukkit), is(true));
-        assertThat("Bukkit and craft stacks should be equal", craft.equals(pureBukkit), is(true));
+        CraftItemStack enchanted = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
+        enchanted.addEnchantment(Enchantment.DIG_SPEED, 1);
+
+        CraftItemStack enchantedNoDamage = CraftItemStack.asCraftCopy(new ItemStack(Material.SHEARS));
+        enchantedNoDamage.addEnchantment(Enchantment.DIG_SPEED, 1);
+        enchantedNoDamage.handle.setDamage(0);
+
+        // check tags:
+        assertThat("noTag should have no NBT tag", CraftItemStack.hasItemMeta(noTag.handle), is(false));
+        assertThat("noTag should have no meta", noTag.hasItemMeta(), is(false));
+
+        assertThat("noDamage should have no NBT tag", CraftItemStack.hasItemMeta(noDamage.handle), is(false));
+        assertThat("noDamage should have no meta", noDamage.hasItemMeta(), is(false));
+
+        assertThat("enchanted should have NBT tag", CraftItemStack.hasItemMeta(enchanted.handle), is(true));
+        assertThat("enchanted should have meta", enchanted.hasItemMeta(), is(true));
+
+        assertThat("enchantedNoDamage should have NBT tag", CraftItemStack.hasItemMeta(enchantedNoDamage.handle), is(true));
+        assertThat("enchantedNoDamage should have meta", enchantedNoDamage.hasItemMeta(), is(true));
+
+        // check comparisons:
+        assertThat("noTag and noDamage stacks should be similar", noTag.isSimilar(noDamage), is(true));
+        assertThat("noTag and noDamage stacks should be equal", noTag.equals(noDamage), is(true));
+
+        assertThat("enchanted and enchantedNoDamage stacks should be similar", enchanted.isSimilar(enchantedNoDamage), is(true));
+        assertThat("enchanted and enchantedNoDamage stacks should be equal", enchanted.equals(enchantedNoDamage), is(true));
+
+        assertThat("noTag and enchanted stacks should not be similar", noTag.isSimilar(enchanted), is(false));
+        assertThat("noTag and enchanted stacks should not be equal", noTag.equals(enchanted), is(false));
     }
 
     @Test
