@@ -29,7 +29,7 @@ import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 
-public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner {
+public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
 
     public CraftCreatureSpawner(World world, SpawnerBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -291,4 +291,38 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
                 new HashMap<>(nms.slotDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getSlot(entry.getKey()), Map.Entry::getValue)))
         )).orElse(null);
     }
+
+    // Paper start - more spawner API
+    @Override
+    public boolean isActivated() {
+        requirePlaced();
+        return org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic.super.isActivated();
+    }
+
+    @Override
+    public void resetTimer() {
+        requirePlaced();
+        org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic.super.resetTimer();
+    }
+
+    @Override
+    public void setNextSpawnData(final SpawnData spawnData) {
+        this.getSpawner().setNextSpawnData(this.isPlaced() ? this.getInternalWorld() : null, this.getInternalPosition(), spawnData);
+    }
+
+    @Override
+    public BaseSpawner getSpawner() {
+        return this.getSnapshot().getSpawner();
+    }
+
+    @Override
+    public net.minecraft.core.BlockPos getInternalPosition() {
+        return this.getPosition();
+    }
+
+    @Override
+    public net.minecraft.world.level.Level getInternalWorld() {
+        return this.world.getHandle();
+    }
+    // Paper end - more spawner API
 }

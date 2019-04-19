@@ -100,3 +100,59 @@
                      }
                  }
  
+@@ -202,7 +237,13 @@
+     }
+ 
+     public void load(@Nullable Level world, BlockPos pos, CompoundTag nbt) {
++        // Paper start - use larger int if set
++        if (nbt.contains("Paper.Delay")) {
++            this.spawnDelay = nbt.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = nbt.getShort("Delay");
++        }
++        // Paper end
+         boolean flag = nbt.contains("SpawnData", 10);
+ 
+         if (flag) {
+@@ -225,9 +266,15 @@
+             this.spawnPotentials = SimpleWeightedRandomList.single(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData());
+         }
+ 
++        // Paper start - use ints if set
++        if (nbt.contains("Paper.MinSpawnDelay", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++            this.minSpawnDelay = nbt.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = nbt.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = nbt.getShort("SpawnCount");
++        } else // Paper end
+         if (nbt.contains("MinSpawnDelay", 99)) {
+-            this.minSpawnDelay = nbt.getShort("MinSpawnDelay");
+-            this.maxSpawnDelay = nbt.getShort("MaxSpawnDelay");
++            this.minSpawnDelay = nbt.getInt("MinSpawnDelay"); // Paper - short -> int
++            this.maxSpawnDelay = nbt.getInt("MaxSpawnDelay"); // Paper - short -> int
+             this.spawnCount = nbt.getShort("SpawnCount");
+         }
+ 
+@@ -244,9 +291,20 @@
+     }
+ 
+     public CompoundTag save(CompoundTag nbt) {
+-        nbt.putShort("Delay", (short) this.spawnDelay);
+-        nbt.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-        nbt.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++        // Paper start
++        if (spawnDelay > Short.MAX_VALUE) {
++            nbt.putInt("Paper.Delay", this.spawnDelay);
++        }
++        nbt.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++            nbt.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++            nbt.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++        }
++
++        nbt.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++        nbt.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++        // Paper end
+         nbt.putShort("SpawnCount", (short) this.spawnCount);
+         nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+         nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);

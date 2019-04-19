@@ -16,7 +16,7 @@ import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 
-final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart {
+final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
     CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
         super(server, entity);
     }
@@ -171,4 +171,21 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
     public String toString() {
         return "CraftMinecartMobSpawner";
     }
+
+    // Paper start - more spawner API
+    @Override
+    public net.minecraft.world.level.BaseSpawner getSpawner() {
+        return this.getHandle().getSpawner();
+    }
+
+    @Override
+    public net.minecraft.world.level.Level getInternalWorld() {
+        return this.getHandle().level();
+    }
+
+    @Override
+    public net.minecraft.core.BlockPos getInternalPosition() {
+        return this.getHandle().blockPosition();
+    }
+    // Paper end - more spawner API
 }
