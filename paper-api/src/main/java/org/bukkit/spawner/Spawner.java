@@ -107,4 +107,30 @@ public interface Spawner extends BaseSpawner {
      * @param maxNearbyEntities the maximum number of nearby, similar, entities
      */
     public void setMaxNearbyEntities(int maxNearbyEntities);
+
+    // Paper start
+    /**
+     * Check if spawner is activated (a player is close enough)
+     *
+     * @return True if a player is close enough to activate it
+     */
+    public boolean isActivated();
+
+    /**
+     * Resets the spawn delay timer within the min/max range
+     */
+    public void resetTimer();
+
+    /**
+     * Sets the {@link EntityType} to {@link EntityType#ITEM} and sets the data to the given
+     * {@link org.bukkit.inventory.ItemStack ItemStack}.
+     * <p>
+     * {@link #setSpawnCount(int)} does not dictate the amount of items in the stack spawned, but rather how many
+     * stacks should be spawned.
+     *
+     * @param itemStack The item to spawn. Must not {@link org.bukkit.Material#isAir be air}.
+     * @see #setSpawnedType(EntityType)
+     */
+    void setSpawnedItem(org.bukkit.inventory.@org.jetbrains.annotations.NotNull ItemStack itemStack);
+    // Paper end
 }
