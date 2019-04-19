@@ -121,4 +121,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     public void setSpawnRange(int spawnRange) {
         this.getSnapshot().getSpawner().spawnRange = spawnRange;
     }
+
+    // Paper start
+    @Override
+    public boolean isActivated() {
+        return this.getSnapshot().getSpawner().isActivated();
+    }
+
+    @Override
+    public void resetTimer() {
+        this.getSnapshot().getSpawner().resetTimer();
+    }
+    // Paper end
 }

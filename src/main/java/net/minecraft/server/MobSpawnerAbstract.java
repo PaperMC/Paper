@@ -47,6 +47,7 @@ public abstract class MobSpawnerAbstract {
         this.mobs.clear(); // CraftBukkit - SPIGOT-3496, MC-92282
     }
 
+    public boolean isActivated() { return h(); } // Paper - OBFHELPER
     private boolean h() {
         BlockPosition blockposition = this.b();
 
@@ -203,6 +204,7 @@ public abstract class MobSpawnerAbstract {
         }
     }
 
+    public void resetTimer() { i(); } // Paper - OBFHELPER
     private void i() {
         if (this.maxSpawnDelay <= this.minSpawnDelay) {
             this.spawnDelay = this.minSpawnDelay;
@@ -220,7 +222,13 @@ public abstract class MobSpawnerAbstract {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
+        // Paper start - use larger int if set
+        if (nbttagcompound.hasKey("Paper.Delay")) {
+            this.spawnDelay = nbttagcompound.getInt("Paper.Delay");
+        } else {
         this.spawnDelay = nbttagcompound.getShort("Delay");
+        }
+        // Paper end
         this.mobs.clear();
         if (nbttagcompound.hasKeyOfType("SpawnPotentials", 9)) {
             NBTTagList nbttaglist = nbttagcompound.getList("SpawnPotentials", 10);
@@ -235,10 +243,15 @@ public abstract class MobSpawnerAbstract {
         } else if (!this.mobs.isEmpty()) {
             this.setSpawnData((MobSpawnerData) WeightedRandom.a(this.a().random, this.mobs));
         }
-
+        // Paper start - use ints if set
+        if (nbttagcompound.hasKeyOfType("Paper.MinSpawnDelay", 99)) {
+            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay");
+            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay");
+            this.spawnCount = nbttagcompound.getShort("SpawnCount");
+        } else // Paper end
         if (nbttagcompound.hasKeyOfType("MinSpawnDelay", 99)) {
-            this.minSpawnDelay = nbttagcompound.getShort("MinSpawnDelay");
-            this.maxSpawnDelay = nbttagcompound.getShort("MaxSpawnDelay");
+            this.minSpawnDelay = nbttagcompound.getInt("MinSpawnDelay");
+            this.maxSpawnDelay = nbttagcompound.getInt("MaxSpawnDelay");
             this.spawnCount = nbttagcompound.getShort("SpawnCount");
         }
 
@@ -263,9 +276,20 @@ public abstract class MobSpawnerAbstract {
         if (minecraftkey == null) {
             return nbttagcompound;
         } else {
-            nbttagcompound.setShort("Delay", (short) this.spawnDelay);
-            nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
-            nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
+            // Paper start
+            if (spawnDelay > Short.MAX_VALUE) {
+                nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
+            }
+            nbttagcompound.setShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
+
+            if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
+                nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
+                nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
+            }
+
+            nbttagcompound.setShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
+            nbttagcompound.setShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
+            // Paper end
             nbttagcompound.setShort("SpawnCount", (short) this.spawnCount);
             nbttagcompound.setShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
             nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
