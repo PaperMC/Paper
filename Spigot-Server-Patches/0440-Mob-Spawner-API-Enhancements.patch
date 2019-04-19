@@ -1,0 +1,88 @@
+From f23a9f4a86c9d9156beadf23706944cd4f709e01 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Fri, 19 Apr 2019 12:41:13 -0500
+Subject: [PATCH] Mob Spawner API Enhancements
+
+
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index af38e5396..30264edfc 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -46,6 +46,7 @@ public abstract class MobSpawnerAbstract {
+         this.mobs.clear(); // CraftBukkit - SPIGOT-3496, MC-92282
+     }
+ 
++    public boolean isActivated() { return h(); } // Paper - OBFHELPER
+     private boolean h() {
+         BlockPosition blockposition = this.b();
+ 
+@@ -176,6 +177,7 @@ public abstract class MobSpawnerAbstract {
+         }
+     }
+ 
++    public void resetTimer() { i(); } // Paper - OBFHELPER
+     private void i() {
+         if (this.maxSpawnDelay <= this.minSpawnDelay) {
+             this.spawnDelay = this.minSpawnDelay;
+@@ -193,7 +195,7 @@ public abstract class MobSpawnerAbstract {
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+-        this.spawnDelay = nbttagcompound.getShort("Delay");
++        this.spawnDelay = nbttagcompound.getInt("Paper.Delay"); // Paper
+         this.mobs.clear();
+         if (nbttagcompound.hasKeyOfType("SpawnPotentials", 9)) {
+             NBTTagList nbttaglist = nbttagcompound.getList("SpawnPotentials", 10);
+@@ -210,8 +212,8 @@ public abstract class MobSpawnerAbstract {
+         }
+ 
+         if (nbttagcompound.hasKeyOfType("MinSpawnDelay", 99)) {
+-            this.minSpawnDelay = nbttagcompound.getShort("MinSpawnDelay");
+-            this.maxSpawnDelay = nbttagcompound.getShort("MaxSpawnDelay");
++            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay"); // Paper
++            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay"); // Paper
+             this.spawnCount = nbttagcompound.getShort("SpawnCount");
+         }
+ 
+@@ -236,9 +238,14 @@ public abstract class MobSpawnerAbstract {
+         if (minecraftkey == null) {
+             return nbttagcompound;
+         } else {
+-            nbttagcompound.setShort("Delay", (short) this.spawnDelay);
+-            nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-            nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++            // Paper start
++            nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
++            nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++            nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            nbttagcompound.setShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++            nbttagcompound.setShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++            nbttagcompound.setShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++            // Paper end
+             nbttagcompound.setShort("SpawnCount", (short) this.spawnCount);
+             nbttagcompound.setShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+             nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index aa63b854d..a3be2b141 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -122,4 +122,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
+     public void setSpawnRange(int spawnRange) {
+         this.getSnapshot().getSpawner().spawnRange = spawnRange;
+     }
++
++    // Paper start
++    @Override
++    public boolean isActivated() {
++        return this.getSnapshot().getSpawner().isActivated();
++    }
++
++    @Override
++    public void resetTimer() {
++        this.getSnapshot().getSpawner().resetTimer();
++    }
++    // Paper end
+ }
+-- 
+2.20.1
+
