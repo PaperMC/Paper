@@ -5,7 +5,7 @@ Subject: [PATCH] Mob Spawner API Enhancements
 
 
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index af38e5396..30264edfc 100644
+index af38e5396e..b0fbd4f6d8 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
@@ -28,19 +28,32 @@ index af38e5396..30264edfc 100644
      }
  
      public void a(NBTTagCompound nbttagcompound) {
--        this.spawnDelay = nbttagcompound.getShort("Delay");
-+        this.spawnDelay = nbttagcompound.getInt("Paper.Delay"); // Paper
++        // Paper start - use larger int if set
++        if (nbttagcompound.hasKey("Paper.Delay")) {
++            this.spawnDelay = nbttagcompound.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = nbttagcompound.getShort("Delay");
++        }
++        // Paper end
          this.mobs.clear();
          if (nbttagcompound.hasKeyOfType("SpawnPotentials", 9)) {
              NBTTagList nbttaglist = nbttagcompound.getList("SpawnPotentials", 10);
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
+         } else if (!this.mobs.isEmpty()) {
+             this.a((MobSpawnerData) WeightedRandom.a(this.a().random, this.mobs));
          }
- 
+-
++        // Paper start - use ints if set
++        if (nbttagcompound.hasKeyOfType("Paper.MinSpawnDelay", 99)) {
++            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = nbttagcompound.getShort("SpawnCount");
++        } else // Paper end
          if (nbttagcompound.hasKeyOfType("MinSpawnDelay", 99)) {
 -            this.minSpawnDelay = nbttagcompound.getShort("MinSpawnDelay");
 -            this.maxSpawnDelay = nbttagcompound.getShort("MaxSpawnDelay");
-+            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay"); // Paper
-+            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay"); // Paper
++            this.minSpawnDelay = nbttagcompound.getInt("MinSpawnDelay");
++            this.maxSpawnDelay = nbttagcompound.getInt("MaxSpawnDelay");
              this.spawnCount = nbttagcompound.getShort("SpawnCount");
          }
  
@@ -52,10 +65,16 @@ index af38e5396..30264edfc 100644
 -            nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
 -            nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
 +            // Paper start
-+            nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
-+            nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
-+            nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            if (spawnDelay > Short.MAX_VALUE) {
++                nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
++            }
 +            nbttagcompound.setShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++            if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++                nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++                nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            }
++
 +            nbttagcompound.setShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
 +            nbttagcompound.setShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
 +            // Paper end
@@ -63,7 +82,7 @@ index af38e5396..30264edfc 100644
              nbttagcompound.setShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
              nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index aa63b854d..a3be2b141 100644
+index aa63b854d1..a3be2b141e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 @@ -0,0 +0,0 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
