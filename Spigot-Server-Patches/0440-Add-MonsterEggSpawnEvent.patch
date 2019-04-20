@@ -1,0 +1,59 @@
+From 5c428a21faf87647b74cb34d96a9d8e00d0695d0 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Fri, 19 Apr 2019 20:31:29 -0500
+Subject: [PATCH] Add MonsterEggSpawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index 24ca35119..381cf60f0 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -159,19 +159,43 @@ public class EntityTypes<T extends Entity> {
+ 
+     @Nullable
+     public Entity a(World world, @Nullable ItemStack itemstack, @Nullable EntityHuman entityhuman, BlockPosition blockposition, boolean flag, boolean flag1) {
+-        return this.a(world, itemstack == null ? null : itemstack.getTag(), itemstack != null && itemstack.hasName() ? itemstack.getName() : null, entityhuman, blockposition, flag, flag1);
++        // Paper start - pass itemstack for monster eggs
++        return this.a(world, itemstack, itemstack == null ? null : itemstack.getTag(), itemstack != null && itemstack.hasName() ? itemstack.getName() : null, entityhuman, blockposition, flag, flag1);
+     }
+ 
+     @Nullable
+     public T a(World world, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, boolean flag, boolean flag1) {
++        return a(world, null, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, flag, flag1);
++    }
++    @Nullable
++    public T a(World world, @Nullable ItemStack itemstack, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, boolean flag, boolean flag1) {
+         // CraftBukkit start
+-        return spawnCreature(world, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
++        return spawnCreature(world, itemstack, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
+     }
+ 
+     @Nullable
+     public T spawnCreature(World world, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        return spawnCreature(world, null, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, flag, flag1, spawnReason);
++    }
++    @Nullable
++    public T spawnCreature(World world, @Nullable ItemStack itemstack, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // Paper end - pass itemstack for monster eggs
+         T t0 = this.b(world, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, flag, flag1);
+ 
++        // Paper start
++        if (spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG && itemstack != null && t0 != null) {
++            final com.destroystokyo.paper.event.entity.MonsterEggSpawnEvent event = new com.destroystokyo.paper.event.entity.MonsterEggSpawnEvent(entityhuman != null ? entityhuman.getBukkitEntity() : null, (org.bukkit.entity.LivingEntity) t0.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
++
++            if (!event.callEvent()) {
++                world.removeEntity(t0);
++                return null;
++            }
++            if (event.getEntity().getEntityId() != t0.getId()) {
++                return (T) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getEntity()).getHandle();
++            }
++        }
++        // Paper end
++
+         return world.addEntity(t0, spawnReason) ? t0 : null; // Don't return an entity when CreatureSpawnEvent is canceled
+         // CraftBukkit end
+     }
+-- 
+2.20.1
+
