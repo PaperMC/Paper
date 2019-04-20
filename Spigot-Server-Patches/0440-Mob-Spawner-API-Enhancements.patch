@@ -1,11 +1,11 @@
-From f23a9f4a86c9d9156beadf23706944cd4f709e01 Mon Sep 17 00:00:00 2001
+From 40b3656ef01220c3535adea82aede58d508640e7 Mon Sep 17 00:00:00 2001
 From: William Blake Galbreath <blake.galbreath@gmail.com>
 Date: Fri, 19 Apr 2019 12:41:13 -0500
 Subject: [PATCH] Mob Spawner API Enhancements
 
 
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index af38e5396..30264edfc 100644
+index af38e5396e..b0fbd4f6d8 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -46,6 +46,7 @@ public abstract class MobSpawnerAbstract {
@@ -24,27 +24,40 @@ index af38e5396..30264edfc 100644
      private void i() {
          if (this.maxSpawnDelay <= this.minSpawnDelay) {
              this.spawnDelay = this.minSpawnDelay;
-@@ -193,7 +195,7 @@ public abstract class MobSpawnerAbstract {
+@@ -193,7 +195,13 @@ public abstract class MobSpawnerAbstract {
      }
  
      public void a(NBTTagCompound nbttagcompound) {
--        this.spawnDelay = nbttagcompound.getShort("Delay");
-+        this.spawnDelay = nbttagcompound.getInt("Paper.Delay"); // Paper
++        // Paper start - use larger int if set
++        if (nbttagcompound.hasKey("Paper.Delay")) {
++            this.spawnDelay = nbttagcompound.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = nbttagcompound.getShort("Delay");
++        }
++        // Paper end
          this.mobs.clear();
          if (nbttagcompound.hasKeyOfType("SpawnPotentials", 9)) {
              NBTTagList nbttaglist = nbttagcompound.getList("SpawnPotentials", 10);
-@@ -210,8 +212,8 @@ public abstract class MobSpawnerAbstract {
+@@ -208,10 +216,15 @@ public abstract class MobSpawnerAbstract {
+         } else if (!this.mobs.isEmpty()) {
+             this.a((MobSpawnerData) WeightedRandom.a(this.a().random, this.mobs));
          }
- 
+-
++        // Paper start - use ints if set
++        if (nbttagcompound.hasKeyOfType("Paper.MinSpawnDelay", 99)) {
++            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = nbttagcompound.getShort("SpawnCount");
++        } else // Paper end
          if (nbttagcompound.hasKeyOfType("MinSpawnDelay", 99)) {
 -            this.minSpawnDelay = nbttagcompound.getShort("MinSpawnDelay");
 -            this.maxSpawnDelay = nbttagcompound.getShort("MaxSpawnDelay");
-+            this.minSpawnDelay = nbttagcompound.getInt("Paper.MinSpawnDelay"); // Paper
-+            this.maxSpawnDelay = nbttagcompound.getInt("Paper.MaxSpawnDelay"); // Paper
++            this.minSpawnDelay = nbttagcompound.getInt("MinSpawnDelay");
++            this.maxSpawnDelay = nbttagcompound.getInt("MaxSpawnDelay");
              this.spawnCount = nbttagcompound.getShort("SpawnCount");
          }
  
-@@ -236,9 +238,14 @@ public abstract class MobSpawnerAbstract {
+@@ -236,9 +249,20 @@ public abstract class MobSpawnerAbstract {
          if (minecraftkey == null) {
              return nbttagcompound;
          } else {
@@ -52,10 +65,16 @@ index af38e5396..30264edfc 100644
 -            nbttagcompound.setShort("MinSpawnDelay", (short) this.minSpawnDelay);
 -            nbttagcompound.setShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
 +            // Paper start
-+            nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
-+            nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
-+            nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            if (spawnDelay > Short.MAX_VALUE) {
++                nbttagcompound.setInt("Paper.Delay", this.spawnDelay);
++            }
 +            nbttagcompound.setShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++            if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++                nbttagcompound.setInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++                nbttagcompound.setInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            }
++
 +            nbttagcompound.setShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
 +            nbttagcompound.setShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
 +            // Paper end
@@ -63,7 +82,7 @@ index af38e5396..30264edfc 100644
              nbttagcompound.setShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
              nbttagcompound.setShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index aa63b854d..a3be2b141 100644
+index aa63b854d1..a3be2b141e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 @@ -122,4 +122,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
@@ -84,5 +103,5 @@ index aa63b854d..a3be2b141 100644
 +    // Paper end
  }
 -- 
-2.20.1
+2.21.0
 
