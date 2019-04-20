@@ -32,6 +32,8 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(PREFIX + "selector", "Allows the use of selectors", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(PREFIX + "trigger", "Allows the use of the trigger command", PermissionDefault.TRUE, commands);
 
+        DefaultPermissions.registerPermission("minecraft.admin.command_feedback", "Receive command broadcasts when sendCommandFeedback is true", PermissionDefault.OP, commands);
+
         commands.recalculatePermissibles();
         return commands;
     }
