@@ -2552,6 +2552,10 @@ public final class Bukkit {
     public static com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
         return server.createProfileExact(uuid, name);
     }
+
+    public static int getCurrentTick() {
+        return server.getCurrentTick();
+    }
     // Paper end
 
     @NotNull
