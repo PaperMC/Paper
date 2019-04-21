@@ -2294,5 +2294,10 @@ public final class CraftServer implements Server {
         }
         return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
     }
+
+    @Override
+    public int getCurrentTick() {
+        return net.minecraft.server.MinecraftServer.currentTick;
+    }
     // Paper end
 }
