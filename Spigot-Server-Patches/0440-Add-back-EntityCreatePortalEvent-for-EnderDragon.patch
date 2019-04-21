@@ -1,0 +1,115 @@
+From 6d46d207e0ec9daeabe0d3e5e76944fcb6661441 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 20 Apr 2019 17:18:38 -0500
+Subject: [PATCH] Add back EntityCreatePortalEvent for EnderDragon
+
+
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 09eabf123..1297d951a 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -15,14 +15,21 @@ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++// Paper start
++import org.bukkit.PortalType;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.event.entity.EntityCreatePortalEvent;
++import java.util.stream.Collectors;
++// Paper end
+ 
+ public class EnderDragonBattle {
+ 
+     private static final Logger a = LogManager.getLogger();
+     private static final Predicate<Entity> b = IEntitySelector.a.and(IEntitySelector.a(0.0D, 128.0D, 0.0D, 192.0D));
+     public final BossBattleServer bossBattle;
+-    private final WorldServer d;
+-    private final List<Integer> e;
++    private final WorldServer d; public WorldServer getWorld() { return d; } // Paper - OBFHELPER
++    private final List<Integer> e; public List<Integer> getGateways() { return e; } // Paper - OBFHELPER
+     private final ShapeDetector f;
+     private int g;
+     private int h;
+@@ -371,8 +378,8 @@ public class EnderDragonBattle {
+         if (entityenderdragon.getUniqueID().equals(this.m)) {
+             this.bossBattle.setProgress(0.0F);
+             this.bossBattle.setVisible(false);
+-            this.a(true);
+-            this.m();
++            spawnExitPortal(entityenderdragon); // Paper
++            spawnGateway(entityenderdragon); // Paper
+             if (!this.l) {
+                 this.d.setTypeUpdate(this.d.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, WorldGenEndTrophy.a), Blocks.DRAGON_EGG.getBlockData());
+             }
+@@ -383,21 +390,62 @@ public class EnderDragonBattle {
+ 
+     }
+ 
+-    private void m() {
+-        if (!this.e.isEmpty()) {
+-            int i = (Integer) this.e.remove(this.e.size() - 1);
++    // Paper start
++    private void spawnGateway(EntityEnderDragon dragon) { m(dragon); } // Paper - OBFHELPER
++    private void m(EntityEnderDragon dragon) {
++        if (!getGateways().isEmpty()) {
++            int i = getGateways().remove(getGateways().size() - 1);
++            // Paper end
+             int j = (int) (96.0D * Math.cos(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+             int k = (int) (96.0D * Math.sin(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+ 
+-            this.a(new BlockPosition(j, 75, k));
++            // Paper start
++            getWorld().captureBlockStates = true;
++            generateGateway(new BlockPosition(j, 75, k));
++            getWorld().captureBlockStates = false;
++            if (getWorld().capturedBlockStates.size() > 0) {
++                EntityCreatePortalEvent event = new EntityCreatePortalEvent(dragon.getBukkitLivingEntity(), getWorld().capturedBlockStates.stream().map(state -> CraftBlockState.getBlockState(getWorld(), state.getPosition())).collect(Collectors.toList()), PortalType.END_GATEWAY);
++                if (!event.callEvent()) {
++                    // put the gateway back into queue
++                    getGateways().add(i);
++                    // revert captured blocks
++                    for (BlockState state : getWorld().capturedBlockStates) {
++                        state.update(true, false);
++                    }
++                }
++            }
++            getWorld().capturedTileEntities.clear();
++            getWorld().capturedBlockStates.clear();
++            // Paper end
+         }
+     }
+ 
++    private void generateGateway(BlockPosition blockPosition) { a(blockPosition); } // Paper - OBFHELPER
+     private void a(BlockPosition blockposition) {
+         this.d.triggerEffect(3000, blockposition, 0);
+         WorldGenerator.ax.generate(this.d, this.d.getChunkProvider().getChunkGenerator(), new Random(), blockposition, new WorldGenEndGatewayConfiguration(false));
+     }
+ 
++    // Paper start
++    private void spawnExitPortal(EntityEnderDragon dragon) {
++        getWorld().captureBlockStates = true;
++        generateExitPortal(true);
++        getWorld().captureBlockStates = false;
++        if (getWorld().capturedBlockStates.size() > 0) {
++            EntityCreatePortalEvent event = new EntityCreatePortalEvent(dragon.getBukkitLivingEntity(), getWorld().capturedBlockStates.stream().map(state -> CraftBlockState.getBlockState(getWorld(), state.getPosition())).collect(Collectors.toList()), PortalType.ENDER);
++            if (!event.callEvent()) {
++                // revert captured blocks
++                for (BlockState state : getWorld().capturedBlockStates) {
++                    state.update(true);
++                }
++            }
++        }
++        getWorld().capturedTileEntities.clear();
++        getWorld().capturedBlockStates.clear();
++    }
++    // Paper end
++
++    private void generateExitPortal(boolean active) { a(active); } // Paper - OBFHELPER
+     private void a(boolean flag) {
+         WorldGenEndTrophy worldgenendtrophy = new WorldGenEndTrophy(flag);
+ 
+-- 
+2.20.1
+
