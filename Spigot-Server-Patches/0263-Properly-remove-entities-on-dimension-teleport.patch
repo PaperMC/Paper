@@ -1,0 +1,51 @@
+From 8a4b7bff6950703ef13ea7ce72e80af4cee67d13 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 Jun 2018 20:04:42 -0400
+Subject: [PATCH] Properly remove entities on dimension teleport
+
+To teleport an entity between dimensions, the server makes a copy
+and puts the copy in the new location, and marks the old one dead.
+
+If this method got called for the same world in the same tick,
+the entity would not have been removed from the UUID map, and the
+world readd would fail.
+
+This can be triggered even with a plugin if the entity is teleported
+twice in the same tick, from world A to B, then back from B to A.
+
+The re-add to A will fail to add the entity to the world. It will
+actually be there, but it will not be visible on the client until
+the server is restarted to re-try the add to world process again.
+
+This bug was unlikely to be seen by many due to the double teleport
+requirement, but plugins (such as my own) use this method to
+trigger a "reload" of the entity on the client.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 92a15ba947..debab1a715 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -2611,7 +2611,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             }
+             // CraftBukkit end */
+ 
+-            this.world.kill(this);
++            this.world.removeEntity(this); // Paper - Fully remove entity, can't have dupes in the UUID map
+             this.dead = false;
+             this.world.methodProfiler.enter("reposition");
+             /* CraftBukkit start - Handled in calculateTarget
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index e4730352d3..c08ee62e84 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -997,6 +997,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+     }
+ 
+     protected void c(Entity entity) {
++        if (!this.entitiesByUUID.containsKey(entity.getUniqueID()) && !entity.valid) return; // Paper - Already removed, dont fire twice - this looks like it can happen even without our changes
+         super.c(entity);
+         this.entitiesById.d(entity.getId());
+         this.entitiesByUUID.remove(entity.getUniqueID());
+-- 
+2.21.0
+

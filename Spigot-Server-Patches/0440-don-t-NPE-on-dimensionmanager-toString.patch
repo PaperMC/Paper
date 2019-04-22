@@ -1,0 +1,38 @@
+From 77a1e11685c6e91533e16f35ae3f0fe4fefbffc1 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 22 Apr 2019 19:51:14 +0100
+Subject: [PATCH] don't NPE on dimensionmanager toString
+
+CraftBukkit uses vanillas DimensionManager, but does not actually
+register its own dimension types, etc, due to vanilla
+
+This causes issues because anything, e.g. command feedback, trying
+to print information about the world will often attempt to print out
+the dimension name, which ends up throwing an NPE due to the lack of
+a registered type, we work around this by just returning the world name,
+this is not super elegant, but is the only route that promises not to
+break stuff.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 9c5b79920f..e5242f9f87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -999,7 +999,14 @@ public final class CraftServer implements Server {
+         }
+         worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
+ 
+-        DimensionManager internalDimension = new DimensionManager(dimension, name, name, () -> DimensionManager.a(creator.environment().getId()).e());
++        // Paper start - override toString
++        DimensionManager internalDimension = new DimensionManager(dimension, name, name, () -> DimensionManager.a(creator.environment().getId()).e()) {
++            @Override
++            public String toString() {
++                return name;
++            }
++        };
++        // Paper end
+         WorldServer internal = (WorldServer) new WorldServer(console, sdm, persistentcollection, worlddata, internalDimension, console.methodProfiler, creator.environment(), generator).i_();
+ 
+         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
+-- 
+2.21.0
+
