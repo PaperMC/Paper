@@ -208,7 +208,7 @@ public class CraftContainer extends Container {
                 break;
             case SMOKER:
                 delegate = new ContainerSmoker(windowId, bottom, top, new ContainerProperties(4));
-                break; 
+                break;
             case LOOM:
                 delegate = new ContainerLoom(windowId, bottom);
                 break;

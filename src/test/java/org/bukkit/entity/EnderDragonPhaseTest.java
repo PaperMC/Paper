@@ -17,7 +17,7 @@ public class EnderDragonPhaseTest {
             assertNotNull(phase.name(), CraftEnderDragon.getBukkitPhase(dragonControllerPhase));
         }
     }
-    
+
     @Test
     public void testBukkitToMinecraft() {
         Assert.assertEquals("CIRCLING", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.CIRCLING), DragonControllerPhase.HOLDING_PATTERN);
@@ -46,5 +46,5 @@ public class EnderDragonPhaseTest {
         Assert.assertEquals("CHARGE_PLAYER", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.CHARGING_PLAYER), EnderDragon.Phase.CHARGE_PLAYER);
         Assert.assertEquals("DYING", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.DYING), EnderDragon.Phase.DYING);
         Assert.assertEquals("HOVER", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.HOVER), EnderDragon.Phase.HOVER);
-    } 
+    }
 }

@@ -11,8 +11,8 @@ import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Erase;
 
 public class TerminalConsoleWriterThread extends Thread {
-    final private ConsoleReader reader;
-    final private OutputStream output;
+    private final ConsoleReader reader;
+    private final OutputStream output;
 
     public TerminalConsoleWriterThread(OutputStream output, ConsoleReader reader) {
         this.output = output;

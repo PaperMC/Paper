@@ -45,14 +45,14 @@ public class CraftWorldBorder implements WorldBorder {
         if (time > 0L) {
             this.handle.transitionSizeBetween(this.handle.getSize(), newSize, time * 1000L);
         } else {
-            this.handle.setSize(newSize); 
+            this.handle.setSize(newSize);
         }
     }
 
     @Override
     public Location getCenter() {
-        double x = this.handle.getCenterX(); 
-        double z = this.handle.getCenterZ(); 
+        double x = this.handle.getCenterX();
+        double z = this.handle.getCenterZ();
 
         return new Location(this.world, x, 0, z);
     }
@@ -63,7 +63,7 @@ public class CraftWorldBorder implements WorldBorder {
         x = Math.min(3.0E7D, Math.max(-3.0E7D, x));
         z = Math.min(3.0E7D, Math.max(-3.0E7D, z));
 
-        this.handle.setCenter(x, z); 
+        this.handle.setCenter(x, z);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setWarningDistance(int distance) {
-        this.handle.setWarningDistance(distance); 
+        this.handle.setWarningDistance(distance);
     }
 
     @Override

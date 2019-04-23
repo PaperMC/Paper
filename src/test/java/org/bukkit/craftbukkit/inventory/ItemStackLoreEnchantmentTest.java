@@ -26,7 +26,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
         return CompoundOperator.compound(
             Joiner.on('+'),
             NAME_PARAMETER,
-            ~0l,
+            ~0L,
             Arrays.asList(
                 new Object[] {
                     new Operator() {

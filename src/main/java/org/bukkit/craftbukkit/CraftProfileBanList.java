@@ -68,7 +68,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     @Override
     public Set<org.bukkit.BanEntry> getBanEntries() {
         ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
-        
+
         for (JsonListEntry entry : list.getValues()) {
             GameProfile profile = (GameProfile) entry.getKey();
             builder.add(new CraftProfileBanEntry(profile, (GameProfileBanEntry) entry, list));
