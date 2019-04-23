@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import org.bukkit.FluidCollisionMode;
-import net.minecraft.server.FluidCollisionOption;
+import net.minecraft.server.RayTrace.FluidCollisionOption;
 
 public class CraftFluidCollisionMode {
 
@@ -12,11 +12,11 @@ public class CraftFluidCollisionMode {
 
         switch (fluidCollisionMode) {
             case ALWAYS:
-                return FluidCollisionOption.ALWAYS;
+                return FluidCollisionOption.ANY;
             case SOURCE_ONLY:
                 return FluidCollisionOption.SOURCE_ONLY;
             case NEVER:
-                return FluidCollisionOption.NEVER;
+                return FluidCollisionOption.NONE;
             default:
                 return null;
         }

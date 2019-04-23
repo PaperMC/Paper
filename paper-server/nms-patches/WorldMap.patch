@@ -16,9 +16,9 @@
  public class WorldMap extends PersistentBase {
  
      public int centerX;
-@@ -22,8 +31,18 @@
-     public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
-     private final Map<String, WorldMapFrame> l = Maps.newHashMap();
+@@ -23,8 +32,18 @@
+     public final Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
+     private final Map<String, WorldMapFrame> m = Maps.newHashMap();
  
 +    // CraftBukkit start
 +    public final CraftMapView mapView;
@@ -35,9 +35,9 @@
      }
  
      public void a(int i, int j, int k, boolean flag, boolean flag1, DimensionManager dimensionmanager) {
-@@ -45,7 +64,31 @@
-     }
+@@ -47,7 +66,31 @@
  
+     @Override
      public void a(NBTTagCompound nbttagcompound) {
 -        this.map = DimensionManager.a(nbttagcompound.getInt("dimension"));
 +        // CraftBukkit start
@@ -55,7 +55,7 @@
 +                if (world == null) {
 +                    /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
 +                       This is to prevent them being corrupted with the wrong map data. */
-+                    this.map = new DimensionManager(127, null, null, null);
++                    this.map = new DimensionManager(127, null, null, null, false);
 +                } else {
 +                    this.map = world.getHandle().dimension;
 +                }
@@ -68,9 +68,9 @@
          this.centerX = nbttagcompound.getInt("xCenter");
          this.centerZ = nbttagcompound.getInt("zCenter");
          this.scale = (byte) MathHelper.clamp(nbttagcompound.getByte("scale"), 0, 4);
-@@ -77,6 +120,25 @@
-     }
+@@ -81,6 +124,25 @@
  
+     @Override
      public NBTTagCompound b(NBTTagCompound nbttagcompound) {
 +        // CraftBukkit start
 +        if (this.map.getDimensionID() >= CraftWorld.CUSTOM_DIMENSION_OFFSET) {
@@ -94,7 +94,7 @@
          nbttagcompound.setInt("dimension", this.map.getDimensionID());
          nbttagcompound.setInt("xCenter", this.centerX);
          nbttagcompound.setInt("zCenter", this.centerZ);
-@@ -357,12 +419,25 @@
+@@ -372,12 +434,25 @@
  
          @Nullable
          public Packet<?> a(ItemStack itemstack) {
@@ -112,11 +112,11 @@
 +
              if (this.d) {
                  this.d = false;
--                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
-+                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
+-                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.locked, WorldMap.this.decorations.values(), WorldMap.this.colors, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
++                return new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.locked, icons, render.buffer, this.e, this.f, this.g + 1 - this.e, this.h + 1 - this.f);
              } else {
--                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.decorations.values(), WorldMap.this.colors, 0, 0, 0, 0) : null;
-+                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, icons, render.buffer, 0, 0, 0, 0) : null;
+-                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.locked, WorldMap.this.decorations.values(), WorldMap.this.colors, 0, 0, 0, 0) : null;
++                return this.i++ % 5 == 0 ? new PacketPlayOutMap(ItemWorldMap.e(itemstack), WorldMap.this.scale, WorldMap.this.track, WorldMap.this.locked, icons, render.buffer, 0, 0, 0, 0) : null;
              }
 +            // CraftBukkit end
          }

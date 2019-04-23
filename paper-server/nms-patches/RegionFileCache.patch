@@ -1,69 +1,50 @@
 --- a/net/minecraft/server/RegionFileCache.java
 +++ b/net/minecraft/server/RegionFileCache.java
-@@ -36,6 +36,29 @@
+@@ -18,7 +18,7 @@
+         this.a = file;
+     }
+ 
+-    private RegionFile a(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++    private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+         RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
+ 
+@@ -34,6 +34,7 @@
+             }
+ 
+             File file = new File(this.a, "r." + chunkcoordintpair.getRegionX() + "." + chunkcoordintpair.getRegionZ() + ".mca");
++            if (existingOnly && !file.exists()) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(file);
+ 
+             this.cache.putAndMoveToFirst(i, regionfile1);
+@@ -43,7 +44,7 @@
+ 
+     @Nullable
+     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+-        RegionFile regionfile = this.a(chunkcoordintpair);
++        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
+         Throwable throwable = null;
+ 
+@@ -78,7 +79,7 @@
+     }
+ 
+     protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
+-        RegionFile regionfile = this.a(chunkcoordintpair);
++        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+         DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
+         Throwable throwable = null;
+ 
+@@ -114,4 +115,12 @@
          }
-     }
  
+     }
++
 +    // CraftBukkit start
-+    public static synchronized RegionFile b(File file, int i, int j) {
-+        File file1 = new File(file, "region");
-+        File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
-+        RegionFile regionfile = (RegionFile) RegionFileCache.cache.get(file2);
++    public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
++        RegionFile regionfile = a(pos, true);
 +
-+        if (regionfile != null) {
-+            return regionfile;
-+        } else if (file1.exists() && file2.exists()) {
-+            if (RegionFileCache.cache.size() >= 256) {
-+                a();
-+            }
-+
-+            RegionFile regionfile1 = new RegionFile(file2);
-+
-+            RegionFileCache.cache.put(file2, regionfile1);
-+            return regionfile1;
-+        } else {
-+            return null;
-+        }
++        return regionfile != null ? regionfile.d(pos) : false;
 +    }
-+    // CraftBukkit end
-+
-     public static synchronized void a() {
-         Iterator iterator = RegionFileCache.cache.values().iterator();
- 
-@@ -55,16 +78,32 @@
-     }
- 
-     @Nullable
--    public static DataInputStream read(File file, int i, int j) {
-+    // CraftBukkit start - call sites hoisted for synchronization
-+    public static synchronized NBTTagCompound read(File file, int i, int j) throws IOException {
-         RegionFile regionfile = a(file, i, j);
- 
--        return regionfile.a(i & 31, j & 31);
-+        DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
-+
-+        if (datainputstream == null) {
-+            return null;
-+        }
-+
-+        return NBTCompressedStreamTools.a(datainputstream);
-     }
- 
-     @Nullable
--    public static DataOutputStream write(File file, int i, int j) {
-+    public static synchronized void write(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
-         RegionFile regionfile = a(file, i, j);
- 
--        return regionfile.c(i & 31, j & 31);
-+        DataOutputStream dataoutputstream = regionfile.c(i & 31, j & 31);
-+        NBTCompressedStreamTools.a(nbttagcompound, (java.io.DataOutput) dataoutputstream);
-+        dataoutputstream.close();
-+    }
-+
-+    public static synchronized boolean chunkExists(File file, int i, int j) {
-+        RegionFile regionfile = b(file, i, j);
-+
-+        return regionfile != null ? regionfile.d(i & 31, j & 31) : false;
-     }
 +    // CraftBukkit end
  }

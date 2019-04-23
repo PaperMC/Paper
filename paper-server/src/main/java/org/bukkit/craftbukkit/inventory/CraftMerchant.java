@@ -25,7 +25,7 @@ public class CraftMerchant implements Merchant {
 
     @Override
     public List<MerchantRecipe> getRecipes() {
-        return Collections.unmodifiableList(Lists.transform(merchant.getOffers(null), new Function<net.minecraft.server.MerchantRecipe, MerchantRecipe>() {
+        return Collections.unmodifiableList(Lists.transform(merchant.getOffers(), new Function<net.minecraft.server.MerchantRecipe, MerchantRecipe>() {
             @Override
             public MerchantRecipe apply(net.minecraft.server.MerchantRecipe recipe) {
                 return recipe.asBukkit();
@@ -35,7 +35,7 @@ public class CraftMerchant implements Merchant {
 
     @Override
     public void setRecipes(List<MerchantRecipe> recipes) {
-        MerchantRecipeList recipesList = merchant.getOffers(null);
+        MerchantRecipeList recipesList = merchant.getOffers();
         recipesList.clear();
         for (MerchantRecipe recipe : recipes) {
             recipesList.add(CraftMerchantRecipe.fromBukkit(recipe).toMinecraft());
@@ -44,17 +44,17 @@ public class CraftMerchant implements Merchant {
 
     @Override
     public MerchantRecipe getRecipe(int i) {
-        return merchant.getOffers(null).get(i).asBukkit();
+        return merchant.getOffers().get(i).asBukkit();
     }
 
     @Override
     public void setRecipe(int i, MerchantRecipe merchantRecipe) {
-        merchant.getOffers(null).set(i, CraftMerchantRecipe.fromBukkit(merchantRecipe).toMinecraft());
+        merchant.getOffers().set(i, CraftMerchantRecipe.fromBukkit(merchantRecipe).toMinecraft());
     }
 
     @Override
     public int getRecipeCount() {
-        return merchant.getOffers(null).size();
+        return merchant.getOffers().size();
     }
 
     @Override

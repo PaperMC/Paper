@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.util;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.IBlockData;
@@ -36,6 +37,10 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         for (BlockState state : list.values()) {
             state.update(true);
         }
+    }
+
+    public Set<BlockPosition> getBlocks() {
+        return list.keySet();
     }
 
     public List<CraftBlockState> getList() {

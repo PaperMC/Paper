@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityInsentient.java
 +++ b/net/minecraft/server/EntityInsentient.java
-@@ -10,6 +10,18 @@
+@@ -8,6 +8,18 @@
  import java.util.UUID;
  import javax.annotation.Nullable;
  
@@ -18,27 +18,27 @@
 +
  public abstract class EntityInsentient extends EntityLiving {
  
-     private static final DataWatcherObject<Byte> a = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
-@@ -28,7 +40,7 @@
-     public float[] dropChanceHand;
-     private final NonNullList<ItemStack> bE;
-     public float[] dropChanceArmor;
--    public boolean canPickUpLoot;
-+    // public boolean canPickUpLoot; // CraftBukkit - moved up to EntityLiving
+     private static final DataWatcherObject<Byte> b = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
+@@ -26,7 +38,7 @@
+     public final float[] dropChanceHand;
+     private final NonNullList<ItemStack> bB;
+     public final float[] dropChanceArmor;
+-    private boolean canPickUpLoot;
++    // private boolean canPickUpLoot; // CraftBukkit - moved up to EntityLiving
      public boolean persistent;
-     private final Map<PathType, Float> bH;
+     private final Map<PathType, Float> bE;
      public MinecraftKey lootTableKey;
-@@ -58,6 +70,9 @@
-             this.n();
+@@ -62,6 +74,9 @@
+             this.initPathfinder();
          }
  
 +        // CraftBukkit start - default persistance to type's persistance value
-+        this.persistent = !isTypeNotPersistent();
++        this.persistent = !isTypeNotPersistent(0);
 +        // CraftBukkit end
      }
  
-     protected void n() {}
-@@ -111,7 +126,38 @@
+     protected void initPathfinder() {}
+@@ -129,7 +144,38 @@
      }
  
      public void setGoalTarget(@Nullable EntityLiving entityliving) {
@@ -76,18 +76,18 @@
 +        // CraftBukkit end
      }
  
-     public boolean b(Class<? extends EntityLiving> oclass) {
-@@ -337,11 +383,20 @@
- 
+     @Override
+@@ -345,11 +391,20 @@
+     @Override
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
 +
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
          if (nbttagcompound.hasKeyOfType("CanPickUpLoot", 1)) {
--            this.p(nbttagcompound.getBoolean("CanPickUpLoot"));
+-            this.setCanPickupLoot(nbttagcompound.getBoolean("CanPickUpLoot"));
 +            boolean data = nbttagcompound.getBoolean("CanPickUpLoot");
 +            if (isLevelAtLeast(nbttagcompound, 1) || data) {
-+                this.p(data);
++                this.setCanPickupLoot(data);
 +            }
          }
  
@@ -100,9 +100,9 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -395,6 +450,11 @@
-     protected MinecraftKey getDefaultLootTable() {
-         return null;
+@@ -403,6 +458,11 @@
+         super.a(damagesource, flag);
+         this.lootTableKey = null;
      }
 +    // CraftBukkit - start
 +    public MinecraftKey getLootTable() {
@@ -110,15 +110,15 @@
 +    }
 +    // CraftBukkit - end
  
-     protected void a(boolean flag, int i, DamageSource damagesource) {
-         MinecraftKey minecraftkey = this.lootTableKey;
-@@ -471,11 +531,21 @@
+     @Override
+     protected LootTableInfo.Builder a(boolean flag, DamageSource damagesource) {
+@@ -462,11 +522,21 @@
          ItemStack itemstack1 = this.getEquipment(enumitemslot);
          boolean flag = this.a(itemstack, itemstack1, enumitemslot);
  
--        if (flag && this.d(itemstack)) {
+-        if (flag && this.g(itemstack)) {
 +        // CraftBukkit start
-+        boolean canPickup = flag && this.d(itemstack);
++        boolean canPickup = flag && this.g(itemstack);
 +
 +        EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((LivingEntity) getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity(), 0);
 +        entityEvent.setCancelled(!canPickup);
@@ -126,33 +126,33 @@
 +        canPickup = !entityEvent.isCancelled();
 +        if (canPickup) {
 +            // CraftBukkit end
-             double d0 = (double) this.c(enumitemslot);
+             double d0 = (double) this.d(enumitemslot);
  
              if (!itemstack1.isEmpty() && (double) (this.random.nextFloat() - 0.1F) < d0) {
 +                this.forceDrops = true; // CraftBukkit
-                 this.a_(itemstack1);
+                 this.a(itemstack1);
 +                this.forceDrops = false; // CraftBukkit
              }
  
              this.setSlot(enumitemslot, itemstack);
-@@ -554,11 +624,11 @@
-                 double d2 = entityhuman.locZ - this.locZ;
-                 double d3 = d0 * d0 + d1 * d1 + d2 * d2;
+@@ -544,11 +614,11 @@
+             if (entityhuman != null) {
+                 double d0 = entityhuman.h(this);
  
--                if (this.isTypeNotPersistent() && d3 > 16384.0D) {
-+                if (d3 > 16384.0D) { // CraftBukkit - remove isTypeNotPersistent() check
+-                if (d0 > 16384.0D && this.isTypeNotPersistent(d0)) {
++                if (d0 > 16384.0D) { // CraftBukkit - remove isTypeNotPersistent() check
                      this.die();
                  }
  
--                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d3 > 1024.0D && this.isTypeNotPersistent()) {
-+                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d3 > 1024.0D) { // CraftBukkit - remove isTypeNotPersistent() check
+-                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d0 > 1024.0D && this.isTypeNotPersistent(d0)) {
++                if (this.ticksFarFromPlayer > 600 && this.random.nextInt(800) == 0 && d0 > 1024.0D) { // CraftBukkit - remove isTypeNotPersistent() check
                      this.die();
-                 } else if (d3 < 1024.0D) {
+                 } else if (d0 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -932,12 +1002,24 @@
- 
-     public final boolean b(EntityHuman entityhuman, EnumHand enumhand) {
-         if (this.isLeashed() && this.getLeashHolder() == entityhuman) {
+@@ -944,12 +1014,24 @@
+         if (!this.isAlive()) {
+             return false;
+         } else if (this.getLeashHolder() == entityhuman) {
 +            // CraftBukkit start - fire PlayerUnleashEntityEvent
 +            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, entityhuman).isCancelled()) {
 +                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(this, this.getLeashHolder()));
@@ -174,21 +174,16 @@
                  this.setLeashHolder(entityhuman, true);
                  itemstack.subtract(1);
                  return true;
-@@ -958,10 +1040,12 @@
+@@ -995,6 +1077,7 @@
  
-         if (this.bK) {
-             if (!this.isAlive()) {
-+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.PLAYER_UNLEASH)); // CraftBukkit
+         if (this.leashHolder != null) {
+             if (!this.isAlive() || !this.leashHolder.isAlive()) {
++                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), (!this.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE)); // CraftBukkit
                  this.unleash(true, true);
              }
  
-             if (this.leashHolder == null || this.leashHolder.dead) {
-+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.HOLDER_GONE)); // CraftBukkit
-                 this.unleash(true, true);
-             }
-         }
-@@ -972,7 +1056,9 @@
-             this.bK = false;
+@@ -1010,7 +1093,9 @@
+ 
              this.leashHolder = null;
              if (!this.world.isClientSide && flag1) {
 +                this.forceDrops = true; // CraftBukkit
@@ -197,27 +192,27 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1042,6 +1128,7 @@
+@@ -1079,6 +1164,7 @@
  
-                 this.setLeashHolder(entityleash, true);
+                 this.setLeashHolder(EntityLeash.a(this.world, blockposition), true);
              } else {
 +                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
                  this.unleash(false, true);
              }
-         }
-@@ -1137,7 +1224,14 @@
-             int j = EnchantmentManager.getFireAspectEnchantmentLevel(this);
  
-             if (j > 0) {
--                entity.setOnFire(j * 4);
-+                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
-+                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
-+                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
+@@ -1186,7 +1272,14 @@
+         int i = EnchantmentManager.getFireAspectEnchantmentLevel(this);
+ 
+         if (i > 0) {
+-            entity.setOnFire(i * 4);
++            // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
++            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), i * 4);
++            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 +
-+                if (!combustEvent.isCancelled()) {
-+                    entity.setOnFire(combustEvent.getDuration(), false);
-+                }
-+                // CraftBukkit end
-             }
++            if (!combustEvent.isCancelled()) {
++                entity.setOnFire(combustEvent.getDuration(), false);
++            }
++            // CraftBukkit end
+         }
  
-             if (entity instanceof EntityHuman) {
+         boolean flag = entity.damageEntity(DamageSource.mobAttack(this), f);

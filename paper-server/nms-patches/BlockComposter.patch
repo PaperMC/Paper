@@ -1,0 +1,55 @@
+--- a/net/minecraft/server/BlockComposter.java
++++ b/net/minecraft/server/BlockComposter.java
+@@ -4,13 +4,14 @@
+ import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+ import java.util.Random;
+ import javax.annotation.Nullable;
++import org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder; // CraftBukkit
+ 
+ public class BlockComposter extends Block implements IInventoryHolder {
+ 
+     public static final BlockStateInteger a = BlockProperties.am;
+     public static final Object2FloatMap<IMaterial> b = new Object2FloatOpenHashMap();
+     public static final VoxelShape c = VoxelShapes.b();
+-    private static final VoxelShape[] d = (VoxelShape[]) SystemUtils.a((Object) (new VoxelShape[9]), (avoxelshape) -> {
++    private static final VoxelShape[] d = (VoxelShape[]) SystemUtils.a((new VoxelShape[9]), (avoxelshape) -> { // CraftBukkit - decompile error
+         for (int i = 0; i < 8; ++i) {
+             avoxelshape[i] = VoxelShapes.a(BlockComposter.c, Block.a(2.0D, (double) Math.max(2, 1 + i * 2), 2.0D, 14.0D, 16.0D, 14.0D), OperatorBoolean.ONLY_FIRST);
+         }
+@@ -220,7 +221,8 @@
+     public IWorldInventory a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
+         int i = (Integer) iblockdata.get(BlockComposter.a);
+ 
+-        return (IWorldInventory) (i == 8 ? new BlockComposter.ContainerOutput(iblockdata, generatoraccess, blockposition, new ItemStack(Items.BONE_MEAL)) : (i < 7 ? new BlockComposter.ContainerInput(iblockdata, generatoraccess, blockposition) : new BlockComposter.ContainerEmpty()));
++        // CraftBukkit - empty generatoraccess, blockposition
++        return (IWorldInventory) (i == 8 ? new BlockComposter.ContainerOutput(iblockdata, generatoraccess, blockposition, new ItemStack(Items.BONE_MEAL)) : (i < 7 ? new BlockComposter.ContainerInput(iblockdata, generatoraccess, blockposition) : new BlockComposter.ContainerEmpty(generatoraccess, blockposition)));
+     }
+ 
+     static class ContainerInput extends InventorySubcontainer implements IWorldInventory {
+@@ -232,6 +234,7 @@
+ 
+         public ContainerInput(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
+             super(1);
++            this.bukkitOwner = new CraftBlockInventoryHolder(generatoraccess, blockposition, this); // CraftBukkit
+             this.a = iblockdata;
+             this.b = generatoraccess;
+             this.c = blockposition;
+@@ -282,6 +285,7 @@
+             this.a = iblockdata;
+             this.b = generatoraccess;
+             this.c = blockposition;
++            this.bukkitOwner = new CraftBlockInventoryHolder(generatoraccess, blockposition, this); // CraftBukkit
+         }
+ 
+         @Override
+@@ -313,8 +317,9 @@
+ 
+     static class ContainerEmpty extends InventorySubcontainer implements IWorldInventory {
+ 
+-        public ContainerEmpty() {
++        public ContainerEmpty(GeneratorAccess generatoraccess, BlockPosition blockposition) { // CraftBukkit
+             super(0);
++            this.bukkitOwner = new CraftBlockInventoryHolder(generatoraccess, blockposition, this); // CraftBukkit
+         }
+ 
+         @Override

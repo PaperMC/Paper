@@ -1,0 +1,42 @@
+--- a/net/minecraft/server/EntityVillagerAbstract.java
++++ b/net/minecraft/server/EntityVillagerAbstract.java
+@@ -4,6 +4,12 @@
+ import java.util.Iterator;
+ import java.util.Set;
+ import javax.annotation.Nullable;
++// CraftBukkit start
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
++import org.bukkit.entity.AbstractVillager;
++import org.bukkit.event.entity.VillagerAcquireTradeEvent;
++// CraftBukkit end
+ 
+ public abstract class EntityVillagerAbstract extends EntityAgeable implements NPC, IMerchant {
+ 
+@@ -11,7 +17,7 @@
+     private EntityHuman tradingPlayer;
+     @Nullable
+     protected MerchantRecipeList trades;
+-    private final InventorySubcontainer inventory = new InventorySubcontainer(8);
++    private final InventorySubcontainer inventory = new InventorySubcontainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit add argument
+     private int bC;
+ 
+     public EntityVillagerAbstract(EntityTypes<? extends EntityVillagerAbstract> entitytypes, World world) {
+@@ -198,7 +204,16 @@
+             MerchantRecipe merchantrecipe = villagertrades_imerchantrecipeoption.a(this, this.random);
+ 
+             if (merchantrecipe != null) {
+-                merchantrecipelist.add(merchantrecipe);
++                // CraftBukkit start
++                VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((AbstractVillager) getBukkitEntity(), merchantrecipe.asBukkit());
++                // Suppress during worldgen
++                if (this.valid) {
++                    Bukkit.getPluginManager().callEvent(event);
++                }
++                if (!event.isCancelled()) {
++                    merchantrecipelist.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
++                }
++                // CraftBukkit end
+             }
+         }
+ 

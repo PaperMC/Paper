@@ -19,26 +19,26 @@
  
      public void eat(int i, float f) {
          this.foodLevel = Math.min(i + this.foodLevel, 20);
-@@ -16,7 +24,17 @@
-     }
+@@ -18,8 +26,17 @@
+     public void a(Item item, ItemStack itemstack) {
+         if (item.isFood()) {
+             FoodInfo foodinfo = item.getFoodInfo();
++            // CraftBukkit start
++            int oldFoodLevel = foodLevel;
  
-     public void a(ItemFood itemfood, ItemStack itemstack) {
--        this.eat(itemfood.getNutrition(itemstack), itemfood.getSaturationModifier(itemstack));
-+        // CraftBukkit start
-+        int oldFoodLevel = foodLevel;
+-            this.eat(foodinfo.getNutrition(), foodinfo.getSaturationModifier());
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel);
 +
-+        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, itemfood.getNutrition(itemstack) + oldFoodLevel);
++            if (!event.isCancelled()) {
++                this.eat(event.getFoodLevel() - oldFoodLevel, foodinfo.getSaturationModifier());
++            }
 +
-+        if (!event.isCancelled()) {
-+            this.eat(event.getFoodLevel() - oldFoodLevel, itemfood.getSaturationModifier(itemstack));
-+        }
-+
-+        ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
-+        // CraftBukkit end
-     }
++            ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
++            // CraftBukkit end
+         }
  
-     public void a(EntityHuman entityhuman) {
-@@ -28,7 +46,15 @@
+     }
+@@ -33,7 +50,15 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
              } else if (enumdifficulty != EnumDifficulty.PEACEFUL) {
@@ -55,7 +55,7 @@
              }
          }
  
-@@ -39,14 +65,14 @@
+@@ -44,14 +69,14 @@
              if (this.foodTickTimer >= 10) {
                  float f = Math.min(this.saturationLevel, 6.0F);
  
@@ -64,7 +64,7 @@
                  this.a(f);
                  this.foodTickTimer = 0;
              }
-         } else if (flag && this.foodLevel >= 18 && entityhuman.dx()) {
+         } else if (flag && this.foodLevel >= 18 && entityhuman.dP()) {
              ++this.foodTickTimer;
              if (this.foodTickTimer >= 80) {
 -                entityhuman.heal(1.0F);

@@ -133,13 +133,13 @@ public final class CraftCustomTagTypeRegistry {
             Primitive Arrays
          */
         if (Objects.equals(byte[].class, type)) {
-            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.c(), n.size()));
+            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getBytes(), n.size()));
         }
         if (Objects.equals(int[].class, type)) {
-            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size()));
+            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getInts(), n.size()));
         }
         if (Objects.equals(long[].class, type)) {
-            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.d(), n.size()));
+            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getLongs(), n.size()));
         }
 
         /*

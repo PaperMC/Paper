@@ -21,8 +21,8 @@
          return itemstack;
      }
  
-@@ -24,7 +29,7 @@
-         WorldMap worldmap = a((GeneratorAccess) world, "map_" + e(itemstack));
+@@ -29,7 +34,7 @@
+         WorldMap worldmap = a(itemstack, world);
  
          if (worldmap == null && !world.isClientSide) {
 -            worldmap = a(itemstack, world, world.getWorldData().b(), world.getWorldData().d(), 3, false, false, world.worldProvider.getDimensionManager());
@@ -30,7 +30,7 @@
          }
  
          return worldmap;
-@@ -33,26 +38,42 @@
+@@ -38,7 +43,7 @@
      public static int e(ItemStack itemstack) {
          NBTTagCompound nbttagcompound = itemstack.getTag();
  
@@ -39,14 +39,9 @@
      }
  
      private static WorldMap a(ItemStack itemstack, World world, int i, int j, int k, boolean flag, boolean flag1, DimensionManager dimensionmanager) {
--        int l = world.a(DimensionManager.OVERWORLD, "map");
-+        World worldMain = world.getServer().getServer().getWorldServer(DimensionManager.OVERWORLD); // CraftBukkit - store reference to primary world
-+        int l = worldMain.a(DimensionManager.OVERWORLD, "map"); // CraftBukkit - use primary world for maps
-         WorldMap worldmap = new WorldMap("map_" + l);
- 
+@@ -48,6 +53,11 @@
          worldmap.a(i, j, k, flag, flag1, dimensionmanager);
--        world.a(DimensionManager.OVERWORLD, worldmap.getId(), (PersistentBase) worldmap);
-+        worldMain.a(DimensionManager.OVERWORLD, worldmap.getId(), (PersistentBase) worldmap); // CraftBukkit - use primary world for maps
+         world.a(worldmap);
          itemstack.getOrCreateTag().setInt("map", l);
 +
 +        // CraftBukkit start
@@ -56,19 +51,7 @@
          return worldmap;
      }
  
-     @Nullable
-     public static WorldMap a(GeneratorAccess generatoraccess, String s) {
--        return (WorldMap) generatoraccess.a(DimensionManager.OVERWORLD, WorldMap::new, s);
-+        // CraftBukkit start - use primary world for maps and call event
-+        WorldMap worldmap = (WorldMap) MinecraftServer.getServer().getWorldServer(DimensionManager.OVERWORLD).a(DimensionManager.OVERWORLD, (id) -> {
-+            // We only get here when the data file exists, but is not a valid map
-+            WorldMap newMap = new WorldMap(id);
-+            MapInitializeEvent event = new MapInitializeEvent(newMap.mapView);
-+            Bukkit.getServer().getPluginManager().callEvent(event);
-+            return newMap;
-+        }, s);
-+        return worldmap;
-+        // CraftBukkit end
+@@ -56,7 +66,8 @@
      }
  
      public void a(World world, Entity entity, WorldMap worldmap) {
@@ -78,7 +61,7 @@
              int i = 1 << worldmap.scale;
              int j = worldmap.centerX;
              int k = worldmap.centerZ;
-@@ -199,7 +220,8 @@
+@@ -208,7 +219,8 @@
          WorldMap worldmap = getSavedMap(itemstack, world);
  
          if (worldmap != null) {

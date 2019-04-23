@@ -1,10 +1,11 @@
 --- a/net/minecraft/server/Container.java
 +++ b/net/minecraft/server/Container.java
-@@ -7,6 +7,17 @@
+@@ -7,6 +7,18 @@
  import java.util.Set;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
++import com.google.common.base.Preconditions;
 +import java.util.HashMap;
 +import java.util.Map;
 +import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -18,9 +19,9 @@
  public abstract class Container {
  
      public NonNullList<ItemStack> items = NonNullList.a();
-@@ -18,6 +29,18 @@
-     protected List<ICrafting> listeners = Lists.newArrayList();
-     private final Set<EntityHuman> i = Sets.newHashSet();
+@@ -21,6 +33,27 @@
+     private final List<ICrafting> listeners = Lists.newArrayList();
+     private final Set<EntityHuman> k = Sets.newHashSet();
  
 +    // CraftBukkit start
 +    public boolean checkReachable = true;
@@ -32,20 +33,29 @@
 +        ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
 +        ((CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
 +    }
++    private IChatBaseComponent title;
++    public IChatBaseComponent getTitle() {
++        Preconditions.checkState(this.title != null, "Title not set");
++        return this.title;
++    }
++    public void setTitle(IChatBaseComponent title) {
++        Preconditions.checkState(this.title == null, "Title already set");
++        this.title = title;
++    }
 +    // CraftBukkit end
 +
-     public Container() {}
- 
-     protected Slot a(Slot slot) {
-@@ -128,6 +151,7 @@
+     protected Container(@Nullable Containers<?> containers, int i) {
+         this.e = containers;
+         this.windowId = i;
+@@ -180,6 +213,7 @@
                      k = playerinventory.getCarried().getCount();
-                     Iterator iterator = this.h.iterator();
+                     Iterator iterator = this.i.iterator();
  
 +                    Map<Integer, ItemStack> draggedSlots = new HashMap<Integer, ItemStack>(); // CraftBukkit - Store slots from drag in map (raw slot id -> new stack)
                      while (iterator.hasNext()) {
                          Slot slot1 = (Slot) iterator.next();
                          ItemStack itemstack3 = playerinventory.getCarried();
-@@ -143,12 +167,48 @@
+@@ -195,12 +229,48 @@
                              }
  
                              k -= itemstack4.getCount() - j1;
@@ -96,8 +106,8 @@
 +                    // CraftBukkit end
                  }
  
-                 this.c();
-@@ -165,8 +225,11 @@
+                 this.d();
+@@ -217,8 +287,11 @@
                  if (i == -999) {
                      if (!playerinventory.getCarried().isEmpty()) {
                          if (j == 0) {
@@ -110,10 +120,10 @@
                          }
  
                          if (j == 1) {
-@@ -254,6 +317,15 @@
+@@ -306,6 +379,15 @@
                          }
  
-                         slot2.f();
+                         slot2.d();
 +                        // CraftBukkit start - Make sure the client has the right slot contents
 +                        if (entityhuman instanceof EntityPlayer && slot2.getMaxStackSize() != 64) {
 +                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(this.windowId, slot2.rawSlotIndex, slot2.getItem()));
@@ -126,7 +136,7 @@
                      }
                  }
              } else if (inventoryclicktype == InventoryClickType.SWAP && j >= 0 && j < 9) {
-@@ -356,8 +428,11 @@
+@@ -408,8 +490,11 @@
          PlayerInventory playerinventory = entityhuman.inventory;
  
          if (!playerinventory.getCarried().isEmpty()) {
@@ -139,11 +149,3 @@
          }
  
      }
-@@ -565,6 +640,7 @@
-             if (inventorycraftresult.a(world, entityplayer, irecipe) && irecipe != null) {
-                 itemstack = irecipe.craftItem(iinventory);
-             }
-+            itemstack = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(iinventory, inventorycraftresult, itemstack, getBukkitView(), false); // CraftBukkit
- 
-             inventorycraftresult.setItem(0, itemstack);
-             entityplayer.playerConnection.sendPacket(new PacketPlayOutSetSlot(this.windowId, 0, itemstack));

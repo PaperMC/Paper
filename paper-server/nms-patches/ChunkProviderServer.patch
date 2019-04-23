@@ -1,109 +1,78 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -16,6 +16,11 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -82,7 +82,7 @@
  
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
-+import org.bukkit.event.world.ChunkUnloadEvent;
-+// CraftBukkit end
-+
- public class ChunkProviderServer implements IChunkProvider {
- 
-     private static final Logger a = LogManager.getLogger();
-@@ -34,7 +39,7 @@
-         this.chunkLoader = ichunkloader;
-         this.chunkGenerator = chunkgenerator;
-         this.asyncTaskHandler = iasynctaskhandler;
--        this.chunkScheduler = new ChunkTaskScheduler(2, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler);
-+        this.chunkScheduler = new ChunkTaskScheduler(0, worldserver, chunkgenerator, ichunkloader, iasynctaskhandler); // CraftBukkit - very buggy, broken in lots of __subtle__ ways. Same goes for async chunk loading. Also Bukkit API / plugins can't handle async events at all anyway.
-         this.batchScheduler = new SchedulerBatch<>(this.chunkScheduler);
+         if (flag1) {
+             completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
+-            this.serverThreadQueue.c(completablefuture::isDone);
++            this.serverThreadQueue.c((BooleanSupplier) completablefuture::isDone); // CraftBukkit - decompile error
+         } else {
+             completablefuture = CompletableFuture.supplyAsync(() -> {
+                 return this.getChunkFutureMainThread(i, j, chunkstatus, flag);
+@@ -193,6 +193,17 @@
+         this.playerChunkMap.close();
      }
  
-@@ -112,6 +117,25 @@
-         }
-     }
- 
-+    // CraftBukkit start
-+    public Chunk generateChunk(int x, int z) {
-+        try {
-+            this.batchScheduler.b();
-+            ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
-+            this.chunkScheduler.forcePolluteCache(pos);
-+            ((ChunkRegionLoader) this.chunkLoader).blacklist.add(pos.a());
-+            this.batchScheduler.a(pos);
-+            CompletableFuture<ProtoChunk> completablefuture = this.batchScheduler.c();
-+
-+            Chunk chunk = (Chunk) completablefuture.thenApply(this::a).join();
-+            ((ChunkRegionLoader) this.chunkLoader).blacklist.remove(pos.a());
-+            return chunk;
-+        } catch (RuntimeException runtimeexception) {
-+            throw this.a(x, z, (Throwable) runtimeexception);
-+        }
++    // CraftBukkit start - modelled on below
++    public void purgeUnload() {
++        this.world.getMethodProfiler().enter("purge");
++        this.chunkMapDistance.purgeTickets();
++        this.tickDistanceManager();
++        this.world.getMethodProfiler().exitEnter("unload");
++        this.playerChunkMap.unloadChunks(() -> true);
++        this.world.getMethodProfiler().exit();
 +    }
 +    // CraftBukkit end
 +
-     public IChunkAccess a(int i, int j, boolean flag) {
-         Chunk chunk = this.getChunkAt(i, j, true, false);
+     public void tick(BooleanSupplier booleansupplier) {
+         this.world.getMethodProfiler().enter("purge");
+         this.chunkMapDistance.purgeTickets();
+@@ -211,14 +222,14 @@
+         this.lastTickTime = i;
+         WorldData worlddata = this.world.getWorldData();
+         boolean flag = worlddata.getType() == WorldType.DEBUG_ALL_BLOCK_STATES;
+-        boolean flag1 = this.world.getGameRules().getBoolean("doMobSpawning");
++        boolean flag1 = this.world.getGameRules().getBoolean("doMobSpawning") && !world.getPlayers().isEmpty(); // CraftBukkit
  
-@@ -249,10 +273,12 @@
-                         Chunk chunk = (Chunk) this.chunks.get(olong);
+         if (!flag) {
+             this.world.getMethodProfiler().enter("pollingChunks");
+             int k = this.chunkMapDistance.b();
+             int l = this.world.getGameRules().c("randomTickSpeed");
+             BlockPosition blockposition = this.world.getSpawn();
+-            boolean flag2 = worlddata.getTime() % 400L == 0L;
++            boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit // PAIL: TODO monster ticks
+             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
+             Object2IntMap<EnumCreatureType> object2intmap = this.world.l();
+             ObjectBidirectionalIterator objectbidirectionaliterator = this.playerChunkMap.f();
+@@ -244,8 +255,30 @@
+                             for (int j1 = 0; j1 < i1; ++j1) {
+                                 EnumCreatureType enumcreaturetype = aenumcreaturetype1[j1];
  
-                         if (chunk != null) {
--                            chunk.removeEntities();
--                            this.saveChunk(chunk);
--                            this.chunks.remove(olong);
--                            this.lastChunk = null;
-+                            // CraftBukkit start - move unload logic to own method
-+                            if (!unloadChunk(chunk, true)) {
-+                                continue;
-+                            }
-+                            // CraftBukkit end
++                                // CraftBukkit start - Use per-world spawn limits
++                                int limit = enumcreaturetype.b();
++                                switch (enumcreaturetype) {
++                                    case MONSTER:
++                                        limit = world.getWorld().getMonsterSpawnLimit();
++                                        break;
++                                    case CREATURE:
++                                        limit = world.getWorld().getAnimalSpawnLimit();
++                                        break;
++                                    case WATER_CREATURE:
++                                        limit = world.getWorld().getWaterAnimalSpawnLimit();
++                                        break;
++                                    case AMBIENT:
++                                        limit = world.getWorld().getAmbientSpawnLimit();
++                                        break;
++                                }
 +
-                             ++i;
-                         }
-                     }
-@@ -265,6 +291,42 @@
-         return false;
-     }
++                                if (limit == 0) {
++                                    continue;
++                                }
++                                // CraftBukkit end
++
+                                 if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
+-                                    int k1 = enumcreaturetype.b() * k / ChunkProviderServer.b;
++                                    int k1 = limit * k / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
-+    // CraftBukkit start
-+    public boolean unloadChunk(Chunk chunk, boolean save) {
-+        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk, save);
-+        this.world.getServer().getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
-+            return false;
-+        }
-+        save = event.isSaveChunk();
-+
-+        // Update neighbor counts
-+        for (int x = -2; x < 3; x++) {
-+            for (int z = -2; z < 3; z++) {
-+                if (x == 0 && z == 0) {
-+                    continue;
-+                }
-+
-+                Chunk neighbor = this.getChunkAt(chunk.locX + x, chunk.locZ + z, false, false);
-+                if (neighbor != null) {
-+                    neighbor.setNeighborUnloaded(-x, -z);
-+                    chunk.setNeighborUnloaded(x, z);
-+                }
-+            }
-+        }
-+        // Moved from unloadChunks above
-+        synchronized (this.chunkLoader) {
-+            chunk.removeEntities();
-+            if (save) {
-+                this.saveChunk(chunk);
-+            }
-+            this.chunks.remove(chunk.chunkKey);
-+            this.lastChunk = null;
-+        }
-+        return true;
-+    }
-+    // CraftBukkit end
-+
-     public boolean d() {
-         return !this.world.savingDisabled;
-     }
+                                     if (object2intmap.getInt(enumcreaturetype) <= k1) {
+                                         SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition);

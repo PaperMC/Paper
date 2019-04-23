@@ -11,9 +11,9 @@
  
  public class TileEntityChest extends TileEntityLootable implements ITickable {
  
-@@ -11,6 +15,31 @@
-     protected int f;
-     private int k;
+@@ -11,6 +15,36 @@
+     protected int viewingCount;
+     private int j;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -35,6 +35,11 @@
 +        return transaction;
 +    }
 +
++    @Override
++    public int getMaxStackSize() {
++        return maxStack;
++    }
++
 +    public void setMaxStackSize(int size) {
 +        maxStack = size;
 +    }
@@ -43,58 +48,49 @@
      protected TileEntityChest(TileEntityTypes<?> tileentitytypes) {
          super(tileentitytypes);
          this.items = NonNullList.a(27, ItemStack.a);
-@@ -75,7 +104,7 @@
-     }
- 
-     public int getMaxStackSize() {
--        return 64;
-+        return maxStack; // CraftBukkit
-     }
- 
-     public void tick() {
-@@ -170,8 +199,20 @@
-             if (this.f < 0) {
-                 this.f = 0;
+@@ -172,8 +206,20 @@
+             if (this.viewingCount < 0) {
+                 this.viewingCount = 0;
              }
-+            int oldPower = Math.max(0, Math.min(15, this.f)); // CraftBukkit - Get power before new viewer is added
++            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
  
-             ++this.f;
+             ++this.viewingCount;
 +            if (this.world == null) return; // CraftBukkit
 +
 +            // CraftBukkit start - Call redstone event
-+            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
-+                int newPower = Math.max(0, Math.min(15, this.f));
++            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
++                int newPower = Math.max(0, Math.min(15, this.viewingCount));
 +
 +                if (oldPower != newPower) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
 +                }
 +            }
 +            // CraftBukkit end
-             this.p();
+             this.onOpen();
          }
  
-@@ -179,7 +220,18 @@
- 
+@@ -182,7 +228,18 @@
+     @Override
      public void closeContainer(EntityHuman entityhuman) {
          if (!entityhuman.isSpectator()) {
-+            int oldPower = Math.max(0, Math.min(15, this.f)); // CraftBukkit - Get power before new viewer is added
-             --this.f;
++            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
+             --this.viewingCount;
 +
 +            // CraftBukkit start - Call redstone event
-+            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
-+                int newPower = Math.max(0, Math.min(15, this.f));
++            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
++                int newPower = Math.max(0, Math.min(15, this.viewingCount));
 +
 +                if (oldPower != newPower) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
 +                }
 +            }
 +            // CraftBukkit end
-             this.p();
+             this.onOpen();
          }
  
-@@ -232,4 +284,11 @@
-         tileentitychest.a(tileentitychest1.q());
-         tileentitychest1.a(nonnulllist);
+@@ -233,4 +290,11 @@
+     protected Container createContainer(int i, PlayerInventory playerinventory) {
+         return ContainerChest.a(i, playerinventory, this);
      }
 +
 +    // CraftBukkit start

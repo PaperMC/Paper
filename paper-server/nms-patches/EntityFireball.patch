@@ -15,18 +15,16 @@
 +    public float bukkitYield = 1; // CraftBukkit
 +    public boolean isIncendiary = true; // CraftBukkit
  
-     protected EntityFireball(EntityTypes<?> entitytypes, World world, float f, float f1) {
+     protected EntityFireball(EntityTypes<? extends EntityFireball> entitytypes, World world) {
          super(entitytypes, world);
-@@ -28,11 +32,18 @@
-     public EntityFireball(EntityTypes<?> entitytypes, EntityLiving entityliving, double d0, double d1, double d2, World world, float f, float f1) {
-         this(entitytypes, world, f, f1);
+@@ -27,9 +31,16 @@
+     public EntityFireball(EntityTypes<? extends EntityFireball> entitytypes, EntityLiving entityliving, double d0, double d1, double d2, World world) {
+         this(entitytypes, world);
          this.shooter = entityliving;
 +        this.projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
          this.setPositionRotation(entityliving.locX, entityliving.locY, entityliving.locZ, entityliving.yaw, entityliving.pitch);
          this.setPosition(this.locX, this.locY, this.locZ);
-         this.motX = 0.0D;
-         this.motY = 0.0D;
-         this.motZ = 0.0D;
+         this.setMot(Vec3D.a);
 +        // CraftBukkit start - Added setDirection method
 +        this.setDirection(d0, d1, d2);
 +    }
@@ -36,9 +34,9 @@
          d0 += this.random.nextGaussian() * 0.4D;
          d1 += this.random.nextGaussian() * 0.4D;
          d2 += this.random.nextGaussian() * 0.4D;
-@@ -59,6 +70,12 @@
+@@ -58,6 +69,12 @@
  
-             if (movingobjectposition != null) {
+             if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
                  this.a(movingobjectposition);
 +
 +                // CraftBukkit start - Fire ProjectileHitEvent
@@ -48,21 +46,21 @@
 +                // CraftBukkit end
              }
  
-             this.locX += this.motX;
-@@ -146,6 +163,11 @@
+             Vec3D vec3d = this.getMot();
+@@ -147,6 +164,11 @@
          } else {
-             this.aA();
+             this.velocityChanged();
              if (damagesource.getEntity() != null) {
 +                // CraftBukkit start
 +                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
-                 Vec3D vec3d = damagesource.getEntity().aN();
+                 Vec3D vec3d = damagesource.getEntity().getLookDirection();
  
-                 if (vec3d != null) {
-@@ -159,6 +181,7 @@
- 
+                 this.setMot(vec3d);
+@@ -155,6 +177,7 @@
+                 this.dirZ = vec3d.z * 0.1D;
                  if (damagesource.getEntity() instanceof EntityLiving) {
                      this.shooter = (EntityLiving) damagesource.getEntity();
 +                    this.projectileSource = (org.bukkit.projectiles.ProjectileSource) this.shooter.getBukkitEntity();

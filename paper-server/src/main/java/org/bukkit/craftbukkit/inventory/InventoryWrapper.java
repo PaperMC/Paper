@@ -104,20 +104,6 @@ public class InventoryWrapper implements IInventory {
     }
 
     @Override
-    public int getProperty(int i) {
-        return 0;
-    }
-
-    @Override
-    public void setProperty(int i, int j) {
-    }
-
-    @Override
-    public int h() {
-        return 0;
-    }
-
-    @Override
     public void clear() {
         inventory.clear();
     }
@@ -160,32 +146,12 @@ public class InventoryWrapper implements IInventory {
     }
 
     @Override
-    public IChatBaseComponent getDisplayName() {
-        return CraftChatMessage.fromStringOrNull(inventory.getName());
-    }
-
-    @Override
-    public IChatBaseComponent getCustomName() {
-        return getDisplayName();
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return inventory.getName() != null;
-    }
-
-    @Override
-    public IChatBaseComponent getScoreboardDisplayName() {
-        return getDisplayName();
-    }
-
-    @Override
     public Location getLocation() {
         return inventory.getLocation();
     }
 
     @Override
-    public boolean P_() {
+    public boolean isNotEmpty() {
         return Iterables.any(inventory, Predicates.notNull());
     }
 }

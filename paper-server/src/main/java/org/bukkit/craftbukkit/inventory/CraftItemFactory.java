@@ -34,6 +34,7 @@ public final class CraftItemFactory implements ItemFactory {
             .add("generic.luck")
             .add("horse.jumpStrength")
             .add("zombie.spawnReinforcements")
+            .add("generic.attackKnockback")
             .build();
     }
 
@@ -87,6 +88,7 @@ public final class CraftItemFactory implements ItemFactory {
         case ZOMBIE_WALL_HEAD:
             return meta instanceof CraftMetaSkull ? meta : new CraftMetaSkull(meta);
         case LEATHER_HELMET:
+        case LEATHER_HORSE_ARMOR:
         case LEATHER_CHESTPLATE:
         case LEATHER_LEGGINGS:
         case LEATHER_BOOTS:
@@ -197,7 +199,18 @@ public final class CraftItemFactory implements ItemFactory {
         case JUKEBOX:
         case DISPENSER:
         case DROPPER:
-        case SIGN:
+        case ACACIA_SIGN:
+        case ACACIA_WALL_SIGN:
+        case BIRCH_SIGN:
+        case BIRCH_WALL_SIGN:
+        case DARK_OAK_SIGN:
+        case DARK_OAK_WALL_SIGN:
+        case JUNGLE_SIGN:
+        case JUNGLE_WALL_SIGN:
+        case OAK_SIGN:
+        case OAK_WALL_SIGN:
+        case SPRUCE_SIGN:
+        case SPRUCE_WALL_SIGN:
         case SPAWNER:
         case BREWING_STAND:
         case ENCHANTING_TABLE:
@@ -228,7 +241,14 @@ public final class CraftItemFactory implements ItemFactory {
         case RED_SHULKER_BOX:
         case BLACK_SHULKER_BOX:
         case ENDER_CHEST:
-            return new CraftMetaBlockState(meta, material);
+        case BARREL:
+        case BELL:
+        case BLAST_FURNACE:
+        case CAMPFIRE:
+        case JIGSAW:
+        case LECTERN:
+        case SMOKER:
+          return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
         default:

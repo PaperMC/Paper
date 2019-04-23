@@ -14,22 +14,22 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
     private final WorldServer worldServer;
     private final int x;
     private final int z;
-    private static final byte[] emptyData = new byte[2048];
-    private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0, false).getBlocks();
-    private static final byte[] emptySkyLight = new byte[2048];
+    private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0).getBlocks();
+    private static final byte[] emptyLight = new byte[2048];
 
     public CraftChunk(net.minecraft.server.Chunk chunk) {
         this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
 
         worldServer = (WorldServer) getHandle().world;
-        x = getHandle().locX;
-        z = getHandle().locZ;
+        x = getHandle().getPos().x;
+        z = getHandle().getPos().z;
     }
 
     public World getWorld() {
@@ -143,10 +143,6 @@ public class CraftChunk implements Chunk {
         return getWorld().unloadChunk(getX(), getZ(), save);
     }
 
-    public boolean unload(boolean save, boolean safe) {
-        return getWorld().unloadChunk(getX(), getZ(), save, safe);
-    }
-
     @Override
     public boolean isForceLoaded() {
         return getWorld().isChunkForceLoaded(getX(), getZ());
@@ -173,34 +169,41 @@ public class CraftChunk implements Chunk {
         for (int i = 0; i < cs.length; i++) {
             if (cs[i] == null) { // Section is empty?
                 sectionBlockIDs[i] = emptyBlockIDs;
-                sectionSkyLights[i] = emptySkyLight;
-                sectionEmitLights[i] = emptyData;
+                sectionSkyLights[i] = emptyLight;
+                sectionEmitLights[i] = emptyLight;
                 sectionEmpty[i] = true;
             } else { // Not empty
                 NBTTagCompound data = new NBTTagCompound();
-                cs[i].getBlocks().b(data, "Spigot", "Magic");
+                cs[i].getBlocks().a(data, "Palette", "BlockStates");
 
                 DataPaletteBlock blockids = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, net.minecraft.server.Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData()); // TODO: snapshot whole ChunkSection
-                blockids.a(data, "Spigot", "Magic");
+                blockids.a(data.getList("Palette", CraftMagicNumbers.NBT.TAG_COMPOUND), data.getLongArray("BlockStates"));
 
                 sectionBlockIDs[i] = blockids;
 
-                if (cs[i].getSkyLightArray() == null) {
-                    sectionSkyLights[i] = emptySkyLight;
+                LightEngine lightengine = chunk.world.getChunkProvider().getLightEngine();
+                NibbleArray skyLightArray = lightengine.a(EnumSkyBlock.SKY).a(SectionPosition.a(x, i, z));
+                if (skyLightArray == null) {
+                    sectionSkyLights[i] = emptyLight;
                 } else {
                     sectionSkyLights[i] = new byte[2048];
-                    System.arraycopy(cs[i].getSkyLightArray().asBytes(), 0, sectionSkyLights[i], 0, 2048);
+                    System.arraycopy(skyLightArray.asBytes(), 0, sectionSkyLights[i], 0, 2048);
                 }
-                sectionEmitLights[i] = new byte[2048];
-                System.arraycopy(cs[i].getEmittedLightArray().asBytes(), 0, sectionEmitLights[i], 0, 2048);
+                NibbleArray emitLightArray = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(x, i, z));
+                if (emitLightArray == null) {
+                    sectionEmitLights[i] = emptyLight;
+                } else {
+                    sectionEmitLights[i] = new byte[2048];
+                    System.arraycopy(emitLightArray.asBytes(), 0, sectionEmitLights[i], 0, 2048);
+                }
             }
         }
 
         HeightMap hmap = null;
 
         if (includeMaxBlockY) {
-            hmap = new HeightMap(null, HeightMap.Type.LIGHT_BLOCKING);
-            hmap.a(chunk.heightMap.get(HeightMap.Type.LIGHT_BLOCKING).b());
+            hmap = new HeightMap(null, HeightMap.Type.MOTION_BLOCKING);
+            hmap.a(chunk.heightMap.get(HeightMap.Type.MOTION_BLOCKING).a());
         }
 
         BiomeBase[] biome = null;
@@ -263,16 +266,16 @@ public class CraftChunk implements Chunk {
 
         for (int i = 0; i < hSection; i++) {
             blockIDs[i] = emptyBlockIDs;
-            skyLight[i] = emptySkyLight;
-            emitLight[i] = emptyData;
+            skyLight[i] = emptyLight;
+            emitLight[i] = emptyLight;
             empty[i] = true;
         }
 
-        return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.LIGHT_BLOCKING), biome, biomeTemp);
+        return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.MOTION_BLOCKING), biome, biomeTemp);
     }
 
     private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
-        BiomeBase[] biomes = chunkmanager.getBiomes(chunkX, chunkZ, 16, 16);
+        BiomeBase[] biomes = chunkmanager.getBiomeBlock(chunkX, chunkZ, 16, 16);
         float[] temps = new float[biomes.length];
 
         for (int i = 0; i < biomes.length; i++) {
@@ -295,6 +298,6 @@ public class CraftChunk implements Chunk {
     }
 
     static {
-        Arrays.fill(emptySkyLight, (byte) 0xFF);
+        Arrays.fill(emptyLight, (byte) 0xFF);
     }
 }

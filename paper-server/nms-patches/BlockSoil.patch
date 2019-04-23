@@ -11,15 +11,15 @@
 +
  public class BlockSoil extends Block {
  
-     public static final BlockStateInteger MOISTURE = BlockProperties.ai;
-@@ -51,26 +56,49 @@
+     public static final BlockStateInteger MOISTURE = BlockProperties.ap;
+@@ -53,12 +58,12 @@
  
              if (!a((IWorldReader) world, blockposition) && !world.isRainingAt(blockposition.up())) {
                  if (i > 0) {
 -                    world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, i - 1), 2);
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, i - 1), 2); // CraftBukkit
                  } else if (!a((IBlockAccess) world, blockposition)) {
-                     b(iblockdata, world, blockposition);
+                     fade(iblockdata, world, blockposition);
                  }
              } else if (i < 7) {
 -                world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, 7), 2);
@@ -27,11 +27,12 @@
              }
  
          }
-     }
+@@ -66,14 +71,37 @@
  
+     @Override
      public void fallOn(World world, BlockPosition blockposition, Entity entity, float f) {
 +        super.fallOn(world, blockposition, entity, f); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean("mobGriefing")) && entity.width * entity.width * entity.length > 0.512F) {
+         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean("mobGriefing")) && entity.getWidth() * entity.getWidth() * entity.getHeight() > 0.512F) {
 +            // CraftBukkit start - Interact soil
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof EntityHuman) {
@@ -49,14 +50,14 @@
 +                return;
 +            }
 +            // CraftBukkit end
-             b(world.getType(blockposition), world, blockposition);
+             fade(world.getType(blockposition), world, blockposition);
          }
  
 -        super.fallOn(world, blockposition, entity, f);
 +        // super.fallOn(world, blockposition, entity, f); // CraftBukkit - moved up
      }
  
-     public static void b(IBlockData iblockdata, World world, BlockPosition blockposition) {
+     public static void fade(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +        // CraftBukkit start
 +        if (CraftEventFactory.callBlockFadeEvent(world, blockposition, Blocks.DIRT.getBlockData()).isCancelled()) {
 +            return;

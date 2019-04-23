@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import net.minecraft.server.ChestLock;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.TileEntity;
@@ -9,14 +10,12 @@ import net.minecraft.server.TileEntityBeacon;
 import org.bukkit.Material;
 import org.bukkit.block.Beacon;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Beacon {
+public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> implements Beacon {
 
     public CraftBeacon(final Block block) {
         super(block, TileEntityBeacon.class);
@@ -24,20 +23,6 @@ public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Bea
 
     public CraftBeacon(final Material material, final TileEntityBeacon te) {
         super(material, te);
-    }
-
-    @Override
-    public BeaconInventory getSnapshotInventory() {
-        return new CraftInventoryBeacon(this.getSnapshot());
-    }
-
-    @Override
-    public BeaconInventory getInventory() {
-        if (!this.isPlaced()) {
-            return this.getSnapshotInventory();
-        }
-
-        return new CraftInventoryBeacon(this.getTileEntity());
     }
 
     @Override
@@ -88,11 +73,26 @@ public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Bea
     @Override
     public String getCustomName() {
         TileEntityBeacon beacon = this.getSnapshot();
-        return beacon.hasCustomName() ? CraftChatMessage.fromComponent(beacon.getCustomName()) : null;
+        return beacon.customName != null ? CraftChatMessage.fromComponent(beacon.customName) : null;
     }
 
     @Override
     public void setCustomName(String name) {
         this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
+    }
+
+    @Override
+    public boolean isLocked() {
+        return !this.getSnapshot().chestLock.key.isEmpty();
+    }
+
+    @Override
+    public String getLock() {
+        return this.getSnapshot().chestLock.key;
+    }
+
+    @Override
+    public void setLock(String key) {
+        this.getSnapshot().chestLock = (key == null) ? ChestLock.a : new ChestLock(key);
     }
 }

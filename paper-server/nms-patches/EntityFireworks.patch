@@ -1,39 +1,37 @@
 --- a/net/minecraft/server/EntityFireworks.java
 +++ b/net/minecraft/server/EntityFireworks.java
-@@ -2,6 +2,7 @@
- 
+@@ -3,6 +3,7 @@
  import java.util.Iterator;
  import java.util.List;
+ import java.util.OptionalInt;
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
  
- public class EntityFireworks extends Entity {
+ public class EntityFireworks extends Entity implements IProjectile {
  
-@@ -114,8 +115,12 @@
+@@ -133,7 +134,11 @@
          }
  
          if (!this.world.isClientSide && this.ticksFlown > this.expectedLifespan) {
--            this.world.broadcastEntityEffect(this, (byte) 17);
--            this.i();
+-            this.explode();
 +            // CraftBukkit start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+                this.world.broadcastEntityEffect(this, (byte) 17);
-+                this.i();
++                this.explode();
 +            }
 +            // CraftBukkit end
-             this.die();
          }
  
-@@ -133,7 +138,9 @@
+     }
+@@ -184,7 +189,9 @@
  
          if (f > 0.0F) {
-             if (this.e != null) {
+             if (this.ridingEntity != null) {
 +                CraftEventFactory.entityDamage = this; // CraftBukkit
-                 this.e.damageEntity(DamageSource.FIREWORKS, (float) (5 + nbttaglist.size() * 2));
+                 this.ridingEntity.damageEntity(DamageSource.FIREWORKS, 5.0F + (float) (nbttaglist.size() * 2));
 +                CraftEventFactory.entityDamage = null; // CraftBukkit
              }
  
              double d0 = 5.0D;
-@@ -159,7 +166,9 @@
+@@ -211,7 +218,9 @@
                      if (flag) {
                          float f1 = f * (float) Math.sqrt((5.0D - (double) this.g(entityliving)) / 5.0D);
  

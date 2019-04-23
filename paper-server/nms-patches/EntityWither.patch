@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityWither.java
 +++ b/net/minecraft/server/EntityWither.java
-@@ -5,6 +5,13 @@
+@@ -6,6 +6,13 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
@@ -13,25 +13,25 @@
 +
  public class EntityWither extends EntityMonster implements IRangedEntity {
  
-     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityWither.class, DataWatcherRegistry.b);
-@@ -181,13 +188,38 @@
-         if (this.dz() > 0) {
-             i = this.dz() - 1;
+     private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityWither.class, DataWatcherRegistry.b);
+@@ -188,14 +195,38 @@
+             i = this.dV() - 1;
              if (i <= 0) {
--                this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
--                this.world.a(1023, new BlockPosition(this), 0);
+                 Explosion.Effect explosion_effect = this.world.getGameRules().getBoolean("mobGriefing") ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
 +                // CraftBukkit start
-+                // this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
++                // this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, explosion_effect);
 +                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
 +                this.world.getServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
-+                    this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, event.getRadius(), event.getFire(), this.world.getGameRules().getBoolean("mobGriefing"));
++                    this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, event.getRadius(), event.getFire(), explosion_effect);
 +                }
 +                // CraftBukkit end
-+
+ 
+-                this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, explosion_effect);
+-                this.world.b(1023, new BlockPosition(this), 0);
 +                // CraftBukkit start - Use relative location for far away sounds
-+                // this.world.a(1023, new BlockPosition(this), 0);
++                // this.world.b(1023, new BlockPosition(this), 0);
 +                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
 +                for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
 +                    double deltaX = this.locX - player.locX;
@@ -49,38 +49,38 @@
 +                // CraftBukkit end
              }
  
-             this.d(i);
+             this.q(i);
              if (this.ticksLived % 10 == 0) {
 -                this.heal(10.0F);
 +                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
              }
  
          } else {
-@@ -239,9 +271,11 @@
+@@ -247,9 +278,11 @@
                              if (entityliving != this && entityliving.isAlive() && this.hasLineOfSight(entityliving)) {
                                  if (entityliving instanceof EntityHuman) {
                                      if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
 +                                        if (CraftEventFactory.callEntityTargetLivingEvent(this, entityliving, EntityTargetEvent.TargetReason.CLOSEST_PLAYER).isCancelled()) continue; // CraftBukkit
-                                         this.a(i, entityliving.getId());
+                                         this.setHeadTarget(i, entityliving.getId());
                                      }
                                  } else {
 +                                    if (CraftEventFactory.callEntityTargetLivingEvent(this, entityliving, EntityTargetEvent.TargetReason.CLOSEST_ENTITY).isCancelled()) continue; // CraftBukkit
-                                     this.a(i, entityliving.getId());
+                                     this.setHeadTarget(i, entityliving.getId());
                                  }
                                  break;
-@@ -278,6 +312,11 @@
-                                 Block block = iblockdata.getBlock();
+@@ -285,6 +318,11 @@
+                                 IBlockData iblockdata = this.world.getType(blockposition);
  
-                                 if (!iblockdata.isAir() && a(block)) {
+                                 if (b(iblockdata)) {
 +                                    // CraftBukkit start
 +                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
 +                                        continue;
 +                                    }
 +                                    // CraftBukkit end
-                                     flag = this.world.setAir(blockposition, true) || flag;
+                                     flag = this.world.b(blockposition, true) || flag;
                                  }
                              }
-@@ -291,7 +330,7 @@
+@@ -298,7 +336,7 @@
              }
  
              if (this.ticksLived % 20 == 0) {

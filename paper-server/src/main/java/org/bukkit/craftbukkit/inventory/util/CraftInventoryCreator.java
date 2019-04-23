@@ -25,9 +25,17 @@ public final class CraftInventoryCreator {
         converterMap.put(InventoryType.MERCHANT, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ENDER_CHEST, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ANVIL, DEFAULT_CONVERTER);
-        converterMap.put(InventoryType.BEACON, new CraftTileInventoryConverter.Beacon());
+        converterMap.put(InventoryType.BEACON, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter.Hopper());
         converterMap.put(InventoryType.SHULKER_BOX, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.BARREL, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.BLAST_FURNACE, new CraftTileInventoryConverter.BlastFurnace());
+        converterMap.put(InventoryType.LECTERN, new CraftTileInventoryConverter.Lectern());
+        converterMap.put(InventoryType.SMOKER, new CraftTileInventoryConverter.Smoker());
+        converterMap.put(InventoryType.LOOM, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.CARTOGRAPHY, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.GRINDSTONE, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.STONECUTTER, DEFAULT_CONVERTER);
     }
 
     public Inventory createInventory(InventoryHolder holder, InventoryType type) {

@@ -1,50 +1,49 @@
 --- a/net/minecraft/server/EntityMushroomCow.java
 +++ b/net/minecraft/server/EntityMushroomCow.java
-@@ -2,6 +2,12 @@
+@@ -2,6 +2,11 @@
  
- import javax.annotation.Nullable;
- 
+ import java.util.UUID;
+ import org.apache.commons.lang3.tuple.Pair;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +import org.bukkit.event.player.PlayerShearEntityEvent;
 +// CraftBukkit end
-+
+ 
  public class EntityMushroomCow extends EntityCow {
  
-     public EntityMushroomCow(World world) {
-@@ -23,9 +29,17 @@
+@@ -72,9 +77,17 @@
+             int i;
  
-             return true;
-         } else if (itemstack.getItem() == Items.SHEARS && this.getAge() >= 0) {
-+            // CraftBukkit start
-+            PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
-+            this.world.getServer().getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
-+                return false;
-+            }
-+            // CraftBukkit end
-             this.world.addParticle(Particles.u, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
-             if (!this.world.isClientSide) {
--                this.die();
-+                // this.die(); // CraftBukkit - moved down
-                 EntityCow entitycow = new EntityCow(this.world);
- 
-                 entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-@@ -35,7 +49,14 @@
-                     entitycow.setCustomName(this.getCustomName());
-                 }
- 
--                this.world.addEntity(entitycow);
+             if (itemstack.getItem() == Items.SHEARS && this.getAge() >= 0) {
 +                // CraftBukkit start
-+                if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
++                PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
++                this.world.getServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
 +                    return false;
 +                }
-+                this.world.addEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
-+
-+                this.die(); // CraftBukkit - from above
 +                // CraftBukkit end
+                 this.world.addParticle(Particles.EXPLOSION, this.locX, this.locY + (double) (this.getHeight() / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
+                 if (!this.world.isClientSide) {
+-                    this.die();
++                    // this.die(); // CraftBukkit - moved down
+                     EntityCow entitycow = (EntityCow) EntityTypes.COW.a(this.world);
  
-                 for (int i = 0; i < 5; ++i) {
-                     this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + (double) this.length, this.locZ, new ItemStack(Blocks.RED_MUSHROOM)));
+                     entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+@@ -84,7 +97,14 @@
+                         entitycow.setCustomName(this.getCustomName());
+                     }
+ 
+-                    this.world.addEntity(entitycow);
++                    // CraftBukkit start
++                    if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
++                        return false;
++                    }
++                    this.world.addEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
++
++                    this.die(); // CraftBukkit - from above
++                    // CraftBukkit end
+ 
+                     for (i = 0; i < 5; ++i) {
+                         this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + (double) this.getHeight(), this.locZ, new ItemStack(this.dV().d.getBlock())));

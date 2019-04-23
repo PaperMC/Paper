@@ -1,11 +1,12 @@
 --- a/net/minecraft/server/EntityHuman.java
 +++ b/net/minecraft/server/EntityHuman.java
-@@ -12,6 +12,18 @@
+@@ -15,10 +15,24 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.util.CraftVector;
 +import org.bukkit.entity.Item;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -18,21 +19,27 @@
 +
  public abstract class EntityHuman extends EntityLiving {
  
-     private static final DataWatcherObject<Float> a = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.c);
-@@ -21,10 +33,10 @@
-     protected static final DataWatcherObject<NBTTagCompound> bz = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
-     protected static final DataWatcherObject<NBTTagCompound> bA = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
-     public PlayerInventory inventory = new PlayerInventory(this);
+     public static final EntitySize bs = EntitySize.b(0.6F, 1.8F);
+-    private static final Map<EntityPose, EntitySize> b = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.bs).put(EntityPose.SLEEPING, EntityHuman.as).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SNEAKING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
++    // CraftBukkit - decompile error
++    private static final Map<EntityPose, EntitySize> b = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.bs).put(EntityPose.SLEEPING, EntityHuman.as).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SNEAKING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
+     private static final DataWatcherObject<Float> c = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.c);
+     private static final DataWatcherObject<Integer> d = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.b);
+     protected static final DataWatcherObject<Byte> bt = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a);
+@@ -26,10 +40,10 @@
+     protected static final DataWatcherObject<NBTTagCompound> bv = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
+     protected static final DataWatcherObject<NBTTagCompound> bw = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
+     public final PlayerInventory inventory = new PlayerInventory(this);
 -    protected InventoryEnderChest enderChest = new InventoryEnderChest();
 +    protected InventoryEnderChest enderChest = new InventoryEnderChest(this); // CraftBukkit - add "this" to constructor
-     public Container defaultContainer;
+     public final ContainerPlayer defaultContainer;
      public Container activeContainer;
 -    protected FoodMetaData foodData = new FoodMetaData();
 +    protected FoodMetaData foodData = new FoodMetaData(this); // CraftBukkit - add "this" to constructor
-     protected int bG;
-     public float bH;
-     public float bI;
-@@ -57,6 +69,17 @@
+     protected int bC;
+     public float bD;
+     public float bE;
+@@ -57,6 +71,17 @@
      @Nullable
      public EntityFishingHook hookedFish;
  
@@ -49,8 +56,8 @@
 +
      public EntityHuman(World world, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
-         this.cd = ItemStack.a;
-@@ -181,7 +204,7 @@
+         this.bX = ItemStack.a;
+@@ -179,7 +204,7 @@
          ItemStack itemstack = this.getEquipment(EnumItemSlot.HEAD);
  
          if (itemstack.getItem() == Items.TURTLE_HELMET && !this.a(TagsFluid.WATER)) {
@@ -59,7 +66,7 @@
          }
  
      }
-@@ -366,7 +389,8 @@
+@@ -352,7 +377,8 @@
  
          if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL && this.world.getGameRules().getBoolean("naturalRegeneration")) {
              if (this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 == 0) {
@@ -69,25 +76,16 @@
              }
  
              if (this.foodData.c() && this.ticksLived % 10 == 0) {
-@@ -390,7 +414,7 @@
- 
-         this.o((float) attributeinstance.getValue());
-         float f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
--        float f1 = (float) (Math.atan(-this.motY * 0.20000000298023224D) * 15.0D);
-+        float f1 = (float) ( org.bukkit.craftbukkit.TrigMath.atan(-this.motY * 0.20000000298023224D) * 15.0D); // CraftBukkit
- 
-         if (f > 0.1F) {
-             f = 0.1F;
-@@ -513,6 +537,7 @@
+@@ -497,6 +523,7 @@
  
      @Nullable
-     public EntityItem a(boolean flag) {
+     public EntityItem n(boolean flag) {
 +        // Called only when dropped by Q or CTRL-Q
          return this.a(this.inventory.splitStack(this.inventory.itemInHandIndex, flag && !this.inventory.getItemInHand().isEmpty() ? this.inventory.getItemInHand().getCount() : 1), false, true);
      }
  
-@@ -555,6 +580,30 @@
-                 entityitem.motZ += Math.sin((double) f1) * (double) f;
+@@ -537,6 +564,30 @@
+                 entityitem.setMot((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
              }
  
 +            // CraftBukkit start - fire PlayerDropItemEvent
@@ -114,13 +112,14 @@
 +            }
 +            // CraftBukkit end
 +
-             ItemStack itemstack1 = this.a(entityitem);
- 
-             if (flag1) {
-@@ -649,6 +698,13 @@
-             this.a(true, true, false);
+             return entityitem;
+         }
+     }
+@@ -611,6 +662,14 @@
          }
  
+         this.setScore(nbttagcompound.getInt("Score"));
++
 +        // CraftBukkit start
 +        this.spawnWorld = nbttagcompound.getString("SpawnWorld");
 +        if ("".equals(spawnWorld)) {
@@ -129,9 +128,9 @@
 +        // CraftBukkit end
 +
          if (nbttagcompound.hasKeyOfType("SpawnX", 99) && nbttagcompound.hasKeyOfType("SpawnY", 99) && nbttagcompound.hasKeyOfType("SpawnZ", 99)) {
-             this.e = new BlockPosition(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
-             this.f = nbttagcompound.getBoolean("SpawnForced");
-@@ -699,6 +755,7 @@
+             this.f = new BlockPosition(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
+             this.g = nbttagcompound.getBoolean("SpawnForced");
+@@ -661,6 +720,7 @@
          if (!this.getShoulderEntityRight().isEmpty()) {
              nbttagcompound.set("ShoulderEntityRight", this.getShoulderEntityRight());
          }
@@ -139,10 +138,10 @@
  
      }
  
-@@ -716,10 +773,10 @@
-                     this.a(true, true, false);
-                 }
- 
+@@ -675,10 +735,10 @@
+             if (this.getHealth() <= 0.0F) {
+                 return false;
+             } else {
 -                this.releaseShoulderEntities();
 +                // this.releaseShoulderEntities(); // CraftBukkit - moved down
                  if (damagesource.s()) {
@@ -152,7 +151,7 @@
                      }
  
                      if (this.world.getDifficulty() == EnumDifficulty.EASY) {
-@@ -731,7 +788,13 @@
+@@ -690,7 +750,13 @@
                      }
                  }
  
@@ -167,7 +166,7 @@
              }
          }
      }
-@@ -745,10 +808,29 @@
+@@ -705,10 +771,29 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
@@ -199,13 +198,14 @@
 +        // CraftBukkit end
      }
  
-     protected void damageArmor(float f) {
-@@ -791,7 +873,12 @@
-         return (float) i / (float) this.inventory.armor.size();
+     @Override
+@@ -739,8 +824,13 @@
+ 
      }
  
--    protected void damageEntity0(DamageSource damagesource, float f) {
 +    // CraftBukkit start
+     @Override
+-    protected void damageEntity0(DamageSource damagesource, float f) {
 +    protected boolean damageEntity0(DamageSource damagesource, float f) { // void -> boolean
 +        if (true) {
 +            return super.damageEntity0(damagesource, f);
@@ -214,7 +214,7 @@
          if (!this.isInvulnerable(damagesource)) {
              f = this.applyArmorModifier(damagesource, f);
              f = this.applyMagicModifier(damagesource, f);
-@@ -817,6 +904,7 @@
+@@ -766,6 +856,7 @@
  
              }
          }
@@ -222,7 +222,7 @@
      }
  
      public void openSign(TileEntitySign tileentitysign) {}
-@@ -938,8 +1026,15 @@
+@@ -896,8 +987,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
                          if (j > 0 && !entity.isBurning()) {
@@ -240,10 +240,10 @@
                          }
                      }
  
-@@ -970,8 +1065,11 @@
+@@ -925,8 +1023,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
-                                 if (entityliving != this && entityliving != entity && !this.r(entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.h(entityliving) < 9.0D) {
+                                 if (entityliving != this && entityliving != entity && !this.r(entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.h((Entity) entityliving) < 9.0D) {
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
 +                                    if (entityliving.damageEntity(DamageSource.playerAttack(this).sweep(), f4)) {
                                      entityliving.a(this, 0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
@@ -253,14 +253,14 @@
                                  }
                              }
  
-@@ -980,11 +1078,28 @@
+@@ -935,9 +1036,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.velocityChanged) {
 +                            // CraftBukkit start - Add Velocity Event
 +                            boolean cancelled = false;
 +                            Player player = (Player) entity.getBukkitEntity();
-+                            org.bukkit.util.Vector velocity = new Vector( d1, d2, d3 );
++                            org.bukkit.util.Vector velocity = CraftVector.toBukkit(vec3d);
 +
 +                            PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
 +                            world.getServer().getPluginManager().callEvent(event);
@@ -274,15 +274,13 @@
 +                            if (!cancelled) {
                              ((EntityPlayer) entity).playerConnection.sendPacket(new PacketPlayOutEntityVelocity(entity));
                              entity.velocityChanged = false;
-                             entity.motX = d1;
-                             entity.motY = d2;
-                             entity.motZ = d3;
+                             entity.setMot(vec3d);
 +                            }
 +                            // CraftBukkit end
                          }
  
                          if (flag2) {
-@@ -1033,7 +1148,14 @@
+@@ -982,7 +1100,14 @@
  
                              this.a(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                              if (j > 0) {
@@ -298,7 +296,7 @@
                              }
  
                              if (this.world instanceof WorldServer && f5 > 2.0F) {
-@@ -1049,6 +1171,11 @@
+@@ -998,6 +1123,11 @@
                          if (flag4) {
                              entity.extinguish();
                          }
@@ -310,63 +308,63 @@
                      }
                  }
  
-@@ -1110,15 +1237,15 @@
-         return this.h;
+@@ -1057,15 +1187,15 @@
+         return this.bV;
      }
  
--    public EntityHuman.EnumBedResult a(BlockPosition blockposition) {
+-    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
 -        EnumDirection enumdirection = (EnumDirection) this.world.getType(blockposition).get(BlockFacingHorizontal.FACING);
 -
 +    // CraftBukkit start - moved bed result checks from below into separate method
-+    private EntityHuman.EnumBedResult getBedResult(BlockPosition blockposition, EnumDirection enumdirection) {
++    private Either<EntityHuman.EnumBedResult, Unit> getBedResult(BlockPosition blockposition, EnumDirection enumdirection) {
          if (!this.world.isClientSide) {
              if (this.isSleeping() || !this.isAlive()) {
-                 return EntityHuman.EnumBedResult.OTHER_PROBLEM;
+                 return Either.left(EntityHuman.EnumBedResult.OTHER_PROBLEM);
              }
  
 -            if (!this.world.worldProvider.isOverworld()) {
 +            // CraftBukkit - moved world and biome check from BlockBed interact handling here
 +            if (!world.worldProvider.canRespawn() || world.getBiome(blockposition) == Biomes.NETHER || !this.world.worldProvider.isOverworld()) {
-                 return EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE;
+                 return Either.left(EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE);
              }
  
-@@ -1140,6 +1267,34 @@
+@@ -1093,6 +1223,34 @@
                  }
              }
          }
-+        return EntityHuman.EnumBedResult.OK;
++        return Either.right(Unit.INSTANCE);
 +    }
 +
-+    public EntityHuman.EnumBedResult a(BlockPosition blockposition) {
++    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
 +        // CraftBukkit start - moved checks into separate method above, add force
-+        return this.a(blockposition, false);
++        return this.sleep(blockposition, false);
 +    }
 +
-+    public EntityHuman.EnumBedResult a(BlockPosition blockposition, boolean force) {
++    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition, boolean force) {
 +        EnumDirection enumdirection = (EnumDirection) this.world.getType(blockposition).get(BlockFacingHorizontal.FACING);
-+        EntityHuman.EnumBedResult bedResult = this.getBedResult(blockposition, enumdirection);
++        Either<EntityHuman.EnumBedResult, Unit> bedResult = this.getBedResult(blockposition, enumdirection);
 +
-+        if (bedResult == EntityHuman.EnumBedResult.OTHER_PROBLEM) {
++        if (bedResult.left().orElse(null) == EntityHuman.EnumBedResult.OTHER_PROBLEM) {
 +            return bedResult; // return immediately if the result is not bypassable by plugins
 +        }
 +
 +        if (force) {
-+            bedResult = EnumBedResult.OK;
++            bedResult = Either.right(Unit.INSTANCE);
 +        }
 +
 +        if (this.getBukkitEntity() instanceof Player) {
 +            bedResult = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedEnterEvent(this, blockposition, bedResult);
 +
-+            if (bedResult != EntityHuman.EnumBedResult.OK) {
++            if (bedResult.left().isPresent()) {
 +                return bedResult;
 +            }
 +        }
 +        // CraftBukkit end
  
-         if (this.isPassenger()) {
-             this.stopRiding();
-@@ -1206,6 +1361,24 @@
-             this.world.everyoneSleeping();
+         this.e(blockposition);
+         this.sleepTicks = 0;
+@@ -1134,6 +1292,24 @@
+             ((WorldServer) this.world).everyoneSleeping();
          }
  
 +        // CraftBukkit start - fire PlayerBedLeaveEvent
@@ -374,7 +372,7 @@
 +            Player player = (Player) this.getBukkitEntity();
 +
 +            org.bukkit.block.Block bed;
-+            BlockPosition blockposition = this.bedPosition;
++            BlockPosition blockposition = this.getBed();
 +            if (blockposition != null) {
 +                bed = this.world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +            } else {
@@ -389,22 +387,22 @@
 +
          this.sleepTicks = flag ? 0 : 100;
          if (flag2) {
-             this.setRespawnPosition(this.bedPosition, false);
-@@ -1257,9 +1430,11 @@
+             optional.ifPresent((blockposition) -> {
+@@ -1188,9 +1364,11 @@
          if (blockposition != null) {
-             this.e = blockposition;
-             this.f = flag;
+             this.f = blockposition;
+             this.g = flag;
 +            this.spawnWorld = this.world.worldData.getName(); // CraftBukkit
          } else {
-             this.e = null;
-             this.f = false;
+             this.f = null;
+             this.g = false;
 +            this.spawnWorld = ""; // CraftBukkit
          }
  
      }
-@@ -1325,7 +1500,11 @@
-             this.motY = d3 * 0.6D;
-             this.aU = f3;
+@@ -1262,7 +1440,11 @@
+             this.setMot(vec3d2.x, d3 * 0.6D, vec3d2.z);
+             this.aO = f;
              this.fallDistance = 0.0F;
 -            this.setFlag(7, false);
 +            // CraftBukkit start
@@ -413,9 +411,9 @@
 +            }
 +            // CraftBukkit end
          } else {
-             super.a(f, f1, f2);
+             super.e(vec3d);
          }
-@@ -1625,13 +1804,17 @@
+@@ -1581,24 +1763,29 @@
      }
  
      protected void releaseShoulderEntities() {
@@ -436,14 +434,17 @@
 -    private void spawnEntityFromShoulder(@Nullable NBTTagCompound nbttagcompound) {
 +    private boolean spawnEntityFromShoulder(@Nullable NBTTagCompound nbttagcompound) { // CraftBukkit void->boolean
          if (!this.world.isClientSide && !nbttagcompound.isEmpty()) {
-             Entity entity = EntityTypes.a(nbttagcompound, this.world);
+-            EntityTypes.a(nbttagcompound, this.world).ifPresent((entity) -> {
++            return EntityTypes.a(nbttagcompound, this.world).map((entity) -> { // CraftBukkit
+                 if (entity instanceof EntityTameableAnimal) {
+                     ((EntityTameableAnimal) entity).setOwnerUUID(this.uniqueID);
+                 }
  
-@@ -1640,9 +1823,10 @@
-             }
- 
-             entity.setPosition(this.locX, this.locY + 0.699999988079071D, this.locZ);
--            this.world.addEntity(entity);
-+            return this.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
+                 entity.setPosition(this.locX, this.locY + 0.699999988079071D, this.locZ);
+-                ((WorldServer) this.world).addEntitySerialized(entity);
+-            });
++                return ((WorldServer) this.world).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
++            }).orElse(true); // CraftBukkit
          }
  
 +        return true; // CraftBukkit

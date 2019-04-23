@@ -1,26 +1,26 @@
 --- a/net/minecraft/server/EntityExperienceOrb.java
 +++ b/net/minecraft/server/EntityExperienceOrb.java
-@@ -1,5 +1,11 @@
+@@ -1,6 +1,11 @@
  package net.minecraft.server;
  
+ import java.util.Map.Entry;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 +import org.bukkit.event.entity.EntityTargetEvent;
 +// CraftBukkit end
-+
+ 
  public class EntityExperienceOrb extends Entity {
  
-     public int a;
-@@ -34,6 +40,7 @@
- 
+@@ -36,6 +41,7 @@
+     @Override
      public void tick() {
          super.tick();
 +        EntityHuman prevTarget = this.targetPlayer;// CraftBukkit - store old target
-         if (this.c > 0) {
-             --this.c;
+         if (this.d > 0) {
+             --this.d;
          }
-@@ -70,6 +77,16 @@
+@@ -73,6 +79,16 @@
          }
  
          if (this.targetPlayer != null) {
@@ -34,32 +34,42 @@
 +            }
 +
 +            if (!cancelled && targetPlayer != null) {
-             double d1 = (this.targetPlayer.locX - this.locX) / 8.0D;
-             double d2 = (this.targetPlayer.locY + (double) this.targetPlayer.getHeadHeight() / 2.0D - this.locY) / 8.0D;
-             double d3 = (this.targetPlayer.locZ - this.locZ) / 8.0D;
-@@ -82,6 +99,8 @@
-                 this.motY += d2 / d4 * d5 * 0.1D;
-                 this.motZ += d3 / d4 * d5 * 0.1D;
+             Vec3D vec3d = new Vec3D(this.targetPlayer.locX - this.locX, this.targetPlayer.locY + (double) this.targetPlayer.getHeadHeight() / 2.0D - this.locY, this.targetPlayer.locZ - this.locZ);
+             double d1 = vec3d.g();
+ 
+@@ -81,6 +97,8 @@
+ 
+                 this.setMot(this.getMot().e(vec3d.d().a(d2 * d2 * 0.1D)));
              }
 +            }
 +            // CraftBukkit end
          }
  
-         this.move(EnumMoveType.SELF, this.motX, this.motY, this.motZ);
-@@ -155,12 +174,18 @@
-                 if (!itemstack.isEmpty() && itemstack.f()) {
-                     int i = Math.min(this.c(this.value), itemstack.getDamage());
+         this.move(EnumMoveType.SELF, this.getMot());
+@@ -113,7 +131,7 @@
+     protected void ay() {}
  
--                    this.value -= this.b(i);
--                    itemstack.setDamage(itemstack.getDamage() - i);
-+                    // CraftBukkit start
-+                    org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(entityhuman, this, itemstack, i);
-+                    i = event.getRepairAmount();
-+                    if (!event.isCancelled()) {
-+                        this.value -= this.b(i);
-+                        itemstack.setDamage(itemstack.getDamage() - i);
-+                    }
-+                    // CraftBukkit end
+     @Override
+-    protected void burn(int i) {
++    protected void burn(float i) { // CraftBukkit - int -> float
+         this.damageEntity(DamageSource.FIRE, (float) i);
+     }
+ 
+@@ -160,13 +178,19 @@
+                     if (!itemstack.isEmpty() && itemstack.f()) {
+                         int i = Math.min(this.c(this.value), itemstack.getDamage());
+ 
+-                        this.value -= this.b(i);
+-                        itemstack.setDamage(itemstack.getDamage() - i);
++                        // CraftBukkit start
++                        org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(entityhuman, this, itemstack, i);
++                        i = event.getRepairAmount();
++                        if (!event.isCancelled()) {
++                            this.value -= this.b(i);
++                            itemstack.setDamage(itemstack.getDamage() - i);
++                        }
++                        // CraftBukkit end
+                     }
                  }
  
                  if (this.value > 0) {
@@ -68,7 +78,7 @@
                  }
  
                  this.die();
-@@ -182,6 +207,24 @@
+@@ -188,6 +212,24 @@
      }
  
      public static int getOrbValue(int i) {

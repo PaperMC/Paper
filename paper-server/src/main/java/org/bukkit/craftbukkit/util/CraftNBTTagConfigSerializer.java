@@ -34,7 +34,7 @@ public class CraftNBTTagConfigSerializer {
         } else if (base instanceof NBTTagList) {
             List<Object> baseList = new ArrayList<>();
             for (int i = 0; i < ((NBTList) base).size(); i++) {
-                baseList.add(serialize(((NBTList) base).get(i)));
+                baseList.add(serialize((NBTBase) ((NBTList) base).get(i)));
             }
 
             return baseList;

@@ -1,29 +1,23 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.server.*;
 
 import org.bukkit.block.Biome;
-import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.generator.ChunkGenerator.BiomeGrid;
+import org.bukkit.generator.ChunkGenerator.ChunkData;
 
 public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettingsDefault> {
     private final ChunkGenerator generator;
     private final WorldServer world;
     private final long seed;
     private final Random random;
-    private final WorldChunkManager chunkManager;
-    private final WorldGenStronghold strongholdGen = new WorldGenStronghold();
-    private final GeneratorSettingsDefault settings = new GeneratorSettingsDefault();
+    private final StructureGenerator strongholdGen = WorldGenerator.STRONGHOLD;
 
     private static class CustomBiomeGrid implements BiomeGrid {
         BiomeBase[] biome;
@@ -40,23 +34,23 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     public CustomChunkGenerator(World world, long seed, ChunkGenerator generator) {
+        super(world, world.worldProvider.getChunkGenerator().getWorldChunkManager(), new GeneratorSettingsDefault());
         this.world = (WorldServer) world;
         this.generator = generator;
         this.seed = seed;
 
         this.random = new Random(seed);
-        this.chunkManager = world.worldProvider.getChunkGenerator().getWorldChunkManager();
     }
 
     @Override
-    public void createChunk(IChunkAccess ichunkaccess) {
+    public void buildBase(IChunkAccess ichunkaccess) {
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
         random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
         // Get default biome data for chunk
         CustomBiomeGrid biomegrid = new CustomBiomeGrid();
-        biomegrid.biome = chunkManager.getBiomeBlock(x << 4, z << 4, 16, 16);
+        biomegrid.biome = this.getWorldChunkManager().getBiomeBlock(x << 4, z << 4, 16, 16);
 
         ChunkData data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
         Preconditions.checkArgument(data instanceof CraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
@@ -87,26 +81,24 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
                 Block block = craftData.getTypeId(tx, ty, tz).getBlock();
 
                 if (block.isTileEntity()) {
-                    TileEntity tile = ((ITileEntity) block).a(world);
-                    ichunkaccess.a(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), tile);
+                    TileEntity tile = ((ITileEntity) block).createTile(world);
+                    ichunkaccess.setTileEntity(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), tile);
                 }
             }
         }
     }
 
     @Override
-    public ChunkData generateChunkData(org.bukkit.World world, Random random, int x, int z, BiomeGrid biome) {
-        return generator.generateChunkData(world, random, x, z, biome);
+    public void doCarving(IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
     }
 
     @Override
-    public boolean canSpawn(org.bukkit.World world, int x, int z) {
-        return generator.canSpawn(world, x, z);
+    public void buildNoise(GeneratorAccess generatoraccess, IChunkAccess ichunkaccess) {
     }
 
     @Override
-    public List<BlockPopulator> getDefaultPopulators(org.bukkit.World world) {
-        return generator.getDefaultPopulators(world);
+    public int getBaseHeight(int i, int j, HeightMap.Type heightmap_type) {
+        return 0;
     }
 
     @Override
@@ -114,10 +106,6 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         BiomeBase biomebase = world.getBiome(position);
 
         return biomebase == null ? null : biomebase.getMobs(type);
-    }
-
-    @Override
-    public void addFeatures(RegionLimitedWorldAccess regionlimitedworldaccess, WorldGenStage.Features worldgenstage_features) {
     }
 
     @Override
@@ -139,43 +127,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public int a(World world, boolean flag, boolean flag1) {
-        return 0;
+    public void doMobSpawning(WorldServer worldserver, boolean flag, boolean flag1) {
     }
 
     @Override
     public boolean canSpawnStructure(BiomeBase biomebase, StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
         return biomebase.a(structuregenerator);
-    }
-
-    @Override
-    public WorldGenFeatureConfiguration getFeatureConfiguration(BiomeBase biomebase, StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
-        return biomebase.b(structuregenerator);
-    }
-
-    // Taken from ChunkGeneratorAbstract
-    private final Map<StructureGenerator<? extends WorldGenFeatureConfiguration>, Long2ObjectMap<StructureStart>> structureStartCache = Maps.newHashMap();
-
-    @Override
-    public Long2ObjectMap<StructureStart> getStructureStartCache(StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
-        return (Long2ObjectMap) this.structureStartCache.computeIfAbsent(structuregenerator, (s) -> {
-            return Long2ObjectMaps.synchronize(new ExpiringMap(8192, 10000));
-        });
-    }
-
-    // Taken from ChunkGeneratorAbstract
-    private final Map<StructureGenerator<? extends WorldGenFeatureConfiguration>, Long2ObjectMap<LongSet>> structureCache = Maps.newHashMap();
-
-    @Override
-    public Long2ObjectMap<LongSet> getStructureCache(StructureGenerator<? extends WorldGenFeatureConfiguration> structuregenerator) {
-        return (Long2ObjectMap) this.structureCache.computeIfAbsent(structuregenerator, (s) -> {
-            return Long2ObjectMaps.synchronize(new ExpiringMap(8192, 10000));
-        });
-    }
-
-    @Override
-    public WorldChunkManager getWorldChunkManager() {
-        return chunkManager;
     }
 
     @Override

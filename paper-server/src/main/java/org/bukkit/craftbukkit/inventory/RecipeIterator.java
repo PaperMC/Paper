@@ -8,10 +8,10 @@ import net.minecraft.server.IRecipe;
 import net.minecraft.server.MinecraftServer;
 
 public class RecipeIterator implements Iterator<Recipe> {
-    private final Iterator<IRecipe> recipes;
+    private final Iterator<IRecipe<?>> recipes;
 
     public RecipeIterator() {
-        this.recipes = MinecraftServer.getServer().getCraftingManager().recipes.values().iterator();
+        this.recipes = MinecraftServer.getServer().getCraftingManager().b().iterator();
     }
 
     public boolean hasNext() {

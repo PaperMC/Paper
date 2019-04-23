@@ -43,6 +43,6 @@ public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
     }
 
     public EntityType getType() {
-        return EntityType.COMPLEX_PART;
+        return EntityType.UNKNOWN;
     }
 }

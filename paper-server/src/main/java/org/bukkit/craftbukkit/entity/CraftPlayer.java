@@ -36,8 +36,6 @@ import net.minecraft.server.Container;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EntityTracker;
-import net.minecraft.server.EntityTrackerEntry;
 import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.IChatBaseComponent;
@@ -60,6 +58,7 @@ import net.minecraft.server.PacketPlayOutUpdateAttributes;
 import net.minecraft.server.PacketPlayOutUpdateHealth;
 import net.minecraft.server.PacketPlayOutWorldEvent;
 import net.minecraft.server.PacketPlayOutWorldParticles;
+import net.minecraft.server.PlayerChunkMap;
 import net.minecraft.server.PlayerConnection;
 import net.minecraft.server.TileEntitySign;
 import net.minecraft.server.Vec3D;
@@ -399,6 +398,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             case 9:
                 instrumentName = "xylophone";
                 break;
+            case 10:
+                instrumentName = "iron_xylophone";
+                break;
+            case 11:
+                instrumentName = "cow_bell";
+                break;
+            case 12:
+                instrumentName = "didgeridoo";
+                break;
+            case 13:
+                instrumentName = "bit";
+                break;
+            case 14:
+                instrumentName = "banjo";
+                break;
+            case 15:
+                instrumentName = "pling";
+                break;
+            case 16:
+                instrumentName = "xylophone";
+                break;
         }
         float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
         getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("block.note_block." + instrumentName), net.minecraft.server.SoundCategory.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
@@ -562,7 +582,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
 
-        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), true, icons, data.buffer, 0, 0, 128, 128);
+        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), true, map.isLocked(), icons, data.buffer, 0, 0, 128, 128);
         getHandle().playerConnection.sendPacket(packet);
     }
 
@@ -668,7 +688,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setSleepingIgnored(boolean isSleeping) {
         getHandle().fauxSleeping = isSleeping;
-        ((CraftWorld) getWorld()).getHandle().checkSleepStatus();
+        ((CraftWorld) getWorld()).getHandle().everyoneSleeping();
     }
 
     @Override
@@ -1000,9 +1020,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         hiddenPlayers.put(player.getUniqueId(), hidingPlugins);
 
         // Remove this player from the hidden player's EntityTrackerEntry
-        EntityTracker tracker = ((WorldServer) entity.world).tracker;
+        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
-        EntityTrackerEntry entry = tracker.trackedEntities.get(other.getId());
+        PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
         if (entry != null) {
             entry.clear(getHandle());
         }
@@ -1042,12 +1062,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
         hiddenPlayers.remove(player.getUniqueId());
 
-        EntityTracker tracker = ((WorldServer) entity.world).tracker;
+        PlayerChunkMap tracker = ((WorldServer) entity.world).getChunkProvider().playerChunkMap;
         EntityPlayer other = ((CraftPlayer) player).getHandle();
 
         getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
 
-        EntityTrackerEntry entry = tracker.trackedEntities.get(other.getId());
+        PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
         if (entry != null && !entry.trackedPlayers.contains(getHandle())) {
             entry.updatePlayer(getHandle());
         }

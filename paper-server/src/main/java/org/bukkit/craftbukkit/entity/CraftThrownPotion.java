@@ -17,7 +17,7 @@ import org.bukkit.potion.PotionEffect;
 
 import com.google.common.collect.ImmutableList;
 
-public abstract class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
+public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
     public CraftThrownPotion(CraftServer server, EntityPotion entity) {
         super(server, entity);
     }
@@ -35,7 +35,23 @@ public abstract class CraftThrownPotion extends CraftProjectile implements Throw
     }
 
     @Override
+    public void setItem(ItemStack item) {
+        // The ItemStack must not be null.
+        Validate.notNull(item, "ItemStack cannot be null.");
+
+        // The ItemStack must be a potion.
+        Validate.isTrue(item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION, "ItemStack must be a lingering or splash potion. This item stack was " + item.getType() + ".");
+
+        getHandle().setItem(CraftItemStack.asNMSCopy(item));
+    }
+
+    @Override
     public EntityPotion getHandle() {
         return (EntityPotion) entity;
+    }
+
+    @Override
+    public EntityType getType() {
+        return EntityType.SPLASH_POTION;
     }
 }

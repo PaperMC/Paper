@@ -16,8 +16,7 @@ public class EntityTypesTest extends AbstractTestingBase {
     public void testMaps() {
         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
 
-        for (Object o : IRegistry.ENTITY_TYPE) {
-            EntityTypes<?> nms = (EntityTypes<?>) o; // Eclipse fail
+        for (EntityTypes<?>  nms : IRegistry.ENTITY_TYPE) {
             MinecraftKey key = EntityTypes.getName(nms);
 
             EntityType bukkit = EntityType.fromName(key.getKey());

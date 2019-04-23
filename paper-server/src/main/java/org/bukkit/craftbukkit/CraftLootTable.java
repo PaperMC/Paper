@@ -9,6 +9,8 @@ import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
+import net.minecraft.server.LootContextParameterSets;
+import net.minecraft.server.LootContextParameters;
 import net.minecraft.server.LootTable;
 import net.minecraft.server.LootTableInfo;
 import net.minecraft.server.WorldServer;
@@ -39,7 +41,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         LootTableInfo nmsContext = convertContext(context);
-        List<net.minecraft.server.ItemStack> nmsItems = handle.populateLoot(random, nmsContext);
+        List<net.minecraft.server.ItemStack> nmsItems = handle.populateLoot(nmsContext);
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
         for (net.minecraft.server.ItemStack item : nmsItems) {
@@ -59,7 +61,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         IInventory handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        getHandle().fillInventory(handle, random, nmsContext);
+        getHandle().fillInventory(handle, nmsContext);
     }
 
     @Override
@@ -72,23 +74,23 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
-        builder.luck(context.getLuck());
+        // builder.luck(context.getLuck());
 
         if (context.getLootedEntity() != null) {
             Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
-            builder.entity(nmsLootedEntity);
-            builder.damageSource(DamageSource.GENERIC);
-            builder.position(new BlockPosition(nmsLootedEntity));
+            builder.set(LootContextParameters.THIS_ENTITY, nmsLootedEntity);
+            builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
+            builder.set(LootContextParameters.POSITION, new BlockPosition(nmsLootedEntity));
         }
 
         if (context.getKiller() != null) {
             EntityHuman nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
-            builder.killer(nmsKiller);
+            builder.set(LootContextParameters.KILLER_ENTITY, nmsKiller);
             // If there is a player killer, damage source should reflect that in case loot tables use that information
-            builder.damageSource(DamageSource.playerAttack(nmsKiller));
+            builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
         }
 
-        return builder.build();
+        return builder.build(LootContextParameterSets.GENERIC);
     }
 
     @Override

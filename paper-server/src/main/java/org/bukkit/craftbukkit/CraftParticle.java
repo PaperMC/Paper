@@ -76,6 +76,14 @@ public enum CraftParticle {
     BUBBLE_COLUMN_UP("bubble_column_up"),
     NAUTILUS("nautilus"),
     DOLPHIN("dolphin"),
+    SNEEZE("sneeze"),
+    CAMPFIRE_COSY_SMOKE("campfire_cosy_smoke"),
+    CAMPFIRE_SIGNAL_SMOKE("campfire_signal_smoke"),
+    COMPOSTER("composter"),
+    FLASH("flash"),
+    FALLING_LAVA("falling_lava"),
+    LANDING_LAVA("landing_lava"),
+    FALLING_WATER("falling_water"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),
@@ -147,6 +155,6 @@ public enum CraftParticle {
     }
 
     public static Particle toBukkit(net.minecraft.server.Particle nms) {
-        return particles.inverse().get(nms.d());
+        return particles.inverse().get(IRegistry.PARTICLE_TYPE.getKey(nms));
     }
 }

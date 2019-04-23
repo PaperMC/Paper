@@ -8,7 +8,6 @@ import java.util.List;
 import net.minecraft.server.BlockFalling;
 import net.minecraft.server.BlockFire;
 import net.minecraft.server.Item;
-import net.minecraft.server.ItemFood;
 import net.minecraft.server.ItemRecord;
 import net.minecraft.server.TileEntityFurnace;
 
@@ -26,12 +25,14 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.common.collect.Lists;
 import java.util.Map;
 import net.minecraft.server.Block;
+import net.minecraft.server.BlockAccessAir;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.EnumHand;
 import net.minecraft.server.IBlockData;
+import net.minecraft.server.MovingObjectPositionBlock;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.EnchantmentTarget;
 
@@ -77,7 +78,11 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @Test
     public void isEdible() {
-        assertThat(material.isEdible(), is(CraftMagicNumbers.getItem(material) instanceof ItemFood));
+        if (material.isBlock()) {
+            assertFalse(material.isEdible());
+        } else {
+            assertThat(material.isEdible(), is(CraftMagicNumbers.getItem(material).isFood()));
+        }
     }
 
     @Test
@@ -153,7 +158,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isOccluding() {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding(CraftMagicNumbers.getBlock(material).getBlockData())));
+            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding(CraftMagicNumbers.getBlock(material).getBlockData(), BlockAccessAir.INSTANCE, BlockPosition.ZERO)));
         } else {
             assertFalse(material.isOccluding());
         }
@@ -209,7 +214,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material.isBlock()) {
             assertThat(material.isInteractable(),
                     is(!CraftMagicNumbers.getBlock(material).getClass()
-                            .getMethod("interact", IBlockData.class, net.minecraft.server.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, EnumDirection.class, float.class, float.class, float.class)
+                            .getMethod("interact", IBlockData.class, net.minecraft.server.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class)
                             .getDeclaringClass().equals(Block.class)));
         } else {
             assertFalse(material.isInteractable());

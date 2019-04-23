@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import org.bukkit.GameMode;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
@@ -63,6 +64,11 @@ public class CraftInventoryView extends InventoryView {
             return null;
         }
         return CraftItemStack.asCraftMirror(container.getSlot(slot).getItem());
+    }
+
+    @Override
+    public String getTitle() {
+        return CraftChatMessage.fromComponent(container.getTitle());
     }
 
     public boolean isInTop(int rawSlot) {

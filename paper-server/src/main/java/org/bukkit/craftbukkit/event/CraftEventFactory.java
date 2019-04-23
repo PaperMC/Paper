@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
+import com.mojang.datafixers.util.Either;
 
 import net.minecraft.server.*;
 
@@ -106,36 +107,33 @@ public class CraftEventFactory {
     /**
      * PlayerBedEnterEvent
      */
-    public static EntityHuman.EnumBedResult callPlayerBedEnterEvent(EntityHuman player, BlockPosition bed, EntityHuman.EnumBedResult nmsBedResult) {
-        BedEnterResult bedEnterResult;
-        switch (nmsBedResult) {
-            case OK:
-                bedEnterResult = BedEnterResult.OK;
-                break;
-            case NOT_POSSIBLE_HERE:
-                bedEnterResult = BedEnterResult.NOT_POSSIBLE_HERE;
-                break;
-            case NOT_POSSIBLE_NOW:
-                bedEnterResult = BedEnterResult.NOT_POSSIBLE_NOW;
-                break;
-            case TOO_FAR_AWAY:
-                bedEnterResult = BedEnterResult.TOO_FAR_AWAY;
-                break;
-            case NOT_SAFE:
-                bedEnterResult = BedEnterResult.NOT_SAFE;
-                break;
-            default:
-                bedEnterResult = BedEnterResult.OTHER_PROBLEM;
-        }
+    public static Either<EntityHuman.EnumBedResult, Unit> callPlayerBedEnterEvent(EntityHuman player, BlockPosition bed, Either<EntityHuman.EnumBedResult, Unit> nmsBedResult) {
+        BedEnterResult bedEnterResult = nmsBedResult.mapBoth(new Function<EntityHuman.EnumBedResult, BedEnterResult>() {
+            @Override
+            public BedEnterResult apply(EntityHuman.EnumBedResult t) {
+                switch (t) {
+                    case NOT_POSSIBLE_HERE:
+                        return BedEnterResult.NOT_POSSIBLE_HERE;
+                    case NOT_POSSIBLE_NOW:
+                        return BedEnterResult.NOT_POSSIBLE_NOW;
+                    case TOO_FAR_AWAY:
+                        return BedEnterResult.TOO_FAR_AWAY;
+                    case NOT_SAFE:
+                        return BedEnterResult.NOT_SAFE;
+                    default:
+                        return BedEnterResult.OTHER_PROBLEM;
+                }
+            }
+        }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
         PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.world, bed), bedEnterResult);
         Bukkit.getServer().getPluginManager().callEvent(event);
 
         Result result = event.useBed();
         if (result == Result.ALLOW) {
-            return EntityHuman.EnumBedResult.OK;
+            return Either.right(Unit.INSTANCE);
         } else if (result == Result.DENY) {
-            return EntityHuman.EnumBedResult.OTHER_PROBLEM;
+            return Either.left(EntityHuman.EnumBedResult.OTHER_PROBLEM);
         }
 
         return nmsBedResult;
@@ -331,10 +329,10 @@ public class CraftEventFactory {
     /**
      * EntityShootBowEvent
      */
-    public static EntityShootBowEvent callEntityShootBowEvent(EntityLiving who, ItemStack itemstack, EntityArrow entityArrow, float force) {
+    public static EntityShootBowEvent callEntityShootBowEvent(EntityLiving who, ItemStack itemstack, Entity entityArrow, float force) {
         LivingEntity shooter = (LivingEntity) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
-        Arrow arrow = (Arrow) entityArrow.getBukkitEntity();
+        org.bukkit.entity.Entity arrow = entityArrow.getBukkitEntity();
 
         if (itemInHand != null && (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0)) {
             itemInHand = null;
@@ -374,7 +372,7 @@ public class CraftEventFactory {
             boolean isNpc = entity instanceof NPC;
 
             if (spawnReason != SpawnReason.CUSTOM) {
-                if (isAnimal && !world.allowAnimals || isMonster && !world.allowMonsters || isNpc && !world.getServer().getServer().getSpawnNPCs()) {
+                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters() || isNpc && !world.getServer().getServer().getSpawnNPCs()) {
                     entity.dead = true;
                     return false;
                 }
@@ -658,7 +656,7 @@ public class CraftEventFactory {
             DamageCause cause = null;
             Block damager = blockDamage;
             blockDamage = null;
-            if (source == DamageSource.CACTUS) {
+            if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH) {
                 cause = DamageCause.CONTACT;
             } else if (source == DamageSource.HOT_FLOOR) {
                 cause = DamageCause.HOT_FLOOR;
@@ -895,9 +893,9 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, int x, int y, int z) {
+    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPosition pos) {
         org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
-        Block block = entity1.getWorld().getBlockAt(x, y, z);
+        Block block = CraftBlock.at(entity.world, pos);
 
         EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block);
         entity1.getServer().getPluginManager().callEvent(event);
@@ -952,12 +950,18 @@ public class CraftEventFactory {
     public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
         Block hitBlock = null;
         BlockFace hitFace = null;
-        if (position.type == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
-            hitBlock = CraftBlock.at(entity.world, position.getBlockPosition());
-            hitFace = CraftBlock.notchToBlockFace(position.direction);
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+            MovingObjectPositionBlock positionBlock = (MovingObjectPositionBlock) position;
+            hitBlock = CraftBlock.at(entity.world, positionBlock.getBlockPosition());
+            hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
         }
 
-        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), position.entity == null ? null : position.entity.getBukkitEntity(), hitBlock, hitFace);
+        org.bukkit.entity.Entity hitEntity = null;
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+            hitEntity = ((MovingObjectPositionEntity) position).getEntity().getBukkitEntity();
+        }
+
+        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1209,7 +1213,10 @@ public class CraftEventFactory {
     public static BlockPhysicsEvent callBlockPhysicsEvent(GeneratorAccess world, BlockPosition blockposition) {
         org.bukkit.block.Block block = CraftBlock.at(world, blockposition);
         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
-        world.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
+        // Suppress during worldgen
+        if (world instanceof World) {
+            world.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
+        }
         return event;
     }
 

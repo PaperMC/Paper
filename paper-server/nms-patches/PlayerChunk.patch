@@ -1,0 +1,48 @@
+--- a/net/minecraft/server/PlayerChunk.java
++++ b/net/minecraft/server/PlayerChunk.java
+@@ -41,7 +41,7 @@
+         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
+         this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+         this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+-        this.chunkSave = CompletableFuture.completedFuture((Object) null);
++        this.chunkSave = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
+         this.dirtyBlocks = new short[64];
+         this.location = chunkcoordintpair;
+         this.lightEngine = lightengine;
+@@ -74,9 +74,9 @@
+     @Nullable
+     public Chunk getChunk() {
+         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
+-        Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow((Object) null);
++        Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+-        return either == null ? null : (Chunk) either.left().orElse((Object) null);
++        return either == null ? null : (Chunk) either.left().orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     public CompletableFuture<IChunkAccess> getChunkSave() {
+@@ -199,7 +199,7 @@
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(i);
+ 
+         if (completablefuture != null) {
+-            Either<IChunkAccess, PlayerChunk.Failure> either = (Either) completablefuture.getNow((Object) null);
++            Either<IChunkAccess, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+             if (either == null || either.left().isPresent()) {
+                 return completablefuture;
+@@ -211,6 +211,15 @@
+ 
+             this.a(completablefuture1);
+             this.statusFutures.set(i, completablefuture1);
++            // CraftBukkit start
++            if (chunkstatus == ChunkStatus.FULL) {
++                completablefuture1.thenAccept((either) -> {
++                    Chunk chunk = (Chunk) either.left().get();
++
++                    chunk.loadCallback();
++                });
++            }
++            // CraftBukkit end
+             return completablefuture1;
+         } else {
+             return completablefuture == null ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : completablefuture;

@@ -10,12 +10,16 @@ import net.minecraft.server.InventoryCrafting;
 import net.minecraft.server.InventoryEnderChest;
 import net.minecraft.server.InventoryMerchant;
 import net.minecraft.server.PlayerInventory;
+import net.minecraft.server.TileEntityBarrel;
 import net.minecraft.server.TileEntityBeacon;
+import net.minecraft.server.TileEntityBlastFurnace;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityFurnace;
+import net.minecraft.server.TileEntityLectern;
 import net.minecraft.server.TileEntityShulkerBox;
+import net.minecraft.server.TileEntitySmoker;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
@@ -41,10 +45,6 @@ public class CraftInventory implements Inventory {
 
     public int getSize() {
         return getInventory().getSize();
-    }
-
-    public String getName() {
-        return CraftChatMessage.fromComponent(getInventory().getDisplayName());
     }
 
     public ItemStack getItem(int index) {
@@ -422,12 +422,8 @@ public class CraftInventory implements Inventory {
         return this.inventory.getViewers();
     }
 
-    public String getTitle() {
-        return getName();
-    }
-
     public InventoryType getType() {
-        // Thanks to Droppers extending Dispensers, order is important.
+        // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
         if (inventory instanceof InventoryCrafting) {
             return inventory.getSize() >= 9 ? InventoryType.WORKBENCH : InventoryType.CRAFTING;
         } else if (inventory instanceof PlayerInventory) {
@@ -436,6 +432,10 @@ public class CraftInventory implements Inventory {
             return InventoryType.DROPPER;
         } else if (inventory instanceof TileEntityDispenser) {
             return InventoryType.DISPENSER;
+        } else if (inventory instanceof TileEntityBlastFurnace) {
+            return InventoryType.BLAST_FURNACE;
+        } else if (inventory instanceof TileEntitySmoker) {
+            return InventoryType.SMOKER;
         } else if (inventory instanceof TileEntityFurnace) {
             return InventoryType.FURNACE;
         } else if (this instanceof CraftInventoryEnchanting) {
@@ -456,6 +456,18 @@ public class CraftInventory implements Inventory {
             return InventoryType.HOPPER;
         } else if (inventory instanceof TileEntityShulkerBox) {
             return InventoryType.SHULKER_BOX;
+        } else if (inventory instanceof TileEntityBarrel) {
+            return InventoryType.BARREL;
+        } else if (inventory instanceof TileEntityLectern) {
+            return InventoryType.LECTERN;
+        } else if (this instanceof CraftInventoryLoom) {
+            return InventoryType.LOOM;
+        } else if (this instanceof CraftInventoryCartography) {
+            return InventoryType.CARTOGRAPHY;
+        } else if (this instanceof CraftInventoryGrindstone) {
+            return InventoryType.GRINDSTONE;
+        } else if (this instanceof CraftInventoryStonecutter) {
+            return InventoryType.STONECUTTER;
         } else {
             return InventoryType.CHEST;
         }

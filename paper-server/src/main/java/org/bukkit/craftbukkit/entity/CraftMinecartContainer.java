@@ -28,7 +28,7 @@ public abstract class CraftMinecartContainer extends CraftMinecart implements Lo
 
     @Override
     public LootTable getLootTable() {
-        MinecraftKey nmsTable = getHandle().getLootTable();
+        MinecraftKey nmsTable = getHandle().lootTable;
         if (nmsTable == null) {
             return null; // return empty loot table?
         }
@@ -49,6 +49,6 @@ public abstract class CraftMinecartContainer extends CraftMinecart implements Lo
 
     private void setLootTable(LootTable table, long seed) {
         MinecraftKey newKey = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-        getHandle().a(newKey, seed);
+        getHandle().setLootTable(newKey, seed);
     }
 }
