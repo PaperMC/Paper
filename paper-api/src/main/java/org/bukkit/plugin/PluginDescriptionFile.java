@@ -784,7 +784,7 @@ public final class PluginDescriptionFile {
      *</pre></blockquote>
      * Another example, with nested definitions, can be found <a
      * href="doc-files/permissions-example_plugin.yml">here</a>.
-     * 
+     *
      * @return the permissions this plugin will register
      */
     @NotNull
@@ -829,7 +829,7 @@ public final class PluginDescriptionFile {
      * not included in the API. Any unrecognized
      * awareness (one unsupported or in a future version) will cause a dummy
      * object to be created instead of failing.
-     * 
+     *
      * <ul>
      * <li>Currently only supports the enumerated values in {@link
      *     PluginAwareness.Flags}.

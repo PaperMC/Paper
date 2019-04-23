@@ -20,7 +20,7 @@ import java.util.Objects;
  * The registration of new {@link StructureType}s is case-sensitive.
  */
 // Order is retrieved from WorldGenFactory
-public class StructureType {
+public final class StructureType {
 
     private static final Map<String, StructureType> structureTypeMap = new HashMap<>();
 

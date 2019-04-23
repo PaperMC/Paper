@@ -9,11 +9,11 @@ import org.jetbrains.annotations.Nullable;
 public interface EndGateway extends BlockState {
 
     /**
-     * Gets the location that entities are teleported to when 
+     * Gets the location that entities are teleported to when
      * entering the gateway portal.
      * <p>
      * If this block state is not placed the location's world will be null.
-     * 
+     *
      * @return the gateway exit location
      */
     @Nullable
@@ -24,7 +24,7 @@ public interface EndGateway extends BlockState {
      * they enter the gateway portal.
      * <p>
      * If this block state is not placed the location's world has to be null.
-     * 
+     *
      * @param location the new exit location
      * @throws IllegalArgumentException for differing worlds
      */
@@ -33,7 +33,7 @@ public interface EndGateway extends BlockState {
     /**
      * Gets whether this gateway will teleport entities directly to
      * the exit location instead of finding a nearby location.
-     * 
+     *
      * @return true if the gateway is teleporting to the exact location
      */
     boolean isExactTeleport();
@@ -41,7 +41,7 @@ public interface EndGateway extends BlockState {
     /**
      * Sets whether this gateway will teleport entities directly to
      * the exit location instead of finding a nearby location.
-     * 
+     *
      * @param exact whether to teleport to the exact location
      */
     void setExactTeleport(boolean exact);

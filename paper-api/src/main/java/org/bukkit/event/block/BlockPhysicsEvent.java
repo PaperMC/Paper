@@ -44,7 +44,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets the source block that triggered this event.
-     * 
+     *
      * Note: This will default to block if not set.
      *
      * @return The source block

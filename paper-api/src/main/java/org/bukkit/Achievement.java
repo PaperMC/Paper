@@ -56,7 +56,7 @@ public enum Achievement {
 
     /**
      * Returns whether or not this achievement has a parent achievement.
-     * 
+     *
      * @return whether the achievement has a parent achievement
      */
     public boolean hasParent() {
@@ -65,7 +65,7 @@ public enum Achievement {
 
     /**
      * Returns the parent achievement of this achievement, or null if none.
-     * 
+     *
      * @return the parent achievement or null
      */
     @Nullable

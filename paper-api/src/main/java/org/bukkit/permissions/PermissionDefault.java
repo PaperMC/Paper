@@ -16,7 +16,7 @@ public enum PermissionDefault {
     NOT_OP("!op", "notop", "!operator", "notoperator", "!admin", "notadmin");
 
     private final String[] names;
-    private final static Map<String, PermissionDefault> lookup = new HashMap<String, PermissionDefault>();
+    private static final Map<String, PermissionDefault> lookup = new HashMap<String, PermissionDefault>();
 
     private PermissionDefault(/*@NotNull*/ String... names) {
         this.names = names;

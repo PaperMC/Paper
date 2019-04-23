@@ -52,7 +52,7 @@ public abstract class ChunkGenerator {
 
     /**
      * Shapes the chunk for the given coordinates.
-     * 
+     *
      * This method must return a ChunkData.
      * <p>
      * Notes:
@@ -64,7 +64,7 @@ public abstract class ChunkGenerator {
      * been returned.
      * <p>
      * This method <b>must</b> return a ChunkData returned by {@link ChunkGenerator#createChunkData(org.bukkit.World)}
-     * 
+     *
      * @param world The world this chunk will be used for
      * @param random The random generator to use
      * @param x The X-coordinate of the chunk
@@ -144,9 +144,9 @@ public abstract class ChunkGenerator {
     public static interface ChunkData {
         /**
          * Get the maximum height for the chunk.
-         * 
+         *
          * Setting blocks at or above this height will do nothing.
-         * 
+         *
          * @return the maximum height
          */
         public int getMaxHeight();
@@ -174,7 +174,7 @@ public abstract class ChunkGenerator {
          * @param material the type to set the block to
          */
         public void setBlock(int x, int y, int z, @NotNull MaterialData material);
-        
+
         /**
          * Set the block at x,y,z in the chunk data to material.
          *
@@ -202,7 +202,7 @@ public abstract class ChunkGenerator {
          * @param material the type to set the blocks to
          */
         public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, @NotNull Material material);
-        
+
         /**
          * Set a region of this chunk from xMin, yMin, zMin (inclusive)
          * to xMax, yMax, zMax (exclusive) to material.
@@ -218,7 +218,7 @@ public abstract class ChunkGenerator {
          * @param material the type to set the blocks to
          */
         public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, @NotNull MaterialData material);
-        
+
         /**
          * Set a region of this chunk from xMin, yMin, zMin (inclusive) to xMax,
          * yMax, zMax (exclusive) to material.
@@ -247,7 +247,7 @@ public abstract class ChunkGenerator {
          */
         @NotNull
         public Material getType(int x, int y, int z);
-        
+
         /**
          * Get the type and data of the block at x, y, z.
          *
@@ -260,7 +260,7 @@ public abstract class ChunkGenerator {
          */
         @NotNull
         public MaterialData getTypeAndData(int x, int y, int z);
-        
+
         /**
          * Get the type and data of the block at x, y, z.
          *
@@ -273,7 +273,7 @@ public abstract class ChunkGenerator {
          */
         @NotNull
         public BlockData getBlockData(int x, int y, int z);
-        
+
         /**
          * Get the block data at x,y,z in the chunk data.
          *

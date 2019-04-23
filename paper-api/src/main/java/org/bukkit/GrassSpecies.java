@@ -24,7 +24,7 @@ public enum GrassSpecies {
     FERN_LIKE(0x2);
 
     private final byte data;
-    private final static Map<Byte, GrassSpecies> BY_DATA = Maps.newHashMap();
+    private static final Map<Byte, GrassSpecies> BY_DATA = Maps.newHashMap();
 
     private GrassSpecies(final int data) {
         this.data = (byte) data;

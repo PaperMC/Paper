@@ -18,7 +18,7 @@ public enum WorldType {
     CUSTOMIZED("CUSTOMIZED"),
     BUFFET("BUFFET");
 
-    private final static Map<String, WorldType> BY_NAME = Maps.newHashMap();
+    private static final Map<String, WorldType> BY_NAME = Maps.newHashMap();
     private final String name;
 
     private WorldType(/*@NotNull*/ String name) {

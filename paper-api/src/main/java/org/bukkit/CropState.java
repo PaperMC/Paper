@@ -44,7 +44,7 @@ public enum CropState {
     RIPE(0x7);
 
     private final byte data;
-    private final static Map<Byte, CropState> BY_DATA = Maps.newHashMap();
+    private static final Map<Byte, CropState> BY_DATA = Maps.newHashMap();
 
     private CropState(final int data) {
         this.data = (byte) data;

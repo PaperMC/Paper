@@ -350,7 +350,7 @@ public enum EntityType implements Keyed {
 
     /**
      *
-     * @return the raw type id 
+     * @return the raw type id
      * @deprecated Magic value
      */
     @Deprecated

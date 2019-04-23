@@ -86,14 +86,14 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * <p>
      * Plugins should check if hasLore() returns <code>true</code> before
      * calling this method.
-     * 
+     *
      * @return a list of lore that is set
      */
     @Nullable
     List<String> getLore();
 
     /**
-     * Sets the lore for this item. 
+     * Sets the lore for this item.
      * Removes lore when given null.
      *
      * @param lore the lore that will be set
@@ -157,7 +157,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
     int getEnchantLevel(@NotNull Enchantment ench);
 
     /**
-     * Returns a copy the enchantments in this ItemMeta. <br> 
+     * Returns a copy the enchantments in this ItemMeta. <br>
      * Returns an empty map if none.
      *
      * @return An immutable copy of the enchantments

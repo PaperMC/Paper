@@ -226,7 +226,7 @@ public interface AreaEffectCloud extends Entity {
 
     /**
      * Retrieve the original source of this cloud.
-     * 
+     *
      * @return the {@link ProjectileSource} that threw the LingeringPotion
      */
     @Nullable

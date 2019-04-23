@@ -41,8 +41,8 @@ public interface EnderDragon extends ComplexLivingEntity, Boss {
         BREATH_ATTACK,
         /**
          * The dragon will search for a player to attack with dragon breath.
-         * If no player is close enough to the dragon for 5 seconds, the 
-         * dragon will charge at a player within 150 blocks or will take off 
+         * If no player is close enough to the dragon for 5 seconds, the
+         * dragon will charge at a player within 150 blocks or will take off
          * and begin circling if no player is found.
          */
         SEARCH_FOR_BREATH_ATTACK_TARGET,

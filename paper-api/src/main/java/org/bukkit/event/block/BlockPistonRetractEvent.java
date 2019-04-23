@@ -13,10 +13,10 @@ import org.jetbrains.annotations.NotNull;
 public class BlockPistonRetractEvent extends BlockPistonEvent {
     private static final HandlerList handlers = new HandlerList();
     private List<Block> blocks;
-    
+
     public BlockPistonRetractEvent(@NotNull final Block block, @NotNull final List<Block> blocks, @NotNull final BlockFace direction) {
         super(block, direction);
-        
+
         this.blocks = blocks;
     }
 
@@ -31,7 +31,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
     public Location getRetractLocation() {
         return getBlock().getRelative(getDirection(), 2).getLocation();
     }
-    
+
     /**
      * Get an immutable list of the blocks which will be moved by the
      * extending.

@@ -4,7 +4,7 @@ package org.bukkit.util.noise;
  * Base class for all noise generators
  */
 public abstract class NoiseGenerator {
-    protected final int perm[] = new int[512];
+    protected final int[] perm= new int[512];
     protected double offsetX;
     protected double offsetY;
     protected double offsetZ;

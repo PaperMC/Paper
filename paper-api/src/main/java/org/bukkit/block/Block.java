@@ -241,7 +241,7 @@ public interface Block extends Metadatable {
     /**
      * Gets the face relation of this block compared to the given block.
      * <p>
-     * For example: 
+     * For example:
      * <pre>{@code
      * Block current = world.getBlockAt(100, 100, 100);
      * Block target = world.getBlockAt(100, 101, 100);

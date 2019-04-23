@@ -1009,12 +1009,12 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Create a ChunkData for use in a generator.
-     * 
+     *
      * See {@link ChunkGenerator#generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
-     * 
+     *
      * @param world the world to create the ChunkData for
      * @return a new ChunkData for the world
-     * 
+     *
      */
     @NotNull
     public ChunkGenerator.ChunkData createChunkData(@NotNull World world);

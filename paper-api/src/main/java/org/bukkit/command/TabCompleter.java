@@ -15,7 +15,7 @@ public interface TabCompleter {
      *
      * @param sender Source of the command.  For players tab-completing a
      *     command inside of a command block, this will be the player, not
-     *     the command block. 
+     *     the command block.
      * @param command Command which was executed
      * @param alias The alias used
      * @param args The arguments passed to the command, including final

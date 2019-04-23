@@ -12,7 +12,7 @@ import java.util.List;
  * response from the user.
  */
 public abstract class FixedSetPrompt extends ValidatingPrompt {
-    
+
     protected List<String> fixedSet;
 
     /**

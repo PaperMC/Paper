@@ -78,7 +78,7 @@ public enum Instrument {
     PLING(0xF);
 
     private final byte type;
-    private final static Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
+    private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
 
     private Instrument(final int type) {
         this.type = (byte) type;

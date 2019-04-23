@@ -37,7 +37,7 @@ public enum TreeSpecies {
     ;
 
     private final byte data;
-    private final static Map<Byte, TreeSpecies> BY_DATA = Maps.newHashMap();
+    private static final Map<Byte, TreeSpecies> BY_DATA = Maps.newHashMap();
 
     private TreeSpecies(final int data) {
         this.data = (byte) data;

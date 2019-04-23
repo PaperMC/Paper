@@ -153,7 +153,7 @@ public enum EntityEffect {
 
     private final byte data;
     private final Class<? extends Entity> applicable;
-    private final static Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
+    private static final Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
 
     EntityEffect(final int data, /*@NotNull*/ Class<? extends Entity> clazz) {
         this.data = (byte) data;

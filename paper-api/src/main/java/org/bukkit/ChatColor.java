@@ -114,8 +114,8 @@ public enum ChatColor {
     private final char code;
     private final boolean isFormat;
     private final String toString;
-    private final static Map<Integer, ChatColor> BY_ID = Maps.newHashMap();
-    private final static Map<Character, ChatColor> BY_CHAR = Maps.newHashMap();
+    private static final Map<Integer, ChatColor> BY_ID = Maps.newHashMap();
+    private static final Map<Character, ChatColor> BY_CHAR = Maps.newHashMap();
 
     private ChatColor(char code, int intCode) {
         this(code, intCode, false);
@@ -145,7 +145,7 @@ public enum ChatColor {
 
     /**
      * Checks if this code is a format code as opposed to a color code.
-     * 
+     *
      * @return whether this ChatColor is a format code
      */
     public boolean isFormat() {
@@ -154,7 +154,7 @@ public enum ChatColor {
 
     /**
      * Checks if this code is a color code as opposed to a format code.
-     * 
+     *
      * @return whether this ChatColor is a color code
      */
     public boolean isColor() {

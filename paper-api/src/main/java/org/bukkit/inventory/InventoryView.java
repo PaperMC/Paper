@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * as it should.
  */
 public abstract class InventoryView {
-    public final static int OUTSIDE = -999;
+    public static final int OUTSIDE = -999;
     /**
      * Represents various extra properties of certain inventory windows.
      */

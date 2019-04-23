@@ -264,7 +264,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually refreshed
-     * 
+     *
      * @deprecated This method is not guaranteed to work suitably across all client implementations.
      */
     @Deprecated
@@ -431,7 +431,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Get a collection of all entities in this World matching the given
      * class/interface
-     * 
+     *
      * @param <T> an entity subclass
      * @param cls The class representing the type of entity to match
      * @return A List of all Entities currently residing in this world that
@@ -1378,7 +1378,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
-     * 
+     *
      * @param limit the new mob limit
      */
     void setMonsterSpawnLimit(int limit);
@@ -1397,7 +1397,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
-     * 
+     *
      * @param limit the new mob limit
      */
     void setAnimalSpawnLimit(int limit);
@@ -1416,7 +1416,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
-     * 
+     *
      * @param limit the new mob limit
      */
     void setWaterAnimalSpawnLimit(int limit);
@@ -1435,7 +1435,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * <p>
      * <b>Note:</b> If set to a negative number the world will use the
      * server-wide spawn limit instead.
-     * 
+     *
      * @param limit the new mob limit
      */
     void setAmbientSpawnLimit(int limit);

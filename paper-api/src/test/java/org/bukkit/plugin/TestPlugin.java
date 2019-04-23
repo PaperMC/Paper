@@ -13,7 +13,7 @@ import org.bukkit.generator.ChunkGenerator;
 public class TestPlugin extends PluginBase {
     private boolean enabled = true;
 
-    final private String pluginName;
+    private final String pluginName;
 
     public TestPlugin(String pluginName) {
         this.pluginName = pluginName;

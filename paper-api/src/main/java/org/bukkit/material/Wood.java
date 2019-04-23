@@ -23,7 +23,7 @@ public class Wood extends MaterialData {
 
     /**
      * Constructs a wood block of the given tree species.
-     * 
+     *
      * @param species the species of the wood block
      */
     public Wood(TreeSpecies species) {

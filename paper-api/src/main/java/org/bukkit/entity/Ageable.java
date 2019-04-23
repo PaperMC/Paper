@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents an entity that can age and breed.
  */
-public interface Ageable extends Creature {    
+public interface Ageable extends Creature {
     /**
      * Gets the age of this animal.
      *
@@ -49,7 +49,7 @@ public interface Ageable extends Creature {
      * @return return true if the animal is an adult
      */
     public boolean isAdult();
-    
+
     /**
      * Return the ability to breed of the animal.
      *

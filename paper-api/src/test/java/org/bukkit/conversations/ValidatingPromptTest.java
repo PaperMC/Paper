@@ -18,7 +18,7 @@ public class ValidatingPromptTest {
         prompt.acceptInput(null, "no");
         assertFalse(prompt.result);
     }
-    
+
     @Test
     public void TestFixedSetPrompt() {
         TestFixedSetPrompt prompt = new TestFixedSetPrompt("foo", "bar");
@@ -27,7 +27,7 @@ public class ValidatingPromptTest {
         prompt.acceptInput(null, "foo");
         assertEquals("foo", prompt.result);
     }
-    
+
     @Test
     public void TestNumericPrompt() {
         TestNumericPrompt prompt = new TestNumericPrompt();
@@ -36,7 +36,7 @@ public class ValidatingPromptTest {
         prompt.acceptInput(null, "1010220");
         assertEquals(1010220, prompt.result);
     }
-    
+
     @Test
     public void TestRegexPrompt() {
         TestRegexPrompt prompt = new TestRegexPrompt("a.c");
@@ -48,10 +48,10 @@ public class ValidatingPromptTest {
     }
 
     //TODO: TestPlayerNamePrompt()
-    
+
     private class TestBooleanPrompt extends BooleanPrompt {
         public boolean result;
-        
+
         @Override
         protected Prompt acceptValidatedInput(ConversationContext context, boolean input) {
             result = input;
@@ -62,7 +62,7 @@ public class ValidatingPromptTest {
             return null;
         }
     }
-    
+
     private class TestFixedSetPrompt extends FixedSetPrompt {
         public String result;
 
@@ -80,10 +80,10 @@ public class ValidatingPromptTest {
             return null;
         }
     }
-    
+
     private class TestNumericPrompt extends NumericPrompt {
         public Number result;
-        
+
         @Override
         protected Prompt acceptValidatedInput(ConversationContext context, Number input) {
             result = input;

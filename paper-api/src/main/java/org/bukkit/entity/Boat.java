@@ -10,7 +10,7 @@ public interface Boat extends Vehicle {
 
     /**
      * Gets the wood type of the boat.
-     * 
+     *
      * @return the wood type
      */
     @NotNull
@@ -18,7 +18,7 @@ public interface Boat extends Vehicle {
 
     /**
      * Sets the wood type of the boat.
-     * 
+     *
      * @param species the new wood type
      */
     void setWoodType(@NotNull TreeSpecies species);

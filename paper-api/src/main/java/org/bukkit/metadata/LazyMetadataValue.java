@@ -58,7 +58,7 @@ public class LazyMetadataValue extends MetadataValueAdapter {
     /**
      * Protected special constructor used by FixedMetadataValue to bypass
      * standard setup.
-     * 
+     *
      * @param owningPlugin the owning plugin
      */
     protected LazyMetadataValue(@NotNull Plugin owningPlugin) {

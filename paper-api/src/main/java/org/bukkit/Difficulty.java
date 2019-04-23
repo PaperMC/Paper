@@ -35,7 +35,7 @@ public enum Difficulty {
     HARD(3);
 
     private final int value;
-    private final static Map<Integer, Difficulty> BY_ID = Maps.newHashMap();
+    private static final Map<Integer, Difficulty> BY_ID = Maps.newHashMap();
 
     private Difficulty(final int value) {
         this.value = value;

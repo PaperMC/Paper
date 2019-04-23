@@ -3243,7 +3243,7 @@ public enum Material implements Keyed {
 
     private final int id;
     private final Constructor<? extends MaterialData> ctor;
-    private final static Map<String, Material> BY_NAME = Maps.newHashMap();
+    private static final Map<String, Material> BY_NAME = Maps.newHashMap();
     private final int maxStack;
     private final short durability;
     public final Class<?> data;

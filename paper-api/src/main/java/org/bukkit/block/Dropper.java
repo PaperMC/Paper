@@ -14,7 +14,7 @@ public interface Dropper extends Container, Lootable {
      * Normal behavior of a dropper is as follows:
      * <p>
      * If the block that the dropper is facing is an InventoryHolder,
-     * the randomly selected ItemStack is placed within that 
+     * the randomly selected ItemStack is placed within that
      * Inventory in the first slot that's available, starting with 0 and
      * counting up.  If the inventory is full, nothing happens.
      * <p>
@@ -24,7 +24,7 @@ public interface Dropper extends Container, Lootable {
      * <p>
      * If the block represented by this state is no longer a dropper, this will
      * do nothing.
-     * 
+     *
      * @throws IllegalStateException if this block state is not placed
      */
     public void drop();

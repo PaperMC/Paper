@@ -80,10 +80,10 @@ public enum DyeColor {
     private final byte dyeData;
     private final Color color;
     private final Color firework;
-    private final static DyeColor[] BY_WOOL_DATA;
-    private final static DyeColor[] BY_DYE_DATA;
-    private final static Map<Color, DyeColor> BY_COLOR;
-    private final static Map<Color, DyeColor> BY_FIREWORK;
+    private static final DyeColor[] BY_WOOL_DATA;
+    private static final DyeColor[] BY_DYE_DATA;
+    private static final Map<Color, DyeColor> BY_COLOR;
+    private static final Map<Color, DyeColor> BY_FIREWORK;
 
     private DyeColor(final int woolData, final int dyeData, /*@NotNull*/ Color color, /*@NotNull*/ Color firework) {
         this.woolData = (byte) woolData;

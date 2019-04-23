@@ -12,7 +12,7 @@ import org.bukkit.plugin.SimplePluginManager;
 
 import com.google.common.collect.ImmutableMap;
 
-public class TestServer implements InvocationHandler {
+public final class TestServer implements InvocationHandler {
     private static interface MethodHandler {
         Object handle(TestServer server, Object[] args);
     }

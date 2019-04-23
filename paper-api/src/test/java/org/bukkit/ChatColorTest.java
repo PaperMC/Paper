@@ -62,7 +62,7 @@ public class ChatColorTest {
             assertThat(String.format("%c%c", ChatColor.COLOR_CHAR, color.getChar()), is(color.toString()));
         }
     }
-    
+
     @Test
     public void translateAlternateColorCodes() {
         String s = "&0&1&2&3&4&5&6&7&8&9&A&a&B&b&C&c&D&d&E&e&F&f&K&k & more";

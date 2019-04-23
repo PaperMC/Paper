@@ -262,7 +262,7 @@ public final class MapCursor {
 
         /**
          *
-         * @return the value 
+         * @return the value
          * @deprecated Magic value
          */
         @Deprecated

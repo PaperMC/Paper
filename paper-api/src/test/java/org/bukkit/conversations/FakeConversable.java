@@ -15,13 +15,13 @@ public class FakeConversable implements Conversable {
     public Conversation begunConversation;
     public Conversation abandonedConverstion;
     public ConversationAbandonedEvent abandonedConversationEvent;
-    
+
     public boolean isConversing() {
-        return false;   
+        return false;
     }
 
     public void acceptConversationInput(String input) {
-         
+
     }
 
     public boolean beginConversation(Conversation conversation) {
@@ -40,66 +40,66 @@ public class FakeConversable implements Conversable {
     }
 
     public void sendRawMessage(String message) {
-        lastSentMessage = message;     
+        lastSentMessage = message;
     }
 
     public Server getServer() {
-        return null;   
+        return null;
     }
 
     public String getName() {
-        return null;   
+        return null;
     }
 
     public boolean isPermissionSet(String name) {
-        return false;   
+        return false;
     }
 
     public boolean isPermissionSet(Permission perm) {
-        return false;   
+        return false;
     }
 
     public boolean hasPermission(String name) {
-        return false;   
+        return false;
     }
 
     public boolean hasPermission(Permission perm) {
-        return false;   
+        return false;
     }
 
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        return null;   
+        return null;
     }
 
     public PermissionAttachment addAttachment(Plugin plugin) {
-        return null;   
+        return null;
     }
 
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-        return null;   
+        return null;
     }
 
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-        return null;   
+        return null;
     }
 
     public void removeAttachment(PermissionAttachment attachment) {
-         
+
     }
 
     public void recalculatePermissions() {
-         
+
     }
 
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return null;   
+        return null;
     }
 
     public boolean isOp() {
-        return false;   
+        return false;
     }
 
     public void setOp(boolean value) {
-         
+
     }
 }

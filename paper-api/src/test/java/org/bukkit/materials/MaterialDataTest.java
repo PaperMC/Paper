@@ -34,7 +34,7 @@ public class MaterialDataTest {
         assertThat("Constructed with default top or bottom",door.isTopHalf(),equalTo(false));
         assertThat("Constructed with default direction",door.getFacing(),equalTo(BlockFace.WEST));
         assertThat("Constructed with default open state",door.isOpen(),equalTo(false));
-        
+
         Material[] types = new Material[] { Material.LEGACY_WOODEN_DOOR,
                 Material.LEGACY_IRON_DOOR_BLOCK, Material.LEGACY_SPRUCE_DOOR,
                 Material.LEGACY_BIRCH_DOOR, Material.LEGACY_JUNGLE_DOOR,

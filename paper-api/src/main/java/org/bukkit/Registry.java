@@ -126,7 +126,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @Nullable
     T get(@NotNull NamespacedKey key);
 
-    final static class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
+    static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
 
         private final Map<NamespacedKey, T> map;
 

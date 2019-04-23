@@ -20,8 +20,8 @@ public interface Creeper extends Monster {
     public void setPowered(boolean value);
 
     /**
-     * Set the maximum fuse ticks for this Creeper, where the maximum ticks 
-     * is the amount of time in which a creeper is allowed to be in the 
+     * Set the maximum fuse ticks for this Creeper, where the maximum ticks
+     * is the amount of time in which a creeper is allowed to be in the
      * primed state before exploding.
      *
      * @param ticks the new maximum fuse ticks
@@ -29,8 +29,8 @@ public interface Creeper extends Monster {
     public void setMaxFuseTicks(int ticks);
 
     /**
-     * Get the maximum fuse ticks for this Creeper, where the maximum ticks 
-     * is the amount of time in which a creeper is allowed to be in the 
+     * Get the maximum fuse ticks for this Creeper, where the maximum ticks
+     * is the amount of time in which a creeper is allowed to be in the
      * primed state before exploding.
      *
      * @return the maximum fuse ticks

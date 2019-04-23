@@ -30,7 +30,7 @@ public class SyntheticEventTest {
         Assert.assertEquals(1, impl.callCount);
     }
 
-    public static abstract class Base<E extends Event> implements Listener {
+    public abstract static class Base<E extends Event> implements Listener {
         int callCount = 0;
 
         public void accept(E evt) {

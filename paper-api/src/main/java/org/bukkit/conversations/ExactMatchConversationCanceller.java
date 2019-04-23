@@ -18,7 +18,7 @@ public class ExactMatchConversationCanceller implements ConversationCanceller {
     public ExactMatchConversationCanceller(@NotNull String escapeSequence) {
         this.escapeSequence = escapeSequence;
     }
-    
+
     public void setConversation(@NotNull Conversation conversation) {}
 
     public boolean cancelBasedOnInput(@NotNull ConversationContext context, @NotNull String input) {

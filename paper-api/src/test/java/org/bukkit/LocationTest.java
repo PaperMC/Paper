@@ -41,7 +41,7 @@ public class LocationTest {
 
     @Parameters(name= "{index}: {0}")
     public static List<Object[]> data() {
-        Random RANDOM = new Random(1l); // Test is deterministic
+        Random RANDOM = new Random(1L); // Test is deterministic
         int r = 0;
         return ImmutableList.<Object[]>of(
             new Object[] { "X",

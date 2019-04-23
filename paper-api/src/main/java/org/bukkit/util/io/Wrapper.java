@@ -9,7 +9,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 
-class Wrapper<T extends Map<String, ?> & Serializable> implements Serializable {
+final class Wrapper<T extends Map<String, ?> & Serializable> implements Serializable {
     private static final long serialVersionUID = -986209235411767547L;
 
     final T map;
