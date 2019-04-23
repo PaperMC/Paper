@@ -1,6 +1,5 @@
 package org.bukkit.entity;
 
-import static junit.framework.TestCase.*;
 import net.minecraft.server.DragonControllerPhase;
 import org.bukkit.craftbukkit.entity.CraftEnderDragon;
 import org.junit.Assert;
@@ -12,8 +11,8 @@ public class EnderDragonPhaseTest {
     public void testNotNull() {
         for (EnderDragon.Phase phase : EnderDragon.Phase.values()) {
             DragonControllerPhase dragonControllerPhase = CraftEnderDragon.getMinecraftPhase(phase);
-            assertNotNull(phase.name(), dragonControllerPhase);
-            assertNotNull(phase.name(), CraftEnderDragon.getBukkitPhase(dragonControllerPhase));
+            Assert.assertNotNull(phase.name(), dragonControllerPhase);
+            Assert.assertNotNull(phase.name(), CraftEnderDragon.getBukkitPhase(dragonControllerPhase));
         }
     }
 
