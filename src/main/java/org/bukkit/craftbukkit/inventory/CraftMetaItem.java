@@ -6,6 +6,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
@@ -35,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumItemSlot;
 import net.minecraft.server.GenericAttributes;
@@ -254,7 +256,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     private IChatBaseComponent displayName;
     private IChatBaseComponent locName;
-    private List<String> lore;
+    private List<IChatBaseComponent> lore;
     private Integer customModelData;
     private String blockData;
     private Map<Enchantment, Integer> enchantments;
@@ -282,7 +284,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.locName = meta.locName;
 
         if (meta.hasLore()) {
-            this.lore = new ArrayList<String>(meta.lore);
+            this.lore = new ArrayList<IChatBaseComponent>(meta.lore);
         }
 
         this.customModelData = meta.customModelData;
@@ -333,11 +335,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             if (display.hasKey(LORE.NBT)) {
                 NBTTagList list = display.getList(LORE.NBT, CraftMagicNumbers.NBT.TAG_STRING);
-                lore = new ArrayList<String>(list.size());
+                lore = new ArrayList<IChatBaseComponent>(list.size());
 
                 for (int index = 0; index < list.size(); index++) {
                     String line = list.getString(index);
-                    lore.add(line);
+                    try {
+                        lore.add(IChatBaseComponent.ChatSerializer.a(line));
+                    } catch (JsonParseException ex) {
+                        // Ignore (stripped like Vanilla)
+                    }
                 }
             }
         }
@@ -465,7 +471,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         Iterable<?> lore = SerializableMeta.getObject(Iterable.class, map, LORE.BUKKIT, true);
         if (lore != null) {
-            safelyAdd(lore, this.lore = new ArrayList<String>(), Integer.MAX_VALUE);
+            safelyAdd(lore, this.lore = new ArrayList<IChatBaseComponent>(), Integer.MAX_VALUE);
         }
 
         Integer customModelData = SerializableMeta.getObject(Integer.class, map, CUSTOM_MODEL_DATA.BUKKIT, true);
@@ -653,14 +659,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
-    static NBTTagList createStringList(List<String> list) {
+    static NBTTagList createStringList(List<IChatBaseComponent> list) {
         if (list == null || list.isEmpty()) {
             return null;
         }
 
         NBTTagList tagList = new NBTTagList();
-        for (String value : list) {
-            tagList.add(new NBTTagString(value));
+        for (IChatBaseComponent value : list) {
+            tagList.add(new NBTTagString(CraftChatMessage.toJSON(value)));
         }
 
         return tagList;
@@ -855,7 +861,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     public List<String> getLore() {
-        return this.lore == null ? null : new ArrayList<String>(this.lore);
+        return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, (line) -> CraftChatMessage.fromComponent(line, EnumChatFormat.DARK_PURPLE)));
     }
 
     public void setLore(List<String> lore) { // too tired to think if .clone is better
@@ -863,7 +869,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.lore = null;
         } else {
             if (this.lore == null) {
-                safelyAdd(lore, this.lore = new ArrayList<String>(lore.size()), Integer.MAX_VALUE);
+                safelyAdd(lore, this.lore = new ArrayList<IChatBaseComponent>(lore.size()), Integer.MAX_VALUE);
             } else {
                 this.lore.clear();
                 safelyAdd(lore, this.lore, Integer.MAX_VALUE);
@@ -1148,7 +1154,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         try {
             CraftMetaItem clone = (CraftMetaItem) super.clone();
             if (this.lore != null) {
-                clone.lore = new ArrayList<String>(this.lore);
+                clone.lore = new ArrayList<IChatBaseComponent>(this.lore);
             }
             clone.customModelData = this.customModelData;
             clone.blockData = this.blockData;
@@ -1280,7 +1286,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         builder.put(key.BUKKIT, mods);
     }
 
-    static void safelyAdd(Iterable<?> addFrom, Collection<String> addTo, int maxItemLength) {
+    static void safelyAdd(Iterable<?> addFrom, Collection<IChatBaseComponent> addTo, int maxItemLength) {
         if (addFrom == null) {
             return;
         }
@@ -1291,7 +1297,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     throw new IllegalArgumentException(addFrom + " cannot contain non-string " + object.getClass().getName());
                 }
 
-                addTo.add("");
+                addTo.add(new ChatComponentText(""));
             } else {
                 String page = object.toString();
 
@@ -1299,7 +1305,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     page = page.substring(0, maxItemLength);
                 }
 
-                addTo.add(page);
+                addTo.add(CraftChatMessage.wrapOrEmpty(page));
             }
         }
     }
