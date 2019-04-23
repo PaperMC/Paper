@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.command;
 import net.minecraft.server.CommandListenerWrapper;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.TileEntity;
-
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.craftbukkit.block.CraftBlock;

@@ -1,10 +1,10 @@
 package org.bukkit.craftbukkit.generator;
 
+import static org.junit.Assert.*;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class ChunkDataTest extends AbstractTestingBase {
 

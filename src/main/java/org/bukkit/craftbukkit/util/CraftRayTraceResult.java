@@ -1,5 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.MovingObjectPosition;
+import net.minecraft.server.MovingObjectPosition.EnumMovingObjectType;
+import net.minecraft.server.MovingObjectPositionBlock;
+import net.minecraft.server.MovingObjectPositionEntity;
+import net.minecraft.server.Vec3D;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -7,12 +13,6 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.MovingObjectPosition;
-import net.minecraft.server.MovingObjectPosition.EnumMovingObjectType;
-import net.minecraft.server.MovingObjectPositionBlock;
-import net.minecraft.server.MovingObjectPositionEntity;
-import net.minecraft.server.Vec3D;
 
 public class CraftRayTraceResult {
 

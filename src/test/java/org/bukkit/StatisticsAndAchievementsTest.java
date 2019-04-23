@@ -1,18 +1,15 @@
 package org.bukkit;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
+import com.google.common.collect.HashMultiset;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.StatisticWrapper;
-
-import org.bukkit.entity.EntityType;
 import org.bukkit.craftbukkit.CraftStatistic;
+import org.bukkit.entity.EntityType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
-
-import com.google.common.collect.HashMultiset;
 
 public class StatisticsAndAchievementsTest extends AbstractTestingBase {
 

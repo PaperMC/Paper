@@ -1,23 +1,19 @@
 package org.bukkit;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.Paintings;
-
 import org.bukkit.craftbukkit.CraftArt;
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
 import org.bukkit.support.AbstractTestingBase;
+import org.junit.Test;
 
 public class ArtTest extends AbstractTestingBase {
     private static final int UNIT_MULTIPLIER = 16;

@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import static org.hamcrest.Matchers.*;
 import net.minecraft.server.BlockCake;
 import net.minecraft.server.BlockChest;
 import net.minecraft.server.Blocks;
@@ -10,7 +11,6 @@ import org.bukkit.block.data.type.Cake;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.AbstractTestingBase;
-import static org.hamcrest.Matchers.*;
 import org.junit.Assert;
 import org.junit.Test;
 

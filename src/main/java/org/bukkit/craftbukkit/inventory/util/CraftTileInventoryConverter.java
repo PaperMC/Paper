@@ -3,8 +3,6 @@ package org.bukkit.craftbukkit.inventory.util;
 import net.minecraft.server.DimensionManager;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TileEntityBarrel;
-import net.minecraft.server.TileEntityBeacon;
 import net.minecraft.server.TileEntityBlastFurnace;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;

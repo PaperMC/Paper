@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.potion;
 
 import net.minecraft.server.MobEffectList;
-
 import org.bukkit.Color;
 import org.bukkit.potion.PotionEffectType;
 

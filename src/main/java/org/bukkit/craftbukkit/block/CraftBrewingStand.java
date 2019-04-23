@@ -5,7 +5,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.BrewerInventory;
 
 public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> implements BrewingStand {

@@ -1,14 +1,27 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import net.minecraft.server.*;
-
+import net.minecraft.server.AxisAlignedBB;
+import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.BlockRedstoneWire;
+import net.minecraft.server.BlockTileEntity;
+import net.minecraft.server.Blocks;
+import net.minecraft.server.EnumDirection;
+import net.minecraft.server.EnumSkyBlock;
+import net.minecraft.server.GeneratorAccess;
+import net.minecraft.server.IBlockData;
+import net.minecraft.server.IRegistry;
+import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MovingObjectPosition;
+import net.minecraft.server.RayTrace;
+import net.minecraft.server.TileEntity;
+import net.minecraft.server.Vec3D;
+import net.minecraft.server.VoxelShape;
+import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;

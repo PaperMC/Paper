@@ -1,15 +1,13 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-
 import net.minecraft.server.NBTTagCompound;
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-
-import com.google.common.collect.ImmutableMap;
-import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;

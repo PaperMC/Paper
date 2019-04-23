@@ -1,16 +1,14 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Joiner;
 import java.util.Arrays;
 import java.util.List;
-
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.base.Joiner;
 
 @RunWith(Parameterized.class)
 public class ItemStackBookTest extends ItemStackTest {

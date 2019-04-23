@@ -5,7 +5,6 @@ import net.minecraft.server.Blocks;
 import net.minecraft.server.ITileInventory;
 import net.minecraft.server.InventoryLargeChest;
 import net.minecraft.server.TileEntityChest;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;

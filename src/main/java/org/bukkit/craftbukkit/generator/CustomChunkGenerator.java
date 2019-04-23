@@ -3,12 +3,27 @@ package org.bukkit.craftbukkit.generator;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Random;
-
-import net.minecraft.server.*;
-
+import net.minecraft.server.BiomeBase;
+import net.minecraft.server.Block;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.ChunkSection;
+import net.minecraft.server.EnumCreatureType;
+import net.minecraft.server.GeneratorAccess;
+import net.minecraft.server.GeneratorSettingsDefault;
+import net.minecraft.server.HeightMap;
+import net.minecraft.server.IChunkAccess;
+import net.minecraft.server.ITileEntity;
+import net.minecraft.server.RegionLimitedWorldAccess;
+import net.minecraft.server.StructureGenerator;
+import net.minecraft.server.TileEntity;
+import net.minecraft.server.World;
+import net.minecraft.server.WorldGenFeatureConfiguration;
+import net.minecraft.server.WorldGenStage;
+import net.minecraft.server.WorldGenerator;
+import net.minecraft.server.WorldServer;
 import org.bukkit.block.Biome;
-import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.ChunkGenerator.BiomeGrid;
 import org.bukkit.generator.ChunkGenerator.ChunkData;
 

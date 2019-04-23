@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import org.apache.commons.lang.Validate;
-import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IChatBaseComponent;
@@ -10,6 +8,7 @@ import net.minecraft.server.ItemStack;
 import net.minecraft.server.MerchantRecipe;
 import net.minecraft.server.MerchantRecipeList;
 import net.minecraft.server.World;
+import org.apache.commons.lang.Validate;
 
 public class CraftMerchantCustom extends CraftMerchant {
 

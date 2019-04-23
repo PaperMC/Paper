@@ -1,11 +1,9 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import java.util.Map;
-
 import net.minecraft.server.Scoreboard;
 import net.minecraft.server.ScoreboardObjective;
 import net.minecraft.server.ScoreboardScore;
-
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.scoreboard.Objective;

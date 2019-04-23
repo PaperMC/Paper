@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block.data;
 
-import java.util.stream.Collectors;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
@@ -11,6 +10,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.server.ArgumentBlock;
 import net.minecraft.server.Block;
 import net.minecraft.server.BlockDataAbstract;

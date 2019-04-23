@@ -1,13 +1,10 @@
 package org.bukkit;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
-
 import net.minecraft.server.EnumColor;
-
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;

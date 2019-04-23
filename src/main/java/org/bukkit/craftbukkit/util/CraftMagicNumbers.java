@@ -14,7 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.Block;
 import net.minecraft.server.ChatDeserializer;
@@ -30,7 +29,6 @@ import net.minecraft.server.MojangsonParser;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.SharedConstants;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;

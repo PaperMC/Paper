@@ -1,12 +1,11 @@
 package org.bukkit;
 
+import static org.junit.Assert.*;
 import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.IChatBaseComponent;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class ChatTest {
 

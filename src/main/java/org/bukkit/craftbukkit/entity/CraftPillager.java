@@ -3,8 +3,8 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.server.EntityPillager;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.entity.Pillager;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Pillager;
 import org.bukkit.inventory.Inventory;
 
 public class CraftPillager extends CraftIllager implements Pillager {

@@ -1,11 +1,5 @@
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.StatisticList;
-
-import org.bukkit.Statistic;
-import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
@@ -14,7 +8,11 @@ import net.minecraft.server.EntityTypes;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.StatisticList;
+import org.bukkit.Material;
+import org.bukkit.Statistic;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.EntityType;
 
 public enum CraftStatistic {
     DAMAGE_DEALT(StatisticList.DAMAGE_DEALT),
