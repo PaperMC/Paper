@@ -1,11 +1,12 @@
 package org.bukkit;
 
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a countable statistic, which is tracked by the server.
  */
-public enum Statistic {
+public enum Statistic implements Keyed {
     DAMAGE_DEALT,
     DAMAGE_TAKEN,
     DEATHS,
@@ -74,9 +75,21 @@ public enum Statistic {
     DAMAGE_BLOCKED_BY_SHIELD,
     DAMAGE_ABSORBED,
     DAMAGE_RESISTED,
-    CLEAN_SHULKER_BOX;
+    CLEAN_SHULKER_BOX,
+    OPEN_BARREL,
+    INTERACT_WITH_BLAST_FURNACE,
+    INTERACT_WITH_SMOKER,
+    INTERACT_WITH_LECTERN,
+    INTERACT_WITH_CAMPFIRE,
+    INTERACT_WITH_CARTOGRAPHY_TABLE,
+    INTERACT_WITH_LOOM,
+    INTERACT_WITH_STONECUTTER,
+    BELL_RING,
+    RAID_TRIGGER,
+    RAID_WIN;
 
     private final Type type;
+    private final NamespacedKey key;
 
     private Statistic() {
         this(Type.UNTYPED);
@@ -84,6 +97,7 @@ public enum Statistic {
 
     private Statistic(/*@NotNull*/ Type type) {
         this.type = type;
+        this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -121,6 +135,12 @@ public enum Statistic {
      */
     public boolean isBlock() {
         return type == Type.BLOCK;
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 
     /**

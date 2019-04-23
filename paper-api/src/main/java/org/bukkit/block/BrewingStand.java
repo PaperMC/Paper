@@ -1,13 +1,12 @@
 package org.bukkit.block;
 
-import org.bukkit.Nameable;
 import org.bukkit.inventory.BrewerInventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a brewing stand.
  */
-public interface BrewingStand extends Container, Nameable {
+public interface BrewingStand extends Container {
 
     /**
      * How much time is left in the brewing cycle.

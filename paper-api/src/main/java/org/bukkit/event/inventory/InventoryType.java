@@ -92,6 +92,39 @@ public enum InventoryType {
      * A shulker box inventory, with 27 slots of type CONTAINER.
      */
     SHULKER_BOX(27, "Shulker Box"),
+    /**
+     * A barrel box inventory, with 27 slots of type CONTAINER.
+     */
+    BARREL(27, "Barrel"),
+    /**
+     * A blast furnace inventory, with a RESULT slot, a CRAFTING slot, and a
+     * FUEL slot.
+     */
+    BLAST_FURNACE(3, "Blast Furnace"),
+    /**
+     * A lectern inventory, with 1 BOOK slot.
+     */
+    LECTERN(1, "Lectern", false),
+    /**
+     * A smoker inventory, with a RESULT slot, a CRAFTING slot, and a FUEL slot.
+     */
+    SMOKER(3, "Smoker"),
+    /**
+     * Loom inventory, with 3 INPUT slots, and 1 RESULT slot.
+     */
+    LOOM(4, "Loom"),
+    /**
+     * Cartography inventory with 2 INPUT slots, and 1 RESULT slot.
+     */
+    CARTOGRAPHY(3, "Cartography Table"),
+    /**
+     * Grindstone inventory with 2 INPUT slots, and 1 RESULT slot.
+     */
+    GRINDSTONE(3, "Repair & Disenchant"),
+    /**
+     * Stonecutter inventory with 1 INPUT slot, and 1 RESULT slot.
+     */
+    STONECUTTER(2, "Stonecutter")
     ;
 
     private final int size;

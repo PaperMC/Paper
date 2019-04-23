@@ -169,7 +169,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param z Z-coordinate of the chunk
      * @return true if the chunk is loaded and in use by one or more players,
      *     otherwise false
+     * @deprecated This method was added to facilitate chunk garbage collection.
+     *     As of the current Minecraft version chunks are now strictly managed and
+     *     will not be loaded for more than 1 tick unless they are in use.
      */
+    @Deprecated
     public boolean isChunkInUse(int x, int z);
 
     /**
@@ -199,8 +203,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
      * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean,
-     * boolean)} where safe and save is true
+     * This method is analogous to {@link #unloadChunk(int, int, boolean)}
+     * where save is true.
      *
      * @param chunk the chunk to unload
      * @return true if the chunk has unloaded successfully, otherwise false
@@ -210,8 +214,8 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
      * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean,
-     * boolean)} where safe and saveis true
+     * This method is analogous to {@link #unloadChunk(int, int, boolean)}
+     * where save is true.
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -221,10 +225,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
 
     /**
      * Safely unloads and optionally saves the {@link Chunk} at the specified
-     * coordinates
-     * <p>
-     * This method is analogous to {@link #unloadChunk(int, int, boolean,
-     * boolean)} where save is true
+     * coordinates.
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
@@ -234,44 +235,14 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean unloadChunk(int x, int z, boolean save);
 
     /**
-     * Unloads and optionally saves the {@link Chunk} at the specified
-     * coordinates
-     *
-     * @param x X-coordinate of the chunk
-     * @param z Z-coordinate of the chunk
-     * @param save Controls whether the chunk is saved
-     * @param safe Controls whether to unload the chunk when players are
-     *     nearby
-     * @return true if the chunk has unloaded successfully, otherwise false
-     * @deprecated it is never safe to remove a chunk in use
-     */
-    @Deprecated
-    public boolean unloadChunk(int x, int z, boolean save, boolean safe);
-
-    /**
      * Safely queues the {@link Chunk} at the specified coordinates for
-     * unloading
-     * <p>
-     * This method is analogous to {@link #unloadChunkRequest(int, int,
-     * boolean)} where safe is true
+     * unloading.
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      * @return true is the queue attempt was successful, otherwise false
      */
     public boolean unloadChunkRequest(int x, int z);
-
-    /**
-     * Queues the {@link Chunk} at the specified coordinates for unloading
-     *
-     * @param x X-coordinate of the chunk
-     * @param z Z-coordinate of the chunk
-     * @param safe Controls whether to queue the chunk when players are nearby
-     * @return Whether the chunk was actually queued
-     * @deprecated it is never safe to remove a chunk in use
-     */
-    @Deprecated
-    public boolean unloadChunkRequest(int x, int z, boolean safe);
 
     /**
      * Regenerates the {@link Chunk} at the specified coordinates

@@ -1,7 +1,6 @@
 package org.bukkit.event.player;
 
 import org.bukkit.Location;
-import org.bukkit.TravelAgent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
@@ -15,68 +14,13 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlayerPortalEvent extends PlayerTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
-    protected boolean useTravelAgent = true;
-    protected TravelAgent travelAgent;
 
-    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TravelAgent pta) {
+    public PlayerPortalEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player, from, to);
-        this.travelAgent = pta;
     }
 
-    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TravelAgent pta, @NotNull TeleportCause cause) {
+    public PlayerPortalEvent(@NotNull Player player, @NotNull Location from, @Nullable Location to, @NotNull TeleportCause cause) {
         super(player, from, to, cause);
-        this.travelAgent = pta;
-    }
-
-    /**
-     * Sets whether or not the Travel Agent will be used.
-     * <p>
-     * If this is set to true, the TravelAgent will try to find a Portal at
-     * the {@link #getTo()} Location, and will try to create one if there is
-     * none.
-     * <p>
-     * If this is set to false, the {@link #getPlayer()} will only be
-     * teleported to the {@link #getTo()} Location.
-     *
-     * @param useTravelAgent whether to use the Travel Agent
-     */
-    public void useTravelAgent(boolean useTravelAgent) {
-        this.useTravelAgent = useTravelAgent;
-    }
-
-    /**
-     * Gets whether or not the Travel Agent will be used.
-     * <p>
-     * If this is set to true, the TravelAgent will try to find a Portal at
-     * the {@link #getTo()} Location, and will try to create one if there is
-     * none.
-     * <p>
-     * If this is set to false, the {@link #getPlayer()}} will only be
-     * teleported to the {@link #getTo()} Location.
-     *
-     * @return whether to use the Travel Agent
-     */
-    public boolean useTravelAgent() {
-        return useTravelAgent && travelAgent != null;
-    }
-
-    /**
-     * Gets the Travel Agent used (or not) in this event.
-     *
-     * @return the Travel Agent used (or not) in this event
-     */
-    @NotNull
-    public TravelAgent getPortalTravelAgent() {
-        return this.travelAgent;
-    }
-
-    /**
-     * Sets the Travel Agent used (or not) in this event.
-     *
-     * @param travelAgent the Travel Agent used (or not) in this event
-     */
-    public void setPortalTravelAgent(@NotNull TravelAgent travelAgent) {
-        this.travelAgent = travelAgent;
     }
 
     @NotNull

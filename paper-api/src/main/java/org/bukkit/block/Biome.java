@@ -1,9 +1,14 @@
 package org.bukkit.block;
 
+import java.util.Locale;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Holds all accepted Biomes in the default server
  */
-public enum Biome {
+public enum Biome implements Keyed {
     OCEAN,
     PLAINS,
     DESERT,
@@ -76,5 +81,19 @@ public enum Biome {
     SHATTERED_SAVANNA_PLATEAU,
     ERODED_BADLANDS,
     MODIFIED_WOODED_BADLANDS_PLATEAU,
-    MODIFIED_BADLANDS_PLATEAU
+    MODIFIED_BADLANDS_PLATEAU,
+    BAMBOO_JUNGLE,
+    BAMBOO_JUNGLE_HILLS;
+
+    private final NamespacedKey key;
+
+    private Biome() {
+        this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
+    }
 }

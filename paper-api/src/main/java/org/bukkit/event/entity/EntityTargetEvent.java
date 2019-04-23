@@ -152,6 +152,10 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          */
         CLOSEST_ENTITY,
         /**
+         * When a raiding entity selects the same target as one of its compatriots.
+         */
+        FOLLOW_LEADER,
+        /**
          * When another entity tempts this entity by having a desired item such
          * as wheat in it's hand.
          */

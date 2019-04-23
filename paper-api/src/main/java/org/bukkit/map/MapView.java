@@ -173,4 +173,22 @@ public interface MapView {
      * @param unlimited tracking state
      */
     void setUnlimitedTracking(boolean unlimited);
+
+    /**
+     * Gets whether the map is locked or not.
+     *
+     * A locked map may not be explored further.
+     *
+     * @return lock status
+     */
+    boolean isLocked();
+
+    /**
+     * Gets whether the map is locked or not.
+     *
+     * A locked map may not be explored further.
+     *
+     * @param locked status
+     */
+    void setLocked(boolean locked);
 }

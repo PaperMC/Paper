@@ -1,23 +1,15 @@
 package org.bukkit.inventory;
 
-import com.google.common.base.Preconditions;
 import java.util.Collections;
-import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a smelting recipe.
+ * Represents a furnace recipe.
  */
-public class FurnaceRecipe implements Recipe, Keyed {
-    private final NamespacedKey key;
-    private ItemStack output;
-    private RecipeChoice ingredient;
-    private float experience;
-    private int cookingTime;
-    private String group = "";
+public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
 
     @Deprecated
     public FurnaceRecipe(@NotNull ItemStack result, @NotNull Material source) {
@@ -67,11 +59,7 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @param cookingTime The cooking time (in ticks)
      */
     public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input, float experience, int cookingTime) {
-        this.key = key;
-        this.output = new ItemStack(result);
-        this.ingredient = input;
-        this.experience = experience;
-        this.cookingTime = cookingTime;
+        super(key, result, input, experience, cookingTime);
     }
 
     /**
@@ -85,15 +73,10 @@ public class FurnaceRecipe implements Recipe, Keyed {
         return setInput(input.getItemType(), input.getData());
     }
 
-    /**
-     * Sets the input of this furnace recipe.
-     *
-     * @param input The input material.
-     * @return The changed recipe, so you can chain calls.
-     */
     @NotNull
+    @Override
     public FurnaceRecipe setInput(@NotNull Material input) {
-        return setInput(input, 0);
+        return (FurnaceRecipe) super.setInput(input);
     }
 
     /**
@@ -106,117 +89,13 @@ public class FurnaceRecipe implements Recipe, Keyed {
      * @deprecated Magic value
      */
     @Deprecated
-    @NotNull
     public FurnaceRecipe setInput(@NotNull Material input, int data) {
-        this.ingredient = new RecipeChoice.MaterialChoice(Collections.singletonList(input));
-        return this;
-    }
-
-    /**
-     * Get the input material.
-     *
-     * @return The input material.
-     */
-    @NotNull
-    public ItemStack getInput() {
-        return this.ingredient.getItemStack();
-    }
-
-    /**
-     * Sets the input of this furnace recipe.
-     *
-     * @param input The input choice.
-     * @return The changed recipe, so you can chain calls.
-     */
-    @NotNull
-    public FurnaceRecipe setInputChoice(@NotNull RecipeChoice input) {
-        this.ingredient = input;
-        return this;
-    }
-
-    /**
-     * Get the input choice.
-     *
-     * @return The input choice.
-     */
-    @NotNull
-    public RecipeChoice getInputChoice() {
-        return this.ingredient.clone();
-    }
-
-    /**
-     * Get the result of this recipe.
-     *
-     * @return The resulting stack.
-     */
-    @NotNull
-    public ItemStack getResult() {
-        return output.clone();
-    }
-
-    /**
-     * Sets the experience given by this recipe.
-     *
-     * @param experience the experience level
-     */
-    public void setExperience(float experience) {
-        this.experience = experience;
-    }
-
-    /**
-     * Get the experience given by this recipe.
-     *
-     * @return experience level
-     */
-    public float getExperience() {
-        return experience;
-    }
-
-    /**
-     * Set the cooking time for this recipe in ticks.
-     *
-     * @param cookingTime new cooking time
-     */
-    public void setCookingTime(int cookingTime) {
-        Preconditions.checkArgument(cookingTime >= 0, "cookingTime must be >= 0");
-        this.cookingTime = cookingTime;
-    }
-
-    /**
-     * Get the cooking time for this recipe in ticks.
-     *
-     * @return cooking time
-     */
-    public int getCookingTime() {
-        return cookingTime;
+        return setInputChoice(new RecipeChoice.MaterialChoice(Collections.singletonList(input)));
     }
 
     @NotNull
     @Override
-    public NamespacedKey getKey() {
-        return key;
-    }
-
-    /**
-     * Get the group of this recipe. Recipes with the same group may be grouped
-     * together when displayed in the client.
-     *
-     * @return recipe group. An empty string denotes no group. May not be null.
-     */
-    @NotNull
-    public String getGroup() {
-        return group;
-    }
-
-    /**
-     * Set the group of this recipe. Recipes with the same group may be grouped
-     * together when displayed in the client.
-     *
-     * @param group recipe group. An empty string denotes no group. May not be
-     * null.
-     */
-    public void setGroup(@NotNull String group) {
-        Preconditions.checkArgument(group != null, "group");
-        this.group = group;
+    public FurnaceRecipe setInputChoice(@NotNull RecipeChoice input) {
+        return (FurnaceRecipe) super.setInputChoice(input);
     }
 }

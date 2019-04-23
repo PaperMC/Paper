@@ -1,12 +1,11 @@
 package org.bukkit.block;
 
-import org.bukkit.Nameable;
 import org.bukkit.loot.Lootable;
 
 /**
  * Represents a captured state of a dropper.
  */
-public interface Dropper extends Container, Nameable, Lootable {
+public interface Dropper extends Container, Lootable {
 
     /**
      * Tries to drop a randomly selected item from the dropper's inventory,

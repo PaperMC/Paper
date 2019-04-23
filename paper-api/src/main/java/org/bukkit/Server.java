@@ -162,27 +162,6 @@ public interface Server extends PluginMessageRecipient {
     public String getIp();
 
     /**
-     * Get the name of this server.
-     *
-     * @return the name of this server
-     * @deprecated not a standard server property
-     */
-    @Deprecated
-    @NotNull
-    public String getServerName();
-
-    /**
-     * Get an ID of this server. The ID is a simple generally alphanumeric ID
-     * that can be used for uniquely identifying this server.
-     *
-     * @return the ID of this server
-     * @deprecated not a standard server property
-     */
-    @Deprecated
-    @NotNull
-    public String getServerId();
-
-    /**
      * Get world type (level-type setting) for default world.
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)

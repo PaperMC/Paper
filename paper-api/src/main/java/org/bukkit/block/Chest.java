@@ -1,6 +1,5 @@
 package org.bukkit.block;
 
-import org.bukkit.Nameable;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a chest.
  */
-public interface Chest extends Container, Nameable, Lootable {
+public interface Chest extends Container, Lootable {
 
     /**
      * Gets the inventory of the chest block represented by this block state.

@@ -28,6 +28,8 @@ public interface UnsafeValues {
 
     BlockData fromLegacy(Material material, byte data);
 
+    Material getMaterial(String material, int version);
+
     int getDataVersion();
 
     ItemStack modifyItemStack(ItemStack stack, String arguments);

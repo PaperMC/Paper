@@ -89,14 +89,16 @@ public class PluginManagerTest {
                         pm.callEvent(event);
                     } catch (Throwable ex) {
                         store.value = ex;
+                        assertThat(event.getEventName() + " cannot be triggered asynchronously from another thread.", is(ex.getMessage()));
+                        return;
                     }
                 }
             }
         );
         secondThread.start();
         secondThread.join();
-        if (store.value != null) {
-            throw new RuntimeException((Throwable) store.value);
+        if (store.value == null) {
+            throw new IllegalStateException("No exception thrown");
         }
     }
 
@@ -112,14 +114,16 @@ public class PluginManagerTest {
                         }
                     } catch (Throwable ex) {
                         store.value = ex;
+                        assertThat(event.getEventName() + " cannot be triggered asynchronously from another thread.", is(ex.getMessage()));
+                        return;
                     }
                 }
             }
         );
         secondThread.start();
         secondThread.join();
-        if (store.value != null) {
-            throw new RuntimeException((Throwable) store.value);
+        if (store.value == null) {
+            throw new IllegalStateException("No exception thrown");
         }
     }
 

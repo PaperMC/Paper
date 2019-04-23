@@ -1,13 +1,12 @@
 package org.bukkit.block;
 
-import org.bukkit.Nameable;
 import org.bukkit.inventory.FurnaceInventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a furnace.
  */
-public interface Furnace extends Container, Nameable {
+public interface Furnace extends Container {
 
     /**
      * Get burn time.

@@ -487,6 +487,9 @@ public final class SimplePluginManager implements PluginManager {
             }
             fireEvent(event);
         } else {
+            if (!server.isPrimaryThread()) {
+                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
+            }
             synchronized (this) {
                 fireEvent(event);
             }

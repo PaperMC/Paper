@@ -44,8 +44,7 @@ public class VersionCommand extends BukkitCommand {
 
         if (args.length == 0) {
             sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")");
-            sender.sendMessage(ChatColor.YELLOW + "This is a final build for 1.13.2. Please see https://www.spigotmc.org/go/1.13.2 for details about upgrading.");
-            // sendVersion(sender);
+            sendVersion(sender);
         } else {
             StringBuilder name = new StringBuilder();
 

@@ -1,6 +1,6 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.entity.Villager;
+import org.bukkit.entity.AbstractVillager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
@@ -20,7 +20,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
     private MerchantRecipe recipe;
     private int bonus;
 
-    public VillagerReplenishTradeEvent(@NotNull Villager what, @NotNull MerchantRecipe recipe, int bonus) {
+    public VillagerReplenishTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe, int bonus) {
         super(what);
         this.recipe = recipe;
         this.bonus = bonus;
@@ -77,8 +77,8 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
 
     @NotNull
     @Override
-    public Villager getEntity() {
-        return (Villager) super.getEntity();
+    public AbstractVillager getEntity() {
+        return (AbstractVillager) super.getEntity();
     }
 
     @NotNull

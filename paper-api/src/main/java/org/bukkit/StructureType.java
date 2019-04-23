@@ -31,7 +31,7 @@ public class StructureType {
      * They are the only place where cave spider spawners and minecarts with
      * chests can be found naturally.
      */
-    public static final StructureType MINESHAFT = register(new StructureType("Mineshaft", MapCursor.Type.RED_X));
+    public static final StructureType MINESHAFT = register(new StructureType("mineshaft", MapCursor.Type.RED_X));
 
     /**
      * Villages are naturally generating structures that form above ground.
@@ -39,7 +39,7 @@ public class StructureType {
      * They are usually generated in desert, plains, taiga, and savanna biomes
      * and are a site for villager spawns, with whom the player can trade.
      */
-    public static final StructureType VILLAGE = register(new StructureType("Village", MapCursor.Type.MANSION));
+    public static final StructureType VILLAGE = register(new StructureType("village", MapCursor.Type.MANSION));
 
     /**
      * Nether fortresses are very large complexes that mainly consist of
@@ -48,7 +48,7 @@ public class StructureType {
      * They contain blaze spawners, nether wart farms, and loot chests. They are
      * only generated in the nether dimension.
      */
-    public static final StructureType NETHER_FORTRESS = register(new StructureType("Fortress", MapCursor.Type.RED_X));
+    public static final StructureType NETHER_FORTRESS = register(new StructureType("fortress", MapCursor.Type.RED_X));
 
     /**
      * Strongholds are underground structures that consist of many rooms,
@@ -56,7 +56,7 @@ public class StructureType {
      * <br>
      * They can be found using an {@link Material#ENDER_EYE}.
      */
-    public static final StructureType STRONGHOLD = register(new StructureType("Stronghold", MapCursor.Type.MANSION));
+    public static final StructureType STRONGHOLD = register(new StructureType("stronghold", MapCursor.Type.MANSION));
 
     /**
      * Jungle pyramids (also known as jungle temples) are found in jungles.
@@ -65,7 +65,7 @@ public class StructureType {
      * consist of three floors, with the bottom floor containing treasure
      * chests.
      */
-    public static final StructureType JUNGLE_PYRAMID = register(new StructureType("Jungle_Pyramid", MapCursor.Type.RED_X));
+    public static final StructureType JUNGLE_PYRAMID = register(new StructureType("jungle_pyramid", MapCursor.Type.RED_X));
 
     /**
      * Ocean ruins are clusters of many different blocks that generate
@@ -74,27 +74,27 @@ public class StructureType {
      * They come in my different variations. The cold variants consist primarily
      * of stone brick, and the warm variants consist of sandstone.
      */
-    public static final StructureType OCEAN_RUIN = register(new StructureType("Ocean_Ruin", MapCursor.Type.TEMPLE));
+    public static final StructureType OCEAN_RUIN = register(new StructureType("ocean_ruin", MapCursor.Type.TEMPLE));
 
     /**
      * Desert pyramids (also known as desert temples) are found in deserts.
      * <br>
      * They are usually composed of sandstone and stained terracotta.
      */
-    public static final StructureType DESERT_PYRAMID = register(new StructureType("Desert_Pyramid", MapCursor.Type.RED_X));
+    public static final StructureType DESERT_PYRAMID = register(new StructureType("desert_pyramid", MapCursor.Type.RED_X));
 
     /**
      * Igloos are structures that generate in snowy biomes.
      * <br>
      * They consist of the house, as well as a basement.
      */
-    public static final StructureType IGLOO = register(new StructureType("Igloo", MapCursor.Type.RED_X));
+    public static final StructureType IGLOO = register(new StructureType("igloo", MapCursor.Type.RED_X));
 
     /**
      * Swamp huts (also known as witch huts) generate in swamp biomes and have
      * the ability to spawn witches.
      */
-    public static final StructureType SWAMP_HUT = register(new StructureType("Swamp_Hut", MapCursor.Type.RED_X));
+    public static final StructureType SWAMP_HUT = register(new StructureType("swamp_hut", MapCursor.Type.RED_X));
 
     /**
      * Ocean monuments are underwater structures.
@@ -103,7 +103,7 @@ public class StructureType {
      * lanterns. They are the only place guardians and elder guardians spawn
      * naturally.
      */
-    public static final StructureType OCEAN_MONUMENT = register(new StructureType("Monument", MapCursor.Type.TEMPLE));
+    public static final StructureType OCEAN_MONUMENT = register(new StructureType("monument", MapCursor.Type.TEMPLE));
 
     /**
      * End Cities are tall castle-like structures that generate in the outer
@@ -112,7 +112,7 @@ public class StructureType {
      * They consist primarily of end stone bricks, purpur blocks, and end rods.
      * They are the only place where shulkers can be found.
      */
-    public static final StructureType END_CITY = register(new StructureType("EndCity", MapCursor.Type.RED_X));
+    public static final StructureType END_CITY = register(new StructureType("endcity", MapCursor.Type.RED_X));
 
     /**
      * Mansions (also known as woodland mansions) are massive house structures
@@ -121,13 +121,13 @@ public class StructureType {
      * They are the only place where evokers, vindicators, and vexes spawn
      * naturally (but only once)
      */
-    public static final StructureType WOODLAND_MANSION = register(new StructureType("Mansion", MapCursor.Type.MANSION));
+    public static final StructureType WOODLAND_MANSION = register(new StructureType("mansion", MapCursor.Type.MANSION));
 
     /**
      * Buried treasure consists of a single chest buried in the beach sand or
      * gravel, with random loot in it.
      */
-    public static final StructureType BURIED_TREASURE = register(new StructureType("Buried_Treasure", MapCursor.Type.RED_X));
+    public static final StructureType BURIED_TREASURE = register(new StructureType("buried_treasure", MapCursor.Type.RED_X));
 
     /**
      * Shipwrecks are structures that generate on the floor of oceans or
@@ -136,7 +136,12 @@ public class StructureType {
      * They are made up of wood materials, and contain 1-3 loot chests. They can
      * generate sideways, upside-down, or upright.
      */
-    public static final StructureType SHIPWRECK = register(new StructureType("Shipwreck", MapCursor.Type.RED_X));
+    public static final StructureType SHIPWRECK = register(new StructureType("shipwreck", MapCursor.Type.RED_X));
+
+    /**
+     * Pillager outposts may contain crossbows.
+     */
+    public static final StructureType PILLAGER_OUTPOST = register(new StructureType("pillager_outpost", MapCursor.Type.RED_X));
 
     /* ****************
      *  STRUCTURE TYPES REGISTERED ABOVE THIS

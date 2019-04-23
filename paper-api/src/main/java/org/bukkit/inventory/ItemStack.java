@@ -480,7 +480,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
                 damage = 0;
             }
         } else {
-            type = Material.getMaterial((String) args.get("type"));
+            type = Bukkit.getUnsafe().getMaterial((String) args.get("type"), version);
         }
 
         if (args.containsKey("amount")) {
@@ -506,6 +506,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         } else if (args.containsKey("meta")) { // We cannot and will not have meta when enchantments (pre-ItemMeta) exist
             Object raw = args.get("meta");
             if (raw instanceof ItemMeta) {
+                ((ItemMeta) raw).setVersion(version);
                 result.setItemMeta((ItemMeta) raw);
             }
         }

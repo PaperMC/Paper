@@ -1,6 +1,6 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.entity.Villager;
+import org.bukkit.entity.AbstractVillager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
@@ -16,7 +16,7 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
     //
     private MerchantRecipe recipe;
 
-    public VillagerAcquireTradeEvent(@NotNull Villager what, @NotNull MerchantRecipe recipe) {
+    public VillagerAcquireTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe) {
         super(what);
         this.recipe = recipe;
     }
@@ -52,8 +52,8 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
 
     @NotNull
     @Override
-    public Villager getEntity() {
-        return (Villager) super.getEntity();
+    public AbstractVillager getEntity() {
+        return (AbstractVillager) super.getEntity();
     }
 
     @NotNull

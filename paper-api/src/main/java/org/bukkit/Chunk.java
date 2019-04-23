@@ -108,18 +108,6 @@ public interface Chunk {
      * Unloads and optionally saves the Chunk
      *
      * @param save Controls whether the chunk is saved
-     * @param safe Controls whether to unload the chunk when players are
-     *     nearby
-     * @return true if the chunk has unloaded successfully, otherwise false
-     * @deprecated it is never safe to remove a chunk in use
-     */
-    @Deprecated
-    boolean unload(boolean save, boolean safe);
-
-    /**
-     * Unloads and optionally saves the Chunk
-     *
-     * @param save Controls whether the chunk is saved
      * @return true if the chunk has unloaded successfully, otherwise false
      */
     boolean unload(boolean save);

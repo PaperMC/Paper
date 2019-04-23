@@ -3,7 +3,6 @@ package org.bukkit.block;
 import java.util.Collection;
 import org.bukkit.Nameable;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
@@ -12,15 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a beacon.
  */
-public interface Beacon extends Container, Nameable {
-
-    @NotNull
-    @Override
-    BeaconInventory getInventory();
-
-    @NotNull
-    @Override
-    BeaconInventory getSnapshotInventory();
+public interface Beacon extends BlockState, Lockable, Nameable {
 
     /**
      * Returns the list of players within the beacon's range of effect.

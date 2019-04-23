@@ -101,6 +101,39 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
     void setLore(@Nullable List<String> lore);
 
     /**
+     * Checks for existence of custom model data.
+     * <p>
+     * CustomModelData is an integer that may be associated client side with a
+     * custom item model.
+     *
+     * @return true if this has custom model data
+     */
+    boolean hasCustomModelData();
+
+    /**
+     * Gets the custom model data that is set.
+     * <p>
+     * CustomModelData is an integer that may be associated client side with a
+     * custom item model.
+     * <p>
+     * Plugins should check that hasCustomModelData() returns <code>true</code>
+     * before calling this method.
+     *
+     * @return the localized name that is set
+     */
+    int getCustomModelData();
+
+    /**
+     * Sets the custom model data.
+     * <p>
+     * CustomModelData is an integer that may be associated client side with a
+     * custom item model.
+     *
+     * @param data the data to set, or null to clear
+     */
+    void setCustomModelData(@Nullable Integer data);
+
+    /**
      * Checks for the existence of any enchantments.
      *
      * @return true if an enchantment exists on this meta
@@ -339,6 +372,15 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      */
     @NotNull
     CustomItemTagContainer getCustomTagContainer();
+
+    /**
+     * Internal use only! Do not use under any circumstances!
+     *
+     * @param version
+     * @deprecated
+     */
+    @Deprecated
+    void setVersion(int version);
 
     @SuppressWarnings("javadoc")
     @NotNull

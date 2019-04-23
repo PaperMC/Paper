@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A wild tameable cat
  */
-public interface Ocelot extends Animals, Tameable, Sittable {
+public interface Ocelot extends Animals {
 
     /**
      * Gets the current type of this cat.
@@ -26,7 +26,10 @@ public interface Ocelot extends Animals, Tameable, Sittable {
 
     /**
      * Represents the various different cat types there are.
+     *
+     * @deprecated Cats are now a separate entity.
      */
+    @Deprecated
     public enum Type {
         WILD_OCELOT(0),
         BLACK_CAT(1),

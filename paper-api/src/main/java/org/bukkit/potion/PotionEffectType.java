@@ -165,6 +165,16 @@ public abstract class PotionEffectType {
      */
     public static final PotionEffectType DOLPHINS_GRACE = new PotionEffectTypeWrapper(30);
 
+    /**
+     * oof.
+     */
+    public static final PotionEffectType BAD_OMEN = new PotionEffectTypeWrapper(31);
+
+    /**
+     * \o/.
+     */
+    public static final PotionEffectType HERO_OF_THE_VILLAGE = new PotionEffectTypeWrapper(32);
+
     private final int id;
 
     protected PotionEffectType(int id) {
@@ -189,7 +199,9 @@ public abstract class PotionEffectType {
      * Returns the duration modifier applied to effects of this type.
      *
      * @return duration modifier
+     * @deprecated unused, always 1.0
      */
+    @Deprecated
     public abstract double getDurationModifier();
 
     /**
@@ -251,7 +263,7 @@ public abstract class PotionEffectType {
         return "PotionEffectType[" + id + ", " + getName() + "]";
     }
 
-    private static final PotionEffectType[] byId = new PotionEffectType[31];
+    private static final PotionEffectType[] byId = new PotionEffectType[33];
     private static final Map<String, PotionEffectType> byName = new HashMap<String, PotionEffectType>();
     // will break on updates.
     private static boolean acceptingNew = true;

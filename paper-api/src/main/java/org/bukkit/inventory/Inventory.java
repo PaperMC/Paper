@@ -61,18 +61,6 @@ public interface Inventory extends Iterable<ItemStack> {
     public void setMaxStackSize(int size);
 
     /**
-     * Returns the name of the inventory
-     *
-     * @return The String with the name of the inventory
-     * @deprecated different instances of the same inventory may have different names;
-     *      it is not clear what this method is meant to return
-     * @see InventoryView#getTitle()
-     */
-    @Deprecated
-    @NotNull
-    public String getName();
-
-    /**
      * Returns the ItemStack found in the slot at the given index
      *
      * @param index The index of the Slot's ItemStack to return
@@ -344,17 +332,6 @@ public interface Inventory extends Iterable<ItemStack> {
      */
     @NotNull
     public List<HumanEntity> getViewers();
-
-    /**
-     * Returns the title of this inventory.
-     *
-     * @return A String with the title.
-     * @deprecated different instances of the same inventory may have different titles
-     * @see InventoryView#getTitle()
-     */
-    @Deprecated
-    @NotNull
-    public String getTitle();
 
     /**
      * Returns what type of inventory this is.

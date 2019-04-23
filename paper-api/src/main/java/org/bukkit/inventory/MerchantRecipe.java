@@ -27,16 +27,24 @@ public class MerchantRecipe implements Recipe {
     private int uses;
     private int maxUses;
     private boolean experienceReward;
+    private int villagerExperience;
+    private float priceMultiplier;
 
     public MerchantRecipe(@NotNull ItemStack result, int maxUses) {
         this(result, 0, maxUses, false);
     }
 
     public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward) {
+        this(result, uses, maxUses, experienceReward, 0, 0.0F);
+    }
+
+    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier) {
         this.result = result;
         this.uses = uses;
         this.maxUses = maxUses;
         this.experienceReward = experienceReward;
+        this.villagerExperience = villagerExperience;
+        this.priceMultiplier = priceMultiplier;
     }
 
     @NotNull
@@ -111,20 +119,58 @@ public class MerchantRecipe implements Recipe {
     }
 
     /**
-     * Whether to reward experience for the trade.
+     * Whether to reward experience to the player for the trade.
      *
-     * @return whether to reward experience for completing this trade
+     * @return whether to reward experience to the player for completing this
+     * trade
      */
     public boolean hasExperienceReward() {
         return experienceReward;
     }
 
     /**
-     * Set whether to reward experience for the trade.
+     * Set whether to reward experience to the player for the trade.
      *
-     * @param flag whether to reward experience for completing this trade
+     * @param flag whether to reward experience to the player for completing
+     * this trade
      */
     public void setExperienceReward(boolean flag) {
         this.experienceReward = flag;
+    }
+
+    /**
+     * Gets the amount of experience the villager earns from this trade.
+     *
+     * @return villager experience
+     */
+    public int getVillagerExperience() {
+        return villagerExperience;
+    }
+
+    /**
+     * Sets the amount of experience the villager earns from this trade.
+     *
+     * @param villagerExperience new experience amount
+     */
+    public void setVillagerExperience(int villagerExperience) {
+        this.villagerExperience = villagerExperience;
+    }
+
+    /**
+     * Gets the additive price multiplier for the cost of this trade.
+     *
+     * @return price multiplier
+     */
+    public float getPriceMultiplier() {
+        return priceMultiplier;
+    }
+
+    /**
+     * Sets the additive price multiplier for the cost of this trade.
+     *
+     * @param priceMultiplier new price multiplier
+     */
+    public void setPriceMultiplier(float priceMultiplier) {
+        this.priceMultiplier = priceMultiplier;
     }
 }

@@ -1,13 +1,14 @@
 package org.bukkit.block;
 
+import org.bukkit.Nameable;
+import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a container block.
  */
-public interface Container extends BlockState, InventoryHolder, Lockable {
+public interface Container extends BlockState, BlockInventoryHolder, Lockable, Nameable {
 
     /**
      * Gets the inventory of the block represented by this block state.

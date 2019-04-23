@@ -1,8 +1,10 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bukkit.Keyed;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
@@ -12,12 +14,14 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public enum EntityType {
+public enum EntityType implements Keyed {
 
     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
     /**
@@ -62,7 +66,7 @@ public enum EntityType {
     /**
      * An arrow projectile; may get stuck in the ground.
      */
-    ARROW("arrow", Arrow.class, 10),
+    ARROW("arrow", TippedArrow.class, 10),
     /**
      * A flying snowball.
      */
@@ -86,7 +90,7 @@ public enum EntityType {
     /**
      * A flying splash potion.
      */
-    SPLASH_POTION("potion", SplashPotion.class, 16, false),
+    SPLASH_POTION("potion", ThrownPotion.class, 16, false),
     /**
      * A flying experience bottle.
      */
@@ -116,7 +120,7 @@ public enum EntityType {
      */
     HUSK("husk", Husk.class, 23),
     /**
-     * Like {@link #TIPPED_ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
+     * Like {@link #ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
      */
     SPECTRAL_ARROW("spectral_arrow", SpectralArrow.class, 24),
     /**
@@ -250,11 +254,13 @@ public enum EntityType {
     TROPICAL_FISH("tropical_fish", TropicalFish.class, -1),
     DROWNED("drowned", Drowned.class, -1),
     DOLPHIN("dolphin", Dolphin.class, -1),
-    // These don't have an entity ID in nms.EntityTypes.
-    /**
-     * A flying lingering potion
-     */
-    LINGERING_POTION(null, LingeringPotion.class, -1, false),
+    CAT("cat", Cat.class, -1),
+    PANDA("panda", Panda.class, -1),
+    PILLAGER("pillager", Pillager.class, -1),
+    RAVAGER("ravager", Ravager.class, -1),
+    TRADER_LLAMA("trader_llama", TraderLlama.class, -1),
+    WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
+    FOX("fox", Fox.class, -1),
     /**
      * A fishing line and bobber.
      */
@@ -265,23 +271,17 @@ public enum EntityType {
      * Spawn with {@link World#strikeLightning(Location)}.
      */
     LIGHTNING("lightning_bolt", LightningStrike.class, -1, false),
-    WEATHER(null, Weather.class, -1, false),
     PLAYER("player", Player.class, -1, false),
-    COMPLEX_PART(null, ComplexEntityPart.class, -1, false),
-    /**
-     * Like {@link #ARROW} but tipped with a specific potion which is applied on
-     * contact.
-     */
-    TIPPED_ARROW(null, TippedArrow.class, -1),
     /**
      * An unknown entity without an Entity Class
      */
     UNKNOWN(null, null, -1, false);
 
-    private String name;
-    private Class<? extends Entity> clazz;
-    private short typeId;
-    private boolean independent, living;
+    private final String name;
+    private final Class<? extends Entity> clazz;
+    private final short typeId;
+    private final boolean independent, living;
+    private final NamespacedKey key;
 
     private static final Map<String, EntityType> NAME_MAP = new HashMap<String, EntityType>();
     private static final Map<Short, EntityType> ID_MAP = new HashMap<Short, EntityType>();
@@ -320,9 +320,8 @@ public enum EntityType {
         this.clazz = clazz;
         this.typeId = (short) typeId;
         this.independent = independent;
-        if (clazz != null) {
-            this.living = LivingEntity.class.isAssignableFrom(clazz);
-        }
+        this.living = clazz != null && LivingEntity.class.isAssignableFrom(clazz);
+        this.key = (name == null) ? null : NamespacedKey.minecraft(name);
     }
 
     /**
@@ -334,6 +333,14 @@ public enum EntityType {
     @Nullable
     public String getName() {
         return name;
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        Preconditions.checkArgument(key != null, "EntityType doesn't have key! Is it UNKNOWN?");
+
+        return key;
     }
 
     @Nullable

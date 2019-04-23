@@ -177,6 +177,21 @@ public abstract class Enchantment implements Keyed {
     public static final Enchantment CHANNELING = new EnchantmentWrapper("channeling");
 
     /**
+     * Shoot multiple arrows from crossbows
+     */
+    public static final Enchantment MULTISHOT = new EnchantmentWrapper("multishot");
+
+    /**
+     * Charges crossbows quickly
+     */
+    public static final Enchantment QUICK_CHARGE = new EnchantmentWrapper("quick_charge");
+
+    /**
+     * Crossbow projectiles pierce entities
+     */
+    public static final Enchantment PIERCING = new EnchantmentWrapper("piercing");
+
+    /**
      * Allows mending the item using experience orbs
      */
     public static final Enchantment MENDING = new EnchantmentWrapper("mending");

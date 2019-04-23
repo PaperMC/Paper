@@ -191,6 +191,16 @@ public enum EnchantmentTarget {
         public boolean includes(@NotNull Material item) {
             return item.equals(Material.TRIDENT);
         }
+    },
+
+    /**
+     * Allow the Enchantment to be placed on crossbows.
+     */
+    CROSSBOW {
+        @Override
+        public boolean includes(@NotNull Material item) {
+            return item.equals(Material.CROSSBOW);
+        }
     };
 
     /**
