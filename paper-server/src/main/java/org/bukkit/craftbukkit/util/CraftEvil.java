@@ -22,6 +22,10 @@ public class CraftEvil {
 
     static {
         for (Material material : Material.values()) {
+            if (!material.isLegacy()) {
+                continue;
+            }
+
             Preconditions.checkState(!byId.containsKey(material.getId()), "Duplicate material ID for", material);
             byId.put(material.getId(), material);
         }
