@@ -49,6 +49,7 @@ import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BossBattleCustom;
 import net.minecraft.server.CommandDispatcher;
 import net.minecraft.server.CommandListenerWrapper;
+import net.minecraft.server.CraftingManager;
 import net.minecraft.server.DedicatedPlayerList;
 import net.minecraft.server.DedicatedServer;
 import net.minecraft.server.DedicatedServerProperties;
@@ -1096,7 +1097,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void clearRecipes() {
-        console.getCraftingManager().recipes.clear();
+        CraftingManager.a(console.getCraftingManager().recipes);
     }
 
     @Override
