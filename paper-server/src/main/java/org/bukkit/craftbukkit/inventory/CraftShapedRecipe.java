@@ -1,12 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.Map;
-
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NonNullList;
 import net.minecraft.server.RecipeItemStack;
 import net.minecraft.server.ShapedRecipes;
-
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;

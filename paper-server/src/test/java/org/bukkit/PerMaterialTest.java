@@ -1,17 +1,26 @@
 package org.bukkit;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
+import com.google.common.collect.Lists;
 import java.util.List;
-
+import java.util.Map;
+import net.minecraft.server.Block;
+import net.minecraft.server.BlockAccessAir;
 import net.minecraft.server.BlockFalling;
 import net.minecraft.server.BlockFire;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.Blocks;
+import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EnumHand;
+import net.minecraft.server.IBlockData;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemRecord;
+import net.minecraft.server.MovingObjectPositionBlock;
 import net.minecraft.server.TileEntityFurnace;
-
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
 import org.bukkit.support.Util;
@@ -21,20 +30,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.collect.Lists;
-import java.util.Map;
-import net.minecraft.server.Block;
-import net.minecraft.server.BlockAccessAir;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EnumDirection;
-import net.minecraft.server.EnumHand;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.MovingObjectPositionBlock;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.enchantments.EnchantmentTarget;
 
 @RunWith(Parameterized.class)
 public class PerMaterialTest extends AbstractTestingBase {

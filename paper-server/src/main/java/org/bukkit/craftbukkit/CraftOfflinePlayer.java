@@ -6,12 +6,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 import net.minecraft.server.DimensionManager;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.WhiteListEntry;
 import net.minecraft.server.WorldNBTStorage;
-
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

@@ -1,11 +1,10 @@
 package org.bukkit.entity;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
 import org.bukkit.entity.TropicalFish.Pattern;
-
 import org.junit.Test;
 
 public class TropicalFishTest {

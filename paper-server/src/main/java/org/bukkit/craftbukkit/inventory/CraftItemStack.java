@@ -1,29 +1,23 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS;
-import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS_ID;
-import static org.bukkit.craftbukkit.inventory.CraftMetaItem.ENCHANTMENTS_LVL;
-
+import static org.bukkit.craftbukkit.inventory.CraftMetaItem.*;
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-
 import net.minecraft.server.EnchantmentManager;
 import net.minecraft.server.Item;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
-
-import com.google.common.collect.ImmutableMap;
-import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
-import org.bukkit.craftbukkit.util.CraftLegacy;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {

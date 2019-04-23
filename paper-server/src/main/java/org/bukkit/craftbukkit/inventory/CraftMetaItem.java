@@ -1,5 +1,18 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
+import com.google.gson.JsonParseException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -7,28 +20,31 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.SetMultimap;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumItemSlot;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTBase;
+import net.minecraft.server.NBTCompressedStreamTools;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
 import net.minecraft.server.NBTTagString;
-
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
@@ -57,26 +73,6 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import com.google.gson.JsonParseException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import net.minecraft.server.EnumChatFormat;
-import net.minecraft.server.NBTCompressedStreamTools;
-import org.apache.commons.codec.binary.Base64;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Children must include the following:

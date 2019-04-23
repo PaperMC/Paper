@@ -1,11 +1,10 @@
 package org.bukkit.entity;
 
+import static junit.framework.TestCase.*;
 import net.minecraft.server.DragonControllerPhase;
 import org.bukkit.craftbukkit.entity.CraftEnderDragon;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static junit.framework.TestCase.assertNotNull;
 
 public class EnderDragonPhaseTest {
 

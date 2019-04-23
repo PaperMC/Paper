@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntitySalmon;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Salmon;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Salmon;
 
 public class CraftSalmon extends CraftFish implements Salmon {
 

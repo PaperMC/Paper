@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.junit.Assert.*;
 import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
@@ -21,10 +22,6 @@ import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.inventory.meta.tags.ItemTagAdapterContext;
 import org.bukkit.inventory.meta.tags.ItemTagType;
 import org.bukkit.support.AbstractTestingBase;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 

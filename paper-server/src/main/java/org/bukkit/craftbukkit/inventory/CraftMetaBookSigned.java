@@ -1,20 +1,17 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
-
+import net.minecraft.server.IChatBaseComponent;
+import net.minecraft.server.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
-
+import net.minecraft.server.NBTTagString;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BookMeta;
-
-import com.google.common.collect.ImmutableMap.Builder;
-import net.minecraft.server.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.NBTTagString;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {

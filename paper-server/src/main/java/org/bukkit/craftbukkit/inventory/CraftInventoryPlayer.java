@@ -5,7 +5,6 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.PacketPlayOutSetSlot;
 import net.minecraft.server.PlayerInventory;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.HumanEntity;

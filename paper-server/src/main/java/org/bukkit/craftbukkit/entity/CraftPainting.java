@@ -4,7 +4,6 @@ import net.minecraft.server.EntityPainting;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.Paintings;
 import net.minecraft.server.WorldServer;
-
 import org.bukkit.Art;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftArt;

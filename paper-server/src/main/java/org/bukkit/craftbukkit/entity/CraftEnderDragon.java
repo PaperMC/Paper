@@ -2,13 +2,10 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
-
 import java.util.Set;
-
 import net.minecraft.server.DragonControllerPhase;
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityEnderDragon;
-
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftBossBar;

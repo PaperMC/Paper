@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.command;
 
 import java.util.Set;
 import net.minecraft.server.CommandListenerWrapper;
-
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;

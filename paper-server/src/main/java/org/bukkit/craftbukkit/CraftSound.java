@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.SoundEffect;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Sound;
 

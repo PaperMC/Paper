@@ -3,18 +3,30 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
-
-import java.util.Random;
-import net.minecraft.server.*;
-
+import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.Blocks;
+import net.minecraft.server.ChunkSection;
+import net.minecraft.server.DataPaletteBlock;
+import net.minecraft.server.EnumSkyBlock;
+import net.minecraft.server.GameProfileSerializer;
+import net.minecraft.server.HeightMap;
+import net.minecraft.server.IBlockData;
+import net.minecraft.server.LightEngine;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NibbleArray;
+import net.minecraft.server.SectionPosition;
+import net.minecraft.server.SeededRandom;
+import net.minecraft.server.WorldChunkManager;
+import net.minecraft.server.WorldServer;
 import org.bukkit.Chunk;
+import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.entity.Entity;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.Entity;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;

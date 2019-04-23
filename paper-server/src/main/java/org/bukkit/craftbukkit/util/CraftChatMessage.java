@@ -1,21 +1,19 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import net.minecraft.server.ChatClickable;
+import net.minecraft.server.ChatClickable.EnumClickAction;
 import net.minecraft.server.ChatComponentText;
+import net.minecraft.server.ChatMessage;
 import net.minecraft.server.ChatModifier;
 import net.minecraft.server.EnumChatFormat;
-import net.minecraft.server.ChatClickable.EnumClickAction;
 import net.minecraft.server.IChatBaseComponent;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
-import net.minecraft.server.ChatMessage;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {

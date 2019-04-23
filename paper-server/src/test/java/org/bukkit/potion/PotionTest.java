@@ -1,12 +1,10 @@
 package org.bukkit.potion;
 
 import static org.junit.Assert.*;
-
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.server.IRegistry;
-
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PotionRegistry;

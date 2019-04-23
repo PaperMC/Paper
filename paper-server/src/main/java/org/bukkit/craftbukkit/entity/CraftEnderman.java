@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityEnderman;
-
 import net.minecraft.server.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;

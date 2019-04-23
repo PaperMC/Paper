@@ -1,39 +1,34 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
 import net.minecraft.server.Block;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.ITileEntity;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemBlock;
 import net.minecraft.server.ItemBlockWallable;
-import net.minecraft.server.NBTTagInt;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
-import org.bukkit.Material;
 import org.bukkit.FireworkEffect.Type;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
+import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
+import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
@@ -48,10 +43,9 @@ import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;

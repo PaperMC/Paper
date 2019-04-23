@@ -6,9 +6,7 @@ import net.minecraft.server.EntityItemFrame;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.WorldServer;
-
 import org.apache.commons.lang.Validate;
-
 import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;

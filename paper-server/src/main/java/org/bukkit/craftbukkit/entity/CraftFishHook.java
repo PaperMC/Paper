@@ -4,7 +4,6 @@ import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityFishingHook;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.MathHelper;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;

@@ -1,11 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import java.lang.reflect.Method;
 import org.bukkit.Material;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 public class ItemMetaCloneTest {
 

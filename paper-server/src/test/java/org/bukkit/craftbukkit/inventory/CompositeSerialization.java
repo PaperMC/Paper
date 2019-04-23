@@ -1,11 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bukkit.Material;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;

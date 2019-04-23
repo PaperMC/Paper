@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.server.BiomeBase;
+import net.minecraft.server.DataPaletteBlock;
+import net.minecraft.server.HeightMap;
+import net.minecraft.server.IBlockData;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -8,11 +11,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.DataPaletteBlock;
-import net.minecraft.server.HeightMap;
-import net.minecraft.server.IBlockData;
 
 /**
  * Represents a static, thread-safe snapshot of chunk of blocks

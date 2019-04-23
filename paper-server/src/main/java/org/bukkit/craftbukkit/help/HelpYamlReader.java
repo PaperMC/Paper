@@ -1,19 +1,17 @@
 package org.bukkit.craftbukkit.help;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Server;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.help.HelpTopic;
-
 import com.google.common.base.Charsets;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
+import org.bukkit.ChatColor;
+import org.bukkit.Server;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.help.HelpTopic;
 
 /**
  * HelpYamlReader is responsible for processing the contents of the help.yml file.

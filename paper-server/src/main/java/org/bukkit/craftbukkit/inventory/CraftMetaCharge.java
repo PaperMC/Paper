@@ -1,16 +1,13 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
-
 import net.minecraft.server.NBTTagCompound;
-
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
-
-import com.google.common.collect.ImmutableMap.Builder;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {

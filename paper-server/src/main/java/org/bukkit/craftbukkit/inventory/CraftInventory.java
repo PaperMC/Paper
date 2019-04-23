@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-
 import net.minecraft.server.IHopper;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.InventoryCrafting;
@@ -20,17 +19,15 @@ import net.minecraft.server.TileEntityFurnace;
 import net.minecraft.server.TileEntityLectern;
 import net.minecraft.server.TileEntityShulkerBox;
 import net.minecraft.server.TileEntitySmoker;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.craftbukkit.util.CraftLegacy;
 
 public class CraftInventory implements Inventory {
     protected final IInventory inventory;

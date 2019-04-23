@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
-import java.util.UUID;
 import com.google.common.base.Preconditions;
+import java.util.UUID;
 import net.minecraft.server.EntityAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Animals;

@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPufferFish;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.PufferFish;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.PufferFish;
 
 public class CraftPufferFish extends CraftFish implements PufferFish {
 

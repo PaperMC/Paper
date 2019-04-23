@@ -1,18 +1,13 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
-import com.mojang.datafixers.Dynamic;
 import java.util.Map;
-import net.minecraft.server.DataConverterTypes;
-import net.minecraft.server.DynamicOpsNBT;
 import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftLegacy;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.material.MaterialData;
