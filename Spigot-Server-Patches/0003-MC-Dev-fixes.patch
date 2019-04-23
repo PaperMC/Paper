@@ -1,87 +1,62 @@
-From 30a67e448eb304db37ace97ac0cc0f1347cd5bb6 Mon Sep 17 00:00:00 2001
+From ea2cb0f4f240fb9536382b71b44f412193744ebc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index bcb4b5e5c..c399bdecc 100644
+index 8f640f0c24..2831c03a69 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -124,7 +124,7 @@ public abstract class BiomeBase {
+@@ -42,7 +42,7 @@ public abstract class BiomeBase {
  
      @Nullable
      public static BiomeBase a(BiomeBase biomebase) {
--        return (BiomeBase) BiomeBase.aH.fromId(IRegistry.BIOME.a((Object) biomebase));
-+        return (BiomeBase) BiomeBase.aH.fromId(IRegistry.BIOME.a(biomebase)); // Paper - decompile fix
+-        return (BiomeBase) BiomeBase.c.fromId(IRegistry.BIOME.a((Object) biomebase));
++        return (BiomeBase) BiomeBase.c.fromId(IRegistry.BIOME.a(biomebase)); // Paper - decompile fix
      }
  
-     public static <C extends WorldGenFeatureConfiguration> WorldGenCarverWrapper<C> a(WorldGenCarver<C> worldgencarver, C c0) {
+     public static <C extends WorldGenCarverConfiguration> WorldGenCarverWrapper<C> a(WorldGenCarverAbstract<C> worldgencarverabstract, C c0) {
+@@ -202,7 +202,7 @@ public abstract class BiomeBase {
+ 
+     @Nullable
+     public <C extends WorldGenFeatureConfiguration> C b(StructureGenerator<C> structuregenerator) {
+-        return (WorldGenFeatureConfiguration) this.t.get(structuregenerator);
++        return (C) this.t.get(structuregenerator); // Paper - decompile fix
+     }
+ 
+     public List<WorldGenFeatureConfigured<?>> e() {
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 16bca7942..13dc7abc5 100644
+index dc823e88a5..3745f66de5 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
+@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
  @Immutable
- public class BlockPosition extends BaseBlockPosition {
+ public class BlockPosition extends BaseBlockPosition implements MinecraftSerializable {
  
 -    private static final Logger b = LogManager.getLogger();
 +    //private static final Logger b = LogManager.getLogger(); // Paper - variable name conflict, logger isn't used
      public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
      private static final int c = 1 + MathHelper.e(MathHelper.c(30000000));
      private static final int d = BlockPosition.c;
-@@ -147,7 +147,7 @@ public class BlockPosition extends BaseBlockPosition {
-         return a(Math.min(blockposition.getX(), blockposition1.getX()), Math.min(blockposition.getY(), blockposition1.getY()), Math.min(blockposition.getZ(), blockposition1.getZ()), Math.max(blockposition.getX(), blockposition1.getX()), Math.max(blockposition.getY(), blockposition1.getY()), Math.max(blockposition.getZ(), blockposition1.getZ()));
-     }
+@@ -57,12 +57,12 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+         OfInt ofint = dynamic.asIntStream().spliterator();
+         int[] aint = new int[3];
  
--    public static Iterable<BlockPosition> a(int i, int j, int k, int l, int i1, int j1) {
-+    public static Iterable<BlockPosition> a(int ix, int jx, int kx, int l, int i1, int j1) { // Paper - decompile fix
-         return () -> {
-             return new AbstractIterator<BlockPosition>() {
-                 private boolean g = true;
-@@ -158,21 +158,21 @@ public class BlockPosition extends BaseBlockPosition {
-                 protected BlockPosition computeNext() {
-                     if (this.g) {
-                         this.g = false;
--                        this.h = i;
--                        this.i = j;
--                        this.j = k;
--                        return new BlockPosition(i, j, k);
-+                        this.h = ix; // Paper - decompile fix
-+                        this.i = jx; // Paper - decompile fix
-+                        this.j = kx; // Paper - decompile fix
-+                        return new BlockPosition(ix, jx, kx);
-                     } else if (this.h == l && this.i == i1 && this.j == j1) {
-                         return (BlockPosition) this.endOfData();
-                     } else {
-                         if (this.h < l) {
-                             ++this.h;
-                         } else if (this.i < i1) {
--                            this.h = i;
-+                            this.h = ix; // Paper - decompile fix
-                             ++this.i;
-                         } else if (this.j < j1) {
--                            this.h = i;
--                            this.i = j;
-+                            this.h = ix; // Paper - decompile fix
-+                            this.i = jx; // Paper - decompile fix
-                             ++this.j;
-                         }
- 
-@@ -206,8 +206,11 @@ public class BlockPosition extends BaseBlockPosition {
-                         if (this.g.b < l) {
-                             ++this.g.b;
-                         } else if (this.g.c < i1) {
-+                            this.g.b = i; // Paper - decompile fix Readd line removed by the decompiler
-                             ++this.g.c;
-                         } else if (this.g.d < j1) {
-+                            this.g.b = i; // Paper - decompile fix Readd line removed by the decompiler
-+                            this.g.c = j; // Paper - decompile fix Readd line removed by the decompiler
-                             ++this.g.d;
-                         }
- 
+-        if (ofint.tryAdvance((i) -> {
++        if (ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decomile fix
+             aint[0] = i;
+-        }) && ofint.tryAdvance((i) -> {
++        }) && ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decompile fix
+             aint[1] = i;
+         })) {
+-            ofint.tryAdvance((i) -> {
++            ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decompile fix
+                 aint[2] = i;
+             });
+         }
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 401b6d970..986b9ccea 100644
+index b4c8722f04..59d86fc66e 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
 @@ -20,10 +20,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
@@ -97,57 +72,8 @@ index 401b6d970..986b9ccea 100644
              String s1 = ((INamable) t0).getName();
  
              if (this.b.containsKey(s1)) {
-diff --git a/src/main/java/net/minecraft/server/DefinedStructure.java b/src/main/java/net/minecraft/server/DefinedStructure.java
-index 66b168396..83db94c4a 100644
---- a/src/main/java/net/minecraft/server/DefinedStructure.java
-+++ b/src/main/java/net/minecraft/server/DefinedStructure.java
-@@ -85,7 +85,7 @@ public class DefinedStructure {
-     }
- 
-     private void a(World world, BlockPosition blockposition, BlockPosition blockposition1) {
--        List<Entity> list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (entity) -> {
-+        List<Entity> list = world.a(Entity.class, new AxisAlignedBB(blockposition, blockposition1), (java.util.function.Predicate<? super Entity>) (entity) -> { // Paper - decompile fix
-             return !(entity instanceof EntityHuman);
-         });
- 
-@@ -235,7 +235,7 @@ public class DefinedStructure {
-                 boolean flag = true;
-                 EnumDirection[] aenumdirection = new EnumDirection[] { EnumDirection.UP, EnumDirection.NORTH, EnumDirection.EAST, EnumDirection.SOUTH, EnumDirection.WEST};
- 
--                int l1;
-+                //int l1; // Paper - decompile fix
- 
-                 while (flag && !list1.isEmpty()) {
-                     flag = false;
-@@ -245,7 +245,7 @@ public class DefinedStructure {
-                         BlockPosition blockposition2 = (BlockPosition) iterator1.next();
-                         Fluid fluid1 = generatoraccess.getFluid(blockposition2);
- 
--                        for (l1 = 0; l1 < aenumdirection.length && !fluid1.d(); ++l1) {
-+                        for (int l1 = 0; l1 < aenumdirection.length && !fluid1.d(); ++l1) { // Paper - decompile fix
-                             Fluid fluid2 = generatoraccess.getFluid(blockposition2.shift(aenumdirection[l1]));
- 
-                             if (fluid2.getHeight() > fluid1.getHeight() || fluid2.d() && !fluid1.d()) {
-@@ -270,7 +270,7 @@ public class DefinedStructure {
-                     int i2 = j;
-                     int j2 = k;
- 
--                    l1 = l;
-+                    int l1 = l; // Paper - decompile fix
-                     Iterator iterator2 = list2.iterator();
- 
-                     Pair pair;
-@@ -717,7 +717,7 @@ public class DefinedStructure {
-         public IBlockData a(int i) {
-             IBlockData iblockdata = (IBlockData) this.b.fromId(i);
- 
--            return iblockdata == null ? DefinedStructure.a.a : iblockdata;
-+            return iblockdata == null ? a : iblockdata; // Paper - decompile fix
-         }
- 
-         public Iterator<IBlockData> iterator() {
 diff --git a/src/main/java/net/minecraft/server/GameRules.java b/src/main/java/net/minecraft/server/GameRules.java
-index d954b94c3..fd2a4f1b8 100644
+index d8d2267084..3de9d264db 100644
 --- a/src/main/java/net/minecraft/server/GameRules.java
 +++ b/src/main/java/net/minecraft/server/GameRules.java
 @@ -17,7 +17,7 @@ import javax.annotation.Nullable;
@@ -169,7 +95,7 @@ index d954b94c3..fd2a4f1b8 100644
              this.e = bifunction;
          }
 diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
-index 1425584ed..b2757aad8 100644
+index cb0c08a144..9aabcb630f 100644
 --- a/src/main/java/net/minecraft/server/NBTBase.java
 +++ b/src/main/java/net/minecraft/server/NBTBase.java
 @@ -88,7 +88,7 @@ public interface NBTBase {
@@ -181,49 +107,8 @@ index 1425584ed..b2757aad8 100644
  
      default String asString() {
          return this.toString();
-diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-index 767013cae..e0fb6fb49 100644
---- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
-+++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-@@ -66,7 +66,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
-         return stringbuilder.append(']').toString();
-     }
- 
--    public NBTBase clone() {
-+    @Override
-+    public NBTTagByteArray clone() { // Paper - decompile fix
-         byte[] abyte = new byte[this.data.length];
- 
-         System.arraycopy(this.data, 0, abyte, 0, this.data.length);
-diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index 2b7b8be8a..27debcfca 100644
---- a/src/main/java/net/minecraft/server/NBTTagList.java
-+++ b/src/main/java/net/minecraft/server/NBTTagList.java
-@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
- public class NBTTagList extends NBTList<NBTBase> {
- 
-     private static final Logger f = LogManager.getLogger();
--    private List<NBTBase> list = Lists.newArrayList();
-+    public List<NBTBase> list = Lists.newArrayList(); // Paper
-     private byte type = 0;
- 
-     public NBTTagList() {}
-diff --git a/src/main/java/net/minecraft/server/Registry.java b/src/main/java/net/minecraft/server/Registry.java
-index 723372f26..9efec49d6 100644
---- a/src/main/java/net/minecraft/server/Registry.java
-+++ b/src/main/java/net/minecraft/server/Registry.java
-@@ -1,3 +1,8 @@
- package net.minecraft.server;
- 
--public interface Registry extends Iterable {}
-+import java.util.Iterator;
-+public interface Registry<T> extends Iterable<T> { // Paper - decompile fix
-+
-+    @Override
-+    Iterator<T> iterator(); // Paper - decompile fix
-+}
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 50410264f..a894f7886 100644
+index 7f89562e90..4efcb8b595 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
 +++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
 @@ -27,7 +27,7 @@ public class RegistryBlockID<T> implements Registry<T> {
@@ -236,7 +121,7 @@ index 50410264f..a894f7886 100644
  
          this.c.set(i, t0);
 diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
-index 9400a4369..5a5c464ea 100644
+index 4cb78c6a3f..e15d286710 100644
 --- a/src/main/java/net/minecraft/server/RegistryID.java
 +++ b/src/main/java/net/minecraft/server/RegistryID.java
 @@ -17,9 +17,9 @@ public class RegistryID<K> implements Registry<K> {
@@ -251,7 +136,7 @@ index 9400a4369..5a5c464ea 100644
      }
  
      public int getId(@Nullable K k0) {
-@@ -54,9 +54,9 @@ public class RegistryID<K> implements Registry<K> {
+@@ -55,9 +55,9 @@ public class RegistryID<K> implements Registry<K> {
          K[] ak = this.b;
          int[] aint = this.c;
  
@@ -264,26 +149,27 @@ index 9400a4369..5a5c464ea 100644
          this.f = 0;
  
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
-index c01a05b25..478bf4997 100644
+index 096277de1c..d484e626d2 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
 +++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
-@@ -39,14 +39,14 @@ public class WorldPersistentData {
+@@ -37,7 +37,7 @@ public class WorldPersistentData {
+         if (t0 != null) {
+             return t0;
+         } else {
+-            T t1 = (PersistentBase) supplier.get();
++            T t1 = supplier.get(); // Paper - decompile fix
  
-     @Nullable
-     public <T extends PersistentBase> T a(Function<String, T> function, String s) {
--        PersistentBase persistentbase = (PersistentBase) this.data.get(s);
-+        T persistentbase = (T) this.data.get(s); // Paper - decompile fix
+             this.a(t1);
+             return t1;
+@@ -64,7 +64,7 @@ public class WorldPersistentData {
+             }
+         }
  
-         if (persistentbase == null && this.e != null) {
-             try {
-                 File file = this.e.getDataFile(this.b, s);
+-        return persistentbase;
++        return (T) persistentbase; // Paper - decompile fix
+     }
  
-                 if (file != null && file.exists()) {
--                    persistentbase = (PersistentBase) function.apply(s);
-+                    persistentbase = function.apply(s); // Paper - decompile fix
-                     persistentbase.a(a(this.e, this.b, s, 1631).getCompound("data"));
-                     this.data.put(s, persistentbase);
-                 }
+     public void a(PersistentBase persistentbase) {
 -- 
 2.21.0
 

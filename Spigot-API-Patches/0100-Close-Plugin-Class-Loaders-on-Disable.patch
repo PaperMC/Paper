@@ -1,4 +1,4 @@
-From 01b125b0fe0165e700c81c3211f8510da00461a5 Mon Sep 17 00:00:00 2001
+From c81c54c9d585ac5c34aa58f474b32d44854bb8a4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -7,10 +7,10 @@ This should close more memory leaks from /reload and disabling plugins,
 by closing the class loader and the jar file.
 
 diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
-index da7839aa9..fbd65e8b0 100644
+index a88733f1..6ab9cd82 100644
 --- a/src/main/java/org/bukkit/plugin/PluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
-@@ -78,4 +78,18 @@ public interface PluginLoader {
+@@ -77,4 +77,18 @@ public interface PluginLoader {
       * @param plugin Plugin to disable
       */
      public void disablePlugin(@NotNull Plugin plugin);
@@ -30,10 +30,10 @@ index da7839aa9..fbd65e8b0 100644
 +    // Paper end - close Classloader on disable
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
-index a468467b4..ba4ed7ed7 100644
+index 41e26451..86cc5025 100644
 --- a/src/main/java/org/bukkit/plugin/PluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/PluginManager.java
-@@ -162,6 +162,18 @@ public interface PluginManager {
+@@ -161,6 +161,18 @@ public interface PluginManager {
       */
      public void disablePlugin(@NotNull Plugin plugin);
  
@@ -53,10 +53,10 @@ index a468467b4..ba4ed7ed7 100644
       * Gets a {@link Permission} from its fully qualified name
       *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 12e17709c..7d4ca43b5 100644
+index e4a0f938..269bb5ca 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -419,17 +419,29 @@ public final class SimplePluginManager implements PluginManager {
+@@ -418,17 +418,29 @@ public final class SimplePluginManager implements PluginManager {
          }
      }
  
@@ -88,7 +88,7 @@ index 12e17709c..7d4ca43b5 100644
              } catch (Throwable ex) {
                  handlePluginException("Error occurred (in the plugin loader) while disabling "
                          + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
-@@ -475,7 +487,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -474,7 +486,7 @@ public final class SimplePluginManager implements PluginManager {
  
      public void clearPlugins() {
          synchronized (this) {
@@ -98,10 +98,10 @@ index 12e17709c..7d4ca43b5 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index b9bf2124b..095448fe7 100644
+index 024d8393..ca29394d 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -328,7 +328,7 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -327,7 +327,7 @@ public final class JavaPluginLoader implements PluginLoader {
              } catch (Throwable ex) {
                  server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
                  // Paper start - Disable plugins that fail to load
@@ -110,7 +110,7 @@ index b9bf2124b..095448fe7 100644
                  return;
                  // Paper end
              }
-@@ -340,6 +340,12 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -339,6 +339,12 @@ public final class JavaPluginLoader implements PluginLoader {
      }
  
      public void disablePlugin(@NotNull Plugin plugin) {
@@ -123,7 +123,7 @@ index b9bf2124b..095448fe7 100644
          Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
  
          if (plugin.isEnabled()) {
-@@ -366,6 +372,16 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -365,6 +371,16 @@ public final class JavaPluginLoader implements PluginLoader {
                  for (String name : names) {
                      removeClass(name);
                  }

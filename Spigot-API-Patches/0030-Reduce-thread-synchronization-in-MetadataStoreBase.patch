@@ -1,4 +1,4 @@
-From 3fe3136ff948b8361bfadeb5e0acd6836bf8831c Mon Sep 17 00:00:00 2001
+From e19f0490d85cb7478d10caf867592ab896f275ee Mon Sep 17 00:00:00 2001
 From: crast <contact@jamescrasta.com>
 Date: Sat, 1 Jun 2013 13:52:30 -0600
 Subject: [PATCH] Reduce thread synchronization in MetadataStoreBase
@@ -8,22 +8,19 @@ limited synchronized portions to allow much higher concurrency in
 MetadataStore as well as far less locking, especially on reads
 
 diff --git a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
-index 9dbc32d8..32728628 100644
+index 02795349..b3d85d97 100644
 --- a/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
 +++ b/src/main/java/org/bukkit/metadata/MetadataStoreBase.java
-@@ -5,9 +5,10 @@ import org.bukkit.plugin.Plugin;
+@@ -12,7 +12,7 @@ import org.bukkit.plugin.Plugin;
  import org.jetbrains.annotations.NotNull;
- 
- import java.util.*;
-+import java.util.concurrent.ConcurrentHashMap;
  
  public abstract class MetadataStoreBase<T> {
 -    private Map<String, Map<Plugin, MetadataValue>> metadataMap = new HashMap<String, Map<Plugin, MetadataValue>>();
-+    private Map<String, Map<Plugin, MetadataValue>> metadataMap = new ConcurrentHashMap<String, Map<Plugin, MetadataValue>>(); // Paper
++    private Map<String, Map<Plugin, MetadataValue>> metadataMap = new java.util.concurrent.ConcurrentHashMap<String, Map<Plugin, MetadataValue>>(); // Paper
  
      /**
       * Adds a metadata value to an object. Each metadata value is owned by a
-@@ -41,7 +42,9 @@ public abstract class MetadataStoreBase<T> {
+@@ -46,7 +46,9 @@ public abstract class MetadataStoreBase<T> {
              entry = new WeakHashMap<Plugin, MetadataValue>(1);
              metadataMap.put(key, entry);
          }
@@ -34,7 +31,7 @@ index 9dbc32d8..32728628 100644
      }
  
      /**
-@@ -55,10 +58,11 @@ public abstract class MetadataStoreBase<T> {
+@@ -60,10 +62,11 @@ public abstract class MetadataStoreBase<T> {
       * @see MetadataStore#getMetadata(Object, String)
       */
      @NotNull
@@ -49,7 +46,7 @@ index 9dbc32d8..32728628 100644
              return Collections.unmodifiableList(new ArrayList<MetadataValue>(values));
          } else {
              return Collections.emptyList();
-@@ -73,7 +77,7 @@ public abstract class MetadataStoreBase<T> {
+@@ -78,7 +81,7 @@ public abstract class MetadataStoreBase<T> {
       * @param metadataKey the unique metadata key being queried.
       * @return the existence of the metadataKey within subject.
       */
@@ -58,7 +55,7 @@ index 9dbc32d8..32728628 100644
          String key = disambiguate(subject, metadataKey);
          return metadataMap.containsKey(key);
      }
-@@ -89,17 +93,18 @@ public abstract class MetadataStoreBase<T> {
+@@ -94,17 +97,18 @@ public abstract class MetadataStoreBase<T> {
       *     org.bukkit.plugin.Plugin)
       * @throws IllegalArgumentException If plugin is null
       */
@@ -82,7 +79,7 @@ index 9dbc32d8..32728628 100644
          }
      }
  
-@@ -112,7 +117,7 @@ public abstract class MetadataStoreBase<T> {
+@@ -117,7 +121,7 @@ public abstract class MetadataStoreBase<T> {
       * @see MetadataStore#invalidateAll(org.bukkit.plugin.Plugin)
       * @throws IllegalArgumentException If plugin is null
       */

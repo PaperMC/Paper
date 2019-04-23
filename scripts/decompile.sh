@@ -22,10 +22,11 @@ forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptio
 classdir="$decompiledir/classes"
 versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
 
-if [ ! -f "$versionjson" ]; then
+if [[ ! -f "$versionjson" ]]; then
     echo "Downloading $minecraftversion JSON Data"
-    verescaped=$(echo ${minecraftversion} | sed 's/\./\\./g')
-    verentry=$(curl -s "https://launchermeta.mojang.com/mc/game/version_manifest.json" | grep -oE "{\"id\": \"${verescaped}\".*${verescaped}\.json")
+    verescaped=$(echo ${minecraftversion} | sed 's/\-pre/ Pre-Release /g' | sed 's/\./\\./g')
+    urlescaped=$(echo ${verescaped} | sed 's/ /_/g')
+    verentry=$(curl -s "https://launchermeta.mojang.com/mc/game/version_manifest.json" | grep -oE "\{\"id\": \"${verescaped}\".*${urlescaped}\.json")
     jsonurl=$(echo $verentry | grep -oE https:\/\/.*\.json)
     curl -o "$versionjson" "$jsonurl"
     echo "$versionjson - $jsonurl"
@@ -124,7 +125,7 @@ if [ ! -d "$spigotdecompiledir/net" ]; then
     echo "Decompiling classes (stage 2)..."
     cd "$basedir"
     set +e
-    java -jar "$workdir/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 -rsy=1 "$classdir" "$spigotdecompiledir"
+    java -jar "$workdir/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 -rsy=1 -aoa=1 "$classdir" "$spigotdecompiledir"
     if [ "$?" != "0" ]; then
         rm -rf "$spigotdecompiledir/net"
         echo "Failed to decompile classes."
