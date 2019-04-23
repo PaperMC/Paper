@@ -15,8 +15,21 @@ which results in a hard crash.
 
 This change removes the synchronize and adds some protection around enable/disable
 
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 9391bbf0..5098eade 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface Entity extends Metadatable, CommandSender, Nameable {
+ 
+-    /**
++    /*
+      * Gets the entity's current position
+      *
+      * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 7d4ca43b5..9ec042fd7 100644
+index 269bb5ca..5d99a41a 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
@@ -67,19 +80,24 @@ index 7d4ca43b5..9ec042fd7 100644
 -            }
 -            fireEvent(event);
 -        } else {
+-            if (!server.isPrimaryThread()) {
+-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
+-            }
 -            synchronized (this) {
 -                fireEvent(event);
 -            }
--        }
--    }
--
--    private void fireEvent(@NotNull Event event) {
 +        // Paper - replace callEvent by merging to below method
++        if (event.isAsynchronous() && server.isPrimaryThread()) {
++            throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+         }
+-    }
+ 
+-    private void fireEvent(@NotNull Event event) {
          HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
  
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index 6b86128e1..56308c0c6 100644
+index 5e986de8..2b50fe63 100644
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 @@ -0,0 +0,0 @@ public class PluginManagerTest {
@@ -109,12 +127,12 @@ index 6b86128e1..56308c0c6 100644
      public void testAsyncLocked() throws InterruptedException {
          final Event event = new TestEvent(true);
 @@ -0,0 +0,0 @@ public class PluginManagerTest {
-         secondThread.join();
-         assertThat(store.value, is(instanceOf(IllegalStateException.class)));
-         assertThat(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.", is(((Throwable) store.value).getMessage()));
+         if (store.value == null) {
+             throw new IllegalStateException("No exception thrown");
+         }
 -    }
-+    }*/ // Paper end
++    } */ // Paper
  
      @Test
-     public void testAsyncUnlocked() throws InterruptedException {
+     public void testRemovePermissionByNameLower() {
 --

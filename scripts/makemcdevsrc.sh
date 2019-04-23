@@ -14,7 +14,7 @@ papernms="Paper-Server/src/main/java/net/minecraft/server"
 mcdevsrc="${decompiledir}/src/net/minecraft/server"
 rm -rf "${mcdevsrc}"
 mkdir -p "${mcdevsrc}"
-cp "${nms}"/*.java "${mcdevsrc}/"
+find ${nms} -name *.java -print0 | xargs -I\{} -0 cp \{} "${mcdevsrc}/"
 
 for file in "${nms}/"*
 do
