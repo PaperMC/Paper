@@ -1,15 +1,16 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.Futures;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -85,8 +86,6 @@ public class CraftWorld implements World {
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
     private int ambientSpawn = -1;
-    private int chunkLoadCount = 0;
-    private int chunkGCTickCount;
 
     private static final Random rand = new Random();
 
@@ -95,10 +94,6 @@ public class CraftWorld implements World {
         this.generator = gen;
 
         environment = env;
-
-        if (server.chunkGCPeriod > 0) {
-            chunkGCTickCount = rand.nextInt(server.chunkGCPeriod);
-        }
     }
 
     public Block getBlockAt(int x, int y, int z) {
@@ -107,10 +102,10 @@ public class CraftWorld implements World {
 
     public int getHighestBlockYAt(int x, int z) {
         if (!isChunkLoaded(x >> 4, z >> 4)) {
-            loadChunk(x >> 4, z >> 4);
+            getChunkAt(x >> 4, z >> 4); // Transient load for this tick
         }
 
-        return world.getHighestBlockYAt(HeightMap.Type.LIGHT_BLOCKING, new BlockPosition(x, 0, z)).getY();
+        return world.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(x, 0, z)).getY();
     }
 
     public Location getSpawnLocation() {
@@ -141,7 +136,7 @@ public class CraftWorld implements World {
     }
 
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkProvider().getChunkAt(x, z, true, true).bukkitChunk;
+        return this.world.getChunkProvider().getChunkAt(x, z, true).bukkitChunk;
     }
 
     public Chunk getChunkAt(Block block) {
@@ -149,24 +144,23 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkLoaded(int x, int z) {
-        return world.getChunkProvider().isLoaded(x, z);
+        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
+        return chunk != null && chunk.loaded;
     }
 
     @Override
     public boolean isChunkGenerated(int x, int z) {
-        return isChunkLoaded(x, z) || ((ChunkRegionLoader) world.getChunkProvider().chunkLoader).chunkExists(x, z);
+        try {
+            return isChunkLoaded(x, z) || world.getChunkProvider().playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public Chunk[] getLoadedChunks() {
-        Object[] chunks = world.getChunkProvider().chunks.values().toArray();
-        org.bukkit.Chunk[] craftChunks = new CraftChunk[chunks.length];
+        Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
 
-        for (int i = 0; i < chunks.length; i++) {
-            net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) chunks[i];
-            craftChunks[i] = chunk.bukkitChunk;
-        }
-
-        return craftChunks;
+        return chunks.values().stream().map(PlayerChunk::getChunk).filter(Objects::nonNull).filter((chunk) -> chunk.loaded).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
     }
 
     public void loadChunk(int x, int z) {
@@ -182,50 +176,39 @@ public class CraftWorld implements World {
     }
 
     public boolean unloadChunk(int x, int z, boolean save) {
-        return unloadChunk(x, z, save, false);
+        return unloadChunk0(x, z, save);
     }
 
     public boolean unloadChunkRequest(int x, int z) {
-        return unloadChunkRequest(x, z, true);
-    }
-
-    public boolean unloadChunkRequest(int x, int z, boolean safe) {
-        if (safe && isChunkInUse(x, z)) {
-            return false;
-        }
-
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
+        net.minecraft.server.IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, false);
         if (chunk != null) {
-            world.getChunkProvider().unload(chunk);
+            world.getChunkProvider().removeTicket(TicketType.PLUGIN, chunk.getPos(), 1, Unit.INSTANCE);
         }
 
         return true;
     }
 
-    public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-        if (isChunkInUse(x, z)) {
-            return false;
-        }
-
-        return unloadChunk0(x, z, save);
-    }
-
     private boolean unloadChunk0(int x, int z, boolean save) {
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false, false);
+        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, false);
         if (chunk == null) {
             return true;
         }
 
-        // If chunk had previously been queued to save, must do save to avoid loss of that data
-        return world.getChunkProvider().unloadChunk(chunk, chunk.mustSave || save);
+        chunk.mustNotSave = !save;
+        unloadChunkRequest(x, z);
+
+        world.getChunkProvider().purgeUnload();
+        return !isChunkLoaded(x, z);
     }
 
     public boolean regenerateChunk(int x, int z) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)");
+        /*
         if (!unloadChunk0(x, z, false)) {
             return false;
         }
 
-        final long chunkKey = ChunkCoordIntPair.a(x, z);
+        final long chunkKey = ChunkCoordIntPair.pair(x, z);
         world.getChunkProvider().unloadQueue.remove(chunkKey);
 
         net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
@@ -239,6 +222,7 @@ public class CraftWorld implements World {
         }
 
         return chunk != null;
+        */
     }
 
     public boolean refreshChunk(int x, int z) {
@@ -262,12 +246,24 @@ public class CraftWorld implements World {
     }
 
     public boolean isChunkInUse(int x, int z) {
-        return world.getPlayerChunkMap().isChunkInUse(x, z) || world.isForceLoaded(x, z);
+        return isChunkLoaded(x, z);
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
-        chunkLoadCount++;
-        return world.getChunkProvider().getChunkAt(x, z, true, generate) != null;
+        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, generate ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
+
+        // If generate = false, but the chunk already exists, we will get this back.
+        if (chunk instanceof ProtoChunkExtension) {
+            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
+            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
+        }
+
+        if (chunk instanceof net.minecraft.server.Chunk) {
+            world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
+            return true;
+        }
+
+        return false;
     }
 
     public boolean isChunkLoaded(Chunk chunk) {
@@ -281,7 +277,7 @@ public class CraftWorld implements World {
 
     @Override
     public boolean isChunkForceLoaded(int x, int z) {
-        return getHandle().isForceLoaded(x, z);
+        return getHandle().getForceLoadedChunks().contains(ChunkCoordIntPair.pair(x, z));
     }
 
     @Override
@@ -293,8 +289,8 @@ public class CraftWorld implements World {
     public Collection<Chunk> getForceLoadedChunks() {
         Set<Chunk> chunks = new HashSet<>();
 
-        for (long coord : getHandle().ag()) { // PAIL
-            chunks.add(getChunkAt(ChunkCoordIntPair.a(coord), ChunkCoordIntPair.b(coord)));
+        for (long coord : getHandle().getForceLoadedChunks()) {
+            chunks.add(getChunkAt(ChunkCoordIntPair.getX(coord), ChunkCoordIntPair.getZ(coord)));
         }
 
         return Collections.unmodifiableCollection(chunks);
@@ -336,14 +332,14 @@ public class CraftWorld implements World {
 
         EntityArrow arrow;
         if (TippedArrow.class.isAssignableFrom(clazz)) {
-            arrow = new EntityTippedArrow(world);
+            arrow = EntityTypes.ARROW.a(world);
             ((EntityTippedArrow) arrow).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
         } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
-            arrow = new EntitySpectralArrow(world);
+            arrow = EntityTypes.SPECTRAL_ARROW.a(world);
         } else if (Trident.class.isAssignableFrom(clazz)){
-            arrow = new EntityThrownTrident(world);
+            arrow = EntityTypes.TRIDENT.a(world);
         } else {
-            arrow = new EntityTippedArrow(world);
+            arrow = EntityTypes.ARROW.a(world);
         }
 
         arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
@@ -374,56 +370,56 @@ public class CraftWorld implements World {
         net.minecraft.server.WorldGenerator gen;
         switch (type) {
         case BIG_TREE:
-            gen = new WorldGenBigTree(true);
+            gen = WorldGenerator.FANCY_TREE;
             break;
         case BIRCH:
-            gen = new WorldGenForest(true, false);
+            gen = WorldGenerator.BIRCH_TREE;
             break;
         case REDWOOD:
-            gen = new WorldGenTaiga2(true);
+            gen = WorldGenerator.SPRUCE_TREE;
             break;
         case TALL_REDWOOD:
-            gen = new WorldGenTaiga1();
+            gen = WorldGenerator.PINE_TREE;
             break;
         case JUNGLE:
-            gen = new WorldGenJungleTree(true, 10, 20, Blocks.JUNGLE_LOG.getBlockData(), Blocks.JUNGLE_LEAVES.getBlockData());
+            gen = WorldGenerator.MEGA_JUNGLE_TREE;
             break;
         case SMALL_JUNGLE:
-            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), Blocks.JUNGLE_LOG.getBlockData(), Blocks.JUNGLE_LEAVES.getBlockData(), false);
+            gen = WorldGenerator.JUNGLE_TREE;
             break;
         case COCOA_TREE:
-            gen = new WorldGenJungleTree(true, 10, 20, Blocks.JUNGLE_LOG.getBlockData(), Blocks.JUNGLE_LEAVES.getBlockData());
+            gen = WorldGenerator.MEGA_JUNGLE_TREE;
             break;
         case JUNGLE_BUSH:
-            gen = new WorldGenGroundBush(Blocks.JUNGLE_LOG.getBlockData(), Blocks.OAK_LEAVES.getBlockData());
+            gen = WorldGenerator.JUNGLE_GROUND_BUSH;
             break;
         case RED_MUSHROOM:
-            gen = new WorldGenHugeMushroomRed();
+            gen = WorldGenerator.HUGE_RED_MUSHROOM;
             break;
         case BROWN_MUSHROOM:
-            gen = new WorldGenHugeMushroomBrown();
+            gen = WorldGenerator.HUGE_BROWN_MUSHROOM;
             break;
         case SWAMP:
-            gen = new WorldGenSwampTree();
+            gen = WorldGenerator.SWAMP_TREE;
             break;
         case ACACIA:
-            gen = new WorldGenAcaciaTree(true);
+            gen = WorldGenerator.SAVANNA_TREE;
             break;
         case DARK_OAK:
-            gen = new WorldGenForestTree(true);
+            gen = WorldGenerator.DARK_OAK_TREE;
             break;
         case MEGA_REDWOOD:
-            gen = new WorldGenMegaTree(false, rand.nextBoolean());
+            gen = WorldGenerator.MEGA_PINE_TREE;
             break;
         case TALL_BIRCH:
-            gen = new WorldGenForest(true, true);
+            gen = WorldGenerator.SUPER_BIRCH_TREE;
             break;
         case CHORUS_PLANT:
             ((BlockChorusFlower) Blocks.CHORUS_FLOWER).a(world, pos, rand, 8);
             return true;
         case TREE:
         default:
-            gen = new WorldGenTrees(true);
+            gen = WorldGenerator.NORMAL_TREE;
             break;
         }
 
@@ -508,7 +504,7 @@ public class CraftWorld implements World {
     }
 
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks) {
-        return !world.createExplosion(null, x, y, z, power, setFire, breakBlocks).wasCanceled;
+        return !world.createExplosion(null, x, y, z, power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
     }
 
     public boolean createExplosion(Location loc, float power) {
@@ -528,13 +524,13 @@ public class CraftWorld implements World {
             environment = env;
             switch (env) {
                 case NORMAL:
-                    world.worldProvider = new WorldProviderNormal();
+                    world.worldProvider = new WorldProviderNormal(world, world.dimension);
                     break;
                 case NETHER:
-                    world.worldProvider = new WorldProviderHell();
+                    world.worldProvider = new WorldProviderHell(world, world.dimension);
                     break;
                 case THE_END:
-                    world.worldProvider = new WorldProviderTheEnd();
+                    world.worldProvider = new WorldProviderTheEnd(world, world.dimension);
                     break;
             }
         }
@@ -597,7 +593,7 @@ public class CraftWorld implements World {
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
 
-        for (Object o : world.entityList) {
+        for (Object o : world.entitiesById.values()) {
             if (o instanceof net.minecraft.server.Entity) {
                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
@@ -615,7 +611,7 @@ public class CraftWorld implements World {
     public List<LivingEntity> getLivingEntities() {
         List<LivingEntity> list = new ArrayList<LivingEntity>();
 
-        for (Object o : world.entityList) {
+        for (Object o : world.entitiesById.values()) {
             if (o instanceof net.minecraft.server.Entity) {
                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
@@ -640,7 +636,7 @@ public class CraftWorld implements World {
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> clazz) {
         Collection<T> list = new ArrayList<T>();
 
-        for (Object entity: world.entityList) {
+        for (Object entity: world.entitiesById.values()) {
             if (entity instanceof net.minecraft.server.Entity) {
                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
 
@@ -662,7 +658,7 @@ public class CraftWorld implements World {
     public Collection<Entity> getEntitiesByClasses(Class<?>... classes) {
         Collection<Entity> list = new ArrayList<Entity>();
 
-        for (Object entity: world.entityList) {
+        for (Object entity: world.entitiesById.values()) {
             if (entity instanceof net.minecraft.server.Entity) {
                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
 
@@ -807,7 +803,7 @@ public class CraftWorld implements World {
         Vector dir = direction.clone().normalize().multiply(maxDistance);
         Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
         Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
-        MovingObjectPosition nmsHitResult = this.getHandle().rayTrace(startPos, endPos, CraftFluidCollisionMode.toNMS(fluidCollisionMode), ignorePassableBlocks, false);
+        MovingObjectPosition nmsHitResult = this.getHandle().rayTrace(new RayTrace(startPos, endPos, ignorePassableBlocks ? RayTrace.BlockCollisionOption.COLLIDER : RayTrace.BlockCollisionOption.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
 
         return CraftRayTraceResult.fromNMS(this, nmsHitResult);
     }
@@ -843,9 +839,9 @@ public class CraftWorld implements World {
     }
 
     public List<Player> getPlayers() {
-        List<Player> list = new ArrayList<Player>(world.players.size());
+        List<Player> list = new ArrayList<Player>(world.getPlayers().size());
 
-        for (EntityHuman human : world.players) {
+        for (EntityHuman human : world.getPlayers()) {
             HumanEntity bukkitEntity = human.getBukkitEntity();
 
             if ((bukkitEntity != null) && (bukkitEntity instanceof Player)) {
@@ -862,7 +858,7 @@ public class CraftWorld implements World {
             boolean oldSave = world.savingDisabled;
 
             world.savingDisabled = false;
-            world.save(true, null);
+            world.save(null, false, false);
 
             world.savingDisabled = oldSave;
         } catch (ExceptionWorldConflict ex) {
@@ -1045,46 +1041,48 @@ public class CraftWorld implements World {
                 entity = new EntityEgg(world, x, y, z);
             } else if (Arrow.class.isAssignableFrom(clazz)) {
                 if (TippedArrow.class.isAssignableFrom(clazz)) {
-                    entity = new EntityTippedArrow(world);
+                    entity = EntityTypes.ARROW.a(world);
                     ((EntityTippedArrow) entity).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
                 } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
-                    entity = new EntitySpectralArrow(world);
+                    entity = EntityTypes.SPECTRAL_ARROW.a(world);
                 } else if (Trident.class.isAssignableFrom(clazz)) {
-                    entity = new EntityThrownTrident(world);
+                    entity = EntityTypes.TRIDENT.a(world);
                 } else {
-                    entity = new EntityTippedArrow(world);
+                    entity = EntityTypes.ARROW.a(world);
                 }
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownExpBottle.class.isAssignableFrom(clazz)) {
-                entity = new EntityThrownExpBottle(world);
+                entity = EntityTypes.EXPERIENCE_BOTTLE.a(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (EnderPearl.class.isAssignableFrom(clazz)) {
-                entity = new EntityEnderPearl(world);
+                entity = EntityTypes.ENDER_PEARL.a(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownPotion.class.isAssignableFrom(clazz)) {
                 if (LingeringPotion.class.isAssignableFrom(clazz)) {
-                    entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+                    entity = new EntityPotion(world, x, y, z);
+                    ((EntityPotion) entity).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
                 } else {
-                    entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+                    entity = new EntityPotion(world, x, y, z);
+                    ((EntityPotion) entity).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
                 }
             } else if (Fireball.class.isAssignableFrom(clazz)) {
                 if (SmallFireball.class.isAssignableFrom(clazz)) {
-                    entity = new EntitySmallFireball(world);
+                    entity = EntityTypes.SMALL_FIREBALL.a(world);
                 } else if (WitherSkull.class.isAssignableFrom(clazz)) {
-                    entity = new EntityWitherSkull(world);
+                    entity = EntityTypes.WITHER_SKULL.a(world);
                 } else if (DragonFireball.class.isAssignableFrom(clazz)) {
-                    entity = new EntityDragonFireball(world);
+                    entity = EntityTypes.DRAGON_FIREBALL.a(world);
                 } else {
-                    entity = new EntityLargeFireball(world);
+                    entity = EntityTypes.FIREBALL.a(world);
                 }
                 entity.setPositionRotation(x, y, z, yaw, pitch);
                 Vector direction = location.getDirection().multiply(10);
                 ((EntityFireball) entity).setDirection(direction.getX(), direction.getY(), direction.getZ());
             } else if (ShulkerBullet.class.isAssignableFrom(clazz)) {
-                entity = new EntityShulkerBullet(world);
+                entity = EntityTypes.SHULKER_BULLET.a(world);
                 entity.setPositionRotation(x, y, z, yaw, pitch);
             } else if (LlamaSpit.class.isAssignableFrom(clazz)) {
-                entity = new EntityLlamaSpit(world);
+                entity = EntityTypes.LLAMA_SPIT.a(world);
                 entity.setPositionRotation(x, y, z, yaw, pitch);
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
@@ -1106,157 +1104,175 @@ public class CraftWorld implements World {
         } else if (EnderSignal.class.isAssignableFrom(clazz)) {
             entity = new EntityEnderSignal(world, x, y, z);
         } else if (EnderCrystal.class.isAssignableFrom(clazz)) {
-            entity = new EntityEnderCrystal(world);
+            entity = EntityTypes.END_CRYSTAL.a(world);
             entity.setPositionRotation(x, y, z, 0, 0);
         } else if (LivingEntity.class.isAssignableFrom(clazz)) {
             if (Chicken.class.isAssignableFrom(clazz)) {
-                entity = new EntityChicken(world);
+                entity = EntityTypes.CHICKEN.a(world);
             } else if (Cow.class.isAssignableFrom(clazz)) {
                 if (MushroomCow.class.isAssignableFrom(clazz)) {
-                    entity = new EntityMushroomCow(world);
+                    entity = EntityTypes.MOOSHROOM.a(world);
                 } else {
-                    entity = new EntityCow(world);
+                    entity = EntityTypes.COW.a(world);
                 }
             } else if (Golem.class.isAssignableFrom(clazz)) {
                 if (Snowman.class.isAssignableFrom(clazz)) {
-                    entity = new EntitySnowman(world);
+                    entity = EntityTypes.SNOW_GOLEM.a(world);
                 } else if (IronGolem.class.isAssignableFrom(clazz)) {
-                    entity = new EntityIronGolem(world);
+                    entity = EntityTypes.IRON_GOLEM.a(world);
                 } else if (Shulker.class.isAssignableFrom(clazz)) {
-                    entity = new EntityShulker(world);
+                    entity = EntityTypes.SHULKER.a(world);
                 }
             } else if (Creeper.class.isAssignableFrom(clazz)) {
-                entity = new EntityCreeper(world);
+                entity = EntityTypes.CREEPER.a(world);
             } else if (Ghast.class.isAssignableFrom(clazz)) {
-                entity = new EntityGhast(world);
+                entity = EntityTypes.GHAST.a(world);
             } else if (Pig.class.isAssignableFrom(clazz)) {
-                entity = new EntityPig(world);
+                entity = EntityTypes.PIG.a(world);
             } else if (Player.class.isAssignableFrom(clazz)) {
                 // need a net server handler for this one
             } else if (Sheep.class.isAssignableFrom(clazz)) {
-                entity = new EntitySheep(world);
+                entity = EntityTypes.SHEEP.a(world);
             } else if (AbstractHorse.class.isAssignableFrom(clazz)) {
                 if (ChestedHorse.class.isAssignableFrom(clazz)) {
                     if (Donkey.class.isAssignableFrom(clazz)) {
-                        entity = new EntityHorseDonkey(world);
+                        entity = EntityTypes.DONKEY.a(world);
                     } else if (Mule.class.isAssignableFrom(clazz)) {
-                        entity = new EntityHorseMule(world);
+                        entity = EntityTypes.MULE.a(world);
                     } else if (Llama.class.isAssignableFrom(clazz)) {
-                        entity = new EntityLlama(world);
+                        if (TraderLlama.class.isAssignableFrom(clazz)) {
+                            entity = EntityTypes.TRADER_LLAMA.a(world);
+                        } else {
+                            entity = EntityTypes.LLAMA.a(world);
+                        }
                     }
                 } else if (SkeletonHorse.class.isAssignableFrom(clazz)) {
-                    entity = new EntityHorseSkeleton(world);
+                    entity = EntityTypes.SKELETON_HORSE.a(world);
                 } else if (ZombieHorse.class.isAssignableFrom(clazz)) {
-                    entity = new EntityHorseZombie(world);
+                    entity = EntityTypes.ZOMBIE_HORSE.a(world);
                 } else {
-                    entity = new EntityHorse(world);
+                    entity = EntityTypes.HORSE.a(world);
                 }
             } else if (Skeleton.class.isAssignableFrom(clazz)) {
                 if (Stray.class.isAssignableFrom(clazz)){
-                    entity = new EntitySkeletonStray(world);
+                    entity = EntityTypes.STRAY.a(world);
                 } else if (WitherSkeleton.class.isAssignableFrom(clazz)) {
-                    entity = new EntitySkeletonWither(world);
+                    entity = EntityTypes.WITHER_SKELETON.a(world);
                 } else {
-                    entity = new EntitySkeleton(world);
+                    entity = EntityTypes.SKELETON.a(world);
                 }
             } else if (Slime.class.isAssignableFrom(clazz)) {
                 if (MagmaCube.class.isAssignableFrom(clazz)) {
-                    entity = new EntityMagmaCube(world);
+                    entity = EntityTypes.MAGMA_CUBE.a(world);
                 } else {
-                    entity = new EntitySlime(world);
+                    entity = EntityTypes.SLIME.a(world);
                 }
             } else if (Spider.class.isAssignableFrom(clazz)) {
                 if (CaveSpider.class.isAssignableFrom(clazz)) {
-                    entity = new EntityCaveSpider(world);
+                    entity = EntityTypes.CAVE_SPIDER.a(world);
                 } else {
-                    entity = new EntitySpider(world);
+                    entity = EntityTypes.SPIDER.a(world);
                 }
             } else if (Squid.class.isAssignableFrom(clazz)) {
-                entity = new EntitySquid(world);
+                entity = EntityTypes.SQUID.a(world);
             } else if (Tameable.class.isAssignableFrom(clazz)) {
                 if (Wolf.class.isAssignableFrom(clazz)) {
-                    entity = new EntityWolf(world);
-                } else if (Ocelot.class.isAssignableFrom(clazz)) {
-                    entity = new EntityOcelot(world);
+                    entity = EntityTypes.WOLF.a(world);
                 } else if (Parrot.class.isAssignableFrom(clazz)) {
-                    entity = new EntityParrot(world);
+                    entity = EntityTypes.PARROT.a(world);
                 }
             } else if (PigZombie.class.isAssignableFrom(clazz)) {
-                entity = new EntityPigZombie(world);
+                entity = EntityTypes.ZOMBIE_PIGMAN.a(world);
             } else if (Zombie.class.isAssignableFrom(clazz)) {
                 if (Husk.class.isAssignableFrom(clazz)) {
-                    entity = new EntityZombieHusk(world);
+                    entity = EntityTypes.HUSK.a(world);
                 } else if (ZombieVillager.class.isAssignableFrom(clazz)) {
-                    entity = new EntityZombieVillager(world);
+                    entity = EntityTypes.ZOMBIE_VILLAGER.a(world);
                 } else if (Drowned.class.isAssignableFrom(clazz)) {
-                    entity = new EntityDrowned(world);
+                    entity = EntityTypes.DROWNED.a(world);
                 } else {
                     entity = new EntityZombie(world);
                 }
             } else if (Giant.class.isAssignableFrom(clazz)) {
-                entity = new EntityGiantZombie(world);
+                entity = EntityTypes.GIANT.a(world);
             } else if (Silverfish.class.isAssignableFrom(clazz)) {
-                entity = new EntitySilverfish(world);
+                entity = EntityTypes.SILVERFISH.a(world);
             } else if (Enderman.class.isAssignableFrom(clazz)) {
-                entity = new EntityEnderman(world);
+                entity = EntityTypes.ENDERMAN.a(world);
             } else if (Blaze.class.isAssignableFrom(clazz)) {
-                entity = new EntityBlaze(world);
-            } else if (Villager.class.isAssignableFrom(clazz)) {
-                entity = new EntityVillager(world);
+                entity = EntityTypes.BLAZE.a(world);
+            } else if (AbstractVillager.class.isAssignableFrom(clazz)) {
+                if (Villager.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.VILLAGER.a(world);
+                } else if (WanderingTrader.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.WANDERING_TRADER.a(world);
+                }
             } else if (Witch.class.isAssignableFrom(clazz)) {
-                entity = new EntityWitch(world);
+                entity = EntityTypes.WITCH.a(world);
             } else if (Wither.class.isAssignableFrom(clazz)) {
-                entity = new EntityWither(world);
+                entity = EntityTypes.WITHER.a(world);
             } else if (ComplexLivingEntity.class.isAssignableFrom(clazz)) {
                 if (EnderDragon.class.isAssignableFrom(clazz)) {
-                    entity = new EntityEnderDragon(world);
+                    entity = EntityTypes.ENDER_DRAGON.a(world);
                 }
             } else if (Ambient.class.isAssignableFrom(clazz)) {
                 if (Bat.class.isAssignableFrom(clazz)) {
-                    entity = new EntityBat(world);
+                    entity = EntityTypes.BAT.a(world);
                 }
             } else if (Rabbit.class.isAssignableFrom(clazz)) {
-                entity = new EntityRabbit(world);
+                entity = EntityTypes.RABBIT.a(world);
             } else if (Endermite.class.isAssignableFrom(clazz)) {
-                entity = new EntityEndermite(world);
+                entity = EntityTypes.ENDERMITE.a(world);
             } else if (Guardian.class.isAssignableFrom(clazz)) {
                 if (ElderGuardian.class.isAssignableFrom(clazz)){
-                    entity = new EntityGuardianElder(world);
+                    entity = EntityTypes.ELDER_GUARDIAN.a(world);
                 } else {
-                    entity = new EntityGuardian(world);
+                    entity = EntityTypes.GUARDIAN.a(world);
                 }
             } else if (ArmorStand.class.isAssignableFrom(clazz)) {
                 entity = new EntityArmorStand(world, x, y, z);
             } else if (PolarBear.class.isAssignableFrom(clazz)) {
-                entity = new EntityPolarBear(world);
+                entity = EntityTypes.POLAR_BEAR.a(world);
             } else if (Vex.class.isAssignableFrom(clazz)) {
-                entity = new EntityVex(world);
+                entity = EntityTypes.VEX.a(world);
             } else if (Illager.class.isAssignableFrom(clazz)) {
                 if (Spellcaster.class.isAssignableFrom(clazz)) {
                     if (Evoker.class.isAssignableFrom(clazz)) {
-                        entity = new EntityEvoker(world);
+                        entity = EntityTypes.EVOKER.a(world);
                     } else if (Illusioner.class.isAssignableFrom(clazz)) {
-                        entity = new EntityIllagerIllusioner(world);
+                        entity = EntityTypes.ILLUSIONER.a(world);
                     }
                 } else if (Vindicator.class.isAssignableFrom(clazz)) {
-                    entity = new EntityVindicator(world);
+                    entity = EntityTypes.VINDICATOR.a(world);
+                } else if (Pillager.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.PILLAGER.a(world);
                 }
             } else if (Turtle.class.isAssignableFrom(clazz)) {
-                entity = new EntityTurtle(world);
+                entity = EntityTypes.TURTLE.a(world);
             } else if (Phantom.class.isAssignableFrom(clazz)) {
-                entity = new EntityPhantom(world);
+                entity = EntityTypes.PHANTOM.a(world);
             } else if (Fish.class.isAssignableFrom(clazz)) {
                 if (Cod.class.isAssignableFrom(clazz)) {
-                    entity = new EntityCod(world);
+                    entity = EntityTypes.COD.a(world);
                 } else if (PufferFish.class.isAssignableFrom(clazz)) {
-                    entity = new EntityPufferFish(world);
+                    entity = EntityTypes.PUFFERFISH.a(world);
                 } else if (Salmon.class.isAssignableFrom(clazz)) {
-                    entity = new EntitySalmon(world);
+                    entity = EntityTypes.SALMON.a(world);
                 } else if (TropicalFish.class.isAssignableFrom(clazz)) {
-                    entity = new EntityTropicalFish(world);
+                    entity = EntityTypes.TROPICAL_FISH.a(world);
                 }
             } else if (Dolphin.class.isAssignableFrom(clazz)) {
-                entity = new EntityDolphin(world);
+                entity = EntityTypes.DOLPHIN.a(world);
+            } else if (Ocelot.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.OCELOT.a(world);
+            } else if (Cat.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.CAT.a(world);
+            } else if (Ravager.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.RAVAGER.a(world);
+            } else if (Panda.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.PANDA.a(world);
+            } else if (Fox.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.FOX.a(world);
             }
 
             if (entity != null) {
@@ -1321,12 +1337,8 @@ public class CraftWorld implements World {
             entity = new EntityTNTPrimed(world, x, y, z, null);
         } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
             entity = new EntityExperienceOrb(world, x, y, z, 0);
-        } else if (Weather.class.isAssignableFrom(clazz)) {
-            // not sure what this can do
-            if (LightningStrike.class.isAssignableFrom(clazz)) {
-                entity = new EntityLightning(world, x, y, z, false);
-                // what is this, I don't even
-            }
+        } else if (LightningStrike.class.isAssignableFrom(clazz)) {
+            entity = new EntityLightning(world, x, y, z, false);
         } else if (Firework.class.isAssignableFrom(clazz)) {
             entity = new EntityFireworks(world, x, y, z, net.minecraft.server.ItemStack.a);
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {
@@ -1352,7 +1364,7 @@ public class CraftWorld implements World {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (entity instanceof EntityInsentient) {
-            ((EntityInsentient) entity).prepare(getHandle().getDamageScaler(new BlockPosition(entity)), (GroupDataEntity) null, null);
+            ((EntityInsentient) entity).prepare(getHandle(), getHandle().getDamageScaler(new BlockPosition(entity)), EnumMobSpawn.COMMAND, (GroupDataEntity) null, null);
         }
 
         if (function != null) {
@@ -1378,11 +1390,11 @@ public class CraftWorld implements World {
     }
 
     public boolean getAllowAnimals() {
-        return world.allowAnimals;
+        return world.getChunkProvider().allowAnimals;
     }
 
     public boolean getAllowMonsters() {
-        return world.allowMonsters;
+        return world.getChunkProvider().allowMonsters;
     }
 
     public int getMaxHeight() {
@@ -1584,7 +1596,7 @@ public class CraftWorld implements World {
         }
 
         GameRules.GameRuleValue value = getHandle().getGameRules().get(rule);
-        return value != null ? value.a() : "";
+        return value != null ? value.getValue() : "";
     }
 
     public boolean setGameRuleValue(String rule, String value) {
@@ -1636,9 +1648,9 @@ public class CraftWorld implements World {
 
         switch (value.getType()) {
             case BOOLEAN_VALUE:
-                return rule.getType().cast(value.b());
+                return rule.getType().cast(value.getBooleanValue());
             case NUMERICAL_VALUE:
-                return rule.getType().cast(value.c());
+                return rule.getType().cast(value.getIntValue());
             default:
                 throw new IllegalArgumentException("Invalid GameRule type (" + value.getType() + ") for GameRule " + rule.getName());
         }
@@ -1740,33 +1752,5 @@ public class CraftWorld implements World {
         BlockPosition originPos = new BlockPosition(origin.getX(), origin.getY(), origin.getZ());
         BlockPosition nearest = getHandle().getChunkProvider().getChunkGenerator().findNearestMapFeature(getHandle(), structureType.getName(), originPos, radius, findUnexplored);
         return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
-    }
-
-    public void processChunkGC() {
-        chunkGCTickCount++;
-
-        if (chunkLoadCount >= server.chunkGCLoadThresh && server.chunkGCLoadThresh > 0) {
-            chunkLoadCount = 0;
-        } else if (chunkGCTickCount >= server.chunkGCPeriod && server.chunkGCPeriod > 0) {
-            chunkGCTickCount = 0;
-        } else {
-            return;
-        }
-
-        ChunkProviderServer cps = world.getChunkProvider();
-        for (net.minecraft.server.Chunk chunk : cps.chunks.values()) {
-            // If in use, skip it
-            if (isChunkInUse(chunk.locX, chunk.locZ)) {
-                continue;
-            }
-
-            // Already unloading?
-            if (cps.unloadQueue.contains(ChunkCoordIntPair.a(chunk.locX, chunk.locZ))) {
-                continue;
-            }
-
-            // Add unload request
-            cps.unload(chunk);
-        }
     }
 }

@@ -1,7 +1,8 @@
 package org.bukkit;
 
 import java.util.Map;
-import net.minecraft.server.WorldGenFactory;
+import net.minecraft.server.IRegistry;
+import net.minecraft.server.MinecraftKey;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,24 +23,24 @@ public class StructureTypeTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkit() {
-        for (String key : WorldGenFactory.structureStartMap.keySet()) {
-            Assert.assertNotNull(structures.get(key));
+        for (MinecraftKey key : IRegistry.STRUCTURE_FEATURE.keySet()) {
+            Assert.assertNotNull(key.getKey(), structures.get(key.getKey()));
         }
     }
 
     @Test
     public void testBukkit() {
         for (Map.Entry<String, StructureType> entry : structures.entrySet()) {
-            Assert.assertNotNull(StructureType.getStructureTypes().get(entry.getKey()));
-            Assert.assertNotNull(StructureType.getStructureTypes().get(entry.getValue().getName()));
+            Assert.assertNotNull(entry.getKey(), StructureType.getStructureTypes().get(entry.getKey()));
+            Assert.assertNotNull(entry.getValue().getName(), StructureType.getStructureTypes().get(entry.getValue().getName()));
         }
     }
 
     @Test
     public void testBukkitToMinecraft() {
         for (Map.Entry<String, StructureType> entry : structures.entrySet()) {
-            Assert.assertNotNull(WorldGenFactory.structureStartMap.get(entry.getKey()));
-            Assert.assertNotNull(WorldGenFactory.structureStartMap.get(entry.getValue().getName()));
+            Assert.assertNotNull(entry.getKey(), IRegistry.STRUCTURE_FEATURE.get(new MinecraftKey(entry.getKey())));
+            Assert.assertNotNull(entry.getValue().getName(), IRegistry.STRUCTURE_FEATURE.get(new MinecraftKey(entry.getValue().getName())));
         }
     }
 }

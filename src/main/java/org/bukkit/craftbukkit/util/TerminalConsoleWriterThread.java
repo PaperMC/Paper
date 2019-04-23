@@ -10,13 +10,15 @@ import org.bukkit.craftbukkit.Main;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Erase;
 
-public class TerminalConsoleWriterThread implements Runnable {
+public class TerminalConsoleWriterThread extends Thread {
     final private ConsoleReader reader;
     final private OutputStream output;
 
     public TerminalConsoleWriterThread(OutputStream output, ConsoleReader reader) {
         this.output = output;
         this.reader = reader;
+
+        this.setDaemon(true);
     }
 
     public void run() {

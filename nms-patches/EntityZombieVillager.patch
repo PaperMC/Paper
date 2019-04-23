@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityZombieVillager.java
 +++ b/net/minecraft/server/EntityZombieVillager.java
-@@ -2,6 +2,10 @@
- 
+@@ -3,6 +3,10 @@
+ import com.mojang.datafixers.Dynamic;
  import java.util.UUID;
  import javax.annotation.Nullable;
 +// CraftBukkit start
@@ -9,23 +9,20 @@
 +import org.bukkit.event.entity.EntityTransformEvent;
 +// CraftBukkit end
  
- public class EntityZombieVillager extends EntityZombie {
+ public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
-@@ -9,6 +13,7 @@
-     private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityZombieVillager.class, DataWatcherRegistry.b);
-     public int conversionTime;
-     private UUID bD;
+@@ -12,6 +16,7 @@
+     private UUID conversionPlayer;
+     private NBTTagCompound bB;
+     private int bC;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
-     public EntityZombieVillager(World world) {
-         super(EntityTypes.ZOMBIE_VILLAGER, world);
-@@ -54,8 +59,13 @@
-     }
- 
+     public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -68,6 +73,11 @@
      public void tick() {
--        if (!this.world.isClientSide && this.isConverting()) {
-+        if (!this.world.isClientSide && this.isConverting() && this.isAlive()) { // CraftBukkit
-             int i = this.dK();
+         if (!this.world.isClientSide && this.isAlive() && this.isConverting()) {
+             int i = this.getConversionProgress();
 +            // CraftBukkit start - Use wall time instead of ticks for villager conversion
 +            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +            this.lastTick = MinecraftServer.currentTick;
@@ -34,8 +31,8 @@
  
              this.conversionTime -= i;
              if (this.conversionTime <= 0) {
-@@ -100,8 +110,11 @@
-         this.bD = uuid;
+@@ -115,8 +125,11 @@
+         this.conversionPlayer = uuid;
          this.conversionTime = i;
          this.getDataWatcher().set(EntityZombieVillager.CONVERTING, true);
 -        this.removeEffect(MobEffects.WEAKNESS);
@@ -48,35 +45,35 @@
          this.world.broadcastEntityEffect(this, (byte) 16);
      }
  
-@@ -116,14 +129,20 @@
+@@ -135,14 +148,20 @@
              entityvillager.setAgeRaw(-24000);
          }
  
--        this.world.kill(this);
-+        // this.world.kill(this); // CraftBukkit - moved down
+-        this.die();
++        // this.die(); // CraftBukkit - moved down
          entityvillager.setNoAI(this.isNoAI());
          if (this.hasCustomName()) {
              entityvillager.setCustomName(this.getCustomName());
              entityvillager.setCustomNameVisible(this.getCustomNameVisible());
          }
  
--        this.world.addEntity(entityvillager);
+-        worldserver.addEntity(entityvillager);
 +        // CraftBukkit start
 +        if (CraftEventFactory.callEntityTransformEvent(this, entityvillager, EntityTransformEvent.TransformReason.CURED).isCancelled()) {
 +            return;
 +        }
-+        this.world.kill(this); // CraftBukkit - from above
-+        this.world.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
++        this.die(); // CraftBukkit - from above
++        worldserver.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
 +        // CraftBukkit end
-         if (this.bD != null) {
-             EntityHuman entityhuman = this.world.b(this.bD);
+         if (this.conversionPlayer != null) {
+             EntityHuman entityhuman = worldserver.b(this.conversionPlayer);
  
-@@ -132,7 +151,7 @@
+@@ -152,7 +171,7 @@
              }
          }
  
 -        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0));
 +        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
-         this.world.a((EntityHuman) null, 1027, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
+         worldserver.a((EntityHuman) null, 1027, new BlockPosition((int) this.locX, (int) this.locY, (int) this.locZ), 0);
      }
  

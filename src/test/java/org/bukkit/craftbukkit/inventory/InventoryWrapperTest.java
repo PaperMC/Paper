@@ -10,7 +10,7 @@ public class InventoryWrapperTest {
 
     @Test
     public void test() {
-        Inventory raw = new CraftInventoryCustom(null, 9);
+        Inventory raw = new CraftInventoryCustom(null, 27);
         raw.addItem(new ItemStack(Material.STONE));
 
         Assert.assertTrue(raw.contains(Material.STONE));

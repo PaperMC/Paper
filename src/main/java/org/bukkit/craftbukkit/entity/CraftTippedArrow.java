@@ -37,7 +37,7 @@ public class CraftTippedArrow extends CraftArrow implements TippedArrow {
 
     @Override
     public EntityType getType() {
-        return EntityType.TIPPED_ARROW;
+        return EntityType.ARROW;
     }
 
     @Override

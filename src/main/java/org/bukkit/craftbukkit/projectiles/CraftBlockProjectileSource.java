@@ -31,7 +31,6 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityFireball;
-import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntitySmallFireball;
@@ -39,7 +38,7 @@ import net.minecraft.server.EntitySnowball;
 import net.minecraft.server.EntitySpectralArrow;
 import net.minecraft.server.EntityThrownExpBottle;
 import net.minecraft.server.EntityTippedArrow;
-import net.minecraft.server.EntityWitherSkull;
+import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.IPosition;
 import net.minecraft.server.IProjectile;
@@ -86,9 +85,11 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             launch = new EntityThrownExpBottle(world, iposition.getX(), iposition.getY(), iposition.getZ());
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
-                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ());
+                ((EntityPotion) launch).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
             } else {
-                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ(), CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+                launch = new EntityPotion(world, iposition.getX(), iposition.getY(), iposition.getZ());
+                ((EntityPotion) launch).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
             }
         } else if (Arrow.class.isAssignableFrom(projectile)) {
             if (TippedArrow.class.isAssignableFrom(projectile)) {
@@ -113,7 +114,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             if (SmallFireball.class.isAssignableFrom(projectile)) {
                 launch = new EntitySmallFireball(world, null, d0, d1, d2);
             } else if (WitherSkull.class.isAssignableFrom(projectile)) {
-                launch = new EntityWitherSkull(world);
+                launch = EntityTypes.WITHER_SKULL.a(world);
                 launch.setPosition(d0, d1, d2);
                 double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
 
@@ -121,7 +122,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
                 ((EntityFireball) launch).dirY = d4 / d6 * 0.1D;
                 ((EntityFireball) launch).dirZ = d5 / d6 * 0.1D;
             } else {
-                launch = new EntityLargeFireball(world);
+                launch = EntityTypes.FIREBALL.a(world);
                 launch.setPosition(d0, d1, d2);
                 double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
 

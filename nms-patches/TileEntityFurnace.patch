@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/TileEntityFurnace.java
 +++ b/net/minecraft/server/TileEntityFurnace.java
-@@ -7,6 +7,15 @@
+@@ -7,6 +7,17 @@
  import java.util.Map;
  import java.util.Map.Entry;
  import javax.annotation.Nullable;
@@ -10,13 +10,15 @@
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.entity.Player;
 +import org.bukkit.event.inventory.FurnaceBurnEvent;
++import org.bukkit.event.inventory.FurnaceExtractEvent;
 +import org.bukkit.event.inventory.FurnaceSmeltEvent;
 +// CraftBukkit end
  
- public class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput, ITickable {
+ public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput, ITickable {
  
-@@ -91,6 +100,31 @@
+@@ -135,6 +146,36 @@
          return map;
      }
  
@@ -40,19 +42,28 @@
 +        return transaction;
 +    }
 +
++    @Override
++    public int getMaxStackSize() {
++        return maxStack;
++    }
++
 +    public void setMaxStackSize(int size) {
 +        maxStack = size;
 +    }
 +    // CraftBukkit end
 +
-     public TileEntityFurnace() {
-         super(TileEntityTypes.FURNACE);
-         this.items = NonNullList.a(3, ItemStack.a);
-@@ -236,9 +270,20 @@
-                 IRecipe irecipe = this.world.getCraftingManager().b(this, this.world);
+     private static void a(Map<Item, Integer> map, Tag<Item> tag, int i) {
+         Iterator iterator = tag.a().iterator();
+ 
+@@ -211,12 +252,23 @@
+                     this.cookTime = MathHelper.clamp(this.cookTime - 2, 0, this.cookTimeTotal);
+                 }
+             } else {
+-                IRecipe<?> irecipe = (IRecipe) this.world.getCraftingManager().craft(this.c, this, this.world).orElse((Object) null);
++                IRecipe irecipe = this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).orElse(null); // Eclipse fail
  
                  if (!this.isBurning() && this.canBurn(irecipe)) {
--                    this.burnTime = fuelTime(itemstack);
+-                    this.burnTime = this.fuelTime(itemstack);
 +                    // CraftBukkit start
 +                    CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
 +
@@ -71,17 +82,8 @@
                          flag1 = true;
                          if (!itemstack.isEmpty()) {
                              Item item = itemstack.getItem();
-@@ -279,7 +324,7 @@
-     }
- 
-     private int s() {
--        FurnaceRecipe furnacerecipe = (FurnaceRecipe) this.world.getCraftingManager().b(this, this.world);
-+        FurnaceRecipe furnacerecipe = (this.hasWorld()) ? (FurnaceRecipe) this.world.getCraftingManager().b(this, this.world) : null; // CraftBukkit - SPIGOT-4302
- 
-         return furnacerecipe != null ? furnacerecipe.h() : 200;
-     }
-@@ -306,11 +351,38 @@
-             ItemStack itemstack1 = irecipe.d();
+@@ -278,11 +330,38 @@
+             ItemStack itemstack1 = irecipe.c();
              ItemStack itemstack2 = (ItemStack) this.items.get(2);
  
 +            // CraftBukkit start - fire FurnaceSmeltEvent
@@ -118,4 +120,55 @@
 +            // CraftBukkit end
  
              if (!this.world.isClientSide) {
-                 this.a(this.world, (EntityPlayer) null, irecipe);
+                 this.a(irecipe);
+@@ -307,7 +386,7 @@
+     }
+ 
+     protected int getRecipeCookingTime() {
+-        return (Integer) this.world.getCraftingManager().craft(this.c, this, this.world).map(RecipeCooking::e).orElse(200);
++        return (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::e).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
+     }
+ 
+     public static boolean isFuel(ItemStack itemstack) {
+@@ -434,7 +513,7 @@
+     @Override
+     public void b(EntityHuman entityhuman) {}
+ 
+-    public void d(EntityHuman entityhuman) {
++    public void d(EntityHuman entityhuman, ItemStack itemstack, int amount) { // CraftBukkit
+         List<IRecipe<?>> list = Lists.newArrayList();
+         Iterator iterator = this.n.entrySet().iterator();
+ 
+@@ -443,7 +522,7 @@
+ 
+             entityhuman.world.getCraftingManager().a((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
+                 list.add(irecipe);
+-                a(entityhuman, (Integer) entry.getValue(), ((RecipeCooking) irecipe).b());
++                a(entityhuman, (Integer) entry.getValue(), ((RecipeCooking) irecipe).b(), itemstack, amount); // CraftBukkit
+             });
+         }
+ 
+@@ -451,7 +530,7 @@
+         this.n.clear();
+     }
+ 
+-    private static void a(EntityHuman entityhuman, int i, float f) {
++    private void a(EntityHuman entityhuman, int i, float f, ItemStack itemstack, int amount) { // CraftBukkit
+         int j;
+ 
+         if (f == 0.0F) {
+@@ -465,6 +544,14 @@
+             i = j;
+         }
+ 
++        // CraftBukkit start - fire FurnaceExtractEvent
++        if (amount != 0) {
++            FurnaceExtractEvent event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(world, position), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, i);
++            world.getServer().getPluginManager().callEvent(event);
++            i = event.getExpToDrop();
++        }
++        // CraftBukkit end
++
+         while (i > 0) {
+             j = EntityExperienceOrb.getOrbValue(i);
+             i -= j;

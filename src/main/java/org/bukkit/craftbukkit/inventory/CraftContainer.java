@@ -10,14 +10,23 @@ import org.bukkit.inventory.InventoryView;
 import net.minecraft.server.Container;
 import net.minecraft.server.ContainerAnvil;
 import net.minecraft.server.ContainerBeacon;
+import net.minecraft.server.ContainerBlastFurnace;
 import net.minecraft.server.ContainerBrewingStand;
+import net.minecraft.server.ContainerCartography;
 import net.minecraft.server.ContainerChest;
 import net.minecraft.server.ContainerDispenser;
 import net.minecraft.server.ContainerEnchantTable;
-import net.minecraft.server.ContainerFurnace;
+import net.minecraft.server.ContainerFurnaceFurnace;
+import net.minecraft.server.ContainerGrindstone;
 import net.minecraft.server.ContainerHopper;
+import net.minecraft.server.ContainerLectern;
+import net.minecraft.server.ContainerLoom;
+import net.minecraft.server.ContainerProperties;
 import net.minecraft.server.ContainerShulkerBox;
+import net.minecraft.server.ContainerSmoker;
+import net.minecraft.server.ContainerStonecutter;
 import net.minecraft.server.ContainerWorkbench;
+import net.minecraft.server.Containers;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
@@ -34,8 +43,8 @@ public class CraftContainer extends Container {
     private final int cachedSize;
 
     public CraftContainer(InventoryView view, EntityHuman player, int id) {
+        super(getNotchInventoryType(view.getType()), id);
         this.view = view;
-        this.windowId = id;
         // TODO: Do we need to check that it really is a CraftInventory?
         IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
         PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
@@ -66,6 +75,11 @@ public class CraftContainer extends Container {
             public InventoryType getType() {
                 return inventory.getType();
             }
+
+            @Override
+            public String getTitle() {
+                return inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
+            }
         }, player, id);
     }
 
@@ -91,7 +105,7 @@ public class CraftContainer extends Container {
         cachedTitle = view.getTitle();
         if (view.getPlayer() instanceof CraftPlayer) {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
-            String type = getNotchInventoryType(cachedType);
+            Containers type = getNotchInventoryType(cachedType);
             IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
             PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
             this.items.clear();
@@ -100,75 +114,112 @@ public class CraftContainer extends Container {
                 setupSlots(top, bottom, player.getHandle());
             }
             int size = getSize();
-            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle), size));
+            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle)));
             player.updateInventory();
         }
         return true;
     }
 
-    public static String getNotchInventoryType(InventoryType type) {
+    public static Containers getNotchInventoryType(InventoryType type) {
         switch (type) {
             case WORKBENCH:
-                return "minecraft:crafting_table";
+                return Containers.CRAFTING;
             case FURNACE:
-                return "minecraft:furnace";
+                return Containers.FURNACE;
             case DISPENSER:
-                return "minecraft:dispenser";
+                return Containers.GENERIC_3X3;
             case ENCHANTING:
-                return "minecraft:enchanting_table";
+                return Containers.ENCHANTMENT;
             case BREWING:
-                return "minecraft:brewing_stand";
+                return Containers.BREWING_STAND;
             case BEACON:
-                return "minecraft:beacon";
+                return Containers.BEACON;
             case ANVIL:
-                return "minecraft:anvil";
+                return Containers.ANVIL;
             case HOPPER:
-                return "minecraft:hopper";
+                return Containers.HOPPER;
             case DROPPER:
-                return "minecraft:dropper";
+                return Containers.GENERIC_3X3;
             case SHULKER_BOX:
-                return "minecraft:shulker_box";
+                return Containers.SHULKER_BOX;
+            case BLAST_FURNACE:
+                return Containers.BLAST_FURNACE;
+            case LECTERN:
+                return Containers.LECTERN;
+            case SMOKER:
+                return Containers.SMOKER;
+            case LOOM:
+                return Containers.LOOM;
+            case CARTOGRAPHY:
+                return Containers.CARTOGRAPHY;
+            case GRINDSTONE:
+                return Containers.GRINDSTONE;
+            case STONECUTTER:
+                return Containers.STONECUTTER;
             default:
-                return "minecraft:chest";
+                return Containers.GENERIC_9X3;
         }
     }
 
     private void setupSlots(IInventory top, PlayerInventory bottom, EntityHuman entityhuman) {
+        int windowId = -1;
         switch (cachedType) {
             case CREATIVE:
                 break; // TODO: This should be an error?
             case PLAYER:
             case CHEST:
-                delegate = new ContainerChest(bottom, top, entityhuman);
+            case BARREL:
+                delegate = new ContainerChest(Containers.GENERIC_9X3, windowId, bottom, top, 3);
                 break;
             case DISPENSER:
             case DROPPER:
-                delegate = new ContainerDispenser(bottom, top);
+                delegate = new ContainerDispenser(windowId, bottom, top);
                 break;
             case FURNACE:
-                delegate = new ContainerFurnace(bottom, top);
+                delegate = new ContainerFurnaceFurnace(windowId, bottom, top, new ContainerProperties(4));
                 break;
             case CRAFTING: // TODO: This should be an error?
             case WORKBENCH:
                 setupWorkbench(top, bottom); // SPIGOT-3812 - manually set up slots so we can use the delegated inventory and not the automatically created one
                 break;
             case ENCHANTING:
-                delegate = new ContainerEnchantTable(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
+                delegate = new ContainerEnchantTable(windowId, bottom);
                 break;
             case BREWING:
-                delegate = new ContainerBrewingStand(bottom, top);
+                delegate = new ContainerBrewingStand(windowId, bottom, top, new ContainerProperties(2));
                 break;
             case HOPPER:
-                delegate = new ContainerHopper(bottom, top, entityhuman);
+                delegate = new ContainerHopper(windowId, bottom, top);
                 break;
             case ANVIL:
-                delegate = new ContainerAnvil(bottom, entityhuman.world, entityhuman.getChunkCoordinates(), entityhuman);
+                delegate = new ContainerAnvil(windowId, bottom);
                 break;
             case BEACON:
-                delegate = new ContainerBeacon(bottom, top);
+                delegate = new ContainerBeacon(windowId, bottom);
                 break;
             case SHULKER_BOX:
-                delegate = new ContainerShulkerBox(bottom, top, entityhuman);
+                delegate = new ContainerShulkerBox(windowId, bottom, top);
+                break;
+            case BLAST_FURNACE:
+                delegate = new ContainerBlastFurnace(windowId, bottom, top, new ContainerProperties(4));
+                break;
+            case LECTERN:
+                delegate = new ContainerLectern(windowId, top, new ContainerProperties(1), bottom);
+                break;
+            case SMOKER:
+                delegate = new ContainerSmoker(windowId, bottom, top, new ContainerProperties(4));
+                break; 
+            case LOOM:
+                delegate = new ContainerLoom(windowId, bottom);
+                break;
+            case CARTOGRAPHY:
+                delegate = new ContainerCartography(windowId, bottom);
+                break;
+            case GRINDSTONE:
+                delegate = new ContainerGrindstone(windowId, bottom);
+                break;
+            case STONECUTTER:
+                delegate = new ContainerStonecutter(windowId, bottom);
                 break;
         }
 
@@ -179,7 +230,7 @@ public class CraftContainer extends Container {
 
         // SPIGOT-4598 - we should still delegate the shift click handler
         if (cachedType == InventoryType.WORKBENCH) {
-            delegate = new ContainerWorkbench(bottom, entityhuman.world, entityhuman.getChunkCoordinates());
+            delegate = new ContainerWorkbench(windowId, bottom);
         }
     }
 
@@ -216,5 +267,10 @@ public class CraftContainer extends Container {
     @Override
     public boolean canUse(EntityHuman entity) {
         return true;
+    }
+
+    @Override
+    public Containers<?> getType() {
+        return getNotchInventoryType(cachedType);
     }
 }

@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityPainting;
+import net.minecraft.server.EntityTypes;
 import net.minecraft.server.Paintings;
 import net.minecraft.server.WorldServer;
 
@@ -53,7 +54,7 @@ public class CraftPainting extends CraftHanging implements Painting {
 
     private void update() {
         WorldServer world = ((CraftWorld) getWorld()).getHandle();
-        EntityPainting painting = new EntityPainting(world);
+        EntityPainting painting = EntityTypes.PAINTING.a(world);
         painting.blockPosition = getHandle().blockPosition;
         painting.art = getHandle().art;
         painting.setDirection(getHandle().direction);

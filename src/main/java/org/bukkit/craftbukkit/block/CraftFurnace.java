@@ -6,16 +6,15 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.FurnaceInventory;
 
-public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements Furnace {
+public class CraftFurnace<T extends TileEntityFurnace> extends CraftContainer<T> implements Furnace {
 
-    public CraftFurnace(final Block block) {
-        super(block, TileEntityFurnace.class);
+    public CraftFurnace(Block block, Class<T> tileEntityClass) {
+        super(block, tileEntityClass);
     }
 
-    public CraftFurnace(final Material material, final TileEntityFurnace te) {
+    public CraftFurnace(final Material material, final T te) {
         super(material, te);
     }
 
@@ -35,53 +34,33 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
 
     @Override
     public short getBurnTime() {
-        return (short) this.getSnapshot().getProperty(0);
+        return (short) this.getSnapshot().burnTime;
     }
 
     @Override
     public void setBurnTime(short burnTime) {
-        this.getSnapshot().setProperty(0, burnTime);
+        this.getSnapshot().burnTime = burnTime;
         // SPIGOT-844: Allow lighting and relighting using this API
         this.data = this.data.set(BlockFurnace.LIT, burnTime > 0);
     }
 
     @Override
     public short getCookTime() {
-        return (short) this.getSnapshot().getProperty(2);
+        return (short) this.getSnapshot().cookTime;
     }
 
     @Override
     public void setCookTime(short cookTime) {
-        this.getSnapshot().setProperty(2, cookTime);
+        this.getSnapshot().cookTime = cookTime;
     }
 
     @Override
     public int getCookTimeTotal() {
-        return this.getSnapshot().getProperty(3);
+        return this.getSnapshot().cookTimeTotal;
     }
 
     @Override
     public void setCookTimeTotal(int cookTimeTotal) {
-        this.getSnapshot().setProperty(3, cookTimeTotal);
-    }
-
-    @Override
-    public String getCustomName() {
-        TileEntityFurnace furnace = this.getSnapshot();
-        return furnace.hasCustomName() ? CraftChatMessage.fromComponent(furnace.getCustomName()) : null;
-    }
-
-    @Override
-    public void setCustomName(String name) {
-        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
-    }
-
-    @Override
-    public void applyTo(TileEntityFurnace furnace) {
-        super.applyTo(furnace);
-
-        if (!this.getSnapshot().hasCustomName()) {
-            furnace.setCustomName(null);
-        }
+        this.getSnapshot().cookTimeTotal = cookTimeTotal;
     }
 }

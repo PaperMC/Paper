@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.Dynamic;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -16,13 +18,18 @@ import java.util.logging.Logger;
 import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.Block;
 import net.minecraft.server.ChatDeserializer;
+import net.minecraft.server.DataConverterRegistry;
+import net.minecraft.server.DataConverterTypes;
+import net.minecraft.server.DynamicOpsNBT;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MojangsonParser;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.SharedConstants;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -74,19 +81,22 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
 
     static {
-        for (Block block : (Iterable<Block>) IRegistry.BLOCK) { // Eclipse fail
+        for (Block block : IRegistry.BLOCK) {
             BLOCK_MATERIAL.put(block, Material.getMaterial(IRegistry.BLOCK.getKey(block).getKey().toUpperCase(Locale.ROOT)));
         }
 
-        for (Item item : (Iterable<Item>) IRegistry.ITEM) { // Eclipse fail
+        for (Item item : IRegistry.ITEM) {
             ITEM_MATERIAL.put(item, Material.getMaterial(IRegistry.ITEM.getKey(item).getKey().toUpperCase(Locale.ROOT)));
         }
 
         for (Material material : Material.values()) {
             MinecraftKey key = key(material);
-            // TODO: only register if block/item?
-            MATERIAL_ITEM.put(material, IRegistry.ITEM.get(key));
-            MATERIAL_BLOCK.put(material, IRegistry.BLOCK.get(key));
+            IRegistry.ITEM.getOptional(key).ifPresent((item) -> {
+                MATERIAL_ITEM.put(material, item);
+            });
+            IRegistry.BLOCK.getOptional(key).ifPresent((block) -> {
+                MATERIAL_BLOCK.put(material, block);
+            });
         }
     }
 
@@ -144,6 +154,24 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftBlockData.fromData(getBlock(material, data));
     }
 
+    @Override
+    public Material getMaterial(String material, int version) {
+        Preconditions.checkArgument(version <= this.getDataVersion(), "Newer version! Server downgrades are not supported!");
+
+        // Fastpath up to date materials
+        if (version == this.getDataVersion()) {
+            return Material.getMaterial(material);
+        }
+
+        NBTTagCompound stack = new NBTTagCompound();
+        stack.setString("id", "minecraft:" + material.toLowerCase(Locale.ROOT));
+
+        Dynamic<NBTBase> converted = DataConverterRegistry.a().update(DataConverterTypes.ITEM_STACK, new Dynamic<>(DynamicOpsNBT.a, stack), version, this.getDataVersion());
+        String newId = converted.get("id").asString("");
+
+        return Material.matchMaterial(newId);
+    }
+
     /**
      * This string should be changed if the NMS mappings do.
      *
@@ -160,12 +188,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "7dd4b3ec31629620c41553e5c142e454";
+        return "8b7fe9012a93b36df04844a6c990de27";
     }
 
     @Override
     public int getDataVersion() {
-        return 1631;
+        return SharedConstants.a().getWorldVersion();
     }
 
     @Override
@@ -222,9 +250,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {
         if (pdf.getAPIVersion() != null) {
-            if (!pdf.getAPIVersion().equals("1.13")) {
+            if (!pdf.getAPIVersion().equals("1.13") && !pdf.getAPIVersion().equals("1.14")) {
                 throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
             }
+        } else {
+            Bukkit.getLogger().log(Level.WARNING, "Plugin " + pdf.getFullName() + " does not specify an api-version.");
         }
     }
 

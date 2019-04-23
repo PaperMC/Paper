@@ -43,7 +43,7 @@ import org.bukkit.material.MaterialData;
 public class CraftLegacy {
 
     private static final Map<Byte, Material> SPAWN_EGGS = new HashMap<>();
-    private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable"));
+    private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable", "facing"));
     private static final Map<MaterialData, Item> materialToItem = new HashMap<>(16384);
     private static final Map<Item, MaterialData> itemToMaterial = new HashMap<>(1024);
     private static final Map<MaterialData, IBlockData> materialToData = new HashMap<>(4096);
@@ -311,7 +311,7 @@ public class CraftLegacy {
         SPAWN_EGGS.put((byte) EntityType.PIG_ZOMBIE.getTypeId(), Material.ZOMBIE_PIGMAN_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.ZOMBIE_VILLAGER.getTypeId(), Material.ZOMBIE_VILLAGER_SPAWN_EGG);
 
-        DispenserRegistry.c();
+        DispenserRegistry.init();
 
         for (Material material : Material.values()) {
             if (!material.isLegacy()) {
@@ -324,11 +324,11 @@ public class CraftLegacy {
                     MaterialData matData = new MaterialData(material, data);
                     Dynamic blockTag = DataConverterFlattenData.b(material.getId() << 4 | data);
                     // TODO: better skull conversion, chests
-                    if (blockTag.getString("Name").contains("%%FILTER_ME%%")) {
+                    if (blockTag.get("Name").asString("").contains("%%FILTER_ME%%")) {
                         continue;
                     }
 
-                    String name = blockTag.getString("Name");
+                    String name = blockTag.get("Name").asString("");
                     // TODO: need to fix
                     if (name.equals("minecraft:portal")) {
                         name = "minecraft:nether_portal";
@@ -341,9 +341,9 @@ public class CraftLegacy {
                     IBlockData blockData = block.getBlockData();
                     BlockStateList states = block.getStates();
 
-                    Optional<Dynamic> propMap = blockTag.get("Properties");
+                    Optional<NBTTagCompound> propMap = blockTag.getElement("Properties");
                     if (propMap.isPresent()) {
-                        NBTTagCompound properties = (NBTTagCompound) propMap.get().getValue();
+                        NBTTagCompound properties = propMap.get();
                         for (String dataKey : properties.getKeys()) {
                             IBlockState state = states.a(dataKey);
 
@@ -402,7 +402,7 @@ public class CraftLegacy {
 
                 Dynamic<NBTBase> converted = DataConverterRegistry.a().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.a, stack), -1, CraftMagicNumbers.INSTANCE.getDataVersion());
 
-                String newId = converted.getString("id");
+                String newId = converted.get("id").asString("");
                 // Recover spawn eggs with invalid data
                 if (newId.equals("minecraft:spawn_egg")) {
                     newId = "minecraft:pig_spawn_egg";

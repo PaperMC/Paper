@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityWolf.java
 +++ b/net/minecraft/server/EntityWolf.java
-@@ -3,6 +3,11 @@
- import java.util.UUID;
+@@ -4,6 +4,11 @@
+ import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
@@ -12,7 +12,16 @@
  public class EntityWolf extends EntityTameableAnimal {
  
      private static final DataWatcherObject<Float> DATA_HEALTH = DataWatcher.a(EntityWolf.class, DataWatcherRegistry.c);
-@@ -56,6 +61,22 @@
+@@ -42,7 +47,7 @@
+         this.goalSelector.a(10, new PathfinderGoalRandomLookaround(this));
+         this.targetSelector.a(1, new PathfinderGoalOwnerHurtByTarget(this));
+         this.targetSelector.a(2, new PathfinderGoalOwnerHurtTarget(this));
+-        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
++        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a(new Class[0])); // CraftBukkit - decompile error
+         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityAnimal.class, false, EntityWolf.bD));
+         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityTurtle.class, false, EntityTurtle.bz));
+         this.targetSelector.a(5, new PathfinderGoalNearestAttackableTarget<>(this, EntitySkeletonAbstract.class, false));
+@@ -61,6 +66,22 @@
          this.getAttributeMap().b(GenericAttributes.ATTACK_DAMAGE).setValue(2.0D);
      }
  
@@ -32,10 +41,10 @@
 +    }
 +    // CraftBukkit end
 +
+     @Override
      public void setGoalTarget(@Nullable EntityLiving entityliving) {
          super.setGoalTarget(entityliving);
-         if (entityliving == null) {
-@@ -190,7 +211,8 @@
+@@ -217,7 +238,8 @@
              Entity entity = damagesource.getEntity();
  
              if (this.goalSit != null) {
@@ -45,37 +54,37 @@
              }
  
              if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
-@@ -236,7 +258,7 @@
+@@ -264,7 +286,7 @@
                              itemstack.subtract(1);
                          }
  
--                        this.heal((float) itemfood.getNutrition(itemstack));
-+                        this.heal((float) itemfood.getNutrition(itemstack), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+-                        this.heal((float) item.getFoodInfo().getNutrition());
++                        this.heal((float) item.getFoodInfo().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
                          return true;
                      }
                  } else if (item instanceof ItemDye) {
-@@ -257,7 +279,7 @@
+@@ -285,7 +307,7 @@
                  this.goalSit.setSitting(!this.isSitting());
-                 this.bg = false;
-                 this.navigation.q();
+                 this.jumping = false;
+                 this.navigation.o();
 -                this.setGoalTarget((EntityLiving) null);
 +                this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
              }
          } else if (item == Items.BONE && !this.isAngry()) {
              if (!entityhuman.abilities.canInstantlyBuild) {
-@@ -265,12 +287,13 @@
+@@ -293,12 +315,13 @@
              }
  
              if (!this.world.isClientSide) {
 -                if (this.random.nextInt(3) == 0) {
 +                // CraftBukkit - added event call and isCancelled check.
 +                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
-                     this.c(entityhuman);
-                     this.navigation.q();
+                     this.tame(entityhuman);
+                     this.navigation.o();
                      this.setGoalTarget((EntityLiving) null);
                      this.goalSit.setSitting(true);
 -                    this.setHealth(20.0F);
 +                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
-                     this.s(true);
+                     this.r(true);
                      this.world.broadcastEntityEffect(this, (byte) 7);
                  } else {

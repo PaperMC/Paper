@@ -1,27 +1,27 @@
 --- a/net/minecraft/server/EntityLightning.java
 +++ b/net/minecraft/server/EntityLightning.java
-@@ -4,6 +4,8 @@
+@@ -5,6 +5,8 @@
  import java.util.List;
  import javax.annotation.Nullable;
  
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 +
- public class EntityLightning extends EntityWeather {
+ public class EntityLightning extends Entity {
  
      private int lifeTicks;
-@@ -12,9 +14,11 @@
-     private final boolean d;
+@@ -13,9 +15,11 @@
+     private final boolean e;
      @Nullable
-     private EntityPlayer e;
+     private EntityPlayer f;
 +    public boolean isEffect; // CraftBukkit
  
      public EntityLightning(World world, double d0, double d1, double d2, boolean flag) {
          super(EntityTypes.LIGHTNING_BOLT, world);
 +        this.isEffect = flag; // CraftBukkit
+         this.af = true;
          this.setPositionRotation(d0, d1, d2, 0.0F, 0.0F);
          this.lifeTicks = 2;
-         this.a = this.random.nextLong();
-@@ -39,7 +43,24 @@
+@@ -43,7 +47,24 @@
      public void tick() {
          super.tick();
          if (this.lifeTicks == 2) {
@@ -30,7 +30,7 @@
 +            // this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
 +            float pitch = 0.8F + this.random.nextFloat() * 0.2F;
 +            int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
-+            for (EntityPlayer player : (List<EntityPlayer>) (List) this.world.players) {
++            for (EntityPlayer player : (List<EntityPlayer>) (List) this.world.getPlayers()) {
 +                double deltaX = this.locX - player.locX;
 +                double deltaZ = this.locZ - player.locZ;
 +                double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
@@ -47,19 +47,19 @@
              this.world.a((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT, SoundCategory.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
          }
  
-@@ -55,7 +76,7 @@
+@@ -59,7 +80,7 @@
              }
          }
  
 -        if (this.lifeTicks >= 0) {
 +        if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit - add !this.isEffect
              if (this.world.isClientSide) {
-                 this.world.d(2);
-             } else if (!this.d) {
-@@ -82,14 +103,22 @@
+                 this.world.c(2);
+             } else if (!this.e) {
+@@ -87,14 +108,22 @@
              BlockPosition blockposition = new BlockPosition(this);
  
-             if (this.world.areChunksLoaded(blockposition, 10) && this.world.getType(blockposition).isAir() && iblockdata.canPlace(this.world, blockposition)) {
+             if (this.world.getType(blockposition).isAir() && iblockdata.canPlace(this.world, blockposition)) {
 -                this.world.setTypeUpdate(blockposition, iblockdata);
 +                // CraftBukkit start - add "!isEffect"
 +                if (!isEffect && !CraftEventFactory.callBlockIgniteEvent(world, blockposition, this).isCancelled()) {
@@ -69,7 +69,7 @@
              }
  
              for (int j = 0; j < i; ++j) {
-                 BlockPosition blockposition1 = blockposition.a(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
+                 BlockPosition blockposition1 = blockposition.b(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
  
                  if (this.world.getType(blockposition1).isAir() && iblockdata.canPlace(this.world, blockposition1)) {
 -                    this.world.setTypeUpdate(blockposition1, iblockdata);

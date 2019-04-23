@@ -22,7 +22,12 @@ public class CraftMerchantCustom extends CraftMerchant {
         return "CraftMerchantCustom";
     }
 
-    private static class MinecraftMerchant implements IMerchant {
+    @Override
+    public MinecraftMerchant getMerchant() {
+        return (MinecraftMerchant) super.getMerchant();
+    }
+
+    public static class MinecraftMerchant implements IMerchant {
 
         private final IChatBaseComponent title;
         private final MerchantRecipeList trades = new MerchantRecipeList();
@@ -44,7 +49,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public MerchantRecipeList getOffers(EntityHuman entityhuman) {
+        public MerchantRecipeList getOffers() {
             return this.trades;
         }
 
@@ -55,10 +60,9 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void a(ItemStack itemstack) {
+        public void i(ItemStack itemstack) {
         }
 
-        @Override
         public IChatBaseComponent getScoreboardDisplayName() {
             return title;
         }
@@ -69,8 +73,17 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public BlockPosition getPosition() {
-            return null;
+        public int dV() {
+            return 0; // xp
+        }
+
+        @Override
+        public void q(int i) {
+        }
+
+        @Override
+        public boolean dZ() {
+            return true;
         }
     }
 }

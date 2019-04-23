@@ -7,39 +7,41 @@
 +
  public class EntityWitherSkull extends EntityFireball {
  
-     private static final DataWatcherObject<Boolean> e = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.i);
-@@ -28,11 +30,11 @@
-         if (!this.world.isClientSide) {
-             if (movingobjectposition.entity != null) {
+     private static final DataWatcherObject<Boolean> f = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.i);
+@@ -34,11 +36,11 @@
+                 Entity entity = ((MovingObjectPositionEntity) movingobjectposition).getEntity();
+ 
                  if (this.shooter != null) {
--                    if (movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F)) {
-+                    if (movingobjectposition.entity.damageEntity(DamageSource.projectile(this, shooter), 8.0F)) { // CraftBukkit
-                         if (movingobjectposition.entity.isAlive()) {
-                             this.a(this.shooter, movingobjectposition.entity);
+-                    if (entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F)) {
++                    if (entity.damageEntity(DamageSource.projectile(this, shooter), 8.0F)) { // CraftBukkit
+                         if (entity.isAlive()) {
+                             this.a(this.shooter, entity);
                          } else {
 -                            this.shooter.heal(5.0F);
 +                            this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
                          }
                      }
                  } else {
-@@ -49,12 +51,20 @@
+@@ -55,14 +57,22 @@
                      }
  
                      if (b0 > 0) {
--                        ((EntityLiving) movingobjectposition.entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1));
-+                        ((EntityLiving) movingobjectposition.entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+-                        ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1));
++                        ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                      }
                  }
              }
  
--            this.world.createExplosion(this, this.locX, this.locY, this.locZ, 1.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
+             Explosion.Effect explosion_effect = this.world.getGameRules().getBoolean("mobGriefing") ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
+ 
+-            this.world.createExplosion(this, this.locX, this.locY, this.locZ, 1.0F, false, explosion_effect);
 +            // CraftBukkit start
-+            // this.world.createExplosion(this, this.locX, this.locY, this.locZ, 1.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
++            // this.world.createExplosion(this, this.locX, this.locY, this.locZ, 1.0F, false, explosion_effect);
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
 +            this.world.getServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
-+                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), this.world.getGameRules().getBoolean("mobGriefing"));
++                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), explosion_effect);
 +            }
 +            // CraftBukkit end
              this.die();

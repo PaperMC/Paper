@@ -40,11 +40,11 @@ public class CraftAnimals extends CraftAgeable implements Animals {
     @Override
     public void setLoveModeTicks(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "Love mode ticks must be positive or 0");
-        getHandle().d(ticks); // PAIL rename setLoveModeTicks
+        getHandle().setLoveTicks(ticks);
     }
 
     @Override
     public int getLoveModeTicks() {
-        return getHandle().bC; // PAIL rename loveTicks
+        return getHandle().loveTicks;
     }
 }

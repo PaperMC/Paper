@@ -66,10 +66,10 @@ public class CraftAttributeInstance implements AttributeInstance {
     }
 
     public static net.minecraft.server.AttributeModifier convert(AttributeModifier bukkit) {
-        return new net.minecraft.server.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), bukkit.getOperation().ordinal());
+        return new net.minecraft.server.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), net.minecraft.server.AttributeModifier.Operation.values()[bukkit.getOperation().ordinal()]);
     }
 
     public static AttributeModifier convert(net.minecraft.server.AttributeModifier nms) {
-        return new AttributeModifier(nms.a(), nms.b(), nms.d(), AttributeModifier.Operation.values()[nms.c()]);
+        return new AttributeModifier(nms.a(), nms.b(), nms.d(), AttributeModifier.Operation.values()[nms.c().ordinal()]);
     }
 }

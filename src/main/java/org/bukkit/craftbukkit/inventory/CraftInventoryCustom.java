@@ -40,7 +40,7 @@ public class CraftInventoryCustom extends CraftInventory {
         private final NonNullList<ItemStack> items;
         private int maxStack = MAX_STACK;
         private final List<HumanEntity> viewers;
-        private final IChatBaseComponent title;
+        private final String title;
         private InventoryType type;
         private final InventoryHolder owner;
 
@@ -60,8 +60,9 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
+            Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots");
             this.items = NonNullList.a(size, ItemStack.a);
-            this.title = CraftChatMessage.fromString(title)[0];
+            this.title = title;
             this.viewers = new ArrayList<HumanEntity>();
             this.owner = owner;
             this.type = InventoryType.CHEST;
@@ -164,42 +165,8 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public int getProperty(int i) {
-            return 0;
-        }
-
-        @Override
-        public void setProperty(int i, int j) {
-        }
-
-        @Override
-        public int h() {
-            return 0;
-        }
-
-        @Override
         public void clear() {
             items.clear();
-        }
-
-        @Override
-        public IChatBaseComponent getDisplayName() {
-            return title;
-        }
-
-        @Override
-        public IChatBaseComponent getCustomName() {
-            return title;
-        }
-
-        @Override
-        public boolean hasCustomName() {
-            return title != null;
-        }
-
-        @Override
-        public IChatBaseComponent getScoreboardDisplayName() {
-            return title;
         }
 
         @Override
@@ -207,8 +174,12 @@ public class CraftInventoryCustom extends CraftInventory {
             return null;
         }
 
+        public String getTitle() {
+            return title;
+        }
+
         @Override
-        public boolean P_() {
+        public boolean isNotEmpty() {
             Iterator iterator = this.items.iterator();
 
             ItemStack itemstack;

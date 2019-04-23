@@ -1,50 +1,73 @@
 --- a/net/minecraft/server/CraftingManager.java
 +++ b/net/minecraft/server/CraftingManager.java
-@@ -20,7 +20,7 @@
+@@ -26,7 +26,7 @@
      private static final Logger c = LogManager.getLogger();
      public static final int a = "recipes/".length();
      public static final int b = ".json".length();
--    public Map<MinecraftKey, IRecipe> recipes = Maps.newHashMap();
-+    public it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe> recipes = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
+-    public Map<Recipes<?>, Map<MinecraftKey, IRecipe<?>>> recipes = (Map) SystemUtils.a((Object) Maps.newHashMap(), CraftingManager::a);
++    public Map<Recipes<?>, it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> recipes = SystemUtils.a(Maps.newHashMap(), CraftingManager::a); // CraftBukkit
      private boolean e;
  
      public CraftingManager() {}
-@@ -84,7 +84,7 @@
-         if (this.recipes.containsKey(irecipe.getKey())) {
+@@ -88,19 +88,23 @@
+     }
+ 
+     public void addRecipe(IRecipe<?> irecipe) {
+-        Map<MinecraftKey, IRecipe<?>> map = (Map) this.recipes.get(irecipe.g());
++        it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>> map = this.recipes.get(irecipe.g()); // CraftBukkit
+ 
+         if (map.containsKey(irecipe.getKey())) {
              throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.getKey());
          } else {
--            this.recipes.put(irecipe.getKey(), irecipe);
-+            this.recipes.putAndMoveToFirst(irecipe.getKey(), irecipe); // CraftBukkit - SPIGOT-4638: last recipe gets priority
+-            map.put(irecipe.getKey(), irecipe);
++            map.putAndMoveToFirst(irecipe.getKey(), irecipe); // CraftBukkit - SPIGOT-4638: last recipe gets priority
          }
      }
  
-@@ -95,12 +95,14 @@
- 
-         do {
-             if (!iterator.hasNext()) {
-+                iinventory.setCurrentRecipe(null); // CraftBukkit - Clear recipe when no recipe is found
-                 return ItemStack.a;
-             }
- 
-             irecipe = (IRecipe) iterator.next();
-         } while (!irecipe.a(iinventory, world));
- 
-+        iinventory.setCurrentRecipe(irecipe); // CraftBukkit
-         return irecipe.craftItem(iinventory);
+     public <C extends IInventory, T extends IRecipe<C>> Optional<T> craft(Recipes<T> recipes, C c0, World world) {
+-        return this.a(recipes).values().stream().flatMap((irecipe) -> {
++        // CraftBukkit start
++        Optional<T> recipe = this.a(recipes).values().stream().flatMap((irecipe) -> {
+             return SystemUtils.a(recipes.a(irecipe, world, c0));
+         }).findFirst();
++        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
++        // CraftBukkit end
++        return recipe;
      }
  
-@@ -112,12 +114,14 @@
- 
-         do {
-             if (!iterator.hasNext()) {
-+                iinventory.setCurrentRecipe(null); // CraftBukkit - Clear recipe when no recipe is found
-                 return null;
-             }
- 
-             irecipe = (IRecipe) iterator.next();
-         } while (!irecipe.a(iinventory, world));
- 
-+        iinventory.setCurrentRecipe(irecipe); // CraftBukkit
-         return irecipe;
+     public <C extends IInventory, T extends IRecipe<C>> List<T> b(Recipes<T> recipes, C c0, World world) {
+@@ -112,7 +116,7 @@
      }
  
+     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> a(Recipes<T> recipes) {
+-        return (Map) this.recipes.getOrDefault(recipes, Maps.newHashMap());
++        return (Map) this.recipes.getOrDefault(recipes, new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>()); // CraftBukkit
+     }
+ 
+     public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> c(Recipes<T> recipes, C c0, World world) {
+@@ -133,7 +137,7 @@
+ 
+     public Optional<? extends IRecipe<?>> a(MinecraftKey minecraftkey) {
+         return this.recipes.values().stream().map((map) -> {
+-            return (IRecipe) map.get(minecraftkey);
++            return map.get(minecraftkey); // CraftBukkit - decompile error
+         }).filter(Objects::nonNull).findFirst();
+     }
+ 
+@@ -157,14 +161,14 @@
+         })).a(minecraftkey, jsonobject);
+     }
+ 
+-    private static void a(Map<Recipes<?>, Map<MinecraftKey, IRecipe<?>>> map) {
++    private static void a(Map<Recipes<?>, it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> map) { // CraftBukkit
+         map.clear();
+         Iterator iterator = IRegistry.RECIPE_TYPE.iterator();
+ 
+         while (iterator.hasNext()) {
+             Recipes<?> recipes = (Recipes) iterator.next();
+ 
+-            map.put(recipes, Maps.newHashMap());
++            map.put(recipes, new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>()); // CraftBukkit
+         }
+ 
+     }

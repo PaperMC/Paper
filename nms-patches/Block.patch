@@ -1,19 +1,19 @@
 --- a/net/minecraft/server/Block.java
 +++ b/net/minecraft/server/Block.java
-@@ -405,7 +405,8 @@
-             int j = this.getDropCount(iblockdata, i, world, blockposition, world.random);
+@@ -427,7 +427,8 @@
+     }
  
-             for (int k = 0; k < j; ++k) {
--                if (f >= 1.0F || world.random.nextFloat() <= f) {
-+                // CraftBukkit - <= to < to allow for plugins to completely disable block drops from explosions
-+                if (f >= 1.0F || world.random.nextFloat() < f) {
-                     Item item = this.getDropType(iblockdata, world, blockposition, i).getItem();
+     public static List<ItemStack> getDrops(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, @Nullable TileEntity tileentity, Entity entity, ItemStack itemstack) {
+-        LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder(worldserver)).a(worldserver.random).set(LootContextParameters.POSITION, blockposition).set(LootContextParameters.TOOL, itemstack).set(LootContextParameters.THIS_ENTITY, entity).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
++        // CraftBukkit - make entity optional
++        LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder(worldserver)).a(worldserver.random).set(LootContextParameters.POSITION, blockposition).set(LootContextParameters.TOOL, itemstack).setOptional(LootContextParameters.THIS_ENTITY, entity).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
  
-                     if (item != Items.AIR) {
-@@ -426,7 +427,13 @@
+         return iblockdata.a(loottableinfo_builder);
+     }
+@@ -481,7 +482,13 @@
              EntityItem entityitem = new EntityItem(world, (double) blockposition.getX() + d0, (double) blockposition.getY() + d1, (double) blockposition.getZ() + d2, itemstack);
  
-             entityitem.n();
+             entityitem.defaultPickupDelay();
 -            world.addEntity(entityitem);
 +            // CraftBukkit start
 +            if (world.captureDrops != null) {
@@ -25,19 +25,16 @@
          }
      }
  
-@@ -1394,8 +1401,14 @@
- 
+@@ -678,6 +685,12 @@
+         return block == Blocks.DIRT || block == Blocks.COARSE_DIRT || block == Blocks.PODZOL;
      }
  
 +    // CraftBukkit start
-+    public int getExpDrop(IBlockData iblockdata, World world, BlockPosition blockposition, int enchantmentLevel) {
++    public int getExpDrop(IBlockData iblockdata, World world, BlockPosition blockposition, ItemStack itemstack) {
 +        return 0;
 +    }
 +    // CraftBukkit end
 +
-     private static void a(MinecraftKey minecraftkey, Block block) {
--        IRegistry.BLOCK.a(minecraftkey, (Object) block);
-+        IRegistry.BLOCK.a(minecraftkey, block); // CraftBukkit - decompile error
-     }
+     public static enum EnumRandomOffset {
  
-     private static void a(String s, Block block) {
+         NONE, XZ, XYZ;

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntitySheep.java
 +++ b/net/minecraft/server/EntitySheep.java
-@@ -8,6 +8,12 @@
+@@ -9,10 +9,16 @@
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
  
@@ -12,51 +12,42 @@
 +
  public class EntitySheep extends EntityAnimal {
  
-     private static final DataWatcherObject<Byte> bC = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
-@@ -15,8 +21,15 @@
-         public boolean canUse(EntityHuman entityhuman) {
-             return false;
-         }
-+
-+        // CraftBukkit start
-+        @Override
-+        public InventoryView getBukkitView() {
-+            return null; // TODO: O.O
-+        }
-+        // CraftBukkit end
-     }, 2, 1);
--    private static final Map<EnumColor, IMaterial> bE = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumColor.class), (enummap) -> {
-+    private static final Map<EnumColor, IMaterial> bE = (Map) SystemUtils.a(Maps.newEnumMap(EnumColor.class), (enummap) -> { // CraftBukkit - decompile error
+     private static final DataWatcherObject<Byte> bz = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
+-    private static final Map<EnumColor, IMaterial> bA = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumColor.class), (enummap) -> {
++    private static final Map<EnumColor, IMaterial> bA = (Map) SystemUtils.a(Maps.newEnumMap(EnumColor.class), (enummap) -> { // CraftBukkit - decompile error
          enummap.put(EnumColor.WHITE, Blocks.WHITE_WOOL);
          enummap.put(EnumColor.ORANGE, Blocks.ORANGE_WOOL);
          enummap.put(EnumColor.MAGENTA, Blocks.MAGENTA_WOOL);
-@@ -141,11 +154,22 @@
+@@ -141,6 +147,15 @@
+         ItemStack itemstack = entityhuman.b(enumhand);
  
          if (itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
++            // CraftBukkit start
++            PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return false;
++            }
++            // CraftBukkit end
++
+             this.shear();
              if (!this.world.isClientSide) {
-+                // CraftBukkit start
-+                PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
-+                this.world.getServer().getPluginManager().callEvent(event);
-+
-+                if (event.isCancelled()) {
-+                    return false;
-+                }
-+                // CraftBukkit end
-+
-                 this.setSheared(true);
-                 int i = 1 + this.random.nextInt(3);
+                 itemstack.damage(1, entityhuman, (entityhuman1) -> {
+@@ -158,7 +173,9 @@
+             int i = 1 + this.random.nextInt(3);
  
-                 for (int j = 0; j < i; ++j) {
-+                    this.forceDrops = true; // CraftBukkit
-                     EntityItem entityitem = this.a((IMaterial) EntitySheep.bE.get(this.getColor()), 1);
-+                    this.forceDrops = false; // CraftBukkit
+             for (int j = 0; j < i; ++j) {
++                this.forceDrops = true; // CraftBukkit
+                 EntityItem entityitem = this.a((IMaterial) EntitySheep.bA.get(this.getColor()), 1);
++                this.forceDrops = false; // CraftBukkit
  
-                     if (entityitem != null) {
-                         entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
-@@ -230,6 +254,12 @@
-     }
+                 if (entityitem != null) {
+                     entityitem.setMot(entityitem.getMot().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
+@@ -245,6 +262,12 @@
  
-     public void x() {
+     @Override
+     public void blockEaten() {
 +        // CraftBukkit start
 +        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
 +        this.world.getServer().getPluginManager().callEvent(event);
@@ -66,11 +57,31 @@
          this.setSheared(false);
          if (this.isBaby()) {
              this.setAge(60);
-@@ -250,6 +280,7 @@
+@@ -264,7 +287,7 @@
+         EnumColor enumcolor = ((EntitySheep) entityanimal).getColor();
+         EnumColor enumcolor1 = ((EntitySheep) entityanimal1).getColor();
+         InventoryCrafting inventorycrafting = a(enumcolor, enumcolor1);
+-        Optional optional = this.world.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.world).map((recipecrafting) -> {
++        Optional<Item> optional = this.world.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.world).map((recipecrafting) -> { // Eclipse fail
+             return recipecrafting.a(inventorycrafting);
+         }).map(ItemStack::getItem);
  
-         this.container.setItem(0, new ItemStack(ItemDye.a(enumcolor)));
-         this.container.setItem(1, new ItemStack(ItemDye.a(enumcolor1)));
-+        this.container.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
-         ItemStack itemstack = entityanimal.world.getCraftingManager().craft(this.container, ((EntitySheep) entityanimal).world);
-         Item item = itemstack.getItem();
-         EnumColor enumcolor2;
+@@ -282,10 +305,18 @@
+             public boolean canUse(EntityHuman entityhuman) {
+                 return false;
+             }
++
++            // CraftBukkit start
++            @Override
++            public InventoryView getBukkitView() {
++                return null; // TODO: O.O
++            }
++            // CraftBukkit end
+         }, 2, 1);
+ 
+         inventorycrafting.setItem(0, new ItemStack(ItemDye.a(enumcolor)));
+         inventorycrafting.setItem(1, new ItemStack(ItemDye.a(enumcolor1)));
++        inventorycrafting.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+         return inventorycrafting;
+     }
+ 

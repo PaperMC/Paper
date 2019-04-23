@@ -16,14 +16,16 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.buyingItem2));
     }
 
-    public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward) {
-        super(result, uses, maxUses, experienceReward);
+    public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier) {
+        super(result, uses, maxUses, experienceReward, experience, priceMultiplier);
         this.handle = new net.minecraft.server.MerchantRecipe(
                 net.minecraft.server.ItemStack.a,
                 net.minecraft.server.ItemStack.a,
                 CraftItemStack.asNMSCopy(result),
                 uses,
                 maxUses,
+                experience,
+                priceMultiplier,
                 this
         );
         this.setExperienceReward(experienceReward);
@@ -59,6 +61,26 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         handle.rewardExp = flag;
     }
 
+    @Override
+    public int getVillagerExperience() {
+        return handle.xp;
+    }
+
+    @Override
+    public void setVillagerExperience(int villagerExperience) {
+        handle.xp = villagerExperience;
+    }
+
+    @Override
+    public float getPriceMultiplier() {
+        return handle.priceMultiplier;
+    }
+
+    @Override
+    public void setPriceMultiplier(float priceMultiplier) {
+        handle.priceMultiplier = priceMultiplier;
+    }
+
     public net.minecraft.server.MerchantRecipe toMinecraft() {
         List<ItemStack> ingredients = getIngredients();
         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
@@ -73,7 +95,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         if (recipe instanceof CraftMerchantRecipe) {
             return (CraftMerchantRecipe) recipe;
         } else {
-            CraftMerchantRecipe craft = new CraftMerchantRecipe(recipe.getResult(), recipe.getUses(), recipe.getMaxUses(), recipe.hasExperienceReward());
+            CraftMerchantRecipe craft = new CraftMerchantRecipe(recipe.getResult(), recipe.getUses(), recipe.getMaxUses(), recipe.hasExperienceReward(), recipe.getVillagerExperience(), recipe.getPriceMultiplier());
             craft.setIngredients(recipe.getIngredients());
 
             return craft;

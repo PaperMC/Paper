@@ -29,8 +29,8 @@ public class ArtTest extends AbstractTestingBase {
         for (MinecraftKey key : IRegistry.MOTIVE.keySet()) {
             Paintings enumArt = IRegistry.MOTIVE.get(key);
             String name = key.getKey();
-            int width = enumArt.b() / UNIT_MULTIPLIER;
-            int height = enumArt.c() / UNIT_MULTIPLIER;
+            int width = enumArt.getWidth() / UNIT_MULTIPLIER;
+            int height = enumArt.getHeight() / UNIT_MULTIPLIER;
 
             Art subject = CraftArt.NotchToBukkit(enumArt);
 
@@ -60,7 +60,7 @@ public class ArtTest extends AbstractTestingBase {
     @Test
     public void testCraftArtToBukkit() {
         Map<Art, Paintings> cache = new EnumMap(Art.class);
-        for (Paintings enumArt : (Iterable<Paintings>) IRegistry.MOTIVE) { // Eclipse fail
+        for (Paintings enumArt : IRegistry.MOTIVE) {
             Art art = CraftArt.NotchToBukkit(enumArt);
             assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
             assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));

@@ -140,6 +140,28 @@ public class Commodore
                     {
                         if ( modern )
                         {
+                            if ( owner.equals( "org/bukkit/Material" ) )
+                            {
+                                switch ( name )
+                                {
+                                    case "CACTUS_GREEN":
+                                        name = "GREEN_DYE";
+                                        break;
+                                    case "DANDELION_YELLOW":
+                                        name = "YELLOW_DYE";
+                                        break;
+                                    case "ROSE_RED":
+                                        name = "RED_DYE";
+                                        break;
+                                    case "SIGN":
+                                        name = "OAK_SIGN";
+                                        break;
+                                    case "WALL_SIGN":
+                                        name = "OAK_WALL_SIGN";
+                                        break;
+                                }
+                            }
+
                             super.visitFieldInsn( opcode, owner, name, desc );
                             return;
                         }

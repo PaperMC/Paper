@@ -484,54 +484,54 @@ public class CraftScheduler implements BukkitScheduler {
     @Deprecated
     @Override
     public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task, long delay) {
-        return scheduleSyncDelayedTask(plugin, (Runnable) task, delay);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
     }
 
     @Deprecated
     @Override
     public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task) {
-        return scheduleSyncDelayedTask(plugin, (Runnable) task);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
     }
 
     @Deprecated
     @Override
     public int scheduleSyncRepeatingTask(Plugin plugin, BukkitRunnable task, long delay, long period) {
-        return scheduleSyncRepeatingTask(plugin, (Runnable) task, delay, period);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTask(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
-        return runTask(plugin, (Runnable) task);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTaskAsynchronously(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
-        return runTaskAsynchronously(plugin, (Runnable) task);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskAsynchronously(Plugin)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTaskLater(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
-        return runTaskLater(plugin, (Runnable) task, delay);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTaskLaterAsynchronously(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
-        return runTaskLaterAsynchronously(plugin, (Runnable) task, delay);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTaskTimer(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
-        return runTaskTimer(plugin, (Runnable) task, delay, period);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
     }
 
     @Deprecated
     @Override
     public BukkitTask runTaskTimerAsynchronously(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
-        return runTaskTimerAsynchronously(plugin, (Runnable) task, delay, period);
+        throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)");
     }
 }

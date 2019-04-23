@@ -1,0 +1,49 @@
+--- a/net/minecraft/server/ItemCrossbow.java
++++ b/net/minecraft/server/ItemCrossbow.java
+@@ -12,6 +12,8 @@
+ 
+     public ItemCrossbow(Item.Info item_info) {
+         super(item_info);
++        // CraftBukkit start - obfuscator went a little crazy
++        /*
+         this.a(new MinecraftKey("pull"), (itemstack, world, entityliving) -> {
+             return entityliving != null && itemstack.getItem() == this ? (d(itemstack) ? 0.0F : (float) (itemstack.k() - entityliving.dm()) / (float) e(itemstack)) : 0.0F;
+         });
+@@ -24,6 +26,8 @@
+         this.a(new MinecraftKey("firework"), (itemstack, world, entityliving) -> {
+             return entityliving != null && d(itemstack) && a(itemstack, Items.FIREWORK_ROCKET) ? 1.0F : 0.0F;
+         });
++        */
++        // CraftBukkit end
+     }
+ 
+     @Override
+@@ -203,11 +207,27 @@
+                 vector3fa.a(quaternion);
+                 ((IProjectile) object).shoot((double) vector3fa.a(), (double) vector3fa.b(), (double) vector3fa.c(), f1, f2);
+             }
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityliving, itemstack, (Entity) object, f);
++            if (event.isCancelled()) {
++                event.getProjectile().remove();
++                return;
++            }
++            // CraftBukkit end
+ 
+             itemstack.damage(flag1 ? 3 : 1, entityliving, (entityliving1) -> {
+                 entityliving1.d(enumhand);
+             });
+-            world.addEntity((Entity) object);
++            // CraftBukkit start
++            if (event.getProjectile() == ((Entity) object).getBukkitEntity()) {
++                if (!world.addEntity((Entity) object)) {
++                    if (entityliving instanceof EntityPlayer) {
++                        ((EntityPlayer) entityliving).getBukkitEntity().updateInventory();
++                    }
++                    return;
++                }
++            }
++            // CraftBukkit end
+             world.a((EntityHuman) null, entityliving.locX, entityliving.locY, entityliving.locZ, SoundEffects.ITEM_CROSSBOW_SHOOT, SoundCategory.PLAYERS, 1.0F, f);
+         }
+     }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import net.minecraft.server.*;
 
@@ -40,7 +41,7 @@ public class CraftBlock implements Block {
 
     public CraftBlock(GeneratorAccess world, BlockPosition position) {
         this.world = world;
-        this.position = position.h();
+        this.position = position.immutableCopy();
     }
 
     public static CraftBlock at(GeneratorAccess world, BlockPosition position) {
@@ -158,7 +159,12 @@ public class CraftBlock implements Block {
     public boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
         if (!blockData.isAir() && blockData.getBlock() instanceof BlockTileEntity && blockData.getBlock() != getNMSBlock()) {
-            world.setTypeAndData(position, Blocks.AIR.getBlockData(), 0);
+            // SPIGOT-4612: faster - just clear tile
+            if (world instanceof net.minecraft.server.World) {
+                ((net.minecraft.server.World) world).removeTileEntity(position);
+            } else {
+                world.setTypeAndData(position, Blocks.AIR.getBlockData(), 0);
+            }
         }
 
         if (applyPhysics) {
@@ -278,14 +284,24 @@ public class CraftBlock implements Block {
         Material material = getType();
 
         switch (material) {
-        case SIGN:
-        case WALL_SIGN:
+        case ACACIA_SIGN:
+        case ACACIA_WALL_SIGN:
+        case BIRCH_SIGN:
+        case BIRCH_WALL_SIGN:
+        case DARK_OAK_SIGN:
+        case DARK_OAK_WALL_SIGN:
+        case JUNGLE_SIGN:
+        case JUNGLE_WALL_SIGN:
+        case OAK_SIGN:
+        case OAK_WALL_SIGN:
+        case SPRUCE_SIGN:
+        case SPRUCE_WALL_SIGN:
             return new CraftSign(this);
         case CHEST:
         case TRAPPED_CHEST:
             return new CraftChest(this);
         case FURNACE:
-            return new CraftFurnace(this);
+            return new CraftFurnaceFurnace(this);
         case DISPENSER:
             return new CraftDispenser(this);
         case DROPPER:
@@ -399,6 +415,22 @@ public class CraftBlock implements Block {
             return new CraftBed(this);
         case CONDUIT:
             return new CraftConduit(this);
+        case BARRIER:
+            return new CraftBarrel(this);
+        case BARREL:
+            return new CraftBarrel(this);
+        case BELL:
+            return new CraftBell(this);
+        case BLAST_FURNACE:
+            return new CraftBlastFurnace(this);
+        case CAMPFIRE:
+            return new CraftCampfire(this);
+        case JIGSAW:
+            return new CraftJigsaw(this);
+        case LECTERN:
+            return new CraftLectern(this);
+        case SMOKER:
+            return new CraftSmoker(this);
         default:
             TileEntity tileEntity = world.getTileEntity(position);
             if (tileEntity != null) {
@@ -512,80 +544,30 @@ public class CraftBlock implements Block {
         return PistonMoveReaction.getById(getNMS().getPushReaction().ordinal());
     }
 
-    private boolean itemCausesDrops(ItemStack item) {
-        net.minecraft.server.Block block = this.getNMSBlock();
-        net.minecraft.server.Item itemType = CraftMagicNumbers.getItem(item.getType());
-        return block != null && (block.getBlockData().getMaterial().isAlwaysDestroyable() || (itemType != null && itemType.canDestroySpecialBlock(block.getBlockData())));
+    public boolean breakNaturally() {
+        return breakNaturally(new ItemStack(Material.AIR));
     }
 
-    public boolean breakNaturally() {
+    public boolean breakNaturally(ItemStack item) {
         // Order matters here, need to drop before setting to air so skulls can get their data
         net.minecraft.server.Block block = this.getNMSBlock();
         boolean result = false;
 
         if (block != null && block != Blocks.AIR) {
-            block.dropNaturally(getNMS(), world.getMinecraftWorld(), position, 1.0F, 0);
+            net.minecraft.server.Block.dropItems(getNMS(), world.getMinecraftWorld(), position, world.getTileEntity(position), null, CraftItemStack.asNMSCopy(item));
             result = true;
         }
 
-        setType(Material.AIR);
-        return result;
-    }
-
-    public boolean breakNaturally(ItemStack item) {
-        if (itemCausesDrops(item)) {
-            return breakNaturally();
-        } else {
-            return setTypeAndData(Blocks.AIR.getBlockData(), true);
-        }
+        return setTypeAndData(Blocks.AIR.getBlockData(), true) && result;
     }
 
     public Collection<ItemStack> getDrops() {
-        List<ItemStack> drops = new ArrayList<ItemStack>();
-
-        net.minecraft.server.Block block = this.getNMSBlock();
-        if (block != Blocks.AIR) {
-            IBlockData data = getData0();
-            // based on nms.Block.dropNaturally
-            int count = block.getDropCount(data, 0, world.getMinecraftWorld(), position, world.getMinecraftWorld().random);
-            for (int i = 0; i < count; ++i) {
-                Item item = block.getDropType(data, world.getMinecraftWorld(), position, 0).getItem();
-                if (item != Items.AIR) {
-                    // Skulls are special, their data is based on the tile entity
-                    if (block instanceof BlockSkullAbstract) {
-                        net.minecraft.server.ItemStack nmsStack = block.a((IBlockAccess) world, position, data);
-                        TileEntitySkull tileentityskull = (TileEntitySkull) world.getTileEntity(position);
-
-                        if ((block == Blocks.PLAYER_HEAD || block == Blocks.PLAYER_WALL_HEAD) && tileentityskull.getGameProfile() != null) {
-                            NBTTagCompound nbttagcompound = new NBTTagCompound();
-
-                            GameProfileSerializer.serialize(nbttagcompound, tileentityskull.getGameProfile());
-                            nmsStack.getOrCreateTag().set("SkullOwner", nbttagcompound);
-                        }
-
-                        drops.add(CraftItemStack.asBukkitCopy(nmsStack));
-                        // We don't want to drop cocoa blocks, we want to drop cocoa beans.
-                    } else if (Blocks.COCOA == block) {
-                        int age = (Integer) data.get(BlockCocoa.AGE);
-                        int dropAmount = (age >= 2 ? 3 : 1);
-                        for (int j = 0; j < dropAmount; ++j) {
-                            drops.add(new ItemStack(Material.COCOA_BEANS, 1));
-                        }
-                    } else {
-                        drops.add(new ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), 1));
-                    }
-                }
-            }
-        }
-        return drops;
+        return getDrops(new ItemStack(Material.AIR));
     }
 
     public Collection<ItemStack> getDrops(ItemStack item) {
-        if (itemCausesDrops(item)) {
-            return getDrops();
-        } else {
-            return Collections.emptyList();
-        }
+        return net.minecraft.server.Block.getDrops(getNMS(), (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), null, CraftItemStack.asNMSCopy(item))
+                .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
     }
 
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
@@ -628,25 +610,7 @@ public class CraftBlock implements Block {
         Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
         Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
 
-        // Similar to to nms.World#rayTrace:
-        IBlockData blockData = world.getType(position);
-        Fluid fluid = world.getFluid(position);
-        boolean collidableBlock = blockData.getBlock().isCollidable(blockData);
-        boolean collideWithFluid = CraftFluidCollisionMode.toNMS(fluidCollisionMode).predicate.test(fluid);
-
-        if (!collidableBlock && !collideWithFluid) {
-            return null;
-        }
-
-        MovingObjectPosition nmsHitResult = null;
-        if (collidableBlock) {
-            nmsHitResult = net.minecraft.server.Block.rayTrace(blockData, world.getMinecraftWorld(), position, startPos, endPos);
-        }
-
-        if (nmsHitResult == null && collideWithFluid) {
-            nmsHitResult = VoxelShapes.create(0.0D, 0.0D, 0.0D, 1.0D, (double) fluid.getHeight(), 1.0D).rayTrace(startPos, endPos, position);
-        }
-
+        MovingObjectPosition nmsHitResult = world.rayTrace(new RayTrace(startPos, endPos, RayTrace.BlockCollisionOption.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
         return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);
     }
 

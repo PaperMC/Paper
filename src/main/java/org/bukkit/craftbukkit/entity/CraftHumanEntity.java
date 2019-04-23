@@ -4,13 +4,17 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.server.BlockAnvil;
 import net.minecraft.server.BlockBed;
+import net.minecraft.server.BlockEnchantmentTable;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BlockWorkbench;
+import net.minecraft.server.Blocks;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.Container;
+import net.minecraft.server.Containers;
 import net.minecraft.server.CraftingManager;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
@@ -19,6 +23,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EnumMainHand;
 import net.minecraft.server.IBlockData;
+import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.IMerchant;
 import net.minecraft.server.IRecipe;
@@ -29,14 +34,19 @@ import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.PacketPlayInCloseWindow;
 import net.minecraft.server.PacketPlayOutOpenWindow;
 import net.minecraft.server.TileEntity;
+import net.minecraft.server.TileEntityBarrel;
 import net.minecraft.server.TileEntityBeacon;
+import net.minecraft.server.TileEntityBlastFurnace;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityEnchantTable;
 import net.minecraft.server.TileEntityFurnace;
+import net.minecraft.server.TileEntityFurnaceFurnace;
 import net.minecraft.server.TileEntityHopper;
+import net.minecraft.server.TileEntityLectern;
 import net.minecraft.server.TileEntityShulkerBox;
+import net.minecraft.server.TileEntitySmoker;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -52,6 +62,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchant;
+import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.HumanEntity;
@@ -121,7 +132,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     public boolean isSleeping() {
-        return getHandle().sleeping;
+        return getHandle().isSleeping();
     }
 
     public int getSleepTicks() {
@@ -168,7 +179,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return false;
         }
 
-        if (getHandle().a(blockposition, force) != EntityHuman.EnumBedResult.OK) {
+        if (getHandle().sleep(blockposition, force).left().isPresent()) {
             return false;
         }
 
@@ -183,14 +194,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void wakeup(boolean setSpawnLocation) {
         Preconditions.checkState(isSleeping(), "Cannot wakeup if not sleeping");
 
-        getHandle().a(true, true, setSpawnLocation);
+        getHandle().wakeup(true, true, setSpawnLocation);
     }
 
     @Override
     public Location getBedLocation() {
         Preconditions.checkState(isSleeping(), "Not sleeping");
 
-        return new Location(getWorld(), getHandle().bedPosition.getX(), getHandle().bedPosition.getY(), getHandle().bedPosition.getZ());
+        BlockPosition bed = getHandle().getBed();
+        return new Location(getWorld(), bed.getX(), bed.getY(), bed.getZ());
     }
 
     @Override
@@ -303,41 +315,64 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             case PLAYER:
             case CHEST:
             case ENDER_CHEST:
-                getHandle().openContainer(iinventory);
+                Containers customSize;
+                switch (inventory.getSize()) {
+                    case 9:
+                        customSize = Containers.GENERIC_9X1;
+                        break;
+                    case 18:
+                        customSize = Containers.GENERIC_9X2;
+                        break;
+                    case 27:
+                        customSize = Containers.GENERIC_9X3;
+                        break;
+                    case 36:
+                        customSize = Containers.GENERIC_9X4;
+                        break;
+                    case 45:
+                        customSize = Containers.GENERIC_9X5;
+                        break;
+                    case 54:
+                        customSize = Containers.GENERIC_9X6;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported custom size " + inventory.getSize());
+                }
+                openCustomInventory(inventory, player, customSize);
                 break;
             case DISPENSER:
                 if (iinventory instanceof TileEntityDispenser) {
                     getHandle().openContainer((TileEntityDispenser) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:dispenser");
+                    openCustomInventory(inventory, player, Containers.GENERIC_3X3);
                 }
                 break;
             case DROPPER:
                 if (iinventory instanceof TileEntityDropper) {
                     getHandle().openContainer((TileEntityDropper) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:dropper");
+                    openCustomInventory(inventory, player, Containers.GENERIC_3X3);
                 }
                 break;
             case FURNACE:
-                if (iinventory instanceof TileEntityFurnace) {
-                    getHandle().openContainer((TileEntityFurnace) iinventory);
+                if (iinventory instanceof TileEntityFurnaceFurnace) {
+                    getHandle().openContainer((TileEntityFurnaceFurnace) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:furnace");
+                    openCustomInventory(inventory, player, Containers.FURNACE);
                 }
                 break;
             case WORKBENCH:
-                openCustomInventory(inventory, player, "minecraft:crafting_table");
+                openCustomInventory(inventory, player, Containers.CRAFTING);
                 break;
             case BREWING:
                 if (iinventory instanceof TileEntityBrewingStand) {
                     getHandle().openContainer((TileEntityBrewingStand) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:brewing_stand");
+                    openCustomInventory(inventory, player, Containers.BREWING_STAND);
                 }
                 break;
             case ENCHANTING:
-                openCustomInventory(inventory, player, "minecraft:enchanting_table");
+                openCustomInventory(inventory, player, Containers.ENCHANTMENT);
                 break;
             case HOPPER:
                 if (iinventory instanceof TileEntityHopper) {
@@ -345,33 +380,67 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 } else if (iinventory instanceof EntityMinecartHopper) {
                     getHandle().openContainer((EntityMinecartHopper) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:hopper");
+                    openCustomInventory(inventory, player, Containers.HOPPER);
                 }
                 break;
             case BEACON:
                 if (iinventory instanceof TileEntityBeacon) {
                     getHandle().openContainer((TileEntityBeacon) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:beacon");
+                    openCustomInventory(inventory, player, Containers.BEACON);
                 }
                 break;
             case ANVIL:
-                if (iinventory instanceof BlockAnvil.TileEntityContainerAnvil) {
-                    getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) iinventory);
+                if (iinventory instanceof ITileInventory) {
+                    getHandle().openContainer((ITileInventory) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:anvil");
+                    openCustomInventory(inventory, player, Containers.ANVIL);
                 }
                 break;
             case SHULKER_BOX:
                 if (iinventory instanceof TileEntityShulkerBox) {
                     getHandle().openContainer((TileEntityShulkerBox) iinventory);
                 } else {
-                    openCustomInventory(inventory, player, "minecraft:shulker_box");
+                    openCustomInventory(inventory, player, Containers.SHULKER_BOX);
                 }
+                break;
+            case BARREL:
+                if (iinventory instanceof TileEntityBarrel) {
+                    getHandle().openContainer((TileEntityBarrel) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, Containers.GENERIC_9X3);
+                }
+                break;
+            case BLAST_FURNACE:
+                if (iinventory instanceof TileEntityBlastFurnace) {
+                    getHandle().openContainer((TileEntityBlastFurnace) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, Containers.BLAST_FURNACE);
+                }
+                break;
+            case LECTERN:
+                if (iinventory instanceof TileEntityLectern) {
+                    getHandle().openContainer((TileEntityLectern) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, Containers.LECTERN);
+                }
+                break;
+            case SMOKER:
+                if (iinventory instanceof TileEntitySmoker) {
+                    getHandle().openContainer((TileEntitySmoker) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, Containers.SMOKER);
+                }
+                break;
+            case STONECUTTER:
+                openCustomInventory(inventory, player, Containers.STONECUTTER);
                 break;
             case CREATIVE:
             case CRAFTING:
             case MERCHANT:
+            case LOOM:
+            case CARTOGRAPHY:
+            case GRINDSTONE:
                 throw new IllegalArgumentException("Can't open a " + type + " inventory!");
         }
         if (getHandle().activeContainer == formerContainer) {
@@ -381,25 +450,17 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().activeContainer.getBukkitView();
     }
 
-    private void openCustomInventory(Inventory inventory, EntityPlayer player, String windowType) {
+    private void openCustomInventory(Inventory inventory, EntityPlayer player, Containers<?> windowType) {
         if (player.playerConnection == null) return;
+        Preconditions.checkArgument(windowType != null, "Unknown windowType");
         Container container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
 
         container = CraftEventFactory.callInventoryOpenEvent(player, container);
         if(container == null) return;
 
         String title = container.getBukkitView().getTitle();
-        int size = container.getBukkitView().getTopInventory().getSize();
 
-        // Special cases
-        if (windowType.equals("minecraft:crafting_table") 
-                || windowType.equals("minecraft:anvil")
-                || windowType.equals("minecraft:enchanting_table")
-                ) {
-            size = 0;
-        }
-
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -414,7 +475,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity(new BlockWorkbench.TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        getHandle().openContainer(((BlockWorkbench) Blocks.CRAFTING_TABLE).getInventory(null, getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -434,13 +495,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        TileEntity container = getHandle().world.getTileEntity(pos);
-        if (container == null && force) {
-            container = new TileEntityEnchantTable();
-            container.setWorld(getHandle().world);
-            container.setPosition(pos);
-        }
-        getHandle().openTileEntity((ITileEntityContainer) container);
+        getHandle().openContainer(((BlockEnchantmentTable) Blocks.ENCHANTING_TABLE).getInventory(null, getHandle().world, pos));
 
         if (force) {
             getHandle().activeContainer.checkReachable = false;
@@ -471,10 +526,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // Now open the window
         InventoryType type = inventory.getType();
-        String windowType = CraftContainer.getNotchInventoryType(type);
+        Containers<?> windowType = CraftContainer.getNotchInventoryType(type);
         String title = inventory.getTitle();
-        int size = inventory.getTopInventory().getSize();
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }
@@ -498,16 +552,19 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         IMerchant mcMerchant;
+        IChatBaseComponent name;
         if (merchant instanceof CraftVillager) {
             mcMerchant = ((CraftVillager) merchant).getHandle();
-        } else if (merchant instanceof CraftMerchant) {
-            mcMerchant = ((CraftMerchant) merchant).getMerchant();
+            name = ((CraftVillager) merchant).getHandle().getScoreboardDisplayName();
+        } else if (merchant instanceof CraftMerchantCustom) {
+            mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
+            name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();
         } else {
             throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
         }
 
         mcMerchant.setTradingPlayer(this.getHandle());
-        this.getHandle().openTrade(mcMerchant);
+        mcMerchant.openTrade(this.getHandle(), name, 0);
 
         return this.getHandle().activeContainer.getBukkitView();
     }
@@ -576,17 +633,17 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().undiscoverRecipes(bukkitKeysToMinecraftRecipes(recipes));
     }
 
-    private Collection<IRecipe> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {
-        Collection<IRecipe> recipes = new ArrayList<>();
+    private Collection<IRecipe<?>> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {
+        Collection<IRecipe<?>> recipes = new ArrayList<>();
         CraftingManager manager = getHandle().world.getMinecraftServer().getCraftingManager();
 
         for (NamespacedKey recipeKey : recipeKeys) {
-            IRecipe recipe = manager.a(CraftNamespacedKey.toMinecraft(recipeKey));
-            if (recipe == null) {
+            Optional<? extends IRecipe<?>> recipe = manager.a(CraftNamespacedKey.toMinecraft(recipeKey));
+            if (!recipe.isPresent()) {
                 continue;
             }
 
-            recipes.add(recipe);
+            recipes.add(recipe.get());
         }
 
         return recipes;
@@ -595,9 +652,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public org.bukkit.entity.Entity getShoulderEntityLeft() {
         if (!getHandle().getShoulderEntityLeft().isEmpty()) {
-            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityLeft(), getHandle().world);
+            Optional<Entity> shoulder = EntityTypes.a(getHandle().getShoulderEntityLeft(), getHandle().world);
 
-            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+            return (!shoulder.isPresent()) ? null : shoulder.get().getBukkitEntity();
         }
 
         return null;
@@ -614,9 +671,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public org.bukkit.entity.Entity getShoulderEntityRight() {
         if (!getHandle().getShoulderEntityRight().isEmpty()) {
-            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityRight(), getHandle().world);
+            Optional<Entity> shoulder = EntityTypes.a(getHandle().getShoulderEntityRight(), getHandle().world);
 
-            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+            return (!shoulder.isPresent()) ? null : shoulder.get().getBukkitEntity();
         }
 
         return null;

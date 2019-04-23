@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/EntityVillager.java
 +++ b/net/minecraft/server/EntityVillager.java
-@@ -6,6 +6,16 @@
+@@ -17,6 +17,16 @@
+ import java.util.function.BiPredicate;
+ import java.util.stream.Collectors;
  import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.entity.CraftVillager;
@@ -15,35 +15,28 @@
 +import org.bukkit.event.entity.VillagerReplenishTradeEvent;
 +// CraftBukkit end
  
- public class EntityVillager extends EntityAgeable implements NPC, IMerchant {
+ public class EntityVillager extends EntityVillagerAbstract implements ReputationHandler, VillagerDataHolder {
  
-@@ -37,7 +47,7 @@
+@@ -62,7 +72,7 @@
  
-     public EntityVillager(World world, int i) {
-         super(EntityTypes.VILLAGER, world);
--        this.inventory = new InventorySubcontainer(new ChatComponentText("Items"), 8);
-+        this.inventory = new InventorySubcontainer(new ChatComponentText("Items"), 8, (CraftVillager) this.getBukkitEntity()); // CraftBukkit add argument
-         this.setProfession(i);
-         this.setSize(0.6F, 1.95F);
-         ((Navigation) this.getNavigation()).a(true);
-@@ -119,7 +129,14 @@
-                         MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
+     @Override
+     public BehaviorController<EntityVillager> getBehaviorController() {
+-        return super.getBehaviorController();
++        return (BehaviorController<EntityVillager>) super.getBehaviorController(); // CraftBukkit - decompile error
+     }
  
-                         if (merchantrecipe.h()) {
--                            merchantrecipe.a(this.random.nextInt(6) + this.random.nextInt(6) + 2);
-+                            // CraftBukkit start
-+                            int bonus = this.random.nextInt(6) + this.random.nextInt(6) + 2;
-+                            VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((Villager) this.getBukkitEntity(), merchantrecipe.asBukkit(), bonus);
-+                            Bukkit.getPluginManager().callEvent(event);
-+                            if (!event.isCancelled()) {
-+                                merchantrecipe.a(event.getBonus());
-+                            }
-+                            // CraftBukkit end
-                         }
-                     }
- 
-@@ -131,7 +148,7 @@
-                     }
+     @Override
+@@ -126,7 +136,7 @@
+     @Override
+     protected void mobTick() {
+         this.world.getMethodProfiler().enter("brain");
+-        this.getBehaviorController().a((WorldServer) this.world, (EntityLiving) this);
++        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
+         this.world.getMethodProfiler().exit();
+         if (!this.dX() && this.bE > 0) {
+             --this.bE;
+@@ -136,7 +146,7 @@
+                     this.bF = false;
                  }
  
 -                this.addEffect(new MobEffect(MobEffects.REGENERATION, 200, 0));
@@ -51,39 +44,51 @@
              }
          }
  
-@@ -433,7 +450,20 @@
-                 for (int l = 0; l < k; ++l) {
-                     EntityVillager.IMerchantRecipeOption entityvillager_imerchantrecipeoption = aentityvillager_imerchantrecipeoption3[l];
+@@ -247,7 +257,14 @@
+             while (iterator.hasNext()) {
+                 MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
--                    entityvillager_imerchantrecipeoption.a(this, this.trades, this.random);
-+                    // CraftBukkit start
-+                    // this is a hack. this must be done because otherwise, if
-+                    // mojang adds a new type of villager merchant option, it will need to
-+                    // have event handling added manually. this is better than having to do that.
-+                    MerchantRecipeList list = new MerchantRecipeList();
-+                    entityvillager_imerchantrecipeoption.a(this, list, this.random);
-+                    for (MerchantRecipe recipe : list) {
-+                        VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((Villager) getBukkitEntity(), recipe.asBukkit());
-+                        Bukkit.getPluginManager().callEvent(event);
-+                        if (!event.isCancelled()) {
-+                            this.trades.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
-+                        }
-+                    }
-+                    // CraftBukkit end
-                 }
+-                merchantrecipe.increaseUses(-MathHelper.d((float) i * merchantrecipe.m()));
++                // CraftBukkit start
++                int bonus = -MathHelper.d((float) i * merchantrecipe.m());
++                VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((Villager) this.getBukkitEntity(), merchantrecipe.asBukkit(), bonus);
++                Bukkit.getPluginManager().callEvent(event);
++                if (!event.isCancelled()) {
++                    merchantrecipe.increaseUses(event.getBonus());
++                }
++                // CraftBukkit end
              }
- 
-@@ -568,7 +598,12 @@
-                 entitywitch.setCustomNameVisible(this.getCustomNameVisible());
-             }
- 
--            this.world.addEntity(entitywitch);
-+            // CraftBukkit start
-+            if (CraftEventFactory.callEntityTransformEvent(this, entitywitch, EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
-+                return;
-+            }
-+            this.world.addEntity(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
-+            // CraftBukkit end
-             this.die();
          }
+ 
+@@ -553,7 +570,12 @@
+             entitywitch.setCustomNameVisible(this.getCustomNameVisible());
+         }
+ 
+-        this.world.addEntity(entitywitch);
++        // CraftBukkit start
++        if (CraftEventFactory.callEntityTransformEvent(this, entitywitch, EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
++            return;
++        }
++        this.world.addEntity(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
++        // CraftBukkit end
+         this.die();
      }
+ 
+@@ -725,7 +747,7 @@
+ 
+             if (entityirongolem != null) {
+                 if (entityirongolem.a((GeneratorAccess) this.world, EnumMobSpawn.MOB_SUMMONED) && entityirongolem.a((IWorldReader) this.world)) {
+-                    this.world.addEntity(entityirongolem);
++                    this.world.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
+                     return entityirongolem;
+                 }
+ 
+@@ -775,7 +797,7 @@
+         EntityVillager.a entityvillager_a = (EntityVillager.a) this.getBehaviorController().c(MemoryModuleType.GOLEM_SPAWN_CONDITIONS).orElseGet(EntityVillager.a::new);
+ 
+         entityvillager_a.b(this.world.getTime());
+-        this.br.a(MemoryModuleType.GOLEM_SPAWN_CONDITIONS, (Object) entityvillager_a);
++        this.br.a(MemoryModuleType.GOLEM_SPAWN_CONDITIONS, entityvillager_a); // CraftBukkit - decompile error
+     }
+ 
+     public static final class a {

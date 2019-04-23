@@ -1,17 +1,18 @@
 --- a/net/minecraft/server/DispenseBehaviorItem.java
 +++ b/net/minecraft/server/DispenseBehaviorItem.java
-@@ -1,5 +1,10 @@
+@@ -1,5 +1,11 @@
  package net.minecraft.server;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftVector;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
 +
  public class DispenseBehaviorItem implements IDispenseBehavior {
  
      public DispenseBehaviorItem() {}
-@@ -17,11 +22,19 @@
+@@ -18,11 +24,19 @@
          IPosition iposition = BlockDispenser.a(isourceblock);
          ItemStack itemstack1 = itemstack.cloneAndSubtract(1);
  
@@ -33,16 +34,16 @@
          double d0 = iposition.getX();
          double d1 = iposition.getY();
          double d2 = iposition.getZ();
-@@ -41,7 +54,41 @@
-         entityitem.motX += world.random.nextGaussian() * 0.007499999832361937D * (double) i;
-         entityitem.motY += world.random.nextGaussian() * 0.007499999832361937D * (double) i;
-         entityitem.motZ += world.random.nextGaussian() * 0.007499999832361937D * (double) i;
+@@ -37,7 +51,39 @@
+         double d3 = world.random.nextDouble() * 0.1D + 0.2D;
+ 
+         entityitem.setMot(world.random.nextGaussian() * 0.007499999832361937D * (double) i + (double) enumdirection.getAdjacentX() * d3, world.random.nextGaussian() * 0.007499999832361937D * (double) i + 0.20000000298023224D, world.random.nextGaussian() * 0.007499999832361937D * (double) i + (double) enumdirection.getAdjacentZ() * d3);
 +
 +        // CraftBukkit start
 +        org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
-+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(entityitem.motX, entityitem.motY, entityitem.motZ));
++        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), CraftVector.toBukkit(entityitem.getMot()));
 +        if (!BlockDispenser.eventFired) {
 +            world.getServer().getPluginManager().callEvent(event);
 +        }
@@ -52,9 +53,7 @@
 +        }
 +
 +        entityitem.setItemStack(CraftItemStack.asNMSCopy(event.getItem()));
-+        entityitem.motX = event.getVelocity().getX();
-+        entityitem.motY = event.getVelocity().getY();
-+        entityitem.motZ = event.getVelocity().getZ();
++        entityitem.setMot(CraftVector.toNMS(event.getVelocity()));
 +
 +        if (!event.getItem().getType().equals(craftItem.getType())) {
 +            // Chain to handler for new item

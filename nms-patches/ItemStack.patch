@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ItemStack.java
 +++ b/net/minecraft/server/ItemStack.java
-@@ -15,6 +15,24 @@
+@@ -16,6 +16,24 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -25,27 +25,21 @@
  public final class ItemStack {
  
      private static final Logger c = LogManager.getLogger();
-@@ -49,25 +67,49 @@
-         this.E();
+@@ -50,23 +68,42 @@
+         this.checkEmpty();
      }
  
 +    // Called to run this stack through the data converter to handle older storage methods and serialized items
-+    public void convertStack() {
-+        if (false && MinecraftServer.getServer() != null) { // Skip for now, causes more issues than it solves
-+            // Don't convert some things - both the old and new data values are valid
-+            // Conversion would make getting then impossible
-+            if (this.item == Blocks.PUMPKIN.getItem() || this.item == Blocks.GRASS.getItem() || this.item == Blocks.SNOW.getItem()) {
-+                return;
-+            }
-+
++    public void convertStack(int version) {
++        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
 +            NBTTagCompound savedStack = new NBTTagCompound();
 +            this.save(savedStack);
-+            savedStack = (NBTTagCompound) MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ITEM_STACK, new Dynamic(DynamicOpsNBT.a, savedStack), -1, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
++            savedStack = (NBTTagCompound) MinecraftServer.getServer().dataConverterManager.update(DataConverterTypes.ITEM_STACK, new Dynamic(DynamicOpsNBT.a, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
 +            this.load(savedStack);
 +        }
 +    }
 +
-     private void E() {
+     private void checkEmpty() {
 +        if (this.h && this == ItemStack.a) throw new AssertionError("TRAP"); // CraftBukkit
          this.h = false;
          this.h = this.isEmpty();
@@ -54,9 +48,7 @@
 -    private ItemStack(NBTTagCompound nbttagcompound) {
 +    // CraftBukkit - break into own method
 +    private void load(NBTTagCompound nbttagcompound) {
-         Item item = (Item) IRegistry.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
- 
-         this.item = item == null ? Items.AIR : item;
+         this.item = (Item) IRegistry.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
          this.count = nbttagcompound.getByte("Count");
          if (nbttagcompound.hasKeyOfType("tag", 10)) {
 -            this.tag = nbttagcompound.getCompound("tag");
@@ -70,15 +62,16 @@
          if (this.getItem().usesDurability()) {
              this.setDamage(this.getDamage());
          }
-+    }
  
++    }
++
 +    private ItemStack(NBTTagCompound nbttagcompound) {
 +        this.load(nbttagcompound);
 +        // CraftBukkit end
-         this.E();
+         this.checkEmpty();
      }
  
-@@ -97,7 +139,7 @@
+@@ -96,7 +133,7 @@
          return this.h ? Items.AIR : this.item;
      }
  
@@ -87,8 +80,8 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -105,12 +147,150 @@
-         if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().F(), shapedetectorblock)) {
+@@ -104,12 +141,150 @@
+         if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().t(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
 +            // CraftBukkit start - handle all block place event logic here
@@ -186,7 +179,7 @@
 +                        IBlockData block = world.getType(newblockposition);
 +
 +                        if (!(block.getBlock() instanceof BlockTileEntity)) { // Containers get placed automatically
-+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock);
++                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
 +                        }
 +
 +                        world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag); // send null chunk as chunk.k() returns false by this point
@@ -226,7 +219,7 @@
 +
 +                    // SPIGOT-1288 - play sound stripped from ItemBlock
 +                    if (this.item instanceof ItemBlock) {
-+                        SoundEffectType soundeffecttype = ((ItemBlock) this.item).getBlock().getStepSound();
++                        SoundEffectType soundeffecttype = ((ItemBlock) this.item).getBlock().stepSound;
 +                        world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F);
 +                    }
 +
@@ -239,7 +232,7 @@
  
              return enuminteractionresult;
          }
-@@ -134,7 +314,7 @@
+@@ -133,7 +308,7 @@
          nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
          nbttagcompound.setByte("Count", (byte) this.count);
          if (this.tag != null) {
@@ -248,20 +241,20 @@
          }
  
          return nbttagcompound;
-@@ -167,6 +347,12 @@
+@@ -166,6 +341,12 @@
      }
  
      public void setDamage(int i) {
 +        // CraftBukkit start - remove Damage tag if 0
 +        if (i <= 0) {
-+            this.c("Damage"); // PAIL removeTag
++            this.removeTag("Damage");
 +            return;
 +        }
 +        // CraftBukkit end
          this.getOrCreateTag().setInt("Damage", Math.max(0, i));
      }
  
-@@ -191,6 +377,21 @@
+@@ -190,6 +371,21 @@
                  }
  
                  i -= k;
@@ -283,19 +276,19 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -212,6 +413,11 @@
-                 if (this.isDamaged(i, entityliving.getRandom(), entityliving instanceof EntityPlayer ? (EntityPlayer) entityliving : null)) {
-                     entityliving.c(this);
+@@ -211,6 +407,11 @@
+                 if (this.isDamaged(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
+                     consumer.accept(t0);
                      Item item = this.getItem();
 +                    // CraftBukkit start - Check for item breaking
-+                    if (this.count == 1 && entityliving instanceof EntityHuman) {
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
++                    if (this.count == 1 && t0 instanceof EntityHuman) {
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) t0, this);
 +                    }
 +                    // CraftBukkit end
  
                      this.subtract(1);
-                     if (entityliving instanceof EntityHuman) {
-@@ -335,6 +541,17 @@
+                     if (t0 instanceof EntityHuman) {
+@@ -338,6 +539,17 @@
          return this.tag;
      }
  
@@ -313,21 +306,21 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -479,6 +696,12 @@
+@@ -482,6 +694,12 @@
      }
  
      public void setRepairCost(int i) {
 +        // CraftBukkit start - remove RepairCost tag when 0 (SPIGOT-3945)
 +        if (i == 0) {
-+            this.c("RepairCost"); // PAIL removeTag
++            this.removeTag("RepairCost");
 +            return;
 +        }
 +        // CraftBukkit end
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -521,6 +744,13 @@
-         nbttaglist.add((NBTBase) nbttagcompound);
+@@ -524,6 +742,13 @@
+         nbttaglist.add(nbttagcompound);
      }
  
 +    // CraftBukkit start
@@ -337,6 +330,6 @@
 +    }
 +    // CraftBukkit end
 +
-     public IChatBaseComponent A() {
+     public IChatBaseComponent B() {
          IChatBaseComponent ichatbasecomponent = (new ChatComponentText("")).addSibling(this.getName());
  

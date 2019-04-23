@@ -175,4 +175,14 @@ public final class CraftMapView implements MapView {
     public void setUnlimitedTracking(boolean unlimited) {
         worldMap.unlimitedTracking = unlimited;
     }
+
+    @Override
+    public boolean isLocked() {
+        return worldMap.locked;
+    }
+
+    @Override
+    public void setLocked(boolean locked) {
+        worldMap.locked = locked;
+    }
 }

@@ -46,9 +46,6 @@ public final class CraftItemStack extends ItemStack {
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount());
         if (original.hasItemMeta()) {
             setItemMeta(stack, original.getItemMeta());
-        } else {
-            // Converted after setItemMeta
-            stack.convertStack();
         }
         return stack;
     }
@@ -349,6 +346,7 @@ public final class CraftItemStack extends ItemStack {
             case ZOMBIE_WALL_HEAD:
                 return new CraftMetaSkull(item.getTag());
             case LEATHER_HELMET:
+            case LEATHER_HORSE_ARMOR:
             case LEATHER_CHESTPLATE:
             case LEATHER_LEGGINGS:
             case LEATHER_BOOTS:
@@ -459,7 +457,18 @@ public final class CraftItemStack extends ItemStack {
             case JUKEBOX:
             case DISPENSER:
             case DROPPER:
-            case SIGN:
+            case ACACIA_SIGN:
+            case ACACIA_WALL_SIGN:
+            case BIRCH_SIGN:
+            case BIRCH_WALL_SIGN:
+            case DARK_OAK_SIGN:
+            case DARK_OAK_WALL_SIGN:
+            case JUNGLE_SIGN:
+            case JUNGLE_WALL_SIGN:
+            case OAK_SIGN:
+            case OAK_WALL_SIGN:
+            case SPRUCE_SIGN:
+            case SPRUCE_WALL_SIGN:
             case SPAWNER:
             case BREWING_STAND:
             case ENCHANTING_TABLE:
@@ -490,6 +499,13 @@ public final class CraftItemStack extends ItemStack {
             case RED_SHULKER_BOX:
             case BLACK_SHULKER_BOX:
             case ENDER_CHEST:
+            case BARREL:
+            case BELL:
+            case BLAST_FURNACE:
+            case CAMPFIRE:
+            case JIGSAW:
+            case LECTERN:
+            case SMOKER:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());
@@ -532,7 +548,7 @@ public final class CraftItemStack extends ItemStack {
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
-        item.convertStack();
+        item.convertStack(((CraftMetaItem) itemMeta).getVersion());
 
         return true;
     }

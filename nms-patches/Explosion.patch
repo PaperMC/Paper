@@ -20,7 +20,7 @@
      private final Map<EntityHuman, Vec3D> l = Maps.newHashMap();
 +    public boolean wasCanceled = false; // CraftBukkit - add field
  
-     public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f, boolean flag, boolean flag1) {
+     public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
          this.world = world;
          this.source = entity;
 -        this.size = f;
@@ -28,7 +28,7 @@
          this.posX = d0;
          this.posY = d1;
          this.posZ = d2;
-@@ -38,6 +46,11 @@
+@@ -73,6 +81,11 @@
      }
  
      public void a() {
@@ -40,7 +40,7 @@
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
  
-@@ -76,7 +89,7 @@
+@@ -111,7 +124,7 @@
                                  f -= (f2 + 0.3F) * 0.3F;
                              }
  
@@ -49,8 +49,8 @@
                                  set.add(blockposition);
                              }
  
-@@ -120,7 +133,16 @@
-                         double d12 = (double) this.world.a(vec3d, entity.getBoundingBox());
+@@ -155,7 +168,16 @@
+                         double d12 = (double) a(vec3d, entity);
                          double d13 = (1.0D - d7) * d12;
  
 -                        entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f3 + 1.0D)));
@@ -67,10 +67,10 @@
                          double d14 = d13;
  
                          if (entity instanceof EntityLiving) {
-@@ -156,6 +178,50 @@
+@@ -191,6 +213,50 @@
          BlockPosition blockposition;
  
-         if (this.b) {
+         if (flag1) {
 +            // CraftBukkit start
 +            org.bukkit.World bworld = this.world.getWorld();
 +            org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
@@ -118,20 +118,19 @@
              iterator = this.blocks.iterator();
  
              while (iterator.hasNext()) {
-@@ -187,7 +253,8 @@
+@@ -226,7 +292,7 @@
+                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.POSITION, blockposition).set(LootContextParameters.TOOL, ItemStack.a).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
  
-                 if (!iblockdata.isAir()) {
-                     if (block.a(this)) {
--                        iblockdata.dropNaturally(this.world, blockposition, 1.0F / this.size, 0);
-+                        // CraftBukkit - add yield
-+                        iblockdata.dropNaturally(this.world, blockposition, yield, 0);
-                     }
+                         if (this.b == Explosion.Effect.DESTROY) {
+-                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, this.size);
++                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
+                         }
  
-                     this.world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 3);
-@@ -202,7 +269,11 @@
+                         Block.b(iblockdata, loottableinfo_builder);
+@@ -244,7 +310,11 @@
              while (iterator.hasNext()) {
                  blockposition = (BlockPosition) iterator.next();
-                 if (this.world.getType(blockposition).isAir() && this.world.getType(blockposition.down()).f(this.world, blockposition.down()) && this.c.nextInt(3) == 0) {
+                 if (this.world.getType(blockposition).isAir() && this.world.getType(blockposition.down()).g(this.world, blockposition.down()) && this.c.nextInt(3) == 0) {
 -                    this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
 +                    // CraftBukkit start - Ignition by explosion
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
@@ -141,7 +140,7 @@
                  }
              }
          }
-@@ -223,7 +294,9 @@
+@@ -265,7 +335,9 @@
  
      @Nullable
      public EntityLiving getSource() {

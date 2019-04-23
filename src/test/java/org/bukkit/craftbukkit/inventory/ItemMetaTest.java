@@ -27,6 +27,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.BukkitWrapper;
@@ -36,6 +37,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -188,7 +190,7 @@ public class ItemMetaTest extends AbstractTestingBase {
     public void testBlockStateMeta() {
         List<Block> queue = new ArrayList<>();
 
-        for (Item item : (Iterable<Item>) IRegistry.ITEM) { // Eclipse fail
+        for (Item item : IRegistry.ITEM) {
             if (item instanceof ItemBlock) {
                 queue.add(((ItemBlock) item).getBlock());
             }
@@ -368,6 +370,13 @@ public class ItemMetaTest extends AbstractTestingBase {
         notEqualMeta2.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 11, AttributeModifier.Operation.ADD_NUMBER));
 
         assertThat(itemMeta2.equals(notEqualMeta2), is(false));
+    }
+
+    @Test
+    public void testBlockData() {
+        BlockDataMeta itemMeta = (BlockDataMeta) Bukkit.getItemFactory().getItemMeta(Material.CHEST);
+        itemMeta.setBlockData(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]"));
+        assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
     }
 
     private void downCastTest(final StackWrapper provider) {

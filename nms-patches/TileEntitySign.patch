@@ -1,6 +1,15 @@
 --- a/net/minecraft/server/TileEntitySign.java
 +++ b/net/minecraft/server/TileEntitySign.java
-@@ -24,6 +24,12 @@
+@@ -3,7 +3,7 @@
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import javax.annotation.Nullable;
+ 
+-public class TileEntitySign extends TileEntity {
++public class TileEntitySign extends TileEntity implements ICommandListener { // CraftBukkit - implements
+ 
+     public final IChatBaseComponent[] lines = new IChatBaseComponent[] { new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText("")};
+     private int c = -1;
+@@ -29,6 +29,12 @@
              nbttagcompound.setString("Text" + (i + 1), s);
          }
  
@@ -10,12 +19,12 @@
 +        }
 +        // CraftBukkit end
 +
+         nbttagcompound.setString("Color", this.l.b());
          return nbttagcompound;
      }
- 
-@@ -31,18 +37,38 @@
-         this.isEditable = false;
+@@ -39,18 +45,38 @@
          super.load(nbttagcompound);
+         this.l = EnumColor.a(nbttagcompound.getString("Color"), EnumColor.BLACK);
  
 +        // CraftBukkit start - Add an option to convert signs correctly
 +        // This is done with a flag instead of all the time because
@@ -29,14 +38,14 @@
 +            if (s != null && s.length() > 2048) {
 +                s = "\"\"";
 +            }
++
++            try {
++                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
  
 -            if (this.world instanceof WorldServer) {
 -                try {
 -                    this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatbasecomponent, (Entity) null);
 -                } catch (CommandSyntaxException commandsyntaxexception) {
-+            try {
-+                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s);
-+
 +                if (oldSign) {
 +                    lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
 +                    continue;
@@ -58,18 +67,43 @@
 +                this.lines[i] = new ChatComponentText(s);
              }
  
-             this.h[i] = null;
-@@ -102,6 +128,13 @@
- 
-     public void sendMessage(IChatBaseComponent ichatbasecomponent) {}
+             this.k[i] = null;
+@@ -111,11 +137,37 @@
+         return true;
+     }
  
 +    // CraftBukkit start
 +    @Override
++    public void sendMessage(IChatBaseComponent ichatbasecomponent) {}
++
++    @Override
 +    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
 +        return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitSender(wrapper) : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, this);
++    }
++
++    @Override
++    public boolean shouldSendSuccess() {
++        return false;
++    }
++
++    @Override
++    public boolean shouldSendFailure() {
++        return false;
++    }
++
++    @Override
++    public boolean shouldBroadcastCommands() {
++        return false;
 +    }
 +    // CraftBukkit end
 +
      public CommandListenerWrapper a(@Nullable EntityPlayer entityplayer) {
          String s = entityplayer == null ? "Sign" : entityplayer.getDisplayName().getString();
          Object object = entityplayer == null ? new ChatComponentText("Sign") : entityplayer.getScoreboardDisplayName();
+ 
+-        return new CommandListenerWrapper(ICommandListener.DUMMY, new Vec3D((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
++        // CraftBukkit - this
++        return new CommandListenerWrapper(this, new Vec3D((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
+     }
+ 
+     public EnumColor f() {

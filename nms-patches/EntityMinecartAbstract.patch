@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityMinecartAbstract.java
 +++ b/net/minecraft/server/EntityMinecartAbstract.java
-@@ -6,6 +6,15 @@
+@@ -4,6 +4,15 @@
  import java.util.List;
  import javax.annotation.Nullable;
  
@@ -13,12 +13,12 @@
 +import org.bukkit.util.Vector;
 +// CraftBukkit end
 +
- public abstract class EntityMinecartAbstract extends Entity implements INamableTileEntity {
+ public abstract class EntityMinecartAbstract extends Entity {
  
-     private static final DataWatcherObject<Integer> a = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
-@@ -23,6 +32,17 @@
-     private double aA;
-     private double aB;
+     private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
+@@ -21,6 +30,17 @@
+     private double ax;
+     private double ay;
  
 +    // CraftBukkit start
 +    public boolean slowWhenEmpty = true;
@@ -33,8 +33,8 @@
 +
      protected EntityMinecartAbstract(EntityTypes<?> entitytypes, World world) {
          super(entitytypes, world);
-         this.j = true;
-@@ -90,6 +110,19 @@
+         this.i = true;
+@@ -76,6 +96,19 @@
              if (this.isInvulnerable(damagesource)) {
                  return false;
              } else {
@@ -51,10 +51,10 @@
 +
 +                f = (float) event.getDamage();
 +                // CraftBukkit end
-                 this.k(-this.u());
-                 this.d(10);
-                 this.aA();
-@@ -97,6 +130,15 @@
+                 this.d(-this.n());
+                 this.c(10);
+                 this.velocityChanged();
+@@ -83,6 +116,15 @@
                  boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
  
                  if (flag || this.getDamage() > 40.0F) {
@@ -70,9 +70,9 @@
                      this.ejectPassengers();
                      if (flag && !this.hasCustomName()) {
                          this.die();
-@@ -135,6 +177,14 @@
-     }
+@@ -124,6 +166,14 @@
  
+     @Override
      public void tick() {
 +        // CraftBukkit start
 +        double prevX = this.locX;
@@ -83,26 +83,18 @@
 +        // CraftBukkit end
 +
          if (this.getType() > 0) {
-             this.d(this.getType() - 1);
+             this.c(this.getType() - 1);
          }
-@@ -149,6 +199,8 @@
- 
-         int i;
- 
-+        // CraftBukkit - handled in postTick
-+        /*
-         if (!this.world.isClientSide && this.world instanceof WorldServer) {
-             this.world.methodProfiler.enter("portal");
-             MinecraftServer minecraftserver = this.world.getMinecraftServer();
-@@ -188,6 +240,7 @@
- 
-             this.world.methodProfiler.exit();
+@@ -136,7 +186,7 @@
+             this.ae();
          }
-+        */
  
+-        this.doPortalTick();
++        // this.doPortalTick(); // CraftBukkit - handled in postTick
          if (this.world.isClientSide) {
-             if (this.aw > 0) {
-@@ -255,6 +308,18 @@
+             if (this.at > 0) {
+                 double d0 = this.locX + (this.au - this.locX) / (double) this.at;
+@@ -202,6 +252,18 @@
              }
  
              this.setYawPitch(this.yaw, this.pitch);
@@ -118,10 +110,10 @@
 +                this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
 +            }
 +            // CraftBukkit end
-             if (this.v() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && this.motX * this.motX + this.motZ * this.motZ > 0.01D) {
+             if (this.getMinecartType() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && b(this.getMot()) > 0.01D) {
                  List<Entity> list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D), IEntitySelector.a(this));
  
-@@ -263,8 +328,24 @@
+@@ -210,8 +272,24 @@
                          Entity entity = (Entity) list.get(l);
  
                          if (!(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && !(entity instanceof EntityMinecartAbstract) && !this.isVehicle() && !entity.isPassenger()) {
@@ -146,7 +138,7 @@
                              entity.collide(this);
                          }
                      }
-@@ -276,6 +357,14 @@
+@@ -223,6 +301,14 @@
                      Entity entity1 = (Entity) iterator.next();
  
                      if (!this.w(entity1) && entity1.isCollidable() && entity1 instanceof EntityMinecartAbstract) {
@@ -161,52 +153,44 @@
                          entity1.collide(this);
                      }
                  }
-@@ -286,7 +375,7 @@
+@@ -233,7 +319,7 @@
      }
  
-     protected double p() {
+     protected double getMaxSpeed() {
 -        return 0.4D;
 +        return this.maxSpeed; // CraftBukkit
      }
  
      public void a(int i, int j, int k, boolean flag) {}
-@@ -297,16 +386,20 @@
-         this.motX = MathHelper.a(this.motX, -d0, d0);
-         this.motZ = MathHelper.a(this.motZ, -d0, d0);
+@@ -244,12 +330,16 @@
+ 
+         this.setMot(MathHelper.a(vec3d.x, -d0, d0), vec3d.y, MathHelper.a(vec3d.z, -d0, d0));
          if (this.onGround) {
--            this.motX *= 0.5D;
--            this.motY *= 0.5D;
--            this.motZ *= 0.5D;
+-            this.setMot(this.getMot().a(0.5D));
 +            // CraftBukkit start - replace magic numbers with our variables
-+            this.motX *= this.derailedX;
-+            this.motY *= this.derailedY;
-+            this.motZ *= this.derailedZ;
++            this.setMot(new Vec3D(this.getMot().x * this.derailedX, this.getMot().y * this.derailedY, this.getMot().z * this.derailedZ));
 +            // CraftBukkit end
          }
  
-         this.move(EnumMoveType.SELF, this.motX, this.motY, this.motZ);
+         this.move(EnumMoveType.SELF, this.getMot());
          if (!this.onGround) {
--            this.motX *= 0.949999988079071D;
--            this.motY *= 0.949999988079071D;
--            this.motZ *= 0.949999988079071D;
+-            this.setMot(this.getMot().a(0.95D));
 +            // CraftBukkit start - replace magic numbers with our variables
-+            this.motX *= this.flyingX;
-+            this.motY *= this.flyingY;
-+            this.motZ *= this.flyingZ;
++            this.setMot(new Vec3D(this.getMot().x * this.flyingX, this.getMot().y * this.flyingY, this.getMot().z * this.flyingZ));
 +            // CraftBukkit end
          }
  
      }
-@@ -491,7 +584,7 @@
+@@ -433,7 +523,7 @@
      }
  
-     protected void r() {
--        if (this.isVehicle()) {
-+        if (this.isVehicle() || !this.slowWhenEmpty) { // CraftBukkit - add !this.slowWhenEmpty
-             this.motX *= 0.996999979019165D;
-             this.motY *= 0.0D;
-             this.motZ *= 0.996999979019165D;
-@@ -588,6 +681,14 @@
+     protected void decelerate() {
+-        double d0 = this.isVehicle() ? 0.997D : 0.96D;
++        double d0 = this.isVehicle() || !this.slowWhenEmpty ? 0.997D : 0.96D; // CraftBukkit - add !this.slowWhenEmpty
+ 
+         this.setMot(this.getMot().d(d0, 0.0D, d0));
+     }
+@@ -516,6 +606,14 @@
          if (!this.world.isClientSide) {
              if (!entity.noclip && !this.noclip) {
                  if (!this.w(entity)) {
@@ -221,9 +205,9 @@
                      double d0 = entity.locX - this.locX;
                      double d1 = entity.locZ - this.locZ;
                      double d2 = d0 * d0 + d1 * d1;
-@@ -734,4 +835,26 @@
-             return this.i;
-         }
+@@ -651,4 +749,26 @@
+ 
+         private EnumMinecartType() {}
      }
 +
 +    // CraftBukkit start - Methods for getting and setting flying and derailed velocity modifiers
