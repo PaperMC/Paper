@@ -1,8 +1,8 @@
 package org.bukkit.util;
 
+import static org.junit.Assert.*;
 import org.bukkit.block.BlockFace;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class VectorTest {
 

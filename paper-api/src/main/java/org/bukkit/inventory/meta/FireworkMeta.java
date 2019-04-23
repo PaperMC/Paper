@@ -1,7 +1,6 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
-
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;

@@ -1,15 +1,14 @@
 package org.bukkit.materials;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
-
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import org.bukkit.CropState;
 import org.bukkit.Material;
 import org.bukkit.NetherWartsState;
 import org.bukkit.TreeSpecies;
 import org.bukkit.block.BlockFace;
-import org.bukkit.material.Crops;
 import org.bukkit.material.Comparator;
+import org.bukkit.material.Crops;
 import org.bukkit.material.Diode;
 import org.bukkit.material.Door;
 import org.bukkit.material.Hopper;

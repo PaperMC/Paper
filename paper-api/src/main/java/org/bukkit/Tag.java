@@ -1,8 +1,7 @@
 package org.bukkit;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a tag that may be defined by the server or a resource pack to

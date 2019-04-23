@@ -1,12 +1,11 @@
 package org.bukkit.util;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.nio.channels.FileChannel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Class containing file utilities

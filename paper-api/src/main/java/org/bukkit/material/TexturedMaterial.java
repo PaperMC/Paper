@@ -1,7 +1,6 @@
 package org.bukkit.material;
 
 import java.util.List;
-
 import org.bukkit.Material;
 
 /**

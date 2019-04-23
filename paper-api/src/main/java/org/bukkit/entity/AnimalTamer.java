@@ -1,9 +1,8 @@
 package org.bukkit.entity;
 
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.UUID;
 
 public interface AnimalTamer {
 

@@ -1,11 +1,14 @@
 package org.bukkit.event;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map.Entry;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * A list of event handlers, stored per-event. Based on lahwran's fevents.

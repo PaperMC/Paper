@@ -1,11 +1,9 @@
 package org.bukkit.metadata;
 
+import static org.junit.Assert.*;
+import java.util.concurrent.Callable;
 import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
-
-import java.util.concurrent.Callable;
-
-import static org.junit.Assert.*;
 
 public class LazyMetadataValueTest {
     private LazyMetadataValue subject;

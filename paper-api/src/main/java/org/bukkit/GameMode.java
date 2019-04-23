@@ -1,10 +1,8 @@
 package org.bukkit;
 
-import java.util.Map;
-
-import org.bukkit.entity.HumanEntity;
-
 import com.google.common.collect.Maps;
+import java.util.Map;
+import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.Nullable;
 
 /**

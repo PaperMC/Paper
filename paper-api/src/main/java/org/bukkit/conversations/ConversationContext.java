@@ -1,10 +1,9 @@
 package org.bukkit.conversations;
 
+import java.util.Map;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 /**
  * A ConversationContext provides continuity between nodes in the prompt graph

@@ -1,9 +1,8 @@
 package org.bukkit.conversations;
 
+import java.util.EventObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.EventObject;
 
 /**
  * ConversationAbandonedEvent contains information about an abandoned

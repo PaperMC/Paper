@@ -1,12 +1,11 @@
 package org.bukkit.scheduler;
 
-import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
-
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.List;
 import java.util.function.Consumer;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 public interface BukkitScheduler {
 

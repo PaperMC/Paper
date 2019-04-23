@@ -1,7 +1,6 @@
 package org.bukkit.event.block;
 
 import java.util.List;
-
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;

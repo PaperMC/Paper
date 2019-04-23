@@ -1,10 +1,9 @@
 package org.bukkit.block;
 
+import java.util.List;
 import org.bukkit.DyeColor;
 import org.bukkit.block.banner.Pattern;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * Represents a captured state of a banner.

@@ -2,7 +2,6 @@ package org.bukkit.metadata;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.Callable;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;

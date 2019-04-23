@@ -3,7 +3,6 @@ package org.bukkit.entity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;

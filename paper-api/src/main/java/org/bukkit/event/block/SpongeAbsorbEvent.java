@@ -1,11 +1,11 @@
 package org.bukkit.event.block;
 
+import java.util.List;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import java.util.List;
-import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
 /**

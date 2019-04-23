@@ -64,8 +64,8 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
     }
 
     /**
-     * Proxy method to {@link #setResult(Event.Result)} for the Cancellable
-     * interface. {@link #setResult(Event.Result)} is preferred, as it allows
+     * Proxy method to {@link #setResult(org.bukkit.event.Event.Result)} for the Cancellable
+     * interface. {@link #setResult(org.bukkit.event.Event.Result)} is preferred, as it allows
      * you to specify the Result beyond Result.DENY and Result.ALLOW.
      * <p>
      * {@inheritDoc}

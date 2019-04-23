@@ -1,7 +1,6 @@
 package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
-
 import org.bukkit.Achievement;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;

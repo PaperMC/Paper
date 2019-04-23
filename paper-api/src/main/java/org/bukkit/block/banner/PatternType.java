@@ -1,11 +1,10 @@
 package org.bukkit.block.banner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public enum PatternType {
     BASE("b"),

@@ -1,7 +1,6 @@
 package org.bukkit.inventory;
 
 import java.util.List;
-
 import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

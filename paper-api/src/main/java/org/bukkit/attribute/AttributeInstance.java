@@ -1,8 +1,7 @@
 package org.bukkit.attribute;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a mutable instance of an attribute and its associated modifiers

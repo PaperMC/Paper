@@ -1,7 +1,6 @@
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;

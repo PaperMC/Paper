@@ -2,7 +2,6 @@ package org.bukkit.event.player;
 
 import java.util.IllegalFormatException;
 import java.util.Set;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;

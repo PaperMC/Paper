@@ -1,7 +1,6 @@
 package org.bukkit.event.player;
 
 import java.util.Collection;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Warning;
 import org.bukkit.entity.Player;

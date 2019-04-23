@@ -1,12 +1,11 @@
 package org.bukkit.loot;
 
+import java.util.Collection;
+import java.util.Random;
 import org.bukkit.Keyed;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Collection;
-import java.util.Random;
 
 /**
  * LootTables are technical files that represent what items should be in

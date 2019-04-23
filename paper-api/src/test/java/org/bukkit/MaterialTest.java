@@ -2,7 +2,6 @@ package org.bukkit;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-
 import org.bukkit.material.MaterialData;
 import org.junit.Test;
 

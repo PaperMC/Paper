@@ -1,7 +1,7 @@
 package org.bukkit.plugin.messaging;
 
-import org.bukkit.entity.Player;
 import static org.junit.Assert.*;
+import org.bukkit.entity.Player;
 
 public class TestMessageListener implements PluginMessageListener {
     private final String channel;

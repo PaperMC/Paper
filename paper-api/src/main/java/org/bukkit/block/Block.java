@@ -1,7 +1,6 @@
 package org.bukkit.block;
 
 import java.util.Collection;
-
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;

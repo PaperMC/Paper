@@ -1,12 +1,11 @@
 package org.bukkit.util;
 
-import org.bukkit.ChatColor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import org.bukkit.ChatColor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The ChatPaginator takes a raw string of arbitrary length and breaks it down

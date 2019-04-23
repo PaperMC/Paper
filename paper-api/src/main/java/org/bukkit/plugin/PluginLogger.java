@@ -1,10 +1,9 @@
 package org.bukkit.plugin;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The PluginLogger class is a modified {@link Logger} that prepends all

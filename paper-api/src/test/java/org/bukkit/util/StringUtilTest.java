@@ -2,14 +2,11 @@ package org.bukkit.util;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
 
 public class StringUtilTest {
 

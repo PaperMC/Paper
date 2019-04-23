@@ -1,11 +1,8 @@
 package org.bukkit.material.types;
 
-import java.util.Map;
-
-import org.bukkit.block.BlockFace;
-
 import com.google.common.collect.Maps;
-import org.jetbrains.annotations.NotNull;
+import java.util.Map;
+import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.Nullable;
 
 /**

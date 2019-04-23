@@ -1,7 +1,6 @@
 package org.bukkit.util;
 
 import java.util.Objects;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;

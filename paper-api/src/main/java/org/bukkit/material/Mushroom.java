@@ -2,7 +2,6 @@ package org.bukkit.material;
 
 import java.util.EnumSet;
 import java.util.Set;
-
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;

@@ -1,13 +1,11 @@
 package org.bukkit.event;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
+import com.google.common.collect.ImmutableList;
 import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.plugin.messaging.TestPlayer;
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
 
 public class PlayerChatTabCompleteEventTest {
 

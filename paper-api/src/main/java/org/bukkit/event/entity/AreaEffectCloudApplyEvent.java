@@ -1,7 +1,6 @@
 package org.bukkit.event.entity;
 
 import java.util.List;
-
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;

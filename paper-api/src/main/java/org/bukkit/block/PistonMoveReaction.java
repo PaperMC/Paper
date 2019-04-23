@@ -1,9 +1,8 @@
 package org.bukkit.block;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents how a block or entity will react when interacting with a piston

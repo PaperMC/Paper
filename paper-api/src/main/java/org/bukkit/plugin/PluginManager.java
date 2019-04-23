@@ -2,7 +2,6 @@ package org.bukkit.plugin;
 
 import java.io.File;
 import java.util.Set;
-
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;

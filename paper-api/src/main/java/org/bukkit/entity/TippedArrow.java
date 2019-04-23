@@ -1,7 +1,6 @@
 package org.bukkit.entity;
 
 import java.util.List;
-
 import org.bukkit.Color;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;

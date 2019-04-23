@@ -1,8 +1,7 @@
 package org.bukkit.configuration.serialization;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an object that may be serialized.

@@ -2,7 +2,6 @@ package org.bukkit.enchantments;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;

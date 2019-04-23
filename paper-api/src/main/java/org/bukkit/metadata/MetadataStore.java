@@ -1,9 +1,8 @@
 package org.bukkit.metadata;
 
+import java.util.List;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public interface MetadataStore<T> {
     /**

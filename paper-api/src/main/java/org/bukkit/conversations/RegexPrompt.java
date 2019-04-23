@@ -1,9 +1,7 @@
 package org.bukkit.conversations;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * RegexPrompt is the base class for any prompt that requires an input

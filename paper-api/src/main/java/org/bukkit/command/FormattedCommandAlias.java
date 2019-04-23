@@ -1,7 +1,6 @@
 package org.bukkit.command;
 
 import java.util.ArrayList;
-
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 

@@ -2,10 +2,9 @@
 package org.bukkit.event.inventory;
 
 import java.util.List;
-
-import org.bukkit.event.HandlerList;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;

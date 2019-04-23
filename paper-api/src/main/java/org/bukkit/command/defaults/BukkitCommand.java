@@ -1,7 +1,6 @@
 package org.bukkit.command.defaults;
 
 import java.util.List;
-
 import org.bukkit.command.Command;
 import org.jetbrains.annotations.NotNull;
 

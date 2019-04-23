@@ -3,7 +3,6 @@ package org.bukkit.plugin;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
-
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

@@ -1,9 +1,8 @@
 package org.bukkit;
 
+import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Date;
 
 /**
  * A single entry from a ban list. This may represent either a player ban or

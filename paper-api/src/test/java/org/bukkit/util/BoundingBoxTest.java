@@ -2,9 +2,7 @@ package org.bukkit.util;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-
 import java.util.Map;
-
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.junit.Test;

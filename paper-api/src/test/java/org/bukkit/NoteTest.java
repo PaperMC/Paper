@@ -1,19 +1,10 @@
 package org.bukkit;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Collection;
-
-import org.junit.Test;
-
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
+import java.util.Collection;
+import org.junit.Test;
 
 public class NoteTest {
     @Test

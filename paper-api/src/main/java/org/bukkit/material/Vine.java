@@ -2,7 +2,6 @@ package org.bukkit.material;
 
 import java.util.Arrays;
 import java.util.EnumSet;
-
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 

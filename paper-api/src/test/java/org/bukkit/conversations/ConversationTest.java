@@ -1,8 +1,8 @@
 package org.bukkit.conversations;
 
+import static org.junit.Assert.*;
 import org.bukkit.plugin.TestPlugin;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  */

@@ -1,12 +1,10 @@
 package org.bukkit.util.io;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.Map;
-
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-
-import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 
 final class Wrapper<T extends Map<String, ?> & Serializable> implements Serializable {

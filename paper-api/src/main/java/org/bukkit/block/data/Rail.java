@@ -1,8 +1,7 @@
 package org.bukkit.block.data;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'shape' represents the current layout of a minecart rail.

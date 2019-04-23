@@ -1,13 +1,12 @@
 package org.bukkit.event.block;
 
 import com.google.common.collect.ImmutableList;
+import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * Fired when a single block placement action of a player triggers the

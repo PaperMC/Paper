@@ -1,7 +1,6 @@
 package org.bukkit.scoreboard;
 
 import java.util.Set;
-
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.potion.PotionEffectType;

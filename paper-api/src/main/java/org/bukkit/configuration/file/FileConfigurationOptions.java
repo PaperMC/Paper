@@ -1,6 +1,7 @@
 package org.bukkit.configuration.file;
 
-import org.bukkit.configuration.*;
+import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.configuration.MemoryConfigurationOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

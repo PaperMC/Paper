@@ -1,7 +1,6 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.Location;
-import org.bukkit.UndefinedNullability;
 import org.bukkit.entity.Item;
 import org.jetbrains.annotations.NotNull;
 

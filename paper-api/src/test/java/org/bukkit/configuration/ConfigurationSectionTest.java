@@ -1,15 +1,15 @@
 package org.bukkit.configuration;
 
-import org.bukkit.Material;
+import static org.junit.Assert.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public abstract class ConfigurationSectionTest {
     public abstract ConfigurationSection getConfigurationSection();

@@ -1,9 +1,8 @@
 package org.bukkit.configuration;
 
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 /**
  * Represents a source of configurable options and settings

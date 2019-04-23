@@ -1,8 +1,7 @@
 package org.bukkit.entity;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Animal.
