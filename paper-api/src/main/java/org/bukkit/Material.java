@@ -529,6 +529,10 @@ public enum Material implements Keyed {
     COMPARATOR(18911, Comparator.class),
     COMPASS(24139),
     /**
+     * BlockData: {@link Levelled}
+     */
+    COMPOSTER(31247, Levelled.class),
+    /**
      * BlockData: {@link Waterlogged}
      */
     CONDUIT(5148, Waterlogged.class),
@@ -559,12 +563,12 @@ public enum Material implements Keyed {
     /**
      * BlockData: {@link Slab}
      */
-    CUT_RED_SANDSTONE_SLAB(-11, Slab.class),
+    CUT_RED_SANDSTONE_SLAB(7220, Slab.class),
     CUT_SANDSTONE(6118),
     /**
      * BlockData: {@link Slab}
      */
-    CUT_SANDSTONE_SLAB(-10, Slab.class),
+    CUT_SANDSTONE_SLAB(30944, Slab.class),
     /**
      * BlockData: {@link Rotatable}
      */
@@ -871,7 +875,7 @@ public enum Material implements Keyed {
     FLINT_AND_STEEL(28620, 1, 64),
     FLOWER_BANNER_PATTERN(5762, 1),
     FLOWER_POT(30567),
-    FOX_SPAWN_EGG(-1),
+    FOX_SPAWN_EGG(22376),
     /**
      * BlockData: {@link Ageable}
      */
@@ -890,7 +894,7 @@ public enum Material implements Keyed {
      */
     GLASS_PANE(5709, Fence.class),
     GLISTERING_MELON_SLICE(20158),
-    GLOBE_BANNER_PATTERN(-99, 1),
+    GLOBE_BANNER_PATTERN(27753, 1),
     GLOWSTONE(32713),
     GLOWSTONE_DUST(6665),
     GOLDEN_APPLE(27732),
@@ -1162,7 +1166,7 @@ public enum Material implements Keyed {
     LEATHER_BOOTS(15282, 1, 65),
     LEATHER_CHESTPLATE(29275, 1, 80),
     LEATHER_HELMET(11624, 1, 55),
-    LEATHER_HORSE_ARMOR(-2, 1),
+    LEATHER_HORSE_ARMOR(30667, 1),
     LEATHER_LEGGINGS(28210, 1, 75),
     /**
      * BlockData: {@link Lectern}
@@ -1749,11 +1753,11 @@ public enum Material implements Keyed {
     RABBIT_HIDE(12467),
     RABBIT_SPAWN_EGG(26496),
     RABBIT_STEW(10611, 1),
-    RAVAGER_SPAWN_EGG(31284),
     /**
      * BlockData: {@link Rail}
      */
     RAIL(13285, Rail.class),
+    RAVAGER_SPAWN_EGG(8726),
     REDSTONE(11233),
     REDSTONE_BLOCK(19496),
     /**
@@ -2146,7 +2150,7 @@ public enum Material implements Keyed {
     TNT_MINECART(4277, 1),
     TORCH(6063),
     TOTEM_OF_UNDYING(10139, 1),
-    TRADER_LLAMA_SPAWN_EGG(13512),
+    TRADER_LLAMA_SPAWN_EGG(8439),
     /**
      * BlockData: {@link Chest}
      */
@@ -2190,11 +2194,11 @@ public enum Material implements Keyed {
      */
     VINE(14564, MultipleFacing.class),
     VOID_AIR(13668),
-    WANDERING_TRADER_SPAWN_EGG(12312),
     /**
      * BlockData: {@link Directional}
      */
     WALL_TORCH(25890, Directional.class),
+    WANDERING_TRADER_SPAWN_EGG(17904),
     /**
      * BlockData: {@link Levelled}
      */
@@ -2300,10 +2304,6 @@ public enum Material implements Keyed {
      * BlockData: {@link Directional}
      */
     ZOMBIE_WALL_HEAD(16296, Directional.class),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    COMPOSTER(-4, Levelled.class),
     // ----- Legacy Separator -----
     @Deprecated
     LEGACY_AIR(0, 0),
@@ -3299,6 +3299,7 @@ public enum Material implements Keyed {
      */
     @Deprecated
     public int getId() {
+        Validate.isTrue(legacy, "Cannot get ID of Modern Material");
         return id;
     }
 
