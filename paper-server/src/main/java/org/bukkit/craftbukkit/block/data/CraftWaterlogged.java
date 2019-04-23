@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.block.data;
 
 import org.bukkit.block.data.Waterlogged;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftWaterlogged extends CraftBlockData implements Waterlogged {
 

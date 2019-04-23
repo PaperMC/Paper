@@ -36,7 +36,7 @@ import com.google.common.collect.ImmutableList;
 
 @RunWith(Parameterized.class)
 public class ItemStackTest extends AbstractTestingBase {
-    static abstract class StackProvider {
+    abstract static class StackProvider {
         final Material material;
 
         StackProvider(Material material) {

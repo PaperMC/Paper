@@ -305,7 +305,7 @@ public class CraftScheduler implements BukkitScheduler {
             return false;
         }
         if (task.isSync()) {
-            return (task == currentTask); 
+            return (task == currentTask);
         }
         final CraftAsyncTask asyncTask = (CraftAsyncTask) task;
         synchronized (asyncTask.getWorkers()) {

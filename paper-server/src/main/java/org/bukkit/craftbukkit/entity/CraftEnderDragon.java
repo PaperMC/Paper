@@ -61,11 +61,11 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
     public void setPhase(Phase phase) {
         getHandle().getDragonControllerManager().setControllerPhase(getMinecraftPhase(phase));
     }
-    
+
     public static Phase getBukkitPhase(DragonControllerPhase phase) {
         return Phase.values()[phase.b()];
     }
-    
+
     public static DragonControllerPhase getMinecraftPhase(Phase phase) {
         return DragonControllerPhase.getById(phase.ordinal());
     }

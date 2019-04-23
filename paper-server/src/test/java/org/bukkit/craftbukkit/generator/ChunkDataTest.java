@@ -60,19 +60,19 @@ public class ChunkDataTest extends AbstractTestingBase {
         testSetRegion(data, 0, 0, 0, 0, 0, 0, RED_WOOL); // minimum == maximum
         testSetRegion(data, 0, 0, 0, 16, 16, 16, RED_WOOL); // Whole Chunk Section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 16, 24, 16, RED_WOOL); // Start middle of this section, end middle of next 
+        testSetRegion(data, 0, 8, 0, 16, 24, 16, RED_WOOL); // Start middle of this section, end middle of next
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
         testSetRegion(data, 0, 4, 0, 16, 12, 16, RED_WOOL); // Start in this section, end in this section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
         testSetRegion(data, 0, 0, 0, 16, 16, 1, RED_WOOL); // Whole Chunk Section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 16, 24, 1, RED_WOOL); // Start middle of this section, end middle of next 
+        testSetRegion(data, 0, 8, 0, 16, 24, 1, RED_WOOL); // Start middle of this section, end middle of next
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
         testSetRegion(data, 0, 4, 0, 16, 12, 1, RED_WOOL); // Start in this section, end in this section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
         testSetRegion(data, 0, 0, 0, 1, 16, 1, RED_WOOL); // Whole Chunk Section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 1, 24, 1, RED_WOOL); // Start middle of this section, end middle of next 
+        testSetRegion(data, 0, 8, 0, 1, 24, 1, RED_WOOL); // Start middle of this section, end middle of next
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);
         testSetRegion(data, 0, 4, 0, 1, 12, 1, RED_WOOL); // Start in this section, end in this section
         data.setRegion(0, 0, 0, 16, 256, 16, AIR);

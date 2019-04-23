@@ -102,7 +102,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (hasMapId()){
             tag.setInt(MAP_ID.NBT, getMapId());
         }
-        
+
         if (hasScaling()) {
             tag.setBoolean(MAP_SCALING.NBT, isScaling());
         }
