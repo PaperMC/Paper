@@ -168,7 +168,7 @@ public class CraftContainer extends Container {
             case PLAYER:
             case CHEST:
             case BARREL:
-                delegate = new ContainerChest(Containers.GENERIC_9X3, windowId, bottom, top, 3);
+                delegate = new ContainerChest(Containers.GENERIC_9X3, windowId, bottom, top, top.getSize() / 9);
                 break;
             case DISPENSER:
             case DROPPER:
