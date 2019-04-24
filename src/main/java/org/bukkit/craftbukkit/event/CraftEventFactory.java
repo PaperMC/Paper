@@ -1052,7 +1052,11 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static ProjectileHitEvent callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
+    public static void callProjectileHitEvent(Entity entity, MovingObjectPosition position) {
+        if (position.getType() == MovingObjectPosition.EnumMovingObjectType.MISS) {
+            return;
+        }
+
         Block hitBlock = null;
         BlockFace hitFace = null;
         if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
@@ -1068,7 +1072,6 @@ public class CraftEventFactory {
 
         ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
         entity.world.getServer().getPluginManager().callEvent(event);
-        return event;
     }
 
     public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
