@@ -167,6 +167,7 @@ public class CraftContainer extends Container {
                 break; // TODO: This should be an error?
             case PLAYER:
             case CHEST:
+            case ENDER_CHEST:
             case BARREL:
                 delegate = new ContainerChest(Containers.GENERIC_9X3, windowId, bottom, top, top.getSize() / 9);
                 break;
