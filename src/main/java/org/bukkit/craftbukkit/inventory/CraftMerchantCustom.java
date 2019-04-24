@@ -31,6 +31,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         private final IChatBaseComponent title;
         private final MerchantRecipeList trades = new MerchantRecipeList();
         private EntityHuman tradingPlayer;
+        private World tradingWorld;
 
         public MinecraftMerchant(String title) {
             Validate.notNull(title, "Title cannot be null");
@@ -40,6 +41,9 @@ public class CraftMerchantCustom extends CraftMerchant {
         @Override
         public void setTradingPlayer(EntityHuman entityhuman) {
             this.tradingPlayer = entityhuman;
+            if (entityhuman != null) {
+                this.tradingWorld = entityhuman.world;
+            }
         }
 
         @Override
@@ -68,7 +72,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         @Override
         public World getWorld() {
-            return null;
+            return this.tradingWorld;
         }
 
         @Override
