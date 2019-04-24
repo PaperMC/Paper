@@ -1,4 +1,4 @@
-From f01b6961ade709b2e4076e4c8bc65ca191af034d Mon Sep 17 00:00:00 2001
+From 46fe3ad03c1a6e865b265c93a1d00dc98c5e7be4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 01:40:13 -0400
 Subject: [PATCH] Add MinecraftKey Information to Objects
@@ -19,10 +19,10 @@ index 2e79b0b5ff..f38179e983 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index cd998fcfb5..d9c9748cec 100644
+index cec990f357..d636965800 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -44,7 +44,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
+@@ -47,7 +47,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
  import org.bukkit.plugin.PluginManager;
  // CraftBukkit end
  
@@ -31,16 +31,7 @@ index cd998fcfb5..d9c9748cec 100644
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
-@@ -72,7 +72,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
-     private static final AxisAlignedBB b = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
-     private static double c = 1.0D;
-     private static int entityCount;
--    private final EntityTypes<?> g;
-+    private final EntityTypes<?> g; public EntityTypes<?> getEntityType() { return g; } // Paper - OBFHELPER
-     private int id;
-     public boolean j;
-     public final List<Entity> passengers;
-@@ -1775,12 +1775,29 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1664,12 +1664,31 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
          return true;
      }
  
@@ -64,27 +55,26 @@ index cd998fcfb5..d9c9748cec 100644
 +    }
      @Nullable
      public final String getSaveID() {
--        EntityTypes<?> entitytypes = this.P();
--        MinecraftKey minecraftkey = EntityTypes.getName(entitytypes);
--
+         EntityTypes<?> entitytypes = this.getEntityType();
+         MinecraftKey minecraftkey = EntityTypes.getName(entitytypes);
+ 
 -        return entitytypes.a() && minecraftkey != null ? minecraftkey.toString() : null;
-+        EntityTypes type = this.getEntityType();
-+        return type != null && type.isPersistable() ? getMinecraftKeyString() : null;
++        return entitytypes != null && entitytypes.isPersistable() ? getMinecraftKeyString() : null;
 +        // Paper end
      }
  
      protected abstract void a(NBTTagCompound nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index a07ee150c2..d74bfa1201 100644
+index 0f2604a3d5..fae259ac70 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
-@@ -240,6 +240,7 @@ public class EntityTypes<T extends Entity> {
+@@ -238,6 +238,7 @@ public class EntityTypes<T extends Entity> {
          }
      }
  
 +    public boolean isPersistable() { return a(); } // Paper - OBFHELPER
      public boolean a() {
-         return this.aU;
+         return this.bb;
      }
 diff --git a/src/main/java/net/minecraft/server/KeyedObject.java b/src/main/java/net/minecraft/server/KeyedObject.java
 new file mode 100644
@@ -102,7 +92,7 @@ index 0000000000..743142d030
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 62b6e6eb38..7390061bf0 100644
+index df46dbcacc..319be67501 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -7,11 +7,11 @@ import org.apache.logging.log4j.Logger;
@@ -114,13 +104,13 @@ index 62b6e6eb38..7390061bf0 100644
  
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
      private static final Logger a = LogManager.getLogger();
--    private final TileEntityTypes<?> e;
-+    private final TileEntityTypes<?> e; public TileEntityTypes getTileEntityType() { return e; } // Paper - OBFHELPER
+-    private final TileEntityTypes<?> b;
++    private final TileEntityTypes<?> b; public TileEntityTypes getTileEntityType() { return b; } // Paper - OBFHELPER
+     @Nullable
      protected World world;
      protected BlockPosition position;
-     protected boolean d;
-@@ -23,6 +23,26 @@ public abstract class TileEntity {
-         this.e = tileentitytypes;
+@@ -24,6 +24,26 @@ public abstract class TileEntity {
+         this.b = tileentitytypes;
      }
  
 +    // Paper start
