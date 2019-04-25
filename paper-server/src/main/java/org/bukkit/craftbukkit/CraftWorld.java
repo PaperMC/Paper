@@ -1357,6 +1357,8 @@ public class CraftWorld implements World {
                     entity = EntityTypes.WOLF.a(world);
                 } else if (Parrot.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.PARROT.a(world);
+                } else if (Cat.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.CAT.a(world);
                 }
             } else if (PigZombie.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.ZOMBIE_PIGMAN.a(world);
@@ -1442,8 +1444,6 @@ public class CraftWorld implements World {
                 entity = EntityTypes.DOLPHIN.a(world);
             } else if (Ocelot.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.OCELOT.a(world);
-            } else if (Cat.class.isAssignableFrom(clazz)) {
-                entity = EntityTypes.CAT.a(world);
             } else if (Ravager.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.RAVAGER.a(world);
             } else if (Panda.class.isAssignableFrom(clazz)) {
