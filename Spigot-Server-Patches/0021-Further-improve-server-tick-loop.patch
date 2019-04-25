@@ -1,4 +1,4 @@
-From 2b197fb4121fb5e528c4c58ee63df0b43f40966f Mon Sep 17 00:00:00 2001
+From c0f630db178f498a793777ac2084016fa9b5e453 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 89ad19e59c..7dfe1f0a3c 100644
+index 33e8030def..48286867fe 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -150,7 +150,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -160,13 +160,13 @@ index 89ad19e59c..7dfe1f0a3c 100644
      }
  
      private boolean canSleepForTick() {
--        return this.bg() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
+-        return this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
 +        return System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
      }
  
      protected void sleepForTick() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a750d8ab5b..423cbd558e 100644
+index 07e052b649..de592ae851 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1919,6 +1919,17 @@ public final class CraftServer implements Server {

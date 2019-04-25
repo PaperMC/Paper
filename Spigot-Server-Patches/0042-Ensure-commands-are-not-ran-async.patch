@@ -1,4 +1,4 @@
-From afe18ef667aa63c426197f85c3785aa7e2e36e46 Mon Sep 17 00:00:00 2001
+From b65da8135d73b3be5877239a3751c4dcd150f97f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 01:17:12 -0600
 Subject: [PATCH] Ensure commands are not ran async
@@ -14,10 +14,10 @@ big slowdown in execution but throwing an exception at same time to raise awaren
 that it is happening so that plugin authors can fix their code to stop executing commands async.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index b9e6a3275c..9a83e5fc0b 100644
+index 287bba3f6c..9d7bbafe02 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -1533,6 +1533,29 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -1579,6 +1579,29 @@ public class PlayerConnection implements PacketListenerPlayIn {
          }
  
          if (!async && s.startsWith("/")) {
@@ -45,13 +45,13 @@ index b9e6a3275c..9a83e5fc0b 100644
 +            }
 +            // Paper End
              this.handleCommand(s);
-         } else if (this.player.getChatFlags() == EntityHuman.EnumChatVisibility.SYSTEM) {
+         } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
              // Do nothing, this is coming from a plugin
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7b4af7a904..c6e6ae4fe7 100644
+index de592ae851..9c54d151df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -701,6 +701,29 @@ public final class CraftServer implements Server {
+@@ -704,6 +704,29 @@ public final class CraftServer implements Server {
          Validate.notNull(commandLine, "CommandLine cannot be null");
          org.spigotmc.AsyncCatcher.catchOp( "command dispatch" ); // Spigot
  
@@ -82,19 +82,19 @@ index 7b4af7a904..c6e6ae4fe7 100644
              return true;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-index a0cdd2317c..984df4083d 100644
+index ddef523ea8..70f8d42992 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-@@ -14,6 +14,7 @@ public class ServerShutdownThread extends Thread {
+@@ -13,6 +13,7 @@ public class ServerShutdownThread extends Thread {
      public void run() {
          try {
              org.spigotmc.AsyncCatcher.enabled = false; // Spigot
 +            org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
-             server.stop();
-         } catch (ExceptionWorldConflict ex) {
-             ex.printStackTrace();
+             server.close();
+         } finally {
+             try {
 diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
-index 4b3aa85c97..e44c230165 100644
+index aeed769725..9f7d2ef932 100644
 --- a/src/main/java/org/spigotmc/AsyncCatcher.java
 +++ b/src/main/java/org/spigotmc/AsyncCatcher.java
 @@ -6,6 +6,7 @@ public class AsyncCatcher
@@ -106,7 +106,7 @@ index 4b3aa85c97..e44c230165 100644
      public static void catchOp(String reason)
      {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index f4e088c134..944151d140 100644
+index e7b953ca31..ccea803f58 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -43,6 +43,7 @@ public class RestartCommand extends Command
