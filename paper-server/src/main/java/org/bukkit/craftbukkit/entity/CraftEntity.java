@@ -146,6 +146,8 @@ import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -163,10 +165,12 @@ import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static PermissibleBase perm;
+    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     protected final CraftServer server;
     protected Entity entity;
     private EntityDamageEvent lastDamageEvent;
+    private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
@@ -882,6 +886,24 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public BlockFace getFacing() {
         // Use this method over getDirection because it handles boats and minecarts.
         return CraftBlock.notchToBlockFace(getHandle().getAdjustedDirection());
+    }
+
+    @Override
+    public CraftPersistentDataContainer getPersistentDataContainer() {
+        return persistentDataContainer;
+    }
+
+    public void storeBukkitValues(NBTTagCompound c) {
+        if (!this.persistentDataContainer.isEmpty()) {
+            c.set("BukkitValues", this.persistentDataContainer.toTagCompound());
+        }
+    }
+
+    public void readBukkitValues(NBTTagCompound c) {
+        NBTTagCompound base = c.getCompound("BukkitValues");
+        if (base != null) {
+            this.persistentDataContainer.putAll(base);
+        }
     }
 
     protected NBTTagCompound save() {

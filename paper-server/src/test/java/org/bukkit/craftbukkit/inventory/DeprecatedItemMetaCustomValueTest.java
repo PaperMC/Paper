@@ -4,18 +4,13 @@ import static org.junit.Assert.*;
 import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagIntArray;
-import net.minecraft.server.NBTTagList;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.inventory.tags.CraftCustomItemTagContainer;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
@@ -25,7 +20,7 @@ import org.bukkit.support.AbstractTestingBase;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ItemMetaCustomValueTest extends AbstractTestingBase {
+public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
 
     private static NamespacedKey VALID_KEY;
 
@@ -166,12 +161,6 @@ public class ItemMetaCustomValueTest extends AbstractTestingBase {
         CustomItemTagContainer innerContainer = itemMeta.getCustomTagContainer().getAdapterContext().newTagContainer(); //Add a inner container
         innerContainer.setCustomTag(VALID_KEY, ItemTagType.LONG, 5L);
         itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-inner-compound"), ItemTagType.TAG_CONTAINER, innerContainer);
-
-        Map<String, NBTBase> rawMap = ((CraftCustomItemTagContainer) itemMeta.getCustomTagContainer()).getRaw(); //Adds a tag list as well (even tho is has no API yet)
-        NBTTagList nbtList = new NBTTagList();
-        nbtList.add(new NBTTagIntArray(Arrays.asList(1, 5, 3)));
-        nbtList.add(new NBTTagIntArray(Arrays.asList(42, 51)));
-        rawMap.put("nbttaglist", nbtList);
         return itemMeta;
     }
 

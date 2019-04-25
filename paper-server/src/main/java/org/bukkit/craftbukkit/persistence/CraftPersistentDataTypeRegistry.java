@@ -1,11 +1,11 @@
-package org.bukkit.craftbukkit.inventory;
+package org.bukkit.craftbukkit.persistence;
 
-import com.google.common.primitives.Primitives;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import com.google.common.primitives.Primitives;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagByte;
 import net.minecraft.server.NBTTagByteArray;
@@ -19,17 +19,16 @@ import net.minecraft.server.NBTTagLongArray;
 import net.minecraft.server.NBTTagShort;
 import net.minecraft.server.NBTTagString;
 import org.apache.commons.lang3.Validate;
-import org.bukkit.craftbukkit.inventory.tags.CraftCustomItemTagContainer;
-import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
+import org.bukkit.persistence.PersistentDataContainer;
 
 /**
  * This class represents a registry that contains the used adapters for.
  */
-public final class CraftCustomTagTypeRegistry {
+public final class CraftPersistentDataTypeRegistry {
 
-    private final Function<Class, CustomTagAdapter> CREATE_ADAPTER = this::createAdapter;
+    private final Function<Class, TagAdapter> CREATE_ADAPTER = this::createAdapter;
 
-    private class CustomTagAdapter<T, Z extends NBTBase> {
+    private class TagAdapter<T, Z extends NBTBase> {
 
         private final Function<T, Z> builder;
         private final Function<Z, T> extractor;
@@ -37,7 +36,7 @@ public final class CraftCustomTagTypeRegistry {
         private final Class<T> primitiveType;
         private final Class<Z> nbtBaseType;
 
-        public CustomTagAdapter(Class<T> primitiveType, Class<Z> nbtBaseType, Function<T, Z> builder, Function<Z, T> extractor) {
+        public TagAdapter(Class<T> primitiveType, Class<Z> nbtBaseType, Function<T, Z> builder, Function<Z, T> extractor) {
             this.primitiveType = primitiveType;
             this.nbtBaseType = nbtBaseType;
             this.builder = builder;
@@ -49,7 +48,9 @@ public final class CraftCustomTagTypeRegistry {
          * the expected primitive type.
          *
          * @param base the base to extract from
+         *
          * @return the value stored inside of the tag
+         *
          * @throws ClassCastException if the passed base is not an instanced of
          * the defined base type and therefore is not applicable to the
          * extractor function
@@ -63,7 +64,9 @@ public final class CraftCustomTagTypeRegistry {
          * Builds a tag instance wrapping around the provided value object.
          *
          * @param value the value to store inside the created tag
+         *
          * @return the new tag instance
+         *
          * @throws ClassCastException if the passed value object is not of the
          * defined primitive type and therefore is not applicable to the builder
          * function
@@ -77,6 +80,7 @@ public final class CraftCustomTagTypeRegistry {
          * Returns if the tag instance matches the adapters one.
          *
          * @param base the base to check
+         *
          * @return if the tag was an instance of the set type
          */
         boolean isInstance(NBTBase base) {
@@ -84,18 +88,20 @@ public final class CraftCustomTagTypeRegistry {
         }
     }
 
-    private final Map<Class, CustomTagAdapter> adapters = new HashMap<>();
+    private final Map<Class, TagAdapter> adapters = new HashMap<>();
 
     /**
      * Creates a suitable adapter instance for the primitive class type
      *
      * @param type the type to create an adapter for
      * @param <T> the generic type of that class
+     *
      * @return the created adapter instance
+     *
      * @throws IllegalArgumentException if no suitable tag type adapter for this
      * type was found
      */
-    private <T> CustomTagAdapter createAdapter(Class<T> type) {
+    private <T> TagAdapter createAdapter(Class<T> type) {
         if (!Primitives.isWrapperType(type)) {
             type = Primitives.wrap(type); //Make sure we will always "switch" over the wrapper types
         }
@@ -143,12 +149,12 @@ public final class CraftCustomTagTypeRegistry {
         }
 
         /*
-            Note that this will map the interface CustomItemTagContainer directly to the CraftBukkit implementation
-            Passing any other instance of this form to the tag type registry will throw a ClassCastException as defined in CustomTagAdapter#build
+            Note that this will map the interface PersistentMetadataContainer directly to the CraftBukkit implementation
+            Passing any other instance of this form to the tag type registry will throw a ClassCastException as defined in TagAdapter#build
          */
-        if (Objects.equals(CustomItemTagContainer.class, type)) {
-            return createAdapter(CraftCustomItemTagContainer.class, NBTTagCompound.class, CraftCustomItemTagContainer::toTagCompound, tag -> {
-                CraftCustomItemTagContainer container = new CraftCustomItemTagContainer(this);
+        if (Objects.equals(PersistentDataContainer.class, type)) {
+            return createAdapter(CraftPersistentDataContainer.class, NBTTagCompound.class, CraftPersistentDataContainer::toTagCompound, tag -> {
+                CraftPersistentDataContainer container = new CraftPersistentDataContainer(this);
                 for (String key : tag.getKeys()) {
                     container.put(key, tag.get(key));
                 }
@@ -156,11 +162,11 @@ public final class CraftCustomTagTypeRegistry {
             });
         }
 
-        throw new IllegalArgumentException("Could not find a valid CustomTagAdapter implementation for the requested type " + type.getSimpleName());
+        throw new IllegalArgumentException("Could not find a valid TagAdapter implementation for the requested type " + type.getSimpleName());
     }
 
-    private <T, Z extends NBTBase> CustomTagAdapter<T, Z> createAdapter(Class<T> primitiveType, Class<Z> nbtBaseType, Function<T, Z> builder, Function<Z, T> extractor) {
-        return new CustomTagAdapter<>(primitiveType, nbtBaseType, builder, extractor);
+    private <T, Z extends NBTBase> TagAdapter<T, Z> createAdapter(Class<T> primitiveType, Class<Z> nbtBaseType, Function<T, Z> builder, Function<Z, T> extractor) {
+        return new TagAdapter<>(primitiveType, nbtBaseType, builder, extractor);
     }
 
     /**
@@ -169,7 +175,9 @@ public final class CraftCustomTagTypeRegistry {
      * @param type the type of the passed value
      * @param value the value to be stored in the tag
      * @param <T> the generic type of the value
+     *
      * @return the created tag instance
+     *
      * @throws IllegalArgumentException if no suitable tag type adapter for this
      * type was found
      */
@@ -183,7 +191,9 @@ public final class CraftCustomTagTypeRegistry {
      * @param type the type of the primitive value
      * @param base the base instance to check
      * @param <T> the generic type of the type
+     *
      * @return if the base stores values of the primitive type passed
+     *
      * @throws IllegalArgumentException if no suitable tag type adapter for this
      * type was found
      */
@@ -197,7 +207,9 @@ public final class CraftCustomTagTypeRegistry {
      * @param type the type of the value to extract
      * @param tag the tag to extract the value from
      * @param <T> the generic type of the value stored inside the tag
+     *
      * @return the extracted value
+     *
      * @throws IllegalArgumentException if the passed base is not an instanced
      * of the defined base type and therefore is not applicable to the extractor
      * function
@@ -207,7 +219,7 @@ public final class CraftCustomTagTypeRegistry {
      * type was found
      */
     public <T> T extract(Class<T> type, NBTBase tag) throws ClassCastException, IllegalArgumentException {
-        CustomTagAdapter adapter = this.adapters.computeIfAbsent(type, CREATE_ADAPTER);
+        TagAdapter adapter = this.adapters.computeIfAbsent(type, CREATE_ADAPTER);
         Validate.isTrue(adapter.isInstance(tag), "`The found tag instance cannot store %s as it is a %s", type.getSimpleName(), tag.getClass().getSimpleName());
 
         Object foundValue = adapter.extract(tag);

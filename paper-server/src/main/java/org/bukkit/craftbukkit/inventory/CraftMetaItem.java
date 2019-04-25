@@ -62,7 +62,9 @@ import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
-import org.bukkit.craftbukkit.inventory.tags.CraftCustomItemTagContainer;
+import org.bukkit.craftbukkit.inventory.tags.DeprecatedCustomTagContainer;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNBTTagConfigSerializer;
@@ -75,6 +77,7 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
+import org.bukkit.persistence.PersistentDataContainer;
 
 /**
  * Children must include the following:
@@ -267,11 +270,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private int damage;
 
     private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
-    private static final CraftCustomTagTypeRegistry TAG_TYPE_REGISTRY = new CraftCustomTagTypeRegistry();
+    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private NBTTagCompound internalTag;
     private final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>();
-    private final CraftCustomItemTagContainer publicItemTagContainer = new CraftCustomItemTagContainer(TAG_TYPE_REGISTRY);
+    private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
 
@@ -303,7 +306,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.unbreakable = meta.unbreakable;
         this.damage = meta.damage;
         this.unhandledTags.putAll(meta.unhandledTags);
-        this.publicItemTagContainer.putAll(meta.publicItemTagContainer.getRaw());
+        this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
 
         this.internalTag = meta.internalTag;
         if (this.internalTag != null) {
@@ -375,7 +378,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             NBTTagCompound compound = tag.getCompound(BUKKIT_CUSTOM_TAG.NBT);
             Set<String> keys = compound.getKeys();
             for (String key : keys) {
-                publicItemTagContainer.put(key, compound.get(key));
+                persistentDataContainer.put(key, compound.get(key));
             }
         }
 
@@ -534,7 +537,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         Map nbtMap = SerializableMeta.getObject(Map.class, map, BUKKIT_CUSTOM_TAG.BUKKIT, true);
         if (nbtMap != null) {
-            this.publicItemTagContainer.putAll((NBTTagCompound) CraftNBTTagConfigSerializer.deserialize(nbtMap));
+            this.persistentDataContainer.putAll((NBTTagCompound) CraftNBTTagConfigSerializer.deserialize(nbtMap));
         }
     }
 
@@ -648,9 +651,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             itemTag.set(e.getKey(), e.getValue());
         }
 
-        if (!publicItemTagContainer.isEmpty()) {
+        if (!persistentDataContainer.isEmpty()) {
             NBTTagCompound bukkitCustomCompound = new NBTTagCompound();
-            Map<String, NBTBase> rawPublicMap = publicItemTagContainer.getRaw();
+            Map<String, NBTBase> rawPublicMap = persistentDataContainer.getRaw();
 
             for (Map.Entry<String, NBTBase> nbtBaseEntry : rawPublicMap.entrySet()) {
                 bukkitCustomCompound.set(nbtBaseEntry.getKey(), nbtBaseEntry.getValue());
@@ -741,7 +744,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !publicItemTagContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
     }
 
     public String getDisplayName() {
@@ -1041,7 +1044,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public CustomItemTagContainer getCustomTagContainer() {
-        return this.publicItemTagContainer;
+        return new DeprecatedCustomTagContainer(this.getPersistentDataContainer());
+    }
+
+    @Override
+    public PersistentDataContainer getPersistentDataContainer() {
+        return this.persistentDataContainer;
     }
 
     private static boolean compareModifiers(Multimap<Attribute, AttributeModifier> first, Multimap<Attribute, AttributeModifier> second) {
@@ -1106,7 +1114,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                 && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
                 && (this.unhandledTags.equals(that.unhandledTags))
-                && (this.publicItemTagContainer.equals(that.publicItemTagContainer))
+                && (this.persistentDataContainer.equals(that.persistentDataContainer))
                 && (this.hideFlag == that.hideFlag)
                 && (this.isUnbreakable() == that.isUnbreakable())
                 && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
@@ -1139,7 +1147,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
         hash = 61 * hash + unhandledTags.hashCode();
-        hash = 61 * hash + (!publicItemTagContainer.isEmpty() ? publicItemTagContainer.hashCode() : 0);
+        hash = 61 * hash + (!persistentDataContainer.isEmpty() ? persistentDataContainer.hashCode() : 0);
         hash = 61 * hash + hideFlag;
         hash = 61 * hash + (isUnbreakable() ? 1231 : 1237);
         hash = 61 * hash + (hasDamage() ? this.damage : 0);
@@ -1240,8 +1248,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
         }
 
-        if (!publicItemTagContainer.isEmpty()) { // Store custom tags, wrapped in their compound
-            builder.put(BUKKIT_CUSTOM_TAG.BUKKIT, publicItemTagContainer.serialize());
+        if (!persistentDataContainer.isEmpty()) { // Store custom tags, wrapped in their compound
+            builder.put(BUKKIT_CUSTOM_TAG.BUKKIT, persistentDataContainer.serialize());
         }
 
         return builder;
