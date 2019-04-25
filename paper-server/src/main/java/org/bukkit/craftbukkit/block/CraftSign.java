@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.ChatComponentText;
+import net.minecraft.server.EnumColor;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.TileEntitySign;
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -53,6 +55,16 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     @Override
     public void setEditable(boolean editable) {
         this.editable = editable;
+    }
+
+    @Override
+    public DyeColor getColor() {
+        return DyeColor.getByWoolData((byte) getSnapshot().f().getColorIndex());
+    }
+
+    @Override
+    public void setColor(DyeColor color) {
+        getSnapshot().a(EnumColor.fromColorIndex(color.getWoolData()));
     }
 
     @Override
