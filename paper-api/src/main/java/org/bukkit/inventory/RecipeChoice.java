@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,6 +48,17 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         public MaterialChoice(@NotNull Material... choices) {
             this(Arrays.asList(choices));
+        }
+
+        /**
+         * Constructs a MaterialChoice with the current values of the specified
+         * tag.
+         *
+         * @param choices the tag
+         */
+        public MaterialChoice(@NotNull Tag<Material> choices) {
+            Preconditions.checkArgument(choices != null, "choices");
+            this.choices = new ArrayList<>(choices.getValues());
         }
 
         public MaterialChoice(@NotNull List<Material> choices) {
