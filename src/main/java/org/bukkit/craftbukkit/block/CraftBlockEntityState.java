@@ -6,9 +6,11 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.World;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.TileState;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.persistence.PersistentDataContainer;
 
-public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState {
+public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState implements TileState {
 
     private final Class<T> tileEntityClass;
     private final T tileEntity;
@@ -117,5 +119,10 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         }
 
         return result;
+    }
+
+    @Override
+    public PersistentDataContainer getPersistentDataContainer() {
+        return this.getSnapshot().persistentDataContainer;
     }
 }

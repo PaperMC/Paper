@@ -1,15 +1,47 @@
 --- a/net/minecraft/server/TileEntity.java
 +++ b/net/minecraft/server/TileEntity.java
-@@ -4,6 +4,8 @@
+@@ -3,9 +3,18 @@
+ import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
++// CraftBukkit start
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
  
-+import org.bukkit.inventory.InventoryHolder; // CraftBukkit
-+
  public abstract class TileEntity {
  
++    // CraftBukkit start - data containers
++    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
++    public final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    // CraftBukkit end
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -55,8 +57,15 @@
+     private final TileEntityTypes<?> b;
+     @Nullable
+@@ -35,6 +44,12 @@
+ 
+     public void load(NBTTagCompound nbttagcompound) {
+         this.position = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
++        // CraftBukkit start - read container
++        NBTTagCompound persistentDataTag = nbttagcompound.getCompound("PublicBukkitValues");
++        if (persistentDataTag != null) {
++            this.persistentDataContainer.putAll(persistentDataTag);
++        }
++        // CraftBukkit end
+     }
+ 
+     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+@@ -51,12 +66,24 @@
+             nbttagcompound.setInt("x", this.position.getX());
+             nbttagcompound.setInt("y", this.position.getY());
+             nbttagcompound.setInt("z", this.position.getZ());
++            // CraftBukkit start - store container
++            if (!this.persistentDataContainer.isEmpty()) {
++                nbttagcompound.set("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
++            }
++            // CraftBukkit end
+             return nbttagcompound;
          }
      }
  
@@ -25,7 +57,7 @@
          String s = nbttagcompound.getString("id");
  
          return (TileEntity) IRegistry.BLOCK_ENTITY_TYPE.getOptional(new MinecraftKey(s)).map((tileentitytypes) -> {
-@@ -68,6 +77,7 @@
+@@ -68,6 +95,7 @@
              }
          }).map((tileentity) -> {
              try {
@@ -33,7 +65,7 @@
                  tileentity.load(nbttagcompound);
                  return tileentity;
              } catch (Throwable throwable) {
-@@ -157,4 +167,13 @@
+@@ -157,4 +185,13 @@
      public TileEntityTypes<?> q() {
          return this.b;
      }
