@@ -43,6 +43,7 @@ import net.minecraft.server.TileEntityHopper;
 import net.minecraft.server.TileEntityLectern;
 import net.minecraft.server.TileEntityShulkerBox;
 import net.minecraft.server.TileEntitySmoker;
+import net.minecraft.server.Vec3D;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -140,9 +141,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         BlockPosition bed = getHandle().getBed();
 
         if (world != null && bed != null) {
-            bed = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
-            if (bed != null) {
-                return new Location(world, bed.getX(), bed.getY(), bed.getZ());
+            Optional<Vec3D> spawnLoc = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
+            if (spawnLoc.isPresent()) {
+                Vec3D vec = spawnLoc.get();
+                return new Location(world, vec.x, vec.y, vec.z);
             }
         }
         return null;

@@ -1097,7 +1097,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void clearRecipes() {
-        CraftingManager.a(console.getCraftingManager().recipes);
+        CraftingManager.initializeRecipeMap(console.getCraftingManager().recipes);
     }
 
     @Override
