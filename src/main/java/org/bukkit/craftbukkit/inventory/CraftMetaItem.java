@@ -1191,7 +1191,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (hasLore()) {
-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(lore));
+            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, CraftChatMessage::fromComponent)));
         }
 
         if (hasCustomModelData()) {
