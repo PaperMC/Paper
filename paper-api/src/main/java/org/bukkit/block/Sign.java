@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of either a SignPost or a WallSign.
  */
-public interface Sign extends BlockState {
+public interface Sign extends TileState {
 
     /**
      * Gets all the lines of text currently on this sign.

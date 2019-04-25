@@ -1,18 +1,17 @@
-package org.bukkit.inventory.meta.tags;
+package org.bukkit.persistence;
 
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represents an enum with a generic content type. It defines the
- * types a custom item tag can have.
+ * types a custom tag can have.
  * <p>
- * This interface can be used to create your own custom {@link ItemTagType} with
- * different complex types. This may be useful for the likes of a
- * UUIDItemTagType:
+ * This interface can be used to create your own custom
+ * {@link PersistentDataType} with different complex types. This may be useful
+ * for the likes of a UUIDTagType:
  * <pre>
  * <code>{@code
- * public class UUIDItemTagType implements ItemTagType<byte[], UUID> {
+ * public class UUIDTagType implements PersistentDataType<byte[], UUID> {
  *
  *         {@literal @Override}
  *         public Class<byte[]> getPrimitiveType() {
@@ -25,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  *         }
  *
  *         {@literal @Override}
- *         public byte[] toPrimitive(UUID complex, ItemTagAdapterContext context) {
+ *         public byte[] toPrimitive(UUID complex, PersistentDataAdapterContext context) {
  *             ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
  *             bb.putLong(complex.getMostSignificantBits());
  *             bb.putLong(complex.getLeastSignificantBits());
@@ -33,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
  *         }
  *
  *         {@literal @Override}
- *         public UUID fromPrimitive(byte[] primitive, ItemTagAdapterContext context) {
+ *         public UUID fromPrimitive(byte[] primitive, PersistentDataAdapterContext context) {
  *             ByteBuffer bb = ByteBuffer.wrap(primitive);
  *             long firstLong = bb.getLong();
  *             long secondLong = bb.getLong();
@@ -42,39 +41,36 @@ import org.jetbrains.annotations.NotNull;
  *     }}</code></pre>
  *
  * @param <T> the primary object type that is stored in the given tag
- * @param <Z> the retrieved object type when applying this item tag type
- *
- * @deprecated please use {@link PersistentDataType} as this part of the api is being replaced
+ * @param <Z> the retrieved object type when applying this tag type
  */
-@Deprecated
-public interface ItemTagType<T, Z> {
+public interface PersistentDataType<T, Z> {
 
     /*
         The primitive one value types.
      */
-    ItemTagType<Byte, Byte> BYTE = new PrimitiveTagType<>(Byte.class);
-    ItemTagType<Short, Short> SHORT = new PrimitiveTagType<>(Short.class);
-    ItemTagType<Integer, Integer> INTEGER = new PrimitiveTagType<>(Integer.class);
-    ItemTagType<Long, Long> LONG = new PrimitiveTagType<>(Long.class);
-    ItemTagType<Float, Float> FLOAT = new PrimitiveTagType<>(Float.class);
-    ItemTagType<Double, Double> DOUBLE = new PrimitiveTagType<>(Double.class);
+    PersistentDataType<Byte, Byte> BYTE = new PrimitivePersistentDataType<>(Byte.class);
+    PersistentDataType<Short, Short> SHORT = new PrimitivePersistentDataType<>(Short.class);
+    PersistentDataType<Integer, Integer> INTEGER = new PrimitivePersistentDataType<>(Integer.class);
+    PersistentDataType<Long, Long> LONG = new PrimitivePersistentDataType<>(Long.class);
+    PersistentDataType<Float, Float> FLOAT = new PrimitivePersistentDataType<>(Float.class);
+    PersistentDataType<Double, Double> DOUBLE = new PrimitivePersistentDataType<>(Double.class);
 
     /*
         String.
      */
-    ItemTagType<String, String> STRING = new PrimitiveTagType<>(String.class);
+    PersistentDataType<String, String> STRING = new PrimitivePersistentDataType<>(String.class);
 
     /*
         Primitive Arrays.
      */
-    ItemTagType<byte[], byte[]> BYTE_ARRAY = new PrimitiveTagType<>(byte[].class);
-    ItemTagType<int[], int[]> INTEGER_ARRAY = new PrimitiveTagType<>(int[].class);
-    ItemTagType<long[], long[]> LONG_ARRAY = new PrimitiveTagType<>(long[].class);
+    PersistentDataType<byte[], byte[]> BYTE_ARRAY = new PrimitivePersistentDataType<>(byte[].class);
+    PersistentDataType<int[], int[]> INTEGER_ARRAY = new PrimitivePersistentDataType<>(int[].class);
+    PersistentDataType<long[], long[]> LONG_ARRAY = new PrimitivePersistentDataType<>(long[].class);
 
     /*
-        Nested TagContainer.
+        Nested PersistentDataContainer.
      */
-    ItemTagType<CustomItemTagContainer, CustomItemTagContainer> TAG_CONTAINER = new PrimitiveTagType<>(CustomItemTagContainer.class);
+    PersistentDataType<PersistentDataContainer, PersistentDataContainer> TAG_CONTAINER = new PrimitivePersistentDataType<>(PersistentDataContainer.class);
 
     /**
      * Returns the primitive data type of this tag.
@@ -101,7 +97,7 @@ public interface ItemTagType<T, Z> {
      * @return the primitive value
      */
     @NotNull
-    T toPrimitive(@NotNull Z complex, @NotNull ItemTagAdapterContext context);
+    T toPrimitive(@NotNull Z complex, @NotNull PersistentDataAdapterContext context);
 
     /**
      * Creates a complex object based of the passed primitive value
@@ -111,22 +107,22 @@ public interface ItemTagType<T, Z> {
      * @return the complex object instance
      */
     @NotNull
-    Z fromPrimitive(@NotNull T primitive, @NotNull ItemTagAdapterContext context);
+    Z fromPrimitive(@NotNull T primitive, @NotNull PersistentDataAdapterContext context);
 
     /**
      * A default implementation that simply exists to pass on the retrieved or
      * inserted value to the next layer.
-     *
+     * <p>
      * This implementation does not add any kind of logic, but is used to
      * provide default implementations for the primitive types.
      *
      * @param <T> the generic type of the primitive objects
      */
-    class PrimitiveTagType<T> implements ItemTagType<T, T> {
+    class PrimitivePersistentDataType<T> implements PersistentDataType<T, T> {
 
         private final Class<T> primitiveType;
 
-        PrimitiveTagType(@NotNull Class<T> primitiveType) {
+        PrimitivePersistentDataType(@NotNull Class<T> primitiveType) {
             this.primitiveType = primitiveType;
         }
 
@@ -144,13 +140,13 @@ public interface ItemTagType<T, Z> {
 
         @NotNull
         @Override
-        public T toPrimitive(@NotNull T complex, @NotNull ItemTagAdapterContext context) {
+        public T toPrimitive(@NotNull T complex, @NotNull PersistentDataAdapterContext context) {
             return complex;
         }
 
         @NotNull
         @Override
-        public T fromPrimitive(@NotNull T primitive, @NotNull ItemTagAdapterContext context) {
+        public T fromPrimitive(@NotNull T primitive, @NotNull PersistentDataAdapterContext context) {
             return primitive;
         }
     }

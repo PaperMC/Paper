@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a lectern.
  */
-public interface Lectern extends BlockState, BlockInventoryHolder {
+public interface Lectern extends TileState, BlockInventoryHolder {
 
     /**
      * Get the current lectern page.

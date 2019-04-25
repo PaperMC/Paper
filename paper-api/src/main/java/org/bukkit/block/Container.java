@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a container block.
  */
-public interface Container extends BlockState, BlockInventoryHolder, Lockable, Nameable {
+public interface Container extends TileState, BlockInventoryHolder, Lockable, Nameable {
 
     /**
      * Gets the inventory of the block represented by this block state.

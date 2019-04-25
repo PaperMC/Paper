@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a campfire.
  */
-public interface Campfire extends BlockState {
+public interface Campfire extends TileState {
 
     /**
      * @see Inventory#getSize()

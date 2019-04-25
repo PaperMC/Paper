@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a command block.
  */
-public interface CommandBlock extends BlockState {
+public interface CommandBlock extends TileState {
 
     /**
      * Gets the command that this CommandBlock will run when powered.

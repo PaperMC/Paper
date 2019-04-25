@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of an end gateway.
  */
-public interface EndGateway extends BlockState {
+public interface EndGateway extends TileState {
 
     /**
      * Gets the location that entities are teleported to when

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a skull block.
  */
-public interface Skull extends BlockState {
+public interface Skull extends TileState {
 
     /**
      * Checks to see if the skull has an owner

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a beacon.
  */
-public interface Beacon extends BlockState, Lockable, Nameable {
+public interface Beacon extends TileState, Lockable, Nameable {
 
     /**
      * Returns the list of players within the beacon's range of effect.

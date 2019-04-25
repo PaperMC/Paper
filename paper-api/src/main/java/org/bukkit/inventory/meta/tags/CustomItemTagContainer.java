@@ -8,7 +8,12 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This interface represents a map like object, capable of storing custom tags
  * in it.
+ *
+ * @deprecated this API part has been replaced by the
+ * {@link org.bukkit.persistence.PersistentDataHolder} API. Please use
+ * {@link org.bukkit.persistence.PersistentDataHolder} instead of this.
  */
+@Deprecated
 public interface CustomItemTagContainer {
 
     /**

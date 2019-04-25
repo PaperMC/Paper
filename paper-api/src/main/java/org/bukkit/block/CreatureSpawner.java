@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a creature spawner.
  */
-public interface CreatureSpawner extends BlockState {
+public interface CreatureSpawner extends TileState {
 
     /**
      * Get the spawner's creature type.

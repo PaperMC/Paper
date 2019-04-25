@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a jukebox.
  */
-public interface Jukebox extends BlockState {
+public interface Jukebox extends TileState {
 
     /**
      * Gets the record inserted into the jukebox.

@@ -12,6 +12,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
+import org.bukkit.persistence.PersistentDataHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * An implementation will handle the creation and application for ItemMeta.
  * This class should not be implemented by a plugin in a live environment.
  */
-public interface ItemMeta extends Cloneable, ConfigurationSerializable {
+public interface ItemMeta extends Cloneable, ConfigurationSerializable, PersistentDataHolder {
 
     /**
      * Checks for existence of a display name.
@@ -368,8 +369,11 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable {
      * These tags can also be modified by the client once in creative mode
      *
      * @return the custom tag container
+     * @deprecated this API part has been replaced by the {@link PersistentDataHolder} API.
+     * Please use {@link PersistentDataHolder#getPersistentDataContainer()} instead of this.
      */
     @NotNull
+    @Deprecated
     CustomItemTagContainer getCustomTagContainer();
 
     /**

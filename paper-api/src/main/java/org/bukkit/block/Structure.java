@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a structure block that can save and load blocks from a file. They
  * can only be used by OPs, and are not obtainable in survival.
  */
-public interface Structure extends BlockState {
+public interface Structure extends TileState {
 
     /**
      * The name of this structure.
