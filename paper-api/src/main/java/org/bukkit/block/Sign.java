@@ -1,11 +1,12 @@
 package org.bukkit.block;
 
+import org.bukkit.material.Colorable;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of either a SignPost or a WallSign.
  */
-public interface Sign extends TileState {
+public interface Sign extends TileState, Colorable {
 
     /**
      * Gets all the lines of text currently on this sign.
