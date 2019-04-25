@@ -54,7 +54,7 @@ fi
 
 echo "Applying member mappings..."
 if [ ! -f "$jarpath-m.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --auto-member TOKENS -i "$jarpath-cl.jar" -m "$membermappings" -o "$jarpath-m.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --auto-member LOGGER --auto-member TOKENS -i "$jarpath-cl.jar" -m "$membermappings" -o "$jarpath-m.jar" 1>/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to apply member mappings."
         exit 1
