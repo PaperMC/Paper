@@ -6,49 +6,16 @@ Subject: [PATCH] Change implementation of (tile)entity removal list
 use sets for faster removal
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a80acbb6a5..09cf98ccdd 100644
+index 48360c2b47..25e5216e25 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-         }
-     };
-     // Spigot end
--    protected final List<Entity> g = Lists.newArrayList();
-+    protected final Set<Entity> g = com.google.common.collect.Sets.newHashSet(); // Paper
+@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
      public final List<TileEntity> tileEntityList = Lists.newArrayList();
      public final List<TileEntity> tileEntityListTick = Lists.newArrayList();
-     private final List<TileEntity> c = Lists.newArrayList();
--    private final List<TileEntity> tileEntityListUnload = Lists.newArrayList();
-+    private final Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet(); // Paper
-     public final List<EntityHuman> players = Lists.newArrayList();
-     public final List<Entity> k = Lists.newArrayList();
-     protected final IntHashMap<Entity> entitiesById = new IntHashMap<>();
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-         this.entityList.removeAll(this.g);
- 
-         int j;
--
--        for (i = 0; i < this.g.size(); ++i) {
--            entity = (Entity) this.g.get(i);
-+        // Paper start - Set based removal lists
-+        for (Iterator<Entity> it = this.g.iterator(); it.hasNext() ; ) {
-+            entity = it.next(); // Paper
-             int k = entity.chunkX;
- 
-             j = entity.chunkZ;
-             if (entity.inChunk && this.isChunkLoaded(k, j, true)) {
-                 this.getChunkAt(k, j).b(entity);
-             }
--        }
-+        //} // Paper - merge
- 
--        for (i = 0; i < this.g.size(); ++i) {
--            this.c((Entity) this.g.get(i));
-+        //for (Entity e : this.g) { // Paper - merge
-+            this.c(entity); // Paper use entity
-         }
-+        // Paper end
- 
-         this.g.clear();
-         this.p_();
+     protected final List<TileEntity> tileEntityListPending = Lists.newArrayList();
+-    protected final List<TileEntity> tileEntityListUnload = Lists.newArrayList();
++    protected final java.util.Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet(); // Paper
+     private final long b = 16777215L;
+     private final Thread c;
+     private int d;
 --
