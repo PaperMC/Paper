@@ -13,6 +13,20 @@ public final class CraftBell extends org.bukkit.craftbukkit.block.data.CraftBloc
         super(state);
     }
 
+    // org.bukkit.craftbukkit.block.data.type.CraftBell
+
+    private static final net.minecraft.server.BlockStateEnum<?> ATTACHMENT = getEnum(net.minecraft.server.BlockBell.class, "attachment");
+
+    @Override
+    public Attachment getAttachment() {
+        return get(ATTACHMENT, Attachment.class);
+    }
+
+    @Override
+    public void setAttachment(Attachment leaves) {
+        set(ATTACHMENT, leaves);
+    }
+
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
     private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockBell.class, "facing");
