@@ -1,5 +1,8 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.block.Block;
@@ -18,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * representation by the implementation.
  */
 public class Location implements Cloneable, ConfigurationSerializable {
-    private World world;
+    private Reference<World> world;
     private double x;
     private double y;
     private double z;
@@ -48,7 +51,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param pitch The absolute rotation on the y-plane, in degrees
      */
     public Location(@Nullable final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
-        this.world = world;
+        if (world != null) {
+            this.world = new WeakReference<>(world);
+        }
+
         this.x = x;
         this.y = y;
         this.z = z;
@@ -62,16 +68,38 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * @param world New world that this location resides in
      */
     public void setWorld(@Nullable World world) {
-        this.world = world;
+        this.world = (world == null) ? null : new WeakReference<>(world);
+    }
+
+    /**
+     * Checks if world in this location is present and loaded.
+     *
+     * @return true if is loaded, otherwise false
+     */
+    public boolean isWorldLoaded() {
+        if (this.world == null) {
+            return false;
+        }
+
+        World world = this.world.get();
+        return world != null && Bukkit.getWorld(world.getUID()) != null;
     }
 
     /**
      * Gets the world that this location resides in
      *
-     * @return World that contains this location
+     * @return World that contains this location, or {@code null} if it is not set
+     * @throws IllegalArgumentException when world is unloaded
+     * @see #isWorldLoaded()
      */
     @Nullable
     public World getWorld() {
+        if (this.world == null) {
+            return null;
+        }
+
+        World world = this.world.get();
+        Preconditions.checkArgument(world != null, "World unloaded");
         return world;
     }
 
@@ -82,7 +110,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public Chunk getChunk() {
-        return world.getChunkAt(this);
+        return getWorld().getChunkAt(this);
     }
 
     /**
@@ -92,7 +120,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public Block getBlock() {
-        return world.getBlockAt(this);
+        return getWorld().getBlockAt(this);
     }
 
     /**
@@ -540,7 +568,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
     public int hashCode() {
         int hash = 3;
 
-        hash = 19 * hash + (this.world != null ? this.world.hashCode() : 0);
+        World world = (this.world == null) ? null : getWorld();
+        hash = 19 * hash + (world != null ? world.hashCode() : 0);
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.z) ^ (Double.doubleToLongBits(this.z) >>> 32));
@@ -551,6 +580,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
 
     @Override
     public String toString() {
+        World world = (this.world == null) ? null : getWorld();
         return "Location{" + "world=" + world + ",x=" + x + ",y=" + y + ",z=" + z + ",pitch=" + pitch + ",yaw=" + yaw + '}';
     }
 
@@ -604,7 +634,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
     @NotNull
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("world", this.world.getName());
+
+        if (this.world != null) {
+            data.put("world", getWorld().getName());
+        }
 
         data.put("x", this.x);
         data.put("y", this.y);
@@ -626,9 +659,12 @@ public class Location implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static Location deserialize(@NotNull Map<String, Object> args) {
-        World world = Bukkit.getWorld((String) args.get("world"));
-        if (world == null) {
-            throw new IllegalArgumentException("unknown world");
+        World world = null;
+        if (args.containsKey("world")) {
+            world = Bukkit.getWorld((String) args.get("world"));
+            if (world == null) {
+                throw new IllegalArgumentException("unknown world");
+            }
         }
 
         return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
