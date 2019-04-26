@@ -67,7 +67,15 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         CustomBiomeGrid biomegrid = new CustomBiomeGrid();
         biomegrid.biome = this.getWorldChunkManager().getBiomeBlock(x << 4, z << 4, 16, 16);
 
-        ChunkData data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
+        ChunkData data;
+        if (generator.isParallelCapable()) {
+            data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
+        } else {
+            synchronized (this) {
+                data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
+            }
+        }
+
         Preconditions.checkArgument(data instanceof CraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
         CraftChunkData craftData = (CraftChunkData) data;
         ChunkSection[] sections = craftData.getRawChunkData();
