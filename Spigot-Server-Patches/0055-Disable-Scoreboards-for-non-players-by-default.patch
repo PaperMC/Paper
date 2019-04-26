@@ -1,4 +1,4 @@
-From 9ec1a2698aee9535ee3990f479b4a66dcee686cc Mon Sep 17 00:00:00 2001
+From 3e23947760e0ec7eb777f34679372e128c282a02 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 8 Mar 2016 23:25:45 -0500
 Subject: [PATCH] Disable Scoreboards for non players by default
@@ -11,10 +11,10 @@ So avoid looking up scoreboards and short circuit to the "not on a team"
 logic which is most likely to be true.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 40b54191e6..06417c8250 100644
+index 94f5c90b3c..30f0dcfd51 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -204,4 +204,9 @@ public class PaperWorldConfig {
+@@ -196,4 +196,9 @@ public class PaperWorldConfig {
      private void disableTeleportationSuffocationCheck() {
          disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
      }
@@ -25,10 +25,10 @@ index 40b54191e6..06417c8250 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index ad30cdd824..c7f83d4343 100644
+index 49245b5c5f..9ad8893943 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2264,6 +2264,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -2188,6 +2188,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
  
      @Nullable
      public ScoreboardTeamBase getScoreboardTeam() {
@@ -37,15 +37,15 @@ index ad30cdd824..c7f83d4343 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index c5cc0b471b..0ba15fce63 100644
+index d85172e728..e3613a8e67 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -538,6 +538,7 @@ public abstract class EntityLiving extends Entity {
+@@ -578,6 +578,7 @@ public abstract class EntityLiving extends Entity {
          if (nbttagcompound.hasKeyOfType("Team", 8)) {
              String s = nbttagcompound.getString("Team");
              ScoreboardTeam scoreboardteam = this.world.getScoreboard().getTeam(s);
 +            if (!world.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof EntityHuman)) { scoreboardteam = null; } // Paper
-             boolean flag = scoreboardteam != null && this.world.getScoreboard().addPlayerToTeam(this.bu(), scoreboardteam);
+             boolean flag = scoreboardteam != null && this.world.getScoreboard().addPlayerToTeam(this.getUniqueIDString(), scoreboardteam);
  
              if (!flag) {
 -- 
