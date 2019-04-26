@@ -1,14 +1,10 @@
 --- a/net/minecraft/server/PlayerChunkMap.java
 +++ b/net/minecraft/server/PlayerChunkMap.java
-@@ -33,6 +33,16 @@
+@@ -33,6 +33,12 @@
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
-+import java.util.concurrent.CompletionException;
-+import java.util.concurrent.ExecutionException;
-+import java.util.concurrent.TimeUnit;
-+import java.util.concurrent.TimeoutException;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -17,7 +13,7 @@
  
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
-@@ -179,9 +189,12 @@
+@@ -179,9 +185,12 @@
  
          return completablefuture1.thenApply((list1) -> {
              List<IChunkAccess> list2 = Lists.newArrayList();
@@ -32,7 +28,7 @@
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -257,9 +270,9 @@
+@@ -257,9 +266,9 @@
          }).forEach((completablefuture) -> {
              if (flag) {
                  this.executor.awaitTasks(completablefuture::isDone);
@@ -44,64 +40,39 @@
              }
  
          });
-@@ -280,13 +293,27 @@
- 
-             for (int i = 0; longiterator.hasNext() && (booleansupplier.getAsBoolean() || i < 200 || this.unloadQueue.size() > 2000); longiterator.remove()) {
-                 long j = longiterator.nextLong();
--                PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
-+                PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.get(j); // CraftBukkit
- 
-                 if (playerchunk != null) {
-+                    // CraftBukkit start
-+                    ChunkUnloadEvent event = null;
-+                    IChunkAccess access = playerchunk.getChunk();
-+
-+                    if (access instanceof Chunk) {
-+                        event = new ChunkUnloadEvent(((Chunk) access).bukkitChunk, access.isNeedsSaving());
-+                        this.world.getServer().getPluginManager().callEvent(event);
-+
-+                        if (event.isCancelled()) {
-+                            continue;
-+                        }
-+                    }
-+                    this.updatingChunks.remove(j);
-+                    // CraftBukkit end
-                     this.g.put(j, playerchunk);
-                     this.updatingChunksModified = true;
-                     ++i;
--                    this.a(j, playerchunk);
-+                    this.a(j, playerchunk, event); // CraftBukkit
-                 }
-             }
+@@ -268,7 +277,6 @@
          }
-@@ -294,17 +321,23 @@
-         gameprofilerfiller.exit();
+ 
      }
+-
+     protected void unloadChunks(BooleanSupplier booleansupplier) {
+         GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
--    private void a(long i, PlayerChunk playerchunk) {
-+    private void a(long i, PlayerChunk playerchunk, ChunkUnloadEvent event) { // CraftBukkit - add event
-         CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkSave();
- 
-         completablefuture.thenAcceptAsync((ichunkaccess) -> {
-             CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkSave();
- 
-             if (completablefuture1 != completablefuture) {
--                this.a(i, playerchunk);
-+                this.a(i, playerchunk, event); // CraftBukkit
+@@ -304,13 +312,22 @@
+                 this.a(i, playerchunk);
              } else {
                  if (this.g.remove(i, playerchunk) && ichunkaccess != null) {
 -                    this.saveChunk(ichunkaccess);
-+                    // CraftBukkit start
-+                    if (event == null) {
-+                        this.saveChunk(ichunkaccess);
-+                    } else {
-+                        this.saveChunk(ichunkaccess, event.isSaveChunk());
-+                    }
-+                    // CraftBukkit end
                      if (this.h.remove(i) && ichunkaccess instanceof Chunk) {
                          Chunk chunk = (Chunk) ichunkaccess;
  
-@@ -394,7 +427,7 @@
++                        // CraftBukkit start
++                        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk, chunk.isNeedsSaving());
++                        this.world.getServer().getPluginManager().callEvent(event);
++                        this.saveChunk(ichunkaccess, event.isSaveChunk());
++                        // CraftBukkit end
++
+                         chunk.c(false);
+                         this.world.unloadChunk(chunk);
++                        // CraftBukkit start
++                    } else {
++                        this.saveChunk(ichunkaccess);
+                     }
++                    // CraftBukkit end
+ 
+                     this.lightEngine.a(ichunkaccess.getPos());
+                     this.lightEngine.queueUpdate();
+@@ -394,7 +411,7 @@
                      return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
                  });
              }, (runnable) -> {
@@ -110,7 +81,7 @@
              });
          }
      }
-@@ -454,7 +487,10 @@
+@@ -454,7 +471,10 @@
                          while (iterator.hasNext()) {
                              Entity entity = (Entity) iterator.next();
  
@@ -122,7 +93,7 @@
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[] { entity});
                                  } else {
-@@ -476,7 +512,7 @@
+@@ -476,7 +496,7 @@
              long i = playerchunk.h().pair();
  
              playerchunk.getClass();
@@ -131,7 +102,7 @@
          });
      }
  
-@@ -493,7 +529,7 @@
+@@ -493,7 +513,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -140,7 +111,7 @@
          });
  
          completablefuture1.thenAcceptAsync((either) -> {
-@@ -507,7 +543,7 @@
+@@ -507,7 +527,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -149,7 +120,7 @@
          });
          return completablefuture1;
      }
-@@ -517,8 +553,14 @@
+@@ -517,8 +537,14 @@
      }
  
      public void saveChunk(IChunkAccess ichunkaccess) {
@@ -165,7 +136,7 @@
              try {
                  this.world.checkSession();
              } catch (ExceptionWorldConflict exceptionworldconflict) {
-@@ -569,9 +611,10 @@
+@@ -569,9 +595,10 @@
                  ChunkCoordIntPair chunkcoordintpair = playerchunk.h();
                  Packet<?>[] apacket = new Packet[2];
  
@@ -177,7 +148,7 @@
                      boolean flag1 = i1 <= this.A;
  
                      this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
-@@ -626,7 +669,7 @@
+@@ -626,7 +653,7 @@
      private NBTTagCompound f(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -186,7 +157,7 @@
      }
  
      boolean d(ChunkCoordIntPair chunkcoordintpair) {
-@@ -946,7 +989,7 @@
+@@ -946,7 +973,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -195,7 +166,7 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1015,6 +1058,17 @@
+@@ -1015,6 +1042,17 @@
                          }
                      }
  
