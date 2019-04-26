@@ -143,7 +143,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Chunk[] getLoadedChunks();
 
     /**
-     * Loads the specified {@link Chunk}
+     * Loads the specified {@link Chunk}.
+     * <p>
+     * <b>This method will keep the specified chunk loaded until one of the
+     * unload methods is manually called. Callers are advised to instead use
+     * getChunkAt which will only temporarily load the requested chunk.</b>
      *
      * @param chunk The chunk to load
      */
@@ -183,7 +187,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean isChunkInUse(int x, int z);
 
     /**
-     * Loads the {@link Chunk} at the specified coordinates
+     * Loads the {@link Chunk} at the specified coordinates.
+     * <p>
+     * <b>This method will keep the specified chunk loaded until one of the
+     * unload methods is manually called. Callers are advised to instead use
+     * getChunkAt which will only temporarily load the requested chunk.</b>
      * <p>
      * If the chunk does not exist, it will be generated.
      * <p>
@@ -196,7 +204,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void loadChunk(int x, int z);
 
     /**
-     * Loads the {@link Chunk} at the specified coordinates
+     * Loads the {@link Chunk} at the specified coordinates.
+     * <p>
+     * <b>This method will keep the specified chunk loaded until one of the
+     * unload methods is manually called. Callers are advised to instead use
+     * getChunkAt which will only temporarily load the requested chunk.</b>
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
