@@ -17,7 +17,15 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A chunk generator is responsible for the initial shaping of an entire
  * chunk. For example, the nether chunk generator should shape netherrack and
- * soulsand
+ * soulsand.
+ *
+ * By default only one thread will call
+ * {@link #generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
+ * at a time, although this may not necessarily be the main server thread.
+ *
+ * If your generator is capable of fully asynchronous generation, then
+ * {@link #isParallelCapable()} should be overriden accordingly to allow
+ * multiple concurrent callers.
  */
 public abstract class ChunkGenerator {
 
@@ -136,6 +144,17 @@ public abstract class ChunkGenerator {
     @Nullable
     public Location getFixedSpawnLocation(@NotNull World world, @NotNull Random random) {
         return null;
+    }
+
+    /**
+     * Gets if this ChunkGenerator is parallel capable.
+     *
+     * See {@link ChunkGenerator} for more information.
+     *
+     * @return parallel capable status
+     */
+    public boolean isParallelCapable() {
+        return false;
     }
 
     /**
