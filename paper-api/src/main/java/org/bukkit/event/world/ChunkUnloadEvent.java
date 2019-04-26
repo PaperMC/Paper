@@ -1,16 +1,14 @@
 package org.bukkit.event.world;
 
 import org.bukkit.Chunk;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a chunk is unloaded
  */
-public class ChunkUnloadEvent extends ChunkEvent implements Cancellable {
+public class ChunkUnloadEvent extends ChunkEvent {
     private static final HandlerList handlers = new HandlerList();
-    private boolean cancel = false;
     private boolean saveChunk;
 
     public ChunkUnloadEvent(@NotNull final Chunk chunk) {
@@ -38,14 +36,6 @@ public class ChunkUnloadEvent extends ChunkEvent implements Cancellable {
      */
     public void setSaveChunk(boolean saveChunk) {
         this.saveChunk = saveChunk;
-    }
-
-    public boolean isCancelled() {
-        return cancel;
-    }
-
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
     }
 
     @NotNull
