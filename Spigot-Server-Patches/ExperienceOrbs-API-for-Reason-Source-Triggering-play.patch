@@ -8,7 +8,7 @@ Adds lots of information about why this orb exists.
 Replaces isFromBottle() with logic that persists entity reloads too.
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index 1dc13fcc30..c674aa13d8 100644
+index fd23d4534..69e65ea6c 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -0,0 +0,0 @@ public class Block implements IMaterial {
@@ -27,11 +27,24 @@ index 1dc13fcc30..c674aa13d8 100644
              }
          }
  
+diff --git a/src/main/java/net/minecraft/server/ContainerGrindstone.java b/src/main/java/net/minecraft/server/ContainerGrindstone.java
+index 2e4f81ebe..88b9655bb 100644
+--- a/src/main/java/net/minecraft/server/ContainerGrindstone.java
++++ b/src/main/java/net/minecraft/server/ContainerGrindstone.java
+@@ -0,0 +0,0 @@ public class ContainerGrindstone extends Container {
+                         int k = EntityExperienceOrb.getOrbValue(j);
+ 
+                         j -= k;
+-                        world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX(), (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, k));
++                        world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX(), (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, k, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, entityhuman)); // Paper
+                     }
+ 
+                     world.triggerEffect(1042, blockposition, 0);
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index b3fbc8249e..79d8be8d46 100644
+index bfdb63094..3a6ae654c 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-@@ -0,0 +0,0 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
+@@ -0,0 +0,0 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
              int j = EntityExperienceOrb.getOrbValue(i);
  
              i -= j;
@@ -41,7 +54,7 @@ index b3fbc8249e..79d8be8d46 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
-index 3030dd9c31..404a222b45 100644
+index bfba08fb2..49668f2c2 100644
 --- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
 +++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
 @@ -0,0 +0,0 @@ public class EntityExperienceOrb extends Entity {
@@ -67,7 +80,7 @@ index 3030dd9c31..404a222b45 100644
 +        if (comp.hasKey("reason")) {
 +            String reason = comp.getString("reason");
 +            try {
-+                spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
++                this.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
 +            } catch (Exception e) {
 +                this.world.getServer().getLogger().warning("Invalid spawnReason set for experience orb: " + e.getMessage() + " - " + reason);
 +            }
@@ -75,14 +88,14 @@ index 3030dd9c31..404a222b45 100644
 +    }
 +    private void savePaperNBT(NBTTagCompound nbttagcompound) {
 +        NBTTagCompound comp = new NBTTagCompound();
-+        if (sourceEntityId != null) {
-+            comp.setUUID("source", sourceEntityId);
++        if (this.sourceEntityId != null) {
++            comp.setUUID("source", this.sourceEntityId);
 +        }
-+        if (triggerEntityId != null) {
++        if (this.triggerEntityId != null) {
 +            comp.setUUID("trigger", triggerEntityId);
 +        }
-+        if (spawnReason != null && spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
-+            comp.setString("reason", spawnReason.name());
++        if (this.spawnReason != null && this.spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
++            comp.setString("reason", this.spawnReason.name());
 +        }
 +        nbttagcompound.set("Paper.ExpData", comp);
 +    }
@@ -96,31 +109,32 @@ index 3030dd9c31..404a222b45 100644
 +    }
 +
 +    public EntityExperienceOrb(World world, double d0, double d1, double d2, int i, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId, Entity sourceId) {
-         super(EntityTypes.EXPERIENCE_ORB, world);
+         this(EntityTypes.EXPERIENCE_ORB, world);
 +        this.sourceEntityId = sourceId != null ? sourceId.getUniqueID() : null;
 +        this.triggerEntityId = triggerId != null ? triggerId.getUniqueID() : null;
 +        this.spawnReason = reason != null ? reason : org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
 +        // Paper end
-         this.setSize(0.5F, 0.5F);
          this.setPosition(d0, d1, d2);
-         this.yaw = (float) (Math.random() * 360.0D);
+         this.yaw = (float) (this.random.nextDouble() * 360.0D);
+         this.setMot((this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D, this.random.nextDouble() * 0.2D * 2.0D, (this.random.nextDouble() * 0.20000000298023224D - 0.10000000149011612D) * 2.0D);
 @@ -0,0 +0,0 @@ public class EntityExperienceOrb extends Entity {
-         nbttagcompound.setShort("Health", (short) this.d);
-         nbttagcompound.setShort("Age", (short) this.b);
+         nbttagcompound.setShort("Health", (short) this.e);
+         nbttagcompound.setShort("Age", (short) this.c);
          nbttagcompound.setShort("Value", (short) this.value);
-+        savePaperNBT(nbttagcompound); // Paper
++        this.savePaperNBT(nbttagcompound); // Paper
      }
  
-     public void a(NBTTagCompound nbttagcompound) {
-         this.d = nbttagcompound.getShort("Health");
-         this.b = nbttagcompound.getShort("Age");
+     @Override
+@@ -0,0 +0,0 @@ public class EntityExperienceOrb extends Entity {
+         this.e = nbttagcompound.getShort("Health");
+         this.c = nbttagcompound.getShort("Age");
          this.value = nbttagcompound.getShort("Value");
-+        loadPaperNBT(nbttagcompound); // Paper
++        this.loadPaperNBT(nbttagcompound); // Paper
      }
  
-     public void d(EntityHuman entityhuman) {
+     @Override
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 202b8d2158..ee71c326ae 100644
+index 78527f350..03f782d4b 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
 @@ -0,0 +0,0 @@ public class EntityFishingHook extends Entity {
@@ -133,7 +147,7 @@ index 202b8d2158..ee71c326ae 100644
                      // CraftBukkit end
                      if (itemstack1.getItem().a(TagsItem.FISHES)) {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index c0ef0c51f1..3bc1f8f9b5 100644
+index 780287f91..014404ade 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
@@ -147,10 +161,10 @@ index c0ef0c51f1..3bc1f8f9b5 100644
              this.expToDrop = 0;
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/EntityThrownExpBottle.java b/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
-index a5e1939e05..e73dba09a6 100644
+index 77dd4c99a..398b499bb 100644
 --- a/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
 +++ b/src/main/java/net/minecraft/server/EntityThrownExpBottle.java
-@@ -0,0 +0,0 @@ public class EntityThrownExpBottle extends EntityProjectile {
+@@ -0,0 +0,0 @@ public class EntityThrownExpBottle extends EntityProjectileThrowable {
                  int j = EntityExperienceOrb.getOrbValue(i);
  
                  i -= j;
@@ -159,21 +173,47 @@ index a5e1939e05..e73dba09a6 100644
              }
  
              this.die();
+diff --git a/src/main/java/net/minecraft/server/EntityTurtle.java b/src/main/java/net/minecraft/server/EntityTurtle.java
+index 7c6506a91..1b4933c07 100644
+--- a/src/main/java/net/minecraft/server/EntityTurtle.java
++++ b/src/main/java/net/minecraft/server/EntityTurtle.java
+@@ -0,0 +0,0 @@ public class EntityTurtle extends EntityAnimal {
+             Random random = this.animal.getRandom();
+ 
+             if (this.b.getGameRules().getBoolean("doMobLoot")) {
+-                this.b.addEntity(new EntityExperienceOrb(this.b, this.animal.locX, this.animal.locY, this.animal.locZ, random.nextInt(7) + 1));
++                this.b.addEntity(new EntityExperienceOrb(this.b, this.animal.locX, this.animal.locY, this.animal.locZ, random.nextInt(7) + 1, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper
+             }
+ 
+         }
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
-index ebe397b15a..78acac4ca7 100644
+index c34868324..bc04086d7 100644
 --- a/src/main/java/net/minecraft/server/EntityVillager.java
 +++ b/src/main/java/net/minecraft/server/EntityVillager.java
-@@ -0,0 +0,0 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant {
+@@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
          }
  
-         if (merchantrecipe.j()) {
+         if (merchantrecipe.q()) {
 -            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY + 0.5D, this.locZ, i));
-+            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY + 0.5D, this.locZ, i, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, tradingPlayer, this)); // Paper
++            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY + 0.5D, this.locZ, i, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.getTrader(), this)); // Paper
          }
  
-         if (this.tradingPlayer instanceof EntityPlayer) {
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityVillagerTrader.java b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
+index 1d612d828..002ff8880 100644
+--- a/src/main/java/net/minecraft/server/EntityVillagerTrader.java
++++ b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
+@@ -0,0 +0,0 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
+         if (merchantrecipe.q()) {
+             int i = 3 + this.random.nextInt(4);
+ 
+-            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY + 0.5D, this.locZ, i));
++            this.world.addEntity(new EntityExperienceOrb(this.world, this.locX, this.locY + 0.5D, this.locZ, i, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.getTrader(), this)); // Paper
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalBreed.java b/src/main/java/net/minecraft/server/PathfinderGoalBreed.java
-index bf061cf064..55f9787680 100644
+index d25a05736..9d0b1ffef 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalBreed.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalBreed.java
 @@ -0,0 +0,0 @@ public class PathfinderGoalBreed extends PathfinderGoal {
@@ -186,7 +226,7 @@ index bf061cf064..55f9787680 100644
                  // CraftBukkit end
              }
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 0baf0100c9..6ae6afa339 100644
+index 6e90f21ea..a7411c75a 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
@@ -199,29 +239,33 @@ index 0baf0100c9..6ae6afa339 100644
                  // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/SlotFurnaceResult.java b/src/main/java/net/minecraft/server/SlotFurnaceResult.java
-index 5ac554d65e..d70c4dda5a 100644
+index d2698e847..edc4a5c34 100644
 --- a/src/main/java/net/minecraft/server/SlotFurnaceResult.java
 +++ b/src/main/java/net/minecraft/server/SlotFurnaceResult.java
-@@ -0,0 +0,0 @@ import org.bukkit.event.inventory.FurnaceExtractEvent;
+@@ -0,0 +0,0 @@ package net.minecraft.server;
  
  public class SlotFurnaceResult extends Slot {
  
 -    private final EntityHuman a;
-+    private final EntityHuman a;public EntityHuman getPlayer() { return a; } // Paper OBFHELPER
++    private final EntityHuman a; public final EntityHuman getPlayer() { return this.a; } // Paper OBFHELPER
      private int b;
  
      public SlotFurnaceResult(EntityHuman entityhuman, IInventory iinventory, int i, int j, int k) {
-@@ -0,0 +0,0 @@ public class SlotFurnaceResult extends Slot {
-                 while (i > 0) {
-                     j = EntityExperienceOrb.getOrbValue(i);
-                     i -= j;
--                    this.a.world.addEntity(new EntityExperienceOrb(this.a.world, this.a.locX, this.a.locY + 0.5D, this.a.locZ + 0.5D, j));
-+                    this.a.world.addEntity(new EntityExperienceOrb(this.a.world, this.a.locX, this.a.locY + 0.5D, this.a.locZ + 0.5D, j, org.bukkit.entity.ExperienceOrb.SpawnReason.FURNACE, getPlayer())); // Paper
-                 }
-             }
+diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+index adb1a0913..be16fe9a9 100644
+--- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
++++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
+@@ -0,0 +0,0 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+         while (i > 0) {
+             j = EntityExperienceOrb.getOrbValue(i);
+             i -= j;
+-            entityhuman.world.addEntity(new EntityExperienceOrb(entityhuman.world, entityhuman.locX, entityhuman.locY + 0.5D, entityhuman.locZ + 0.5D, j));
++            entityhuman.world.addEntity(new EntityExperienceOrb(entityhuman.world, entityhuman.locX, entityhuman.locY + 0.5D, entityhuman.locZ + 0.5D, j, org.bukkit.entity.ExperienceOrb.SpawnReason.FURNACE, entityhuman)); // Paper
+         }
  
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 6718028190..d72f393a75 100644
+index 3c7f62fc5..3fbc48150 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
@@ -230,11 +274,11 @@ index 6718028190..d72f393a75 100644
          } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {
 -            entity = new EntityExperienceOrb(world, x, y, z, 0);
 +            entity = new EntityExperienceOrb(world, x, y, z, 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null); // Paper
-         } else if (Weather.class.isAssignableFrom(clazz)) {
-             // not sure what this can do
-             if (LightningStrike.class.isAssignableFrom(clazz)) {
+         } else if (LightningStrike.class.isAssignableFrom(clazz)) {
+             entity = new EntityLightning(world, x, y, z, false);
+         } else if (Firework.class.isAssignableFrom(clazz)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
-index 3a09cab3d4..3302af0e45 100644
+index 3a09cab3d..3302af0e4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
 @@ -0,0 +0,0 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
