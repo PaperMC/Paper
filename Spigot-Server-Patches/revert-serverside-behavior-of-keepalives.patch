@@ -17,10 +17,10 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 0d87ddc0f5..551740ec6c 100644
+index 62c0137a7..9a981a608 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private final MinecraftServer minecraftServer;
      public EntityPlayer player;
      private int e;
@@ -29,7 +29,7 @@ index 0d87ddc0f5..551740ec6c 100644
      private boolean awaitingKeepAlive; private void setPendingPing(boolean isPending) { this.awaitingKeepAlive = isPending;}; private boolean isPendingPing() { return this.awaitingKeepAlive;}; // Paper - OBFHELPER
      private long h; private void setKeepAliveID(long keepAliveID) { this.h = keepAliveID;}; private long getKeepAliveID() {return this.h; };  // Paper - OBFHELPER
      // CraftBukkit start - multithreaded fields
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private int E;
      private int receivedMovePackets;
      private int processedMovePackets;
@@ -37,14 +37,11 @@ index 0d87ddc0f5..551740ec6c 100644
  
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
          this.minecraftServer = minecraftserver;
-@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
          }
  
-         this.minecraftServer.methodProfiler.enter("keepAlive");
+         this.minecraftServer.getMethodProfiler().enter("keepAlive");
 -        long i = SystemUtils.getMonotonicMillis();
--
--        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
--            if (this.awaitingKeepAlive) {
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = SystemUtils.getMonotonicMillis();
@@ -53,12 +50,6 @@ index 0d87ddc0f5..551740ec6c 100644
 +        if (this.isPendingPing()) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
-                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
--            } else {
--                this.awaitingKeepAlive = true;
--                this.lastKeepAlive = i;
--                this.h = i;
--                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
@@ -66,11 +57,19 @@ index 0d87ddc0f5..551740ec6c 100644
 +                this.setLastPing(currentTime);
 +                this.setKeepAliveID(currentTime);
 +                this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
-+
+ 
+-        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
+-            if (this.awaitingKeepAlive) {
+-                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
+-            } else {
+-                this.awaitingKeepAlive = true;
+-                this.lastKeepAlive = i;
+-                this.h = i;
+-                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
              }
          }
 +        // Paper end
  
-         this.minecraftServer.methodProfiler.exit();
+         this.minecraftServer.getMethodProfiler().exit();
          // CraftBukkit start
 --
