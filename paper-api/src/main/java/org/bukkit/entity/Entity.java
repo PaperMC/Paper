@@ -571,4 +571,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     BlockFace getFacing();
+
+    /**
+     * Gets the entity's current pose.
+     *
+     * <b>Note that the pose is only updated at the end of a tick, so may be
+     * inconsistent with other methods. eg {@link Player#isSneaking()} being
+     * true does not imply the current pose will be {@link Pose#SNEAKING}</b>
+     *
+     * @return current pose
+     */
+    @NotNull
+    Pose getPose();
 }
