@@ -324,6 +324,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                         customSize = Containers.GENERIC_9X3;
                         break;
                     case 36:
+                    case 41: // PLAYER
                         customSize = Containers.GENERIC_9X4;
                         break;
                     case 45:
