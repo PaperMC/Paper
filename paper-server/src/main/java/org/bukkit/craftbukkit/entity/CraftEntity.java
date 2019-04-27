@@ -150,6 +150,7 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.entity.Pose;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
@@ -891,6 +892,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public CraftPersistentDataContainer getPersistentDataContainer() {
         return persistentDataContainer;
+    }
+
+    @Override
+    public Pose getPose() {
+        return Pose.values()[getHandle().Z().ordinal()];
     }
 
     public void storeBukkitValues(NBTTagCompound c) {
