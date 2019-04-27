@@ -55,7 +55,6 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
-            Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots");
             this.items = NonNullList.a(size, ItemStack.a);
             this.title = title;
             this.viewers = new ArrayList<HumanEntity>();

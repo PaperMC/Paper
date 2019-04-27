@@ -333,7 +333,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                         customSize = Containers.GENERIC_9X6;
                         break;
                     default:
-                        throw new IllegalArgumentException("Unsupported custom size " + inventory.getSize());
+                        throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
                 }
                 openCustomInventory(inventory, player, customSize);
                 break;
