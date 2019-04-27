@@ -49,7 +49,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         old.die();
 
         EntityItemFrame frame = new EntityItemFrame(world, position, direction);
-        frame.setItem(item);
+        frame.setItem(item, true, false); // Paper - fix itemframe sound
         world.addEntity(frame);
         this.entity = frame;
     }

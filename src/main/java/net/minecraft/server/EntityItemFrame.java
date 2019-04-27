@@ -247,7 +247,7 @@ public class EntityItemFrame extends EntityHanging {
         }
 
         this.getDataWatcher().set(EntityItemFrame.ITEM, itemstack);
-        if (!itemstack.isEmpty() && playSound) { // CraftBukkit
+        if (!itemstack.isEmpty() && flag && playSound) { // CraftBukkit // Paper - only play sound when update flag is set
             this.playSound(SoundEffects.ENTITY_ITEM_FRAME_ADD_ITEM, 1.0F, 1.0F);
         }
 
