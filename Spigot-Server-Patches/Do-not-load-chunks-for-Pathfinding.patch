@@ -5,20 +5,20 @@ Subject: [PATCH] Do not load chunks for Pathfinding
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
-index 49533ac33e..eef3ab73fc 100644
+index c76087614..475c93836 100644
 --- a/src/main/java/net/minecraft/server/ChunkCache.java
 +++ b/src/main/java/net/minecraft/server/ChunkCache.java
 @@ -0,0 +0,0 @@ public class ChunkCache implements IIBlockAccess {
  
-         for (l = this.a; l <= j; ++l) {
-             for (i1 = this.b; i1 <= k; ++i1) {
--                this.c[l - this.a][i1 - this.b] = world.getChunkAt(l, i1);
-+                this.c[l - this.a][i1 - this.b] = world.getChunkIfLoaded(l, i1); // Paper
+         for (k = this.a; k <= i; ++k) {
+             for (l = this.b; l <= j; ++l) {
+-                this.c[k - this.a][l - this.b] = world.getChunkAt(k, l, ChunkStatus.FULL, false);
++                this.c[k - this.a][l - this.b] = world.getChunkIfLoaded(k, l); // Paper
              }
          }
  
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 604049b088..716d00afb1 100644
+index 6ce35018a..2a391be28 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
@@ -35,34 +35,34 @@ index 604049b088..716d00afb1 100644
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
          this.b = world;
          this.p = entityinsentient.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
-         this.r = this.a();
+         this.r = this.a(MathHelper.floor(this.p.getValue() * 16.0D));
 +        setWorld(); // Paper
      }
  
-     public BlockPosition i() {
+     public BlockPosition h() {
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
      }
  
-     public void d() {
+     public void c() {
 +        setWorld(); // Paper
          ++this.e;
          if (this.m) {
-             this.l();
+             this.k();
 diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
-index 3085338f0a..89d51d471a 100644
+index 480dee704..3901dd751 100644
 --- a/src/main/java/net/minecraft/server/Pathfinder.java
 +++ b/src/main/java/net/minecraft/server/Pathfinder.java
 @@ -0,0 +0,0 @@ public class Pathfinder {
-     private final Path a = new Path();
      private final Set<PathPoint> b = Sets.newHashSet();
      private final PathPoint[] c = new PathPoint[32];
--    private PathfinderAbstract d;
-+    private PathfinderAbstract d; public PathfinderAbstract getPathfinder() { return d; }  // Paper - OBFHELPER
+     private final int d;
+-    private PathfinderAbstract e;
++    private PathfinderAbstract e; public PathfinderAbstract getPathfinder() { return this.e; }  // Paper - OBFHELPER
  
-     public Pathfinder(PathfinderAbstract pathfinderabstract) {
-         this.d = pathfinderabstract;
+     public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {
+         this.e = pathfinderabstract;
 diff --git a/src/main/java/net/minecraft/server/PathfinderAbstract.java b/src/main/java/net/minecraft/server/PathfinderAbstract.java
-index 36d7e1d966..d722c85139 100644
+index 7aad55c7d..3cb43808f 100644
 --- a/src/main/java/net/minecraft/server/PathfinderAbstract.java
 +++ b/src/main/java/net/minecraft/server/PathfinderAbstract.java
 @@ -0,0 +0,0 @@ public abstract class PathfinderAbstract {
@@ -70,7 +70,7 @@ index 36d7e1d966..d722c85139 100644
      protected IBlockAccess a;
      protected EntityInsentient b;
 +    public World world; // Paper
-     protected final IntHashMap<PathPoint> c = new IntHashMap<>();
+     protected final Int2ObjectMap<PathPoint> c = new Int2ObjectOpenHashMap();
      protected int d;
      protected int e;
 @@ -0,0 +0,0 @@ public abstract class PathfinderAbstract {
@@ -79,10 +79,10 @@ index 36d7e1d966..d722c85139 100644
          this.a = iblockaccess;
 +        if (iblockaccess instanceof World) world = (World) iblockaccess; // Paper
          this.b = entityinsentient;
-         this.c.c();
-         this.d = MathHelper.d(entityinsentient.width + 1.0F);
+         this.c.clear();
+         this.d = MathHelper.d(entityinsentient.getWidth() + 1.0F);
 diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
-index eec8916479..e45bdb581e 100644
+index f1198272b..1eaed0fd8 100644
 --- a/src/main/java/net/minecraft/server/PathfinderNormal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
 @@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
@@ -99,8 +99,8 @@ index eec8916479..e45bdb581e 100644
                  for (int l = -1; l <= 1; ++l) {
                      for (int i1 = -1; i1 <= 1; ++i1) {
                          if (l != 0 || i1 != 0) {
--                            Block block = iblockaccess.getType(blockposition_pooledblockposition.c(l + i, j, i1 + k)).getBlock();
-+                            Block block = world.getBlockIfLoaded(blockposition_pooledblockposition.c(l + i, j, i1 + k)); // Paper
+-                            Block block = iblockaccess.getType(blockposition_pooledblockposition.d(l + i, j, i1 + k)).getBlock();
++                            Block block = world.getBlockIfLoaded(blockposition_pooledblockposition.d(l + i, j, i1 + k)); // Paper
  
 -                            if (block == Blocks.CACTUS) {
 +                            if (block == null) pathtype = PathType.BLOCKED; // Paper

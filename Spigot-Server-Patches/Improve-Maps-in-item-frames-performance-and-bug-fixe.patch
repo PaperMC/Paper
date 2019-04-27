@@ -13,7 +13,7 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index e97bb2305c..5e5a747e9f 100644
+index d0713bfcd..8a6f8e875 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
@@ -25,30 +25,18 @@ index e97bb2305c..5e5a747e9f 100644
 +                WorldMap worldmap = ItemWorldMap.getSavedMap(itemstack, this.world);
 +                worldmap.updateSeenPlayers(this, itemstack);
 +            }
-+            // Paper stop
++            // Paper end
  
-             ItemStack itemstack1 = this.a(entityitem);
- 
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 04ec2a0399..32ee298648 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-                         {
-                             if ( iter.next().trackee == entity )
-                             {
-+                                map.decorations.remove(entity.getDisplayName().getString()); // Paper
-                                 iter.remove();
-                             }
-                         }
+             return entityitem;
+         }
 diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
-index 5c09085a6b..a819d60375 100644
+index e080a77c7..98e4ad4ac 100644
 --- a/src/main/java/net/minecraft/server/WorldMap.java
 +++ b/src/main/java/net/minecraft/server/WorldMap.java
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
-     private final Map<String, MapIconBanner> k = Maps.newHashMap();
-     public Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
-     private final Map<String, WorldMapFrame> l = Maps.newHashMap();
+     private final Map<String, MapIconBanner> l = Maps.newHashMap();
+     public final Map<String, MapIcon> decorations = Maps.newLinkedHashMap();
+     private final Map<String, WorldMapFrame> m = Maps.newHashMap();
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
@@ -62,7 +50,7 @@ index 5c09085a6b..a819d60375 100644
      }
  
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
-             this.k.put(mapiconbanner.f(), mapiconbanner);
+             this.l.put(mapiconbanner.f(), mapiconbanner);
              this.a(mapiconbanner.c(), (GeneratorAccess) null, mapiconbanner.f(), (double) mapiconbanner.a().getX(), (double) mapiconbanner.a().getZ(), 180.0D, mapiconbanner.d());
          }
 +        vanillaRender.buffer = colors; // Paper
@@ -70,10 +58,10 @@ index 5c09085a6b..a819d60375 100644
          NBTTagList nbttaglist1 = nbttagcompound.getList("frames", 10);
  
 @@ -0,0 +0,0 @@ public class WorldMap extends PersistentBase {
-         return nbttagcompound;
+         this.b();
      }
  
-+    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { a(entityhuman, itemstack); } // Paper - OBFHELPER
++    public void updateSeenPlayers(EntityHuman entityhuman, ItemStack itemstack) { this.a(entityhuman, itemstack); } // Paper - OBFHELPER
      public void a(EntityHuman entityhuman, ItemStack itemstack) {
          if (!this.humans.containsKey(entityhuman)) {
              WorldMap.WorldMapHumanTracker worldmap_worldmaphumantracker = new WorldMap.WorldMapHumanTracker(entityhuman);
@@ -95,7 +83,7 @@ index 5c09085a6b..a819d60375 100644
 +        private boolean shouldUseVanillaMap() {
 +            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
 +        }
-+        // Paper stop
++        // Paper end
          public final EntityHuman trackee;
          private boolean d = true;
          private int e;
@@ -113,8 +101,20 @@ index 5c09085a6b..a819d60375 100644
  
              for ( org.bukkit.map.MapCursor cursor : render.cursors) {
  
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index ab2ca1c32..1e718e4db 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+                         {
+                             if ( iter.next().trackee == entity )
+                             {
++                                map.decorations.remove(entity.getDisplayName().getString()); // Paper
+                                 iter.remove();
+                             }
+                         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
-index 256a131781..5768cd512e 100644
+index 256a13178..5768cd512 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
 @@ -0,0 +0,0 @@ import org.bukkit.map.MapCursor;

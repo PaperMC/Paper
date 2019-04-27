@@ -6,32 +6,31 @@ Subject: [PATCH] remove null possibility for getServer singleton
 to stop IDE complaining about potential NPE
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b87520d834..78b60d0e35 100644
+index 43cd6d2c6..cddb4311a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import co.aikar.timings.MinecraftTimings; // Paper
  
- public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStatistics, ICommandListener, Runnable {
+ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable, Runnable {
  
 +    private static MinecraftServer SERVER; // Paper
      public static final Logger LOGGER = LogManager.getLogger();
-     public static final File a = new File("usercache.json");
-     public Convertable convertable;
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-     // Spigot end
+     public static final File b = new File("usercache.json");
+     public static final WorldSettings c = (new WorldSettings((long) "North Carolina".hashCode(), EnumGamemode.SURVIVAL, true, false, WorldType.NORMAL)).a();
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
-     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
+         super("Server");
 +        SERVER = this; // Paper - better singleton
-+        this.commandDispatcher = commanddispatcher; // CraftBukkit
-         this.ac = new ResourceManager(EnumResourcePackType.SERVER_DATA);
+         this.ae = new ResourceManager(EnumResourcePackType.SERVER_DATA, this.serverThread);
          this.resourcePackRepository = new ResourcePackRepository<>(ResourcePackLoader::new);
-         this.ag = new CraftingManager();
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-     // CraftBukkit start
+         this.ai = new CraftingManager();
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
      @Deprecated
      public static MinecraftServer getServer() {
 -        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
-+        return SERVER;
++        return SERVER; // Paper
      }
      // CraftBukkit end
  }

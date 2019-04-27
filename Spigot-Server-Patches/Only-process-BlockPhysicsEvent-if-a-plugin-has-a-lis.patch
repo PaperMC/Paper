@@ -6,7 +6,7 @@ Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
 Saves on some object allocation and processing when no plugin listens to this
 
 diff --git a/src/main/java/net/minecraft/server/BlockPlant.java b/src/main/java/net/minecraft/server/BlockPlant.java
-index 0e4037ea21..317ae16347 100644
+index 9bf42bb5e..0526af776 100644
 --- a/src/main/java/net/minecraft/server/BlockPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockPlant.java
 @@ -0,0 +0,0 @@ public class BlockPlant extends Block {
@@ -19,11 +19,11 @@ index 0e4037ea21..317ae16347 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/BlockTallPlant.java b/src/main/java/net/minecraft/server/BlockTallPlant.java
-index 77782bf1c1..39d449c28e 100644
+index 469a3be05..f2c429f22 100644
 --- a/src/main/java/net/minecraft/server/BlockTallPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
 @@ -0,0 +0,0 @@ public class BlockTallPlant extends BlockPlant {
- 
+     @Override
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
          // CraftBukkit start
 -        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
@@ -32,22 +32,22 @@ index 77782bf1c1..39d449c28e 100644
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f488c37f73..ee45d3705b 100644
+index 4e97e74a2..c5359ae24 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit - dropTickTime
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
-              WorldServer worldserver = (WorldServer) iterator.next();
+             WorldServer worldserver = (WorldServer) iterator.next();
 +            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
              i = SystemUtils.getMonotonicNanos();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f4e91db7c6..f94633cbe2 100644
+index 78d1a5c71..7d6893cee 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
                  // CraftBukkit start
                  iblockdata1.b(this, blockposition, j); // Don't call an event for the old block to limit event spam
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -56,7 +56,7 @@ index f4e91db7c6..f94633cbe2 100644
                      BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                      this.getServer().getPluginManager().callEvent(event);
  
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
              try {
                  // CraftBukkit start
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -66,15 +66,15 @@ index f4e91db7c6..f94633cbe2 100644
                      this.getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index aaeb888a8c..639068d2dc 100644
+index 9a4a55846..3bd624569 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ import org.bukkit.event.weather.LightningStrikeEvent;
- public class WorldServer extends World implements IAsyncTaskHandler {
- 
-     private static final Logger a = LogManager.getLogger();
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+     // CraftBukkit start
+     public final DimensionManager dimension;
+     private int tickPosition;
 +    boolean hasPhysicsEvent = true; // Paper
-     private final MinecraftServer server;
-     public EntityTracker tracker;
-     private final PlayerChunkMap manager;
+ 
+     // Add env and gen to constructor
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 --

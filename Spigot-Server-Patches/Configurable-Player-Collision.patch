@@ -5,7 +5,7 @@ Subject: [PATCH] Configurable Player Collision
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 06c53af2c5..b0bfdf9424 100644
+index e929ba452..033fcf50e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -19,12 +19,12 @@ index 06c53af2c5..b0bfdf9424 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 01c5d3c572..b87520d834 100644
+index c5359ae24..43cd6d2c6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
-         this.a(this.getWorldServer(DimensionManager.OVERWORLD).worldMaps);
-         // CraftBukkit end
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             this.loadSpawn(worldserver.getChunkProvider().playerChunkMap.worldLoadListener, worldserver);
+         }
  
 +        // Paper start - Handle collideRule team for player collision toggle
 +        final Scoreboard scoreboard = this.getScoreboard();
@@ -39,11 +39,12 @@ index 01c5d3c572..b87520d834 100644
 +            collideTeam.setCanSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
-     }
- 
-     protected void a(File file, WorldData worlddata) {
++
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
-index a6aed2531f..575e3762b2 100644
+index b0740965a..6b1a914d2 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutScoreboardTeam implements Packet<PacketListenerPlayOut
@@ -56,7 +57,7 @@ index a6aed2531f..575e3762b2 100644
              packetdataserializer.a(this.c);
              packetdataserializer.a(this.d);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 5236948990..79641a73a8 100644
+index b3343fca2..7003c4a93 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -65,8 +66,8 @@ index 5236948990..79641a73a8 100644
      private final Map<String,EntityPlayer> playersByName = new java.util.HashMap<>();
 +    @Nullable String collideRuleTeamName; // Paper - Team name used for collideRule
  
-     public PlayerList(MinecraftServer minecraftserver) {
-         this.cserver = minecraftserver.server = new CraftServer(minecraftserver, this);
+     public PlayerList(MinecraftServer minecraftserver, int i) {
+         this.cserver = minecraftserver.server = new CraftServer((DedicatedServer) minecraftserver, this);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          }
  
@@ -79,7 +80,7 @@ index 5236948990..79641a73a8 100644
 +        }
 +        // Paper end
          // CraftBukkit - Moved from above, added world
-         PlayerList.f.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.world.worldData.getName(), entityplayer.locX, entityplayer.locY, entityplayer.locZ);
+         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.world.worldData.getName(), entityplayer.locX, entityplayer.locY, entityplayer.locZ);
      }
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          entityplayer.playerTick();// SPIGOT-924

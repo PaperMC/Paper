@@ -5,35 +5,46 @@ Subject: [PATCH] Reduce IO ops opening a new region file.
 
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 9626396745..e2d4450e90 100644
+index b062a31c4..4e6288e8b 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -0,0 +0,0 @@ public class RegionFile {
-             this.c.seek(0L);
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+     private final File file;
+     // Spigot end
+     private static final byte[] a = new byte[4096];
+-    private final RandomAccessFile b;
++    private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
+     private final int[] c = new int[1024];
+     private final int[] d = new int[1024];
+     private final List<Boolean> e;
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         this.e.set(1, false);
+         this.b.seek(0L);
  
-             int k;
-+            // Paper Start
-+            java.nio.ByteBuffer header = java.nio.ByteBuffer.allocate(8192);
-+            while (header.hasRemaining())  {
-+                if (this.c.getChannel().read(header) == -1) throw new java.io.EOFException();
-+            }
-+            header.clear();
-+            java.nio.IntBuffer headerAsInts = header.asIntBuffer();
-+            // Paper End
++        // Paper Start
++        java.nio.ByteBuffer header = java.nio.ByteBuffer.allocate(8192);
++        while (header.hasRemaining())  {
++            if (this.getDataFile().getChannel().read(header) == -1) throw new java.io.EOFException();
++        }
++        header.clear();
++        java.nio.IntBuffer headerAsInts = header.asIntBuffer();
++        // Paper End
++
+         int k;
  
-             for (j = 0; j < 1024; ++j) {
--                k = this.c.readInt();
-+                k = headerAsInts.get(); // Paper
-                 this.d[j] = k;
-                 // Spigot start
-                 int length = k & 255;
-@@ -0,0 +0,0 @@ public class RegionFile {
-             }
+         for (j = 0; j < 1024; ++j) {
+-            k = this.b.readInt();
++            k = headerAsInts.get(); // Paper
+             this.c[j] = k;
+             // Spigot start
+             int length = k & 255;
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         }
  
-             for (j = 0; j < 1024; ++j) {
--                k = this.c.readInt();
-+                k = headerAsInts.get(); // Paper
-                 this.e[j] = k;
-             }
-         } catch (IOException ioexception) {
+         for (j = 0; j < 1024; ++j) {
+-            k = this.b.readInt();
++            k = headerAsInts.get(); // Paper
+             this.d[j] = k;
+         }
+ 
 --
