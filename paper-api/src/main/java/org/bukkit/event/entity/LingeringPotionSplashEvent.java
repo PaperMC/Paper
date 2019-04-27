@@ -1,7 +1,6 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.AreaEffectCloud;
-import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -22,8 +21,8 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
 
     @NotNull
     @Override
-    public LingeringPotion getEntity() {
-        return (LingeringPotion) super.getEntity();
+    public ThrownPotion getEntity() {
+        return (ThrownPotion) super.getEntity();
     }
 
     /**
@@ -36,10 +35,12 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
         return entity;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
