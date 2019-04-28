@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -30,4 +31,12 @@ public interface MerchantInventory extends Inventory {
      */
     @Nullable
     MerchantRecipe getSelectedRecipe();
+
+    /**
+     * Gets the Merchant associated with this inventory.
+     *
+     * @return merchant
+     */
+    @NotNull
+    Merchant getMerchant();
 }
