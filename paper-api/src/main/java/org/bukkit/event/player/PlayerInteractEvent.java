@@ -66,7 +66,14 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * prevent buckets from placing water and so forth
      *
      * @return boolean cancellation state
+     * @deprecated This event has two possible cancellation states, one for
+     * {@link #useInteractedBlock()} and one for {@link #useItemInHand()}. It is
+     * possible a call might have the former false, but the latter true, eg in
+     * the case of using a firework whilst gliding. Callers should check the
+     * relevant methods individually.
      */
+    @Deprecated
+    @Override
     public boolean isCancelled() {
         return useInteractedBlock() == Result.DENY;
     }
