@@ -75,15 +75,20 @@
  
      public Entity(EntityTypes<?> entitytypes, World world) {
          this.id = Entity.entityCount.incrementAndGet();
-@@ -204,6 +263,7 @@
+@@ -204,6 +263,12 @@
      }
  
      protected void b(EntityPose entitypose) {
-+        this.world.getServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[entitypose.ordinal()])); // CraftBukkit
++        // CraftBukkit start
++        if (entitypose == this.Z()) {
++            return;
++        }
++        this.world.getServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[entitypose.ordinal()]));
++        // CraftBukkit end
          this.datawatcher.set(Entity.X, entitypose);
      }
  
-@@ -212,6 +272,33 @@
+@@ -212,6 +277,33 @@
      }
  
      protected void setYawPitch(float f, float f1) {
@@ -117,7 +122,7 @@
          this.yaw = f % 360.0F;
          this.pitch = f1 % 360.0F;
      }
-@@ -224,6 +311,7 @@
+@@ -224,6 +316,7 @@
          float f1 = this.size.height;
  
          this.a(new AxisAlignedBB(d0 - (double) f, d1, d2 - (double) f, d0 + (double) f, d1 + (double) f1, d2 + (double) f));
@@ -125,7 +130,7 @@
      }
  
      public void tick() {
-@@ -234,6 +322,15 @@
+@@ -234,6 +327,15 @@
          this.entityBaseTick();
      }
  
@@ -141,7 +146,7 @@
      public void entityBaseTick() {
          this.world.getMethodProfiler().enter("entityBaseTick");
          if (this.isPassenger() && this.getVehicle().dead) {
-@@ -250,7 +347,7 @@
+@@ -250,7 +352,7 @@
          this.lastZ = this.locZ;
          this.lastPitch = this.pitch;
          this.lastYaw = this.yaw;
@@ -150,7 +155,7 @@
          this.az();
          this.m();
          if (this.world.isClientSide) {
-@@ -300,12 +397,44 @@
+@@ -300,12 +402,44 @@
  
      protected void burnFromLava() {
          if (!this.isFireProof()) {
@@ -196,7 +201,7 @@
          int j = i * 20;
  
          if (this instanceof EntityLiving) {
-@@ -401,6 +530,28 @@
+@@ -401,6 +535,28 @@
                  block1.a((IBlockAccess) this.world, this);
              }
  
@@ -225,7 +230,7 @@
              if (this.playStepSound() && (!this.onGround || !this.isSneaking() || !(this instanceof EntityHuman)) && !this.isPassenger()) {
                  double d0 = vec3d1.x;
                  double d1 = vec3d1.y;
-@@ -454,7 +605,14 @@
+@@ -454,7 +610,14 @@
                  if (!flag) {
                      ++this.fireTicks;
                      if (this.fireTicks == 0) {
@@ -241,7 +246,7 @@
                      }
                  }
  
-@@ -565,7 +723,7 @@
+@@ -565,7 +728,7 @@
          VoxelShape voxelshape = this.world.getWorldBorder().a();
          Stream<VoxelShape> stream = VoxelShapes.c(voxelshape, VoxelShapes.a(axisalignedbb.shrink(1.0E-7D)), OperatorBoolean.AND) ? Stream.empty() : Stream.of(voxelshape);
          AxisAlignedBB axisalignedbb1 = axisalignedbb.a(vec3d).g(1.0E-7D);
@@ -250,7 +255,7 @@
              return !this.x(entity);
          }).flatMap((entity) -> {
              return Stream.of(entity.ap(), this.j(entity));
-@@ -649,6 +807,7 @@
+@@ -649,6 +812,7 @@
          this.locX = (axisalignedbb.minX + axisalignedbb.maxX) / 2.0D;
          this.locY = axisalignedbb.minY;
          this.locZ = (axisalignedbb.minZ + axisalignedbb.maxZ) / 2.0D;
@@ -258,7 +263,7 @@
      }
  
      protected SoundEffect getSoundSwim() {
-@@ -820,7 +979,7 @@
+@@ -820,7 +984,7 @@
          return null;
      }
  
@@ -267,7 +272,7 @@
          if (!this.isFireProof()) {
              this.damageEntity(DamageSource.FIRE, (float) i);
          }
-@@ -1053,6 +1212,13 @@
+@@ -1053,6 +1217,13 @@
      }
  
      public void spawnIn(World world) {
@@ -281,7 +286,7 @@
          this.world = world;
      }
  
-@@ -1078,6 +1244,7 @@
+@@ -1078,6 +1249,7 @@
              this.lastYaw -= 360.0F;
          }
  
@@ -289,7 +294,7 @@
          this.setPosition(this.locX, this.locY, this.locZ);
          this.setYawPitch(f, f1);
      }
-@@ -1246,7 +1413,7 @@
+@@ -1246,7 +1418,7 @@
      public boolean c(NBTTagCompound nbttagcompound) {
          String s = this.getSaveID();
  
@@ -298,7 +303,7 @@
              nbttagcompound.setString("id", s);
              this.save(nbttagcompound);
              return true;
-@@ -1265,6 +1432,18 @@
+@@ -1265,6 +1437,18 @@
              Vec3D vec3d = this.getMot();
  
              nbttagcompound.set("Motion", this.a(vec3d.x, vec3d.y, vec3d.z));
@@ -317,7 +322,7 @@
              nbttagcompound.set("Rotation", this.a(this.yaw, this.pitch));
              nbttagcompound.setFloat("FallDistance", this.fallDistance);
              nbttagcompound.setShort("Fire", (short) this.fireTicks);
-@@ -1274,6 +1453,12 @@
+@@ -1274,6 +1458,12 @@
              nbttagcompound.setBoolean("Invulnerable", this.invulnerable);
              nbttagcompound.setInt("PortalCooldown", this.portalCooldown);
              nbttagcompound.a("UUID", this.getUniqueID());
@@ -330,7 +335,7 @@
              IChatBaseComponent ichatbasecomponent = this.getCustomName();
  
              if (ichatbasecomponent != null) {
-@@ -1331,6 +1516,11 @@
+@@ -1331,6 +1521,11 @@
                  }
              }
  
@@ -342,7 +347,7 @@
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-@@ -1414,6 +1604,42 @@
+@@ -1414,6 +1609,42 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
              }
@@ -385,7 +390,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
-@@ -1489,9 +1715,22 @@
+@@ -1489,9 +1720,22 @@
          } else if (this.world.isClientSide) {
              return null;
          } else {
@@ -408,7 +413,7 @@
              this.world.addEntity(entityitem);
              return entityitem;
          }
-@@ -1595,7 +1834,7 @@
+@@ -1595,7 +1839,7 @@
              }
  
              this.vehicle = entity;
@@ -417,7 +422,7 @@
              return true;
          }
      }
-@@ -1620,15 +1859,36 @@
+@@ -1620,15 +1864,36 @@
              Entity entity = this.vehicle;
  
              this.vehicle = null;
@@ -456,7 +461,7 @@
              if (!this.world.isClientSide && entity instanceof EntityHuman && !(this.getRidingPassenger() instanceof EntityHuman)) {
                  this.passengers.add(0, entity);
              } else {
-@@ -1636,15 +1896,33 @@
+@@ -1636,15 +1901,33 @@
              }
  
          }
@@ -491,7 +496,7 @@
      }
  
      protected boolean q(Entity entity) {
-@@ -1687,11 +1965,17 @@
+@@ -1687,11 +1970,17 @@
              int i = this.ab();
  
              if (this.ai) {
@@ -511,7 +516,7 @@
                      this.world.getMethodProfiler().exit();
                  }
  
-@@ -1771,6 +2055,13 @@
+@@ -1771,6 +2060,13 @@
      }
  
      public void setSwimming(boolean flag) {
@@ -525,7 +530,7 @@
          this.setFlag(4, flag);
      }
  
-@@ -1831,16 +2122,56 @@
+@@ -1831,16 +2127,56 @@
      }
  
      public void setAirTicks(int i) {
@@ -585,7 +590,7 @@
      }
  
      public void j(boolean flag) {
-@@ -1988,20 +2319,33 @@
+@@ -1988,20 +2324,33 @@
  
      @Nullable
      public Entity a(DimensionManager dimensionmanager) {
@@ -622,7 +627,7 @@
              if (dimensionmanager1 == DimensionManager.THE_END && dimensionmanager == DimensionManager.OVERWORLD) {
                  blockposition = worldserver1.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver1.getSpawn());
              } else if (dimensionmanager == DimensionManager.THE_END) {
-@@ -2039,6 +2383,25 @@
+@@ -2039,6 +2388,25 @@
                  vec3d = shapedetector_c.b;
                  f = (float) shapedetector_c.c;
              }
@@ -648,7 +653,7 @@
  
              this.world.getMethodProfiler().exitEnter("reloading");
              Entity entity = this.getEntityType().a((World) worldserver1);
-@@ -2048,6 +2411,14 @@
+@@ -2048,6 +2416,14 @@
                  entity.setPositionRotation(blockposition, entity.yaw + f, entity.pitch);
                  entity.setMot(vec3d);
                  worldserver1.addEntityTeleport(entity);
@@ -663,7 +668,7 @@
              }
  
              this.dead = true;
-@@ -2239,7 +2610,26 @@
+@@ -2239,7 +2615,26 @@
      }
  
      public void a(AxisAlignedBB axisalignedbb) {
