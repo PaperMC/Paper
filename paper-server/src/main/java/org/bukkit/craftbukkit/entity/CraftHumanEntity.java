@@ -136,11 +136,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public boolean isSleeping() {
-        return getHandle().isSleeping();
-    }
-
-    @Override
     public int getSleepTicks() {
         return getHandle().sleepTicks;
     }

@@ -552,6 +552,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean isSleeping() {
+        return getHandle().isSleeping();
+    }
+
+    @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         return getHandle().craftAttributes.getAttribute(attribute);
     }
