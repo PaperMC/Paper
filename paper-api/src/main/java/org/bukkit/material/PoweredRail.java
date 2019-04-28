@@ -24,6 +24,7 @@ public class PoweredRail extends ExtendedRails implements Redstone {
         super(type, data);
     }
 
+    @Override
     public boolean isPowered() {
         return (getData() & 0x8) == 0x8;
     }

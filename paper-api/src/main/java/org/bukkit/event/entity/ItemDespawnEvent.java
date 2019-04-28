@@ -23,10 +23,12 @@ public class ItemDespawnEvent extends EntityEvent implements Cancellable {
         location = loc;
     }
 
+    @Override
     public boolean isCancelled() {
         return canceled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         canceled = cancel;
     }

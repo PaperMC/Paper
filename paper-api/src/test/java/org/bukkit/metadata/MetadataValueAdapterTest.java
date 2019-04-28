@@ -85,10 +85,12 @@ public class MetadataValueAdapterTest {
             super(owningPlugin);
         }
 
+        @Override
         public Object value() {
             return ++internalValue;
         }
 
+        @Override
         public void invalidate() {
             internalValue = 0;
         }

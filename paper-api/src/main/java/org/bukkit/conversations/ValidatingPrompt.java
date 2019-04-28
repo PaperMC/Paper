@@ -23,6 +23,7 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param input The input text from the user.
      * @return This prompt or the next Prompt in the prompt graph.
      */
+    @Override
     @Nullable
     public Prompt acceptInput(@NotNull ConversationContext context, @Nullable String input) {
         if (isInputValid(context, input)) {
@@ -43,6 +44,7 @@ public abstract class ValidatingPrompt implements Prompt {
      * @param context Context information about the conversation.
      * @return True.
      */
+    @Override
     public boolean blocksForInput(@NotNull ConversationContext context) {
         return true;
     }

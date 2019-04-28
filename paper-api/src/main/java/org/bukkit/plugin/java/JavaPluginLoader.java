@@ -64,6 +64,7 @@ public final class JavaPluginLoader implements PluginLoader {
         server = instance;
     }
 
+    @Override
     @NotNull
     public Plugin loadPlugin(@NotNull final File file) throws InvalidPluginException {
         Validate.notNull(file, "File cannot be null");
@@ -141,6 +142,7 @@ public final class JavaPluginLoader implements PluginLoader {
         return loader.plugin;
     }
 
+    @Override
     @NotNull
     public PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
         Validate.notNull(file, "File cannot be null");
@@ -180,6 +182,7 @@ public final class JavaPluginLoader implements PluginLoader {
         }
     }
 
+    @Override
     @NotNull
     public Pattern[] getPluginFileFilters() {
         return fileFilters.clone();
@@ -229,6 +232,7 @@ public final class JavaPluginLoader implements PluginLoader {
         }
     }
 
+    @Override
     @NotNull
     public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull final Plugin plugin) {
         Validate.notNull(plugin, "Plugin can not be null");
@@ -297,6 +301,7 @@ public final class JavaPluginLoader implements PluginLoader {
             }
 
             EventExecutor executor = new EventExecutor() {
+                @Override
                 public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
                     try {
                         if (!eventClass.isAssignableFrom(event.getClass())) {
@@ -319,6 +324,7 @@ public final class JavaPluginLoader implements PluginLoader {
         return ret;
     }
 
+    @Override
     public void enablePlugin(@NotNull final Plugin plugin) {
         Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
 
@@ -346,6 +352,7 @@ public final class JavaPluginLoader implements PluginLoader {
         }
     }
 
+    @Override
     public void disablePlugin(@NotNull Plugin plugin) {
         Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
 

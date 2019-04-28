@@ -44,6 +44,7 @@ public class LazyMetadataValueTest {
     @Test(expected=MetadataEvaluationException.class)
     public void testEvalException() {
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.CACHE_AFTER_FIRST_EVAL, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 throw new RuntimeException("Gotcha!");
             }
@@ -56,6 +57,7 @@ public class LazyMetadataValueTest {
         final Counter counter = new Counter();
         final int value = 10;
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.CACHE_AFTER_FIRST_EVAL, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 counter.increment();
                 return value;
@@ -77,6 +79,7 @@ public class LazyMetadataValueTest {
         final Counter counter = new Counter();
         final int value = 10;
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.NEVER_CACHE, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 counter.increment();
                 return value;
@@ -94,6 +97,7 @@ public class LazyMetadataValueTest {
         final Counter counter = new Counter();
         final int value = 10;
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.CACHE_ETERNALLY, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 counter.increment();
                 return value;
@@ -113,6 +117,7 @@ public class LazyMetadataValueTest {
 
     private LazyMetadataValue makeSimpleCallable(final Object value) {
         return new LazyMetadataValue(plugin, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 return value;
             }

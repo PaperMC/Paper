@@ -168,12 +168,14 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     public boolean isReservedChannel(@NotNull String channel) {
         channel = validateAndCorrectChannel(channel);
 
         return channel.contains("minecraft") && !channel.equals("minecraft:brand");
     }
 
+    @Override
     public void registerOutgoingPluginChannel(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -186,6 +188,7 @@ public class StandardMessenger implements Messenger {
         addToOutgoing(plugin, channel);
     }
 
+    @Override
     public void unregisterOutgoingPluginChannel(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -195,6 +198,7 @@ public class StandardMessenger implements Messenger {
         removeFromOutgoing(plugin, channel);
     }
 
+    @Override
     public void unregisterOutgoingPluginChannel(@NotNull Plugin plugin) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -203,6 +207,7 @@ public class StandardMessenger implements Messenger {
         removeFromOutgoing(plugin);
     }
 
+    @Override
     @NotNull
     public PluginMessageListenerRegistration registerIncomingPluginChannel(@NotNull Plugin plugin, @NotNull String channel, @NotNull PluginMessageListener listener) {
         if (plugin == null) {
@@ -223,6 +228,7 @@ public class StandardMessenger implements Messenger {
         return result;
     }
 
+    @Override
     public void unregisterIncomingPluginChannel(@NotNull Plugin plugin, @NotNull String channel, @NotNull PluginMessageListener listener) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -235,6 +241,7 @@ public class StandardMessenger implements Messenger {
         removeFromIncoming(new PluginMessageListenerRegistration(this, plugin, channel, listener));
     }
 
+    @Override
     public void unregisterIncomingPluginChannel(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -244,6 +251,7 @@ public class StandardMessenger implements Messenger {
         removeFromIncoming(plugin, channel);
     }
 
+    @Override
     public void unregisterIncomingPluginChannel(@NotNull Plugin plugin) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -252,6 +260,7 @@ public class StandardMessenger implements Messenger {
         removeFromIncoming(plugin);
     }
 
+    @Override
     @NotNull
     public Set<String> getOutgoingChannels() {
         synchronized (outgoingLock) {
@@ -260,6 +269,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<String> getOutgoingChannels(@NotNull Plugin plugin) {
         if (plugin == null) {
@@ -277,6 +287,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<String> getIncomingChannels() {
         synchronized (incomingLock) {
@@ -285,6 +296,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<String> getIncomingChannels(@NotNull Plugin plugin) {
         if (plugin == null) {
@@ -308,6 +320,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<PluginMessageListenerRegistration> getIncomingChannelRegistrations(@NotNull Plugin plugin) {
         if (plugin == null) {
@@ -325,6 +338,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<PluginMessageListenerRegistration> getIncomingChannelRegistrations(@NotNull String channel) {
         channel = validateAndCorrectChannel(channel);
@@ -340,6 +354,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     @NotNull
     public Set<PluginMessageListenerRegistration> getIncomingChannelRegistrations(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
@@ -366,6 +381,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     public boolean isRegistrationValid(@NotNull PluginMessageListenerRegistration registration) {
         if (registration == null) {
             throw new IllegalArgumentException("Registration cannot be null");
@@ -382,6 +398,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     public boolean isIncomingChannelRegistered(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -403,6 +420,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     public boolean isOutgoingChannelRegistered(@NotNull Plugin plugin, @NotNull String channel) {
         if (plugin == null) {
             throw new IllegalArgumentException("Plugin cannot be null");
@@ -420,6 +438,7 @@ public class StandardMessenger implements Messenger {
         }
     }
 
+    @Override
     public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, @NotNull byte[] message) {
         if (source == null) {
             throw new IllegalArgumentException("Player source cannot be null");

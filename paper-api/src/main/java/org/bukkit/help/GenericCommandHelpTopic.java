@@ -59,6 +59,7 @@ public class GenericCommandHelpTopic extends HelpTopic {
         fullText = sb.toString();
     }
 
+    @Override
     public boolean canSee(@NotNull CommandSender sender) {
         if (!command.isRegistered()) {
             // Unregistered commands should not show up in the help

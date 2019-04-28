@@ -156,6 +156,7 @@ public interface MapMeta extends ItemMeta {
      */
     void setColor(@Nullable Color color);
 
+    @Override
     @NotNull
     MapMeta clone();
 }

@@ -39,6 +39,7 @@ public final class TestPlayer implements InvocationHandler {
         }
     }
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         MethodHandler handler = methods.get(method);
         if (handler != null) {

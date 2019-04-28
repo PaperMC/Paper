@@ -42,10 +42,12 @@ public class BrewEvent extends BlockEvent implements Cancellable {
         return fuelLevel;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }

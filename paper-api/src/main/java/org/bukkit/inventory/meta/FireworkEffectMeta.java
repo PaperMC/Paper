@@ -33,6 +33,7 @@ public interface FireworkEffectMeta extends ItemMeta {
     @Nullable
     FireworkEffect getEffect();
 
+    @Override
     @NotNull
     FireworkEffectMeta clone();
 }

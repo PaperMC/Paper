@@ -89,10 +89,12 @@ public class ConversationTest {
 
     private class FirstPrompt extends StringPrompt {
 
+        @Override
         public String getPromptText(ConversationContext context) {
             return "FirstPrompt";
         }
 
+        @Override
         public Prompt acceptInput(ConversationContext context, String input) {
             assertEquals("FirstInput", input);
             context.setSessionData("data", 10);
@@ -107,6 +109,7 @@ public class ConversationTest {
             return Prompt.END_OF_CONVERSATION;
         }
 
+        @Override
         public String getPromptText(ConversationContext context) {
             // Assert that session data passes from one prompt to the next
             assertEquals(context.getSessionData("data"), 10);

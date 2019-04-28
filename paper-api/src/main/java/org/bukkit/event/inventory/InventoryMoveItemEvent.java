@@ -94,10 +94,12 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
         return didSourceInitiate ? sourceInventory : destinationInventory;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

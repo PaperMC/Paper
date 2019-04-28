@@ -41,10 +41,12 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         return leaveMessage;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

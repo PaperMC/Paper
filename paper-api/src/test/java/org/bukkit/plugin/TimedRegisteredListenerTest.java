@@ -18,6 +18,7 @@ public class TimedRegisteredListenerTest {
     public void testEventClass() throws EventException {
         Listener listener = new Listener() {};
         EventExecutor executor = new EventExecutor() {
+            @Override
             public void execute(Listener listener, Event event) {}
         };
         TestPlugin plugin = new TestPlugin("Test");

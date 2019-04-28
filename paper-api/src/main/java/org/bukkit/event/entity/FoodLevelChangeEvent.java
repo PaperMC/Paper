@@ -49,10 +49,12 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
         this.level = level;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

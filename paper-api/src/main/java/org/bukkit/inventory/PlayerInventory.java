@@ -212,6 +212,7 @@ public interface PlayerInventory extends Inventory {
      */
     public void setHeldItemSlot(int slot);
 
+    @Override
     @Nullable
     public HumanEntity getHolder();
 }

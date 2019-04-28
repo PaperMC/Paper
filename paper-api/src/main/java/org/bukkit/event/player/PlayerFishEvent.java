@@ -50,10 +50,12 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
         return hookEntity;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

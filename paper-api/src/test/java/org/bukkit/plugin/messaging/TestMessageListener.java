@@ -13,6 +13,7 @@ public class TestMessageListener implements PluginMessageListener {
         this.message = message;
     }
 
+    @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
         assertEquals(this.channel, channel);
         assertArrayEquals(this.message, message);

@@ -64,10 +64,12 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
         return handlers;
     }
 
+    @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancelled  = cancel;
     }

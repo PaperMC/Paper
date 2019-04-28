@@ -102,10 +102,12 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         return material;
     }
 
+    @Override
     public boolean isCancelled() {
         return isCancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.isCancelled = cancel;
     }

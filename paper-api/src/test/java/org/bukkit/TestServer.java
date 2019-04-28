@@ -23,6 +23,7 @@ public final class TestServer implements InvocationHandler {
             methodMap.put(
                     Server.class.getMethod("isPrimaryThread"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return Thread.currentThread().equals(server.creatingThread);
                         }
@@ -31,6 +32,7 @@ public final class TestServer implements InvocationHandler {
             methodMap.put(
                     Server.class.getMethod("getPluginManager"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return server.pluginManager;
                         }
@@ -40,6 +42,7 @@ public final class TestServer implements InvocationHandler {
                     Server.class.getMethod("getLogger"),
                     new MethodHandler() {
                         final Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return logger;
                         }
@@ -48,6 +51,7 @@ public final class TestServer implements InvocationHandler {
             methodMap.put(
                     Server.class.getMethod("getName"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return TestServer.class.getSimpleName();
                         }
@@ -56,6 +60,7 @@ public final class TestServer implements InvocationHandler {
             methodMap.put(
                     Server.class.getMethod("getVersion"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return "Version_" + TestServer.class.getPackage().getImplementationVersion();
                         }
@@ -64,6 +69,7 @@ public final class TestServer implements InvocationHandler {
             methodMap.put(
                     Server.class.getMethod("getBukkitVersion"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(TestServer server, Object[] args) {
                             return "BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion();
                         }
@@ -88,6 +94,7 @@ public final class TestServer implements InvocationHandler {
         return Bukkit.getServer();
     }
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         MethodHandler handler = methods.get(method);
         if (handler != null) {

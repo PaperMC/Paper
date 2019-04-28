@@ -27,10 +27,12 @@ public class PlayerToggleSneakEvent extends PlayerEvent implements Cancellable {
         return isSneaking;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

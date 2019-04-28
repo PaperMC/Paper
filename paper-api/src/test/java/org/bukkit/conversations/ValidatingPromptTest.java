@@ -57,6 +57,7 @@ public class ValidatingPromptTest {
             return null;
         }
 
+        @Override
         public String getPromptText(ConversationContext context) {
             return null;
         }
@@ -75,6 +76,7 @@ public class ValidatingPromptTest {
             return null;
         }
 
+        @Override
         public String getPromptText(ConversationContext context) {
             return null;
         }
@@ -89,6 +91,7 @@ public class ValidatingPromptTest {
             return null;
         }
 
+        @Override
         public String getPromptText(ConversationContext context) {
             return null;
         }
@@ -107,6 +110,7 @@ public class ValidatingPromptTest {
             return null;
         }
 
+        @Override
         public String getPromptText(ConversationContext context) {
             return null;
         }

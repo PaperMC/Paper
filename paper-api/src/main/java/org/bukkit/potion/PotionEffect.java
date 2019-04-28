@@ -127,6 +127,7 @@ public class PotionEffect implements ConfigurationSerializable {
         return def;
     }
 
+    @Override
     @NotNull
     public Map<String, Object> serialize() {
         return ImmutableMap.<String, Object>builder()

@@ -54,6 +54,7 @@ public class Stairs extends MaterialData implements Directional {
     /**
      * Set the direction the stair part of the block is facing
      */
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
@@ -82,6 +83,7 @@ public class Stairs extends MaterialData implements Directional {
     /**
      * @return the direction the stair part of the block is facing
      */
+    @Override
     public BlockFace getFacing() {
         return getDescendingDirection();
     }

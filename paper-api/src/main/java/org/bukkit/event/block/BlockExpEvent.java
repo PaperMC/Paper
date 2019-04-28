@@ -36,6 +36,7 @@ public class BlockExpEvent extends BlockEvent {
         this.exp = exp;
     }
 
+    @Override
     @NotNull
     public HandlerList getHandlers() {
         return handlers;

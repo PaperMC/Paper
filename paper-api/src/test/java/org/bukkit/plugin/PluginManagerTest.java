@@ -41,6 +41,7 @@ public class PluginManagerTest {
         final Event event = new TestEvent(true);
         Thread secondThread = new Thread(
             new Runnable() {
+                @Override
                 public void run() {
                     try {
                         synchronized (pm) {
@@ -63,6 +64,7 @@ public class PluginManagerTest {
         final Event event = new TestEvent(true);
         Thread secondThread = new Thread(
             new Runnable() {
+                @Override
                 public void run() {
                     try {
                         pm.callEvent(event);
@@ -82,6 +84,7 @@ public class PluginManagerTest {
         final Event event = new TestEvent(false);
         Thread secondThread = new Thread(
             new Runnable() {
+                @Override
                 public void run() {
                     try {
                         pm.callEvent(event);
@@ -105,6 +108,7 @@ public class PluginManagerTest {
         final Event event = new TestEvent(false);
         Thread secondThread = new Thread(
             new Runnable() {
+                @Override
                 public void run() {
                     try {
                         synchronized (pm) {

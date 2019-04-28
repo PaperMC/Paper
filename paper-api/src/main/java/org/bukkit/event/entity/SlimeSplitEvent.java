@@ -18,10 +18,12 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
         this.count = count;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

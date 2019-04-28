@@ -40,6 +40,7 @@ public class Pumpkin extends MaterialData implements Directional {
         return getItemType() == Material.LEGACY_JACK_O_LANTERN;
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
@@ -64,6 +65,7 @@ public class Pumpkin extends MaterialData implements Directional {
         setData(data);
     }
 
+    @Override
     public BlockFace getFacing() {
         byte data = getData();
 

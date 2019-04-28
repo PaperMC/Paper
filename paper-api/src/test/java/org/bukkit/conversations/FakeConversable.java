@@ -15,29 +15,35 @@ public class FakeConversable implements Conversable {
     public Conversation abandonedConverstion;
     public ConversationAbandonedEvent abandonedConversationEvent;
 
+    @Override
     public boolean isConversing() {
         return false;
     }
 
+    @Override
     public void acceptConversationInput(String input) {
 
     }
 
+    @Override
     public boolean beginConversation(Conversation conversation) {
         begunConversation = conversation;
         conversation.outputNextPrompt();
         return true;
     }
 
+    @Override
     public void abandonConversation(Conversation conversation) {
         abandonedConverstion = conversation;
     }
 
+    @Override
     public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
         abandonedConverstion = conversation;
         abandonedConversationEvent = details;
     }
 
+    @Override
     public void sendRawMessage(String message) {
         lastSentMessage = message;
     }

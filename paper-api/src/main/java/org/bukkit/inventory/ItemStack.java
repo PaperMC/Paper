@@ -430,6 +430,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         return level;
     }
 
+    @Override
     @NotNull
     @Utility
     public Map<String, Object> serialize() {

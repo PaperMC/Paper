@@ -26,6 +26,7 @@ public final class HelpTopicComparator implements Comparator<HelpTopic> {
 
     private HelpTopicComparator() {}
 
+    @Override
     public int compare(@NotNull HelpTopic lhs, @NotNull HelpTopic rhs) {
         return tnc.compare(lhs.getName(), rhs.getName());
     }
@@ -33,6 +34,7 @@ public final class HelpTopicComparator implements Comparator<HelpTopic> {
     public static final class TopicNameComparator implements Comparator<String> {
         private TopicNameComparator(){}
 
+        @Override
         public int compare(@NotNull String lhs, @NotNull String rhs) {
             boolean lhsStartSlash = lhs.startsWith("/");
             boolean rhsStartSlash = rhs.startsWith("/");

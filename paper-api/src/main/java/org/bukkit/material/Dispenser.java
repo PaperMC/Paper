@@ -31,6 +31,7 @@ public class Dispenser extends FurnaceAndDispenser {
         super(type, data);
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
@@ -63,6 +64,7 @@ public class Dispenser extends FurnaceAndDispenser {
         setData(data);
     }
 
+    @Override
     public BlockFace getFacing() {
         int data = getData() & 0x7;
 

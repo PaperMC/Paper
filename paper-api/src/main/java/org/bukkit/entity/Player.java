@@ -138,6 +138,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param message Message to be displayed
      */
+    @Override
     public void sendRawMessage(@NotNull String message);
 
     /**

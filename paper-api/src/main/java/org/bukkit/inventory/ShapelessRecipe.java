@@ -253,6 +253,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      *
      * @return The result stack.
      */
+    @Override
     @NotNull
     public ItemStack getResult() {
         return output.clone();

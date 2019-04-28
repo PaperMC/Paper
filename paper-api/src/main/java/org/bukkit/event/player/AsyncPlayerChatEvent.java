@@ -124,10 +124,12 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
         return recipients;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

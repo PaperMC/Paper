@@ -34,6 +34,7 @@ public class MetadataStoreTest {
         final Counter counter = new Counter();
 
         subject.setMetadata("subject", "key", new LazyMetadataValue(pluginX, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 counter.increment();
                 return 10;
@@ -52,6 +53,7 @@ public class MetadataStoreTest {
         final Counter counter = new Counter();
 
         subject.setMetadata("subject", "key", new LazyMetadataValue(pluginX, new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 counter.increment();
                 return 10;

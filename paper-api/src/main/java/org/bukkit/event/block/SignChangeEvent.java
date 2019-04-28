@@ -70,10 +70,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         lines[index] = line;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
     }

@@ -30,6 +30,7 @@ public class RedstoneWire extends MaterialData implements Redstone {
      *
      * @return true if powered, otherwise false
      */
+    @Override
     public boolean isPowered() {
         return getData() > 0;
     }

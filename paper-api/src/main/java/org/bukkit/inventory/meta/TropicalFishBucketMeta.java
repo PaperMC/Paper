@@ -80,6 +80,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      */
     boolean hasVariant();
 
+    @Override
     @NotNull
     TropicalFishBucketMeta clone();
 }

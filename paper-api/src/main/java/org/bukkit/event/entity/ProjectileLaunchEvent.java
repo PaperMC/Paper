@@ -15,10 +15,12 @@ public class ProjectileLaunchEvent extends EntitySpawnEvent implements Cancellab
         super(what);
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }

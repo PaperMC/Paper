@@ -40,6 +40,7 @@ public interface BrewerInventory extends Inventory {
      */
     void setFuel(@Nullable ItemStack fuel);
 
+    @Override
     @Nullable
     BrewingStand getHolder();
 }

@@ -22,35 +22,43 @@ public abstract class MetadataValueAdapter implements MetadataValue {
         this.owningPlugin = new WeakReference<Plugin>(owningPlugin);
     }
 
+    @Override
     @Nullable
     public Plugin getOwningPlugin() {
         return owningPlugin.get();
     }
 
+    @Override
     public int asInt() {
         return NumberConversions.toInt(value());
     }
 
+    @Override
     public float asFloat() {
         return NumberConversions.toFloat(value());
     }
 
+    @Override
     public double asDouble() {
         return NumberConversions.toDouble(value());
     }
 
+    @Override
     public long asLong() {
         return NumberConversions.toLong(value());
     }
 
+    @Override
     public short asShort() {
         return NumberConversions.toShort(value());
     }
 
+    @Override
     public byte asByte() {
         return NumberConversions.toByte(value());
     }
 
+    @Override
     public boolean asBoolean() {
         Object value = value();
         if (value instanceof Boolean) {
@@ -68,6 +76,7 @@ public abstract class MetadataValueAdapter implements MetadataValue {
         return value != null;
     }
 
+    @Override
     @NotNull
     public String asString() {
         Object value = value();

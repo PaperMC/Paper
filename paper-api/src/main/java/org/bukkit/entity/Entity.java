@@ -223,6 +223,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return Server instance running this Entity
      */
+    @Override
     @NotNull
     public Server getServer();
 

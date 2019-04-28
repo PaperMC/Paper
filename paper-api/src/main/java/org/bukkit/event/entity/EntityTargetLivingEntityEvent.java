@@ -14,6 +14,7 @@ public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
         super(entity, target, reason);
     }
 
+    @Override
     @Nullable
     public LivingEntity getTarget() {
         return (LivingEntity) super.getTarget();
@@ -29,6 +30,7 @@ public class EntityTargetLivingEntityEvent extends EntityTargetEvent{
      *
      * @param target The entity to target
      */
+    @Override
     public void setTarget(@Nullable Entity target) {
         if (target == null || target instanceof LivingEntity) {
             super.setTarget(target);

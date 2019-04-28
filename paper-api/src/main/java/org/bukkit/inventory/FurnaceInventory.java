@@ -53,6 +53,7 @@ public interface FurnaceInventory extends Inventory {
      */
     void setSmelting(@Nullable ItemStack stack);
 
+    @Override
     @Nullable
     Furnace getHolder();
 }

@@ -42,10 +42,12 @@ public class InventoryPickupItemEvent extends Event implements Cancellable {
         return item;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

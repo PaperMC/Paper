@@ -31,6 +31,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
      *
      * @return true if powered, otherwise false
      */
+    @Override
     public boolean isPowered() {
         return (getData() & 0x8) == 0x8;
     }
@@ -49,6 +50,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
      *
      * @return BlockFace attached to
      */
+    @Override
     public BlockFace getAttachedFace() {
         byte data = (byte) (getData() & 0x7);
 
@@ -81,6 +83,7 @@ public class Lever extends SimpleAttachableMaterialData implements Redstone {
     /**
      * Sets the direction this lever is pointing in
      */
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data = (byte) (getData() & 0x8);
         BlockFace attach = getAttachedFace();

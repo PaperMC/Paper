@@ -56,10 +56,12 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
         return blockFace;
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }

@@ -30,6 +30,7 @@ public interface LeatherArmorMeta extends ItemMeta {
      */
     void setColor(@Nullable Color color);
 
+    @Override
     @NotNull
     LeatherArmorMeta clone();
 }
