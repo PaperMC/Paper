@@ -14,6 +14,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
     public CraftMerchantCustom(String title) {
         super(new MinecraftMerchant(title));
+        getMerchant().craftMerchant = this;
     }
 
     @Override
@@ -32,10 +33,16 @@ public class CraftMerchantCustom extends CraftMerchant {
         private final MerchantRecipeList trades = new MerchantRecipeList();
         private EntityHuman tradingPlayer;
         private World tradingWorld;
+        protected CraftMerchant craftMerchant;
 
         public MinecraftMerchant(String title) {
             Validate.notNull(title, "Title cannot be null");
             this.title = new ChatComponentText(title);
+        }
+
+        @Override
+        public CraftMerchant getCraftMerchant() {
+            return craftMerchant;
         }
 
         @Override

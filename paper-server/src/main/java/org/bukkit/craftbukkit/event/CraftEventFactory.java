@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.event;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Either;
 import java.net.InetAddress;
@@ -16,6 +17,7 @@ import net.minecraft.server.BlockPropertyInstrument;
 import net.minecraft.server.ChatMessage;
 import net.minecraft.server.ChatModifier;
 import net.minecraft.server.Container;
+import net.minecraft.server.ContainerMerchant;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.DimensionManager;
 import net.minecraft.server.Entity;
@@ -161,6 +163,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.inventory.TradeSelectEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent.BedEnterResult;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -179,6 +182,8 @@ import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.Merchant;
+import org.bukkit.inventory.MerchantInventory;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffect;
 
@@ -242,6 +247,15 @@ public class CraftEventFactory {
         }
 
         return nmsBedResult;
+    }
+
+    /**
+     * Trade Index Change Event
+     */
+    public static TradeSelectEvent callTradeSelectEvent(EntityPlayer player, int newIndex, ContainerMerchant merchant) {
+        TradeSelectEvent tradeSelectEvent = new TradeSelectEvent(merchant.getBukkitView(), newIndex);
+        Bukkit.getPluginManager().callEvent(tradeSelectEvent);
+        return tradeSelectEvent;
     }
 
     /**
