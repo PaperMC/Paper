@@ -224,13 +224,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public void setCooldown(@NotNull Material material, int ticks);
 
     /**
-     * Returns whether this player is slumbering.
-     *
-     * @return slumber state
-     */
-    public boolean isSleeping();
-
-    /**
      * Get the sleep ticks of the player. This value may be capped.
      *
      * @return slumber ticks

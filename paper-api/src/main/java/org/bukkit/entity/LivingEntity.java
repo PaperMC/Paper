@@ -433,6 +433,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public boolean isRiptiding();
 
     /**
+     * Returns whether this entity is slumbering.
+     *
+     * @return slumber state
+     */
+    public boolean isSleeping();
+
+    /**
      * Sets whether an entity will have AI.
      *
      * @param ai whether the mob will have AI or not.
