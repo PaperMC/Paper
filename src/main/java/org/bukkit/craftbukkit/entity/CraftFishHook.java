@@ -17,6 +17,7 @@ public class CraftFishHook extends AbstractProjectile implements FishHook {
         super(server, entity);
     }
 
+    @Override
     public ProjectileSource getShooter() {
         if (getHandle().owner != null) {
             return getHandle().owner.getBukkitEntity();
@@ -25,6 +26,7 @@ public class CraftFishHook extends AbstractProjectile implements FishHook {
         return null;
     }
 
+    @Override
     public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftHumanEntity) {
             getHandle().owner = (EntityHuman) ((CraftHumanEntity) shooter).entity;
@@ -41,10 +43,12 @@ public class CraftFishHook extends AbstractProjectile implements FishHook {
         return "CraftFishingHook";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.FISHING_HOOK;
     }
 
+    @Override
     public double getBiteChance() {
         EntityFishingHook hook = getHandle();
 
@@ -57,6 +61,7 @@ public class CraftFishHook extends AbstractProjectile implements FishHook {
         return this.biteChance;
     }
 
+    @Override
     public void setBiteChance(double chance) {
         Validate.isTrue(chance >= 0 && chance <= 1, "The bite chance must be between 0 and 1.");
         this.biteChance = chance;

@@ -167,10 +167,12 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         return scaling != SCALING_EMPTY;
     }
 
+    @Override
     public boolean isScaling() {
         return scaling == SCALING_TRUE;
     }
 
+    @Override
     public void setScaling(boolean scaling) {
         this.scaling = scaling ? SCALING_TRUE : SCALING_FALSE;
     }
@@ -248,6 +250,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     }
 
 
+    @Override
     public CraftMetaMap clone() {
         return (CraftMetaMap) super.clone();
     }

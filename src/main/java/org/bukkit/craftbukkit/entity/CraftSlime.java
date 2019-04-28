@@ -11,10 +11,12 @@ public class CraftSlime extends CraftMob implements Slime {
         super(server, entity);
     }
 
+    @Override
     public int getSize() {
         return getHandle().getSize();
     }
 
+    @Override
     public void setSize(int size) {
         getHandle().setSize(size, true);
     }
@@ -29,6 +31,7 @@ public class CraftSlime extends CraftMob implements Slime {
         return "CraftSlime";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SLIME;
     }

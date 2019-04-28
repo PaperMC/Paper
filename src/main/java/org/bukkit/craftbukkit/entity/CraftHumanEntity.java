@@ -91,34 +91,42 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         enderChest = new CraftInventory(entity.getEnderChest());
     }
 
+    @Override
     public PlayerInventory getInventory() {
         return inventory;
     }
 
+    @Override
     public EntityEquipment getEquipment() {
         return inventory;
     }
 
+    @Override
     public Inventory getEnderChest() {
         return enderChest;
     }
 
+    @Override
     public MainHand getMainHand() {
         return getHandle().getMainHand()== EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
     }
 
+    @Override
     public ItemStack getItemInHand() {
         return getInventory().getItemInHand();
     }
 
+    @Override
     public void setItemInHand(ItemStack item) {
         getInventory().setItemInHand(item);
     }
 
+    @Override
     public ItemStack getItemOnCursor() {
         return CraftItemStack.asCraftMirror(getHandle().inventory.getCarried());
     }
 
+    @Override
     public void setItemOnCursor(ItemStack item) {
         net.minecraft.server.ItemStack stack = CraftItemStack.asNMSCopy(item);
         getHandle().inventory.setCarried(stack);
@@ -127,10 +135,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
     }
 
+    @Override
     public boolean isSleeping() {
         return getHandle().isSleeping();
     }
 
+    @Override
     public int getSleepTicks() {
         return getHandle().sleepTicks;
     }
@@ -207,63 +217,78 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().getName();
     }
 
+    @Override
     public boolean isOp() {
         return op;
     }
 
+    @Override
     public boolean isPermissionSet(String name) {
         return perm.isPermissionSet(name);
     }
 
+    @Override
     public boolean isPermissionSet(Permission perm) {
         return this.perm.isPermissionSet(perm);
     }
 
+    @Override
     public boolean hasPermission(String name) {
         return perm.hasPermission(name);
     }
 
+    @Override
     public boolean hasPermission(Permission perm) {
         return this.perm.hasPermission(perm);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
         return perm.addAttachment(plugin, name, value);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
         return perm.addAttachment(plugin);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
         return perm.addAttachment(plugin, name, value, ticks);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
         return perm.addAttachment(plugin, ticks);
     }
 
+    @Override
     public void removeAttachment(PermissionAttachment attachment) {
         perm.removeAttachment(attachment);
     }
 
+    @Override
     public void recalculatePermissions() {
         perm.recalculatePermissions();
     }
 
+    @Override
     public void setOp(boolean value) {
         this.op = value;
         perm.recalculatePermissions();
     }
 
+    @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
         return perm.getEffectivePermissions();
     }
 
+    @Override
     public GameMode getGameMode() {
         return mode;
     }
 
+    @Override
     public void setGameMode(GameMode mode) {
         if (mode == null) {
             throw new IllegalArgumentException("Mode cannot be null");
@@ -287,10 +312,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
 
+    @Override
     public InventoryView getOpenInventory() {
         return getHandle().activeContainer.getBukkitView();
     }
 
+    @Override
     public InventoryView openInventory(Inventory inventory) {
         if(!(getHandle() instanceof EntityPlayer)) return null;
         EntityPlayer player = (EntityPlayer) getHandle();
@@ -463,6 +490,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         getHandle().activeContainer.addSlotListener(player);
     }
 
+    @Override
     public InventoryView openWorkbench(Location location, boolean force) {
         if (!force) {
             Block block = location.getBlock();
@@ -480,6 +508,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().activeContainer.getBukkitView();
     }
 
+    @Override
     public InventoryView openEnchanting(Location location, boolean force) {
         if (!force) {
             Block block = location.getBlock();
@@ -501,6 +530,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().activeContainer.getBukkitView();
     }
 
+    @Override
     public void openInventory(InventoryView inventory) {
         if (!(getHandle() instanceof EntityPlayer)) return; // TODO: NPC support?
         if (((EntityPlayer) getHandle()).playerConnection == null) return;
@@ -567,10 +597,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return this.getHandle().activeContainer.getBukkitView();
     }
 
+    @Override
     public void closeInventory() {
         getHandle().closeInventory();
     }
 
+    @Override
     public boolean isBlocking() {
         return getHandle().isBlocking();
     }
@@ -580,10 +612,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().isHandRaised();
     }
 
+    @Override
     public boolean setWindowProperty(InventoryView.Property prop, int value) {
         return false;
     }
 
+    @Override
     public int getExpToLevel() {
         return getHandle().getExpToLevel();
     }

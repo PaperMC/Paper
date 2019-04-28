@@ -59,6 +59,7 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
         }
     }
 
+    @Override
     void applyToItem(NBTTagCompound itemData) {
         super.applyToItem(itemData);
 

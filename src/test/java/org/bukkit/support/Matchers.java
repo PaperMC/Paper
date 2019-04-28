@@ -19,10 +19,12 @@ public final class Matchers {
             expected = object.hashCode();
         }
 
+        @Override
         public boolean matches(Object item) {
             return item.hashCode() == expected;
         }
 
+        @Override
         public void describeTo(Description description) {
             description.appendValue(expected);
         }

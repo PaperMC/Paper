@@ -22,33 +22,40 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
         return (EntityHorseAbstract) entity;
     }
 
+    @Override
     public void setVariant(Horse.Variant variant) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
+    @Override
     public int getDomestication() {
         return getHandle().getTemper();
     }
 
+    @Override
     public void setDomestication(int value) {
         Validate.isTrue(value >= 0, "Domestication cannot be less than zero");
         Validate.isTrue(value <= getMaxDomestication(), "Domestication cannot be greater than the max domestication");
         getHandle().setTemper(value);
     }
 
+    @Override
     public int getMaxDomestication() {
         return getHandle().getMaxDomestication();
     }
 
+    @Override
     public void setMaxDomestication(int value) {
         Validate.isTrue(value > 0, "Max domestication cannot be zero or less");
         getHandle().maxDomestication = value;
     }
 
+    @Override
     public double getJumpStrength() {
         return getHandle().getJumpStrength();
     }
 
+    @Override
     public void setJumpStrength(double strength) {
         Validate.isTrue(strength >= 0, "Jump strength cannot be less than zero");
         getHandle().getAttributeInstance(EntityHorse.attributeJumpStrength).setValue(strength);

@@ -191,6 +191,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
         }
 
+        @Override
         public Map<String, Object> serialize() {
             throw new AssertionError();
         }
@@ -747,14 +748,17 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
     }
 
+    @Override
     public String getDisplayName() {
         return CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE);
     }
 
+    @Override
     public final void setDisplayName(String name) {
         this.displayName = CraftChatMessage.wrapOrNull(name);
     }
 
+    @Override
     public boolean hasDisplayName() {
         return displayName != null;
     }
@@ -774,19 +778,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return locName != null;
     }
 
+    @Override
     public boolean hasLore() {
         return this.lore != null && !this.lore.isEmpty();
     }
 
+    @Override
     public boolean hasRepairCost() {
         return repairCost > 0;
     }
 
+    @Override
     public boolean hasEnchant(Enchantment ench) {
         Validate.notNull(ench, "Enchantment cannot be null");
         return hasEnchants() && enchantments.containsKey(ench);
     }
 
+    @Override
     public int getEnchantLevel(Enchantment ench) {
         Validate.notNull(ench, "Enchantment cannot be null");
         Integer level = hasEnchants() ? enchantments.get(ench) : null;
@@ -796,10 +804,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return level;
     }
 
+    @Override
     public Map<Enchantment, Integer> getEnchants() {
         return hasEnchants() ? ImmutableMap.copyOf(enchantments) : ImmutableMap.<Enchantment, Integer>of();
     }
 
+    @Override
     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
         Validate.notNull(ench, "Enchantment cannot be null");
         if (enchantments == null) {
@@ -813,15 +823,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return false;
     }
 
+    @Override
     public boolean removeEnchant(Enchantment ench) {
         Validate.notNull(ench, "Enchantment cannot be null");
         return hasEnchants() && enchantments.remove(ench) != null;
     }
 
+    @Override
     public boolean hasEnchants() {
         return !(enchantments == null || enchantments.isEmpty());
     }
 
+    @Override
     public boolean hasConflictingEnchant(Enchantment ench) {
         return checkConflictingEnchants(enchantments, ench);
     }
@@ -863,10 +876,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return (byte) (1 << hideFlag.ordinal());
     }
 
+    @Override
     public List<String> getLore() {
         return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, (line) -> CraftChatMessage.fromComponent(line, EnumChatFormat.DARK_PURPLE)));
     }
 
+    @Override
     public void setLore(List<String> lore) { // too tired to think if .clone is better
         if (lore == null) {
             this.lore = null;
@@ -911,10 +926,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.blockData = (blockData == null) ? null : ((CraftBlockData) blockData).toStates();
     }
 
+    @Override
     public int getRepairCost() {
         return repairCost;
     }
 
+    @Override
     public void setRepairCost(int cost) { // TODO: Does this have limits?
         repairCost = cost;
     }
@@ -1182,6 +1199,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
+    @Override
     public final Map<String, Object> serialize() {
         ImmutableMap.Builder<String, Object> map = ImmutableMap.builder();
         map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));

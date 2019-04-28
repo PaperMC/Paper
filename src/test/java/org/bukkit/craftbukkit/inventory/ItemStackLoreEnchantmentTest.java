@@ -28,6 +28,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setLore(Arrays.asList("First Lore", "Second Lore"));
@@ -36,6 +37,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -44,6 +46,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setLore(Arrays.asList("Some lore"));
@@ -52,6 +55,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -62,6 +66,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setLore(Arrays.asList("Some more lore", "Another lore"));
@@ -70,6 +75,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setLore(Arrays.asList("Some more lore"));
@@ -83,6 +89,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setDisplayName("TestItemName");
@@ -91,6 +98,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -99,6 +107,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setDisplayName("AnotherItemName");
@@ -107,6 +116,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -117,6 +127,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setDisplayName("The original ItemName");
@@ -125,6 +136,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.setDisplayName("The other name");
@@ -138,12 +150,14 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.addUnsafeEnchantment(Enchantment.DIG_SPEED, 2);
                             return cleanStack;
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -152,12 +166,14 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.addUnsafeEnchantment(Enchantment.OXYGEN, 1);
                             return cleanStack;
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -168,12 +184,14 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 1);
                             return cleanStack;
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.addUnsafeEnchantment(Enchantment.ARROW_FIRE, 1);
                             return cleanStack;
@@ -183,6 +201,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.addEnchant(Enchantment.DURABILITY, 1, true);
@@ -191,6 +210,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -201,6 +221,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.addEnchant(Enchantment.KNOCKBACK, 1, true);
@@ -209,6 +230,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -217,6 +239,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.addEnchant(Enchantment.PROTECTION_FIRE, 1, true);
@@ -225,6 +248,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             meta.addEnchant(Enchantment.PROTECTION_FIRE, 2, true);
@@ -238,6 +262,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             ((Repairable) meta).setRepairCost(42);
@@ -246,6 +271,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -254,6 +280,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             ((Repairable) meta).setRepairCost(36);
@@ -262,6 +289,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -272,6 +300,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             ((Repairable) meta).setRepairCost(89);
@@ -280,6 +309,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
                             ((Repairable) meta).setRepairCost(88);

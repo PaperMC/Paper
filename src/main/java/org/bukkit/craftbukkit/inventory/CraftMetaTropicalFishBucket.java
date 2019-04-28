@@ -149,6 +149,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     }
 
 
+    @Override
     public CraftMetaTropicalFishBucket clone() {
         return (CraftMetaTropicalFishBucket) super.clone();
     }

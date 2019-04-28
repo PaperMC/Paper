@@ -20,10 +20,12 @@ public class CraftIronGolem extends CraftGolem implements IronGolem {
         return "CraftIronGolem";
     }
 
+    @Override
     public boolean isPlayerCreated() {
         return getHandle().isPlayerCreated();
     }
 
+    @Override
     public void setPlayerCreated(boolean playerCreated) {
         getHandle().setPlayerCreated(playerCreated);
     }

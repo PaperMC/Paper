@@ -45,38 +45,47 @@ public class CraftEntityEquipment implements EntityEquipment {
         setItemInMainHand(stack);
     }
 
+    @Override
     public ItemStack getHelmet() {
         return getEquipment(EnumItemSlot.HEAD);
     }
 
+    @Override
     public void setHelmet(ItemStack helmet) {
         setEquipment(EnumItemSlot.HEAD, helmet);
     }
 
+    @Override
     public ItemStack getChestplate() {
         return getEquipment(EnumItemSlot.CHEST);
     }
 
+    @Override
     public void setChestplate(ItemStack chestplate) {
         setEquipment(EnumItemSlot.CHEST, chestplate);
     }
 
+    @Override
     public ItemStack getLeggings() {
         return getEquipment(EnumItemSlot.LEGS);
     }
 
+    @Override
     public void setLeggings(ItemStack leggings) {
         setEquipment(EnumItemSlot.LEGS, leggings);
     }
 
+    @Override
     public ItemStack getBoots() {
         return getEquipment(EnumItemSlot.FEET);
     }
 
+    @Override
     public void setBoots(ItemStack boots) {
         setEquipment(EnumItemSlot.FEET, boots);
     }
 
+    @Override
     public ItemStack[] getArmorContents() {
         ItemStack[] armor = new ItemStack[]{
                 getEquipment(EnumItemSlot.FEET),
@@ -87,6 +96,7 @@ public class CraftEntityEquipment implements EntityEquipment {
         return armor;
     }
 
+    @Override
     public void setArmorContents(ItemStack[] items) {
         setEquipment(EnumItemSlot.FEET, items.length >= 1 ? items[0] : null);
         setEquipment(EnumItemSlot.LEGS, items.length >= 2 ? items[1] : null);
@@ -102,12 +112,14 @@ public class CraftEntityEquipment implements EntityEquipment {
         entity.getHandle().setSlot(slot, CraftItemStack.asNMSCopy(stack));
     }
 
+    @Override
     public void clear() {
         for (EnumItemSlot slot : EnumItemSlot.values()) {
             setEquipment(slot, null);
         }
     }
 
+    @Override
     public Entity getHolder() {
         return entity;
     }
@@ -142,34 +154,42 @@ public class CraftEntityEquipment implements EntityEquipment {
         setDropChance(EnumItemSlot.OFFHAND, chance);
     }
 
+    @Override
     public float getHelmetDropChance() {
         return getDropChance(EnumItemSlot.HEAD);
     }
 
+    @Override
     public void setHelmetDropChance(float chance) {
         setDropChance(EnumItemSlot.HEAD, chance);
     }
 
+    @Override
     public float getChestplateDropChance() {
         return getDropChance(EnumItemSlot.CHEST);
     }
 
+    @Override
     public void setChestplateDropChance(float chance) {
         setDropChance(EnumItemSlot.CHEST, chance);
     }
 
+    @Override
     public float getLeggingsDropChance() {
         return getDropChance(EnumItemSlot.LEGS);
     }
 
+    @Override
     public void setLeggingsDropChance(float chance) {
         setDropChance(EnumItemSlot.LEGS, chance);
     }
 
+    @Override
     public float getBootsDropChance() {
         return getDropChance(EnumItemSlot.FEET);
     }
 
+    @Override
     public void setBootsDropChance(float chance) {
         setDropChance(EnumItemSlot.FEET, chance);
     }

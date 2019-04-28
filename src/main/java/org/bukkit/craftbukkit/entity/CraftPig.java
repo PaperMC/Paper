@@ -10,14 +10,17 @@ public class CraftPig extends CraftAnimals implements Pig {
         super(server, entity);
     }
 
+    @Override
     public boolean hasSaddle() {
         return getHandle().hasSaddle();
     }
 
+    @Override
     public void setSaddle(boolean saddled) {
         getHandle().setSaddle(saddled);
     }
 
+    @Override
     public EntityPig getHandle() {
         return (EntityPig) entity;
     }
@@ -27,6 +30,7 @@ public class CraftPig extends CraftAnimals implements Pig {
         return "CraftPig";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.PIG;
     }

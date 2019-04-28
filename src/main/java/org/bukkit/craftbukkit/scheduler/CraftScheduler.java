@@ -60,6 +60,7 @@ public class CraftScheduler implements BukkitScheduler {
      */
     private final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10,
             new Comparator<CraftTask>() {
+                @Override
                 public int compare(final CraftTask o1, final CraftTask o2) {
                     int value = Long.compare(o1.getNextRun(), o2.getNextRun());
 
@@ -227,6 +228,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
         task = new CraftTask(
                 new Runnable() {
+                    @Override
                     public void run() {
                         if (!check(CraftScheduler.this.temp)) {
                             check(CraftScheduler.this.pending);
@@ -263,6 +265,7 @@ public class CraftScheduler implements BukkitScheduler {
         Validate.notNull(plugin, "Cannot cancel tasks of null plugin");
         final CraftTask task = new CraftTask(
                 new Runnable() {
+                    @Override
                     public void run() {
                         check(CraftScheduler.this.pending);
                         check(CraftScheduler.this.temp);

@@ -29,6 +29,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 1), false);
@@ -37,6 +38,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -45,6 +47,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.HARM.createEffect(2, 1), false);
@@ -53,6 +56,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -63,6 +67,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.SLOW_DIGGING.createEffect(1, 1), false);
@@ -71,6 +76,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.FAST_DIGGING.createEffect(1, 1), false);
@@ -82,6 +88,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.JUMP.createEffect(1, 1), false);
@@ -90,6 +97,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.JUMP.createEffect(1, 1), false);
@@ -102,6 +110,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.SPEED.createEffect(10, 1), false);
@@ -110,6 +119,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.SPEED.createEffect(5, 1), false);
@@ -121,6 +131,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.INCREASE_DAMAGE.createEffect(1, 1), false);
@@ -129,6 +140,7 @@ public class ItemStackPotionsTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
                             meta.addCustomEffect(PotionEffectType.INCREASE_DAMAGE.createEffect(1, 2), false);

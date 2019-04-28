@@ -28,6 +28,7 @@ public class ItemStackSkullTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                             meta.setOwner("Notch");
@@ -36,6 +37,7 @@ public class ItemStackSkullTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                             meta.setOwner("Dinnerbone");
@@ -47,6 +49,7 @@ public class ItemStackSkullTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                             meta.setOwner("Notch");
@@ -55,6 +58,7 @@ public class ItemStackSkullTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                             meta.setOwner(null);
@@ -66,6 +70,7 @@ public class ItemStackSkullTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             SkullMeta meta = (SkullMeta) cleanStack.getItemMeta();
                             meta.setOwner("Notch");
@@ -74,6 +79,7 @@ public class ItemStackSkullTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }

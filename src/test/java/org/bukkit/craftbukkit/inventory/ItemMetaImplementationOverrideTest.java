@@ -44,6 +44,7 @@ public class ItemMetaImplementationOverrideTest {
                 testData.add(
                     new Object[] {
                         new Callable<Method>() {
+                            @Override
                             public Method call() throws Exception {
                                 return clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
                             }
@@ -56,6 +57,7 @@ public class ItemMetaImplementationOverrideTest {
             testData.add(
                 new Object[] {
                     new Callable<DelegateDeserialization>() {
+                        @Override
                         public DelegateDeserialization call() throws Exception {
                             return clazz.getAnnotation(DelegateDeserialization.class);
                         }

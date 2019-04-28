@@ -30,6 +30,7 @@ public class CraftWitherSkull extends CraftFireball implements WitherSkull {
         return "CraftWitherSkull";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.WITHER_SKULL;
     }

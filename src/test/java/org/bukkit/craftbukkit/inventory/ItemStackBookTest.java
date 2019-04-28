@@ -28,6 +28,7 @@ public class ItemStackBookTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 1", "Page 2");
@@ -36,6 +37,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -44,6 +46,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 1", "Page 2");
@@ -52,6 +55,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.setItemMeta(cleanStack.getItemMeta());
                             return cleanStack;
@@ -61,6 +65,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 1", "Page 2");
@@ -69,6 +74,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 2", "Page 1");
@@ -80,6 +86,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 1", "Page 2");
@@ -88,6 +95,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.addPage("Page 1");
@@ -101,6 +109,7 @@ public class ItemStackBookTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setAuthor("AnAuthor");
@@ -109,6 +118,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -117,6 +127,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setAuthor("AnAuthor");
@@ -125,6 +136,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.setItemMeta(cleanStack.getItemMeta());
                             return cleanStack;
@@ -134,6 +146,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setAuthor("AnAuthor");
@@ -142,6 +155,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setAuthor("AnotherAuthor");
@@ -155,6 +169,7 @@ public class ItemStackBookTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setTitle("Some title");
@@ -163,6 +178,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -171,6 +187,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setTitle("Some title");
@@ -179,6 +196,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             cleanStack.setItemMeta(cleanStack.getItemMeta());
                             return cleanStack;
@@ -188,6 +206,7 @@ public class ItemStackBookTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setTitle("Some title");
@@ -196,6 +215,7 @@ public class ItemStackBookTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             BookMeta meta = (BookMeta) cleanStack.getItemMeta();
                             meta.setTitle("Different title");

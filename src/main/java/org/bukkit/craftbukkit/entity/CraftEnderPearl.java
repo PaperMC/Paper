@@ -20,6 +20,7 @@ public class CraftEnderPearl extends CraftProjectile implements EnderPearl {
         return "CraftEnderPearl";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.ENDER_PEARL;
     }

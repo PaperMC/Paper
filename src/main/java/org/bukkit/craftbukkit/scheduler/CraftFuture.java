@@ -19,6 +19,7 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
         this.callable = callable;
     }
 
+    @Override
     public synchronized boolean cancel(final boolean mayInterruptIfRunning) {
         if (getPeriod() != CraftTask.NO_REPEATING) {
             return false;
@@ -27,11 +28,13 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
         return true;
     }
 
+    @Override
     public boolean isDone() {
         final long period = this.getPeriod();
         return period != CraftTask.NO_REPEATING && period != CraftTask.PROCESS_FOR_FUTURE;
     }
 
+    @Override
     public T get() throws CancellationException, InterruptedException, ExecutionException {
         try {
             return get(0, TimeUnit.MILLISECONDS);
@@ -40,6 +43,7 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
         }
     }
 
+    @Override
     public synchronized T get(long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         timeout = unit.toMillis(timeout);
         long period = this.getPeriod();
@@ -92,6 +96,7 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
         }
     }
 
+    @Override
     synchronized boolean cancel0() {
         if (getPeriod() != CraftTask.NO_REPEATING) {
             return false;

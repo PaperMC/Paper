@@ -20,6 +20,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
         super(server, entity);
     }
 
+    @Override
     public Collection<PotionEffect> getEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
         for (MobEffect effect : PotionUtil.getEffects(getHandle().getItem())) {
@@ -28,6 +29,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
         return builder.build();
     }
 
+    @Override
     public ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }

@@ -12,14 +12,17 @@ public class RecipeIterator implements Iterator<Recipe> {
         this.recipes = MinecraftServer.getServer().getCraftingManager().b().iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return recipes.hasNext();
     }
 
+    @Override
     public Recipe next() {
         return recipes.next().toBukkitRecipe();
     }
 
+    @Override
     public void remove() {
         recipes.remove();
     }

@@ -214,11 +214,13 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
         return CraftPotionUtil.toBukkit(getHandle().getType());
     }
 
+    @Override
     public ProjectileSource getSource() {
         EntityLiving source = getHandle().getSource();
         return (source == null) ? null : (LivingEntity) source.getBukkitEntity();
     }
 
+    @Override
     public void setSource(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
             getHandle().setSource((EntityLiving) ((CraftLivingEntity) shooter).getHandle());

@@ -11,18 +11,22 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
         super(server, entity);
     }
 
+    @Override
     public int getAnger() {
         return getHandle().angerLevel;
     }
 
+    @Override
     public void setAnger(int level) {
         getHandle().angerLevel = level;
     }
 
+    @Override
     public void setAngry(boolean angry) {
         setAnger(angry ? 400 : 0);
     }
 
+    @Override
     public boolean isAngry() {
         return getAnger() > 0;
     }
@@ -37,6 +41,7 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
         return "CraftPigZombie";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.PIG_ZOMBIE;
     }

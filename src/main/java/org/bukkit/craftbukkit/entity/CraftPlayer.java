@@ -157,10 +157,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         perm.recalculatePermissions();
     }
 
+    @Override
     public boolean isOnline() {
         return server.getPlayer(getUniqueId()) != null;
     }
 
+    @Override
     public InetSocketAddress getAddress() {
         if (getHandle().playerConnection == null) return null;
 

@@ -39,6 +39,7 @@ public final class CraftItemFactory implements ItemFactory {
     private CraftItemFactory() {
     }
 
+    @Override
     public boolean isApplicable(ItemMeta meta, ItemStack itemstack) {
         if (itemstack == null) {
             return false;
@@ -46,6 +47,7 @@ public final class CraftItemFactory implements ItemFactory {
         return isApplicable(meta, itemstack.getType());
     }
 
+    @Override
     public boolean isApplicable(ItemMeta meta, Material type) {
         type = CraftLegacy.fromLegacy(type); // This may be called from legacy item stacks, try to get the right material
         if (type == null || meta == null) {
@@ -58,6 +60,7 @@ public final class CraftItemFactory implements ItemFactory {
         return ((CraftMetaItem) meta).applicableTo(type);
     }
 
+    @Override
     public ItemMeta getItemMeta(Material material) {
         Validate.notNull(material, "Material cannot be null");
         return getItemMeta(material, null);
@@ -254,6 +257,7 @@ public final class CraftItemFactory implements ItemFactory {
         }
     }
 
+    @Override
     public boolean equals(ItemMeta meta1, ItemMeta meta2) {
         if (meta1 == meta2) {
             return true;
@@ -291,11 +295,13 @@ public final class CraftItemFactory implements ItemFactory {
         return instance;
     }
 
+    @Override
     public ItemMeta asMetaFor(ItemMeta meta, ItemStack stack) {
         Validate.notNull(stack, "Stack cannot be null");
         return asMetaFor(meta, stack.getType());
     }
 
+    @Override
     public ItemMeta asMetaFor(ItemMeta meta, Material material) {
         Validate.notNull(material, "Material cannot be null");
         if (!(meta instanceof CraftMetaItem)) {
@@ -304,6 +310,7 @@ public final class CraftItemFactory implements ItemFactory {
         return getItemMeta(material, (CraftMetaItem) meta);
     }
 
+    @Override
     public Color getDefaultLeatherColor() {
         return DEFAULT_LEATHER_COLOR;
     }

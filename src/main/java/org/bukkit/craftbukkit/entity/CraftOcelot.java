@@ -15,10 +15,12 @@ public class CraftOcelot extends CraftAnimals implements Ocelot {
         return (EntityOcelot) entity;
     }
 
+    @Override
     public Type getCatType() {
         return Type.WILD_OCELOT;
     }
 
+    @Override
     public void setCatType(Type type) {
         throw new UnsupportedOperationException("Cats are now a different entity!");
     }

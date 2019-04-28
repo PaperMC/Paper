@@ -25,14 +25,17 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         return "CraftVillager";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.VILLAGER;
     }
 
+    @Override
     public Profession getProfession() {
         return Profession.valueOf(IRegistry.VILLAGER_PROFESSION.getKey(getHandle().getVillagerData().getProfession()).getKey().toUpperCase(Locale.ROOT));
     }
 
+    @Override
     public void setProfession(Profession profession) {
         Validate.notNull(profession);
         getHandle().setVillagerData(getHandle().getVillagerData().withProfession(IRegistry.VILLAGER_PROFESSION.get(new MinecraftKey(profession.name().toLowerCase(Locale.ROOT)))));

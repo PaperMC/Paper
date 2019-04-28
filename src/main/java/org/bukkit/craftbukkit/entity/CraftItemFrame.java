@@ -54,18 +54,22 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         this.entity = frame;
     }
 
+    @Override
     public void setItem(org.bukkit.inventory.ItemStack item) {
         setItem(item, true);
     }
 
+    @Override
     public void setItem(org.bukkit.inventory.ItemStack item, boolean playSound) {
         getHandle().setItem(CraftItemStack.asNMSCopy(item), true, playSound);
     }
 
+    @Override
     public org.bukkit.inventory.ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }
 
+    @Override
     public Rotation getRotation() {
         return toBukkitRotation(getHandle().getRotation());
     }
@@ -94,6 +98,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         }
     }
 
+    @Override
     public void setRotation(Rotation rotation) {
         Validate.notNull(rotation, "Rotation cannot be null");
         getHandle().setRotation(toInteger(rotation));
@@ -133,6 +138,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         return "CraftItemFrame{item=" + getItem() + ", rotation=" + getRotation() + "}";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.ITEM_FRAME;
     }
