@@ -42,14 +42,17 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         this.biomeTemp = biomeTemp;
     }
 
+    @Override
     public int getX() {
         return x;
     }
 
+    @Override
     public int getZ() {
         return z;
     }
 
+    @Override
     public String getWorldName() {
         return worldname;
     }
@@ -75,6 +78,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         return CraftMagicNumbers.toLegacyData(blockids[y >> 4].a(x, y & 0xF, z));
     }
 
+    @Override
     public final int getBlockSkyLight(int x, int y, int z) {
         CraftChunk.validateChunkCoordinates(x, y, z);
 
@@ -82,6 +86,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         return (skylight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
+    @Override
     public final int getBlockEmittedLight(int x, int y, int z) {
         CraftChunk.validateChunkCoordinates(x, y, z);
 
@@ -89,28 +94,33 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         return (emitlight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
 
+    @Override
     public final int getHighestBlockYAt(int x, int z) {
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return hmap.a(x, z);
     }
 
+    @Override
     public final Biome getBiome(int x, int z) {
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
     }
 
+    @Override
     public final double getRawBiomeTemperature(int x, int z) {
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return biomeTemp[z << 4 | x];
     }
 
+    @Override
     public final long getCaptureFullTime() {
         return captureFulltime;
     }
 
+    @Override
     public final boolean isSectionEmpty(int sy) {
         return empty[sy];
     }

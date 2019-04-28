@@ -21,6 +21,7 @@ public class CraftSquid extends CraftWaterMob implements Squid {
         return "CraftSquid";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SQUID;
     }

@@ -124,6 +124,7 @@ public class ItemStackTest extends AbstractTestingBase {
             this.operators = operators;
         }
 
+        @Override
         public ItemStack operate(ItemStack cleanStack) {
             for (Operator operator : operators) {
                 operator.operate(cleanStack);
@@ -177,6 +178,7 @@ public class ItemStackTest extends AbstractTestingBase {
                                 final Operator op1 = (Operator) toOut[i];
                                 final Operator op2 = (Operator) singleton[i];
                                 toOut[i] = new Operator() {
+                                    @Override
                                     public ItemStack operate(final ItemStack cleanStack) {
                                         return op2.operate(op1.operate(cleanStack));
                                     }
@@ -257,6 +259,7 @@ public class ItemStackTest extends AbstractTestingBase {
             this.provider = provider;
         }
 
+        @Override
         public ItemStack stack() {
             return provider.craft();
         }
@@ -274,6 +277,7 @@ public class ItemStackTest extends AbstractTestingBase {
             this.provider = provider;
         }
 
+        @Override
         public ItemStack stack() {
             return provider.bukkit();
         }

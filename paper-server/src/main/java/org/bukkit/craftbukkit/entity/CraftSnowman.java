@@ -30,6 +30,7 @@ public class CraftSnowman extends CraftGolem implements Snowman {
         return "CraftSnowman";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SNOWMAN;
     }

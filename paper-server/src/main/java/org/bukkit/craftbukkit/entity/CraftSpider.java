@@ -21,6 +21,7 @@ public class CraftSpider extends CraftMonster implements Spider {
         return "CraftSpider";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SPIDER;
     }

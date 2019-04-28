@@ -10,10 +10,12 @@ public class CraftInventoryBrewer extends CraftInventory implements BrewerInvent
         super(inventory);
     }
 
+    @Override
     public ItemStack getIngredient() {
         return getItem(3);
     }
 
+    @Override
     public void setIngredient(ItemStack ingredient) {
         setItem(3, ingredient);
     }

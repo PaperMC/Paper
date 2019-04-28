@@ -28,6 +28,7 @@ public class ItemStackMapTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(true);
@@ -36,6 +37,7 @@ public class ItemStackMapTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(false);
@@ -47,6 +49,7 @@ public class ItemStackMapTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(true);
@@ -55,6 +58,7 @@ public class ItemStackMapTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -65,6 +69,7 @@ public class ItemStackMapTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(false);
@@ -73,6 +78,7 @@ public class ItemStackMapTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -83,6 +89,7 @@ public class ItemStackMapTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(true);
@@ -91,6 +98,7 @@ public class ItemStackMapTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -99,6 +107,7 @@ public class ItemStackMapTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             MapMeta meta = (MapMeta) cleanStack.getItemMeta();
                             meta.setScaling(false);
@@ -107,6 +116,7 @@ public class ItemStackMapTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }

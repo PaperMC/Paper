@@ -62,14 +62,17 @@ public class CraftInventoryCustom extends CraftInventory {
             this.type = InventoryType.CHEST;
         }
 
+        @Override
         public int getSize() {
             return items.size();
         }
 
+        @Override
         public ItemStack getItem(int i) {
             return items.get(i);
         }
 
+        @Override
         public ItemStack splitStack(int i, int j) {
             ItemStack stack = this.getItem(i);
             ItemStack result;
@@ -85,6 +88,7 @@ public class CraftInventoryCustom extends CraftInventory {
             return result;
         }
 
+        @Override
         public ItemStack splitWithoutUpdate(int i) {
             ItemStack stack = this.getItem(i);
             ItemStack result;
@@ -99,6 +103,7 @@ public class CraftInventoryCustom extends CraftInventory {
             return result;
         }
 
+        @Override
         public void setItem(int i, ItemStack itemstack) {
             items.set(i, itemstack);
             if (itemstack != ItemStack.a && this.getMaxStackSize() > 0 && itemstack.getCount() > this.getMaxStackSize()) {
@@ -106,32 +111,40 @@ public class CraftInventoryCustom extends CraftInventory {
             }
         }
 
+        @Override
         public int getMaxStackSize() {
             return maxStack;
         }
 
+        @Override
         public void setMaxStackSize(int size) {
             maxStack = size;
         }
 
+        @Override
         public void update() {}
 
+        @Override
         public boolean a(EntityHuman entityhuman) {
             return true;
         }
 
+        @Override
         public List<ItemStack> getContents() {
             return items;
         }
 
+        @Override
         public void onOpen(CraftHumanEntity who) {
             viewers.add(who);
         }
 
+        @Override
         public void onClose(CraftHumanEntity who) {
             viewers.remove(who);
         }
 
+        @Override
         public List<HumanEntity> getViewers() {
             return viewers;
         }
@@ -140,10 +153,12 @@ public class CraftInventoryCustom extends CraftInventory {
             return type;
         }
 
+        @Override
         public InventoryHolder getOwner() {
             return owner;
         }
 
+        @Override
         public boolean b(int i, ItemStack itemstack) {
             return true;
         }

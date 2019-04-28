@@ -21,6 +21,7 @@ public class CraftSkeleton extends CraftMonster implements Skeleton {
         return "CraftSkeleton";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SKELETON;
     }

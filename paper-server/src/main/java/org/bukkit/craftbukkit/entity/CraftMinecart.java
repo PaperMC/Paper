@@ -16,44 +16,54 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         super(server, entity);
     }
 
+    @Override
     public void setDamage(double damage) {
         getHandle().setDamage((float) damage);
     }
 
+    @Override
     public double getDamage() {
         return getHandle().getDamage();
     }
 
+    @Override
     public double getMaxSpeed() {
         return getHandle().maxSpeed;
     }
 
+    @Override
     public void setMaxSpeed(double speed) {
         if (speed >= 0D) {
             getHandle().maxSpeed = speed;
         }
     }
 
+    @Override
     public boolean isSlowWhenEmpty() {
         return getHandle().slowWhenEmpty;
     }
 
+    @Override
     public void setSlowWhenEmpty(boolean slow) {
         getHandle().slowWhenEmpty = slow;
     }
 
+    @Override
     public Vector getFlyingVelocityMod() {
         return getHandle().getFlyingVelocityMod();
     }
 
+    @Override
     public void setFlyingVelocityMod(Vector flying) {
         getHandle().setFlyingVelocityMod(flying);
     }
 
+    @Override
     public Vector getDerailedVelocityMod() {
         return getHandle().getDerailedVelocityMod();
     }
 
+    @Override
     public void setDerailedVelocityMod(Vector derailed) {
         getHandle().setDerailedVelocityMod(derailed);
     }
@@ -63,6 +73,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         return (EntityMinecartAbstract) entity;
     }
 
+    @Override
     public void setDisplayBlock(MaterialData material) {
         if(material != null) {
             IBlockData block = CraftMagicNumbers.getBlock(material);
@@ -86,6 +97,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         }
     }
 
+    @Override
     public MaterialData getDisplayBlock() {
         IBlockData blockData = getHandle().getDisplayBlock();
         return CraftMagicNumbers.getMaterial(blockData);
@@ -97,10 +109,12 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         return CraftBlockData.fromData(blockData);
     }
 
+    @Override
     public void setDisplayBlockOffset(int offset) {
         getHandle().setDisplayBlockOffset(offset);
     }
 
+    @Override
     public int getDisplayBlockOffset() {
         return getHandle().getDisplayBlockOffset();
     }

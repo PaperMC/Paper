@@ -21,6 +21,7 @@ public class TerminalConsoleWriterThread extends Thread {
         this.setDaemon(true);
     }
 
+    @Override
     public void run() {
         String message;
 

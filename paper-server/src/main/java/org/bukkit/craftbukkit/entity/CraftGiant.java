@@ -21,6 +21,7 @@ public class CraftGiant extends CraftMonster implements Giant {
         return "CraftGiant";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.GIANT;
     }

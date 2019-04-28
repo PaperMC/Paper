@@ -24,18 +24,22 @@ public class CraftZombie extends CraftMonster implements Zombie {
         return "CraftZombie";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.ZOMBIE;
     }
 
+    @Override
     public boolean isBaby() {
         return getHandle().isBaby();
     }
 
+    @Override
     public void setBaby(boolean flag) {
         getHandle().setBaby(flag);
     }
 
+    @Override
     public boolean isVillager() {
         return getHandle() instanceof EntityZombieVillager;
     }

@@ -29,6 +29,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                             meta.setColor(Color.FUCHSIA);
@@ -37,6 +38,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -45,6 +47,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                             meta.setColor(Color.GRAY);
@@ -53,6 +56,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -63,6 +67,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                             meta.setColor(Color.MAROON);
@@ -71,6 +76,7 @@ public class ItemStackLeatherTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                             meta.setColor(Color.ORANGE);

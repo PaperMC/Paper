@@ -13,10 +13,12 @@ public class CraftCreeper extends CraftMonster implements Creeper {
         super(server, entity);
     }
 
+    @Override
     public boolean isPowered() {
         return getHandle().isPowered();
     }
 
+    @Override
     public void setPowered(boolean powered) {
         CraftServer server = this.server;
         Creeper entity = (Creeper) this.getHandle().getBukkitEntity();
@@ -72,6 +74,7 @@ public class CraftCreeper extends CraftMonster implements Creeper {
         return "CraftCreeper";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.CREEPER;
     }

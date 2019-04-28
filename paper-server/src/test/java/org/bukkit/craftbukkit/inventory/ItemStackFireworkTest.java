@@ -31,6 +31,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).build());
@@ -39,6 +40,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.BLACK).build());
@@ -51,6 +53,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).with(Type.CREEPER).build());
@@ -59,6 +62,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).with(Type.BURST).build());
@@ -70,6 +74,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFade(Color.BLUE).build());
@@ -78,6 +83,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFade(Color.RED).build());
@@ -89,6 +95,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withFlicker().build());
@@ -97,6 +104,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -107,6 +115,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.addEffect(FireworkEffect.builder().withColor(Color.WHITE).withTrail().build());
@@ -115,6 +124,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }
@@ -125,6 +135,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
             Arrays.asList(
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.setPower(127);
@@ -133,6 +144,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.setPower(100);
@@ -144,6 +156,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.setPower(42);
@@ -152,6 +165,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             cleanStack.setItemMeta(meta);
@@ -162,6 +176,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                 },
                 new Object[] {
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             FireworkMeta meta = (FireworkMeta) cleanStack.getItemMeta();
                             meta.setPower(10);
@@ -170,6 +185,7 @@ public class ItemStackFireworkTest extends ItemStackTest {
                         }
                     },
                     new Operator() {
+                        @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             return cleanStack;
                         }

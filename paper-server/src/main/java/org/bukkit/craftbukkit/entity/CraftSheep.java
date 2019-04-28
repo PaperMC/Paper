@@ -12,18 +12,22 @@ public class CraftSheep extends CraftAnimals implements Sheep {
         super(server, entity);
     }
 
+    @Override
     public DyeColor getColor() {
         return DyeColor.getByWoolData((byte) getHandle().getColor().getColorIndex());
     }
 
+    @Override
     public void setColor(DyeColor color) {
         getHandle().setColor(EnumColor.fromColorIndex(color.getWoolData()));
     }
 
+    @Override
     public boolean isSheared() {
         return getHandle().isSheared();
     }
 
+    @Override
     public void setSheared(boolean flag) {
         getHandle().setSheared(flag);
     }
@@ -38,6 +42,7 @@ public class CraftSheep extends CraftAnimals implements Sheep {
         return "CraftSheep";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.SHEEP;
     }

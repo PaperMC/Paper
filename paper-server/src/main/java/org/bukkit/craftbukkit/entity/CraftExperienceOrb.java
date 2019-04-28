@@ -10,10 +10,12 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
         super(server, entity);
     }
 
+    @Override
     public int getExperience() {
         return getHandle().value;
     }
 
+    @Override
     public void setExperience(int value) {
         getHandle().value = value;
     }
@@ -28,6 +30,7 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
         return "CraftExperienceOrb";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.EXPERIENCE_ORB;
     }

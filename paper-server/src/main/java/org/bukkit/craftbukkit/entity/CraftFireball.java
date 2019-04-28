@@ -14,26 +14,32 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         super(server, entity);
     }
 
+    @Override
     public float getYield() {
         return getHandle().bukkitYield;
     }
 
+    @Override
     public boolean isIncendiary() {
         return getHandle().isIncendiary;
     }
 
+    @Override
     public void setIsIncendiary(boolean isIncendiary) {
         getHandle().isIncendiary = isIncendiary;
     }
 
+    @Override
     public void setYield(float yield) {
         getHandle().bukkitYield = yield;
     }
 
+    @Override
     public ProjectileSource getShooter() {
         return getHandle().projectileSource;
     }
 
+    @Override
     public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
             getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
@@ -43,10 +49,12 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         getHandle().projectileSource = shooter;
     }
 
+    @Override
     public Vector getDirection() {
         return new Vector(getHandle().dirX, getHandle().dirY, getHandle().dirZ);
     }
 
+    @Override
     public void setDirection(Vector direction) {
         Validate.notNull(direction, "Direction can not be null");
         double x = direction.getX();
@@ -68,6 +76,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         return "CraftFireball";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.UNKNOWN;
     }

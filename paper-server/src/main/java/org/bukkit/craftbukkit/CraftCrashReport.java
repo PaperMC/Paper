@@ -13,6 +13,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 
 public class CraftCrashReport implements CrashReportCallable<Object> {
 
+    @Override
     public Object call() throws Exception {
         StringWriter value = new StringWriter();
         try {

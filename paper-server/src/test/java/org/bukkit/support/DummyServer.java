@@ -26,6 +26,7 @@ public class DummyServer implements InvocationHandler {
             methods.put(
                     Server.class.getMethod("getItemFactory"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return CraftItemFactory.instance();
                         }
@@ -34,6 +35,7 @@ public class DummyServer implements InvocationHandler {
             methods.put(
                     Server.class.getMethod("getName"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return DummyServer.class.getName();
                         }
@@ -42,6 +44,7 @@ public class DummyServer implements InvocationHandler {
             methods.put(
                     Server.class.getMethod("getVersion"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return DummyServer.class.getPackage().getImplementationVersion();
                         }
@@ -50,6 +53,7 @@ public class DummyServer implements InvocationHandler {
             methods.put(
                     Server.class.getMethod("getBukkitVersion"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return Versioning.getBukkitVersion();
                         }
@@ -59,6 +63,7 @@ public class DummyServer implements InvocationHandler {
                     Server.class.getMethod("getLogger"),
                     new MethodHandler() {
                         final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return logger;
                         }
@@ -67,6 +72,7 @@ public class DummyServer implements InvocationHandler {
             methods.put(
                     Server.class.getMethod("getUnsafe"),
                     new MethodHandler() {
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return CraftMagicNumbers.INSTANCE;
                         }
@@ -76,6 +82,7 @@ public class DummyServer implements InvocationHandler {
                     Server.class.getMethod("createBlockData", Material.class),
                     new MethodHandler() {
                         final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
+                        @Override
                         public Object handle(DummyServer server, Object[] args) {
                             return CraftBlockData.newData((Material) args[0], null);
                         }
@@ -100,6 +107,7 @@ public class DummyServer implements InvocationHandler {
 
     private DummyServer() {};
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         MethodHandler handler = methods.get(method);
         if (handler != null) {

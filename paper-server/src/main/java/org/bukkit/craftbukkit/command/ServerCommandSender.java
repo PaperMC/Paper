@@ -16,46 +16,57 @@ public abstract class ServerCommandSender implements CommandSender {
     public ServerCommandSender() {
     }
 
+    @Override
     public boolean isPermissionSet(String name) {
         return perm.isPermissionSet(name);
     }
 
+    @Override
     public boolean isPermissionSet(Permission perm) {
         return this.perm.isPermissionSet(perm);
     }
 
+    @Override
     public boolean hasPermission(String name) {
         return perm.hasPermission(name);
     }
 
+    @Override
     public boolean hasPermission(Permission perm) {
         return this.perm.hasPermission(perm);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
         return perm.addAttachment(plugin, name, value);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
         return perm.addAttachment(plugin);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
         return perm.addAttachment(plugin, name, value, ticks);
     }
 
+    @Override
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
         return perm.addAttachment(plugin, ticks);
     }
 
+    @Override
     public void removeAttachment(PermissionAttachment attachment) {
         perm.removeAttachment(attachment);
     }
 
+    @Override
     public void recalculatePermissions() {
         perm.recalculatePermissions();
     }
 
+    @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
         return perm.getEffectivePermissions();
     }
@@ -64,6 +75,7 @@ public abstract class ServerCommandSender implements CommandSender {
         return false;
     }
 
+    @Override
     public Server getServer() {
         return Bukkit.getServer();
     }

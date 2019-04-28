@@ -1847,6 +1847,7 @@ public final class CraftServer implements Server {
         }
     }
 
+    @Override
     public LootTable getLootTable(NamespacedKey key) {
         Validate.notNull(key, "NamespacedKey cannot be null");
 

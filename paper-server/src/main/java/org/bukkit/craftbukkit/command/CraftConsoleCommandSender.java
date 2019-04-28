@@ -18,48 +18,59 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
         super();
     }
 
+    @Override
     public void sendMessage(String message) {
         sendRawMessage(message);
     }
 
+    @Override
     public void sendRawMessage(String message) {
         System.out.println(ChatColor.stripColor(message));
     }
 
+    @Override
     public void sendMessage(String[] messages) {
         for (String message : messages) {
             sendMessage(message);
         }
     }
 
+    @Override
     public String getName() {
         return "CONSOLE";
     }
 
+    @Override
     public boolean isOp() {
         return true;
     }
 
+    @Override
     public void setOp(boolean value) {
         throw new UnsupportedOperationException("Cannot change operator status of server console");
     }
 
+    @Override
     public boolean beginConversation(Conversation conversation) {
         return conversationTracker.beginConversation(conversation);
     }
 
+    @Override
     public void abandonConversation(Conversation conversation) {
         conversationTracker.abandonConversation(conversation, new ConversationAbandonedEvent(conversation, new ManuallyAbandonedConversationCanceller()));
     }
 
+    @Override
     public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
         conversationTracker.abandonConversation(conversation, details);
     }
 
+    @Override
     public void acceptConversationInput(String input) {
         conversationTracker.acceptConversationInput(input);
     }
 
+    @Override
     public boolean isConversing() {
         return conversationTracker.isConversing();
     }

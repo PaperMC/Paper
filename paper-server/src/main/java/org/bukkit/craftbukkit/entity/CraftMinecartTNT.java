@@ -15,6 +15,7 @@ final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMinecart 
         return "CraftMinecartTNT";
     }
 
+    @Override
     public EntityType getType() {
         return EntityType.MINECART_TNT;
     }

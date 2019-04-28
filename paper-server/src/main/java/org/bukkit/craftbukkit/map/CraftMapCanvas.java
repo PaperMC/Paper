@@ -20,18 +20,22 @@ public class CraftMapCanvas implements MapCanvas {
         Arrays.fill(buffer, (byte) -1);
     }
 
+    @Override
     public CraftMapView getMapView() {
         return mapView;
     }
 
+    @Override
     public MapCursorCollection getCursors() {
         return cursors;
     }
 
+    @Override
     public void setCursors(MapCursorCollection cursors) {
         this.cursors = cursors;
     }
 
+    @Override
     public void setPixel(int x, int y, byte color) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return;
@@ -41,12 +45,14 @@ public class CraftMapCanvas implements MapCanvas {
         }
     }
 
+    @Override
     public byte getPixel(int x, int y) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return 0;
         return buffer[y * 128 + x];
     }
 
+    @Override
     public byte getBasePixel(int x, int y) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return 0;
@@ -61,6 +67,7 @@ public class CraftMapCanvas implements MapCanvas {
         return buffer;
     }
 
+    @Override
     public void drawImage(int x, int y, Image image) {
         byte[] bytes = MapPalette.imageToBytes(image);
         for (int x2 = 0; x2 < image.getWidth(null); ++x2) {
@@ -70,6 +77,7 @@ public class CraftMapCanvas implements MapCanvas {
         }
     }
 
+    @Override
     public void drawText(int x, int y, MapFont font, String text) {
         int xStart = x;
         byte color = MapPalette.DARK_GRAY;
