@@ -543,7 +543,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
         }
         final Location other = (Location) obj;
 
-        if (this.world != other.world && (this.world == null || !this.world.equals(other.world))) {
+        World world = (this.world == null) ? null : this.world.get();
+        World otherWorld = (other.world == null) ? null : other.world.get();
+        if (world != otherWorld && (world == null || !world.equals(otherWorld))) {
             return false;
         }
         if (Double.doubleToLongBits(this.x) != Double.doubleToLongBits(other.x)) {
@@ -568,7 +570,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
     public int hashCode() {
         int hash = 3;
 
-        World world = (this.world == null) ? null : getWorld();
+        World world = (this.world == null) ? null : this.world.get();
         hash = 19 * hash + (world != null ? world.hashCode() : 0);
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
@@ -580,7 +582,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
 
     @Override
     public String toString() {
-        World world = (this.world == null) ? null : getWorld();
+        World world = (this.world == null) ? null : this.world.get();
         return "Location{" + "world=" + world + ",x=" + x + ",y=" + y + ",z=" + z + ",pitch=" + pitch + ",yaw=" + yaw + '}';
     }
 

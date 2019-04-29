@@ -176,12 +176,21 @@ public class LocationTest {
         assertThat(vector.getZ(), is(closeTo(z, delta)));
     }
 
+    @Test
+    public void testEquals() {
+        Location first = getLocation().add(getVector());
+        Location second = getLocation().add(getVector());
+
+        assertThat(first.hashCode(), is(second.hashCode()));
+        assertThat(first, is(second));
+    }
+
     private Vector getVector() {
         return new Vector(x, y, z);
     }
 
     private static Location getEmptyLocation() {
-        return new Location(null, 0, 0, 0);
+        return new Location(TestWorld.INSTANCE, 0, 0, 0);
     }
 
     private Location getLocation() {
