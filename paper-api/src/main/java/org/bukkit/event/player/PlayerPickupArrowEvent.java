@@ -1,6 +1,6 @@
 package org.bukkit.event.player;
 
-import org.bukkit.entity.Arrow;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -10,9 +10,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerPickupArrowEvent extends PlayerPickupItemEvent {
 
-    private final Arrow arrow;
+    private final AbstractArrow arrow;
 
-    public PlayerPickupArrowEvent(@NotNull final Player player, @NotNull final Item item, @NotNull final Arrow arrow) {
+    public PlayerPickupArrowEvent(@NotNull final Player player, @NotNull final Item item, @NotNull final AbstractArrow arrow) {
         super(player, item, 0);
         this.arrow = arrow;
     }
@@ -23,7 +23,7 @@ public class PlayerPickupArrowEvent extends PlayerPickupItemEvent {
      * @return The arrow being picked up
      */
     @NotNull
-    public Arrow getArrow() {
+    public AbstractArrow getArrow() {
         return arrow;
     }
 }
