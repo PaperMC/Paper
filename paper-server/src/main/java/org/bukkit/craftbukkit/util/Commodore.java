@@ -235,12 +235,6 @@ public class Commodore
                             super.visitMethodInsn( opcode, owner, name, "(I)Lorg/bukkit/map/MapView;", itf );
                             return;
                         }
-                        if ( owner.equals( "org/bukkit/World" ) && name.equals( "spawnArrow" ) )
-                        {
-                            // Should be same size on stack so just call other method
-                            super.visitMethodInsn( opcode, owner, name, desc.replace( "Lorg/bukkit/entity/Arrow;", "Lorg/bukkit/entity/AbstractArrow;" ), itf );
-                            return;
-                        }
 
                         if ( modern )
                         {
