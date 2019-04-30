@@ -6,12 +6,12 @@ import net.minecraft.server.EntityArrow;
 import org.apache.commons.lang.Validate;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Arrow;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.projectiles.ProjectileSource;
 
-public class CraftArrow extends AbstractProjectile implements Arrow {
+public class CraftArrow extends AbstractProjectile implements AbstractArrow {
 
     public CraftArrow(CraftServer server, EntityArrow entity) {
         super(server, entity);
