@@ -128,7 +128,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
             if (hasPages()) {
                 NBTTagList list = new NBTTagList();
                 for (IChatBaseComponent page : pages) {
-                    list.add(new NBTTagString(CraftChatMessage.fromComponent(page)));
+                    list.add(new NBTTagString(page == null ? "" : page.getString()));
                 }
                 itemData.set(BOOK_PAGES.NBT, list);
             }
