@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a spectral arrow.
  */
-public interface SpectralArrow extends Arrow {
+public interface SpectralArrow extends AbstractArrow {
 
     /**
      * Returns the amount of time that this arrow will apply

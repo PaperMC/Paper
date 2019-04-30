@@ -65,7 +65,7 @@ public enum EntityType implements Keyed {
     /**
      * An arrow projectile; may get stuck in the ground.
      */
-    ARROW("arrow", TippedArrow.class, 10),
+    ARROW("arrow", Arrow.class, 10),
     /**
      * A flying snowball.
      */
