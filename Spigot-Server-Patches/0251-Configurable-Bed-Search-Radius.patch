@@ -1,0 +1,105 @@
+From 123cf353a72db41320695ad0ca68af2be035beb5 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 15:22:06 -0400
+Subject: [PATCH] Configurable Bed Search Radius
+
+Allows you to increase how far to check for a safe place to respawn
+a player near their bed, allowing a better chance to respawn the
+player at their bed should it of became obstructed.
+
+Defaults to vanilla 1.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 3294fbbea..83e54cb90 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -375,4 +375,15 @@ public class PaperWorldConfig {
+     private void scanForLegacyEnderDragon() {
+         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+     }
++
++    public int bedSearchRadius = 1;
++    private void bedSearchRadius() {
++        bedSearchRadius = getInt("bed-search-radius", 1);
++        if (bedSearchRadius < 1) {
++            bedSearchRadius = 1;
++        }
++        if (bedSearchRadius > 1) {
++            log("Bed Search Radius: " + bedSearchRadius);
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
+index 2a451025f..75331c986 100644
+--- a/src/main/java/net/minecraft/server/BlockBed.java
++++ b/src/main/java/net/minecraft/server/BlockBed.java
+@@ -171,6 +171,58 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+ 
+     public static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int i) {
+         EnumDirection enumdirection = (EnumDirection) iworldreader.getType(blockposition).get(BlockBed.FACING);
++        // Paper -  configurable bed search radius
++        World world = (World) iworldreader;
++        int radius = world.paperConfig.bedSearchRadius;
++        if (radius > 0) {
++            for (int r = 1; r <= radius; r++) {
++                int x = -r;
++                int z = r;
++
++                // Iterates the edge of half of the box; then negates for other half.
++                while (x <= r && z > -r) {
++                    for (int y = -1; y <= 1; y++) {
++                        BlockPosition pos = blockposition.add(x, y, z);
++                        Optional<Vec3D> vector;
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
++                        }
++                        pos = blockposition.add(-x, y, -z);
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
++                        }
++
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
++                        }
++
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
++                        }
++                    }
++                    if (x < r) {
++                        x++;
++                    } else {
++                        z--;
++                    }
++                }
++            }
++
++            return Optional.empty();
++        }
++        // Paper end
+         int j = blockposition.getX();
+         int k = blockposition.getY();
+         int l = blockposition.getZ();
+@@ -200,6 +252,7 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+         return Optional.empty();
+     }
+ 
++    protected static Optional<Vec3D> isSafeRespawn(EntityTypes<?> entityTypes, IWorldReader iworldreader, BlockPosition blockPosition) { return a(entityTypes, iworldreader, blockPosition); } // Paper -- obfhelper
+     protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
+         VoxelShape voxelshape = iworldreader.getType(blockposition).getCollisionShape(iworldreader, blockposition);
+ 
+-- 
+2.21.0
+
