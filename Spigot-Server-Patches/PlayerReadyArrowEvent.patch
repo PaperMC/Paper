@@ -6,73 +6,35 @@ Subject: [PATCH] PlayerReadyArrowEvent
 Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
-diff --git a/src/main/java/net/minecraft/server/ItemBow.java b/src/main/java/net/minecraft/server/ItemBow.java
-index 52bc68e6a6..f8dbc3c400 100644
---- a/src/main/java/net/minecraft/server/ItemBow.java
-+++ b/src/main/java/net/minecraft/server/ItemBow.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server;
- 
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+
- public class ItemBow extends Item {
- 
-     public ItemBow(Item.Info item_info) {
-@@ -0,0 +0,0 @@ public class ItemBow extends Item {
-         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 27bf83f37..3031d73f5 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
+         return (EntitySize) EntityHuman.b.getOrDefault(entitypose, EntityHuman.bs);
      }
  
--    private ItemStack a(EntityHuman entityhuman) {
--        if (this.e_(entityhuman.b(EnumHand.OFF_HAND))) {
-+    private ItemStack a(EntityHuman entityhuman, ItemStack bow) { // Paper
-+        if (this.e_(entityhuman, bow, entityhuman.b(EnumHand.OFF_HAND))) { // Paper
-             return entityhuman.b(EnumHand.OFF_HAND);
--        } else if (this.e_(entityhuman.b(EnumHand.MAIN_HAND))) {
-+        } else if (this.e_(entityhuman, bow, entityhuman.b(EnumHand.MAIN_HAND))) {
-             return entityhuman.b(EnumHand.MAIN_HAND);
-         } else {
-             for (int i = 0; i < entityhuman.inventory.getSize(); ++i) {
-                 ItemStack itemstack = entityhuman.inventory.getItem(i);
- 
--                if (this.e_(itemstack)) {
-+                if (this.e_(entityhuman, bow, itemstack)) {
-                     return itemstack;
-                 }
-             }
-@@ -0,0 +0,0 @@ public class ItemBow extends Item {
-         }
-     }
- 
--    protected boolean e_(ItemStack itemstack) {
--        return itemstack.getItem() instanceof ItemArrow;
 +    // Paper start
-+    protected boolean e_(EntityHuman player, ItemStack bow, ItemStack itemstack) {
-+        return itemstack.getItem() instanceof ItemArrow && (
-+                !(player instanceof EntityPlayer) ||
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++        return !(this instanceof EntityPlayer) ||
 +                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
-+                        ((EntityPlayer) player).getBukkitEntity(),
-+                        CraftItemStack.asCraftMirror(bow),
-+                        CraftItemStack.asCraftMirror(itemstack)
-+                    ).callEvent());
++                    ((EntityPlayer) this).getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
++                ).callEvent();
 +        // Paper end
-     }
++    }
++
+     @Override
+     public ItemStack f(ItemStack itemstack) {
+         if (!(itemstack.getItem() instanceof ItemProjectileWeapon)) {
+@@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
+                 for (int i = 0; i < this.inventory.getSize(); ++i) {
+                     ItemStack itemstack2 = this.inventory.getItem(i);
  
-     public void a(ItemStack itemstack, World world, EntityLiving entityliving, int i) {
-         if (entityliving instanceof EntityHuman) {
-             EntityHuman entityhuman = (EntityHuman) entityliving;
-             boolean flag = entityhuman.abilities.canInstantlyBuild || EnchantmentManager.getEnchantmentLevel(Enchantments.ARROW_INFINITE, itemstack) > 0;
--            ItemStack itemstack1 = this.a(entityhuman);
-+            ItemStack itemstack1 = this.a(entityhuman, itemstack); // Paper
- 
-             if (!itemstack1.isEmpty() || flag) {
-                 if (itemstack1.isEmpty()) {
-@@ -0,0 +0,0 @@ public class ItemBow extends Item {
- 
-     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
-         ItemStack itemstack = entityhuman.b(enumhand);
--        boolean flag = !this.a(entityhuman).isEmpty();
-+        boolean flag = !this.a(entityhuman, itemstack).isEmpty(); // Paper
- 
-         if (!entityhuman.abilities.canInstantlyBuild && !flag) {
-             return flag ? new InteractionResultWrapper<>(EnumInteractionResult.PASS, itemstack) : new InteractionResultWrapper<>(EnumInteractionResult.FAIL, itemstack);
+-                    if (predicate.test(itemstack2)) {
++                    if (predicate.test(itemstack2) && tryReadyArrow(itemstack, itemstack2)) { // Paper
+                         return itemstack2;
+                     }
+                 }
 --

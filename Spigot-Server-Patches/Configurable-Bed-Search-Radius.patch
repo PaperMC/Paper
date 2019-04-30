@@ -10,7 +10,7 @@ player at their bed should it of became obstructed.
 Defaults to vanilla 1.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index aa2be2ede6..f5b2e88f3b 100644
+index 3294fbbea..83e54cb90 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -30,74 +30,74 @@ index aa2be2ede6..f5b2e88f3b 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
-index 06f627002c..d81a2db6cd 100644
+index 2a451025f..75331c986 100644
 --- a/src/main/java/net/minecraft/server/BlockBed.java
 +++ b/src/main/java/net/minecraft/server/BlockBed.java
 @@ -0,0 +0,0 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
-     @Nullable
-     public static BlockPosition a(IBlockAccess iblockaccess, BlockPosition blockposition, int i) {
-         EnumDirection enumdirection = (EnumDirection) iblockaccess.getType(blockposition).get(BlockBed.FACING);
-+        // Paper - replace whole method
-+        World world = (World) iblockaccess;
+ 
+     public static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int i) {
+         EnumDirection enumdirection = (EnumDirection) iworldreader.getType(blockposition).get(BlockBed.FACING);
++        // Paper -  configurable bed search radius
++        World world = (World) iworldreader;
 +        int radius = world.paperConfig.bedSearchRadius;
-+        for (int r = 1; r <= radius; r++) {
-+            int x = -r;
-+            int z = r;
++        if (radius > 0) {
++            for (int r = 1; r <= radius; r++) {
++                int x = -r;
++                int z = r;
 +
-+            // Iterates the edge of half of the box; then negates for other half.
-+            while (x <= r && z > -r) {
-+                for (int y = -1; y <= 1; y++) {
-+                    BlockPosition pos = blockposition.add(x, y, z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
++                // Iterates the edge of half of the box; then negates for other half.
++                while (x <= r && z > -r) {
++                    for (int y = -1; y <= 1; y++) {
++                        BlockPosition pos = blockposition.add(x, y, z);
++                        Optional<Vec3D> vector;
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
 +                        }
-+                    }
-+                    pos = blockposition.add(-x, y, -z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
++                        pos = blockposition.add(-x, y, -z);
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
 +                        }
-+                    }
 +
-+                    pos = blockposition.add(enumdirection.getAdjacentX() + x, y, enumdirection.getAdjacentZ() + z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
 +                        }
-+                    }
 +
-+                    pos = blockposition.add(enumdirection.getAdjacentX() - x, y, enumdirection.getAdjacentZ() - z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
++                        vector = isSafeRespawn(entitytypes, world, pos);
++                        if (vector.isPresent()) {
++                            if (i-- <= 0) {
++                                return vector;
++                            }
 +                        }
 +                    }
-+                }
-+                if (x < r) {
-+                    x++;
-+                } else {
-+                    z--;
++                    if (x < r) {
++                        x++;
++                    } else {
++                        z--;
++                    }
 +                }
 +            }
-+        }
 +
-+        return null; /* // Paper comment out
++            return Optional.empty();
++        }
++        // Paper end
          int j = blockposition.getX();
          int k = blockposition.getY();
          int l = blockposition.getZ();
 @@ -0,0 +0,0 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
-             }
-         }
- 
--        return null;
-+        return null;*/ // Paper
+         return Optional.empty();
      }
  
-+    protected static boolean isSafeRespawn(IBlockAccess iblockaccess, BlockPosition blockposition) { // Paper - OBFHELPER + behavior improvement
-+        return a(iblockaccess, blockposition) && iblockaccess.getType(blockposition.down()).getMaterial().isBuildable(); // Paper - ensure solid block
-+    }
-     protected static boolean a(IBlockAccess iblockaccess, BlockPosition blockposition) {
-         return iblockaccess.getType(blockposition.down()).q() && !iblockaccess.getType(blockposition).getMaterial().isBuildable() && !iblockaccess.getType(blockposition.up()).getMaterial().isBuildable();
-     }
++    protected static Optional<Vec3D> isSafeRespawn(EntityTypes<?> entityTypes, IWorldReader iworldreader, BlockPosition blockPosition) { return a(entityTypes, iworldreader, blockPosition); } // Paper -- obfhelper
+     protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
+         VoxelShape voxelshape = iworldreader.getType(blockposition).getCollisionShape(iworldreader, blockposition);
+ 
 --

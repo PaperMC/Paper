@@ -36,7 +36,7 @@ This change will result in some major changes to fishing formulas.
 I would love to see this change in Vanilla, so Mojang please pull :)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index b85cd10437..d42853d14c 100644
+index 7fba61a6d..c8f9c45e5 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
@@ -53,54 +53,81 @@ index b85cd10437..d42853d14c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/LootSelectorEntry.java b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-index 3e313bba7c..80f9f9a252 100644
+index 929053491..62cac814d 100644
 --- a/src/main/java/net/minecraft/server/LootSelectorEntry.java
 +++ b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-@@ -0,0 +0,0 @@ import java.util.Random;
+@@ -0,0 +0,0 @@ import org.apache.commons.lang3.ArrayUtils;
  
- public abstract class LootSelectorEntry {
+ public abstract class LootSelectorEntry extends LootEntryAbstract {
  
--    protected final int c;
--    protected final int d;
-+    protected final int c; public int getWeight() { return c; } // Paper - OBFHELPER
-+    protected final int d; public int getQuality() { return d; } // Paper - OBFHELPER
-     protected final LootItemCondition[] e;
+-    protected final int e;
+-    protected final int f;
++    protected final int e; public int getWeight() { return e; } // Paper - OBFHELPER
++    protected final int f; public int getQuality() { return f; } // Paper - OBFHELPER
+     protected final LootItemFunction[] g;
+     private final BiFunction<ItemStack, LootTableInfo, ItemStack> c;
+     private final LootEntry h = new LootSelectorEntry.c() {
+@@ -0,0 +0,0 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+         @Override
+         public T b(LootItemFunction.a lootitemfunction_a) {
+             this.c.add(lootitemfunction_a.b());
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix -- move to mcdev fixes
+         }
  
-     protected LootSelectorEntry(int i, int j, LootItemCondition[] alootitemcondition) {
-@@ -0,0 +0,0 @@ public abstract class LootSelectorEntry {
+         protected LootItemFunction[] a() {
+@@ -0,0 +0,0 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+ 
+         public T a(int i) {
+             this.a = i;
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix -- move to mcdev fixes
+         }
+ 
+         public T b(int i) {
+             this.b = i;
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix -- MOVE UP
+         }
      }
  
-     public int a(float f) {
--        return Math.max(MathHelper.d((float) this.c + (float) this.d * f), 0);
-+        // Paper start - Offer an alternative loot formula to refactor how luck bonus applies
-+        // SEE: https://luckformula.emc.gs for details and data
-+        if (lastLuck != null && lastLuck == f) {
+     public abstract class c implements LootEntry {
+ 
+-        protected c() {}
++        protected c() {
++        }
+ 
+         @Override
+         public int a(float f) {
+-            return Math.max(MathHelper.d((float) LootSelectorEntry.this.e + (float) LootSelectorEntry.this.f * f), 0);
++            // Paper start - Offer an alternative loot formula to refactor how luck bonus applies
++            // SEE: https://luckformula.emc.gs for details and data
++            if (lastLuck != null && lastLuck == f) {
++                return lastWeight;
++            }
++            // This is vanilla
++            float qualityModifer = (float) getQuality() * f;
++            double baseWeight = (getWeight() + qualityModifer);
++            if (com.destroystokyo.paper.PaperConfig.useAlternativeLuckFormula) {
++                // Random boost to avoid losing precision in the final int cast on return
++                final int weightBoost = 100;
++                baseWeight *= weightBoost;
++                // If we have vanilla 1, bump that down to 0 so nothing is is impacted
++                // vanilla 3 = 300, 200 basis = impact 2%
++                // =($B2*(($B2-100)/100/100))
++                double impacted = baseWeight * ((baseWeight - weightBoost) / weightBoost / 100);
++                // =($B$7/100)
++                float luckModifier = Math.min(100, f * 10) / 100;
++                // =B2 - (C2 *($B$7/100))
++                baseWeight = Math.ceil(baseWeight - (impacted * luckModifier));
++            }
++            lastLuck = f;
++            lastWeight = (int) Math.max(0, Math.floor(baseWeight));
 +            return lastWeight;
-+        }
-+        // This is vanilla
-+        float qualityModifer = (float) this.getQuality() * f;
-+        double baseWeight = (this.getWeight() + qualityModifer);
-+        if (com.destroystokyo.paper.PaperConfig.useAlternativeLuckFormula) {
-+            // Random boost to avoid losing precision in the final int cast on return
-+            final int weightBoost = 100;
-+            baseWeight *= weightBoost;
-+            // If we have vanilla 1, bump that down to 0 so nothing is is impacted
-+            // vanilla 3 = 300, 200 basis = impact 2%
-+            // =($B2*(($B2-100)/100/100))
-+            double impacted = baseWeight * ((baseWeight - weightBoost) / weightBoost / 100);
-+            // =($B$7/100)
-+            float luckModifier = Math.min(100, f * 10) / 100;
-+            // =B2 - (C2 *($B$7/100))
-+            baseWeight = Math.ceil(baseWeight - (impacted * luckModifier));
-+        }
-+        lastLuck = f;
-+        lastWeight = (int) Math.max(0, Math.floor(baseWeight));
-+        return lastWeight;
+         }
      }
-+    private Float lastLuck = null;
-+    private int lastWeight = 0;
-+    // Paper end
- 
-     public abstract void a(Collection<ItemStack> collection, Random random, LootTableInfo loottableinfo);
- 
++        private Float lastLuck = null;
++        private int lastWeight = 0;
++        // Paper end
+ }
 --
