@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -352,7 +353,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return Arrow entity spawned as a result of this method
      */
     @NotNull
-    public Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread);
+    public AbstractArrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread);
 
     /**
      * Creates an arrow entity of the given class at the given {@link Location}
@@ -367,7 +368,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return Arrow entity spawned as a result of this method
      */
     @NotNull
-    public <T extends Arrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
+    public <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
 
     /**
      * Creates a tree at the given {@link Location}
