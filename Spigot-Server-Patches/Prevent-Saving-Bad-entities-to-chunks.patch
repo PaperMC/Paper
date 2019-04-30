@@ -18,42 +18,46 @@ an invalid entity.
 This should reduce log occurrences of dupe uuid messages.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 2c4a4fc6b7..485bce9872 100644
+index 0fed039f3..2e9686b43 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
- 
-         Iterator iterator;
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
+         NBTTagCompound nbttagcompound4;
+         Iterator iterator1;
  
 +        java.util.List<Entity> toUpdate = new java.util.ArrayList<>(); // Paper
-         for (int j = 0; j < chunk.getEntitySlices().length; ++j) {
-             iterator = chunk.getEntitySlices()[j].iterator();
+         if (ichunkaccess.getChunkStatus().getType() == ChunkStatus.Type.LEVELCHUNK) {
+             Chunk chunk = (Chunk) ichunkaccess;
  
-             while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
-+                // Paper start
-+                if ((int)Math.floor(entity.locX) >> 4 != chunk.locX || (int)Math.floor(entity.locZ) >> 4 != chunk.locZ) {
-+                    LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
-+                    toUpdate.add(entity);
-+                    continue;
-+                }
-+                if (entity.dead) {
-+                    continue;
-+                }
-+                // Paper end
-                 NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
  
-                 if (entity.d(nbttagcompound1)) {
-@@ -0,0 +0,0 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+                 while (iterator2.hasNext()) {
+                     Entity entity = (Entity) iterator2.next();
++                    // Paper start
++                    if ((int)Math.floor(entity.locX) >> 4 != chunk.getPos().x || (int)Math.floor(entity.locZ) >> 4 != chunk.getPos().z) {
++                        LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
++                        toUpdate.add(entity);
++                        continue;
++                    }
++                    if (entity.dead) {
++                        continue;
++                    }
++                    // Paper end
+ 
+                     nbttagcompound4 = new NBTTagCompound();
+                     if (entity.d(nbttagcompound4)) {
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
+                     }
                  }
              }
-         }
-+        // Paper start - move entities to the correct chunk
-+        for (Entity entity : toUpdate) {
-+            world.entityJoinedWorld(entity, false);
-+        }
-+        // Paper end
++
++            // Paper start - move entities to the correct chunk
++            for (Entity entity : toUpdate) {
++                ((WorldServer)world).entityJoinedWorld(entity);
++            }
++            // Paper end
++
+         } else {
+             ProtoChunk protochunk = (ProtoChunk) ichunkaccess;
  
-         nbttagcompound.set("Entities", nbttaglist1);
-         NBTTagList nbttaglist2 = new NBTTagList();
 --
