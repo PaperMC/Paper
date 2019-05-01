@@ -9,6 +9,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Villager;
 import org.bukkit.loot.LootTables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -116,6 +117,18 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Statistic
      */
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
+    /**
+     * Villager profession.
+     *
+     * @see Villager.Profession
+     */
+    Registry<Villager.Profession> VILLAGER_PROFESSION = new SimpleRegistry<>(Villager.Profession.class);
+    /**
+     * Villager type.
+     *
+     * @see Villager.Type
+     */
+    Registry<Villager.Type> VILLAGER_TYPE = new SimpleRegistry<>(Villager.Type.class);
 
     /**
      * Get the object by its key.

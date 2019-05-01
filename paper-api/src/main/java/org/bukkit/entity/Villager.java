@@ -1,5 +1,8 @@
 package org.bukkit.entity;
 
+import java.util.Locale;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,10 +26,51 @@ public interface Villager extends AbstractVillager {
     public void setProfession(@NotNull Profession profession);
 
     /**
+     * Gets the current type of this villager.
+     *
+     * @return Current type.
+     */
+    @NotNull
+    public Type getVillagerType();
+
+    /**
+     * Sets the new type of this villager.
+     *
+     * @param type New type.
+     */
+    public void setVillagerType(@NotNull Type type);
+
+    /**
+     * Represents Villager type, usually corresponding to what biome they spawn
+     * in.
+     */
+    public enum Type implements Keyed {
+
+        DESERT,
+        JUNGLE,
+        PLAINS,
+        SAVANNA,
+        SNOWY,
+        SWAMP,
+        TAIGA;
+        private final NamespacedKey key;
+
+        private Type() {
+            this.key = NamespacedKey.minecraft(this.name().toLowerCase(Locale.ROOT));
+        }
+
+        @NotNull
+        @Override
+        public NamespacedKey getKey() {
+            return key;
+        }
+    }
+
+    /**
      * Represents the various different Villager professions there may be.
      * Villagers have different trading options depending on their profession,
      */
-    public enum Profession {
+    public enum Profession implements Keyed {
         NONE,
         /**
          * Armorer profession. Wears a black apron.
@@ -103,5 +147,16 @@ public interface Villager extends AbstractVillager {
          * enchanted.
          */
         WEAPONSMITH;
+        private final NamespacedKey key;
+
+        private Profession() {
+            this.key = NamespacedKey.minecraft(this.name().toLowerCase(Locale.ROOT));
+        }
+
+        @NotNull
+        @Override
+        public NamespacedKey getKey() {
+            return key;
+        }
     }
 }
