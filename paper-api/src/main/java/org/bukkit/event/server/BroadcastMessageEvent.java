@@ -4,11 +4,16 @@ import java.util.Set;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Event triggered for server broadcast messages such as from
  * {@link org.bukkit.Server#broadcast(String, String)}.
+ *
+ * <b>This event behaves similarly to {@link AsyncPlayerChatEvent} in that it
+ * should be async if fired from an async thread. Please see that event for
+ * further information.</b>
  */
 public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
 
@@ -17,7 +22,13 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
     private final Set<CommandSender> recipients;
     private boolean cancelled = false;
 
+    @Deprecated
     public BroadcastMessageEvent(@NotNull String message, @NotNull Set<CommandSender> recipients) {
+        this(false, message, recipients);
+    }
+
+    public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
+        super(isAsync);
         this.message = message;
         this.recipients = recipients;
     }
