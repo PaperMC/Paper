@@ -252,6 +252,8 @@ public final class CraftItemFactory implements ItemFactory {
           return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
+        case CROSSBOW:
+            return meta instanceof CraftMetaCrossbow ? meta : new CraftMetaCrossbow(meta);
         default:
             return new CraftMetaItem(meta);
         }

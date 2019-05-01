@@ -35,6 +35,7 @@ import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -332,6 +333,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     meta.setBodyColor(DyeColor.ORANGE);
                     meta.setPatternColor(DyeColor.BLACK);
                     meta.setPattern(TropicalFish.Pattern.DASHER);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.CROSSBOW) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CrossbowMeta meta = (CrossbowMeta) cleanStack.getItemMeta();
+                    meta.addChargedProjectile(new ItemStack(Material.ARROW));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
