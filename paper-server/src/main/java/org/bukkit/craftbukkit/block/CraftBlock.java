@@ -446,8 +446,6 @@ public class CraftBlock implements Block {
             return new CraftBed(this);
         case CONDUIT:
             return new CraftConduit(this);
-        case BARRIER:
-            return new CraftBarrel(this);
         case BARREL:
             return new CraftBarrel(this);
         case BELL:
