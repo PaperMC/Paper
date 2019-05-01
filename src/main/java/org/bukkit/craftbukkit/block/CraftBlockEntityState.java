@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.TileEntity;
@@ -24,6 +25,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         // get tile entity from block:
         CraftWorld world = (CraftWorld) this.getWorld();
         this.tileEntity = tileEntityClass.cast(world.getHandle().getTileEntity(this.getPosition()));
+        Preconditions.checkState(this.tileEntity != null, "Tile is null, asynchronous access? " + block);
 
         // copy tile entity data:
         this.snapshot = this.createSnapshot(tileEntity, world.getHandle());
