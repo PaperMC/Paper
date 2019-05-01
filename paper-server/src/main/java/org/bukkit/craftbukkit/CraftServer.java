@@ -908,7 +908,8 @@ public final class CraftServer implements Server {
 
         WorldNBTStorage sdm = new WorldNBTStorage(getWorldContainer(), name, getServer(), getHandle().getServer().dataConverterManager);
         WorldData worlddata = sdm.getWorldData();
-        WorldSettings worldSettings = null;
+        WorldSettings worldSettings;
+        // See MinecraftServer.a(String, String, long, WorldType, JsonElement)
         if (worlddata == null) {
             worldSettings = new WorldSettings(creator.seed(), EnumGamemode.getById(getDefaultGameMode().getValue()), generateStructures, hardcore, type);
             JsonElement parsedSettings = new JsonParser().parse(creator.generatorSettings());
@@ -916,8 +917,10 @@ public final class CraftServer implements Server {
                 worldSettings.setGeneratorSettings(parsedSettings.getAsJsonObject());
             }
             worlddata = new WorldData(worldSettings, name);
+        } else {
+            worlddata.a(name);
+            worldSettings = new WorldSettings(worlddata);
         }
-        worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
 
         DimensionManager actualDimension = DimensionManager.a(creator.environment().getId());
         DimensionManager internalDimension = new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.getWorldProvider(w), actualDimension.hasSkyLight());
