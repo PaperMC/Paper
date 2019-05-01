@@ -521,7 +521,7 @@ public class CraftWorld implements World {
     }
 
     @Override
-    public AbstractArrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
+    public Arrow spawnArrow(Location loc, Vector velocity, float speed, float spread) {
         return spawnArrow(loc, velocity, speed, spread, Arrow.class);
     }
 
