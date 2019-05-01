@@ -353,7 +353,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return Arrow entity spawned as a result of this method
      */
     @NotNull
-    public AbstractArrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread);
+    public Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread);
 
     /**
      * Creates an arrow entity of the given class at the given {@link Location}
