@@ -1678,19 +1678,11 @@ public class CraftWorld implements World {
         world.keepSpawnInMemory = keepLoaded;
         // Grab the worlds spawn chunk
         BlockPosition chunkcoordinates = this.world.getSpawn();
-        int chunkCoordX = chunkcoordinates.getX() >> 4;
-        int chunkCoordZ = chunkcoordinates.getZ() >> 4;
-        // Cycle through the 25x25 Chunks around it to load/unload the chunks.
-        for (int x = -12; x <= 12; x++) {
-            for (int z = -12; z <= 12; z++) {
-                if (keepLoaded) {
-                    loadChunk(chunkCoordX + x, chunkCoordZ + z);
-                } else {
-                    if (isChunkLoaded(chunkCoordX + x, chunkCoordZ + z)) {
-                        unloadChunk(chunkCoordX + x, chunkCoordZ + z);
-                    }
-                }
-            }
+        if (keepLoaded) {
+            world.getChunkProvider().addTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
+        } else {
+            // TODO: doesn't work well if spawn changed....
+            world.getChunkProvider().removeTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
         }
     }
 

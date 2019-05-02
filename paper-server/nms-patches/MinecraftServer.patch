@@ -134,7 +134,7 @@
          WorldNBTStorage worldnbtstorage = this.getConvertable().a(s, this);
  
          this.a(this.getWorld(), worldnbtstorage);
-@@ -268,24 +315,134 @@
+@@ -268,24 +315,135 @@
          }
  
          this.a(worldnbtstorage.getDirectory(), worlddata);
@@ -257,15 +257,16 @@
 +        this.a(this.getDifficulty(), true);
 +        for (WorldServer worldserver : this.getWorlds()) {
 +            this.loadSpawn(worldserver.getChunkProvider().playerChunkMap.worldLoadListener, worldserver);
++            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 +        }
 +
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
 +        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        // CraftBukkit end
++
++    }
  
 -        WorldServer worldserver = new WorldServer(this, this.executorService, worldnbtstorage, worlddata, DimensionManager.OVERWORLD, this.methodProfiler, worldloadlistener);
-+    }
-+
 +    // CraftBukkit start
 +    public void initWorld(WorldServer worldserver1, WorldData worlddata, WorldSettings worldsettings) {
 +        worldserver1.getWorldBorder().b(worlddata);
@@ -282,7 +283,7 @@
  
          if (!worlddata.v()) {
              try {
-@@ -309,23 +466,8 @@
+@@ -309,23 +467,8 @@
  
              worlddata.d(true);
          }
@@ -307,7 +308,7 @@
  
      private void a(WorldData worlddata) {
          worlddata.f(false);
-@@ -344,6 +486,25 @@
+@@ -344,6 +487,25 @@
      protected void a(File file, WorldData worlddata) {
          this.resourcePackRepository.a((ResourcePackSource) (new ResourcePackSourceVanilla()));
          this.resourcePackFolder = new ResourcePackSourceFolder(new File(file, "datapacks"));
@@ -333,13 +334,17 @@
          this.resourcePackRepository.a((ResourcePackSource) this.resourcePackFolder);
          this.resourcePackRepository.a();
          List<ResourcePackLoader> list = Lists.newArrayList();
-@@ -364,11 +525,14 @@
+@@ -364,11 +526,18 @@
          this.b(worlddata);
      }
  
 -    public void loadSpawn(WorldLoadListener worldloadlistener) {
 +    // CraftBukkit start
 +    public void loadSpawn(WorldLoadListener worldloadlistener, WorldServer worldserver) {
++        if (!worldserver.getWorld().getKeepSpawnInMemory()) {
++            return;
++        }
++
          this.b((IChatBaseComponent) (new ChatMessage("menu.generatingTerrain", new Object[0])));
 -        WorldServer worldserver = this.getWorldServer(DimensionManager.OVERWORLD);
 +        // WorldServer worldserver = this.getWorldServer(DimensionManager.OVERWORLD);
@@ -351,7 +356,7 @@
          BlockPosition blockposition = worldserver.getSpawn();
  
          worldloadlistener.a(new ChunkCoordIntPair(blockposition));
-@@ -379,17 +543,21 @@
+@@ -379,17 +548,21 @@
          chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
  
          while (chunkproviderserver.b() != 441) {
@@ -382,7 +387,7 @@
  
              if (forcedchunk != null) {
                  WorldServer worldserver1 = this.getWorldServer(dimensionmanager);
-@@ -404,10 +572,17 @@
+@@ -404,10 +577,16 @@
              }
          }
  
@@ -396,13 +401,12 @@
          chunkproviderserver.getLightEngine().a(5);
 +
 +        // CraftBukkit start
-+        this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 +        this.forceTicks = false;
 +        // CraftBukkit end
      }
  
      protected void a(String s, WorldNBTStorage worldnbtstorage) {
-@@ -450,14 +625,14 @@
+@@ -450,14 +629,14 @@
              } catch (ExceptionWorldConflict exceptionworldconflict) {
                  MinecraftServer.LOGGER.warn(exceptionworldconflict.getMessage());
              }
@@ -419,7 +423,7 @@
          return flag3;
      }
  
-@@ -466,8 +641,29 @@
+@@ -466,8 +645,29 @@
          this.stop();
      }
  
@@ -449,7 +453,7 @@
          if (this.getServerConnection() != null) {
              this.getServerConnection().b();
          }
-@@ -476,6 +672,7 @@
+@@ -476,6 +676,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
              this.playerList.shutdown();
@@ -457,7 +461,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -548,11 +745,13 @@
+@@ -548,11 +749,13 @@
                      if (i > 2000L && this.nextTick - this.lastOverloadTime >= 15000L) {
                          long j = i / 50L;
  
@@ -471,7 +475,7 @@
                      this.nextTick += 50L;
                      if (this.T) {
                          this.T = false;
-@@ -599,6 +798,12 @@
+@@ -599,6 +802,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -484,25 +488,24 @@
                  this.exit();
              }
  
-@@ -607,9 +812,16 @@
+@@ -607,8 +816,15 @@
      }
  
      private boolean canSleepForTick() {
 -        return this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
 +        // CraftBukkit start
 +        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
-     }
- 
++    }
++
 +    private void executeModerately() {
 +        this.executeAll();
 +        java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      protected void sleepForTick() {
          this.executeAll();
-         this.awaitTasks(() -> {
-@@ -709,7 +921,7 @@
+@@ -709,7 +925,7 @@
              this.serverPing.b().a(agameprofile);
          }
  
@@ -511,7 +514,7 @@
              MinecraftServer.LOGGER.debug("Autosave started");
              this.methodProfiler.enter("save");
              this.playerList.savePlayers();
-@@ -739,27 +951,43 @@
+@@ -739,27 +955,43 @@
      }
  
      protected void b(BooleanSupplier booleansupplier) {
@@ -561,7 +564,7 @@
  
                  this.methodProfiler.enter("tick");
  
-@@ -798,7 +1026,8 @@
+@@ -798,7 +1030,8 @@
          this.tickables.add(runnable);
      }
  
@@ -571,7 +574,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -821,15 +1050,17 @@
+@@ -821,15 +1054,17 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -591,7 +594,7 @@
                  MinecraftServer.LOGGER.info("Initialized '" + java_nio_file_path.toAbsolutePath().toString() + "' and '" + java_nio_file_path1.toAbsolutePath().toString() + "'");
                  return;
              }
-@@ -841,14 +1072,15 @@
+@@ -841,14 +1076,15 @@
  
              DispenserRegistry.init();
              DispenserRegistry.c();
@@ -610,7 +613,7 @@
              dedicatedserver.i((String) optionset.valueOf(optionspec7));
              dedicatedserver.setPort((Integer) optionset.valueOf(optionspec10));
              dedicatedserver.e(optionset.has(optionspec2));
-@@ -871,6 +1103,25 @@
+@@ -871,6 +1107,25 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -636,7 +639,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -890,7 +1141,9 @@
+@@ -890,7 +1145,9 @@
      }
  
      public void startServerThread() {
@@ -646,7 +649,7 @@
      }
  
      public File d(String s) {
-@@ -945,7 +1198,7 @@
+@@ -945,7 +1202,7 @@
      }
  
      public String getServerModName() {
@@ -655,7 +658,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -984,7 +1237,7 @@
+@@ -984,7 +1241,7 @@
      }
  
      public boolean E() {
@@ -664,7 +667,7 @@
      }
  
      @Override
-@@ -1480,4 +1733,16 @@
+@@ -1480,4 +1737,16 @@
      }
  
      public abstract boolean b(GameProfile gameprofile);
