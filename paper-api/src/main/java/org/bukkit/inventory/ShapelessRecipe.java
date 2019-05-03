@@ -24,6 +24,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
 
     @Deprecated
     public ShapelessRecipe(@NotNull ItemStack result) {
+        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
         this.key = NamespacedKey.randomKey();
         this.output = new ItemStack(result);
     }
@@ -43,6 +44,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
      * @see ShapelessRecipe#addIngredient(int,Material,int)
      */
     public ShapelessRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
+        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
         this.key = key;
         this.output = new ItemStack(result);
     }

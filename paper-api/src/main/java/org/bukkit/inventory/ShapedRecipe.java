@@ -23,6 +23,7 @@ public class ShapedRecipe implements Recipe, Keyed {
 
     @Deprecated
     public ShapedRecipe(@NotNull ItemStack result) {
+        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
         this.key = NamespacedKey.randomKey();
         this.output = new ItemStack(result);
     }
@@ -41,6 +42,7 @@ public class ShapedRecipe implements Recipe, Keyed {
      */
     public ShapedRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
         Preconditions.checkArgument(key != null, "key");
+        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
 
         this.key = key;
         this.output = new ItemStack(result);
