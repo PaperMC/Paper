@@ -214,6 +214,8 @@ public enum ChatColor {
      */
     @NotNull
     public static String translateAlternateColorCodes(char altColorChar, @NotNull String textToTranslate) {
+        Validate.notNull(textToTranslate, "Cannot translate null text");
+
         char[] b = textToTranslate.toCharArray();
         for (int i = 0; i < b.length - 1; i++) {
             if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i+1]) > -1) {
@@ -232,6 +234,8 @@ public enum ChatColor {
      */
     @NotNull
     public static String getLastColors(@NotNull String input) {
+        Validate.notNull(input, "Cannot get last colors from null text");
+
         String result = "";
         int length = input.length();
 
