@@ -334,31 +334,35 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             case PLAYER:
             case CHEST:
             case ENDER_CHEST:
-                Containers customSize;
-                switch (inventory.getSize()) {
-                    case 9:
-                        customSize = Containers.GENERIC_9X1;
-                        break;
-                    case 18:
-                        customSize = Containers.GENERIC_9X2;
-                        break;
-                    case 27:
-                        customSize = Containers.GENERIC_9X3;
-                        break;
-                    case 36:
-                    case 41: // PLAYER
-                        customSize = Containers.GENERIC_9X4;
-                        break;
-                    case 45:
-                        customSize = Containers.GENERIC_9X5;
-                        break;
-                    case 54:
-                        customSize = Containers.GENERIC_9X6;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
+                if (iinventory instanceof ITileInventory) {
+                    getHandle().openContainer((ITileInventory) iinventory);
+                } else {
+                    Containers customSize;
+                    switch (inventory.getSize()) {
+                        case 9:
+                            customSize = Containers.GENERIC_9X1;
+                            break;
+                        case 18:
+                            customSize = Containers.GENERIC_9X2;
+                            break;
+                        case 27:
+                            customSize = Containers.GENERIC_9X3;
+                            break;
+                        case 36:
+                        case 41: // PLAYER
+                            customSize = Containers.GENERIC_9X4;
+                            break;
+                        case 45:
+                            customSize = Containers.GENERIC_9X5;
+                            break;
+                        case 54:
+                            customSize = Containers.GENERIC_9X6;
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
+                    }
+                    openCustomInventory(inventory, player, customSize);
                 }
-                openCustomInventory(inventory, player, customSize);
                 break;
             case DISPENSER:
                 if (iinventory instanceof TileEntityDispenser) {
