@@ -111,6 +111,7 @@ public class Main {
                         .describedAs("Yml file");
 
                 acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
+                acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 

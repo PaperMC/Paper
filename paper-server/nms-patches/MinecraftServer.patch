@@ -158,7 +158,10 @@
 +                    continue;
 +                }
 +            }
-+
+ 
+-    protected void a(WorldNBTStorage worldnbtstorage, WorldData worlddata, WorldSettings worldsettings, WorldLoadListener worldloadlistener) {
+-        if (this.isDemoMode()) {
+-            worlddata.a(MinecraftServer.c);
 +            if (j == 2) {
 +                if (server.getAllowEnd()) {
 +                    dimension = 1;
@@ -196,10 +199,7 @@
 +                this.initWorld(world, worlddata, worldsettings);
 +            } else {
 +                String dim = "DIM" + dimension;
- 
--    protected void a(WorldNBTStorage worldnbtstorage, WorldData worlddata, WorldSettings worldsettings, WorldLoadListener worldloadlistener) {
--        if (this.isDemoMode()) {
--            worlddata.a(MinecraftServer.c);
++
 +                File newWorld = new File(new File(name), dim);
 +                File oldWorld = new File(new File(s), dim);
 +                File oldLevelDat = new File(new File(s), "level.dat"); // The data folders exist on first run as they are created in the PersistentCollection constructor above, but the level.dat won't
@@ -253,28 +253,28 @@
 +            if (worlddata.getCustomBossEvents() != null) {
 +                this.getBossBattleCustomData().a(worlddata.getCustomBossEvents());
 +            }
-         }
++        }
 +        this.a(this.getDifficulty(), true);
 +        for (WorldServer worldserver : this.getWorlds()) {
 +            this.loadSpawn(worldserver.getChunkProvider().playerChunkMap.worldLoadListener, worldserver);
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
-+        }
-+
+         }
+ 
+-        WorldServer worldserver = new WorldServer(this, this.executorService, worldnbtstorage, worlddata, DimensionManager.OVERWORLD, this.methodProfiler, worldloadlistener);
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
 +        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        // CraftBukkit end
-+
-+    }
- 
--        WorldServer worldserver = new WorldServer(this, this.executorService, worldnbtstorage, worlddata, DimensionManager.OVERWORLD, this.methodProfiler, worldloadlistener);
-+    // CraftBukkit start
-+    public void initWorld(WorldServer worldserver1, WorldData worlddata, WorldSettings worldsettings) {
-+        worldserver1.getWorldBorder().b(worlddata);
  
 -        this.worldServer.put(DimensionManager.OVERWORLD, worldserver);
 -        this.initializeScoreboards(worldserver.getWorldPersistentData());
 -        worldserver.getWorldBorder().b(worlddata);
 -        WorldServer worldserver1 = this.getWorldServer(DimensionManager.OVERWORLD);
++    }
++
++    // CraftBukkit start
++    public void initWorld(WorldServer worldserver1, WorldData worlddata, WorldSettings worldsettings) {
++        worldserver1.getWorldBorder().b(worlddata);
++
 +        // CraftBukkit start
 +        if (worldserver1.generator != null) {
 +            worldserver1.getWorld().getPopulators().addAll(worldserver1.generator.getDefaultPopulators(worldserver1.getWorld()));
@@ -613,7 +613,7 @@
              dedicatedserver.i((String) optionset.valueOf(optionspec7));
              dedicatedserver.setPort((Integer) optionset.valueOf(optionspec10));
              dedicatedserver.e(optionset.has(optionspec2));
-@@ -871,6 +1107,25 @@
+@@ -871,6 +1107,29 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -634,12 +634,16 @@
 +                dedicatedserver.setForceUpgrade(true);
 +            }
 +
++            if (optionset.has("eraseCache")) {
++                dedicatedserver.c(true);
++            }
++
 +            dedicatedserver.serverThread.start();
 +            // CraftBukkit end
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -890,7 +1145,9 @@
+@@ -890,7 +1149,9 @@
      }
  
      public void startServerThread() {
@@ -649,7 +653,7 @@
      }
  
      public File d(String s) {
-@@ -945,7 +1202,7 @@
+@@ -945,7 +1206,7 @@
      }
  
      public String getServerModName() {
@@ -658,7 +662,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -984,7 +1241,7 @@
+@@ -984,7 +1245,7 @@
      }
  
      public boolean E() {
@@ -667,7 +671,7 @@
      }
  
      @Override
-@@ -1480,4 +1737,16 @@
+@@ -1480,4 +1741,16 @@
      }
  
      public abstract boolean b(GameProfile gameprofile);
