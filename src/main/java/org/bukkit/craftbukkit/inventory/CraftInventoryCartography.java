@@ -5,7 +5,15 @@ import org.bukkit.inventory.CartographyInventory;
 
 public class CraftInventoryCartography extends CraftInventory implements CartographyInventory {
 
-    public CraftInventoryCartography(IInventory inventory) {
+    private final IInventory resultInventory;
+
+    public CraftInventoryCartography(IInventory inventory, IInventory resultInventory) {
         super(inventory);
+        this.resultInventory = resultInventory;
+    }
+
+    @Override
+    public int getSize() {
+        return super.getSize() + resultInventory.getSize();
     }
 }
