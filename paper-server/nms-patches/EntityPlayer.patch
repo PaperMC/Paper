@@ -53,7 +53,7 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super((World) worldserver, gameprofile);
          playerinteractmanager.player = this;
-@@ -62,8 +96,50 @@
+@@ -62,7 +96,49 @@
          this.advancementDataPlayer = minecraftserver.getPlayerList().f(this);
          this.K = 1.0F;
          this.a(worldserver);
@@ -62,8 +62,8 @@
 +        this.displayName = this.getName();
 +        this.canPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-     }
- 
++    }
++
 +    // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 +    // If this is an issue, PRs are welcome
 +    public final BlockPosition getSpawnPoint(WorldServer worldserver) {
@@ -98,12 +98,11 @@
 +        }
 +
 +        return blockposition;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      private void a(WorldServer worldserver) {
          BlockPosition blockposition = worldserver.getSpawn();
- 
 @@ -131,6 +207,7 @@
          if (nbttagcompound.hasKeyOfType("recipeBook", 10)) {
              this.recipeBook.a(nbttagcompound.getCompound("recipeBook"));
@@ -427,7 +426,41 @@
              this.setPositionRotation(d0, d1, d2, f1, f);
              worldserver.getMethodProfiler().exit();
              worldserver.getMethodProfiler().enter("placing");
-@@ -618,7 +859,7 @@
+@@ -572,6 +813,7 @@
+                 int k = MathHelper.floor(this.locZ);
+                 boolean flag = true;
+                 boolean flag1 = false;
++                org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(this.world); // CraftBukkit - Use BlockStateListPopulator
+ 
+                 for (int l = -2; l <= 2; ++l) {
+                     for (int i1 = -2; i1 <= 2; ++i1) {
+@@ -581,11 +823,24 @@
+                             int i2 = k + i1 * 0 - l * 1;
+                             boolean flag2 = j1 < 0;
+ 
+-                            worldserver1.setTypeUpdate(new BlockPosition(k1, l1, i2), flag2 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
++                            blockList.setTypeAndData(new BlockPosition(k1, l1, i2), flag2 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData(), 3); // CraftBukkit
+                         }
+                     }
+                 }
+ 
++                // CraftBukkit start
++                org.bukkit.World bworld = worldserver1.getWorld();
++                List<org.bukkit.block.Block> bukkitBlocks = Lists.newArrayList();
++                for (BlockPosition cpos : blockList.getBlocks()) {
++                    bukkitBlocks.add(bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ()));
++                }
++
++                org.bukkit.event.world.PortalCreateEvent portalEvent = new org.bukkit.event.world.PortalCreateEvent(bukkitBlocks, bworld, org.bukkit.event.world.PortalCreateEvent.CreateReason.OBC_DESTINATION);
++                this.world.getServer().getPluginManager().callEvent(portalEvent);
++                if (!portalEvent.isCancelled()) {
++                    blockList.updateList();
++                }
++                // CraftBukkit end
+                 this.setPositionRotation((double) i, (double) j, (double) k, f1, 0.0F);
+                 this.setMot(Vec3D.a);
+             } else if (!worldserver1.getTravelAgent().a(this, f2)) {
+@@ -618,7 +873,7 @@
          }
      }
  
@@ -436,7 +469,7 @@
          DimensionManager dimensionmanager = worldserver.worldProvider.getDimensionManager();
          DimensionManager dimensionmanager1 = this.world.worldProvider.getDimensionManager();
  
-@@ -655,9 +896,16 @@
+@@ -655,9 +910,16 @@
          this.activeContainer.c();
      }
  
@@ -455,7 +488,7 @@
              this.a(StatisticList.SLEEP_IN_BED);
              CriterionTriggers.q.a(this);
          });
-@@ -665,6 +913,7 @@
+@@ -665,6 +927,7 @@
  
      @Override
      public void wakeup(boolean flag, boolean flag1, boolean flag2) {
@@ -463,7 +496,7 @@
          if (this.isSleeping()) {
              this.getWorldServer().getChunkProvider().broadcastIncludingSelf(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -752,8 +1001,9 @@
+@@ -752,8 +1015,9 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -474,7 +507,7 @@
      }
  
      @Override
-@@ -768,6 +1018,17 @@
+@@ -768,6 +1032,17 @@
              this.nextContainerCounter();
              Container container = itileinventory.createMenu(this.containerCounter, this.inventory, this);
  
@@ -492,7 +525,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).a(EnumChatFormat.RED), true);
-@@ -775,9 +1036,11 @@
+@@ -775,9 +1050,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -506,7 +539,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -790,13 +1053,21 @@
+@@ -790,13 +1067,21 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -530,7 +563,7 @@
          this.activeContainer.addSlotListener(this);
      }
  
-@@ -841,6 +1112,11 @@
+@@ -841,6 +1126,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -542,7 +575,7 @@
      }
  
      @Override
-@@ -850,6 +1126,7 @@
+@@ -850,6 +1140,7 @@
  
      @Override
      public void closeInventory() {
@@ -550,7 +583,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.m();
      }
-@@ -884,7 +1161,7 @@
+@@ -884,7 +1175,7 @@
      @Override
      public void a(Statistic<?> statistic, int i) {
          this.serverStatisticManager.b(this, statistic, i);
@@ -559,7 +592,7 @@
              scoreboardscore.addScore(i);
          });
      }
-@@ -892,7 +1169,7 @@
+@@ -892,7 +1183,7 @@
      @Override
      public void a(Statistic<?> statistic) {
          this.serverStatisticManager.setStatistic(this, statistic, 0);
@@ -568,25 +601,24 @@
      }
  
      @Override
-@@ -941,8 +1218,17 @@
+@@ -941,7 +1232,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
 +        this.lastSentExp = -1; // CraftBukkit - Added to reset
-     }
- 
++    }
++
 +    // CraftBukkit start - Support multi-line messages
 +    public void sendMessage(IChatBaseComponent[] ichatbasecomponent) {
 +        for (IChatBaseComponent component : ichatbasecomponent) {
 +            this.sendMessage(component);
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
-         this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, flag ? ChatMessageType.GAME_INFO : ChatMessageType.CHAT));
-@@ -996,12 +1282,14 @@
+@@ -996,12 +1296,14 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -602,7 +634,7 @@
      }
  
      @Override
-@@ -1063,6 +1351,18 @@
+@@ -1063,6 +1365,18 @@
  
      @Override
      public void a(EnumGamemode enumgamemode) {
@@ -621,7 +653,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -1113,6 +1413,17 @@
+@@ -1113,6 +1427,17 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -639,7 +671,7 @@
          this.locale = packetplayinsettings.b();
          this.ck = packetplayinsettings.d();
          this.cl = packetplayinsettings.e();
-@@ -1149,13 +1460,13 @@
+@@ -1149,13 +1474,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[] { entity.getId()}));
          } else {
@@ -655,7 +687,7 @@
      }
  
      @Override
-@@ -1179,7 +1490,7 @@
+@@ -1179,7 +1504,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -664,7 +696,7 @@
          }
  
      }
-@@ -1208,7 +1519,7 @@
+@@ -1208,7 +1533,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -673,7 +705,7 @@
      }
  
      @Override
-@@ -1226,21 +1537,33 @@
+@@ -1226,21 +1551,33 @@
      }
  
      public void J() {
@@ -707,7 +739,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1263,6 +1586,9 @@
+@@ -1263,6 +1600,9 @@
              this.server.getPlayerList().a(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
@@ -717,7 +749,7 @@
  
      }
  
-@@ -1314,4 +1640,144 @@
+@@ -1314,4 +1654,144 @@
              return entityitem;
          }
      }
