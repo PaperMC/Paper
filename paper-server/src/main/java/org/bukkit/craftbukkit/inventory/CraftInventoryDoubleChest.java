@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.server.BlockChest;
+import net.minecraft.server.ITileInventory;
 import net.minecraft.server.InventoryLargeChest;
 import org.bukkit.Location;
 import org.bukkit.block.DoubleChest;
@@ -8,13 +10,15 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryDoubleChest extends CraftInventory implements DoubleChestInventory {
+    public ITileInventory tile;
     private final CraftInventory left;
     private final CraftInventory right;
 
-    public CraftInventoryDoubleChest(CraftInventory left, CraftInventory right) {
-        super(new InventoryLargeChest(left.getInventory(), right.getInventory()));
-        this.left = left;
-        this.right = right;
+    public CraftInventoryDoubleChest(BlockChest.DoubleInventory block) {
+        super(block.inventorylargechest);
+        this.tile = block;
+        this.left = new CraftInventory(block.inventorylargechest.left);
+        this.right = new CraftInventory(block.inventorylargechest.right);
     }
 
     public CraftInventoryDoubleChest(InventoryLargeChest largeChest) {
