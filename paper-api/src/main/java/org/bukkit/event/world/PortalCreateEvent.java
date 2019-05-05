@@ -1,9 +1,8 @@
 package org.bukkit.event.world;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import org.bukkit.World;
-import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
@@ -14,13 +13,13 @@ import org.jetbrains.annotations.NotNull;
 public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
-    private final ArrayList<Block> blocks = new ArrayList<Block>();
-    private CreateReason reason = CreateReason.FIRE;
+    private final List<BlockState> blocks;
+    private final CreateReason reason;
 
-    public PortalCreateEvent(@NotNull final Collection<Block> blocks, @NotNull final World world, @NotNull CreateReason reason) {
+    public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @NotNull CreateReason reason) {
         super(world);
 
-        this.blocks.addAll(blocks);
+        this.blocks = blocks;
         this.reason = reason;
     }
 
@@ -30,7 +29,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      * @return array list of all the blocks associated with the created portal
      */
     @NotNull
-    public ArrayList<Block> getBlocks() {
+    public List<BlockState> getBlocks() {
         return this.blocks;
     }
 
@@ -70,14 +69,19 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      */
     public enum CreateReason {
         /**
-         * When a portal is created 'traditionally' due to a portal frame
+         * When the blocks inside a portal are created due to a portal frame
          * being set on fire.
          */
         FIRE,
         /**
-         * When a portal is created as a destination for an existing portal
-         * when using the custom PortalTravelAgent
+         * When a nether portal frame and portal is created at the exist of an
+         * entered nether portal.
          */
-        OBC_DESTINATION
+        NETHER_PAIR,
+        /**
+         * When the target end platform is created as a result of a player
+         * entering an end portal.
+         */
+        END_PLATFORM
     }
 }
