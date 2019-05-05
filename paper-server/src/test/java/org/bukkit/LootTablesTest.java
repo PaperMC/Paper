@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import net.minecraft.server.MinecraftKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
 import org.bukkit.support.AbstractTestingBase;
@@ -17,6 +19,17 @@ public class LootTablesTest extends AbstractTestingBase {
 
             Assert.assertNotNull("Unknown LootTable " + table.getKey(), lootTable);
             Assert.assertEquals(lootTable.getKey(), table.getKey());
+        }
+    }
+
+    @Test
+    public void testNMS() {
+        for (MinecraftKey key : net.minecraft.server.LootTables.a()) {
+            NamespacedKey bukkitKey = CraftNamespacedKey.fromMinecraft(key);
+            LootTables lootTable = Registry.LOOT_TABLES.get(bukkitKey);
+
+            Assert.assertNotNull("Unknown LootTable " + key, lootTable);
+            Assert.assertEquals(lootTable.getKey(), bukkitKey);
         }
     }
 }
