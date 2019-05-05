@@ -41,6 +41,42 @@ public interface Villager extends AbstractVillager {
     public void setVillagerType(@NotNull Type type);
 
     /**
+     * Gets the level of this villager.
+     *
+     * A villager with a level <= 1 and no experience is liable to lose its
+     * profession.
+     *
+     * @return this villager's level
+     */
+    public int getVillagerLevel();
+
+    /**
+     * Sets the level of this villager.
+     *
+     * A villager with a level <= 1 and no experience is liable to lose its
+     * profession.
+     *
+     * @param level the new level
+     * @throws IllegalArgumentException if level not between [0, 5]
+     */
+    public void setVillagerLevel(int level);
+
+    /**
+     * Gets the trading experience of this villager.
+     *
+     * @return trading experience
+     */
+    public int getVillagerExperience();
+
+    /**
+     * Sets the trading experience of this villager.
+     *
+     * @param experience new experience
+     * @throws IllegalArgumentException if experience < 0
+     */
+    public void setVillagerExperience(int experience);
+
+    /**
      * Represents Villager type, usually corresponding to what biome they spawn
      * in.
      */
@@ -73,52 +109,49 @@ public interface Villager extends AbstractVillager {
     public enum Profession implements Keyed {
         NONE,
         /**
-         * Armorer profession. Wears a black apron.
-         * Armorers primarily trade for iron armor, chainmail armor, and
-         * sometimes diamond armor.
+         * Armorer profession. Wears a black apron. Armorers primarily trade for
+         * iron armor, chainmail armor, and sometimes diamond armor.
          */
         ARMORER,
         /**
-         * Butcher profession. Wears a white apron.
-         * Butchers primarily trade for raw and cooked food.
+         * Butcher profession. Wears a white apron. Butchers primarily trade for
+         * raw and cooked food.
          */
         BUTCHER,
         /**
-         * Cartographer profession. Wears a white robe.
-         * Cartographers primarily trade for explorer maps and some paper.
+         * Cartographer profession. Wears a white robe. Cartographers primarily
+         * trade for explorer maps and some paper.
          */
         CARTOGRAPHER,
         /**
-         * Cleric profession. Wears a purple robe.
-         * Clerics primarily trade for rotten flesh, gold ingot, redstone,
-         * lapis, ender pearl, glowstone, and bottle o' enchanting.
+         * Cleric profession. Wears a purple robe. Clerics primarily trade for
+         * rotten flesh, gold ingot, redstone, lapis, ender pearl, glowstone,
+         * and bottle o' enchanting.
          */
         CLERIC,
         /**
-         * Farmer profession. Wears a brown robe.
-         * Farmers primarily trade for food-related items.
+         * Farmer profession. Wears a brown robe. Farmers primarily trade for
+         * food-related items.
          */
         FARMER,
         /**
-         * Fisherman profession. Wears a brown robe.
-         * Fisherman primarily trade for fish, as well as possibly selling
-         * string and/or coal.
+         * Fisherman profession. Wears a brown robe. Fisherman primarily trade
+         * for fish, as well as possibly selling string and/or coal.
          */
         FISHERMAN,
         /**
-         * Fletcher profession. Wears a brown robe.
-         * Fletchers primarily trade for string, bows, and arrows.
+         * Fletcher profession. Wears a brown robe. Fletchers primarily trade
+         * for string, bows, and arrows.
          */
         FLETCHER,
         /**
-         * Leatherworker profession. Wears a white apron.
-         * Leatherworkers primarily trade for leather, and leather armor, as
-         * well as saddles.
+         * Leatherworker profession. Wears a white apron. Leatherworkers
+         * primarily trade for leather, and leather armor, as well as saddles.
          */
         LEATHERWORKER,
         /**
-         * Librarian profession. Wears a white robe.
-         * Librarians primarily trade for paper, books, and enchanted books.
+         * Librarian profession. Wears a white robe. Librarians primarily trade
+         * for paper, books, and enchanted books.
          */
         LIBRARIAN,
         /**
@@ -126,25 +159,23 @@ public interface Villager extends AbstractVillager {
          */
         MASON,
         /**
-         * Nitwit profession. Wears a green apron, cannot trade.
-         * Nitwit villagers do not do anything. They do not have any trades by
-         * default.
+         * Nitwit profession. Wears a green apron, cannot trade. Nitwit
+         * villagers do not do anything. They do not have any trades by default.
          */
         NITWIT,
         /**
-         * Sheperd profession. Wears a brown robe.
-         * Shepherds primarily trade for wool items, and shears.
+         * Sheperd profession. Wears a brown robe. Shepherds primarily trade for
+         * wool items, and shears.
          */
         SHEPHERD,
         /**
-         * Toolsmith profession. Wears a black apron.
-         * Tool smiths primarily trade for iron and diamond tools.
+         * Toolsmith profession. Wears a black apron. Tool smiths primarily
+         * trade for iron and diamond tools.
          */
         TOOLSMITH,
         /**
-         * Weaponsmith profession. Wears a black apron.
-         * Weapon smiths primarily trade for iron and diamond weapons, sometimes
-         * enchanted.
+         * Weaponsmith profession. Wears a black apron. Weapon smiths primarily
+         * trade for iron and diamond weapons, sometimes enchanted.
          */
         WEAPONSMITH;
         private final NamespacedKey key;
