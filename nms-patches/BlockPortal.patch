@@ -1,11 +1,12 @@
 --- a/net/minecraft/server/BlockPortal.java
 +++ b/net/minecraft/server/BlockPortal.java
-@@ -4,6 +4,12 @@
+@@ -4,6 +4,13 @@
  import java.util.Random;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.event.entity.EntityPortalEnterEvent;
 +import org.bukkit.event.world.PortalCreateEvent;
 +// CraftBukkit end
@@ -13,7 +14,7 @@
  public class BlockPortal extends Block {
  
      public static final BlockStateEnum<EnumDirection.EnumAxis> AXIS = BlockProperties.D;
-@@ -34,7 +40,8 @@
+@@ -34,7 +41,8 @@
              }
  
              if (world.getType(blockposition).a((IBlockAccess) world, blockposition, EntityTypes.ZOMBIE_PIGMAN)) {
@@ -23,7 +24,7 @@
  
                  if (entity != null) {
                      entity.portalCooldown = entity.aW();
-@@ -48,8 +55,10 @@
+@@ -48,8 +56,10 @@
          BlockPortal.Shape blockportal_shape = this.b(generatoraccess, blockposition);
  
          if (blockportal_shape != null) {
@@ -36,7 +37,7 @@
          } else {
              return false;
          }
-@@ -85,6 +94,10 @@
+@@ -85,6 +95,10 @@
      @Override
      public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
          if (!entity.isPassenger() && !entity.isVehicle() && entity.canPortal()) {
@@ -47,15 +48,15 @@
              entity.c(blockposition);
          }
  
-@@ -177,6 +190,7 @@
+@@ -177,6 +191,7 @@
          private BlockPosition position;
          private int height;
          private int width;
-+        java.util.Collection<org.bukkit.block.Block> blocks = new java.util.HashSet<org.bukkit.block.Block>(); // CraftBukkit - add field
++        java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<org.bukkit.block.BlockState>(); // CraftBukkit - add field
  
          public Shape(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
              this.a = generatoraccess;
-@@ -235,6 +249,9 @@
+@@ -235,6 +250,9 @@
          }
  
          protected int c() {
@@ -65,14 +66,14 @@
              int i;
  
              label56:
-@@ -257,11 +274,21 @@
+@@ -257,11 +275,21 @@
                          block = this.a.getType(blockposition.shift(this.d)).getBlock();
                          if (block != Blocks.OBSIDIAN) {
                              break label56;
 +                            // CraftBukkit start - add the block to our list
 +                        } else {
 +                            BlockPosition pos = blockposition.shift(this.d);
-+                            blocks.add(CraftBlock.at(this.a, pos));
++                            blocks.add(CraftBlock.at(this.a, pos).getState());
 +                            // CraftBukkit end
                          }
                      } else if (i == this.width - 1) {
@@ -82,24 +83,24 @@
 +                            // CraftBukkit start - add the block to our list
 +                        } else {
 +                            BlockPosition pos = blockposition.shift(this.c);
-+                            blocks.add(CraftBlock.at(this.a, pos));
++                            blocks.add(CraftBlock.at(this.a, pos).getState());
 +                            // CraftBukkit end
                          }
                      }
                  }
-@@ -271,6 +298,11 @@
+@@ -271,6 +299,11 @@
                  if (this.a.getType(this.position.shift(this.c, i).up(this.height)).getBlock() != Blocks.OBSIDIAN) {
                      this.height = 0;
                      break;
 +                    // CraftBukkit start - add the block to our list
 +                } else {
 +                    BlockPosition pos = this.position.shift(this.c, i).up(this.height);
-+                    blocks.add(CraftBlock.at(this.a, pos));
++                    blocks.add(CraftBlock.at(this.a, pos).getState());
 +                    // CraftBukkit end
                  }
              }
  
-@@ -294,7 +326,27 @@
+@@ -294,7 +327,29 @@
              return this.position != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
          }
  
@@ -114,7 +115,9 @@
 +
 +                for (int j = 0; j < this.height; ++j) {
 +                    BlockPosition pos = blockposition.up(j);
-+                    blocks.add(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                    CraftBlockState state = CraftBlockState.getBlockState(this.a.getMinecraftWorld(), pos, 18);
++                    state.setData((IBlockData) Blocks.NETHER_PORTAL.getBlockData().set(BlockPortal.AXIS, this.b));
++                    blocks.add(state);
 +                }
 +            }
 +
@@ -128,7 +131,7 @@
              for (int i = 0; i < this.width; ++i) {
                  BlockPosition blockposition = this.position.shift(this.c, i);
  
-@@ -303,6 +355,7 @@
+@@ -303,6 +358,7 @@
                  }
              }
  
