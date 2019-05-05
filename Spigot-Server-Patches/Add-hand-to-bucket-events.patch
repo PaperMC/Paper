@@ -5,7 +5,7 @@ Subject: [PATCH] Add hand to bucket events
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityCow.java b/src/main/java/net/minecraft/server/EntityCow.java
-index 5ac88166fd..5874d2993c 100644
+index a17738f9f..d2c2e3cc3 100644
 --- a/src/main/java/net/minecraft/server/EntityCow.java
 +++ b/src/main/java/net/minecraft/server/EntityCow.java
 @@ -0,0 +0,0 @@ public class EntityCow extends EntityAnimal {
@@ -18,7 +18,7 @@ index 5ac88166fd..5874d2993c 100644
              if (event.isCancelled()) {
                  return false;
 diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
-index 6f5dda880b..a064897fc4 100644
+index cb2891411..5dc967f8b 100644
 --- a/src/main/java/net/minecraft/server/ItemBucket.java
 +++ b/src/main/java/net/minecraft/server/ItemBucket.java
 @@ -0,0 +0,0 @@ public class ItemBucket extends Item {
@@ -32,22 +32,22 @@ index 6f5dda880b..a064897fc4 100644
                              ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
 @@ -0,0 +0,0 @@ public class ItemBucket extends Item {
                      iblockdata = world.getType(blockposition);
-                     BlockPosition blockposition1 = this.a(iblockdata, blockposition, movingobjectposition);
+                     BlockPosition blockposition1 = iblockdata.getBlock() instanceof IFluidContainer && this.fluidType == FluidTypes.WATER ? blockposition : movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection());
  
--                    if (this.a(entityhuman, world, blockposition1, movingobjectposition, movingobjectposition.direction, blockposition, itemstack)) { // CraftBukkit
-+                    if (this.a(entityhuman, world, blockposition1, movingobjectposition, movingobjectposition.direction, blockposition, itemstack, enumhand)) { // CraftBukkit // Paper - add enumHand
+-                    if (this.a(entityhuman, world, blockposition1, movingobjectpositionblock, movingobjectpositionblock.getDirection(), blockposition, itemstack)) { // CraftBukkit
++                    if (this.a(entityhuman, world, blockposition1, movingobjectpositionblock, movingobjectpositionblock.getDirection(), blockposition, itemstack, enumhand)) { // CraftBukkit // Paper - add enumHand
                          this.a(world, itemstack, blockposition1);
                          if (entityhuman instanceof EntityPlayer) {
                              CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition1, itemstack);
 @@ -0,0 +0,0 @@ public class ItemBucket extends Item {
      }
  
-     public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPosition movingobjectposition, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack) {
+     public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack) {
 +        // Paper start - add enumHand
-+        return a(entityhuman, world, blockposition, movingobjectposition, enumdirection, clicked, itemstack, null);
++        return a(entityhuman, world, blockposition, movingobjectpositionblock, enumdirection, clicked, itemstack, null);
 +    }
 +
-+    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPosition movingobjectposition, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack, EnumHand enumhand) {
++    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack, EnumHand enumhand) {
 +        // Paper end
          // CraftBukkit end
          if (!(this.fluidType instanceof FluidTypeFlowing)) {
@@ -56,8 +56,8 @@ index 6f5dda880b..a064897fc4 100644
              boolean flag1 = material.isReplaceable();
  
              if (!world.isEmpty(blockposition) && !flag && !flag1 && (!(iblockdata.getBlock() instanceof IFluidContainer) || !((IFluidContainer) iblockdata.getBlock()).canPlace(world, blockposition, iblockdata, this.fluidType))) {
--                return movingobjectposition == null ? false : this.a(entityhuman, world, movingobjectposition.getBlockPosition().shift(movingobjectposition.direction), (MovingObjectPosition) null, enumdirection, clicked, itemstack); // CraftBukkit
-+                return movingobjectposition == null ? false : this.a(entityhuman, world, movingobjectposition.getBlockPosition().shift(movingobjectposition.direction), (MovingObjectPosition) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit  // Paper - add enumhand
+-                return movingobjectpositionblock == null ? false : this.a(entityhuman, world, movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null, enumdirection, clicked, itemstack); // CraftBukkit
++                return movingobjectpositionblock == null ? false : this.a(entityhuman, world, movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection()), (MovingObjectPositionBlock) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit  // Paper - add enumhand
              } else {
                  // CraftBukkit start
                  if (entityhuman != null) {
@@ -67,7 +67,7 @@ index 6f5dda880b..a064897fc4 100644
                          ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                          ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 0a3a121cbc..e76862ef49 100644
+index c09f7e7c4..50444ed94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {

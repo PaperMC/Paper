@@ -11,76 +11,53 @@ I don't know why mojang only checks for 4096, when anything less than 8192 is a 
 But to be safe, it will attempt to back up the file.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index e2d4450e90..c20511588d 100644
+index 4e6288e8b..e68f90194 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -0,0 +0,0 @@ public class RegionFile {
-     private static final boolean ENABLE_EXTENDED_SAVE = Boolean.parseBoolean(System.getProperty("net.minecraft.server.RegionFile.enableExtendedSave", "true"));
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      // Spigot end
      private static final byte[] a = new byte[4096];
--    private final File b;
--    private RandomAccessFile c;
+     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
+-    private final int[] c = new int[1024];
 -    private final int[] d = new int[1024];
--    private final int[] e = new int[1024];
-+    private final File b;private File getFile() { return b; } // Paper - OBFHELPER
-+    private RandomAccessFile c;private RandomAccessFile getDataFile() { return c; } // Paper - OBFHELPER
-+    private final int[] d = new int[1024];private int[] offsets = d; // Paper - OBFHELPER
-+    private final int[] e = new int[1024];private int[] timestamps = e; // Paper - OBFHELPER
-     private List<Boolean> f;
-     private int g;
-     private long h;
-@@ -0,0 +0,0 @@ public class RegionFile {
-             }
++    private final int[] c = new int[1024]; private int[] offsets = c; // Paper - OBFHELPER
++    private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
+     private final List<Boolean> e;
  
-             this.c = new RandomAccessFile(file, "rw");
--            if (this.c.length() < 4096L) {
-+            if (this.c.length() < 8192L) { // Paper - headers should be 8192
-                 this.c.write(RegionFile.a);
-                 this.c.write(RegionFile.a);
-                 this.g += 8192;
-@@ -0,0 +0,0 @@ public class RegionFile {
-                         this.c.seek(j * 4 + 4); // Go back to where we were
-                     }
+     public RegionFile(File file) throws IOException {
+         this.b = new RandomAccessFile(file, "rw");
+-        if (this.b.length() < 4096L) {
++        if (this.b.length() < 8192L) { // Paper - headers should be 8192
+             this.b.write(RegionFile.a);
+             this.b.write(RegionFile.a);
+         }
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+                     this.b.seek(j * 4 + 4); // Go back to where we were
                  }
--                if (k != 0 && (k >> 8) + (length) <= this.f.size()) {
-+                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
-                     for (int l = 0; l < (length); ++l) {
-                         // Spigot end
-                         this.f.set((k >> 8) + l, false);
-                     }
-                 }
-                 // Spigot start
--                else if (length > 0) {
--                    org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Invalid chunk: ({0}, {1}) Offset: {2} Length: {3} runs off end file. {4}", new Object[]{j % 32, (int) (j / 32), k >> 8, length, file});
-+                else if (k != 0) { // Paper
-+                    org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Invalid chunk: ({0}, {1}) Offset: {2} Length: {3} runs off end file. {4}", new Object[]{j % 32, (int) (j / 32), k >> 8, length, file}); // Paper
-+                    deleteChunk(j); // Paper
-                 }
-                 // Spigot end
              }
- 
-             for (j = 0; j < 1024; ++j) {
-                 k = headerAsInts.get(); // Paper
--                this.e[j] = k;
-+                if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
+-            if (k != 0 && (k >> 8) + (length) <= this.e.size()) {
++            if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.e.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
+                 for (int l = 0; l < (length); ++l) {
+                     // Spigot end
+                     this.e.set((k >> 8) + l, false);
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+             // Spigot start
+             else if (length > 0) {
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Invalid chunk: ({0}, {1}) Offset: {2} Length: {3} runs off end file. {4}", new Object[]{j % 32, (int) (j / 32), k >> 8, length, file});
++                deleteChunk(j); // Paper
              }
-         } catch (IOException ioexception) {
-             ioexception.printStackTrace();
-@@ -0,0 +0,0 @@ public class RegionFile {
-                         int j1 = this.c.readInt();
+             // Spigot end
+         }
  
-                         if (j1 > 4096 * i1) {
--                            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Invalid chunk: ({0}, {1}) Offset: {2} Invalid Size: {3}>{4} {5}", new Object[]{i, j, l, j1, i1 * 4096, this.b}); // Spigot
-+                            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Invalid chunk: ({0}, {1}) Offset: {2} Invalid Size: {3}>{4} {5}", new Object[]{i, j, l, j1, i1 * 4096, this.b}); // Spigot
-                             return null;
-                         } else if (j1 <= 0) {
--                            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Invalid chunk: ({0}, {1}) Offset: {2} Invalid Size: {3} {4}", new Object[]{i, j, l, j1, this.b}); // Spigot
-+                            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Invalid chunk: ({0}, {1}) Offset: {2} Invalid Size: {3} {4}", new Object[]{i, j, l, j1, this.b}); // Spigot
-                             return null;
-                         } else {
-                             byte b0 = this.c.readByte();
-@@ -0,0 +0,0 @@ public class RegionFile {
+         for (j = 0; j < 1024; ++j) {
+             k = headerAsInts.get(); // Paper
+-            this.d[j] = k;
++            if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
+         }
  
+         this.file = file; // Spigot
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         this.b.close();
      }
  
 +    // Paper start
@@ -101,10 +78,10 @@ index e2d4450e90..c20511588d 100644
 +            // clear the timestamp
 +            file.seek(4096 + j1 * 4);
 +            file.writeInt(0);
-+            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Deleted corrupt chunk (" + debug + ") " + getFile().getAbsolutePath(), e);
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Deleted corrupt chunk (" + debug + ") " + this.file.getAbsolutePath(), e);
 +        } catch (IOException e) {
 +
-+            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Error deleting corrupt chunk (" + debug + ") " + getFile().getAbsolutePath(), e);
++            org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Error deleting corrupt chunk (" + debug + ") " + this.file.getAbsolutePath(), e);
 +        }
 +    }
 +    private boolean backedUp = false;
@@ -113,7 +90,6 @@ index e2d4450e90..c20511588d 100644
 +            return;
 +        }
 +        backedUp = true;
-+        File file = this.getFile();
 +        java.text.DateFormat formatter = new java.text.SimpleDateFormat("yyyy-MM-dd");
 +        java.util.Date today = new java.util.Date();
 +        File corrupt = new File(file.getParentFile(), file.getName() + "." + formatter.format(today) + ".corrupt");
@@ -133,5 +109,5 @@ index e2d4450e90..c20511588d 100644
 +
      class ChunkBuffer extends ByteArrayOutputStream {
  
-         private final int b;
+         private final ChunkCoordIntPair b;
 --

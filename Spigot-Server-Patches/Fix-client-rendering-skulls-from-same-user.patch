@@ -12,7 +12,7 @@ This allows the client to render multiple skull textures from the same user,
 for when different skins were used when skull was made.
 
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index c1b6eb52bf..0420589faa 100644
+index 2acd02f2f..ca1bd0299 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -0,0 +0,0 @@ public final class ItemStack {
@@ -25,7 +25,7 @@ index c1b6eb52bf..0420589faa 100644
      private EntityItemFrame i;
      private ShapeDetectorBlock j;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index d05f1e02cf..b95836d443 100644
+index 0d67676f7..fa2d3ce8c 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
@@ -45,7 +45,7 @@ index d05f1e02cf..b95836d443 100644
  
              this.a(nbttagcompound);
 @@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
-             itemstack.setTag(this.j());
+             itemstack.setTag(this.l());
              // CraftBukkit start
              if (itemstack.getTag() != null) {
 +                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
@@ -62,32 +62,27 @@ index d05f1e02cf..b95836d443 100644
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index f2159bc2dd..18ef7232ec 100644
+index 363ab5da1..d19a30ad8 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
  
              if (this.f() || (i & 1 << j) != 0) {
-                 NBTTagCompound nbttagcompound = tileentity.aa_();
+                 NBTTagCompound nbttagcompound = tileentity.b();
 +                if (tileentity instanceof TileEntitySkull) { TileEntitySkull.sanitizeTileEntityUUID(nbttagcompound); } // Paper
  
-                 this.e.add(nbttagcompound);
+                 this.f.add(nbttagcompound);
              }
-@@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
-             BiomeBase[] abiomebase = chunk.getBiomeIndex();
- 
-             for (l = 0; l < abiomebase.length; ++l) {
--                packetdataserializer.writeInt(IRegistry.BIOME.a((Object) abiomebase[l]));
-+                packetdataserializer.writeInt(IRegistry.BIOME.a(abiomebase[l])); // Paper - Decompile fix
-             }
-         }
- 
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 79c24cdc4c..6511bfda8d 100644
+index e827d7605..4803b173a 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-         return this.a;
+     @Nullable
+     @Override
+     public PacketPlayOutTileEntityData getUpdatePacket() {
+-        return new PacketPlayOutTileEntityData(this.position, 4, this.b());
++        return new PacketPlayOutTileEntityData(this.position, 4, sanitizeTileEntityUUID(this.b())); // Paper
      }
  
 +    // Paper start
@@ -118,11 +113,7 @@ index 79c24cdc4c..6511bfda8d 100644
 +    }
 +    // Paper end
 +
-     @Nullable
-     public PacketPlayOutTileEntityData getUpdatePacket() {
--        return new PacketPlayOutTileEntityData(this.position, 4, this.aa_());
-+        return new PacketPlayOutTileEntityData(this.position, 4, sanitizeTileEntityUUID(this.aa_())); // Paper
-     }
- 
-     public NBTTagCompound aa_() {
+     @Override
+     public NBTTagCompound b() {
+         return this.save(new NBTTagCompound());
 --
