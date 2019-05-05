@@ -1,4 +1,4 @@
-From 42871ad2d0b7b9bd4d5ecfafc8b03e532384ff11 Mon Sep 17 00:00:00 2001
+From 5cf3baddf895999083a82dc77734d0298d5d542a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 2 Nov 2018 23:11:51 -0400
 Subject: [PATCH] Optimize World Time Updates
@@ -8,12 +8,12 @@ the updates per world, so that we can re-use the same packet
 object for every player unless they have per-player time enabled.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 236fbafeb5..ce39ea09e8 100644
+index e6054dddb..e90cf0629 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1033,12 +1033,24 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1101,12 +1101,24 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
-         MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot
+         MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot // Paper
          // Send time updates to everyone, it will get the right time from the world the player is in.
 -        if (this.ticks % 20 == 0) {
 -            for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
@@ -25,7 +25,7 @@ index 236fbafeb5..ce39ea09e8 100644
 +            final long dayTime = world.getDayTime();
 +            long worldTime = world.getTime();
 +            final PacketPlayOutUpdateTime worldPacket = new PacketPlayOutUpdateTime(worldTime, dayTime, doDaylight);
-+            for (EntityHuman entityhuman : world.players) {
++            for (EntityHuman entityhuman : world.getPlayers()) {
 +                if (!(entityhuman instanceof EntityPlayer) || (ticks + entityhuman.getId()) % 20 != 0) {
 +                    continue;
 +                }
@@ -37,9 +37,9 @@ index 236fbafeb5..ce39ea09e8 100644
              }
          }
 +        // Paper end
-         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
          // WorldServer worldserver; // CraftBukkit - dropped down
 -- 
-2.21.0
+2.20.1
 
