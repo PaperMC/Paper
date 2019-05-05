@@ -1,22 +1,22 @@
-From b3fc29ee0ac0e56b2a3267a9b3bcd9e7b3e05bb8 Mon Sep 17 00:00:00 2001
+From 943fa216876f05eb896525e1fe18a46f63ae33ad Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Mon, 3 Sep 2018 18:20:03 -0500
 Subject: [PATCH] Add ray tracing methods to LivingEntity
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 2ed2960c5..064703afe 100644
+index 8c3be17f7d..f86e7c9d4d 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -3170,6 +3170,22 @@ public abstract class EntityLiving extends Entity {
+@@ -3170,6 +3170,23 @@ public abstract class EntityLiving extends Entity {
          this.c(enumhand == EnumHand.MAIN_HAND ? EnumItemSlot.MAINHAND : EnumItemSlot.OFFHAND);
      }
      // Paper start
 +    public MovingObjectPosition getRayTrace(int maxDistance) {
-+        return getRayTrace(maxDistance, FluidCollisionOption.NEVER);
++        return getRayTrace(maxDistance, RayTrace.FluidCollisionOption.NONE);
 +    }
 +
-+    public MovingObjectPosition getRayTrace(int maxDistance, FluidCollisionOption fluidCollisionOption) {
++    public MovingObjectPosition getRayTrace(int maxDistance, RayTrace.FluidCollisionOption fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
 +        }
@@ -24,15 +24,16 @@ index 2ed2960c5..064703afe 100644
 +        Vec3D start = new Vec3D(locX, locY + getHeadHeight(), locZ);
 +        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
 +        Vec3D end = new Vec3D(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
++        RayTrace raytrace = new RayTrace(start, end, RayTrace.BlockCollisionOption.OUTLINE, fluidCollisionOption, this); // TODO review these options
 +
-+        return world.rayTrace(start, end, fluidCollisionOption);
++        return world.rayTrace(raytrace);
 +    }
 +
      public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
  
      public int getShieldBlockingDelay() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 29b23e30f..863802187 100644
+index 29b23e30fa..8638021879 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -170,6 +170,23 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {

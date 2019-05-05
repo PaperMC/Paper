@@ -1,4 +1,4 @@
-From ee5622690e3f68cb3c8e31a3b30763994b3f4371 Mon Sep 17 00:00:00 2001
+From 41f633a47824331f98f400103bb76b0b9a19a49a Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Fri, 9 Jun 2017 19:03:43 +0200
 Subject: [PATCH] Use TerminalConsoleAppender for console improvements
@@ -19,7 +19,7 @@ Other changes:
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 099d7218c..108c8c05e 100644
+index 099d7218c9..108c8c05e7 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -41,10 +41,27 @@
@@ -75,7 +75,7 @@ index 099d7218c..108c8c05e 100644
                  <groupId>org.apache.maven.plugins</groupId>
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 new file mode 100644
-index 000000000..688b4715e
+index 0000000000..cd6e259239
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 @@ -0,0 +1,40 @@
@@ -115,13 +115,13 @@ index 000000000..688b4715e
 +
 +    @Override
 +    protected void shutdown() {
-+        this.server.safeShutdown();
++        this.server.safeShutdown(false);
 +    }
 +
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 new file mode 100644
-index 000000000..685deaa0e
+index 0000000000..685deaa0e5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 @@ -0,0 +1,17 @@
@@ -143,7 +143,7 @@ index 000000000..685deaa0e
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 19e2df309..3d0cb874d 100644
+index 19e2df3098..3d0cb874d7 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -83,6 +83,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -185,7 +185,7 @@ index 19e2df309..3d0cb874d 100644
          System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
          System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2d5e340ee..dc6d7b3a2 100644
+index 2d5e340eea..dc6d7b3a27 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -50,7 +50,7 @@ import org.apache.commons.lang3.Validate;
@@ -244,7 +244,7 @@ index 2d5e340ee..dc6d7b3a2 100644
  
      public KeyPair getKeyPair() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 46a3f0751..52b2f4874 100644
+index 46a3f07512..52b2f48749 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -76,8 +76,7 @@ public abstract class PlayerList {
@@ -258,7 +258,7 @@ index 46a3f0751..52b2f4874 100644
  
          this.k = new GameProfileBanList(PlayerList.a);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b2aee24e5..2bdbc939e 100644
+index b2aee24e51..2bdbc939e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -41,7 +41,6 @@ import java.util.function.Consumer;
@@ -284,7 +284,7 @@ index b2aee24e5..2bdbc939e 100644
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 5203e781e..e3d163ac4 100644
+index 5203e781e3..e3d163ac4d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -13,7 +13,7 @@ import java.util.logging.Logger;
@@ -326,7 +326,7 @@ index 5203e781e..e3d163ac4 100644
                  if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
 deleted file mode 100644
-index fdf2f075e..000000000
+index fdf2f075e2..0000000000
 --- a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
 +++ /dev/null
 @@ -1,72 +0,0 @@
@@ -403,7 +403,7 @@ index fdf2f075e..000000000
 -    }
 -}
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 48d4dc7e2..24f4a16a6 100644
+index 48d4dc7e2c..24f4a16a69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -4,19 +4,30 @@ import java.util.Collections;
@@ -485,7 +485,7 @@ index 48d4dc7e2..24f4a16a6 100644
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-index 70f8d4299..449e99d1b 100644
+index 70f8d42992..449e99d1b6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 @@ -17,7 +17,7 @@ public class ServerShutdownThread extends Thread {
@@ -499,7 +499,7 @@ index 70f8d4299..449e99d1b 100644
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java b/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java
 deleted file mode 100644
-index f239cd623..000000000
+index f239cd6236..0000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/TerminalConsoleWriterThread.java
 +++ /dev/null
 @@ -1,56 +0,0 @@
@@ -560,7 +560,7 @@ index f239cd623..000000000
 -    }
 -}
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
-index 490a9acc7..08b6bb7f9 100644
+index 490a9acc70..08b6bb7f97 100644
 --- a/src/main/resources/log4j2.xml
 +++ b/src/main/resources/log4j2.xml
 @@ -1,12 +1,11 @@

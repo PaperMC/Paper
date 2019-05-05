@@ -1,4 +1,4 @@
-From c8f0455c3659ae62743792a22b8f5b7e75136548 Mon Sep 17 00:00:00 2001
+From 2a7df1df57521c5e013a7e71b748d5c73a4904cc Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
@@ -63,6 +63,31 @@ index b4c8722f04..59d86fc66e 100644
              String s1 = ((INamable) t0).getName();
  
              if (this.b.containsKey(s1)) {
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index c973ab6076..30701fd7f3 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -148,6 +148,6 @@ public class ChunkSection {
+     }
+ 
+     public boolean a(IBlockData iblockdata) {
+-        return this.blockIds.a((Object) iblockdata);
++        return this.blockIds.a(iblockdata); // Paper - decompile fix
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityVindicator.java b/src/main/java/net/minecraft/server/EntityVindicator.java
+index 45370ad5d9..b566e77869 100644
+--- a/src/main/java/net/minecraft/server/EntityVindicator.java
++++ b/src/main/java/net/minecraft/server/EntityVindicator.java
+@@ -25,7 +25,7 @@ public class EntityVindicator extends EntityIllagerAbstract {
+         this.goalSelector.a(2, new EntityIllagerAbstract.b(this));
+         this.goalSelector.a(3, new EntityRaider.a(this, 10.0F));
+         this.goalSelector.a(4, new EntityVindicator.c(this));
+-        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[] { EntityRaider.class})).a());
++        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[] { EntityRaider.class})).a(new Class[0])); // Paper - decompile fix
+         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, true));
+         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityVillagerAbstract.class, true));
+         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityIronGolem.class, true));
 diff --git a/src/main/java/net/minecraft/server/GameRules.java b/src/main/java/net/minecraft/server/GameRules.java
 index d8d2267084..3de9d264db 100644
 --- a/src/main/java/net/minecraft/server/GameRules.java
@@ -98,6 +123,48 @@ index 8753bea614..809ca0983a 100644
  
                  do {
                      if (d12 > 1.0D && d13 > 1.0D && d14 > 1.0D) {
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index e8ae4b5e44..0f4aa698aa 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -265,12 +265,12 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+ 
+     public static <T> Dynamic<T> a(DynamicOps<T> dynamicops, IBlockData iblockdata) {
+         ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap = iblockdata.getStateMap();
+-        Object object;
++        T object; // Paper - decompile fix
+ 
+         if (immutablemap.isEmpty()) {
+             object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString())));
+         } else {
+-            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString()), dynamicops.createString("Properties"), dynamicops.createMap((Map) immutablemap.entrySet().stream().map((entry) -> {
++            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString()), dynamicops.createString("Properties"), dynamicops.createMap(immutablemap.entrySet().stream().map((entry) -> { // Paper - decompile fix
+                 return Pair.of(dynamicops.createString(((IBlockState) entry.getKey()).a()), dynamicops.createString(IBlockDataHolder.b((IBlockState) entry.getKey(), (Comparable) entry.getValue())));
+             }).collect(Collectors.toMap(Pair::getFirst, Pair::getSecond)))));
+         }
+@@ -329,9 +329,9 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+             if (!iblockdata.o()) {
+                 this.f = null;
+             } else {
+-                this.f = new VoxelShape[IBlockData.a.a.length];
++                this.f = new VoxelShape[a.length]; // Paper - decompile fix
+                 voxelshape = block.h(iblockdata, BlockAccessAir.INSTANCE, BlockPosition.ZERO);
+-                EnumDirection[] aenumdirection = IBlockData.a.a;
++                EnumDirection[] aenumdirection = a; // Paper - decompile fix
+                 int i = aenumdirection.length;
+ 
+                 for (int j = 0; j < i; ++j) {
+@@ -342,8 +342,9 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+             }
+ 
+             voxelshape = block.b(iblockdata, BlockAccessAir.INSTANCE, BlockPosition.ZERO, VoxelShapeCollision.a());
++            final VoxelShape final_voxelshape = voxelshape; // Paper - decompile fix
+             this.g = Arrays.stream(EnumDirection.EnumAxis.values()).anyMatch((enumdirection_enumaxis) -> {
+-                return voxelshape.b(enumdirection_enumaxis) < 0.0D || voxelshape.c(enumdirection_enumaxis) > 1.0D;
++                return final_voxelshape.b(enumdirection_enumaxis) < 0.0D || final_voxelshape.c(enumdirection_enumaxis) > 1.0D; // Paper - decompile fix
+             });
+         }
+     }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
 index bf7e0d17ef..ee22bb0387 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java

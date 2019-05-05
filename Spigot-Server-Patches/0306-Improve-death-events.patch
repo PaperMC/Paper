@@ -1,4 +1,4 @@
-From cbdfe763326cfd3b4cf02eedd82e10ffa0f841d4 Mon Sep 17 00:00:00 2001
+From 4d2ec687e93a4142a82ac66a97e2f90fee5604d8 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:39:35 +0100
 Subject: [PATCH] Improve death events
@@ -15,7 +15,7 @@ items and experience which is otherwise only properly possible by using
 internal code.
 
 diff --git a/src/main/java/net/minecraft/server/CombatTracker.java b/src/main/java/net/minecraft/server/CombatTracker.java
-index 20db76abd..a148cd437 100644
+index 20db76abd7..a148cd437c 100644
 --- a/src/main/java/net/minecraft/server/CombatTracker.java
 +++ b/src/main/java/net/minecraft/server/CombatTracker.java
 @@ -175,6 +175,7 @@ public class CombatTracker {
@@ -27,7 +27,7 @@ index 20db76abd..a148cd437 100644
          int i = this.f ? 300 : 100;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 784520342..ef7f0213b 100644
+index 784520342e..ef7f0213b6 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -1460,6 +1460,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -47,7 +47,7 @@ index 784520342..ef7f0213b 100644
  
      protected void i(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index 7031dd0e4..f6dc96434 100644
+index 7031dd0e4c..f6dc96434b 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
 @@ -675,7 +675,8 @@ public class EntityArmorStand extends EntityLiving {
@@ -61,7 +61,7 @@ index 7031dd0e4..f6dc96434 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 064703afe..bd8385cd5 100644
+index f86e7c9d4d..2ca490eedc 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -77,7 +77,7 @@ public abstract class EntityLiving extends Entity {
@@ -203,7 +203,20 @@ index 064703afe..bd8385cd5 100644
      }
  
      protected void cE() {}
-@@ -1895,6 +1920,7 @@ public abstract class EntityLiving extends Entity {
+@@ -1442,6 +1467,7 @@ public abstract class EntityLiving extends Entity {
+         return SoundEffects.ENTITY_GENERIC_HURT;
+     }
+ 
++    public final SoundEffect getDeathSoundEffect() { return this.getSoundDeath(); } // Paper - OBFHELPER
+     @Nullable
+     protected SoundEffect getSoundDeath() {
+         return SoundEffects.ENTITY_GENERIC_DEATH;
+@@ -1891,10 +1917,12 @@ public abstract class EntityLiving extends Entity {
+ 
+     }
+ 
++    public final float getDeathSoundVolume() { return this.getSoundVolume(); } // Paper - OBFHELPER
+     protected float getSoundVolume() {
          return 1.0F;
      }
  
@@ -212,7 +225,7 @@ index 064703afe..bd8385cd5 100644
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 634c30d93..332515128 100644
+index 634c30d93e..3325151284 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -74,6 +74,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -263,7 +276,7 @@ index 634c30d93..332515128 100644
          }
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftSound.java b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-index 73cb64e09..9f317ff2e 100644
+index 73cb64e09d..9f317ff2e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 @@ -806,6 +806,22 @@ public enum CraftSound {
@@ -290,7 +303,7 @@ index 73cb64e09..9f317ff2e 100644
          this.minecraftKey = minecraftKey;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index d505af188..5f752784d 100644
+index d505af1883..5f752784d5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1711,7 +1711,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -311,7 +324,7 @@ index d505af188..5f752784d 100644
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 50444ed94..46c05c398 100644
+index 50444ed94d..55642b6bd6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -706,9 +706,16 @@ public class CraftEventFactory {
@@ -356,11 +369,11 @@ index 50444ed94..46c05c398 100644
 +    private static void populateFields(EntityLiving victim, EntityDeathEvent event) {
 +        event.setReviveHealth(event.getEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
 +        event.setShouldPlayDeathSound(!victim.silentDeath && !victim.isSilent());
-+        SoundEffect soundEffect = victim.getDeathSoundEffect();
++        net.minecraft.server.SoundEffect soundEffect = victim.getDeathSoundEffect();
 +        event.setDeathSound(soundEffect != null ? org.bukkit.craftbukkit.CraftSound.getSoundByEffect(soundEffect) : null);
-+        event.setDeathSoundCategory(org.bukkit.SoundCategory.valueOf(victim.getDeathSoundCategory().name()));
++        event.setDeathSoundCategory(org.bukkit.SoundCategory.valueOf(victim.getSoundCategory().name()));
 +        event.setDeathSoundVolume(victim.getDeathSoundVolume());
-+        event.setDeathSoundPitch(victim.getDeathSoundPitch());
++        event.setDeathSoundPitch(victim.getSoundPitch());
 +    }
 +
 +    // Play death sound manually
@@ -370,8 +383,8 @@ index 50444ed94..46c05c398 100644
 +            double x = event.getEntity().getLocation().getX();
 +            double y = event.getEntity().getLocation().getY();
 +            double z = event.getEntity().getLocation().getZ();
-+            SoundEffect soundEffect = org.bukkit.craftbukkit.CraftSound.getSoundEffect(event.getDeathSound());
-+            SoundCategory soundCategory = SoundCategory.valueOf(event.getDeathSoundCategory().name());
++            net.minecraft.server.SoundEffect soundEffect = org.bukkit.craftbukkit.CraftSound.getSoundEffect(event.getDeathSound());
++            net.minecraft.server.SoundCategory soundCategory = net.minecraft.server.SoundCategory.valueOf(event.getDeathSoundCategory().name());
 +            victim.world.sendSoundEffect(source, x, y, z, soundEffect, soundCategory, event.getDeathSoundVolume(), event.getDeathSoundPitch());
 +        }
 +    }

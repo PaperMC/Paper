@@ -1,4 +1,4 @@
-From ad235c2c832bb36e4bb444861075244c89c22da4 Mon Sep 17 00:00:00 2001
+From 3eca27df8c7688c5f1d10ce9fe77d6c66b48f5f5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 20:16:03 -0400
 Subject: [PATCH] Add World Util Methods
@@ -6,7 +6,7 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index c4103680d..9433d04f4 100644
+index c4103680d4..9433d04f43 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -388,6 +388,7 @@ public class Chunk implements IChunkAccess {
@@ -18,7 +18,7 @@ index c4103680d..9433d04f4 100644
          return this.a(blockposition, i, this.world.getWorldProvider().g());
      }
 diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index bac6c9d65..0930552b1 100644
+index bac6c9d65b..0930552b1f 100644
 --- a/src/main/java/net/minecraft/server/IWorldReader.java
 +++ b/src/main/java/net/minecraft/server/IWorldReader.java
 @@ -36,6 +36,22 @@ public interface IWorldReader extends IIBlockAccess {
@@ -45,7 +45,7 @@ index bac6c9d65..0930552b1 100644
      @Nullable
      IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 01f510588..cdc5d7009 100644
+index 01f5105884..556d7af07a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -57,7 +57,7 @@ index 01f510588..cdc5d7009 100644
      protected int j = (new Random()).nextInt();
      protected final int k = 1013904223;
      protected float l;
-@@ -208,6 +208,83 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -208,6 +208,84 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          return i < 0 || i >= 256;
      }
  
@@ -71,36 +71,37 @@ index 01f510588..cdc5d7009 100644
 +    // test if meets light level, return faster
 +    // logic copied from below
 +    public boolean isLightLevel(BlockPosition blockposition, int level) {
-+        if (isValidLocation(blockposition)) {
-+            if (this.getType(blockposition).c(this, blockposition)) {
-+                int sky = getSkylightSubtracted();
-+                if (this.getLightLevel(blockposition.up(), sky) >= level) {
-+                    return true;
-+                }
-+                if (this.getLightLevel(blockposition.east(), sky) >= level) {
-+                    return true;
-+                }
-+                if (this.getLightLevel(blockposition.west(), sky) >= level) {
-+                    return true;
-+                }
-+                if (this.getLightLevel(blockposition.south(), sky) >= level) {
-+                    return true;
-+                }
-+                if (this.getLightLevel(blockposition.north(), sky) >= level) {
-+                    return true;
-+                }
-+                return false;
-+            } else {
-+                if (blockposition.getY() >= 256) {
-+                    blockposition = new BlockPosition(blockposition.getX(), 255, blockposition.getZ());
-+                }
-+
-+                Chunk chunk = this.getChunkAtWorldCoords(blockposition);
-+                return chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()) >= level;
-+            }
-+        } else {
-+            return true;
-+        }
++        return this.getLightLevel(blockposition) >= level; // TODO
++//        if (isValidLocation(blockposition)) {
++//            if (this.getType(blockposition).c(this, blockposition)) { // use neighbour brightness (where did this go)
++//                int sky = getSkylightSubtracted();
++//                if (this.getLightLevel(blockposition.up(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.east(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.west(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.south(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.north(), sky) >= level) {
++//                    return true;
++//                }
++//                return false;
++//            } else {
++//                if (blockposition.getY() >= 256) {
++//                    blockposition = new BlockPosition(blockposition.getX(), 255, blockposition.getZ());
++//                }
++//
++//                Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++//                return chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()) >= level;
++//            }
++//        } else {
++//            return true;
++//        }
 +    }
 +    //  reduces need to do isLoaded before getType
 +    public IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
@@ -118,7 +119,7 @@ index 01f510588..cdc5d7009 100644
 +        // CraftBukkit end
 +        Chunk chunk = this.getChunkIfLoaded(blockposition);
 +        if (chunk != null) {
-+            return isValidLocation(blockposition) ? chunk.getBlockData(blockposition) : Blocks.AIR.getBlockData();
++            return isValidLocation(blockposition) ? chunk.getType(blockposition) : Blocks.AIR.getBlockData();
 +        }
 +        return null;
 +    }
@@ -140,6 +141,18 @@ index 01f510588..cdc5d7009 100644
 +
      public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
          return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index 94d1c2be11..77b805f3ae 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -19,6 +19,7 @@ public class WorldBorder {
+ 
+     public WorldBorder() {}
+ 
++    public final boolean isInBounds(BlockPosition blockposition) { return this.a(blockposition); } // Paper - OBFHELPER
+     public boolean a(BlockPosition blockposition) {
+         return (double) (blockposition.getX() + 1) > this.c() && (double) blockposition.getX() < this.e() && (double) (blockposition.getZ() + 1) > this.d() && (double) blockposition.getZ() < this.f();
      }
 -- 
 2.21.0

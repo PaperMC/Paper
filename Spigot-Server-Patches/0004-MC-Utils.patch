@@ -1,4 +1,4 @@
-From fe856f842c339f1366c793bd3a787c9f6d1e0d69 Mon Sep 17 00:00:00 2001
+From 476438fe56b63e02b76f3c52fa84aae5c3489f2f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -285,7 +285,7 @@ index e975265a28..aa6a58dd88 100644
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000000..c97e116aaf
+index 0000000000..3448b5588e
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -0,0 +1,316 @@
@@ -384,7 +384,7 @@ index 0000000000..c97e116aaf
 +     * @return
 +     */
 +    public static void ensureMain(String reason, Runnable run) {
-+        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
 +            if (reason != null) {
 +                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
 +            }
@@ -409,7 +409,7 @@ index 0000000000..c97e116aaf
 +     * @return
 +     */
 +    public static <T> T ensureMain(String reason, Supplier<T> run) {
-+        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().primaryThread) {
++        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
 +            if (reason != null) {
 +                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
 +            }
@@ -555,7 +555,7 @@ index 0000000000..c97e116aaf
 +    @Nullable
 +    public static TileEntityHopper getHopper(World world, BlockPosition pos) {
 +        Chunk chunk = world.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4);
-+        if (chunk != null && chunk.getBlockData(pos.getX(), pos.getY(), pos.getZ()).getBlock() == Blocks.HOPPER) {
++        if (chunk != null && chunk.getType(new BlockPosition(pos.getX(), pos.getY(), pos.getZ())).getBlock() == Blocks.HOPPER) {
 +            TileEntity tileEntity = chunk.getTileEntityImmediately(pos);
 +            if (tileEntity instanceof TileEntityHopper) {
 +                return (TileEntityHopper) tileEntity;
@@ -573,15 +573,15 @@ index 0000000000..c97e116aaf
 +        return getNMSWorld(entity.getWorld());
 +    }
 +
-+    public static FluidCollisionOption getNMSFluidCollisionOption(TargetBlockInfo.FluidMode fluidMode) {
++    public static RayTrace.FluidCollisionOption getNMSFluidCollisionOption(TargetBlockInfo.FluidMode fluidMode) {
 +        if (fluidMode == TargetBlockInfo.FluidMode.NEVER) {
-+            return FluidCollisionOption.NEVER;
++            return RayTrace.FluidCollisionOption.NONE;
 +        }
 +        if (fluidMode == TargetBlockInfo.FluidMode.SOURCE_ONLY) {
-+            return FluidCollisionOption.SOURCE_ONLY;
++            return RayTrace.FluidCollisionOption.SOURCE_ONLY;
 +        }
 +        if (fluidMode == TargetBlockInfo.FluidMode.ALWAYS) {
-+            return FluidCollisionOption.ALWAYS;
++            return RayTrace.FluidCollisionOption.ANY;
 +        }
 +        return null;
 +    }

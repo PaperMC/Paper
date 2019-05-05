@@ -1,4 +1,4 @@
-From 106afc897f40321e0f4cad5985e0d38dc225d40e Mon Sep 17 00:00:00 2001
+From 8340921d81719bbc4211856ad6cd864a09883c89 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 19:55:45 -0400
 Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
@@ -6,7 +6,7 @@ Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
 Saves on some object allocation and processing when no plugin listens to this
 
 diff --git a/src/main/java/net/minecraft/server/BlockPlant.java b/src/main/java/net/minecraft/server/BlockPlant.java
-index 9bf42bb5e..0526af776 100644
+index 9bf42bb5ef..0526af776d 100644
 --- a/src/main/java/net/minecraft/server/BlockPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockPlant.java
 @@ -16,7 +16,7 @@ public class BlockPlant extends Block {
@@ -19,7 +19,7 @@ index 9bf42bb5e..0526af776 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/BlockTallPlant.java b/src/main/java/net/minecraft/server/BlockTallPlant.java
-index 469a3be05..f2c429f22 100644
+index 469a3be057..f2c429f22e 100644
 --- a/src/main/java/net/minecraft/server/BlockTallPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
 @@ -55,7 +55,7 @@ public class BlockTallPlant extends BlockPlant {
@@ -32,7 +32,7 @@ index 469a3be05..f2c429f22 100644
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4e97e74a2..c5359ae24 100644
+index 4e97e74a20..c5359ae248 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1087,6 +1087,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -44,10 +44,10 @@ index 4e97e74a2..c5359ae24 100644
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 78d1a5c71..7d6893cee 100644
+index 3d47fc899e..d8723c82d8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -435,7 +435,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -436,7 +436,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
                  // CraftBukkit start
                  iblockdata1.b(this, blockposition, j); // Don't call an event for the old block to limit event spam
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -56,7 +56,7 @@ index 78d1a5c71..7d6893cee 100644
                      BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                      this.getServer().getPluginManager().callEvent(event);
  
-@@ -546,7 +546,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -547,7 +547,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
              try {
                  // CraftBukkit start
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -66,7 +66,7 @@ index 78d1a5c71..7d6893cee 100644
                      this.getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 9a4a55846..3bd624569 100644
+index 399a766b3b..7923808ff1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -76,6 +76,7 @@ public class WorldServer extends World {
