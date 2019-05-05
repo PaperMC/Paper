@@ -66,9 +66,9 @@ will help to ensure the PR can be easily maintained over time and encourage the 
 
 * There needs to be a new line at the end of every file.
 * Imports should be organised in a logical manner.
-    * Do not group packages unless already grouped.
+    * Do not group packages
     * All new imports should be within existing CraftBukkit comments if any are present. If not, make them.
-    * __Absolutely no wildcard imports.__
+    * __Absolutely no wildcard imports outside of tests.__
     * If you only use an import once, don't import it. Use the fully qualified name.
 
 Any questions about these requirements can be asked in #spigot-dev in IRC.
