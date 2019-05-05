@@ -30,8 +30,12 @@ Contributions of all sorts are welcome. To manage community contributions, we us
 * Create an account on [JIRA](http://hub.spigotmc.org/jira/).
 * Fill in the [SpigotMC CLA](http://www.spigotmc.org/go/cla) and wait up to 24 hours for your Stash account to be activated. Please ensure that your username and email addresses match.
 * Log into Stash using your JIRA credentials.
- 
+
 Once you have performed these steps you can create a fork, push your code changes, and then submit it for review.
+
+If you submit a PR involving both Bukkit and CraftBukkit, each PR should link the other.
+
+Although the minimum requirement for compilation & usage is Java 8, we prefer all contributions to be written in Java 7 style code unless there is a compelling reason otherwise.
 
 Bukkit's Goals
 --------------
@@ -64,10 +68,15 @@ Code Requirements
     * Empty lines should contain no spaces.
 * No trailing whitespaces.
 * No 80 character column limit, or 'weird' mid-statement newlines unless absolutely necessary.
+    * The 80 character column limit still applies to documentation.
 * No one-line methods.
-* All major additions should have documentation(e.g. javadocs).
+* All major additions should have documentation.
 * Try to follow test driven development where available.
 * All code should be free of magic values. If this is not possible, it should be marked with a TODO comment indicating it should be addressed in the future.
+  * If magic values are absolutely necessary for your change, what those values represent should be documented in the code as well as an explanation in the Pull Request description on why those values are necessary.
+* No unnecessary code changes. Look through all your changes before you submit it.
+* Do not attempt to fix multiple problems with a single patch or pull request.
+* Avoid moving or renaming classes.
 * All non-private methods and constructors must have specified nullability through [annotations](https://github.com/JetBrains/java-annotations)
 
 Bukkit/CraftBukkit employs [JUnit 4](http://www.vogella.com/articles/JUnit/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
@@ -75,4 +84,8 @@ Bukkit is a large project and what seems simple to a PR author at the time of wr
 will help to ensure the PR can be easily maintained over time and encourage the Spigot team to pull the PR.
 
 * There needs to be a new line at the end of every file.
-* Absolutely no wildcard imports.
+* Imports should be organised in a logical manner.
+    * Do not group packages
+    * __Absolutely no wildcard imports outside of tests.__
+
+Any questions about these requirements can be asked in #spigot-dev in IRC.

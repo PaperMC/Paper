@@ -1,9 +1,11 @@
 package org.bukkit;
 
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.Biome;
 import org.bukkit.boss.KeyedBossBar;
@@ -98,7 +100,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see EntityType
      */
-    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class);
+    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, (entity) -> entity != EntityType.UNKNOWN);
     /**
      * Default server loot tables.
      *
@@ -110,7 +112,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Material
      */
-    Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class);
+    Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
     /**
      * Server statistics.
      *
@@ -144,10 +146,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         private final Map<NamespacedKey, T> map;
 
         protected SimpleRegistry(@NotNull Class<T> type) {
+            this(type, Predicates.<T>alwaysTrue());
+        }
+
+        protected SimpleRegistry(@NotNull Class<T> type, @NotNull Predicate<T> predicate) {
             ImmutableMap.Builder<NamespacedKey, T> builder = ImmutableMap.builder();
 
             for (T entry : type.getEnumConstants()) {
-                builder.put(entry.getKey(), entry);
+                if (predicate.test(entry)) {
+                    builder.put(entry.getKey(), entry);
+                }
             }
 
             map = builder.build();
