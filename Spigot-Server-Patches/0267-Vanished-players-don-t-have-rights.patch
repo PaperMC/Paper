@@ -1,11 +1,11 @@
-From e67d57bd1c9073fe848eda9eb7a7e459a838c108 Mon Sep 17 00:00:00 2001
+From 345aae7afaa998970bff80dbfd8d303ecbd001dd Mon Sep 17 00:00:00 2001
 From: Hugo Manrique <hugmanrique@gmail.com>
 Date: Mon, 23 Jul 2018 14:22:26 +0200
 Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 8dd589aae..57a4481c5 100644
+index 8dd589aaea..57a4481c50 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -94,7 +94,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -18,7 +18,7 @@ index 8dd589aae..57a4481c5 100644
      protected int j;
      private Entity vehicle;
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index bf7e0d17e..c5d5876c2 100644
+index ee22bb0387..e5a013ffd2 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
 @@ -22,9 +22,18 @@ public interface IEntityAccess {
@@ -40,35 +40,8 @@ index bf7e0d17e..c5d5876c2 100644
          }).noneMatch((entity1) -> {
              return VoxelShapes.c(voxelshape, VoxelShapes.a(entity1.getBoundingBox()), OperatorBoolean.AND);
          });
-@@ -147,7 +156,7 @@ public interface IEntityAccess {
- 
-     @Nullable
-     default <T extends EntityLiving> T a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2, AxisAlignedBB axisalignedbb) {
--        return this.a(this.a(oclass, axisalignedbb, (Predicate) null), pathfindertargetcondition, entityliving, d0, d1, d2);
-+        return this.a(this.a(oclass, axisalignedbb, (Predicate<T>) null), pathfindertargetcondition, entityliving, d0, d1, d2); // Paper - decompile fix
-     }
- 
-     @Nullable
-@@ -157,7 +166,7 @@ public interface IEntityAccess {
-         Iterator iterator = list.iterator();
- 
-         while (iterator.hasNext()) {
--            T t1 = (EntityLiving) iterator.next();
-+            T t1 = (T) iterator.next(); // Paper - decompile fix
- 
-             if (pathfindertargetcondition.a(entityliving, t1)) {
-                 double d4 = t1.e(d0, d1, d2);
-@@ -193,7 +202,7 @@ public interface IEntityAccess {
-         Iterator iterator = list.iterator();
- 
-         while (iterator.hasNext()) {
--            T t0 = (EntityLiving) iterator.next();
-+            T t0 = (T) iterator.next(); // Paper - decompile fix
- 
-             if (pathfindertargetcondition.a(entityliving, t0)) {
-                 list1.add(t0);
 diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index 0930552b1..c0aa21703 100644
+index 0930552b1f..c0aa21703f 100644
 --- a/src/main/java/net/minecraft/server/IWorldReader.java
 +++ b/src/main/java/net/minecraft/server/IWorldReader.java
 @@ -95,7 +95,12 @@ public interface IWorldReader extends IIBlockAccess {
@@ -85,7 +58,7 @@ index 0930552b1..c0aa21703 100644
  
          return voxelshape.isEmpty() || this.a((Entity) null, voxelshape.a((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()));
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index 59b1e6ce2..b90cc6652 100644
+index 59b1e6ce2e..b90cc6652b 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
 @@ -126,7 +126,8 @@ public class ItemBlock extends Item {
@@ -99,7 +72,7 @@ index 59b1e6ce2..b90cc6652 100644
  
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index de081ca1c..c09f7e7c4 100644
+index de081ca1c5..c09f7e7c40 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -1106,6 +1106,14 @@ public class CraftEventFactory {

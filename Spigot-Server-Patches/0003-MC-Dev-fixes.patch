@@ -1,4 +1,4 @@
-From 4718559989fd4efabfb66513b7755d6f262bee1b Mon Sep 17 00:00:00 2001
+From c8f0455c3659ae62743792a22b8f5b7e75136548 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
@@ -85,6 +85,85 @@ index d8d2267084..3de9d264db 100644
              this.d = supplier;
              this.e = bifunction;
          }
+diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
+index 8753bea614..809ca0983a 100644
+--- a/src/main/java/net/minecraft/server/IBlockAccess.java
++++ b/src/main/java/net/minecraft/server/IBlockAccess.java
+@@ -96,7 +96,7 @@ public interface IBlockAccess {
+                 double d13 = d10 * (i1 > 0 ? 1.0D - MathHelper.h(d4) : MathHelper.h(d4));
+                 double d14 = d11 * (j1 > 0 ? 1.0D - MathHelper.h(d5) : MathHelper.h(d5));
+ 
+-                Object object;
++                T object; // Paper - decompile fix
+ 
+                 do {
+                     if (d12 > 1.0D && d13 > 1.0D && d14 > 1.0D) {
+diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
+index bf7e0d17ef..ee22bb0387 100644
+--- a/src/main/java/net/minecraft/server/IEntityAccess.java
++++ b/src/main/java/net/minecraft/server/IEntityAccess.java
+@@ -147,17 +147,17 @@ public interface IEntityAccess {
+ 
+     @Nullable
+     default <T extends EntityLiving> T a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2, AxisAlignedBB axisalignedbb) {
+-        return this.a(this.a(oclass, axisalignedbb, (Predicate) null), pathfindertargetcondition, entityliving, d0, d1, d2);
++        return this.a(this.a(oclass, axisalignedbb, null), pathfindertargetcondition, entityliving, d0, d1, d2); // Paper - decompile fix
+     }
+ 
+     @Nullable
+     default <T extends EntityLiving> T a(List<? extends T> list, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2) {
+         double d3 = -1.0D;
+         T t0 = null;
+-        Iterator iterator = list.iterator();
++        Iterator<? extends T> iterator = list.iterator(); // Paper - decompile fix
+ 
+         while (iterator.hasNext()) {
+-            T t1 = (EntityLiving) iterator.next();
++            T t1 = iterator.next(); // Paper - decompile fix
+ 
+             if (pathfindertargetcondition.a(entityliving, t1)) {
+                 double d4 = t1.e(d0, d1, d2);
+@@ -190,10 +190,10 @@ public interface IEntityAccess {
+     default <T extends EntityLiving> List<T> a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, EntityLiving entityliving, AxisAlignedBB axisalignedbb) {
+         List<T> list = this.a(oclass, axisalignedbb, (Predicate) null);
+         List<T> list1 = Lists.newArrayList();
+-        Iterator iterator = list.iterator();
++        Iterator<T> iterator = list.iterator(); // Paper - decompile fix
+ 
+         while (iterator.hasNext()) {
+-            T t0 = (EntityLiving) iterator.next();
++            T t0 = iterator.next(); // Paper - decompile fix
+ 
+             if (pathfindertargetcondition.a(entityliving, t0)) {
+                 list1.add(t0);
+diff --git a/src/main/java/net/minecraft/server/LootSelectorEntry.java b/src/main/java/net/minecraft/server/LootSelectorEntry.java
+index 9290534917..1016325bd7 100644
+--- a/src/main/java/net/minecraft/server/LootSelectorEntry.java
++++ b/src/main/java/net/minecraft/server/LootSelectorEntry.java
+@@ -127,7 +127,7 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+         @Override
+         public T b(LootItemFunction.a lootitemfunction_a) {
+             this.c.add(lootitemfunction_a.b());
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix
+         }
+ 
+         protected LootItemFunction[] a() {
+@@ -136,12 +136,12 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+ 
+         public T a(int i) {
+             this.a = i;
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix
+         }
+ 
+         public T b(int i) {
+             this.b = i;
+-            return (LootSelectorEntry.a) this.d();
++            return this.d(); // Paper - decompile fix
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
 index cb0c08a144..9aabcb630f 100644
 --- a/src/main/java/net/minecraft/server/NBTBase.java
@@ -98,6 +177,19 @@ index cb0c08a144..9aabcb630f 100644
  
      default String asString() {
          return this.toString();
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+index 0dda7aaf69..4e20cfba41 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+@@ -134,7 +134,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+             BiomeBase[] abiomebase = chunk.getBiomeIndex();
+ 
+             for (l = 0; l < abiomebase.length; ++l) {
+-                packetdataserializer.writeInt(IRegistry.BIOME.a((Object) abiomebase[l]));
++                packetdataserializer.writeInt(IRegistry.BIOME.a(abiomebase[l])); // Paper - decompile fix
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
 index 7f89562e90..4efcb8b595 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
@@ -139,6 +231,70 @@ index 4cb78c6a3f..e15d286710 100644
          this.e = 0;
          this.f = 0;
  
+diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+index 41a5d1dc29..b3799ab564 100644
+--- a/src/main/java/net/minecraft/server/SystemUtils.java
++++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -45,8 +45,8 @@ public class SystemUtils {
+         return Collectors.toMap(Entry::getKey, Entry::getValue);
+     }
+ 
+-    public static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Object object) {
+-        return iblockstate.a((Comparable) object);
++    public static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, T object) { // Paper - decompile fix
++        return iblockstate.a(object); // Paper - decompile fix
+     }
+ 
+     public static String a(String s, @Nullable MinecraftKey minecraftkey) {
+@@ -154,8 +154,8 @@ public class SystemUtils {
+     public static <T> T b(Iterable<T> iterable, @Nullable T t0) {
+         Iterator<T> iterator = iterable.iterator();
+ 
+-        Object object;
+-        Object object1;
++        T object; // Paper - decompile fix
++        T object1; // Paper - decompile fix
+ 
+         for (object1 = null; iterator.hasNext(); object1 = object) {
+             object = iterator.next();
+@@ -180,7 +180,7 @@ public class SystemUtils {
+     }
+ 
+     public static <K> Strategy<K> i() {
+-        return SystemUtils.IdentityHashingStrategy.INSTANCE;
++        return (Strategy<K>) SystemUtils.IdentityHashingStrategy.INSTANCE; // Paper - decompile fix
+     }
+ 
+     public static <V> CompletableFuture<List<V>> b(List<? extends CompletableFuture<? extends V>> list) {
+@@ -191,7 +191,7 @@ public class SystemUtils {
+         list.forEach((completablefuture1) -> {
+             int i = list1.size();
+ 
+-            list1.add((Object) null);
++            list1.add(null); // Paper - decompile fix
+             acompletablefuture[i] = completablefuture1.whenComplete((object, throwable) -> {
+                 if (throwable != null) {
+                     completablefuture.completeExceptionally(throwable);
+diff --git a/src/main/java/net/minecraft/server/VillagerTrades.java b/src/main/java/net/minecraft/server/VillagerTrades.java
+index 1df86e3bb1..eabbf29334 100644
+--- a/src/main/java/net/minecraft/server/VillagerTrades.java
++++ b/src/main/java/net/minecraft/server/VillagerTrades.java
+@@ -15,12 +15,12 @@ import javax.annotation.Nullable;
+ 
+ public class VillagerTrades {
+ 
+-    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.IMerchantRecipeOption[]>> a = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
++    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.IMerchantRecipeOption[]>> a = SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // Paper - decompile fix
+         hashmap.put(VillagerProfession.FARMER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.WHEAT, 20, 8, 2), new VillagerTrades.b(Items.POTATO, 26, 8, 2), new VillagerTrades.b(Items.CARROT, 22, 8, 2), new VillagerTrades.b(Items.BEETROOT, 15, 8, 2), new VillagerTrades.h(Items.BREAD, 1, 6, 8, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Blocks.PUMPKIN, 6, 6, 10), new VillagerTrades.h(Items.PUMPKIN_PIE, 1, 4, 5), new VillagerTrades.h(Items.APPLE, 1, 4, 8, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.COOKIE, 3, 18, 10), new VillagerTrades.b(Blocks.MELON, 4, 6, 20)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Blocks.CAKE, 1, 1, 6, 15), new VillagerTrades.i(MobEffects.FASTER_MOVEMENT, 160, 15), new VillagerTrades.i(MobEffects.JUMP, 160, 15), new VillagerTrades.i(MobEffects.WEAKNESS, 140, 15), new VillagerTrades.i(MobEffects.BLINDNESS, 120, 15), new VillagerTrades.i(MobEffects.POISON, 280, 15), new VillagerTrades.i(MobEffects.SATURATION, 7, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.GOLDEN_CARROT, 3, 3, 30), new VillagerTrades.h(Items.GLISTERING_MELON_SLICE, 4, 3, 30)})));
+-        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.STRING, 20, 8, 2), new VillagerTrades.b(Items.COAL, 10, 8, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 8, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 8, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.COD, 15, 8, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 8, 5), new VillagerTrades.h(Items.pS, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.SALMON, 13, 8, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 2, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.TROPICAL_FISH, 6, 6, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.PUFFERFISH, 4, 6, 30), new VillagerTrades.c(1, 6, 30, ImmutableMap.builder().put(VillagerType.c, Items.OAK_BOAT).put(VillagerType.g, Items.SPRUCE_BOAT).put(VillagerType.e, Items.SPRUCE_BOAT).put(VillagerType.a, Items.JUNGLE_BOAT).put(VillagerType.b, Items.JUNGLE_BOAT).put(VillagerType.d, Items.ACACIA_BOAT).put(VillagerType.f, Items.DARK_OAK_BOAT).build())})));
++        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.STRING, 20, 8, 2), new VillagerTrades.b(Items.COAL, 10, 8, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 8, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 8, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.COD, 15, 8, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 8, 5), new VillagerTrades.h(Items.pS, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.SALMON, 13, 8, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 2, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.TROPICAL_FISH, 6, 6, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.PUFFERFISH, 4, 6, 30), new VillagerTrades.c(1, 6, 30, ImmutableMap.<VillagerType, Item>builder().put(VillagerType.c, Items.OAK_BOAT).put(VillagerType.g, Items.SPRUCE_BOAT).put(VillagerType.e, Items.SPRUCE_BOAT).put(VillagerType.a, Items.JUNGLE_BOAT).put(VillagerType.b, Items.JUNGLE_BOAT).put(VillagerType.d, Items.ACACIA_BOAT).put(VillagerType.f, Items.DARK_OAK_BOAT).build())})));  // Paper - decompile fix
+         hashmap.put(VillagerProfession.SHEPHERD, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Blocks.WHITE_WOOL, 18, 8, 2), new VillagerTrades.b(Blocks.BROWN_WOOL, 18, 8, 2), new VillagerTrades.b(Blocks.BLACK_WOOL, 18, 8, 2), new VillagerTrades.b(Blocks.GRAY_WOOL, 18, 8, 2), new VillagerTrades.h(Items.SHEARS, 2, 1, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.WHITE_DYE, 12, 8, 10), new VillagerTrades.b(Items.GRAY_DYE, 12, 8, 10), new VillagerTrades.b(Items.BLACK_DYE, 12, 8, 10), new VillagerTrades.b(Items.LIGHT_BLUE_DYE, 12, 8, 10), new VillagerTrades.b(Items.LIME_DYE, 12, 8, 10), new VillagerTrades.h(Blocks.WHITE_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.ORANGE_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.MAGENTA_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.LIGHT_BLUE_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.YELLOW_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.LIME_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.PINK_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.GRAY_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.LIGHT_GRAY_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.CYAN_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.PURPLE_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.BLUE_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.BROWN_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.GREEN_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.RED_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.BLACK_WOOL, 1, 1, 8, 5), new VillagerTrades.h(Blocks.WHITE_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.ORANGE_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.MAGENTA_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.LIGHT_BLUE_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.YELLOW_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.LIME_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.PINK_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.GRAY_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.LIGHT_GRAY_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.CYAN_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.PURPLE_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.BLUE_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.BROWN_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.GREEN_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.RED_CARPET, 1, 4, 8, 5), new VillagerTrades.h(Blocks.BLACK_CARPET, 1, 4, 8, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.YELLOW_DYE, 12, 8, 20), new VillagerTrades.b(Items.LIGHT_GRAY_DYE, 12, 8, 20), new VillagerTrades.b(Items.ORANGE_DYE, 12, 8, 20), new VillagerTrades.b(Items.RED_DYE, 12, 8, 20), new VillagerTrades.b(Items.PINK_DYE, 12, 8, 20), new VillagerTrades.h(Blocks.WHITE_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.YELLOW_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.RED_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.BLACK_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.BLUE_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.BROWN_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.CYAN_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.GRAY_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.GREEN_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.LIGHT_BLUE_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.LIGHT_GRAY_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.LIME_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.MAGENTA_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.ORANGE_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.PINK_BED, 3, 1, 6, 10), new VillagerTrades.h(Blocks.PURPLE_BED, 3, 1, 6, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.BROWN_DYE, 12, 8, 30), new VillagerTrades.b(Items.PURPLE_DYE, 12, 8, 30), new VillagerTrades.b(Items.BLUE_DYE, 12, 8, 30), new VillagerTrades.b(Items.GREEN_DYE, 12, 8, 30), new VillagerTrades.b(Items.MAGENTA_DYE, 12, 8, 30), new VillagerTrades.b(Items.CYAN_DYE, 12, 8, 30), new VillagerTrades.h(Items.WHITE_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.BLUE_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.LIGHT_BLUE_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.RED_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.PINK_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.GREEN_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.LIME_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.GRAY_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.BLACK_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.PURPLE_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.MAGENTA_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.CYAN_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.BROWN_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.YELLOW_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.ORANGE_BANNER, 3, 1, 6, 15), new VillagerTrades.h(Items.LIGHT_GRAY_BANNER, 3, 1, 6, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.PAINTING, 2, 3, 30)})));
+         hashmap.put(VillagerProfession.FLETCHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.STICK, 32, 8, 2), new VillagerTrades.h(Items.ARROW, 1, 16, 1), new VillagerTrades.g(Blocks.GRAVEL, 10, Items.FLINT, 10, 6, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.FLINT, 26, 6, 10), new VillagerTrades.h(Items.BOW, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.STRING, 14, 8, 20), new VillagerTrades.h(Items.CROSSBOW, 3, 1, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.FEATHER, 24, 8, 30), new VillagerTrades.e(Items.BOW, 2, 2, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.dE, 8, 6, 30), new VillagerTrades.e(Items.CROSSBOW, 3, 2, 15), new VillagerTrades.j(Items.ARROW, 5, Items.TIPPED_ARROW, 5, 2, 6, 30)})));
+-        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.builder().put(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.PAPER, 24, 8, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 6, 3, 6, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.BOOK, 4, 6, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.pQ, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.INK_SAC, 5, 6, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.am, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 6, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build()));
++        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.<Integer, VillagerTrades.IMerchantRecipeOption[]>builder().put(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.PAPER, 24, 8, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 6, 3, 6, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.BOOK, 4, 6, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.pQ, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.INK_SAC, 5, 6, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.am, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 6, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build())); // Paper - decompile fix
+         hashmap.put(VillagerProfession.CARTOGRAPHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.PAPER, 24, 8, 2), new VillagerTrades.h(Items.MAP, 7, 1, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.df, 10, 8, 10), new VillagerTrades.k(13, "Monument", MapIcon.Type.MONUMENT, 6, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.COMPASS, 1, 6, 20), new VillagerTrades.k(14, "Mansion", MapIcon.Type.MANSION, 6, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.ITEM_FRAME, 7, 1, 15), new VillagerTrades.h(Items.WHITE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.RED_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PINK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GREEN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIME_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GRAY_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLACK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PURPLE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.MAGENTA_BANNER, 3, 1, 15), new VillagerTrades.h(Items.CYAN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BROWN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.YELLOW_BANNER, 3, 1, 15), new VillagerTrades.h(Items.ORANGE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_GRAY_BANNER, 3, 1, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.h(Items.GLOBE_BANNER_PATTERN, 8, 1, 30)})));
+         hashmap.put(VillagerProfession.CLERIC, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.ROTTEN_FLESH, 32, 8, 2), new VillagerTrades.h(Items.REDSTONE, 1, 2, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.GOLD_INGOT, 3, 6, 10), new VillagerTrades.h(Items.LAPIS_LAZULI, 1, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.RABBIT_FOOT, 2, 6, 20), new VillagerTrades.h(Blocks.GLOWSTONE, 4, 1, 6, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.SCUTE, 4, 6, 30), new VillagerTrades.b(Items.GLASS_BOTTLE, 9, 6, 30), new VillagerTrades.h(Items.ENDER_PEARL, 5, 1, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.NETHER_WART, 22, 6, 30), new VillagerTrades.h(Items.EXPERIENCE_BOTTLE, 3, 1, 30)})));
+         hashmap.put(VillagerProfession.ARMORER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.COAL, 15, 8, 2), new VillagerTrades.h(new ItemStack(Items.IRON_LEGGINGS), 7, 1, 6, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_BOOTS), 4, 1, 6, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_HELMET), 5, 1, 6, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_CHESTPLATE), 9, 1, 6, 1, 0.2F)}, 2, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.IRON_INGOT, 4, 6, 10), new VillagerTrades.h(new ItemStack(Items.pP), 36, 1, 6, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_BOOTS), 1, 1, 6, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_LEGGINGS), 3, 1, 6, 5, 0.2F)}, 3, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.b(Items.LAVA_BUCKET, 1, 6, 20), new VillagerTrades.b(Items.DIAMOND, 1, 6, 20), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_HELMET), 1, 1, 6, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_CHESTPLATE), 4, 1, 6, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.SHIELD), 5, 1, 6, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.e(Items.DIAMOND_LEGGINGS, 14, 2, 15, 0.2F), new VillagerTrades.e(Items.DIAMOND_BOOTS, 8, 2, 15, 0.2F)}, 5, new VillagerTrades.IMerchantRecipeOption[] { new VillagerTrades.e(Items.DIAMOND_HELMET, 8, 2, 30, 0.2F), new VillagerTrades.e(Items.DIAMOND_CHESTPLATE, 16, 2, 30, 0.2F)})));
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
 index b251a1d7d9..3c5b3fe101 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
