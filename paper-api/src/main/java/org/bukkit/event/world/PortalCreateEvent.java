@@ -74,7 +74,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
          */
         FIRE,
         /**
-         * When a nether portal frame and portal is created at the exist of an
+         * When a nether portal frame and portal is created at the exit of an
          * entered nether portal.
          */
         NETHER_PAIR,
