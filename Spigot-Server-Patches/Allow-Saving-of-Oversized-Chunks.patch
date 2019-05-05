@@ -31,7 +31,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
-index 12268f87b9..e1f7e06ab2 100644
+index 9fd8a75dae..d49afd622e 100644
 --- a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 +++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 @@ -0,0 +0,0 @@ public class NBTCompressedStreamTools {
@@ -50,59 +50,81 @@ index 12268f87b9..e1f7e06ab2 100644
      public static void a(NBTTagCompound nbttagcompound, DataOutput dataoutput) throws IOException {
          a((NBTBase) nbttagcompound, dataoutput);
      }
+diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
+index b7c94fe238..80eea5dfbd 100644
+--- a/src/main/java/net/minecraft/server/NBTTagList.java
++++ b/src/main/java/net/minecraft/server/NBTTagList.java
+@@ -0,0 +0,0 @@ import java.util.Objects;
+ 
+ public class NBTTagList extends NBTList<NBTBase> {
+ 
+-    private List<NBTBase> list = Lists.newArrayList();
++    List<NBTBase> list = Lists.newArrayList(); // Paper - private -> package
+     private byte type = 0;
+ 
+     public NBTTagList() {}
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index c20511588d..82f7af46f8 100644
+index e68f901943..995a893774 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -0,0 +0,0 @@ public class RegionFile {
-             }
-             header.clear();
-             java.nio.IntBuffer headerAsInts = header.asIntBuffer();
-+            initOversizedState();
-             // Paper End
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+     // Minecraft is limited to 256 sections per chunk. So 1MB. This can easily be overriden.
+     // So we extend this to use the REAL size when the count is maxed by seeking to that section and reading the length.
+     private static final boolean ENABLE_EXTENDED_SAVE = Boolean.parseBoolean(System.getProperty("net.minecraft.server.RegionFile.enableExtendedSave", "true"));
+-    private final File file;
++    final File file; // Paper - private -> package
+     // Spigot end
+     private static final byte[] a = new byte[4096];
+     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         }
+         header.clear();
+         java.nio.IntBuffer headerAsInts = header.asIntBuffer();
++        initOversizedState();
+         // Paper End
  
-             for (j = 0; j < 1024; ++j) {
-@@ -0,0 +0,0 @@ public class RegionFile {
-                         this.c.seek(j * 4 + 4); // Go back to where we were
-                     }
+         int k;
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+                     this.b.seek(j * 4 + 4); // Go back to where we were
                  }
--                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
-+                if (k > 0 && (k >> 8) > 1 && (k >> 8) + (length) <= this.f.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
-                     for (int l = 0; l < (length); ++l) {
-                         // Spigot end
-                         this.f.set((k >> 8) + l, false);
-@@ -0,0 +0,0 @@ public class RegionFile {
+             }
+-            if (k > 0 && (k >> 8) > 1 && (k >> 8) + (k & 255) <= this.e.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
++            if (k > 0 && (k >> 8) > 1 && (k >> 8) + (length) <= this.e.size()) { // Paper >= 1 as 0/1 are the headers, and negative isnt valid
+                 for (int l = 0; l < (length); ++l) {
+                     // Spigot end
+                     this.e.set((k >> 8) + l, false);
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      }
  
      @Nullable
--    public synchronized DataInputStream a(int i, int j) {
-+    public synchronized DataInputStream getReadStream(int i, int j) { return a(i, j); } @Nullable public synchronized DataInputStream a(int i, int j) { // Paper - OBFHELPER
-         if (this.e(i, j)) {
-             return null;
-         } else {
-@@ -0,0 +0,0 @@ public class RegionFile {
+-    public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) {
++    public synchronized DataInputStream getReadStream(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) { // Paper - OBFHELPER
+         try {
+             int i = this.getOffset(chunkcoordintpair);
+ 
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         }
      }
  
-     @Nullable
--    public DataOutputStream c(int i, int j) {
--        return this.e(i, j) ? null : new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new RegionFile.ChunkBuffer(i, j))));
-+    public DataOutputStream getWriteStream(int i, int j) { return c(i, j); } @Nullable public DataOutputStream c(int i, int j) { // Paper - OBFHELPER
-+        return this.e(i, j) ? null : new DataOutputStream(new RegionFile.ChunkBuffer(i, j)); // Paper - remove middleware, move deflate to .close() for dynamic levels
+-    public DataOutputStream c(ChunkCoordIntPair chunkcoordintpair) {
+-        return new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new RegionFile.ChunkBuffer(chunkcoordintpair))));
++    public DataOutputStream getWriteStream(ChunkCoordIntPair chunkcoordintpair) { return this.c(chunkcoordintpair); } public DataOutputStream c(ChunkCoordIntPair chunkcoordintpair) { // Paper - OBFHELPER
++        return new DataOutputStream(new RegionFile.ChunkBuffer(chunkcoordintpair)); // Paper - remove middleware, move deflate to .close() for dynamic levels
      }
  
-     protected synchronized void a(int i, int j, byte[] abyte, int k) {
-@@ -0,0 +0,0 @@ public class RegionFile {
+     protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, byte[] abyte, int i) {
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
-             if (k1 >= 256) {
+             if (i1 >= 256) {
                  // Spigot start
--                if (!ENABLE_EXTENDED_SAVE) return;
-+                if (!USE_SPIGOT_OVERSIZED_METHOD && !RegionFileCache.isOverzealous()) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
-                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
-+                if (!ENABLE_EXTENDED_SAVE) return;
+-                if (!ENABLE_EXTENDED_SAVE) throw new RuntimeException(String.format("Too big to save, %d > 1048576", i));
++                if (!USE_SPIGOT_OVERSIZED_METHOD && !RegionFileCache.isOverzealous()) throw new ChunkTooLargeException(chunkcoordintpair.x, chunkcoordintpair.z, l); // Paper - throw error instead
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}) Size: {1} {2}", new Object[]{chunkcoordintpair, i1, this.file});
++                if (!ENABLE_EXTENDED_SAVE) throw new RuntimeException(String.format("Too big to save, %d > 1048576", i)); // Paper - move after our check
                  // Spigot end
              }
  
-@@ -0,0 +0,0 @@ public class RegionFile {
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
      }
@@ -159,11 +181,11 @@ index c20511588d..82f7af46f8 100644
 +    }
 +
 +    private File getOversizedMetaFile() {
-+        return new File(getFile().getParentFile(), getFile().getName().replaceAll("\\.mca$", "") + ".oversized.nbt");
++        return new File(this.file.getParentFile(), this.file.getName().replaceAll("\\.mca$", "") + ".oversized.nbt");
 +    }
 +
 +    private File getOversizedFile(int x, int z) {
-+        return new File(this.getFile().getParentFile(), this.getFile().getName().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
++        return new File(this.file.getParentFile(), this.file.getName().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
 +    void writeOversizedData(int x, int z, NBTTagCompound oversizedData) throws IOException {
@@ -193,7 +215,7 @@ index c20511588d..82f7af46f8 100644
 +    }
 +    public class ChunkTooLargeException extends RuntimeException {
 +        public ChunkTooLargeException(int x, int z, int sectors) {
-+            super("Chunk " + x + "," + z + " of " + getFile().toString() + " is too large (" + sectors + "/256)");
++            super("Chunk " + x + "," + z + " of " + RegionFile.this.file.toString() + " is too large (" + sectors + "/255)");
 +        }
 +    }
 +    private static class DirectByteArrayOutputStream extends ByteArrayOutputStream {
@@ -212,12 +234,12 @@ index c20511588d..82f7af46f8 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -0,0 +0,0 @@ public class RegionFile {
-             this.c = j;
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+             this.b = chunkcoordintpair;
          }
  
 -        public void close() {
--            RegionFile.this.a(this.b, this.c, this.buf, this.count);
+-            RegionFile.this.a(this.b, this.buf, this.count);
 +        public void close() throws IOException {
 +            // Paper start - apply dynamic compression
 +            int origLength = this.count;
@@ -226,9 +248,9 @@ index c20511588d..82f7af46f8 100644
 +            byte[] bytes = out.getBuffer();
 +            int length = out.size();
 +
-+            RegionFile.this.a(this.b, this.c, bytes, length); // Paper - change to bytes/length
-+        }
-+    }
++            RegionFile.this.a(this.b, bytes, length); // Paper - change to bytes/length
+         }
+     }
 +
 +    private static final byte[] compressionBuffer = new byte[1024 * 64]; // 64k fits most standard chunks input size even, ideally 1 pass through zlib
 +    private static final java.util.zip.Deflater deflater = new java.util.zip.Deflater();
@@ -245,27 +267,28 @@ index c20511588d..82f7af46f8 100644
 +            out.close();
 +            deflater.reset();
 +            return out;
-         }
-     }
++        }
++    }
 +    // Paper end
 +
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 8c8b7cbab5..17e76815ad 100644
+index 1b12a16113..6893f3cd34 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
-@@ -0,0 +0,0 @@ public class RegionFileCache {
- 
-     public static final Map<File, RegionFile> cache = new LinkedHashMap(PaperConfig.regionFileCacheSize, 0.75f, true); // Paper - HashMap -> LinkedHashMap
- 
-+    public static synchronized RegionFile getRegionFile(File file, int i, int j) { return a(file, i, j); } // Paper - OBFHELPER
-     public static synchronized RegionFile a(File file, int i, int j) {
-         File file1 = new File(file, "region");
-         File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
-@@ -0,0 +0,0 @@ public class RegionFileCache {
-     public static synchronized boolean hasRegionFile(File file, int i, int j) {
-         return RegionFileCache.cache.containsKey(getRegionFileName(file, i, j));
+@@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
+         // Paper start
      }
+ 
++    public RegionFile getRegionFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { return this.a(chunkcoordintpair, existingOnly); } // Paper - OBFHELPER
+     private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+         RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
+@@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
+     public synchronized boolean hasRegionFile(File file, int i, int j) {
+         return cache.containsKey(getRegionFileName(file, i, j));
+     }
++    // Paper start
 +    private static void printOversizedLog(String msg, File file, int x, int z) {
 +        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
 +    }
@@ -285,23 +308,26 @@ index 8c8b7cbab5..17e76815ad 100644
 +        return SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD;
 +    }
 +
-+    private static void writeRegion(File file, int x, int z, NBTTagCompound nbttagcompound) throws IOException {
-+        RegionFile regionfile = getRegionFile(file, x, z);
++    private void writeRegion(ChunkCoordIntPair chunk, NBTTagCompound nbttagcompound) throws IOException {
++        RegionFile regionfile = getRegionFile(chunk, false);
 +
-+        DataOutputStream out = regionfile.getWriteStream(x & 31, z & 31);
++        int chunkX = chunk.x;
++        int chunkZ = chunk.z;
++
++        DataOutputStream out = regionfile.getWriteStream(chunk);
 +        try {
 +            NBTCompressedStreamTools.writeNBT(nbttagcompound, out);
 +            out.close();
-+            regionfile.setOversized(x, z, false);
++            regionfile.setOversized(chunkX, chunkZ, false);
 +        } catch (RegionFile.ChunkTooLargeException ignored) {
-+            printOversizedLog("ChunkTooLarge! Someone is trying to duplicate.", file, x, z);
++            printOversizedLog("ChunkTooLarge! Someone is trying to duplicate.", regionfile.file, chunkX, chunkZ);
 +            // Clone as we are now modifying it, don't want to corrupt the pending save state
 +            nbttagcompound = nbttagcompound.clone();
 +            // Filter out TileEntities and Entities
 +            NBTTagCompound oversizedData = filterChunkData(nbttagcompound);
 +            //noinspection SynchronizationOnLocalVariableOrMethodParameter
 +            synchronized (regionfile) {
-+                out = regionfile.getWriteStream(x & 31, z & 31);
++                out = regionfile.getWriteStream(chunk);
 +                NBTCompressedStreamTools.writeNBT(nbttagcompound, out);
 +                try {
 +                    out.close();
@@ -310,13 +336,13 @@ index 8c8b7cbab5..17e76815ad 100644
 +                        resetFilterThresholds();
 +                    }
 +                } catch (RegionFile.ChunkTooLargeException e) {
-+                    printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", file, x, z);
++                    printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
 +                    // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 +                    SIZE_THRESHOLD = OVERZEALOUS_THRESHOLD;
 +                    throw e;
 +                }
 +
-+                regionfile.writeOversizedData(x, z, oversizedData);
++                regionfile.writeOversizedData(chunkX, chunkZ, oversizedData);
 +            }
 +        }
 +    }
@@ -335,7 +361,7 @@ index 8c8b7cbab5..17e76815ad 100644
 +        NBTTagList list = level.getList(key, 10);
 +        NBTTagList newList = extra.getList(key, 10);
 +        int totalSize = 0;
-+        for (Iterator<NBTBase> iterator = list.list.iterator(); iterator.hasNext(); ) {
++        for (java.util.Iterator<NBTBase> iterator = list.list.iterator(); iterator.hasNext();) {
 +            NBTBase object = iterator.next();
 +            int nbtSize = getNBTSize(object);
 +            if (nbtSize > SIZE_THRESHOLD || (SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD && totalSize > OVERZEALOUS_TOTAL_THRESHOLD)) {
@@ -350,10 +376,10 @@ index 8c8b7cbab5..17e76815ad 100644
 +    }
 +
 +
-+    private static NBTTagCompound readOversizedChunk(RegionFile regionfile, int i, int j) throws IOException {
++    private static NBTTagCompound readOversizedChunk(RegionFile regionfile, ChunkCoordIntPair chunkCoordinate) throws IOException {
 +        synchronized (regionfile) {
-+            try (DataInputStream datainputstream = regionfile.getReadStream(i & 31, j & 31)) {
-+                NBTTagCompound oversizedData = regionfile.getOversizedData(i, j);
++            try (DataInputStream datainputstream = regionfile.getReadStream(chunkCoordinate)) {
++                NBTTagCompound oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
 +                NBTTagCompound chunk = NBTCompressedStreamTools.readNBT(datainputstream);
 +                if (oversizedData == null) {
 +                    return chunk;
@@ -397,38 +423,73 @@ index 8c8b7cbab5..17e76815ad 100644
 +
      // Paper End
  
-     public static synchronized void a() {
-@@ -0,0 +0,0 @@ public class RegionFileCache {
-     // CraftBukkit start - call sites hoisted for synchronization
-     public static NBTTagCompound read(File file, int i, int j) throws IOException { // Paper - remove synchronization
-         RegionFile regionfile = a(file, i, j);
+     @Nullable
+     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+         RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
 +        // Paper start
-+        if (regionfile.isOversized(i, j)) {
-+            printOversizedLog("Loading Oversized Chunk!", file, i, j);
-+            return readOversizedChunk(regionfile, i, j);
++        if (regionfile.isOversized(chunkcoordintpair.x, chunkcoordintpair.z)) {
++            printOversizedLog("Loading Oversized Chunk!", regionfile.file, chunkcoordintpair.x, chunkcoordintpair.z);
++            return readOversizedChunk(regionfile, chunkcoordintpair);
 +        }
 +        // Paper end
+         Throwable throwable = null;
  
-         DataInputStream datainputstream = regionfile.a(i & 31, j & 31);
+         NBTTagCompound nbttagcompound;
+@@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
  
-@@ -0,0 +0,0 @@ public class RegionFileCache {
-     @Nullable
-     public static void write(File file, int i, int j, NBTTagCompound nbttagcompound) throws IOException {
+     protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
          int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
--        RegionFile regionfile = a(file, i, j);
+-        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+-        DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
+-        Throwable throwable = null;
 -
--        DataOutputStream dataoutputstream = regionfile.c(i & 31, j & 31);
--        NBTCompressedStreamTools.a(nbttagcompound, (java.io.DataOutput) dataoutputstream);
--        dataoutputstream.close();
-+        writeRegion(file, i, j, nbttagcompound); // Paper - moved to own method
+-        try {
+-            NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+-        } catch (Throwable throwable1) {
+-            throwable = throwable1;
+-            throw throwable1;
+-        } finally {
+-            if (dataoutputstream != null) {
+-                if (throwable != null) {
+-                    try {
+-                        dataoutputstream.close();
+-                    } catch (Throwable throwable2) {
+-                        throwable.addSuppressed(throwable2);
+-                    }
+-                } else {
+-                    dataoutputstream.close();
+-                }
+-            }
+-
+-        }
 +        // Paper start
-+//      RegionFile regionfile = a(file, i, j);
++        this.writeRegion(chunkcoordintpair, nbttagcompound);
++//        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
++//        DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
++//        Throwable throwable = null;
 +//
-+//      DataOutputStream dataoutputstream = regionfile.c(i & 31, j & 31);
-+//      NBTCompressedStreamTools.a(nbttagcompound, (java.io.DataOutput) dataoutputstream);
-+//      dataoutputstream.close();
++//        try {
++//            NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
++//        } catch (Throwable throwable1) {
++//            throwable = throwable1;
++//            throw throwable1;
++//        } finally {
++//            if (dataoutputstream != null) {
++//                if (throwable != null) {
++//                    try {
++//                        dataoutputstream.close();
++//                    } catch (Throwable throwable2) {
++//                        throwable.addSuppressed(throwable2);
++//                    }
++//                } else {
++//                    dataoutputstream.close();
++//                }
++//            }
++//
++//        }
 +        // Paper end
-         // Paper start
-             laste = null; break; // Paper
-             } catch (Exception exception) {
+ 
+         } catch (Exception ex)  {
+             laste = ex;
 --

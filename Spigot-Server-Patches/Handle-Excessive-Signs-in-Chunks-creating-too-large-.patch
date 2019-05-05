@@ -11,7 +11,7 @@ Use -DPaper.excessiveSignsLimit=500 to configure that limit, or -1
 to disable the limit and let your players be abused.
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 553637239c..30f646e421 100644
+index 1b0643c27f..4766f7b773 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -29,7 +29,7 @@ index 553637239c..30f646e421 100644
 +
      }
  
-     // Paper start - Async-Anti-Xray - Stop dispatching further packets and return false if the peeked packet is a chunk packet which is not ready
+     private void sendPacketQueue() { this.o(); } // Paper - OBFHELPER
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
 index 2d8e6a2f4a..8d0965a053 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
@@ -43,31 +43,33 @@ index 2d8e6a2f4a..8d0965a053 100644
          return false;
      }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 4a57e8a3ec..eb54bdb642 100644
+index 58eccd9c63..ef71a1feb3 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
-         this.ready = true; // Paper - Async-Anti-Xray - Set the ready flag to true
-     }
+ 
+     public PacketPlayOutMapChunk() {}
  
 +    // Paper start
 +    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
 +    private static final int SKIP_EXCESSIVE_SIGNS_LIMIT = Integer.getInteger("Paper.excessiveSignsLimit", 500);
++
++    @Override
 +    public java.util.List<Packet> getExtraPackets() {
 +        return extraPackets;
 +    }
 +    // Paper end
      public PacketPlayOutMapChunk(Chunk chunk, int i) {
-         ChunkPacketInfo<IBlockData> chunkPacketInfo = chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i); // Paper - Anti-Xray - Add chunk packet info
-         this.a = chunk.locX;
+         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
+ 
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
-         this.c = this.writeChunk(new PacketDataSerializer(this.h()), chunk, flag, i, chunkPacketInfo); // Paper - Anti-Xray - Add chunk packet info
-         this.e = Lists.newArrayList();
-         Iterator iterator = chunk.getTileEntities().entrySet().iterator();
+         this.c = this.a(new PacketDataSerializer(this.i()), chunk, i);
+         this.f = Lists.newArrayList();
+         iterator = chunk.getTileEntities().entrySet().iterator();
 +        int totalSigns = 0; // Paper
  
          while (iterator.hasNext()) {
-             Entry<BlockPosition, TileEntity> entry = (Entry) iterator.next();
+             entry = (Entry) iterator.next();
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
              int j = blockposition.getY() >> 4;
  
@@ -75,13 +77,12 @@ index 4a57e8a3ec..eb54bdb642 100644
 +                // Paper start - send signs separately
 +                if (tileentity instanceof TileEntitySign) {
 +                    if (SKIP_EXCESSIVE_SIGNS_LIMIT < 0 || ++totalSigns < SKIP_EXCESSIVE_SIGNS_LIMIT) {
-+                        extraPackets.add(tileentity.getUpdatePacket());
++                        this.extraPackets.add(tileentity.getUpdatePacket());
 +                    }
 +                    continue;
 +                }
 +                // Paper end
-+
-                 NBTTagCompound nbttagcompound = tileentity.aa_();
+                 NBTTagCompound nbttagcompound = tileentity.b();
                  if (tileentity instanceof TileEntitySkull) { TileEntitySkull.sanitizeTileEntityUUID(nbttagcompound); } // Paper
  
 --

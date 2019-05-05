@@ -6,28 +6,34 @@ Subject: [PATCH] Prevent rayTrace from loading chunks
 ray tracing into an unloaded chunk should be treated as a miss
 this saves a ton of lag for when AI tries to raytrace near unloaded chunks.
 
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7721dfee65..1454af710e 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-                 int i1 = MathHelper.floor(d1);
-                 int j1 = MathHelper.floor(d2);
-                 BlockPosition blockposition = new BlockPosition(l, i1, j1);
--                IBlockData iblockdata = this.getType(blockposition);
-+                IBlockData iblockdata = this.getTypeIfLoaded(blockposition); // Paper
-+                if (iblockdata == null) return null; // Paper
-                 Fluid fluid = this.getFluid(blockposition);
-                 boolean flag2;
-                 boolean flag3;
-@@ -0,0 +0,0 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
-                     i1 = MathHelper.floor(d1) - (enumdirection == EnumDirection.UP ? 1 : 0);
-                     j1 = MathHelper.floor(d2) - (enumdirection == EnumDirection.SOUTH ? 1 : 0);
-                     blockposition = new BlockPosition(l, i1, j1);
--                    IBlockData iblockdata1 = this.getType(blockposition);
-+                    IBlockData iblockdata1 = this.getTypeIfLoaded(blockposition); // Paper
-+                    if (iblockdata1 == null) return null; // Paper
-                     Fluid fluid1 = this.getFluid(blockposition);
+diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
+index 8753bea614..039f27312a 100644
+--- a/src/main/java/net/minecraft/server/IBlockAccess.java
++++ b/src/main/java/net/minecraft/server/IBlockAccess.java
+@@ -0,0 +0,0 @@ public interface IBlockAccess {
  
-                     if (!flag || iblockdata1.getMaterial() == Material.PORTAL || !iblockdata1.getCollisionShape(this, blockposition).isEmpty()) {
+     default MovingObjectPositionBlock rayTrace(RayTrace raytrace) {
+         return (MovingObjectPositionBlock) a(raytrace, (raytrace1, blockposition) -> {
+-            IBlockData iblockdata = this.getType(blockposition);
++            // Paper start - Prevent raytrace from loading chunks
++            IBlockData iblockdata = ((World)this).getTypeIfLoaded(blockposition);
++            if (iblockdata == null) {
++                // copied the last function parameter (listed below)
++                Vec3D vec3d = raytrace1.b().d(raytrace1.a());
++
++                return MovingObjectPositionBlock.a(raytrace1.a(), EnumDirection.a(vec3d.x, vec3d.y, vec3d.z), new BlockPosition(raytrace1.a()));
++            }
++            // Paper end
+             Fluid fluid = this.getFluid(blockposition);
+             Vec3D vec3d = raytrace1.b();
+             Vec3D vec3d1 = raytrace1.a();
+@@ -0,0 +0,0 @@ public interface IBlockAccess {
+                 double d13 = d10 * (i1 > 0 ? 1.0D - MathHelper.h(d4) : MathHelper.h(d4));
+                 double d14 = d11 * (j1 > 0 ? 1.0D - MathHelper.h(d5) : MathHelper.h(d5));
+ 
+-                Object object;
++                T object; // Paper - decompile fix (TODO move to mcdev)
+ 
+                 do {
+                     if (d12 > 1.0D && d13 > 1.0D && d14 > 1.0D) {
 --
