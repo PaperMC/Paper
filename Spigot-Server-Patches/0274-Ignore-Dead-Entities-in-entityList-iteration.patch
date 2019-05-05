@@ -1,4 +1,4 @@
-From bdc5870e89f2c479df6e0f68daedc579cdc60179 Mon Sep 17 00:00:00 2001
+From f4f84a5fc9331648ef73054255e7b40b0eee2c48 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Jul 2018 12:18:27 -0400
 Subject: [PATCH] Ignore Dead Entities in entityList iteration
@@ -11,7 +11,7 @@ This will ensure that dead entities are skipped from iteration since
 they shouldn't of been in the list in the first place.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f38179e98..8e1bda4de 100644
+index f38179e983..8e1bda4de9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -176,6 +176,7 @@ public class PaperCommand extends Command {
@@ -23,7 +23,7 @@ index f38179e98..8e1bda4de 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 0c8a2ac90..21fae98c1 100644
+index 0c8a2ac902..21fae98c10 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -665,6 +665,7 @@ public class Chunk implements IChunkAccess {
@@ -51,7 +51,7 @@ index 0c8a2ac90..21fae98c1 100644
                  if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
                      list.add(t0);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 4648a93b0..33b2dd3ff 100644
+index 4648a93b0f..33b2dd3ff8 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -123,6 +123,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -63,7 +63,7 @@ index 4648a93b0..33b2dd3ff 100644
      private float av;
      private float aw;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3e41c080d..3bfe40bb6 100644
+index ece9900aac..716f3b7db5 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -843,6 +843,7 @@ public class WorldServer extends World {
@@ -74,15 +74,15 @@ index 3e41c080d..3bfe40bb6 100644
              // CraftBukkit start - Split out persistent check, don't apply it to special persistent mobs
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
-@@ -1131,6 +1132,7 @@ public class WorldServer extends World {
-                 this.I.add(((EntityInsentient) entity).getNavigation());
+@@ -1136,6 +1137,7 @@ public class WorldServer extends World {
+                 entity.origin = entity.getBukkitEntity().getLocation();
              }
-             entity.valid = true; // CraftBukkit
+             // Paper end
 +            entity.shouldBeRemoved = false; // Paper - shouldn't be removed after being re-added
              new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
          }
  
-@@ -1145,6 +1147,7 @@ public class WorldServer extends World {
+@@ -1150,6 +1152,7 @@ public class WorldServer extends World {
              this.removeEntityFromChunk(entity);
              this.entitiesById.remove(entity.getId());
              this.unregisterEntity(entity);
@@ -91,7 +91,7 @@ index 3e41c080d..3bfe40bb6 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index f8870f37b..03148879f 100644
+index f8870f37bb..03148879f4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -805,6 +805,7 @@ public class CraftWorld implements World {
