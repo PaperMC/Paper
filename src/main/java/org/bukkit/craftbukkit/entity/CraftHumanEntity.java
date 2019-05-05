@@ -55,6 +55,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -319,7 +320,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         InventoryType type = inventory.getType();
         Container formerContainer = getHandle().activeContainer;
 
-        IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory) inventory).getInventory() : new org.bukkit.craftbukkit.inventory.InventoryWrapper(inventory);
+        ITileInventory iinventory = null;
+        if (inventory instanceof CraftInventoryDoubleChest) {
+            iinventory = ((CraftInventoryDoubleChest) inventory).tile;
+        } else if (inventory instanceof CraftInventory) {
+            CraftInventory craft = (CraftInventory) inventory;
+            if (craft.getInventory() instanceof ITileInventory) {
+                iinventory = (ITileInventory) craft.getInventory();
+            }
+        }
 
         if (iinventory instanceof ITileInventory) {
             if (iinventory instanceof TileEntity) {

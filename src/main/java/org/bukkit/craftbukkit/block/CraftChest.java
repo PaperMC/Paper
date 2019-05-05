@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.BlockChest;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.ITileInventory;
-import net.minecraft.server.InventoryLargeChest;
 import net.minecraft.server.TileEntityChest;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -51,7 +50,7 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         ITileInventory nms = blockChest.getInventory(data, world.getHandle(), this.getPosition());
 
         if (nms instanceof BlockChest.DoubleInventory) {
-            inventory = new CraftInventoryDoubleChest(((BlockChest.DoubleInventory) nms).inventorylargechest);
+            inventory = new CraftInventoryDoubleChest((BlockChest.DoubleInventory) nms);
         }
         return inventory;
     }
