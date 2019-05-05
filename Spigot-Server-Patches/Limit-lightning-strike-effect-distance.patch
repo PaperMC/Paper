@@ -5,7 +5,7 @@ Subject: [PATCH] Limit lightning strike effect distance
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 869bf8a9f9..2a912286b2 100644
+index 2c27be63e..fb44fccc9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -38,10 +38,10 @@ index 869bf8a9f9..2a912286b2 100644
      public boolean firePhysicsEventForRedstone = false;
      private void firePhysicsEventForRedstone() {
 diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
-index 7781babf51..50f6200095 100644
+index adf68d165..fbcda86b3 100644
 --- a/src/main/java/net/minecraft/server/EntityLightning.java
 +++ b/src/main/java/net/minecraft/server/EntityLightning.java
-@@ -0,0 +0,0 @@ public class EntityLightning extends EntityWeather {
+@@ -0,0 +0,0 @@ public class EntityLightning extends Entity {
                  double deltaX = this.locX - player.locX;
                  double deltaZ = this.locZ - player.locZ;
                  double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
@@ -59,7 +59,7 @@ index 7781babf51..50f6200095 100644
                  if (distanceSquared > viewDistance * viewDistance) {
                      double deltaLength = Math.sqrt(distanceSquared);
                      double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
-@@ -0,0 +0,0 @@ public class EntityLightning extends EntityWeather {
+@@ -0,0 +0,0 @@ public class EntityLightning extends Entity {
                  }
              }
              // CraftBukkit end
@@ -69,16 +69,16 @@ index 7781babf51..50f6200095 100644
  
          --this.lifeTicks;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index e71a405807..53e7834cca 100644
+index ffa5a0bee..6d8fb1290 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
          }
          // CraftBukkit end
-         if (super.strikeLightning(entity)) {
--            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension
-+            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, this.paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension, limit lightning strike effect distance
-             return true;
-         } else {
-             return false;
+         this.globalEntityList.add(entitylightning);
+-        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension
++        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension, limit lightning strike effect distance
+     }
+ 
+     @Override
 --

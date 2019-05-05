@@ -6,27 +6,27 @@ Subject: [PATCH] Implement furnace cook speed multiplier API
 Signed-off-by: Tassu <git@tassu.me>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index 5b6ccfa9f5..bfbd35bbe5 100644
+index be16fe9a9..b9f3a952e 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-@@ -0,0 +0,0 @@ import java.util.Map.Entry;
+@@ -0,0 +0,0 @@ import java.util.Map;
+ import java.util.Map.Entry;
  import javax.annotation.Nullable;
  // CraftBukkit start
- import java.util.List;
-+
++import java.util.List;
  import org.bukkit.craftbukkit.block.CraftBlock;
  import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.craftbukkit.inventory.CraftItemStack;
-@@ -0,0 +0,0 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
-     private NonNullList<ItemStack> items;
-     private int burnTime;
+@@ -0,0 +0,0 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+     protected NonNullList<ItemStack> items;
+     public int burnTime;
      private int ticksForCurrentFuel;
 +    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
-     private int cookTime;
-     private int cookTimeTotal;
-     private IChatBaseComponent l;
-@@ -0,0 +0,0 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
-             this.l = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
+     public int cookTime;
+     public int cookTimeTotal;
+     protected final IContainerProperties b;
+@@ -0,0 +0,0 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+             this.n.put(minecraftkey, j);
          }
  
 +        // Paper start - cook speed API
@@ -36,16 +36,16 @@ index 5b6ccfa9f5..bfbd35bbe5 100644
 +        // Paper end
      }
  
-     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
-@@ -0,0 +0,0 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+     @Override
+@@ -0,0 +0,0 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
          nbttagcompound.setShort("BurnTime", (short) this.burnTime);
          nbttagcompound.setShort("CookTime", (short) this.cookTime);
          nbttagcompound.setShort("CookTimeTotal", (short) this.cookTimeTotal);
 +        nbttagcompound.setDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
          ContainerUtil.a(nbttagcompound, this.items);
-         nbttagcompound.setShort("RecipesUsedSize", (short) this.m.size());
+         nbttagcompound.setShort("RecipesUsedSize", (short) this.n.size());
          int i = 0;
-@@ -0,0 +0,0 @@ public class TileEntityFurnace extends TileEntityContainer implements IWorldInve
+@@ -0,0 +0,0 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
                  }
  
                  if (this.isBurning() && this.canBurn(irecipe)) {
@@ -54,15 +54,15 @@ index 5b6ccfa9f5..bfbd35bbe5 100644
 +                    this.cookTime += cookSpeedMultiplier; // Paper - cook speed multiplier API
 +                    if (this.cookTime >= this.cookTimeTotal) { // Paper - cook speed multiplier API
                          this.cookTime = 0;
-                         this.cookTimeTotal = this.s();
+                         this.cookTimeTotal = this.getRecipeCookingTime();
                          this.burn(irecipe);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-index c2eea8ce03..429c780ec7 100644
+index 9cc67915c..1ce10ea04 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-@@ -0,0 +0,0 @@ public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements F
-             furnace.setCustomName(null);
-         }
+@@ -0,0 +0,0 @@ public class CraftFurnace<T extends TileEntityFurnace> extends CraftContainer<T>
+     public void setCookTimeTotal(int cookTimeTotal) {
+         this.getSnapshot().cookTimeTotal = cookTimeTotal;
      }
 +
 +    // Paper start - cook speed multiplier API

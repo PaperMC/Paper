@@ -7,7 +7,7 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000..ed3d86ddd3
+index 000000000..ed3d86ddd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 @@ -0,0 +0,0 @@
@@ -125,7 +125,7 @@ index 0000000000..ed3d86ddd3
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index c55aadb536..cac0ce2a3a 100644
+index 0586597e7..583f2c5ad 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
@@ -143,9 +143,9 @@ index c55aadb536..cac0ce2a3a 100644
      @Nullable
 -    public PathEntity a(Entity entity) {
 +    public PathEntity calculateDestination(Entity entity) { return a(entity); } @Nullable public PathEntity a(Entity entity) { // Paper - OBFHELPER
-         if (!this.b()) {
-             return null;
-         } else {
+         BlockPosition blockposition = new BlockPosition(entity);
+         double d0 = entity.locX;
+         double d1 = entity.getBoundingBox().minY;
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
      private int pathfindFailures = 0;
      // Paper end
@@ -155,64 +155,61 @@ index c55aadb536..cac0ce2a3a 100644
          if (pathentity == null) {
              this.c = null;
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
-             }
          }
      }
--
+ 
 -    @Nullable
-+    @Nullable public PathEntity getPathEntity() { return m(); } @Nullable // Paper - OBFHELPER
-     public PathEntity m() {
++    @Nullable public PathEntity getPathEntity() { return l(); } @Nullable // Paper - OBFHELPER
+     public PathEntity l() {
          return this.c;
      }
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
          return this.c == null || this.c.b();
      }
  
-+    public void stopPathfinding() { q(); } // Paper - OBFHELPER
-     public void q() {
++    public void stopPathfinding() { o(); } // Paper - OBFHELPER
+     public void o() {
          this.pathfindFailures = 0; this.lastFailure = 0; // Paper - Pathfinding optimizations
          this.c = null;
 diff --git a/src/main/java/net/minecraft/server/PathEntity.java b/src/main/java/net/minecraft/server/PathEntity.java
-index 31fc1fbc65..5cf7f3bf1b 100644
+index d1cb80208..ec6b3a292 100644
 --- a/src/main/java/net/minecraft/server/PathEntity.java
 +++ b/src/main/java/net/minecraft/server/PathEntity.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
  
  public class PathEntity {
  
--    private final PathPoint[] a;
-+    private final PathPoint[] a; public PathPoint[] getPoints() { return a; } // Paper - OBFHELPER
+-    private final List<PathPoint> a;
++    private final List<PathPoint> a; public List<PathPoint> getPoints() { return a; } // Paper - OBFHELPER
      private PathPoint[] b = new PathPoint[0];
      private PathPoint[] c = new PathPoint[0];
      private PathPoint d;
 -    private int e;
--    private int f;
 +    private int e; public int getNextIndex() { return e; } // Paper - OBFHELPER
-+    private int f; public int getPathCount() { return f; } // Paper - OBFHELPER
-+    public boolean hasNext() { return getNextIndex() < getPathCount(); } // Paper
  
-     public PathEntity(PathPoint[] apathpoint) {
-         this.a = apathpoint;
+     public PathEntity(List<PathPoint> list) {
+         this.a = list;
 @@ -0,0 +0,0 @@ public class PathEntity {
+         return this.e >= this.a.size();
      }
  
-     @Nullable
+-    @Nullable
 -    public PathPoint c() {
 +    public PathPoint getFinalPoint() { return c(); } @Nullable public PathPoint c() { // Paper - OBFHELPER
-         return this.f > 0 ? this.a[this.f - 1] : null;
+         return !this.a.isEmpty() ? (PathPoint) this.a.get(this.a.size() - 1) : null;
      }
  
 @@ -0,0 +0,0 @@ public class PathEntity {
          return this.a(entity, this.e);
      }
  
--    public Vec3D f() {
-+    public Vec3D getNext() { return f(); } public Vec3D f() { // Paper - OBFHELPER
-         PathPoint pathpoint = this.a[this.e];
+-    public Vec3D g() {
++    public Vec3D getNext() { return g(); } public Vec3D g() { // Paper - OBFHELPER
+         PathPoint pathpoint = (PathPoint) this.a.get(this.e);
  
          return new Vec3D((double) pathpoint.a, (double) pathpoint.b, (double) pathpoint.c);
 diff --git a/src/main/java/net/minecraft/server/PathPoint.java b/src/main/java/net/minecraft/server/PathPoint.java
-index 78ed002868..0dd6e46d12 100644
+index 0f6e8c51e..5d445e08a 100644
 --- a/src/main/java/net/minecraft/server/PathPoint.java
 +++ b/src/main/java/net/minecraft/server/PathPoint.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
@@ -229,7 +226,7 @@ index 78ed002868..0dd6e46d12 100644
      public int d = -1;
      public float e;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-index 5bf1cd06fa..53c2d154ed 100644
+index 5bf1cd06f..53c2d154e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 @@ -0,0 +0,0 @@ import org.bukkit.loot.LootTable;
