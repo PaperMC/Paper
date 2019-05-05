@@ -1,4 +1,4 @@
-From 299cee7fed5ab4af4ff1096312c690260696221f Mon Sep 17 00:00:00 2001
+From 565714b3d1a1ba66f02cf327fdbe09672969c2e3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -11,10 +11,10 @@ Subject: [PATCH] Optimize Hoppers
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0b60ca82ce..e87fb94c06 100644
+index a5b4f9990..2b5402b00 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -429,6 +429,15 @@ public class PaperWorldConfig {
+@@ -360,6 +360,15 @@ public class PaperWorldConfig {
          squidMaxSpawnHeight = getDouble("squid-spawn-height.maximum", 0.0D);
      }
  
@@ -31,10 +31,10 @@ index 0b60ca82ce..e87fb94c06 100644
      private void disableSprintInterruptionOnAttack() {
          disableSprintInterruptionOnAttack = getBoolean("game-mechanics.disable-sprint-interruption-on-attack", false);
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 0420589faa..0d06db9355 100644
+index ca1bd0299..2d83c9e79 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -485,8 +485,9 @@ public final class ItemStack {
+@@ -482,8 +482,9 @@ public final class ItemStack {
          return this.getItem().a(this, entityhuman, entityliving, enumhand);
      }
  
@@ -44,25 +44,25 @@ index 0420589faa..0d06db9355 100644
 +    public ItemStack cloneItemStack(boolean origItem) { // Paper
 +        ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
  
-         itemstack.d(this.B());
+         itemstack.d(this.C());
          if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4565a56b3f..38c0201acb 100644
+index 30952ade4..0cebf6f5a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1048,6 +1048,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -1117,6 +1117,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
-              WorldServer worldserver = (WorldServer) iterator.next();
+             WorldServer worldserver = (WorldServer) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 +            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
              i = SystemUtils.getMonotonicNanos();
              if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
                  this.methodProfiler.a(() -> {
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 29fe031d85..d67fd92d9d 100644
+index 4ac97a59c..6f63b2867 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -52,6 +52,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -53,6 +53,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
      public void setCurrentChunk(Chunk chunk) {
          this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
      }
@@ -70,19 +70,19 @@ index 29fe031d85..d67fd92d9d 100644
      // Paper end
  
      @Nullable
-@@ -124,6 +125,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -125,6 +126,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
  
      public void update() {
          if (this.world != null) {
 +            if (IGNORE_TILE_UPDATES) return; // Paper
-             this.f = this.world.getType(this.position);
+             this.c = this.world.getType(this.position);
              this.world.b(this.position, this);
-             if (!this.f.isAir()) {
+             if (!this.c.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 559eedfa66..7303a6fdda 100644
+index 0ecfbcb4b..dfe51fc6f 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
-@@ -189,6 +189,154 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -191,6 +191,154 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          return false;
      }
  
@@ -234,18 +234,18 @@ index 559eedfa66..7303a6fdda 100644
 +    }
 +
 +    // Paper end
-     private boolean s() {
-         IInventory iinventory = this.D();
+     private boolean t() {
+         IInventory iinventory = this.u();
  
-@@ -200,6 +348,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
-             if (this.a(iinventory, enumdirection)) {
+@@ -202,6 +350,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             if (this.b(iinventory, enumdirection)) {
                  return false;
              } else {
 +                return hopperPush(iinventory, enumdirection); /* // Paper - disable rest
                  for (int i = 0; i < this.getSize(); ++i) {
                      if (!this.getItem(i).isEmpty()) {
                          ItemStack itemstack = this.getItem(i).cloneItemStack();
-@@ -237,7 +386,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -239,7 +388,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
                      }
                  }
  
@@ -254,15 +254,15 @@ index 559eedfa66..7303a6fdda 100644
              }
          }
      }
-@@ -308,6 +457,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
-             if (b(iinventory, enumdirection)) {
-                 return false;
-             }
-+            skipPullModeEventFire = skipHopperEvents; // Paper
+@@ -269,6 +418,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             EnumDirection enumdirection = EnumDirection.DOWN;
  
-             if (iinventory instanceof IWorldInventory) {
-                 IWorldInventory iworldinventory = (IWorldInventory) iinventory;
-@@ -350,6 +500,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
++                skipPullModeEventFire = skipHopperEvents; // Paper
+                 return a(ihopper, iinventory, i, enumdirection);
+             });
+         } else {
+@@ -292,6 +442,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          ItemStack itemstack = iinventory.getItem(i);
  
          if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
@@ -270,7 +270,7 @@ index 559eedfa66..7303a6fdda 100644
              ItemStack itemstack1 = itemstack.cloneItemStack();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
-@@ -386,7 +537,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -328,7 +479,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              }
  
              itemstack1.subtract(origCount - itemstack2.getCount()); // Spigot
@@ -279,7 +279,7 @@ index 559eedfa66..7303a6fdda 100644
          }
  
          return false;
-@@ -395,7 +546,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -337,7 +488,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      public static boolean a(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
          // CraftBukkit start
@@ -288,8 +288,8 @@ index 559eedfa66..7303a6fdda 100644
          entityitem.world.getServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -449,7 +600,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
-             boolean flag1 = iinventory1.P_();
+@@ -391,7 +542,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             boolean flag1 = iinventory1.isNotEmpty();
  
              if (itemstack1.isEmpty()) {
 +                IGNORE_TILE_UPDATES = true; // Paper

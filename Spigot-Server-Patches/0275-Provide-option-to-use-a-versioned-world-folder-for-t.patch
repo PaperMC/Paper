@@ -1,4 +1,4 @@
-From 2fab85ef228b9e7e1aafe1b04abd84ff634bbbda Mon Sep 17 00:00:00 2001
+From d1a4bbe9d075d932918bfbf3c054ae1871cad606 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 29 Jul 2018 15:48:50 -0400
 Subject: [PATCH] Provide option to use a versioned world folder for testing
@@ -19,7 +19,7 @@ may be some delay there, but region files are only copied on demand.
 This is highly experiemental so backup your world before relying on this to not modify it
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index d42853d14c..63fdd94818 100644
+index c8f9c45e5..52adc671e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -13,6 +13,7 @@ import java.util.List;
@@ -30,7 +30,7 @@ index d42853d14c..63fdd94818 100644
  import java.util.regex.Pattern;
  
  import com.google.common.collect.Lists;
-@@ -308,4 +309,27 @@ public class PaperConfig {
+@@ -284,4 +285,27 @@ public class PaperConfig {
              Bukkit.getLogger().log(Level.INFO, "Using Aikar's Alternative Luck Formula to apply Luck attribute to all loot pool calculations. See https://luckformula.emc.gs");
          }
      }
@@ -58,45 +58,31 @@ index d42853d14c..63fdd94818 100644
 +        }
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 485bce9872..60143ff63f 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -58,8 +58,55 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     // private boolean f; // CraftBukkit
-     public final LongSet blacklist = new LongOpenHashSet();
-     private static final double SAVE_QUEUE_TARGET_SIZE = 625; // Spigot
-+    // Paper start - support saving to an alternate directory
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index c8573a8ee..1b12a1611 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -10,13 +10,41 @@ import java.io.IOException;
+ import javax.annotation.Nullable;
+ import com.destroystokyo.paper.PaperConfig; // Paper
+ 
++import org.apache.logging.log4j.LogManager;
++
+ public abstract class RegionFileCache implements AutoCloseable {
+ 
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> cache = new Long2ObjectLinkedOpenHashMap();
+     private final File a;
++    // Paper start
 +    private final File templateWorld;
 +    private final File actualWorld;
-+    private final boolean useAltWorld;
-+
-+    private void copyIfNeeded(int x, int z) {
-+        if (!useAltWorld) {
-+            return;
-+        }
-+        synchronized (RegionFileCache.class) {
-+            if (RegionFileCache.hasRegionFile(this.actualWorld, x, z)) {
-+                return;
-+            }
-+            File actual = RegionFileCache.getRegionFileName(this.actualWorld, x, z);
-+            File template = RegionFileCache.getRegionFileName(this.templateWorld, x, z);
-+            if (!actual.exists() && template.exists()) {
-+                try {
-+                    //a.info("Copying" + template + " to " + actual);
-+                    java.nio.file.Files.copy(template.toPath(), actual.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
-+                } catch (IOException e1) {
-+                    LogManager.getLogger().error("Error copying " + template + " to " + actual, e1);
-+                    MinecraftServer.getServer().safeShutdown();
-+                    com.destroystokyo.paper.util.SneakyThrow.sneaky(e1);
-+                }
-+            }
-+        }
-+    }
++    private boolean useAltWorld;
 +    // Paper end
++
  
-     public ChunkRegionLoader(File file, DataFixer datafixer) {
-+        // Paper start
+     protected RegionFileCache(File file) {
+         this.a = file;
++        // Paper end
++
 +        this.actualWorld = file;
 +        if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
 +            this.useAltWorld = true;
@@ -114,57 +100,73 @@ index 485bce9872..60143ff63f 100644
 +            this.useAltWorld = false;
 +            this.templateWorld = file;
 +        }
-+        // Paper end
-         this.c = file;
-         this.d = datafixer;
-     }
-@@ -97,7 +144,13 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-     }
- 
-     public boolean chunkExists(int x, int z) {
--        return RegionFileCache.chunkExists(this.c, x, z);
 +        // Paper start
-+        if (this.saveMap.containsKey(ChunkCoordIntPair.asLong(x, z))) {
-+            return true;
-+        }
-+        copyIfNeeded(x, z);
-+        return RegionFileCache.chunkExists(this.actualWorld, x, z);
-+        // Paper end
      }
  
-     @Nullable
-@@ -107,6 +160,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
-             return null;
-         }
-         // CraftBukkit end
-+        copyIfNeeded(i, j); // Paper
-+
-         NBTTagCompound nbttagcompound = SupplierUtils.getIfExists(this.saveMap.get(ChunkCoordIntPair.asLong(i, j))); // Spigot // Paper
+     private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+@@ -34,6 +62,7 @@ public abstract class RegionFileCache implements AutoCloseable {
+                 this.a.mkdirs();
+             }
  
-         if (nbttagcompound != null) {
-diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index d072222390..8c8b7cbab5 100644
---- a/src/main/java/net/minecraft/server/RegionFileCache.java
-+++ b/src/main/java/net/minecraft/server/RegionFileCache.java
-@@ -76,6 +76,13 @@ public class RegionFileCache {
-             itr.remove();
++            copyIfNeeded(chunkcoordintpair.x, chunkcoordintpair.z); // Paper
+             File file = new File(this.a, "r." + chunkcoordintpair.getRegionX() + "." + chunkcoordintpair.getRegionZ() + ".mca");
+             if (existingOnly && !file.exists()) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(file);
+@@ -43,6 +72,15 @@ public abstract class RegionFileCache implements AutoCloseable {
          }
      }
+ 
 +    public static synchronized File getRegionFileName(File file, int i, int j) {
 +        File file1 = new File(file, "region");
 +        return new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
 +    }
-+    public static synchronized boolean hasRegionFile(File file, int i, int j) {
-+        return RegionFileCache.cache.containsKey(getRegionFileName(file, i, j));
++    public synchronized boolean hasRegionFile(File file, int i, int j) {
++        return cache.containsKey(getRegionFileName(file, i, j));
 +    }
-     // Paper End
++    // Paper End
++
+     @Nullable
+     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+         RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+@@ -129,9 +167,33 @@ public abstract class RegionFileCache implements AutoCloseable {
  
-     public static synchronized void a() {
+     // CraftBukkit start
+     public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
++        copyIfNeeded(pos.x, pos.z); // Paper
+         RegionFile regionfile = a(pos, true);
+ 
+         return regionfile != null ? regionfile.d(pos) : false;
+     }
+     // CraftBukkit end
++
++    private void copyIfNeeded(int x, int z) {
++        if (!useAltWorld) {
++            return;
++        }
++        synchronized (RegionFileCache.class) {
++            if (hasRegionFile(this.actualWorld, x, z)) {
++                return;
++            }
++            File actual = RegionFileCache.getRegionFileName(this.actualWorld, x, z);
++            File template = RegionFileCache.getRegionFileName(this.templateWorld, x, z);
++            if (!actual.exists() && template.exists()) {
++                try {
++                    net.minecraft.server.MinecraftServer.LOGGER.info("Copying" + template + " to " + actual);
++                    java.nio.file.Files.copy(template.toPath(), actual.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
++                } catch (IOException e1) {
++                    LogManager.getLogger().error("Error copying " + template + " to " + actual, e1);
++                    MinecraftServer.getServer().safeShutdown(false);
++                    com.destroystokyo.paper.util.SneakyThrow.sneaky(e1);
++                }
++            }
++        }
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-index 577ba1b5f9..9be0e994ef 100644
+index 350ac42d6..eaae44686 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
 +++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-@@ -32,6 +32,58 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+@@ -31,6 +31,58 @@ public class WorldNBTStorage implements IPlayerFileData {
  
      public WorldNBTStorage(File file, String s, @Nullable MinecraftServer minecraftserver, DataFixer datafixer) {
          this.a = datafixer;
