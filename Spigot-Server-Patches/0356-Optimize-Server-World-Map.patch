@@ -1,4 +1,4 @@
-From 6c00757284ea40b18a629c0be9fa09042496f06d Mon Sep 17 00:00:00 2001
+From cf834d2b80d762e0229edf91987ea48e58767e7e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 17 Sep 2018 23:37:31 -0400
 Subject: [PATCH] Optimize Server World Map
@@ -21,7 +21,7 @@ known NMS used methods, but we can add more if naughty plugins are found later.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldMap.java b/src/main/java/com/destroystokyo/paper/PaperWorldMap.java
 new file mode 100644
-index 0000000000..af9e4455c6
+index 000000000..af9e4455c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldMap.java
 @@ -0,0 +1,191 @@
@@ -217,27 +217,35 @@ index 0000000000..af9e4455c6
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4543ac8f15..d2ee4e5781 100644
+index 27af4398c..e6054dddb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -82,7 +82,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+@@ -78,7 +78,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public final DataFixer dataConverterManager;
      private String serverIp;
-     private int q = -1;
+     private int serverPort = -1;
 -    public final Map<DimensionManager, WorldServer> worldServer = Maps.newLinkedHashMap(); // CraftBukkit - keep order, k+v already use identity methods
 +    public final Map<DimensionManager, WorldServer> worldServer = new com.destroystokyo.paper.PaperWorldMap(); // Paper;
      private PlayerList playerList;
-     private boolean isRunning = true;
-     private boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
-@@ -546,7 +546,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     private volatile boolean isRunning = true;
+     private volatile boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
+@@ -442,7 +442,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              }
          }
- 
--        for (WorldServer world : this.getWorlds()) {
-+        for (WorldServer world : com.google.common.collect.Lists.newArrayList(this.getWorlds())) { // Paper - avoid como if 1 world triggers another world
-             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(world.getWorld()));
+         this.a(this.getDifficulty(), true);
+-        for (WorldServer worldserver : this.getWorlds()) {
++        for (WorldServer worldserver : com.google.common.collect.Lists.newArrayList(this.getWorlds())) { // Paper - avoid como if 1 world triggers another world
+             this.loadSpawn(worldserver.getChunkProvider().playerChunkMap.worldLoadListener, worldserver);
          }
-         // CraftBukkit end
+ 
+@@ -582,7 +582,6 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.sleepForTick();
+         // CraftBukkit start
+         // Iterator iterator = DimensionManager.a().iterator();
+-
+         if (true) {
+             DimensionManager dimensionmanager = worldserver.worldProvider.getDimensionManager();
+             // CraftBukkit end
 -- 
-2.21.0
+2.20.1
 

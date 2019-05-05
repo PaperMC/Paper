@@ -1,4 +1,4 @@
-From 5d4e0ebff8236bcee63ca414af432baff1681c40 Mon Sep 17 00:00:00 2001
+From 98329c0298e555bd0b4bc87f00ac49c7bc210d85 Mon Sep 17 00:00:00 2001
 From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 8 Oct 2018 14:36:14 -0400
 Subject: [PATCH] Add Velocity IP Forwarding Support
@@ -14,7 +14,7 @@ forwarding, and is integrated into the Minecraft login process by using the 1.13
 login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index e4972e30ce..cac79686d8 100644
+index 6a2eb12ba..ee282cb35 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -8,6 +8,7 @@ import java.io.IOException;
@@ -25,7 +25,7 @@ index e4972e30ce..cac79686d8 100644
  import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
-@@ -256,7 +257,7 @@ public class PaperConfig {
+@@ -243,7 +244,7 @@ public class PaperConfig {
      }
  
      public static boolean isProxyOnlineMode() {
@@ -34,7 +34,7 @@ index e4972e30ce..cac79686d8 100644
      }
  
      public static int packetInSpamThreshold = 300;
-@@ -434,4 +435,18 @@ public class PaperConfig {
+@@ -357,4 +358,18 @@ public class PaperConfig {
              }
          }
      }
@@ -55,7 +55,7 @@ index e4972e30ce..cac79686d8 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
-index 0000000000..fdd8708f97
+index 000000000..fdd8708f9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 @@ -0,0 +1,67 @@
@@ -127,10 +127,10 @@ index 0000000000..fdd8708f97
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index c5801122dd..ca76f2a380 100644
+index d4d752ddb..5d46a975e 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -42,6 +42,7 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -42,6 +42,7 @@ public class LoginListener implements PacketLoginInListener {
      private SecretKey loginKey;
      private EntityPlayer l;
      public String hostname = ""; // CraftBukkit - add field
@@ -138,9 +138,9 @@ index c5801122dd..ca76f2a380 100644
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -186,6 +187,14 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -188,6 +189,14 @@ public class LoginListener implements PacketLoginInListener {
              this.g = LoginListener.EnumProtocolState.KEY;
-             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.E().getPublic(), this.e));
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic(), this.e));
          } else {
 +            // Paper start - Velocity support
 +            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
@@ -153,7 +153,7 @@ index c5801122dd..ca76f2a380 100644
              // Spigot start
              // Paper start - Cache authenticator threads
              authenticatorPool.execute(new Runnable() {
-@@ -277,6 +286,12 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -280,6 +289,12 @@ public class LoginListener implements PacketLoginInListener {
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
@@ -166,7 +166,7 @@ index c5801122dd..ca76f2a380 100644
                              String playerName = i.getName();
                              java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
                              java.util.UUID uniqueId = i.getId();
-@@ -324,6 +339,35 @@ public class LoginListener implements PacketLoginInListener, ITickable {
+@@ -327,6 +342,35 @@ public class LoginListener implements PacketLoginInListener {
      // Spigot end
  
      public void a(PacketLoginInCustomPayload packetloginincustompayload) {
@@ -203,7 +203,7 @@ index c5801122dd..ca76f2a380 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 4c1110479c..c536979140 100644
+index 6c5544807..38386d588 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -46,7 +46,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -216,23 +216,23 @@ index 4c1110479c..c536979140 100644
      public java.util.UUID spoofedUUID;
      public com.mojang.authlib.properties.Property[] spoofedProfile;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index b95836d443..621aad1503 100644
+index fa2d3ce8c..dac560c63 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -140,6 +140,7 @@ public class PacketDataSerializer extends ByteBuf {
          return this.d(oenum.ordinal());
      }
  
-+    public int readVarInt() { return this.g(); } // Paper - OBFHELPER
-     public int g() {
++    public int readVarInt() { return i(); } // Paper - OBFHELPER
+     public int i() {
          int i = 0;
          int j = 0;
 @@ -180,6 +181,7 @@ public class PacketDataSerializer extends ByteBuf {
          return this;
      }
  
-+    public UUID readUUID() { return this.i(); } // Paper - OBFHELPER
-     public UUID i() {
++    public UUID readUUID() { return k(); } // Paper - OBFHELPER
+     public UUID k() {
          return new UUID(this.readLong(), this.readLong());
      }
 @@ -298,6 +300,7 @@ public class PacketDataSerializer extends ByteBuf {
@@ -241,10 +241,10 @@ index b95836d443..621aad1503 100644
  
 +    public String readUTF(int maxLength) { return this.e(maxLength); } // Paper - OBFHELPER
      public String e(int i) {
-         int j = this.g();
+         int j = this.i();
  
 diff --git a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
-index bdac03da43..430445cc6d 100644
+index 4d1f44139..c1ca6f950 100644
 --- a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
 +++ b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
 @@ -4,8 +4,8 @@ import java.io.IOException;
@@ -259,7 +259,7 @@ index bdac03da43..430445cc6d 100644
      public PacketLoginInCustomPayload() {}
  
 diff --git a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
-index 345843a7f2..23c96f44b3 100644
+index ae74dc9e1..7eb230f1b 100644
 --- a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
 +++ b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
 @@ -10,6 +10,14 @@ public class PacketLoginOutCustomPayload implements Packet<PacketLoginOutListene
@@ -274,9 +274,9 @@ index 345843a7f2..23c96f44b3 100644
 +    }
 +    // Paper end
 +
+     @Override
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
-         this.a = packetdataserializer.g();
-         this.b = packetdataserializer.l();
+         this.a = packetdataserializer.i();
 -- 
-2.21.0
+2.20.1
 

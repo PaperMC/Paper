@@ -1,70 +1,70 @@
-From f11bd89aabd642b356d2af32e10640a8569fef7d Mon Sep 17 00:00:00 2001
+From e8030d939fc374bbef44bb68ebcaed841c330a7a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:56:36 -0400
 Subject: [PATCH] Prevent Mob AI Rules from Loading Chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
-index 2b15aa6c9e..3ca32123bb 100644
+index ce9318c57..541d97344 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 @@ -12,11 +12,13 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
-     private final Block f;
+     private final Block g;
      private final EntityInsentient entity;
-     private int h;
+     private int i;
 +    private World world; // Paper
  
      public PathfinderGoalRemoveBlock(Block block, EntityCreature entitycreature, double d0, int i) {
          super(entitycreature, d0, 24, i);
-         this.f = block;
+         this.g = block;
          this.entity = entitycreature;
 +        this.world = entitycreature.world; // Paper
      }
  
-     public boolean a() {
-@@ -99,7 +101,9 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+     @Override
+@@ -114,7 +116,9 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
  
      @Nullable
      private BlockPosition a(BlockPosition blockposition, IBlockAccess iblockaccess) {
--        if (iblockaccess.getType(blockposition).getBlock() == this.f) {
+-        if (iblockaccess.getType(blockposition).getBlock() == this.g) {
 +        Block block = world.getBlockIfLoaded(blockposition); // Paper
 +        if (block == null) return null; // Paper
-+        if (block == this.f) { // Paper
++        if (block == this.g) { // Paper
              return blockposition;
          } else {
              BlockPosition[] ablockposition = new BlockPosition[] { blockposition.down(), blockposition.west(), blockposition.east(), blockposition.north(), blockposition.south(), blockposition.down().down()};
-@@ -109,7 +113,7 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+@@ -124,7 +128,7 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
              for (int j = 0; j < i; ++j) {
                  BlockPosition blockposition1 = ablockposition1[j];
  
--                if (iblockaccess.getType(blockposition1).getBlock() == this.f) {
-+                if (world.getBlockIfLoaded(blockposition1) == this.f) { // Paper
+-                if (iblockaccess.getType(blockposition1).getBlock() == this.g) {
++                if (world.getBlockIfLoaded(blockposition1) == this.g) { // Paper
                      return blockposition1;
                  }
              }
-@@ -119,7 +123,8 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
-     }
+@@ -135,7 +139,8 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
  
+     @Override
      protected boolean a(IWorldReader iworldreader, BlockPosition blockposition) {
 -        Block block = iworldreader.getType(blockposition).getBlock();
 +        Block block = world.getBlockIfLoaded(blockposition); // Paper
 +        if (block == null) return false; // Paper
  
-         return block == this.f && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
+         return block == this.g && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
      }
 diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-index e58fdee8bb..f2c4048c2b 100644
+index 8340d6d25..78eb1b39c 100644
 --- a/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 +++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-@@ -87,6 +87,7 @@ public class RandomPositionGenerator {
+@@ -93,6 +93,7 @@ public class RandomPositionGenerator {
                  }
  
                  blockposition1 = new BlockPosition((double) k1 + entitycreature.locX, (double) l1 + entitycreature.locY, (double) i2 + entitycreature.locZ);
 +                if (!entitycreature.world.isLoaded(blockposition1)) continue; // Paper
-                 if ((!flag1 || entitycreature.f(blockposition1)) && navigationabstract.a(blockposition1)) {
+                 if ((!flag1 || entitycreature.a(blockposition1)) && navigationabstract.a(blockposition1)) {
                      if (!flag) {
                          blockposition1 = a(blockposition1, entitycreature);
-@@ -155,6 +156,7 @@ public class RandomPositionGenerator {
+@@ -161,6 +162,7 @@ public class RandomPositionGenerator {
      }
  
      private static boolean b(BlockPosition blockposition, EntityCreature entitycreature) {
@@ -74,10 +74,10 @@ index e58fdee8bb..f2c4048c2b 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 630ebfb37c..0d45e21573 100644
+index 79ded224c..cfab578df 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -764,7 +764,17 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -644,6 +644,16 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
              return chunk.getType(blockposition);
          }
      }
@@ -87,14 +87,13 @@ index 630ebfb37c..0d45e21573 100644
 +            return getFluid(blockposition);
 +        } else {
 +            Chunk chunk = this.getChunkIfLoaded(blockposition);
- 
 +            return chunk != null ? chunk.getFluid(blockposition) : null;
 +        }
 +    }
 +    // Paper end
+ 
+     @Override
      public Fluid getFluid(BlockPosition blockposition) {
-         if (blockposition.isInvalidYLocation()) { // Paper
-             return FluidTypes.EMPTY.i();
 -- 
-2.21.0
+2.20.1
 

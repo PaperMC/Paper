@@ -1,14 +1,14 @@
-From 4fef830e9621867bc3af8bac7fa822e12adfed59 Mon Sep 17 00:00:00 2001
+From d7b2ad128b02dce9fcda0b35a8a76f01e2bc0614 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 8 Aug 2018 16:33:21 -0600
 Subject: [PATCH] Configurable speed for water flowing over lava
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 8f49262226..869bf8a9f9 100644
+index 2b5402b00..2c27be63e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -481,6 +481,12 @@ public class PaperWorldConfig {
+@@ -401,6 +401,12 @@ public class PaperWorldConfig {
          }
      }
  
@@ -18,19 +18,19 @@ index 8f49262226..869bf8a9f9 100644
 +        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
 +    }
 +
-     public enum DuplicateUUIDMode {
-         SAFE_REGEN, DELETE, NOTHING, WARN
-     }
+     public boolean armorStandTick = true;
+     private void armorStandTick() {
+         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
 diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
-index e672385829..b53a88c33f 100644
+index 44e00339f..b4616f259 100644
 --- a/src/main/java/net/minecraft/server/BlockFluids.java
 +++ b/src/main/java/net/minecraft/server/BlockFluids.java
-@@ -77,11 +77,27 @@ public class BlockFluids extends Block implements IFluidSource {
- 
-     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1) {
+@@ -70,11 +70,27 @@ public class BlockFluids extends Block implements IFluidSource {
+     @Override
+     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
          if (this.a(world, blockposition, iblockdata)) {
--            world.getFluidTickList().a(blockposition, iblockdata.s().c(), this.a((IWorldReader) world));
-+            world.getFluidTickList().a(blockposition, iblockdata.s().c(), this.getFlowSpeed(world, blockposition)); // Paper
+-            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.getFlowSpeed(world, blockposition)); // Paper
          }
  
      }
@@ -51,18 +51,18 @@ index e672385829..b53a88c33f 100644
 +    }
 +    // Paper end
 +
+     @Override
      public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
-         if (iblockdata.s().d() || iblockdata1.s().d()) {
-             generatoraccess.getFluidTickList().a(blockposition, iblockdata.s().c(), this.a((IWorldReader) generatoraccess));
-@@ -92,7 +108,7 @@ public class BlockFluids extends Block implements IFluidSource {
- 
-     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1) {
+         if (iblockdata.p().isSource() || iblockdata1.p().isSource()) {
+@@ -87,7 +103,7 @@ public class BlockFluids extends Block implements IFluidSource {
+     @Override
+     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
          if (this.a(world, blockposition, iblockdata)) {
--            world.getFluidTickList().a(blockposition, iblockdata.s().c(), this.a((IWorldReader) world));
-+            world.getFluidTickList().a(blockposition, iblockdata.s().c(), this.getFlowSpeed(world, blockposition)); // Paper
+-            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.getFlowSpeed(world, blockposition)); // Paper
          }
  
      }
 -- 
-2.21.0
+2.20.1
 

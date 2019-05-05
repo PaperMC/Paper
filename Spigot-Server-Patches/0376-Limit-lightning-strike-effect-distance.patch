@@ -1,14 +1,14 @@
-From baf45e6afa85406637c126b82ac06e48a949e18f Mon Sep 17 00:00:00 2001
+From e448b41d1488e3cff3b4bcda8c2d035cabafe69c Mon Sep 17 00:00:00 2001
 From: Trigary <trigary0@gmail.com>
 Date: Fri, 14 Sep 2018 17:42:08 +0200
 Subject: [PATCH] Limit lightning strike effect distance
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 869bf8a9f9..2a912286b2 100644
+index 2c27be63e..fb44fccc9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -246,6 +246,28 @@ public class PaperWorldConfig {
+@@ -234,6 +234,28 @@ public class PaperWorldConfig {
              skeleHorseSpawnChance = 0.01D; // Vanilla value
          }
      }
@@ -38,10 +38,10 @@ index 869bf8a9f9..2a912286b2 100644
      public boolean firePhysicsEventForRedstone = false;
      private void firePhysicsEventForRedstone() {
 diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
-index 7781babf51..50f6200095 100644
+index adf68d165..fbcda86b3 100644
 --- a/src/main/java/net/minecraft/server/EntityLightning.java
 +++ b/src/main/java/net/minecraft/server/EntityLightning.java
-@@ -60,6 +60,17 @@ public class EntityLightning extends EntityWeather {
+@@ -64,6 +64,17 @@ public class EntityLightning extends Entity {
                  double deltaX = this.locX - player.locX;
                  double deltaZ = this.locZ - player.locZ;
                  double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
@@ -59,7 +59,7 @@ index 7781babf51..50f6200095 100644
                  if (distanceSquared > viewDistance * viewDistance) {
                      double deltaLength = Math.sqrt(distanceSquared);
                      double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
-@@ -70,7 +81,7 @@ public class EntityLightning extends EntityWeather {
+@@ -74,7 +85,7 @@ public class EntityLightning extends Entity {
                  }
              }
              // CraftBukkit end
@@ -69,18 +69,18 @@ index 7781babf51..50f6200095 100644
  
          --this.lifeTicks;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index e71a405807..53e7834cca 100644
+index ffa5a0bee..6d8fb1290 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1065,7 +1065,7 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+@@ -1183,7 +1183,7 @@ public class WorldServer extends World {
          }
          // CraftBukkit end
-         if (super.strikeLightning(entity)) {
--            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension
-+            this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entity.locX, entity.locY, entity.locZ, this.paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entity)); // CraftBukkit - Use dimension, // Paper - use world instead of dimension, limit lightning strike effect distance
-             return true;
-         } else {
-             return false;
+         this.globalEntityList.add(entitylightning);
+-        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension
++        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension, limit lightning strike effect distance
+     }
+ 
+     @Override
 -- 
-2.21.0
+2.20.1
 

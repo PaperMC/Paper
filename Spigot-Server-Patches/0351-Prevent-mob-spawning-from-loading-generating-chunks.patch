@@ -1,4 +1,4 @@
-From 25496ec74347f65858d1b02bf856dc89c3e44a65 Mon Sep 17 00:00:00 2001
+From e84f9798c9de10f7cd0fc3c479c72a6bfbec6b0d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 12 Sep 2018 21:12:57 -0400
 Subject: [PATCH] Prevent mob spawning from loading/generating chunks
@@ -6,30 +6,30 @@ Subject: [PATCH] Prevent mob spawning from loading/generating chunks
 also prevents if out of world border bounds
 
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index d125fae03b..297c53d15c 100644
+index e5695c760..696293132 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
-@@ -129,9 +129,9 @@ public final class SpawnerCreature {
-                             int i2 = blockposition1.getX();
-                             int j2 = blockposition1.getY();
-                             int k2 = blockposition1.getZ();
--                            IBlockData iblockdata = worldserver.getType(blockposition1);
-+                            IBlockData iblockdata = worldserver.getTypeIfLoadedAndInBounds(blockposition1);  // Paper - don't load chunks for mob spawn
+@@ -25,9 +25,9 @@ public final class SpawnerCreature {
+         int l = blockposition1.getZ();
  
--                            if (!iblockdata.isOccluding()) {
-+                            if (iblockdata != null && !iblockdata.isOccluding()) { // Paper - don't load chunks for mob spawn
-                                 int l2 = 0;
-                                 int i3 = 0;
+         if (k >= 1) {
+-            IBlockData iblockdata = chunk.getType(blockposition1);
++            IBlockData iblockdata = world.getTypeIfLoadedAndInBounds(blockposition1);  // Paper - don't load chunks for mob spawn
  
-@@ -158,7 +158,7 @@ public final class SpawnerCreature {
-                                                 float f1 = (float) l3 + 0.5F;
-                                                 EntityHuman entityhuman1 = worldserver.a((double) f, (double) f1, -1.0D);
+-            if (!iblockdata.isOccluding(chunk, blockposition1)) {
++            if (iblockdata != null && !iblockdata.isOccluding(chunk, blockposition1)) { // Paper - don't load chunks for mob spawn
+                 BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
+                 int i1 = 0;
  
--                                                if (entityhuman1 != null) {
-+                                                if (entityhuman1 != null && worldserver.isLoadedAndInBounds(blockposition_mutableblockposition)) { // Paper - don't load chunks for mob spawn
-                                                     double d0 = entityhuman1.d((double) f, (double) k3, (double) f1);
+@@ -52,7 +52,7 @@ public final class SpawnerCreature {
+                                 float f1 = (float) k1 + 0.5F;
+                                 EntityHuman entityhuman = world.a((double) f, (double) f1, -1.0D);
  
-                                                     if (d0 > 576.0D && blockposition.distanceSquared((double) f, (double) k3, (double) f1) >= 576.0D) {
+-                                if (entityhuman != null && entityhuman.e((double) f, (double) k, (double) f1) > 576.0D && !blockposition.a((IPosition) (new Vec3D((double) f, (double) k, (double) f1)), 24.0D)) {
++                                if (entityhuman != null && entityhuman.e((double) f, (double) k, (double) f1) > 576.0D && !blockposition.a((IPosition) (new Vec3D((double) f, (double) k, (double) f1)), 24.0D) && world.isLoadedAndInBounds(blockposition_mutableblockposition)) { // Paper - don't load chunks for mob spawn
+                                     ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(blockposition_mutableblockposition);
+ 
+                                     if (Objects.equals(chunkcoordintpair, chunk.getPos())) {
 -- 
-2.21.0
+2.20.1
 

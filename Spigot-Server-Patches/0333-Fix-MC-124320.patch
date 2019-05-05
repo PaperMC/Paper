@@ -1,14 +1,14 @@
-From c31f3e86f6647a66fe4ab95da3ab06921900bd31 Mon Sep 17 00:00:00 2001
+From 3d39c0e93184b77724106a9b6911d53179a61ce2 Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Thu, 23 Aug 2018 09:25:30 -0500
 Subject: [PATCH] Fix MC-124320
 
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index c674aa13d8..2e460a7f63 100644
+index 69e65ea6c..549c50de7 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
-@@ -154,6 +154,7 @@ public class Block implements IMaterial {
+@@ -160,6 +160,7 @@ public class Block implements IMaterial {
          return tag.isTagged(this);
      }
  
@@ -17,21 +17,21 @@ index c674aa13d8..2e460a7f63 100644
          IBlockData iblockdata1 = iblockdata;
          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
 diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
-index 139a70ca3b..e4aba0e0a8 100644
+index a1033ce28..de2d99534 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderman.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderman.java
-@@ -305,8 +305,9 @@ public class EntityEnderman extends EntityMonster {
+@@ -325,8 +325,9 @@ public class EntityEnderman extends EntityMonster {
              if (block.a(TagsBlock.ENDERMAN_HOLDABLE) && flag) {
                  // CraftBukkit start - Pickup event
                  if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
 -                    this.enderman.setCarried(iblockdata);
 +                    //this.enderman.setCarried(iblockdata); // Paper - moved down
-                     world.setAir(blockposition);
+                     world.a(blockposition, false);
 +                    this.enderman.setCarried(Block.getValidBlockForPosition(iblockdata, this.enderman.world, blockposition)); // Paper - Fix MC-124320
                  }
                  // CraftBukkit end
              }
-@@ -316,6 +317,7 @@ public class EntityEnderman extends EntityMonster {
+@@ -336,6 +337,7 @@ public class EntityEnderman extends EntityMonster {
  
      static class PathfinderGoalEndermanPlaceBlock extends PathfinderGoal {
  
@@ -39,15 +39,15 @@ index 139a70ca3b..e4aba0e0a8 100644
          private final EntityEnderman a;
  
          public PathfinderGoalEndermanPlaceBlock(EntityEnderman entityenderman) {
-@@ -335,7 +337,7 @@ public class EntityEnderman extends EntityMonster {
-             BlockPosition blockposition = new BlockPosition(i, j, k);
+@@ -358,7 +360,7 @@ public class EntityEnderman extends EntityMonster {
              IBlockData iblockdata = world.getType(blockposition);
-             IBlockData iblockdata1 = world.getType(blockposition.down());
+             BlockPosition blockposition1 = blockposition.down();
+             IBlockData iblockdata1 = world.getType(blockposition1);
 -            IBlockData iblockdata2 = this.a.getCarried();
 +            IBlockData iblockdata2 = Block.getValidBlockForPosition(getEnderman().getCarried(), getEnderman().world, blockposition); // Paper - Fix MC-124320
  
-             if (iblockdata2 != null && this.a(world, blockposition, iblockdata2, iblockdata, iblockdata1)) {
+             if (iblockdata2 != null && this.a(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
                  // CraftBukkit start - Place event
 -- 
-2.21.0
+2.20.1
 

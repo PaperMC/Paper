@@ -1,14 +1,14 @@
-From 3d3c48d4ab5f4be23a1fb1e8803f8a233c3d7628 Mon Sep 17 00:00:00 2001
+From 1cef982ae001f8da273de56a99ce6c1ef3d1de9a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 10 Sep 2018 23:36:16 -0400
 Subject: [PATCH] Prevent chunk loading from Fluid Flowing
 
 
 diff --git a/src/main/java/net/minecraft/server/FluidTypeFlowing.java b/src/main/java/net/minecraft/server/FluidTypeFlowing.java
-index 431602cac1..c0955d6ec2 100644
+index c76fa0b4b..5f1514360 100644
 --- a/src/main/java/net/minecraft/server/FluidTypeFlowing.java
 +++ b/src/main/java/net/minecraft/server/FluidTypeFlowing.java
-@@ -185,7 +185,8 @@ public abstract class FluidTypeFlowing extends FluidType {
+@@ -178,7 +178,8 @@ public abstract class FluidTypeFlowing extends FluidType {
                  EnumDirection enumdirection = (EnumDirection) entry.getKey();
                  Fluid fluid1 = (Fluid) entry.getValue();
                  BlockPosition blockposition1 = blockposition.shift(enumdirection);
@@ -16,19 +16,19 @@ index 431602cac1..c0955d6ec2 100644
 +                IBlockData iblockdata1 = generatoraccess.getTypeIfLoaded(blockposition1); // Paper
 +                if (iblockdata1 == null) continue; // Paper
  
-                 if (this.a(generatoraccess, blockposition, iblockdata, enumdirection, blockposition1, iblockdata1, generatoraccess.getFluid(blockposition1), fluid1.c())) {
+                 if (this.a(generatoraccess, blockposition, iblockdata, enumdirection, blockposition1, iblockdata1, generatoraccess.getFluid(blockposition1), fluid1.getType())) {
                      // CraftBukkit start
-@@ -212,7 +213,8 @@ public abstract class FluidTypeFlowing extends FluidType {
+@@ -205,7 +206,8 @@ public abstract class FluidTypeFlowing extends FluidType {
          while (iterator.hasNext()) {
              EnumDirection enumdirection = (EnumDirection) iterator.next();
              BlockPosition blockposition1 = blockposition.shift(enumdirection);
 -            IBlockData iblockdata1 = iworldreader.getType(blockposition1);
 +            IBlockData iblockdata1 = iworldreader.getTypeIfLoaded(blockposition1); // Paper
 +            if (iblockdata1 == null) continue; // Paper
-             Fluid fluid = iblockdata1.s();
+             Fluid fluid = iblockdata1.p();
  
-             if (fluid.c().a((FluidType) this) && this.a(enumdirection, (IBlockAccess) iworldreader, blockposition, iblockdata, blockposition1, iblockdata1)) {
-@@ -329,11 +331,20 @@ public abstract class FluidTypeFlowing extends FluidType {
+             if (fluid.getType().a((FluidType) this) && this.a(enumdirection, (IBlockAccess) iworldreader, blockposition, iblockdata, blockposition1, iblockdata1)) {
+@@ -322,11 +324,19 @@ public abstract class FluidTypeFlowing extends FluidType {
              if (enumdirection1 != enumdirection) {
                  BlockPosition blockposition2 = blockposition.shift(enumdirection1);
                  short short0 = a(blockposition1, blockposition2);
@@ -41,26 +41,25 @@ index 431602cac1..c0955d6ec2 100644
 +                    if (iblockdatax == null) {
 +                        continue;
 +                    }
-+
-+                    pair = Pair.of(iblockdatax, iblockdatax.s());
+ 
+-                    return Pair.of(iblockdata1, iblockdata1.p());
+-                });
++                    pair = Pair.of(iblockdatax, iblockdatax.p());
 +                    short2objectmap.put(short0, pair);
 +
 +                }
 +                // Paper end
- 
--                    return Pair.of(iblockdata1, iblockdata1.s());
--                });
                  IBlockData iblockdata1 = (IBlockData) pair.getFirst();
                  Fluid fluid = (Fluid) pair.getSecond();
  
-@@ -405,11 +416,16 @@ public abstract class FluidTypeFlowing extends FluidType {
+@@ -398,11 +408,16 @@ public abstract class FluidTypeFlowing extends FluidType {
              EnumDirection enumdirection = (EnumDirection) iterator.next();
              BlockPosition blockposition1 = blockposition.shift(enumdirection);
              short short0 = a(blockposition, blockposition1);
 -            Pair<IBlockData, Fluid> pair = (Pair) short2objectmap.computeIfAbsent(short0, (j) -> {
 -                IBlockData iblockdata1 = iworldreader.getType(blockposition1);
 -
--                return Pair.of(iblockdata1, iblockdata1.s());
+-                return Pair.of(iblockdata1, iblockdata1.p());
 -            });
 +            // Paper start
 +            Pair pair = (Pair) short2objectmap.get(short0);
@@ -68,7 +67,7 @@ index 431602cac1..c0955d6ec2 100644
 +                IBlockData iblockdatax = iworldreader.getTypeIfLoaded(blockposition1);
 +                if (iblockdatax == null) continue;
 +
-+                pair = Pair.of(iblockdatax, iblockdatax.s());
++                pair = Pair.of(iblockdatax, iblockdatax.p());
 +                short2objectmap.put(short0, pair);
 +            }
 +            // Paper end
@@ -76,5 +75,5 @@ index 431602cac1..c0955d6ec2 100644
              Fluid fluid = (Fluid) pair.getSecond();
              Fluid fluid1 = this.a(iworldreader, blockposition1, iblockdata1);
 -- 
-2.21.0
+2.20.1
 

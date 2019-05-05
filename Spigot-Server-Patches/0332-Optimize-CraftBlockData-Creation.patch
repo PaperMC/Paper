@@ -1,4 +1,4 @@
-From 7f9d6eaeea4c3a7fd2d75d413016e01b7b2d30d8 Mon Sep 17 00:00:00 2001
+From 83261d909e36f226f2043582f2bcadd3e89dd068 Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Thu, 23 Aug 2018 11:45:32 -0400
 Subject: [PATCH] Optimize CraftBlockData Creation
@@ -7,21 +7,25 @@ Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
 and cloning it when one is needed.
 
 diff --git a/src/main/java/net/minecraft/server/BlockData.java b/src/main/java/net/minecraft/server/BlockData.java
-index 4dd6c32761..1b226a77e0 100644
---- a/src/main/java/net/minecraft/server/BlockData.java
+new file mode 100644
+index 000000000..1b226a77e
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/BlockData.java
-@@ -1,6 +1,7 @@
- package net.minecraft.server;
- 
- import com.google.common.collect.ImmutableMap;
+@@ -0,0 +1,25 @@
++package net.minecraft.server;
++
++import com.google.common.collect.ImmutableMap;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
- 
- public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
- 
-@@ -11,4 +12,14 @@ public class BlockData extends BlockDataAbstract<Block, IBlockData> implements I
-     public Block getBlock() {
-         return (Block) this.e_;
-     }
++
++public class BlockData extends BlockDataAbstract<Block, IBlockData> implements IBlockData {
++
++    public BlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
++        super(block, immutablemap);
++    }
++
++    public Block getBlock() {
++        return (Block) this.e_;
++    }
 +
 +    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
 +    private CraftBlockData cachedCraftBlockData;
@@ -32,25 +36,42 @@ index 4dd6c32761..1b226a77e0 100644
 +        return (CraftBlockData) cachedCraftBlockData.clone();
 +    }
 +    // Paper end
- }
++}
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index e4e4c55130..08a5acb0ac 100644
+index e8ae4b5e4..5413fe5b1 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -27,6 +27,8 @@ public interface IBlockData extends IBlockDataHolder<IBlockData> {
- 
-     Block getBlock();
- 
-+    org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData(); // Paper - property for converting IBlockData to CraftBlockData, should only be used by CraftBlockData#fromData and should return a clone
+@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
+ import com.mojang.datafixers.Dynamic;
+ import com.mojang.datafixers.types.DynamicOps;
+ import com.mojang.datafixers.util.Pair;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
 +
-     default Material getMaterial() {
-         return this.getBlock().n(this);
+ import java.util.Arrays;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -38,6 +40,16 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return (Block) this.a;
+     }
+ 
++    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++    private CraftBlockData cachedCraftBlockData;
++
++    @Override
++    public CraftBlockData createCraftBlockData() {
++        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
++        return (CraftBlockData) cachedCraftBlockData.clone();
++    }
++    // Paper end
++
+     public Material getMaterial() {
+         return this.getBlock().l(this);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index 7755e4f7a6..4bb43e360d 100644
+index c1666a9ba..3c29abd52 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-@@ -521,7 +521,17 @@ public class CraftBlockData implements BlockData {
+@@ -539,7 +539,17 @@ public class CraftBlockData implements BlockData {
          return craft;
      }
  
@@ -69,5 +90,5 @@ index 7755e4f7a6..4bb43e360d 100644
      }
  }
 -- 
-2.21.0
+2.20.1
 

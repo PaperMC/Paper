@@ -1,4 +1,4 @@
-From 38dcc25caf79d64c5fcb8cf6046cb7fe4cbd72a9 Mon Sep 17 00:00:00 2001
+From 8d39347a9a9836d2df429831bee64bc016e97c67 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 12 Sep 2018 21:47:01 -0400
 Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
@@ -6,29 +6,29 @@ Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
 Uses an EnumMap as well as a Set paired List for O(1) contains calls.
 
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index c399bdecc3..3496d4236d 100644
+index 9a839d654..72eb669c5 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -120,7 +120,7 @@ public abstract class BiomeBase {
-     protected final Map<WorldGenStage.Decoration, List<WorldGenFeatureComposite<?, ?>>> aW = Maps.newHashMap();
-     protected final List<WorldGenFeatureCompositeFlower<?>> aX = Lists.newArrayList();
-     protected final Map<StructureGenerator<?>, WorldGenFeatureConfiguration> aY = Maps.newHashMap();
--    private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> aZ = Maps.newHashMap();
-+    private final java.util.EnumMap<EnumCreatureType, List<BiomeBase.BiomeMeta>> aZ = Maps.newEnumMap(EnumCreatureType.class); // Paper
+@@ -38,7 +38,7 @@ public abstract class BiomeBase {
+     protected final Map<WorldGenStage.Decoration, List<WorldGenFeatureConfigured<?>>> r = Maps.newHashMap();
+     protected final List<WorldGenFeatureConfigured<?>> s = Lists.newArrayList();
+     protected final Map<StructureGenerator<?>, WorldGenFeatureConfiguration> t = Maps.newHashMap();
+-    private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> u = Maps.newHashMap();
++    private final java.util.EnumMap<EnumCreatureType, List<BiomeBase.BiomeMeta>> u = Maps.newEnumMap(EnumCreatureType.class); // Paper
  
      @Nullable
      public static BiomeBase a(BiomeBase biomebase) {
-@@ -169,7 +169,7 @@ public abstract class BiomeBase {
+@@ -85,7 +85,7 @@ public abstract class BiomeBase {
              for (j = 0; j < i; ++j) {
                  EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
  
--                this.aZ.put(enumcreaturetype, Lists.newArrayList());
-+                this.aZ.put(enumcreaturetype, new MobList()); // Paper
+-                this.u.put(enumcreaturetype, Lists.newArrayList());
++                this.u.put(enumcreaturetype, new MobList()); // Paper
              }
  
          } else {
-@@ -473,6 +473,38 @@ public abstract class BiomeBase {
- 
+@@ -283,6 +283,38 @@ public abstract class BiomeBase {
+         return this.m;
      }
  
 +    // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
@@ -67,5 +67,5 @@ index c399bdecc3..3496d4236d 100644
  
          @Nullable
 -- 
-2.21.0
+2.20.1
 
