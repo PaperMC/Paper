@@ -1,4 +1,4 @@
-From 46fb6cb816d0b057c8137c3e6795a4fb281fd52d Mon Sep 17 00:00:00 2001
+From 474d222e2b8dde31dc97fb3a077f44a82b5f2b20 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
@@ -64,7 +64,7 @@ index b7c94fe238..80eea5dfbd 100644
  
      public NBTTagList() {}
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index e68f901943..995a893774 100644
+index e68f901943..ed2ccebb23 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -23,7 +23,7 @@ public class RegionFile implements AutoCloseable {
@@ -76,7 +76,15 @@ index e68f901943..995a893774 100644
      // Spigot end
      private static final byte[] a = new byte[4096];
      private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
-@@ -66,6 +66,7 @@ public class RegionFile implements AutoCloseable {
+@@ -33,6 +33,7 @@ public class RegionFile implements AutoCloseable {
+ 
+     public RegionFile(File file) throws IOException {
+         this.b = new RandomAccessFile(file, "rw");
++        this.file = file; // Spigot // Paper - We need this earlier
+         if (this.b.length() < 8192L) { // Paper - headers should be 8192
+             this.b.write(RegionFile.a);
+             this.b.write(RegionFile.a);
+@@ -66,6 +67,7 @@ public class RegionFile implements AutoCloseable {
          }
          header.clear();
          java.nio.IntBuffer headerAsInts = header.asIntBuffer();
@@ -84,7 +92,7 @@ index e68f901943..995a893774 100644
          // Paper End
  
          int k;
-@@ -83,7 +84,7 @@ public class RegionFile implements AutoCloseable {
+@@ -83,7 +85,7 @@ public class RegionFile implements AutoCloseable {
                      this.b.seek(j * 4 + 4); // Go back to where we were
                  }
              }
@@ -93,7 +101,12 @@ index e68f901943..995a893774 100644
                  for (int l = 0; l < (length); ++l) {
                      // Spigot end
                      this.e.set((k >> 8) + l, false);
-@@ -106,7 +107,7 @@ public class RegionFile implements AutoCloseable {
+@@ -102,11 +104,11 @@ public class RegionFile implements AutoCloseable {
+             if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
+         }
+ 
+-        this.file = file; // Spigot
++        // Paper - we need this earlier
      }
  
      @Nullable
@@ -102,7 +115,7 @@ index e68f901943..995a893774 100644
          try {
              int i = this.getOffset(chunkcoordintpair);
  
-@@ -182,8 +183,8 @@ public class RegionFile implements AutoCloseable {
+@@ -182,8 +184,8 @@ public class RegionFile implements AutoCloseable {
          }
      }
  
@@ -113,7 +126,7 @@ index e68f901943..995a893774 100644
      }
  
      protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, byte[] abyte, int i) {
-@@ -201,8 +202,9 @@ public class RegionFile implements AutoCloseable {
+@@ -201,8 +203,9 @@ public class RegionFile implements AutoCloseable {
  
              if (i1 >= 256) {
                  // Spigot start
@@ -124,7 +137,7 @@ index e68f901943..995a893774 100644
                  // Spigot end
              }
  
-@@ -352,6 +354,109 @@ public class RegionFile implements AutoCloseable {
+@@ -352,6 +355,109 @@ public class RegionFile implements AutoCloseable {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
      }
@@ -234,7 +247,7 @@ index e68f901943..995a893774 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -363,8 +468,35 @@ public class RegionFile implements AutoCloseable {
+@@ -363,8 +469,35 @@ public class RegionFile implements AutoCloseable {
              this.b = chunkcoordintpair;
          }
  
