@@ -1,4 +1,4 @@
-From c81c54c9d585ac5c34aa58f474b32d44854bb8a4 Mon Sep 17 00:00:00 2001
+From 907bba63380895a6f6efa8e8eba33a01cfde0657 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 May 2018 21:33:35 -0400
 Subject: [PATCH] Close Plugin Class Loaders on Disable
@@ -53,17 +53,17 @@ index 41e26451..86cc5025 100644
       * Gets a {@link Permission} from its fully qualified name
       *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index e4a0f938..269bb5ca 100644
+index 4cbec1f1..85b6d3cb 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -418,17 +418,29 @@ public final class SimplePluginManager implements PluginManager {
-         }
-     }
+@@ -428,17 +428,31 @@ public final class SimplePluginManager implements PluginManager {
  
-+    // Paper start - close Classloader on disable
+     @Override
      public void disablePlugins() {
++        // Paper start - close Classloader on disable
 +        disablePlugins(false);
 +    }
++
 +
 +    public void disablePlugins(boolean closeClassloaders) {
 +        // Paper end - close Classloader on disable
@@ -74,10 +74,12 @@ index e4a0f938..269bb5ca 100644
          }
      }
  
-+    // Paper start - close Classloader on disable
+     @Override
      public void disablePlugin(@NotNull final Plugin plugin) {
++        // Paper start - close Classloader on disable
 +        disablePlugin(plugin, false);
 +    }
++
 +
 +    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
 +        // Paper end - close Classloader on disable
@@ -88,8 +90,8 @@ index e4a0f938..269bb5ca 100644
              } catch (Throwable ex) {
                  handlePluginException("Error occurred (in the plugin loader) while disabling "
                          + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
-@@ -474,7 +486,7 @@ public final class SimplePluginManager implements PluginManager {
- 
+@@ -485,7 +499,7 @@ public final class SimplePluginManager implements PluginManager {
+     @Override
      public void clearPlugins() {
          synchronized (this) {
 -            disablePlugins();
@@ -98,10 +100,10 @@ index e4a0f938..269bb5ca 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 024d8393..ca29394d 100644
+index 06b6724f..bc7bf6a3 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -327,7 +327,7 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -332,7 +332,7 @@ public final class JavaPluginLoader implements PluginLoader {
              } catch (Throwable ex) {
                  server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
                  // Paper start - Disable plugins that fail to load
@@ -110,9 +112,9 @@ index 024d8393..ca29394d 100644
                  return;
                  // Paper end
              }
-@@ -339,6 +339,12 @@ public final class JavaPluginLoader implements PluginLoader {
-     }
+@@ -345,6 +345,12 @@ public final class JavaPluginLoader implements PluginLoader {
  
+     @Override
      public void disablePlugin(@NotNull Plugin plugin) {
 +    // Paper start - close Classloader on disable
 +        disablePlugin(plugin, false); // Retain old behavior unless requested
@@ -123,7 +125,7 @@ index 024d8393..ca29394d 100644
          Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
  
          if (plugin.isEnabled()) {
-@@ -365,6 +371,16 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -371,6 +377,16 @@ public final class JavaPluginLoader implements PluginLoader {
                  for (String name : names) {
                      removeClass(name);
                  }
@@ -141,5 +143,5 @@ index 024d8393..ca29394d 100644
          }
      }
 -- 
-2.21.0
+2.17.1
 
