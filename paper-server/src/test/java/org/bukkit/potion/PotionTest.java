@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.server.IRegistry;
+import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
 import net.minecraft.server.PotionRegistry;
@@ -29,5 +30,21 @@ public class PotionTest extends AbstractTestingBase {
         }
 
         assertEquals(effects.entrySet().size(), PotionType.values().length - /* PotionTypes with no/shared Effects */ 6);
+    }
+
+    @Test
+    public void testEffectType() {
+        for (MobEffectList nms : IRegistry.MOB_EFFECT) {
+            MinecraftKey key = IRegistry.MOB_EFFECT.getKey(nms);
+
+            int id = MobEffectList.getId(nms);
+            PotionEffectType bukkit = PotionEffectType.getById(id);
+
+            assertNotNull("No Bukkit type for " + key, bukkit);
+            assertFalse("No name for " + key, bukkit.getName().contains("UNKNOWN"));
+
+            PotionEffectType byName = PotionEffectType.getByName(bukkit.getName());
+            assertEquals("Same type not returned by name " + key, bukkit, byName);
+        }
     }
 }
