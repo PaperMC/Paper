@@ -2024,6 +2024,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             super.remove();
         }
     }
+
+    @Override
+    public int getViewDistance() {
+        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public void setViewDistance(int viewDistance) {
+        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
     // Paper end
 
     // Spigot start
