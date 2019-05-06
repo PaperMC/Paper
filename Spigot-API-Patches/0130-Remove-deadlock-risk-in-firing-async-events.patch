@@ -1,4 +1,4 @@
-From efab2286b27530bc51746d79927a19d4b75d0777 Mon Sep 17 00:00:00 2001
+From 79eb3b353f5f8e4b7f237675a59c0b8139499da3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 9 Sep 2018 00:32:05 -0400
 Subject: [PATCH] Remove deadlock risk in firing async events
@@ -16,12 +16,12 @@ which results in a hard crash.
 This change removes the synchronize and adds some protection around enable/disable
 
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 9391bbf0..5098eade 100644
+index adca48f1..2d3cee14 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
   */
- public interface Entity extends Metadatable, CommandSender, Nameable {
+ public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder {
  
 -    /**
 +    /*
@@ -29,37 +29,37 @@ index 9391bbf0..5098eade 100644
       *
       * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 269bb5ca..5d99a41a 100644
+index da3cd63b..583f8ee4 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -391,7 +391,7 @@ public final class SimplePluginManager implements PluginManager {
-      * @param plugin Plugin to check
+@@ -398,7 +398,7 @@ public final class SimplePluginManager implements PluginManager {
       * @return true if the plugin is enabled, otherwise false
       */
+     @Override
 -    public boolean isPluginEnabled(@Nullable Plugin plugin) {
 +    public synchronized boolean isPluginEnabled(@Nullable Plugin plugin) { // Paper - synchronize
          if ((plugin != null) && (plugins.contains(plugin))) {
              return plugin.isEnabled();
          } else {
-@@ -399,7 +399,7 @@ public final class SimplePluginManager implements PluginManager {
-         }
+@@ -407,7 +407,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
+     @Override
 -    public void enablePlugin(@NotNull final Plugin plugin) {
 +    public synchronized void enablePlugin(@NotNull final Plugin plugin) { // Paper - synchronize
          if (!plugin.isEnabled()) {
              List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
  
-@@ -436,7 +436,7 @@ public final class SimplePluginManager implements PluginManager {
-         disablePlugin(plugin, false);
+@@ -445,7 +445,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
+     @Override
 -    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
 +    public synchronized void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) { // Paper - synchronize
          // Paper end - close Classloader on disable
          if (plugin.isEnabled()) {
              try {
-@@ -496,6 +496,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -506,6 +506,7 @@ public final class SimplePluginManager implements PluginManager {
              defaultPerms.get(false).clear();
          }
      }
@@ -67,9 +67,9 @@ index 269bb5ca..5d99a41a 100644
  
      /**
       * Calls an event with the given details.
-@@ -505,25 +506,11 @@ public final class SimplePluginManager implements PluginManager {
-      * @param event Event details
+@@ -516,25 +517,11 @@ public final class SimplePluginManager implements PluginManager {
       */
+     @Override
      public void callEvent(@NotNull Event event) {
 -        if (event.isAsynchronous()) {
 -            if (Thread.holdsLock(this)) {
@@ -97,7 +97,7 @@ index 269bb5ca..5d99a41a 100644
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
  
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index 5e986de8..2b50fe63 100644
+index 17dbe913..bae26ce7 100644
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 @@ -17,7 +17,7 @@ public class PluginManagerTest {
@@ -126,7 +126,7 @@ index 5e986de8..2b50fe63 100644
      @Test
      public void testAsyncLocked() throws InterruptedException {
          final Event event = new TestEvent(true);
-@@ -123,7 +123,7 @@ public class PluginManagerTest {
+@@ -127,7 +127,7 @@ public class PluginManagerTest {
          if (store.value == null) {
              throw new IllegalStateException("No exception thrown");
          }

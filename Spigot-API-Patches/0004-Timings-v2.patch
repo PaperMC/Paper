@@ -1,4 +1,4 @@
-From cf5ea1965af71c23c2baae43f99cabd273c82291 Mon Sep 17 00:00:00 2001
+From 3cb74e805adf6ffb74f73fa3e55b7ad82e12c801 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -3416,7 +3416,7 @@ index 00000000..ca1893e9
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index b3d5a302..9d0ae63f 100644
+index 81e4fa57..f020cb04 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -15,7 +15,6 @@ import org.bukkit.command.defaults.BukkitCommand;
@@ -3436,15 +3436,15 @@ index b3d5a302..9d0ae63f 100644
      }
  
      public void setFallbackCommands() {
-@@ -64,6 +63,7 @@ public class SimpleCommandMap implements CommandMap {
-      * {@inheritDoc}
+@@ -67,6 +66,7 @@ public class SimpleCommandMap implements CommandMap {
       */
+     @Override
      public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
 +        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
          fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -139,16 +139,22 @@ public class SimpleCommandMap implements CommandMap {
+@@ -143,16 +143,22 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3731,10 +3731,10 @@ index 6023e4f6..00000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 36a42a80..942cb386 100644
+index 06762a69..4f8ae7a8 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1565,6 +1565,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1566,6 +1566,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
@@ -3747,10 +3747,10 @@ index 36a42a80..942cb386 100644
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 17ddbe61..47327376 100644
+index f648c598..78a2d2f8 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -295,7 +295,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -297,7 +297,6 @@ public final class SimplePluginManager implements PluginManager {
              }
          }
  
@@ -3758,7 +3758,7 @@ index 17ddbe61..47327376 100644
          return result.toArray(new Plugin[result.size()]);
      }
  
-@@ -333,7 +332,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -336,7 +335,7 @@ public final class SimplePluginManager implements PluginManager {
  
          if (result != null) {
              plugins.add(result);
@@ -3767,16 +3767,16 @@ index 17ddbe61..47327376 100644
          }
  
          return result;
-@@ -360,7 +359,7 @@ public final class SimplePluginManager implements PluginManager {
-      */
+@@ -364,7 +363,7 @@ public final class SimplePluginManager implements PluginManager {
+     @Override
      @Nullable
      public synchronized Plugin getPlugin(@NotNull String name) {
 -        return lookupNames.get(name.replace(' ', '_'));
 +        return lookupNames.get(name.replace(' ', '_').toLowerCase(java.util.Locale.ENGLISH)); // Paper
      }
  
-     @NotNull
-@@ -562,7 +561,8 @@ public final class SimplePluginManager implements PluginManager {
+     @Override
+@@ -577,7 +576,8 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
  
@@ -3786,16 +3786,16 @@ index 17ddbe61..47327376 100644
              getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -745,7 +745,7 @@ public final class SimplePluginManager implements PluginManager {
-     }
+@@ -774,7 +774,7 @@ public final class SimplePluginManager implements PluginManager {
  
+     @Override
      public boolean useTimings() {
 -        return useTimings;
 +        return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
      }
  
      /**
-@@ -754,6 +754,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -783,6 +783,6 @@ public final class SimplePluginManager implements PluginManager {
       * @param use True if per event timing code should be used
       */
      public void useTimings(boolean use) {
@@ -3804,7 +3804,7 @@ index 17ddbe61..47327376 100644
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 92983c1e..2618906f 100644
+index 1173e433..82e379d1 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -53,7 +53,6 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -3815,14 +3815,15 @@ index 92983c1e..2618906f 100644
  
      /**
       * This class was not meant to be constructed explicitly
-@@ -298,26 +297,20 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -302,27 +301,21 @@ public final class JavaPluginLoader implements PluginLoader {
                  }
              }
  
 -            final CustomTimingsHandler timings = new CustomTimingsHandler("Plugin: " + plugin.getDescription().getFullName() + " Event: " + listener.getClass().getName() + "::" + method.getName()+"("+eventClass.getSimpleName()+")", pluginParentTimer); // Spigot
 -            EventExecutor executor = new EventExecutor() {
--                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
 +            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
+                 @Override
+-                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
 +                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                      try {
                          if (!eventClass.isAssignableFrom(event.getClass())) {

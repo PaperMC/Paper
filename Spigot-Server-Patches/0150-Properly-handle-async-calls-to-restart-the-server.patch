@@ -1,4 +1,4 @@
-From a5592be696baf2e08fb817f8d29c2a90a559c241 Mon Sep 17 00:00:00 2001
+From 33332f35059abad5b341500014eb43e2145912f4 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Fri, 12 May 2017 23:34:11 -0500
 Subject: [PATCH] Properly handle async calls to restart the server
@@ -30,7 +30,7 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c41adf441..2d5e340ee 100644
+index d7071929b8..486e45d9df 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -80,6 +80,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -41,7 +41,7 @@ index c41adf441..2d5e340ee 100644
      private boolean isStopped;
      private int ticks;
      protected final Proxy proxy;
-@@ -690,7 +691,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -703,7 +704,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          if (this.playerList != null) {
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
@@ -50,7 +50,7 @@ index c41adf441..2d5e340ee 100644
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
-@@ -744,8 +745,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -757,8 +758,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          return this.isRunning;
      }
  
@@ -64,7 +64,7 @@ index c41adf441..2d5e340ee 100644
          if (flag) {
              try {
                  this.serverThread.join();
-@@ -755,6 +761,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -768,6 +774,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
  
      }
@@ -73,10 +73,10 @@ index c41adf441..2d5e340ee 100644
      // Spigot Start
      private static double calcTps(double avg, double exp, double tps)
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index a1659e6a2..46a3f0751 100644
+index 6457317d78..274e93a25d 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1038,10 +1038,15 @@ public abstract class PlayerList {
+@@ -1040,10 +1040,15 @@ public abstract class PlayerList {
          entityplayer.playerInteractManager.b(generatoraccess.getWorldData().getGameType());
      }
  
@@ -93,7 +93,7 @@ index a1659e6a2..46a3f0751 100644
          }
          // CraftBukkit end
          // Paper start - Remove collideRule team if it exists
-@@ -1052,6 +1057,7 @@ public abstract class PlayerList {
+@@ -1054,6 +1059,7 @@ public abstract class PlayerList {
          }
          // Paper end
      }
@@ -102,7 +102,7 @@ index a1659e6a2..46a3f0751 100644
      // CraftBukkit start
      public void sendMessage(IChatBaseComponent[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index ccea803f5..aefea3a9a 100644
+index ccea803f58..aefea3a9a8 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
 @@ -46,86 +46,134 @@ public class RestartCommand extends Command
