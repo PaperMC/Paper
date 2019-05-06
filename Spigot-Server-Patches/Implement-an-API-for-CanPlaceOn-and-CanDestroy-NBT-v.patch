@@ -5,7 +5,7 @@ Subject: [PATCH] Implement an API for CanPlaceOn and CanDestroy NBT values
 
 
 diff --git a/src/main/java/net/minecraft/server/ArgumentBlock.java b/src/main/java/net/minecraft/server/ArgumentBlock.java
-index 3a215dea4..ea93452e6 100644
+index 3a215dea43..ea93452e6d 100644
 --- a/src/main/java/net/minecraft/server/ArgumentBlock.java
 +++ b/src/main/java/net/minecraft/server/ArgumentBlock.java
 @@ -0,0 +0,0 @@ public class ArgumentBlock {
@@ -32,10 +32,10 @@ index 3a215dea4..ea93452e6 100644
          this.s = this::l;
          if (this.i.canRead() && this.i.peek() == '#') {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 9435136cc..9ced2abbb 100644
+index 159037fc3e..9dcf2d20f2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -0,0 +0,0 @@ import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
+@@ -0,0 +0,0 @@ import org.bukkit.persistence.PersistentDataContainer;
  import static org.spigotmc.ValidateUtils.*;
  // Spigot end
  
@@ -69,7 +69,7 @@ index 9435136cc..9ced2abbb 100644
 +    // Paper end
  
      private static final Set<String> HANDLED_TAGS = Sets.newHashSet();
-     private static final CraftCustomTagTypeRegistry TAG_TYPE_REGISTRY = new CraftCustomTagTypeRegistry();
+     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.hideFlag = meta.hideFlag;
          this.unbreakable = meta.unbreakable;
@@ -84,10 +84,10 @@ index 9435136cc..9ced2abbb 100644
 +        }
 +        // Paper end
          this.unhandledTags.putAll(meta.unhandledTags);
-         this.publicItemTagContainer.putAll(meta.publicItemTagContainer.getRaw());
+         this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
  
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 publicItemTagContainer.put(key, compound.get(key));
+                 persistentDataContainer.put(key, compound.get(key));
              }
          }
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
@@ -203,11 +203,11 @@ index 9435136cc..9ced2abbb 100644
  
      @Overridden
      boolean isEmpty() {
--        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !publicItemTagContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
-+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !publicItemTagContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers() || hasPlaceableKeys() || hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
+-        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
++        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || hasLore() || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers() || hasPlaceableKeys() || hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
      }
  
-     public String getDisplayName() {
+     @Override
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  && (this.hideFlag == that.hideFlag)
                  && (this.isUnbreakable() == that.isUnbreakable())

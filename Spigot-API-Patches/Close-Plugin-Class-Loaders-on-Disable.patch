@@ -53,14 +53,12 @@ index 41e26451..86cc5025 100644
       * Gets a {@link Permission} from its fully qualified name
       *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index e4a0f938..269bb5ca 100644
+index 4cbec1f1..da3cd63b 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-         }
-     }
  
-+    // Paper start - close Classloader on disable
+     @Override
      public void disablePlugins() {
 +        disablePlugins(false);
 +    }
@@ -74,11 +72,12 @@ index e4a0f938..269bb5ca 100644
          }
      }
  
-+    // Paper start - close Classloader on disable
+     @Override
      public void disablePlugin(@NotNull final Plugin plugin) {
 +        disablePlugin(plugin, false);
 +    }
 +
++    @Override
 +    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
 +        // Paper end - close Classloader on disable
          if (plugin.isEnabled()) {
@@ -89,7 +88,7 @@ index e4a0f938..269bb5ca 100644
                  handlePluginException("Error occurred (in the plugin loader) while disabling "
                          + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
- 
+     @Override
      public void clearPlugins() {
          synchronized (this) {
 -            disablePlugins();
@@ -98,7 +97,7 @@ index e4a0f938..269bb5ca 100644
              lookupNames.clear();
              HandlerList.unregisterAll();
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 024d8393..ca29394d 100644
+index 06b6724f..bc7bf6a3 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -111,8 +110,8 @@ index 024d8393..ca29394d 100644
                  // Paper end
              }
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
-     }
  
+     @Override
      public void disablePlugin(@NotNull Plugin plugin) {
 +    // Paper start - close Classloader on disable
 +        disablePlugin(plugin, false); // Retain old behavior unless requested

@@ -16,12 +16,12 @@ which results in a hard crash.
 This change removes the synchronize and adds some protection around enable/disable
 
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 9391bbf0..5098eade 100644
+index adca48f1..2d3cee14 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
   */
- public interface Entity extends Metadatable, CommandSender, Nameable {
+ public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder {
  
 -    /**
 +    /*
@@ -29,31 +29,31 @@ index 9391bbf0..5098eade 100644
       *
       * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 269bb5ca..5d99a41a 100644
+index da3cd63b..583f8ee4 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-      * @param plugin Plugin to check
       * @return true if the plugin is enabled, otherwise false
       */
+     @Override
 -    public boolean isPluginEnabled(@Nullable Plugin plugin) {
 +    public synchronized boolean isPluginEnabled(@Nullable Plugin plugin) { // Paper - synchronize
          if ((plugin != null) && (plugins.contains(plugin))) {
              return plugin.isEnabled();
          } else {
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-         }
      }
  
+     @Override
 -    public void enablePlugin(@NotNull final Plugin plugin) {
 +    public synchronized void enablePlugin(@NotNull final Plugin plugin) { // Paper - synchronize
          if (!plugin.isEnabled()) {
              List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
  
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-         disablePlugin(plugin, false);
      }
  
+     @Override
 -    public void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) {
 +    public synchronized void disablePlugin(@NotNull final Plugin plugin, boolean closeClassloader) { // Paper - synchronize
          // Paper end - close Classloader on disable
@@ -68,8 +68,8 @@ index 269bb5ca..5d99a41a 100644
      /**
       * Calls an event with the given details.
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-      * @param event Event details
       */
+     @Override
      public void callEvent(@NotNull Event event) {
 -        if (event.isAsynchronous()) {
 -            if (Thread.holdsLock(this)) {
@@ -97,7 +97,7 @@ index 269bb5ca..5d99a41a 100644
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
  
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index 5e986de8..2b50fe63 100644
+index 17dbe913..bae26ce7 100644
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 @@ -0,0 +0,0 @@ public class PluginManagerTest {

@@ -3416,7 +3416,7 @@ index 00000000..ca1893e9
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index b3d5a302..9d0ae63f 100644
+index 81e4fa57..f020cb04 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -0,0 +0,0 @@ import org.bukkit.command.defaults.BukkitCommand;
@@ -3437,8 +3437,8 @@ index b3d5a302..9d0ae63f 100644
  
      public void setFallbackCommands() {
 @@ -0,0 +0,0 @@ public class SimpleCommandMap implements CommandMap {
-      * {@inheritDoc}
       */
+     @Override
      public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
 +        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
@@ -3731,7 +3731,7 @@ index 6023e4f6..00000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 36a42a80..942cb386 100644
+index 06762a69..4f8ae7a8 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
@@ -3747,7 +3747,7 @@ index 36a42a80..942cb386 100644
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 17ddbe61..47327376 100644
+index f648c598..78a2d2f8 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
@@ -3768,14 +3768,14 @@ index 17ddbe61..47327376 100644
  
          return result;
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-      */
+     @Override
      @Nullable
      public synchronized Plugin getPlugin(@NotNull String name) {
 -        return lookupNames.get(name.replace(' ', '_'));
 +        return lookupNames.get(name.replace(' ', '_').toLowerCase(java.util.Locale.ENGLISH)); // Paper
      }
  
-     @NotNull
+     @Override
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
@@ -3787,8 +3787,8 @@ index 17ddbe61..47327376 100644
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-     }
  
+     @Override
      public boolean useTimings() {
 -        return useTimings;
 +        return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
@@ -3804,7 +3804,7 @@ index 17ddbe61..47327376 100644
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 92983c1e..2618906f 100644
+index 1173e433..82e379d1 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -3821,8 +3821,9 @@ index 92983c1e..2618906f 100644
  
 -            final CustomTimingsHandler timings = new CustomTimingsHandler("Plugin: " + plugin.getDescription().getFullName() + " Event: " + listener.getClass().getName() + "::" + method.getName()+"("+eventClass.getSimpleName()+")", pluginParentTimer); // Spigot
 -            EventExecutor executor = new EventExecutor() {
--                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
 +            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
+                 @Override
+-                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
 +                public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                      try {
                          if (!eventClass.isAssignableFrom(event.getClass())) {

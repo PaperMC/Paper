@@ -546,7 +546,7 @@ index b60956218d..19e2df3098 100644
              return waitable.get();
          } catch (java.util.concurrent.ExecutionException e) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 53f8e6811a..114a851f0f 100644
+index 14c3f04170..6127f9ba96 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ import org.bukkit.command.CommandSender;
@@ -661,7 +661,7 @@ index f86e6a4c51..85567a7072 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 741105fb6c..277fa64e24 100644
+index 4de927416b..4c1c914132 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@
@@ -789,7 +789,7 @@ index 741105fb6c..277fa64e24 100644
          this.methodProfiler.exit();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 4d8491c760..a44525304d 100644
+index 755c0406e1..ee65b01f43 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@
@@ -827,30 +827,29 @@ index 4d8491c760..a44525304d 100644
                  this.updatingChunksModified = true;
              }
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-                 this.a(i, playerchunk, event); // CraftBukkit
-             } else {
-                 if (this.g.remove(i, playerchunk) && ichunkaccess != null) {
+                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk, chunk.isNeedsSaving());
+                         this.world.getServer().getPluginManager().callEvent(event);
+                         this.saveChunk(ichunkaccess, event.isSaveChunk());
++                        // TODO: VERIFY THIS
++                        // Paper - Update neighbor counts
++                        for (int x = -2; x < 3; x++) {
++                            for (int z = -2; z < 3; z++) {
++                                if (x == 0 && z == 0) {
++                                    continue;
++                                }
 +
-+                    // TODO: VERIFY THIS
-+                    // Paper - Update neighbor counts
-+                    for (int x = -2; x < 3; x++) {
-+                        for (int z = -2; z < 3; z++) {
-+                            if (x == 0 && z == 0) {
-+                                continue;
-+                            }
 +
-+
-+                            Chunk neighbor = ((Chunk) ichunkaccess).world.getChunkProvider().getChunkAt(event.getChunk().getX(), event.getChunk().getZ(), false);
-+                            if (neighbor != null) {
-+                                neighbor.setNeighborUnloaded(-x, -z);
-+                                ((Chunk) ichunkaccess).setNeighborUnloaded(x, z);
++                                Chunk neighbor = ((Chunk) ichunkaccess).world.getChunkProvider().getChunkAt(event.getChunk().getX(), event.getChunk().getZ(), false);
++                                if (neighbor != null) {
++                                    neighbor.setNeighborUnloaded(-x, -z);
++                                    ((Chunk) ichunkaccess).setNeighborUnloaded(x, z);
++                                }
 +                            }
 +                        }
-+                    }
-+                    // Paper
-                     // CraftBukkit start
-                     if (event == null) {
-                         this.saveChunk(ichunkaccess);
++                        // Paper
+                         // CraftBukkit end
+ 
+                         chunk.c(false);
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              });
  
@@ -881,7 +880,7 @@ index 4d8491c760..a44525304d 100644
              playerchunkmap_entitytracker = (PlayerChunkMap.EntityTracker) objectiterator.next();
              playerchunkmap_entitytracker.track(list);
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 23e37b5008..287bba3f6c 100644
+index 78a090ac75..e07f4a9680 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ import org.bukkit.inventory.CraftingInventory;
@@ -936,7 +935,7 @@ index 23e37b5008..287bba3f6c 100644
          // this.minecraftServer.getCommandDispatcher().a(this.player.getCommandListener(), s);
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-index c8d2c81c58..aefc3eb19c 100644
+index cb6d50ea70..9ba03f8ed0 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 @@ -0,0 +0,0 @@
@@ -954,15 +953,15 @@ index c8d2c81c58..aefc3eb19c 100644
          if (!iasynctaskhandler.isMainThread()) {
 +            Timing timing = MinecraftTimings.getPacketTiming(packet); // Paper
              iasynctaskhandler.execute(() -> {
-                 if (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect) return; // CraftBukkit
+                 if (MinecraftServer.getServer().hasStopped() || (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect)) return; // CraftBukkit, MC-142590
 +                try (Timing ignored = timing.startTiming()) { // Paper
                  packet.a(t0);
-+            } // Paper - timings
++                } // Paper - timings
              });
              throw CancelledPacketHandleException.INSTANCE;
          }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index b0c6b1385d..7939208a5a 100644
+index 56e36c8668..7a837ec0fc 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@
@@ -1039,25 +1038,24 @@ index 537e610797..b48e5b51a0 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 42303f5b39..456afbf079 100644
+index 4c811325c3..da30d2cf86 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- 
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
+ import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+ import org.bukkit.inventory.InventoryHolder;
+ // CraftBukkit end
 -import org.spigotmc.CustomTimingsHandler; // Spigot
 +import co.aikar.timings.MinecraftTimings; // Paper
 +import co.aikar.timings.Timing; // Paper
- import org.bukkit.inventory.InventoryHolder; // CraftBukkit
  
  public abstract class TileEntity implements KeyedObject { // Paper
  
 -    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
 +    public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
-     private static final Logger LOGGER = LogManager.getLogger();
-     private final TileEntityTypes<?> b; public TileEntityTypes getTileEntityType() { return b; } // Paper - OBFHELPER
-     @Nullable
+     // CraftBukkit start - data containers
+     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
+     public final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 83fdea893c..738d9da8ce 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -1123,7 +1121,7 @@ index 83fdea893c..738d9da8ce 100644
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 20900593af..d54d58e1ee 100644
+index d08c5fc93b..11cd9003e3 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@
@@ -1200,7 +1198,7 @@ index 20900593af..d54d58e1ee 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9021ab34fa..672a647960 100644
+index 5dc2bb1246..8e877055c3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
@@ -1408,7 +1406,7 @@ index 38f211526b..0000000000
 -    }
 -}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 57d4427097..25726dd751 100644
+index 6806ada495..e45fd0028b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -1427,7 +1425,7 @@ index 57d4427097..25726dd751 100644
  
      public Player.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index e9fce8622f..d99634062b 100644
+index b90979c7ba..8823f94f7b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -0,0 +0,0 @@
