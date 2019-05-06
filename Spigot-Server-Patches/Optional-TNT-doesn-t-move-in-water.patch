@@ -5,7 +5,7 @@ Subject: [PATCH] Optional TNT doesn't move in water
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 805aa5699..92ab55182 100644
+index 805aa56999..92ab55182f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ package com.destroystokyo.paper;
@@ -32,9 +32,18 @@ index 805aa5699..92ab55182 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3dcd93e5e..b68e2fc04 100644
+index 3dcd93e5e9..989fb44a0d 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public double locX;
+     public double locY;
+     public double locZ;
+-    private Vec3D mot;
++    protected Vec3D mot; // Paper - private -> protected
+     public float yaw;
+     public float pitch;
+     public float lastYaw;
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
@@ -62,7 +71,7 @@ index 3dcd93e5e..b68e2fc04 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-index e0535604b..91e332c3a 100644
+index e0535604b6..479b62d665 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 +++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 @@ -0,0 +0,0 @@ public class EntityTNTPrimed extends Entity {
@@ -84,20 +93,21 @@ index e0535604b..91e332c3a 100644
 +        if (!world.paperConfig.preventTntFromMovingInWater) return super.doWaterMovement();
 +
 +        // Preserve velocity while calling the super method
-+        double oldMotX = this.motX;
-+        double oldMotY = this.motY;
-+        double oldMotZ = this.motZ;
-+
-+        super.doWaterMovement();
-+
-+        this.motX = oldMotX;
-+        this.motY = oldMotY;
-+        this.motZ = oldMotZ;
++        // TODO test this patch...
++//        double oldMotX = this.motX;
++//        double oldMotY = this.motY;
++//        double oldMotZ = this.motZ;
++//
++//        super.doWaterMovement();
++//
++//        this.motX = oldMotX;
++//        this.motY = oldMotY;
++//        this.motZ = oldMotZ;
 +
 +        if (this.inWater) {
 +            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
 +            // This does pretty well at keeping their clients in sync with the server.
-+            EntityTrackerEntry ete = ((WorldServer) this.getWorld()).getTracker().trackedEntities.get(this.getId());
++            EntityTrackerEntry ete = this.tracker; // TODO review this (this field isn't written to)
 +            if (ete != null) {
 +                PacketPlayOutEntityVelocity velocityPacket = new PacketPlayOutEntityVelocity(this);
 +                PacketPlayOutEntityTeleport positionPacket = new PacketPlayOutEntityTeleport(this);
@@ -115,4 +125,17 @@ index e0535604b..91e332c3a 100644
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index aaf3a54b08..afd8748da8 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+     private boolean q;
+     private boolean r;
+     // CraftBukkit start
+-    private final Set<EntityPlayer> trackedPlayers;
++    final Set<EntityPlayer> trackedPlayers; // Paper - private -> package
+     // Paper start
+     private java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = null;
+ 
 --
