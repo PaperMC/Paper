@@ -1,4 +1,4 @@
-From ae519f467fcc1b34f171226dc77c4bad75efebaf Mon Sep 17 00:00:00 2001
+From 47e948d519f3c35a4e0eef53c0d0d81eb0ca6dcd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 7 Jan 2017 15:24:46 -0500
 Subject: [PATCH] Provide E/TE/Chunk count stat methods
@@ -6,22 +6,41 @@ Subject: [PATCH] Provide E/TE/Chunk count stat methods
 Provides counts without the ineffeciency of using .getEntities().size()
 which creates copy of the collections.
 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index f32c4913c5..606ec3c482 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -51,7 +51,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
+ public class WorldServer extends World {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+-    private final List<Entity> globalEntityList = Lists.newArrayList();
++    public final List<Entity> globalEntityList = Lists.newArrayList(); // Paper - private -> public
+     public final Int2ObjectMap<Entity> entitiesById = new Int2ObjectLinkedOpenHashMap();
+     private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
+     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b8de760079..db390ced15 100644
+index b8de760079..c79b0f42a6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -265,6 +265,29 @@ public class CraftWorld implements World {
+@@ -265,6 +265,35 @@ public class CraftWorld implements World {
      private int waterAnimalSpawn = -1;
      private int ambientSpawn = -1;
  
 +    // Paper start - Provide fast information methods
++    // TODO review these changes
 +    public int getEntityCount() {
-+        return world.entityList.size();
++        return world.globalEntityList.size();
 +    }
 +    public int getTileEntityCount() {
 +        // We don't use the full world tile entity list, so we must iterate chunks
++        Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
 +        int size = 0;
-+        for (net.minecraft.server.Chunk chunk : ((ChunkProviderServer) world.getChunkProvider()).chunks.values()) {
++        for (net.minecraft.server.PlayerChunk playerchunk : chunks.values()) {
++            net.minecraft.server.Chunk chunk = playerchunk.getChunk();
++            if (chunk == null) {
++                continue;
++            }
 +            size += chunk.tileEntities.size();
 +        }
 +        return size;
@@ -30,7 +49,7 @@ index b8de760079..db390ced15 100644
 +        return world.tileEntityListTick.size();
 +    }
 +    public int getChunkCount() {
-+        return world.getChunkProvider().chunks.size();
++        return world.getChunkProvider().playerChunkMap.visibleChunks.size();
 +    }
 +    public int getPlayerCount() {
 +        return world.players.size();
