@@ -1,4 +1,4 @@
-From 8f2e9085a36026d92a1ed969d4ed198eb68e7b76 Mon Sep 17 00:00:00 2001
+From b1186b7a08e6001e53378135aee676be3161e346 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 9 Sep 2018 13:30:00 -0400
 Subject: [PATCH] Mob Pathfinding API
@@ -7,10 +7,10 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000..ed3d86ddd3
+index 000000000..f68a07cb9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,111 @@
 +package com.destroystokyo.paper.entity;
 +
 +import net.minecraft.server.EntityInsentient;
@@ -96,11 +96,9 @@ index 0000000000..ed3d86ddd3
 +
 +        @Override
 +        public List<Location> getPoints() {
-+            int pathCount = path.getPathCount();
 +            List<Location> points = new ArrayList<>();
-+            PathPoint[] pathPoints = path.getPoints();
-+            for (int i = 0; i < pathCount; i++) {
-+                points.add(toLoc(pathPoints[i]));
++            for (PathPoint point : path.getPoints()) {
++                points.add(toLoc(point));
 +            }
 +            return points;
 +        }
@@ -116,7 +114,7 @@ index 0000000000..ed3d86ddd3
 +            if (!path.hasNext()) {
 +                return null;
 +            }
-+            return toLoc(path.getPoints()[path.getNextIndex()]);
++            return toLoc(path.getPoints().get(path.getNextIndex()));
 +        }
 +    }
 +
@@ -125,7 +123,7 @@ index 0000000000..ed3d86ddd3
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 0586597e73..583f2c5ada 100644
+index 0586597e7..583f2c5ad 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -69,7 +69,7 @@ public abstract class NavigationAbstract {
@@ -172,10 +170,10 @@ index 0586597e73..583f2c5ada 100644
          this.pathfindFailures = 0; this.lastFailure = 0; // Paper - Pathfinding optimizations
          this.c = null;
 diff --git a/src/main/java/net/minecraft/server/PathEntity.java b/src/main/java/net/minecraft/server/PathEntity.java
-index d1cb802087..ec6b3a292a 100644
+index d1cb80208..c4cdd0965 100644
 --- a/src/main/java/net/minecraft/server/PathEntity.java
 +++ b/src/main/java/net/minecraft/server/PathEntity.java
-@@ -5,11 +5,11 @@ import javax.annotation.Nullable;
+@@ -5,11 +5,12 @@ import javax.annotation.Nullable;
  
  public class PathEntity {
  
@@ -186,10 +184,11 @@ index d1cb802087..ec6b3a292a 100644
      private PathPoint d;
 -    private int e;
 +    private int e; public int getNextIndex() { return e; } // Paper - OBFHELPER
++    public boolean hasNext() { return getNextIndex() < getPoints().size(); } // Paper
  
      public PathEntity(List<PathPoint> list) {
          this.a = list;
-@@ -23,8 +23,7 @@ public class PathEntity {
+@@ -23,8 +24,7 @@ public class PathEntity {
          return this.e >= this.a.size();
      }
  
@@ -199,7 +198,7 @@ index d1cb802087..ec6b3a292a 100644
          return !this.a.isEmpty() ? (PathPoint) this.a.get(this.a.size() - 1) : null;
      }
  
-@@ -72,7 +71,7 @@ public class PathEntity {
+@@ -72,7 +72,7 @@ public class PathEntity {
          return this.a(entity, this.e);
      }
  
@@ -209,7 +208,7 @@ index d1cb802087..ec6b3a292a 100644
  
          return new Vec3D((double) pathpoint.a, (double) pathpoint.b, (double) pathpoint.c);
 diff --git a/src/main/java/net/minecraft/server/PathPoint.java b/src/main/java/net/minecraft/server/PathPoint.java
-index 0f6e8c51e4..5d445e08a8 100644
+index 0f6e8c51e..5d445e08a 100644
 --- a/src/main/java/net/minecraft/server/PathPoint.java
 +++ b/src/main/java/net/minecraft/server/PathPoint.java
 @@ -2,9 +2,9 @@ package net.minecraft.server;
@@ -226,7 +225,7 @@ index 0f6e8c51e4..5d445e08a8 100644
      public int d = -1;
      public float e;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-index 5bf1cd06fa..53c2d154ed 100644
+index 5bf1cd06f..53c2d154e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 @@ -12,8 +12,11 @@ import org.bukkit.loot.LootTable;

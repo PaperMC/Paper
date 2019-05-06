@@ -1,4 +1,4 @@
-From 15d0b4b256c5e808396fa3e7a22f018386699b16 Mon Sep 17 00:00:00 2001
+From 13f345848bcc1fc092ff857b6a973103b85ad092 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:39:35 +0100
 Subject: [PATCH] Improve death events
@@ -15,7 +15,7 @@ items and experience which is otherwise only properly possible by using
 internal code.
 
 diff --git a/src/main/java/net/minecraft/server/CombatTracker.java b/src/main/java/net/minecraft/server/CombatTracker.java
-index 20db76abd7..a148cd437c 100644
+index 20db76abd..a148cd437 100644
 --- a/src/main/java/net/minecraft/server/CombatTracker.java
 +++ b/src/main/java/net/minecraft/server/CombatTracker.java
 @@ -175,6 +175,7 @@ public class CombatTracker {
@@ -27,7 +27,7 @@ index 20db76abd7..a148cd437c 100644
          int i = this.f ? 300 : 100;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9bfc725a2c..b406dc5232 100644
+index 9bfc725a2..b406dc523 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -1469,6 +1469,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -47,7 +47,7 @@ index 9bfc725a2c..b406dc5232 100644
  
      protected void i(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index 7031dd0e4c..f6dc96434b 100644
+index 7031dd0e4..f6dc96434 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
 @@ -675,7 +675,8 @@ public class EntityArmorStand extends EntityLiving {
@@ -60,8 +60,30 @@ index 7031dd0e4c..f6dc96434b 100644
          this.die();
      }
  
+diff --git a/src/main/java/net/minecraft/server/EntityFox.java b/src/main/java/net/minecraft/server/EntityFox.java
+index 917d60350..9ddcc3a89 100644
+--- a/src/main/java/net/minecraft/server/EntityFox.java
++++ b/src/main/java/net/minecraft/server/EntityFox.java
+@@ -597,7 +597,7 @@ public class EntityFox extends EntityAnimal {
+     }
+ 
+     @Override
+-    protected void d(DamageSource damagesource) {
++    protected org.bukkit.event.entity.EntityDeathEvent d(DamageSource damagesource) { // Paper
+         ItemStack itemstack = this.getEquipment(EnumItemSlot.MAINHAND);
+ 
+         if (!itemstack.isEmpty()) {
+@@ -605,7 +605,7 @@ public class EntityFox extends EntityAnimal {
+             this.setSlot(EnumItemSlot.MAINHAND, ItemStack.a);
+         }
+ 
+-        super.d(damagesource);
++        return super.d(damagesource); // Paper
+     }
+ 
+     public static boolean a(EntityFox entityfox, EntityLiving entityliving) {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 78b7ab59b9..4f7ebe3642 100644
+index 78b7ab59b..4f7ebe364 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -85,7 +85,7 @@ public abstract class EntityLiving extends Entity {
@@ -216,7 +238,7 @@ index 78b7ab59b9..4f7ebe3642 100644
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 870ef557a2..a3f5919fe8 100644
+index 870ef557a..a3f5919fe 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -75,6 +75,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -267,7 +289,7 @@ index 870ef557a2..a3f5919fe8 100644
          }
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftSound.java b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-index 73cb64e09d..9f317ff2e8 100644
+index 73cb64e09..9f317ff2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 @@ -806,6 +806,22 @@ public enum CraftSound {
@@ -294,7 +316,7 @@ index 73cb64e09d..9f317ff2e8 100644
          this.minecraftKey = minecraftKey;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 53d61790c5..6a390c1146 100644
+index 53d61790c..6a390c114 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1713,7 +1713,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -315,7 +337,7 @@ index 53d61790c5..6a390c1146 100644
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 23c4b93466..aafd71d65c 100644
+index 23c4b9346..aafd71d65 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -720,9 +720,16 @@ public class CraftEventFactory {

@@ -1,4 +1,4 @@
-From 3cb74e805adf6ffb74f73fa3e55b7ad82e12c801 Mon Sep 17 00:00:00 2001
+From 0f0f805ffa000c104c0d75167b0071a01ca7e170 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -1682,7 +1682,7 @@ index 00000000..c0d8f201
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 00000000..65d312b0
+index 00000000..ea8734c4
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
 @@ -0,0 +1,355 @@
@@ -1799,7 +1799,7 @@ index 00000000..65d312b0
 +        );
 +        if (!TimingsManager.privacy) {
 +            appendObjectData(parent,
-+                pair("server", Bukkit.getServerName()),
++                pair("server", Bukkit.getUnsafe().getTimingsServerName()),
 +                pair("motd", Bukkit.getServer().getMotd()),
 +                pair("online-mode", Bukkit.getServer().getOnlineMode()),
 +                pair("icon", Bukkit.getServer().getServerIcon().getData())
@@ -1976,8 +1976,8 @@ index 00000000..65d312b0
 +            String hostName = "BrokenHost";
 +            try {
 +                hostName = InetAddress.getLocalHost().getHostName();
-+            } catch(Exception ignored) {}
-+            con.setRequestProperty("User-Agent", "Paper/" + Bukkit.getServerName() + "/" + hostName);
++            } catch (Exception ignored) {}
++            con.setRequestProperty("User-Agent", "Paper/" + Bukkit.getUnsafe().getTimingsServerName() + "/" + hostName);
 +            con.setRequestMethod("POST");
 +            con.setInstanceFollowRedirects(false);
 +
@@ -3139,28 +3139,10 @@ index 00000000..5989ee21
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 1c1f650d..d2e47a35 100644
+index 1c1f650d..8f46899f 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -189,6 +189,17 @@ public final class Bukkit {
-         return server.getIp();
-     }
- 
-+    // Paper start - bring back server name
-+    /**
-+     * Get the name of this server
-+     * @return the name of the server
-+     */
-+    @NotNull
-+    public static String getServerName() {
-+        return server.getServerName();
-+    }
-+    // Paper
-+
-     /**
-      * Get world type (level-type setting) for default world.
-      *
-@@ -574,7 +585,6 @@ public final class Bukkit {
+@@ -574,7 +574,6 @@ public final class Bukkit {
       */
      public static void reload() {
          server.reload();
@@ -3169,26 +3151,10 @@ index 1c1f650d..d2e47a35 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 2a55a954..77d993ad 100644
+index 2a55a954..0f9e5ba7 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -158,6 +158,15 @@ public interface Server extends PluginMessageRecipient {
-     @NotNull
-     public String getIp();
- 
-+    // Paper start - bring back server name
-+    /**
-+     * Get the name of this server
-+     * @return the name of the server
-+     */
-+    @NotNull
-+    public String getServerName();
-+    // Paper
-+
-     /**
-      * Get world type (level-type setting) for default world.
-      *
-@@ -1252,6 +1261,26 @@ public interface Server extends PluginMessageRecipient {
+@@ -1252,6 +1252,26 @@ public interface Server extends PluginMessageRecipient {
              throw new UnsupportedOperationException( "Not supported yet." );
          }
  
@@ -3215,6 +3181,23 @@ index 2a55a954..77d993ad 100644
          /**
           * Sends the component to the player
           *
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 247d194f..72c5501e 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -69,4 +69,12 @@ public interface UnsafeValues {
+      * @return true if a file matching this key was found and deleted
+      */
+     boolean removeAdvancement(NamespacedKey key);
++
++    // Paper start
++    /**
++     * Server name to report to timings v2
++     * @return name
++     */
++    String getTimingsServerName();
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
 index 00000000..f9a00aec

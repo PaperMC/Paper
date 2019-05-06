@@ -1,4 +1,4 @@
-From 77b20bd34533d5f2af72bac439ba33a64339e565 Mon Sep 17 00:00:00 2001
+From 9d86c1508b1b4798ae083a405ee2e7101949b161 Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Optimize redstone algorithm
@@ -19,7 +19,7 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ad793ffa38..ef882b897f 100644
+index ad793ffa3..ef882b897 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -439,4 +439,14 @@ public class PaperWorldConfig {
@@ -39,7 +39,7 @@ index ad793ffa38..ef882b897f 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 0000000000..21d9d6d7ed
+index 000000000..21d9d6d7e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 @@ -0,0 +1,910 @@
@@ -954,7 +954,7 @@ index 0000000000..21d9d6d7ed
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneWire.java b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
-index da903f74b6..f8dfc91f28 100644
+index da903f74b..aa35e0d06 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 @@ -1,5 +1,7 @@
@@ -1036,11 +1036,11 @@ index da903f74b6..f8dfc91f28 100644
 +                    l = this.getPower(l, worldIn.getType(blockpos));
 +                }
 +
-+                if (worldIn.getType(blockpos).isOccluding() && !worldIn.getType(pos1.up()).isOccluding()) {
++                if (worldIn.getType(blockpos).isOccluding(worldIn, blockpos) && !worldIn.getType(pos1.up()).isOccluding(worldIn, pos1)) {
 +                    if (flag && pos1.getY() >= pos2.getY()) {
 +                        l = this.getPower(l, worldIn.getType(blockpos.up()));
 +                    }
-+                } else if (!worldIn.getType(blockpos).isOccluding() && flag && pos1.getY() <= pos2.getY()) {
++                } else if (!worldIn.getType(blockpos).isOccluding(worldIn, blockpos) && flag && pos1.getY() <= pos2.getY()) {
 +                    l = this.getPower(l, worldIn.getType(blockpos.down()));
 +                }
 +            }
@@ -1122,7 +1122,7 @@ index da903f74b6..f8dfc91f28 100644
                  c(iblockdata, world, blockposition);
                  world.a(blockposition, false);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 136727c280..326165468c 100644
+index 136727c28..326165468 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -546,6 +546,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
