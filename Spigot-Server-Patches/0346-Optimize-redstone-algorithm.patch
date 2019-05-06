@@ -1,4 +1,4 @@
-From 9d86c1508b1b4798ae083a405ee2e7101949b161 Mon Sep 17 00:00:00 2001
+From f4ea90abc5bbe39acf0de2aa6de4801139e329ac Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Optimize redstone algorithm
@@ -19,7 +19,7 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ad793ffa3..ef882b897 100644
+index ad793ffa38..ef882b897f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -439,4 +439,14 @@ public class PaperWorldConfig {
@@ -39,10 +39,10 @@ index ad793ffa3..ef882b897 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 000000000..21d9d6d7e
+index 0000000000..cf5661f1c5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
-@@ -0,0 +1,910 @@
+@@ -0,0 +1,912 @@
 +package com.destroystokyo.paper.util;
 +
 +import java.util.List;
@@ -58,6 +58,8 @@ index 000000000..21d9d6d7e
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.BlockRedstoneWire;
 +import net.minecraft.server.IBlockData;
++import net.minecraft.server.Items;
++import net.minecraft.server.ItemStack;
 +import net.minecraft.server.World;
 +
 +/**
@@ -365,7 +367,7 @@ index 000000000..21d9d6d7e
 +        // be replicated here.
 +        if (!wire.canPlace(null, worldIn, pos)) {
 +            // Pop off the redstone dust
-+            oldState.dropNaturally(worldIn, pos, 0);
++            Block.a(worldIn, pos, new ItemStack(Items.REDSTONE)); // TODO
 +            worldIn.setAir(pos);
 +
 +            // Mark this position as not being redstone wire
@@ -888,7 +890,7 @@ index 000000000..21d9d6d7e
 +            // position directly above the node being calculated is always
 +            // at index 1.
 +            UpdateNode center_up = upd.neighbor_nodes[1];
-+            boolean center_up_is_cube = center_up.currentState.isOccluding();
++            boolean center_up_is_cube = center_up.currentState.isOccluding(worldIn, center_up.self); // TODO
 +
 +            for (int m = 0; m < 4; m++) {
 +                // Get the neighbor array index of each of the four cardinal
@@ -902,7 +904,7 @@ index 000000000..21d9d6d7e
 +
 +                // Also check the positions above and below the cardinal
 +                // neighbors
-+                boolean neighbor_is_cube = neighbor.currentState.isOccluding();
++                boolean neighbor_is_cube = neighbor.currentState.isOccluding(worldIn, neighbor.self); // TODO
 +                if (!neighbor_is_cube) {
 +                    UpdateNode neighbor_down = upd.neighbor_nodes[rs_neighbors_dn[m]];
 +                    l = getMaxCurrentStrength(neighbor_down, l);
@@ -954,7 +956,7 @@ index 000000000..21d9d6d7e
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneWire.java b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
-index da903f74b..aa35e0d06 100644
+index da903f74b6..aa35e0d061 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 @@ -1,5 +1,7 @@
@@ -1122,10 +1124,10 @@ index da903f74b..aa35e0d06 100644
                  c(iblockdata, world, blockposition);
                  world.a(blockposition, false);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 136727c28..326165468 100644
+index 2278c7c4ab..4531adc268 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -546,6 +546,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -547,6 +547,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
  
      }
  
@@ -1133,7 +1135,7 @@ index 136727c28..326165468 100644
      public void a(BlockPosition blockposition, Block block, BlockPosition blockposition1) {
          if (!this.isClientSide) {
              IBlockData iblockdata = this.getType(blockposition);
-@@ -1307,6 +1308,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -1308,6 +1309,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          return this.getBlockFacePower(blockposition.down(), EnumDirection.DOWN) > 0 ? true : (this.getBlockFacePower(blockposition.up(), EnumDirection.UP) > 0 ? true : (this.getBlockFacePower(blockposition.north(), EnumDirection.NORTH) > 0 ? true : (this.getBlockFacePower(blockposition.south(), EnumDirection.SOUTH) > 0 ? true : (this.getBlockFacePower(blockposition.west(), EnumDirection.WEST) > 0 ? true : this.getBlockFacePower(blockposition.east(), EnumDirection.EAST) > 0))));
      }
  
