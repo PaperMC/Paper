@@ -84,6 +84,10 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "CONDUIT_POWER";
         case 30:
             return "DOLPHINS_GRACE";
+        case 31:
+            return "BAD_OMEN";
+        case 32:
+            return "HERO_OF_THE_VILLAGE";
         default:
             return "UNKNOWN_EFFECT_TYPE_" + getId();
         }
