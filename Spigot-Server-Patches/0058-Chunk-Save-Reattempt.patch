@@ -1,4 +1,4 @@
-From dfe7064ed97f2a3c987416aea3c613aea3fc8a7a Mon Sep 17 00:00:00 2001
+From d38104d04a34c19ab958709583fbfe9eeb32b222 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 4 Mar 2013 23:46:10 -0500
 Subject: [PATCH] Chunk Save Reattempt
@@ -6,7 +6,7 @@ Subject: [PATCH] Chunk Save Reattempt
 We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 88b5aa3a51..b062a31c49 100644
+index 88b5aa3a5..b062a31c4 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -253,8 +253,7 @@ public class RegionFile implements AutoCloseable {
@@ -20,7 +20,7 @@ index 88b5aa3a51..b062a31c49 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index ad76ed27dc..75731c9195 100644
+index ad76ed27d..20f563144 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -79,6 +79,7 @@ public abstract class RegionFileCache implements AutoCloseable {
@@ -31,10 +31,12 @@ index ad76ed27dc..75731c9195 100644
          RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
          DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
          Throwable throwable = null;
-@@ -103,6 +104,15 @@ public abstract class RegionFileCache implements AutoCloseable {
+@@ -103,6 +104,18 @@ public abstract class RegionFileCache implements AutoCloseable {
  
          }
  
++            // Paper start
++            return;
 +        } catch (Exception ex)  {
 +            laste = ex;
 +        }
@@ -44,6 +46,7 @@ index ad76ed27dc..75731c9195 100644
 +            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
 +            MinecraftServer.LOGGER.error("Failed to save chunk", laste);
 +        }
++        // Paper end
      }
  
      public void close() throws IOException {
