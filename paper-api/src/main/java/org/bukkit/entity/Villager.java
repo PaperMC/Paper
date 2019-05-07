@@ -86,7 +86,7 @@ public interface Villager extends AbstractVillager {
         JUNGLE,
         PLAINS,
         SAVANNA,
-        SNOWY,
+        SNOW,
         SWAMP,
         TAIGA;
         private final NamespacedKey key;
