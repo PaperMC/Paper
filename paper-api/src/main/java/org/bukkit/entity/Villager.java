@@ -43,7 +43,7 @@ public interface Villager extends AbstractVillager {
     /**
      * Gets the level of this villager.
      *
-     * A villager with a level &lt;= 1 and no experience is liable to lose its
+     * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      *
      * @return this villager's level
@@ -53,11 +53,11 @@ public interface Villager extends AbstractVillager {
     /**
      * Sets the level of this villager.
      *
-     * A villager with a level &lt;= 1 and no experience is liable to lose its
+     * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      *
      * @param level the new level
-     * @throws IllegalArgumentException if level not between [0, 5]
+     * @throws IllegalArgumentException if level not between [1, 5]
      */
     public void setVillagerLevel(int level);
 
