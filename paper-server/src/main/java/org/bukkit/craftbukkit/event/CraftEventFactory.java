@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.event;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Either;
 import java.net.InetAddress;
@@ -38,6 +37,7 @@ import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySlime;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityWaterAnimal;
@@ -98,6 +98,7 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Sheep;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
@@ -116,6 +117,7 @@ import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.block.BlockShearEntityEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.FluidLevelChangeEvent;
@@ -182,8 +184,6 @@ import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.Merchant;
-import org.bukkit.inventory.MerchantInventory;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffect;
 
@@ -1239,6 +1239,13 @@ public class CraftEventFactory {
         PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity());
         entity.world.getServer().getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static BlockShearEntityEvent callBlockShearEntityEvent(EntitySheep animal, org.bukkit.block.Block dispenser, CraftItemStack is) {
+        Sheep sheep = (Sheep) animal.getBukkitEntity();
+        BlockShearEntityEvent bse = new BlockShearEntityEvent(dispenser, sheep, is);
+        Bukkit.getPluginManager().callEvent(bse);
+        return bse;
     }
 
     public static Cancellable handleStatisticsIncrease(EntityHuman entityHuman, net.minecraft.server.Statistic<?> statistic, int current, int incrementation) {
