@@ -1,4 +1,4 @@
-From 48a682eac7e1502586e5edae0c1233ae181823df Mon Sep 17 00:00:00 2001
+From 4ed471356d2a121be6ed130098d24f68590c325a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -12,7 +12,7 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index 2852a17f2..7cb46d7a9 100644
+index 2852a17f23..7cb46d7a9c 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -10,6 +10,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
@@ -31,7 +31,7 @@ index 2852a17f2..7cb46d7a9 100644
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index c927d524a..64700b97c 100644
+index c927d524a8..64700b97c0 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -339,6 +339,16 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -52,10 +52,10 @@ index c927d524a..64700b97c 100644
          public MutableBlockPosition() {
              this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 9433d04f4..98ec98e02 100644
+index 2928f7d218..7a0ab24a91 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -232,12 +232,24 @@ public class Chunk implements IChunkAccess {
+@@ -209,12 +209,24 @@ public class Chunk implements IChunkAccess {
          return this.sections;
      }
  
@@ -86,7 +86,7 @@ index 9433d04f4..98ec98e02 100644
              IBlockData iblockdata = null;
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index c973ab607..0d7eab0e0 100644
+index 30701fd7f3..43f75fc837 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -9,7 +9,7 @@ public class ChunkSection {
@@ -99,7 +99,7 @@ index c973ab607..0d7eab0e0 100644
      public ChunkSection(int i) {
          this(i, (short) 0, (short) 0, (short) 0);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index cdc5d7009..78d1a5c71 100644
+index e1cebacb83..31c38e1051 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -197,11 +197,11 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose

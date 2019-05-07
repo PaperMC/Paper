@@ -1,4 +1,4 @@
-From 5649d05624dac0cd18bc362f5769c01606b59019 Mon Sep 17 00:00:00 2001
+From f7f8402e29b9516fedb8a617a5079f0861603d12 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -322,40 +322,10 @@ index 8b91e27c66..fd23d45346 100644
      private final float frictionFactor;
      protected final BlockStateList<Block, IBlockData> blockStateList;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 9cce929c3e..1a2cc0258a 100644
+index 9cce929c3e..5c34fe52a4 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -89,6 +89,29 @@ public class Chunk implements IChunkAccess {
-             return removed;
-         }
-     }
-+    public boolean areNeighborsLoaded(final int radius) {
-+        switch (radius) {
-+            case 2:
-+                return this.neighbors == Integer.MAX_VALUE >> 6;
-+            case 1:
-+                final int mask =
-+                    //       x        z   offset          x        z   offset          x         z   offset
-+                    (0x1 << (1 * 5 +  1 + 12)) | (0x1 << (0 * 5 +  1 + 12)) | (0x1 << (-1 * 5 +  1 + 12)) |
-+                        (0x1 << (1 * 5 +  0 + 12)) | (0x1 << (0 * 5 +  0 + 12)) | (0x1 << (-1 * 5 +  0 + 12)) |
-+                        (0x1 << (1 * 5 + -1 + 12)) | (0x1 << (0 * 5 + -1 + 12)) | (0x1 << (-1 * 5 + -1 + 12));
-+                return (this.neighbors & mask) == mask;
-+            default:
-+                throw new UnsupportedOperationException(String.valueOf(radius));
-+        }
-+    }
-+
-+    public void setNeighborLoaded(final int x, final int z) {
-+        this.neighbors |= 0x1 << (x * 5 + 12 + z);
-+    }
-+
-+    public void setNeighborUnloaded(final int x, final int z) {
-+        this.neighbors &= ~(0x1 << (x * 5 + 12 + z));
-+    }
-     // Paper end
- 
-     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
-@@ -546,6 +569,7 @@ public class Chunk implements IChunkAccess {
+@@ -546,6 +546,7 @@ public class Chunk implements IChunkAccess {
              server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
  
              if (this.needsDecoration) {
@@ -363,7 +333,7 @@ index 9cce929c3e..1a2cc0258a 100644
                  java.util.Random random = new java.util.Random();
                  random.setSeed(world.getSeed());
                  long xRand = random.nextLong() / 2L * 2L + 1L;
-@@ -564,6 +588,7 @@ public class Chunk implements IChunkAccess {
+@@ -564,6 +565,7 @@ public class Chunk implements IChunkAccess {
                      }
                  }
                  server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
@@ -792,7 +762,7 @@ index 4de927416b..4c1c914132 100644
          this.methodProfiler.exit();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 755c0406e1..5816c7bcc7 100644
+index 755c0406e1..036577dd0e 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -1,6 +1,8 @@
@@ -804,59 +774,7 @@ index 755c0406e1..5816c7bcc7 100644
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
  import com.mojang.datafixers.DataFixer;
-@@ -244,6 +246,27 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-                     playerchunk = new PlayerChunk(new ChunkCoordIntPair(i), j, this.lightEngine, this.q, this);
-                 }
- 
-+                // TODO: VERIFY THIS
-+                ChunkCoordIntPair currentChunkPair = new ChunkCoordIntPair(i);
-+                for (int x = -2; x < 3; x++) {
-+                    for (int z = -2; z < 3; z++) {
-+                        if (x == 0 && z == 0) {
-+                            continue;
-+                        }
-+
-+
-+                        PlayerChunk neighborPlayer = getUpdatingChunk(ChunkCoordIntPair.pair(currentChunkPair.x + x, currentChunkPair.z + z));
-+                        if (neighborPlayer != null) {
-+                            Chunk neighbor = neighborPlayer.getChunk();
-+                            Chunk player = playerchunk.getChunk();
-+                            if (neighbor != null && player != null) {
-+                                neighbor.setNeighborLoaded(-x, -z);
-+                                player.setNeighborLoaded(x, z);
-+                            }
-+                        }
-+                    }
-+                }
-+
-                 this.updatingChunks.put(i, playerchunk);
-                 this.updatingChunksModified = true;
-             }
-@@ -332,6 +355,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-                         ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk, chunk.isNeedsSaving());
-                         this.world.getServer().getPluginManager().callEvent(event);
-                         this.saveChunk(ichunkaccess, event.isSaveChunk());
-+                        // TODO: VERIFY THIS
-+                        // Paper - Update neighbor counts
-+                        for (int x = -2; x < 3; x++) {
-+                            for (int z = -2; z < 3; z++) {
-+                                if (x == 0 && z == 0) {
-+                                    continue;
-+                                }
-+
-+
-+                                Chunk neighbor = ((Chunk) ichunkaccess).world.getChunkProvider().getChunkAt(event.getChunk().getX(), event.getChunk().getZ(), false);
-+                                if (neighbor != null) {
-+                                    neighbor.setNeighborUnloaded(-x, -z);
-+                                    ((Chunk) ichunkaccess).setNeighborUnloaded(x, z);
-+                                }
-+                            }
-+                        }
-+                        // Paper
-                         // CraftBukkit end
- 
-                         chunk.c(false);
-@@ -402,7 +442,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -402,7 +404,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              });
  
              return completablefuture.thenComposeAsync((either) -> {
@@ -865,7 +783,7 @@ index 755c0406e1..5816c7bcc7 100644
                      try {
                          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture1 = chunkstatus.a(this.world, this.chunkGenerator, this.definedStructureManager, this.lightEngine, (ichunkaccess) -> {
                              return this.b(playerchunk);
-@@ -879,6 +919,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -879,6 +881,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
          PlayerChunkMap.EntityTracker playerchunkmap_entitytracker;
          ObjectIterator objectiterator;
@@ -873,7 +791,7 @@ index 755c0406e1..5816c7bcc7 100644
  
          for (objectiterator = this.trackedEntities.values().iterator(); objectiterator.hasNext(); playerchunkmap_entitytracker.trackerEntry.a()) {
              playerchunkmap_entitytracker = (PlayerChunkMap.EntityTracker) objectiterator.next();
-@@ -896,13 +937,16 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -896,13 +899,16 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  playerchunkmap_entitytracker.e = sectionposition1;
              }
          }
@@ -1632,7 +1550,7 @@ index 06728e53d5..783676b747 100644
       * This helper class represents the different NBT Tags.
       * <p>
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 76b060a126..bf35950867 100644
+index 76b060a126..2daecf5049 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -30,7 +30,7 @@ import net.minecraft.server.EntityWither;
@@ -1684,19 +1602,11 @@ index 76b060a126..bf35950867 100644
              return true;
          }
  
-@@ -274,7 +272,14 @@ public class ActivationRange
+@@ -274,7 +272,6 @@ public class ActivationRange
          {
              isActive = false;
          }
 -        SpigotTimings.checkIfActiveTimer.stopTiming();
-+        int x = MathHelper.floor( entity.locX );
-+        int z = MathHelper.floor( entity.locZ );
-+        // Make sure not on edge of unloaded chunk
-+        Chunk chunk = entity.world.getChunkIfLoaded( x >> 4, z >> 4 );
-+        if ( isActive && !( chunk != null && chunk.areNeighborsLoaded( 1 ) ) )
-+        {
-+            isActive = false;
-+        }
          return isActive;
      }
  }
