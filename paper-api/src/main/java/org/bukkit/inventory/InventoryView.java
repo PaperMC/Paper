@@ -98,7 +98,11 @@ public abstract class InventoryView {
         /**
          * The repair's cost in xp levels
          */
-        REPAIR_COST(0, InventoryType.ANVIL);
+        REPAIR_COST(0, InventoryType.ANVIL),
+        /**
+         * The lectern's current open book page
+         */
+        BOOK_PAGE(0, InventoryType.LECTERN);
         int id;
         InventoryType style;
         private Property(int id, /*@NotNull*/ InventoryType appliesTo) {
