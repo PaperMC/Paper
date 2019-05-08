@@ -1,4 +1,4 @@
-From 29e2b7d741c5bf7cc70114c2dc52d60f41eaed8b Mon Sep 17 00:00:00 2001
+From 1692805bdb3cb7f5ede09255253d2fd08dc16a9e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
@@ -6,20 +6,41 @@ Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
 Add -Ddebug.entities=true to your JVM flags to gain more information
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0088d6088a..56adea9cf4 100644
+index 0088d6088a..4a42b7c594 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -75,6 +75,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
      protected CraftEntity bukkitEntity;
  
-+    EntityTrackerEntry tracker; // Paper
++    PlayerChunkMap.EntityTracker tracker; // Paper
 +    Throwable addedToWorldStack; // Paper - entity debug
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
              bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index eee03e39b1..96f814af3c 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -837,6 +837,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 } else {
+                     PlayerChunkMap.EntityTracker playerchunkmap_entitytracker = new PlayerChunkMap.EntityTracker(entity, i, j, entitytypes.isDeltaTracking());
+ 
++                    entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
+                     this.trackedEntities.put(entity.getId(), playerchunkmap_entitytracker);
+                     playerchunkmap_entitytracker.track(this.world.getPlayers());
+                     if (entity instanceof EntityPlayer) {
+@@ -879,7 +880,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         if (playerchunkmap_entitytracker1 != null) {
+             playerchunkmap_entitytracker1.a();
+         }
+-
++        entity.tracker = null; // Paper - We're no longer tracked
+     }
+ 
+     protected void g() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 2f79f9e947..f8c382cb69 100644
+index 5349a3a8bc..a7e24ed725 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -68,6 +68,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -31,7 +52,7 @@ index 2f79f9e947..f8c382cb69 100644
      public boolean captureBlockStates = false;
      public boolean captureTreeGeneration = false;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1ac79158c1..8515794059 100644
+index e787faed08..08617318a9 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -77,6 +77,9 @@ public class WorldServer extends World {
