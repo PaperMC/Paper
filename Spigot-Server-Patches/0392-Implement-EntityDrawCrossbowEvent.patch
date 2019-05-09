@@ -1,0 +1,85 @@
+From 16699e6227f3de8876afb68faf5aa5b235b31a47 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Wed, 8 May 2019 21:37:01 -0400
+Subject: [PATCH] Implement EntityDrawCrossbowEvent
+
+Also added some obfuscation helper methods for ammunition and charged state
+
+diff --git a/src/main/java/net/minecraft/server/ItemCrossbow.java b/src/main/java/net/minecraft/server/ItemCrossbow.java
+index cd17b4777..8f8809415 100644
+--- a/src/main/java/net/minecraft/server/ItemCrossbow.java
++++ b/src/main/java/net/minecraft/server/ItemCrossbow.java
+@@ -69,6 +69,32 @@ public class ItemCrossbow extends ItemProjectileWeapon {
+         if (f >= 1.0F && !d(itemstack)) {
+             a(entityliving, itemstack);
+             a(itemstack, true);
++            // Paper start - EntityDrawCrossbowEvent
++            List<org.bukkit.inventory.ItemStack> items = Lists.newArrayList();
++            List<ItemStack> ammunition = getAmmunition(itemstack);
++            ammunition.forEach(item -> items.add(item.getBukkitStack()));
++            com.destroystokyo.paper.event.entity.EntityDrawCrossbowEvent event = new com.destroystokyo.paper.event.entity.EntityDrawCrossbowEvent(entityliving.getBukkitLivingEntity(), itemstack.getBukkitStack(), items);
++            event.callEvent();
++            if (event.isCancelled()) return;
++
++            if (ammunition.size() != event.getAmmunition().size()) {
++                clearAmmunition(itemstack);
++                ammunition.clear();
++            }
++            for (int k = 0; k < 3; k++) {
++                if (!ammunition.get(k).getBukkitStack().isSimilar(event.getAmmunition().get(k))) {
++                    clearAmmunition(itemstack);
++                    ammunition.clear();
++                    break;
++                }
++            }
++
++            if (ammunition.size() == 0) {
++                event.getAmmunition().forEach(item -> {
++                    addAmmunition(itemstack, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item));
++                });
++            }
++            // Paper end;
+             SoundCategory soundcategory = entityliving instanceof EntityHuman ? SoundCategory.PLAYERS : SoundCategory.HOSTILE;
+ 
+             world.a((EntityHuman) null, entityliving.locX, entityliving.locY, entityliving.locZ, SoundEffects.ITEM_CROSSBOW_LOADING_END, soundcategory, 1.0F, 1.0F / (ItemCrossbow.i.nextFloat() * 0.5F + 1.0F) + 0.2F);
+@@ -119,18 +145,21 @@ public class ItemCrossbow extends ItemProjectileWeapon {
+         b(itemstack, itemstack2);
+     }
+ 
++    public static boolean isCharged(ItemStack crossbow) { return d(crossbow); } // Paper - OBFHELPER
+     public static boolean d(ItemStack itemstack) {
+         NBTTagCompound nbttagcompound = itemstack.getTag();
+ 
+         return nbttagcompound != null && nbttagcompound.getBoolean("Charged");
+     }
+ 
++    public static void setCharged(ItemStack crossbow, boolean charged) { a(crossbow, charged); } // Paper - OBFHELPER
+     public static void a(ItemStack itemstack, boolean flag) {
+         NBTTagCompound nbttagcompound = itemstack.getOrCreateTag();
+ 
+         nbttagcompound.setBoolean("Charged", flag);
+     }
+ 
++    public static void addAmmunition(ItemStack crossbow, ItemStack ammo) { b(crossbow, ammo); } // Paper - OBFHELPER
+     private static void b(ItemStack itemstack, ItemStack itemstack1) {
+         NBTTagCompound nbttagcompound = itemstack.getOrCreateTag();
+         NBTTagList nbttaglist;
+@@ -148,6 +177,7 @@ public class ItemCrossbow extends ItemProjectileWeapon {
+         nbttagcompound.set("ChargedProjectiles", nbttaglist);
+     }
+ 
++    public static List<ItemStack> getAmmunition(ItemStack crossbow) { return j(crossbow); } // Paper - OBFHELPER
+     private static List<ItemStack> j(ItemStack itemstack) {
+         List<ItemStack> list = Lists.newArrayList();
+         NBTTagCompound nbttagcompound = itemstack.getTag();
+@@ -167,6 +197,7 @@ public class ItemCrossbow extends ItemProjectileWeapon {
+         return list;
+     }
+ 
++    public static void clearAmmunition(ItemStack crossbow) { k(crossbow); } // Paper - OBFHELPER
+     private static void k(ItemStack itemstack) {
+         NBTTagCompound nbttagcompound = itemstack.getTag();
+ 
+-- 
+2.20.1.windows.1
+
