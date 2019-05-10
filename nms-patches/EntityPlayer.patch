@@ -545,13 +545,16 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -790,13 +1069,21 @@
+@@ -790,13 +1069,24 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
 +        // CraftBukkit start - Inventory open hook
 +        this.nextContainerCounter();
-+        Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerHorse(this.containerCounter, this.inventory, iinventory, entityhorseabstract));
++        Container container = new ContainerHorse(this.containerCounter, this.inventory, iinventory, entityhorseabstract);
++        container.setTitle(entityhorseabstract.getScoreboardDisplayName());
++        container = CraftEventFactory.callInventoryOpenEvent(this, container);
++
 +        if (container == null) {
 +            iinventory.closeContainer(this);
 +            return;
@@ -569,7 +572,7 @@
          this.activeContainer.addSlotListener(this);
      }
  
-@@ -841,6 +1128,11 @@
+@@ -841,6 +1131,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -581,7 +584,7 @@
      }
  
      @Override
-@@ -850,6 +1142,7 @@
+@@ -850,6 +1145,7 @@
  
      @Override
      public void closeInventory() {
@@ -589,7 +592,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.m();
      }
-@@ -884,7 +1177,7 @@
+@@ -884,7 +1180,7 @@
      @Override
      public void a(Statistic<?> statistic, int i) {
          this.serverStatisticManager.b(this, statistic, i);
@@ -598,7 +601,7 @@
              scoreboardscore.addScore(i);
          });
      }
-@@ -892,7 +1185,7 @@
+@@ -892,7 +1188,7 @@
      @Override
      public void a(Statistic<?> statistic) {
          this.serverStatisticManager.setStatistic(this, statistic, 0);
@@ -607,7 +610,7 @@
      }
  
      @Override
-@@ -941,7 +1234,16 @@
+@@ -941,7 +1237,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -624,7 +627,7 @@
  
      @Override
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
-@@ -996,12 +1298,14 @@
+@@ -996,12 +1301,14 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -640,7 +643,7 @@
      }
  
      @Override
-@@ -1063,6 +1367,18 @@
+@@ -1063,6 +1370,18 @@
  
      @Override
      public void a(EnumGamemode enumgamemode) {
@@ -659,7 +662,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -1113,6 +1429,17 @@
+@@ -1113,6 +1432,17 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -677,7 +680,7 @@
          this.locale = packetplayinsettings.b();
          this.ck = packetplayinsettings.d();
          this.cl = packetplayinsettings.e();
-@@ -1149,13 +1476,13 @@
+@@ -1149,13 +1479,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[] { entity.getId()}));
          } else {
@@ -693,7 +696,7 @@
      }
  
      @Override
-@@ -1179,7 +1506,7 @@
+@@ -1179,7 +1509,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -702,7 +705,7 @@
          }
  
      }
-@@ -1208,7 +1535,7 @@
+@@ -1208,7 +1538,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -711,7 +714,7 @@
      }
  
      @Override
-@@ -1226,21 +1553,33 @@
+@@ -1226,21 +1556,33 @@
      }
  
      public void J() {
@@ -745,7 +748,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1263,6 +1602,9 @@
+@@ -1263,6 +1605,9 @@
              this.server.getPlayerList().a(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
@@ -755,7 +758,7 @@
  
      }
  
-@@ -1314,4 +1656,144 @@
+@@ -1314,4 +1659,144 @@
              return entityitem;
          }
      }
