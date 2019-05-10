@@ -1,4 +1,4 @@
-From f9d1477d080f592e85e7279932c397dba374cb13 Mon Sep 17 00:00:00 2001
+From 2b38cf192766111ee616781fcad9018b0ce05cbd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -10,10 +10,10 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index edd8e7810f..5349a3a8bc 100644
+index c388a8261..463353bc7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -761,7 +761,8 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -762,7 +762,8 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
              if (!tileentity.isRemoved() && tileentity.hasWorld()) {
                  BlockPosition blockposition = tileentity.getPosition();
  
@@ -23,7 +23,7 @@ index edd8e7810f..5349a3a8bc 100644
                      try {
                          gameprofilerfiller.a(() -> {
                              return String.valueOf(TileEntityTypes.a(tileentity.q()));
-@@ -795,7 +796,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -796,7 +797,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
                  this.tileEntityListTick.remove(tileTickPosition--);
                  // Spigot end
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
@@ -32,7 +32,7 @@ index edd8e7810f..5349a3a8bc 100644
                      this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
                  }
              }
-@@ -816,8 +817,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -817,8 +818,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
                      }
                      // CraftBukkit end */
  
@@ -45,7 +45,7 @@ index edd8e7810f..5349a3a8bc 100644
  
                          chunk.setTileEntity(tileentity1.getPosition(), tileentity1);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 38d673d8fe..902aa562cc 100644
+index 0e559133f..1c92cf58a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1068,7 +1068,7 @@ public class WorldServer extends World {
