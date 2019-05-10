@@ -286,7 +286,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
         this.networkManager.getClass();
         // CraftBukkit - Don't wait
-        minecraftserver.postToMainThread(networkmanager::handleDisconnection);
+        minecraftserver.scheduleOnMain(networkmanager::handleDisconnection); // Paper
     }
 
     @Override
