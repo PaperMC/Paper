@@ -767,11 +767,9 @@ public interface Server extends PluginMessageRecipient {
     public HelpMap getHelpMap();
 
     /**
-     * Creates an empty inventory with the specified type and title. If the type
+     * Creates an empty inventory with the specified type. If the type
      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-     * otherwise the new inventory has the normal size for its type.<br>
-     * It should be noted that some inventory types do not support titles and
-     * may not render with said titles on the Minecraft client.
+     * otherwise the new inventory has the normal size for its type.
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
