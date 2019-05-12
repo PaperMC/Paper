@@ -897,7 +897,7 @@ public final class CraftServer implements Server {
         boolean used = false;
         do {
             for (WorldServer server : console.getWorlds()) {
-                used = server.dimension.getDimensionID() == dimension;
+                used = server.getWorldProvider().getDimensionManager().getDimensionID() == dimension;
                 if (used) {
                     dimension++;
                     break;
@@ -923,7 +923,7 @@ public final class CraftServer implements Server {
         }
 
         DimensionManager actualDimension = DimensionManager.a(creator.environment().getId());
-        DimensionManager internalDimension = new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.getWorldProvider(w), actualDimension.hasSkyLight());
+        DimensionManager internalDimension = DimensionManager.a(name, new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.g.apply(w, manager), actualDimension.hasSkyLight(), actualDimension));
         WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, sdm, worlddata, internalDimension, console.getMethodProfiler(), getServer().worldLoadListenerFactory.create(11), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
@@ -934,7 +934,7 @@ public final class CraftServer implements Server {
 
         internal.worldData.setDifficulty(EnumDifficulty.EASY);
         internal.setSpawnFlags(true, true);
-        console.worldServer.put(internal.dimension, internal);
+        console.worldServer.put(internal.getWorldProvider().getDimensionManager(), internal);
 
         pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
 
@@ -957,11 +957,11 @@ public final class CraftServer implements Server {
 
         WorldServer handle = ((CraftWorld) world).getHandle();
 
-        if (!(console.worldServer.containsKey(handle.dimension))) {
+        if (!(console.worldServer.containsKey(handle.getWorldProvider().getDimensionManager()))) {
             return false;
         }
 
-        if (handle.dimension == DimensionManager.OVERWORLD) {
+        if (handle.getWorldProvider().getDimensionManager() == DimensionManager.OVERWORLD) {
             return false;
         }
 
@@ -986,7 +986,7 @@ public final class CraftServer implements Server {
         }
 
         worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
-        console.worldServer.remove(handle.dimension);
+        console.worldServer.remove(handle.getWorldProvider().getDimensionManager());
         return true;
     }
 
