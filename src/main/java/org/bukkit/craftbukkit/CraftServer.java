@@ -923,7 +923,7 @@ public final class CraftServer implements Server {
         }
 
         DimensionManager actualDimension = DimensionManager.a(creator.environment().getId());
-        DimensionManager internalDimension = DimensionManager.a(name, new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.g.apply(w, manager), actualDimension.hasSkyLight(), actualDimension));
+        DimensionManager internalDimension = DimensionManager.a(name, new DimensionManager(dimension, actualDimension.c(), actualDimension.f, (w, manager) -> actualDimension.g.apply(w, manager), actualDimension.hasSkyLight(), actualDimension));
         WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, sdm, worlddata, internalDimension, console.getMethodProfiler(), getServer().worldLoadListenerFactory.create(11), creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
