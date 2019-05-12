@@ -37,7 +37,8 @@ public interface CrossbowMeta extends ItemMeta {
      * Adds a charged projectile to this item.
      *
      * @param item projectile
-     * @throws IllegalArgumentException if the projectile is not an arrow
+     * @throws IllegalArgumentException if the projectile is not an arrow or
+     * firework rocket
      */
     void addChargedProjectile(@NotNull ItemStack item);
 }
