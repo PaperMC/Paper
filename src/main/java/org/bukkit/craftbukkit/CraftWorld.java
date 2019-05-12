@@ -737,23 +737,6 @@ public class CraftWorld implements World {
         return environment;
     }
 
-    public void setEnvironment(Environment env) {
-        if (environment != env) {
-            environment = env;
-            switch (env) {
-                case NORMAL:
-                    world.worldProvider = new WorldProviderNormal(world, world.dimension);
-                    break;
-                case NETHER:
-                    world.worldProvider = new WorldProviderHell(world, world.dimension);
-                    break;
-                case THE_END:
-                    world.worldProvider = new WorldProviderTheEnd(world, world.dimension);
-                    break;
-            }
-        }
-    }
-
     @Override
     public Block getBlockAt(Location location) {
         return getBlockAt(location.getBlockX(), location.getBlockY(), location.getBlockZ());
@@ -1866,7 +1849,7 @@ public class CraftWorld implements World {
         double z = loc.getZ();
 
         PacketPlayOutCustomSoundEffect packet = new PacketPlayOutCustomSoundEffect(new MinecraftKey(sound), SoundCategory.valueOf(category.name()), new Vec3D(x, y, z), volume, pitch);
-        world.getMinecraftServer().getPlayerList().sendPacketNearby(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension, packet);
+        world.getMinecraftServer().getPlayerList().sendPacketNearby(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.getWorldProvider().getDimensionManager(), packet);
     }
 
     @Override

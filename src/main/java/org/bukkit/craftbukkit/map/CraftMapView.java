@@ -69,7 +69,7 @@ public final class CraftMapView implements MapView {
 
     @Override
     public void setWorld(World world) {
-        worldMap.map = ((CraftWorld) world).getHandle().dimension;
+        worldMap.map = ((CraftWorld) world).getHandle().getWorldProvider().getDimensionManager();
     }
 
     @Override
