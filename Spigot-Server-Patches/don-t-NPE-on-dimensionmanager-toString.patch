@@ -14,22 +14,20 @@ this is not super elegant, but is the only route that promises not to
 break stuff.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 982dce4800..d18a530a4d 100644
+index 050bf3eb4..56e8a613e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          }
  
          DimensionManager actualDimension = DimensionManager.a(creator.environment().getId());
--        DimensionManager internalDimension = new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.getWorldProvider(w), actualDimension.hasSkyLight());
-+        // Paper start - override toString
-+        DimensionManager internalDimension = new DimensionManager(dimension, name, name, (w, manager) -> actualDimension.getWorldProvider(w), actualDimension.hasSkyLight()) {
+-        DimensionManager internalDimension = DimensionManager.register(name, new DimensionManager(dimension, actualDimension.getSuffix(), actualDimension.folder, (w, manager) -> actualDimension.providerFactory.apply(w, manager), actualDimension.hasSkyLight(), actualDimension));
++        DimensionManager internalDimension = DimensionManager.register(name, new DimensionManager(dimension, actualDimension.getSuffix(), actualDimension.folder, (w, manager) -> actualDimension.providerFactory.apply(w, manager), actualDimension.hasSkyLight(), actualDimension) {
 +            @Override
 +            public String toString() {
 +                return name;
 +            }
-+        };
-+        // Paper end
++        });
          WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, sdm, worlddata, internalDimension, console.getMethodProfiler(), getServer().worldLoadListenerFactory.create(11), creator.environment(), generator);
  
          if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
