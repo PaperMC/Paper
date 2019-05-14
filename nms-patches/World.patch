@@ -79,7 +79,7 @@
 @@ -49,6 +109,35 @@
          this.isClientSide = flag;
          this.worldBorder = this.worldProvider.getWorldBorder();
-         this.c = Thread.currentThread();
+         this.serverThread = Thread.currentThread();
 +        // CraftBukkit start
 +        getWorldBorder().world = (WorldServer) this;
 +        // From PlayerList.setPlayerFileData
@@ -136,7 +136,7 @@
 +            return true;
 +        }
 +        // CraftBukkit end
-         if (isInsideWorld(blockposition)) {
+         if (isOutsideWorld(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
 @@ -126,9 +235,23 @@
@@ -283,10 +283,10 @@
 +            }
 +        }
 +        // CraftBukkit end
-         if (isInsideWorld(blockposition)) {
+         if (isOutsideWorld(blockposition)) {
              return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -454,9 +658,11 @@
+@@ -459,9 +663,11 @@
                  TileEntity tileentity1 = (TileEntity) this.tileEntityListPending.get(i);
  
                  if (!tileentity1.isRemoved()) {
@@ -298,7 +298,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
-@@ -464,6 +670,12 @@
+@@ -469,6 +675,12 @@
  
                          chunk.setTileEntity(tileentity1.getPosition(), tileentity1);
                          this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
@@ -311,7 +311,7 @@
                      }
                  }
              }
-@@ -626,6 +838,7 @@
+@@ -631,6 +843,7 @@
          }
      }
  
@@ -319,8 +319,8 @@
      @Nullable
      @Override
      public TileEntity getTileEntity(BlockPosition blockposition) {
-@@ -634,6 +847,12 @@
-         } else if (!this.isClientSide && Thread.currentThread() != this.c) {
+@@ -639,6 +852,12 @@
+         } else if (!this.isClientSide && Thread.currentThread() != this.serverThread) {
              return null;
          } else {
 +            // CraftBukkit start
@@ -332,9 +332,9 @@
              TileEntity tileentity = null;
  
              if (this.tickingTileEntities) {
-@@ -668,6 +887,14 @@
+@@ -673,6 +892,14 @@
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
-         if (!isInsideWorld(blockposition)) {
+         if (!isOutsideWorld(blockposition)) {
              if (tileentity != null && !tileentity.isRemoved()) {
 +                // CraftBukkit start
 +                if (captureBlockStates) {

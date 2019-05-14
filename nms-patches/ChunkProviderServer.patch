@@ -1,15 +1,6 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -82,7 +82,7 @@
- 
-         if (flag1) {
-             completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
--            this.serverThreadQueue.awaitTasks(completablefuture::isDone);
-+            this.serverThreadQueue.awaitTasks((BooleanSupplier) completablefuture::isDone); // CraftBukkit - decompile error
-         } else {
-             completablefuture = CompletableFuture.supplyAsync(() -> {
-                 return this.getChunkFutureMainThread(i, j, chunkstatus, flag);
-@@ -193,6 +193,17 @@
+@@ -241,6 +241,17 @@
          this.playerChunkMap.close();
      }
  
@@ -27,7 +18,7 @@
      public void tick(BooleanSupplier booleansupplier) {
          this.world.getMethodProfiler().enter("purge");
          this.chunkMapDistance.purgeTickets();
-@@ -211,14 +222,14 @@
+@@ -260,13 +271,13 @@
          this.lastTickTime = i;
          WorldData worlddata = this.world.getWorldData();
          boolean flag = worlddata.getType() == WorldType.DEBUG_ALL_BLOCK_STATES;
@@ -36,15 +27,14 @@
  
          if (!flag) {
              this.world.getMethodProfiler().enter("pollingChunks");
-             int k = this.chunkMapDistance.b();
-             int l = this.world.getGameRules().c("randomTickSpeed");
+             int k = this.world.getGameRules().c("randomTickSpeed");
              BlockPosition blockposition = this.world.getSpawn();
 -            boolean flag2 = worlddata.getTime() % 400L == 0L;
 +            boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit // PAIL: TODO monster ticks
-             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
-             Object2IntMap<EnumCreatureType> object2intmap = this.world.l();
-             ObjectBidirectionalIterator objectbidirectionaliterator = this.playerChunkMap.f();
-@@ -244,8 +255,30 @@
+ 
+             this.world.getMethodProfiler().enter("naturalSpawnCount");
+             int l = this.chunkMapDistance.b();
+@@ -299,8 +310,30 @@
                              for (int j1 = 0; j1 < i1; ++j1) {
                                  EnumCreatureType enumcreaturetype = aenumcreaturetype1[j1];
  
@@ -71,8 +61,8 @@
 +                                // CraftBukkit end
 +
                                  if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
--                                    int k1 = enumcreaturetype.b() * k / ChunkProviderServer.b;
-+                                    int k1 = limit * k / ChunkProviderServer.b; // CraftBukkit - use per-world limits
+-                                    int k1 = enumcreaturetype.b() * l / ChunkProviderServer.b;
++                                    int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
                                      if (object2intmap.getInt(enumcreaturetype) <= k1) {
                                          SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition);
