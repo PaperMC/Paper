@@ -29,38 +29,38 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public Type getFoxType() {
-        return Type.values()[getHandle().dV().ordinal()];
+        return Type.values()[getHandle().getFoxType().ordinal()];
     }
 
     @Override
     public void setFoxType(Type type) {
         Preconditions.checkArgument(type != null, "type");
 
-        getHandle().a(EntityFox.Type.values()[type.ordinal()]);
+        getHandle().setFoxType(EntityFox.Type.values()[type.ordinal()]);
     }
 
     @Override
     public boolean isCrouching() {
-        return getHandle().ef();
+        return getHandle().isCrouching();
     }
 
     @Override
     public void setCrouching(boolean crouching) {
-        getHandle().t(crouching);
+        getHandle().setCrouching(crouching);
     }
 
     @Override
     public boolean isSitting() {
-        return getHandle().dW();
+        return getHandle().isSitting();
     }
 
     @Override
     public void setSitting(boolean sitting) {
-        getHandle().r(sitting);
+        getHandle().setSitting(sitting);
     }
 
     @Override
     public void setSleeping(boolean sleeping) {
-        getHandle().x(sleeping);
+        getHandle().setSleeping(sleeping);
     }
 }

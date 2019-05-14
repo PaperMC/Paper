@@ -83,16 +83,16 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public int dV() {
+        public int getExperience() {
             return 0; // xp
         }
 
         @Override
-        public void q(int i) {
+        public void r(int i) {
         }
 
         @Override
-        public boolean dZ() {
+        public boolean ea() {
             return true;
         }
     }

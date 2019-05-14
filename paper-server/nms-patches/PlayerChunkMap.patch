@@ -1,19 +1,17 @@
 --- a/net/minecraft/server/PlayerChunkMap.java
 +++ b/net/minecraft/server/PlayerChunkMap.java
-@@ -33,6 +33,12 @@
- import javax.annotation.Nullable;
+@@ -35,6 +35,10 @@
+ import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.Player;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.world.ChunkUnloadEvent;
 +// CraftBukkit end
  
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
-@@ -179,9 +185,12 @@
+@@ -181,9 +185,12 @@
  
          return completablefuture1.thenApply((list1) -> {
              List<IChunkAccess> list2 = Lists.newArrayList();
@@ -28,19 +26,16 @@
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -257,9 +266,9 @@
-         }).forEach((completablefuture) -> {
-             if (flag) {
-                 this.executor.awaitTasks(completablefuture::isDone);
--                ((Either) completablefuture.join()).ifLeft(this::saveChunk);
-+                (completablefuture.join()).ifLeft(this::saveChunk); // CraftBukkit - decompile error
-             } else {
--                ((Either) completablefuture.getNow(PlayerChunk.UNLOADED_CHUNK_ACCESS)).ifLeft(this::saveChunk);
-+                (completablefuture.getNow(PlayerChunk.UNLOADED_CHUNK_ACCESS)).ifLeft(this::saveChunk); // CraftBukkit - decompile error
-             }
+@@ -279,7 +286,7 @@
+             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
+         } else {
+             this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
+-                IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow((Object) null);
++                IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
  
-         });
-@@ -268,7 +277,6 @@
+                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
+                     this.saveChunk(ichunkaccess);
+@@ -290,7 +297,6 @@
          }
  
      }
@@ -48,12 +43,8 @@
      protected void unloadChunks(BooleanSupplier booleansupplier) {
          GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
-@@ -304,13 +312,22 @@
-                 this.a(i, playerchunk);
-             } else {
-                 if (this.g.remove(i, playerchunk) && ichunkaccess != null) {
--                    this.saveChunk(ichunkaccess);
-                     if (this.h.remove(i) && ichunkaccess instanceof Chunk) {
+@@ -330,9 +336,19 @@
+                     if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
                          Chunk chunk = (Chunk) ichunkaccess;
  
 +                        // CraftBukkit start
@@ -62,7 +53,7 @@
 +                        this.saveChunk(ichunkaccess, event.isSaveChunk());
 +                        // CraftBukkit end
 +
-                         chunk.c(false);
+                         chunk.setLoaded(false);
                          this.world.unloadChunk(chunk);
 +                        // CraftBukkit start
 +                    } else {
@@ -72,7 +63,7 @@
  
                      this.lightEngine.a(ichunkaccess.getPos());
                      this.lightEngine.queueUpdate();
-@@ -394,7 +411,7 @@
+@@ -416,7 +432,7 @@
                      return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
                  });
              }, (runnable) -> {
@@ -81,16 +72,16 @@
              });
          }
      }
-@@ -476,7 +493,7 @@
+@@ -498,7 +514,7 @@
              long i = playerchunk.h().pair();
  
              playerchunk.getClass();
--            mailbox.a((Object) ChunkTaskQueueSorter.a(runnable, i, playerchunk::i));
-+            mailbox.a(ChunkTaskQueueSorter.a(runnable, i, playerchunk::i)); // CraftBukkit - decompile error
+-            mailbox.a((Object) ChunkTaskQueueSorter.a(runnable, i, playerchunk::getTicketLevel));
++            mailbox.a(ChunkTaskQueueSorter.a(runnable, i, playerchunk::getTicketLevel)); // CraftBukkit - decompile error
          });
      }
  
-@@ -493,7 +510,7 @@
+@@ -515,7 +531,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -99,7 +90,7 @@
          });
  
          completablefuture1.thenAcceptAsync((either) -> {
-@@ -507,7 +524,7 @@
+@@ -529,7 +545,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -108,23 +99,32 @@
          });
          return completablefuture1;
      }
-@@ -517,8 +534,14 @@
+@@ -543,7 +559,7 @@
+                 return chunk;
+             });
+         }, (runnable) -> {
+-            this.mailboxMain.a((Object) ChunkTaskQueueSorter.a(playerchunk, runnable));
++            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
+         });
      }
  
-     public void saveChunk(IChunkAccess ichunkaccess) {
+@@ -552,8 +568,14 @@
+     }
+ 
+     public boolean saveChunk(IChunkAccess ichunkaccess) {
 +        // CraftBukkit start
-+        this.saveChunk(ichunkaccess, ichunkaccess.isNeedsSaving());
++        return this.saveChunk(ichunkaccess, ichunkaccess.isNeedsSaving());
 +    }
 +
-+    public void saveChunk(IChunkAccess ichunkaccess, boolean save) {
++    public boolean saveChunk(IChunkAccess ichunkaccess, boolean save) {
 +        // CraftBukkit end
          this.n.a(ichunkaccess.getPos());
--        if (ichunkaccess.isNeedsSaving()) {
-+        if (save) { // CraftBukkit
+-        if (!ichunkaccess.isNeedsSaving()) {
++        if (!save) { // CraftBukkit
+             return false;
+         } else {
              try {
-                 this.world.checkSession();
-             } catch (ExceptionWorldConflict exceptionworldconflict) {
-@@ -569,9 +592,10 @@
+@@ -607,9 +629,10 @@
                  ChunkCoordIntPair chunkcoordintpair = playerchunk.h();
                  Packet<?>[] apacket = new Packet[2];
  
@@ -133,11 +133,11 @@
                      int i1 = b(chunkcoordintpair, entityplayer, true);
 -                    boolean flag = i1 <= l;
 +                    boolean flag = i1 <= finall; // CraftBukkit - decompile error
-                     boolean flag1 = i1 <= this.A;
+                     boolean flag1 = i1 <= this.viewDistance;
  
                      this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
-@@ -626,7 +650,7 @@
-     private NBTTagCompound f(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+@@ -664,7 +687,7 @@
+     private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
 -        return nbttagcompound == null ? null : this.getChunkData(this.world.getWorldProvider().getDimensionManager(), this.m, nbttagcompound);
@@ -145,7 +145,7 @@
      }
  
      boolean d(ChunkCoordIntPair chunkcoordintpair) {
-@@ -946,7 +970,7 @@
+@@ -984,7 +1007,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -154,7 +154,7 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1015,6 +1039,17 @@
+@@ -1053,6 +1076,17 @@
                          }
                      }
  

@@ -59,12 +59,12 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData((byte) getSnapshot().f().getColorIndex());
+        return DyeColor.getByWoolData((byte) getSnapshot().getColor().getColorIndex());
     }
 
     @Override
     public void setColor(DyeColor color) {
-        getSnapshot().a(EnumColor.fromColorIndex(color.getWoolData()));
+        getSnapshot().setColor(EnumColor.fromColorIndex(color.getWoolData()));
     }
 
     @Override

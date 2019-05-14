@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/PlayerChunk.java
 +++ b/net/minecraft/server/PlayerChunk.java
-@@ -41,7 +41,7 @@
-         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
+@@ -43,7 +43,7 @@
+         this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
 -        this.chunkSave = CompletableFuture.completedFuture((Object) null);
@@ -9,7 +9,7 @@
          this.dirtyBlocks = new short[64];
          this.location = chunkcoordintpair;
          this.lightEngine = lightengine;
-@@ -74,9 +74,9 @@
+@@ -76,9 +76,9 @@
      @Nullable
      public Chunk getChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
@@ -21,7 +21,7 @@
      }
  
      public CompletableFuture<IChunkAccess> getChunkSave() {
-@@ -199,7 +199,7 @@
+@@ -201,7 +201,7 @@
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(i);
  
          if (completablefuture != null) {
@@ -30,7 +30,7 @@
  
              if (either == null || either.left().isPresent()) {
                  return completablefuture;
-@@ -211,6 +211,15 @@
+@@ -213,6 +213,15 @@
  
              this.a(completablefuture1);
              this.statusFutures.set(i, completablefuture1);
@@ -46,3 +46,12 @@
              return completablefuture1;
          } else {
              return completablefuture == null ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : completablefuture;
+@@ -294,7 +303,7 @@
+         if (flag2 && !flag3) {
+             completablefuture = this.fullChunkFuture;
+             this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+-            this.a(completablefuture.thenApply((either1) -> {
++            this.a(((CompletableFuture<Either<Chunk, PlayerChunk.Failure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
+                 playerchunkmap.getClass();
+                 return either1.ifLeft(playerchunkmap::a);
+             }));

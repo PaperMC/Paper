@@ -66,13 +66,13 @@ import net.minecraft.server.EntityIllagerWizard;
 import net.minecraft.server.EntityIronGolem;
 import net.minecraft.server.EntityItem;
 import net.minecraft.server.EntityItemFrame;
-import net.minecraft.server.EntityLLamaTrader;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLeash;
 import net.minecraft.server.EntityLightning;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityLlama;
 import net.minecraft.server.EntityLlamaSpit;
+import net.minecraft.server.EntityLlamaTrader;
 import net.minecraft.server.EntityMagmaCube;
 import net.minecraft.server.EntityMinecartAbstract;
 import net.minecraft.server.EntityMinecartChest;
@@ -220,7 +220,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         if (entity instanceof EntityHorseChestedAbstract){
                             if (entity instanceof EntityHorseDonkey) { return new CraftDonkey(server, (EntityHorseDonkey) entity); }
                             else if (entity instanceof EntityHorseMule) { return new CraftMule(server, (EntityHorseMule) entity); }
-                            else if (entity instanceof EntityLLamaTrader) { return new CraftTraderLlama(server, (EntityLLamaTrader) entity); }
+                            else if (entity instanceof EntityLlamaTrader) { return new CraftTraderLlama(server, (EntityLlamaTrader) entity); }
                             else if (entity instanceof EntityLlama) { return new CraftLlama(server, (EntityLlama) entity); }
                         } else if (entity instanceof EntityHorse) { return new CraftHorse(server, (EntityHorse) entity); }
                         else if (entity instanceof EntityHorseSkeleton) { return new CraftSkeletonHorse(server, (EntityHorseSkeleton) entity); }
@@ -933,7 +933,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Pose getPose() {
-        return Pose.values()[getHandle().Z().ordinal()];
+        return Pose.values()[getHandle().getPose().ordinal()];
     }
 
     public void storeBukkitValues(NBTTagCompound c) {

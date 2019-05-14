@@ -143,11 +143,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public int a(BlockPosition bp, EnumDirection ed) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public boolean e() {
         throw new UnsupportedOperationException("Not supported yet.");
     }

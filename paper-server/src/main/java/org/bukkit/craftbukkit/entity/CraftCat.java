@@ -43,11 +43,11 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public DyeColor getCollarColor() {
-        return DyeColor.getByWoolData((byte) getHandle().ei().getColorIndex());
+        return DyeColor.getByWoolData((byte) getHandle().getCollarColor().getColorIndex());
     }
 
     @Override
     public void setCollarColor(DyeColor color) {
-        getHandle().a(EnumColor.fromColorIndex(color.getWoolData()));
+        getHandle().setCollarColor(EnumColor.fromColorIndex(color.getWoolData()));
     }
 }
