@@ -469,7 +469,7 @@ public class CraftInventory implements Inventory {
             return InventoryType.ENDER_CHEST;
         } else if (inventory instanceof InventoryMerchant) {
             return InventoryType.MERCHANT;
-        } else if (inventory instanceof TileEntityBeacon) {
+        } else if (this instanceof CraftInventoryBeacon) {
             return InventoryType.BEACON;
         } else if (this instanceof CraftInventoryAnvil) {
            return InventoryType.ANVIL;
