@@ -1,4 +1,4 @@
-From 43fe880530ba71a467d76e1a5d6ad57ba9fed5d5 Mon Sep 17 00:00:00 2001
+From 850bdbebc31a1756bdcd70dfa677cd0f3a447262 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,7 +8,7 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 8f789c91f7..15be6bb33f 100644
+index aa13028d0..6d75bf220 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -36,7 +36,7 @@ public class Chunk implements IChunkAccess {
@@ -20,13 +20,10 @@ index 8f789c91f7..15be6bb33f 100644
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
      private final ChunkConverter i;
-@@ -58,11 +58,39 @@ public class Chunk implements IChunkAccess {
-     private final ChunkCoordIntPair loc;
-     private volatile boolean x;
+@@ -62,11 +62,36 @@ public class Chunk implements IChunkAccess {
+         this(world, chunkcoordintpair, abiomebase, ChunkConverter.a, TickListEmpty.a(), TickListEmpty.a(), 0L, (ChunkSection[]) null, (Consumer) null);
+     }
  
-+    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
-+    private int neighbors = 0x1 << 12;
-+    public long chunkKey;
 +    // Paper start
 +    private class TileEntityHashMap extends java.util.HashMap<BlockPosition, TileEntity> {
 +        @Override
@@ -61,7 +58,7 @@ index 8f789c91f7..15be6bb33f 100644
          this.l = Maps.newHashMap();
          this.m = Maps.newHashMap();
          this.n = new ShortList[16];
-@@ -357,6 +385,7 @@ public class Chunk implements IChunkAccess {
+@@ -361,6 +386,7 @@ public class Chunk implements IChunkAccess {
          }
  
          entity.inChunk = true;
@@ -69,7 +66,7 @@ index 8f789c91f7..15be6bb33f 100644
          entity.chunkX = this.loc.x;
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
-@@ -368,6 +397,7 @@ public class Chunk implements IChunkAccess {
+@@ -372,6 +398,7 @@ public class Chunk implements IChunkAccess {
          ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
@@ -77,7 +74,7 @@ index 8f789c91f7..15be6bb33f 100644
      public void b(Entity entity) {
          this.a(entity, entity.chunkY);
      }
-@@ -380,8 +410,12 @@ public class Chunk implements IChunkAccess {
+@@ -384,8 +411,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
@@ -93,13 +90,13 @@ index 8f789c91f7..15be6bb33f 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 01e4863899..14c3f04170 100644
+index 033cddf8e..7fc4af565 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -133,7 +133,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
-     protected static final DataWatcherObject<EntityPose> X = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
+     protected static final DataWatcherObject<EntityPose> POSE = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
 -    public boolean inChunk;
 +    public boolean inChunk; public boolean isAddedToChunk() { return inChunk; } // Paper - OBFHELPER
      public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
@@ -146,10 +143,10 @@ index 01e4863899..14c3f04170 100644
      private String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 77d77fcb8b..4c811325c3 100644
+index b511fe263..7546f6690 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -49,6 +49,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -51,6 +51,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
          getMinecraftKey(); // Try to load if it doesn't exists.
          return tileEntityKeyString;
      }
@@ -166,7 +163,7 @@ index 77d77fcb8b..4c811325c3 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index eddac6ed95..049641db06 100644
+index 5b72b3633..b2a16bb36 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -137,6 +137,7 @@ import net.minecraft.server.EntityZombieVillager;

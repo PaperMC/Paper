@@ -1,4 +1,4 @@
-From 790dff9ff673058b18a3c92bddced6e2cb179981 Mon Sep 17 00:00:00 2001
+From c7641c30bd926b4c5d123ed4f9943bfbaad76ee7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 21:22:26 -0400
 Subject: [PATCH] EntityPathfindEvent
@@ -6,7 +6,7 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/server/Navigation.java b/src/main/java/net/minecraft/server/Navigation.java
-index 79b2d9297..b6e3bf823 100644
+index aacaecd82..bc30e3f33 100644
 --- a/src/main/java/net/minecraft/server/Navigation.java
 +++ b/src/main/java/net/minecraft/server/Navigation.java
 @@ -60,7 +60,7 @@ public class Navigation extends NavigationAbstract {
@@ -19,7 +19,7 @@ index 79b2d9297..b6e3bf823 100644
  
      private int s() {
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 2ced8dedd..7b27251b3 100644
+index 75e01c242..d04eb1bbf 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -4,7 +4,7 @@ import javax.annotation.Nullable;
@@ -50,7 +50,7 @@ index 2ced8dedd..7b27251b3 100644
      }
  
      @Nullable
-@@ -87,16 +89,24 @@ public abstract class NavigationAbstract {
+@@ -87,11 +89,12 @@ public abstract class NavigationAbstract {
          double d1 = entity.getBoundingBox().minY;
          double d2 = entity.locZ;
  
@@ -58,24 +58,24 @@ index 2ced8dedd..7b27251b3 100644
 +        return this.a(blockposition, entity, d0, d1, d2, 16, true); // Paper - Path find event
      }
  
--    @Nullable
+     @Nullable
 -    protected PathEntity a(BlockPosition blockposition, double d0, double d1, double d2, int i, boolean flag) {
-+    // Paper start - Add target entity parameter for path find event
-+    @Nullable protected PathEntity a(BlockPosition blockposition, double d0, double d1, double d2, int i, boolean flag) { return this.a(blockposition, null, d0, d1, d2, i, flag); }
++    protected PathEntity a(BlockPosition blockposition, double d0, double d1, double d2, int i, boolean flag) { return this.a(blockposition, null, d0, d1, d2, i, flag); }
 +    @Nullable protected PathEntity a(BlockPosition blockposition, Entity target, double d0, double d1, double d2, int i, boolean flag) {
-+        // Paper end
-         if (!this.a()) {
+         if (this.a.locY < 0.0D) {
              return null;
+         } else if (!this.a()) {
+@@ -99,6 +102,12 @@ public abstract class NavigationAbstract {
          } else if (this.c != null && !this.c.b() && blockposition.equals(this.q)) {
              return this.c;
          } else {
 +            // Paper start - Pathfind event
 +            if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
-+                    MCUtil.toLocation(getEntity().world, blockposition), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                MCUtil.toLocation(getEntity().world, blockposition), target == null ? null : target.getBukkitEntity()).callEvent()) {
 +                return null;
 +            }
 +            // Paper end
-             this.q = blockposition;
+             this.q = blockposition.immutableCopy();
              float f = this.i();
  
 diff --git a/src/main/java/net/minecraft/server/NavigationFlying.java b/src/main/java/net/minecraft/server/NavigationFlying.java

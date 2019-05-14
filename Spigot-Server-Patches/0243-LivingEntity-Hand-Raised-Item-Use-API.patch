@@ -1,0 +1,66 @@
+From be55a812380577a34ab74e2e5c377847bf01f5e8 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Jun 2018 00:21:28 -0400
+Subject: [PATCH] LivingEntity Hand Raised/Item Use API
+
+How long an entity has raised hands to charge an attack or use an item
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 6faed231a..d52c0d81d 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -109,7 +109,7 @@ public abstract class EntityLiving extends Entity {
+     private float bD;
+     private int jumpTicks;
+     private float bF;
+-    protected ItemStack activeItem;
++    public ItemStack activeItem; // Paper - public
+     protected int bo;
+     protected int bp;
+     private BlockPosition bG;
+@@ -2893,10 +2893,12 @@ public abstract class EntityLiving extends Entity {
+         return this.activeItem;
+     }
+ 
++    public int getItemUseRemainingTime() { return dm(); } // Paper - OBFHELPER
+     public int dm() {
+         return this.bo;
+     }
+ 
++    public int getHandRaisedTime() { return dn(); } // Paper - OBFHELPER
+     public int dn() {
+         return this.isHandRaised() ? this.activeItem.k() - this.dm() : 0;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index aeb4b7343..00fae6840 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -616,5 +616,25 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public void setShieldBlockingDelay(int delay) {
+         getHandle().setShieldBlockingDelay(delay);
+     }
++
++    @Override
++    public ItemStack getActiveItem() {
++        return getHandle().activeItem.asBukkitMirror();
++    }
++
++    @Override
++    public int getItemUseRemainingTime() {
++        return getHandle().getItemUseRemainingTime();
++    }
++
++    @Override
++    public int getHandRaisedTime() {
++        return getHandle().getHandRaisedTime();
++    }
++
++    @Override
++    public boolean isHandRaised() {
++        return getHandle().isHandRaised();
++    }
+     // Paper end
+ }
+-- 
+2.21.0
+

@@ -1,14 +1,14 @@
-From 6e7c5c35348506ebf4ef4a4f84e8eebf1ac924ab Mon Sep 17 00:00:00 2001
+From 435410e1e7631cb7e5b169d2b0a7f6b8bad0992e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 31 Mar 2016 19:17:58 -0400
 Subject: [PATCH] Do not load chunks for Pathfinding
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
-index c76087614..475c93836 100644
+index 2c9bf7d00..281f5f04f 100644
 --- a/src/main/java/net/minecraft/server/ChunkCache.java
 +++ b/src/main/java/net/minecraft/server/ChunkCache.java
-@@ -25,7 +25,7 @@ public class ChunkCache implements IIBlockAccess {
+@@ -25,7 +25,7 @@ public class ChunkCache implements IWorldReader {
  
          for (k = this.a; k <= i; ++k) {
              for (l = this.b; l <= j; ++l) {
@@ -18,7 +18,7 @@ index c76087614..475c93836 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 7b27251b3..fe19167a1 100644
+index d04eb1bbf..4a91e0d8c 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -22,8 +22,9 @@ public abstract class NavigationAbstract {
@@ -40,7 +40,7 @@ index 7b27251b3..fe19167a1 100644
      }
  
      public BlockPosition h() {
-@@ -176,6 +178,7 @@ public abstract class NavigationAbstract {
+@@ -177,6 +179,7 @@ public abstract class NavigationAbstract {
      }
  
      public void c() {
@@ -49,7 +49,7 @@ index 7b27251b3..fe19167a1 100644
          if (this.m) {
              this.k();
 diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
-index 480dee704..3901dd751 100644
+index 359d9a11c..262fa5585 100644
 --- a/src/main/java/net/minecraft/server/Pathfinder.java
 +++ b/src/main/java/net/minecraft/server/Pathfinder.java
 @@ -12,7 +12,7 @@ public class Pathfinder {
@@ -62,12 +62,12 @@ index 480dee704..3901dd751 100644
      public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {
          this.e = pathfinderabstract;
 diff --git a/src/main/java/net/minecraft/server/PathfinderAbstract.java b/src/main/java/net/minecraft/server/PathfinderAbstract.java
-index 7aad55c7d..3cb43808f 100644
+index 92df34aba..e773bef61 100644
 --- a/src/main/java/net/minecraft/server/PathfinderAbstract.java
 +++ b/src/main/java/net/minecraft/server/PathfinderAbstract.java
 @@ -7,6 +7,7 @@ public abstract class PathfinderAbstract {
  
-     protected IBlockAccess a;
+     protected IWorldReader a;
      protected EntityInsentient b;
 +    public World world; // Paper
      protected final Int2ObjectMap<PathPoint> c = new Int2ObjectOpenHashMap();
@@ -75,17 +75,17 @@ index 7aad55c7d..3cb43808f 100644
      protected int e;
 @@ -19,6 +20,7 @@ public abstract class PathfinderAbstract {
  
-     public void a(IBlockAccess iblockaccess, EntityInsentient entityinsentient) {
-         this.a = iblockaccess;
-+        if (iblockaccess instanceof World) world = (World) iblockaccess; // Paper
+     public void a(IWorldReader iworldreader, EntityInsentient entityinsentient) {
+         this.a = iworldreader;
++        if (iworldreader instanceof World) world = (World) iworldreader; // Paper
          this.b = entityinsentient;
          this.c.clear();
          this.d = MathHelper.d(entityinsentient.getWidth() + 1.0F);
 diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
-index f1198272b..1eaed0fd8 100644
+index d97166f8f..51991b8c8 100644
 --- a/src/main/java/net/minecraft/server/PathfinderNormal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
-@@ -343,7 +343,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+@@ -355,7 +355,8 @@ public class PathfinderNormal extends PathfinderAbstract {
          PathType pathtype = this.b(iblockaccess, i, j, k);
  
          if (pathtype == PathType.OPEN && j >= 1) {
@@ -95,7 +95,7 @@ index f1198272b..1eaed0fd8 100644
              PathType pathtype1 = this.b(iblockaccess, i, j - 1, k);
  
              pathtype = pathtype1 != PathType.WALKABLE && pathtype1 != PathType.OPEN && pathtype1 != PathType.WATER && pathtype1 != PathType.LAVA ? PathType.WALKABLE : PathType.OPEN;
-@@ -373,9 +374,10 @@ public class PathfinderNormal extends PathfinderAbstract {
+@@ -385,9 +386,10 @@ public class PathfinderNormal extends PathfinderAbstract {
                  for (int l = -1; l <= 1; ++l) {
                      for (int i1 = -1; i1 <= 1; ++i1) {
                          if (l != 0 || i1 != 0) {
@@ -108,7 +108,7 @@ index f1198272b..1eaed0fd8 100644
                                  pathtype = PathType.DANGER_CACTUS;
                              } else if (block == Blocks.FIRE) {
                                  pathtype = PathType.DANGER_FIRE;
-@@ -409,7 +411,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+@@ -421,7 +423,8 @@ public class PathfinderNormal extends PathfinderAbstract {
  
      protected PathType b(IBlockAccess iblockaccess, int i, int j, int k) {
          BlockPosition blockposition = new BlockPosition(i, j, k);

@@ -1,0 +1,33 @@
+From 414ae3622b3470e439711445447b5bef8dfb0053 Mon Sep 17 00:00:00 2001
+From: Michael Himing <mhiming@gmail.com>
+Date: Sun, 16 Dec 2018 13:07:33 +1100
+Subject: [PATCH] Fix PlayerEditBookEvent
+
+- Updating book writing (not signing) mutated the original item, making
+it impossible to properly cancel the event or modify the book meta
+
+- When the event was cancelled, the client's book would keep the
+cancelled writing
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index f46a4868b..448645e52 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -859,9 +859,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                         itemstack2.a("pages", (NBTBase) nbttaglist);
+                         this.player.a(packetplayinbedit.d(), CraftEventFactory.handleEditBookEvent(player, enumitemslot, itemstack1, itemstack2)); // CraftBukkit
+                     } else {
+-                        ItemStack old = itemstack1.cloneItemStack(); // CraftBukkit
+-                        itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
+-                        CraftEventFactory.handleEditBookEvent(player, enumitemslot, old, itemstack1); // CraftBukkit
++                        // Paper start - dont mutate players current item, set it from the event
++                        ItemStack newBook = itemstack1.cloneItemStack();
++                        newBook.getOrCreateTagAndSet("pages", (NBTBase)itemstack.getTag().getList("pages", 8));
++                        this.player.setSlot(enumitemslot, CraftEventFactory.handleEditBookEvent(player, enumitemslot, itemstack1, newBook));
++                        // Paper end
+                     }
+                 }
+ 
+-- 
+2.21.0
+
