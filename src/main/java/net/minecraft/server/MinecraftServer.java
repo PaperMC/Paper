@@ -2064,7 +2064,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     // CraftBukkit start
     @Override
     public boolean isMainThread() {
-        return super.isMainThread() || this.isStopped(); // CraftBukkit - MC-142590
+        return super.isMainThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
     }
 
     public boolean isDebugging() {
