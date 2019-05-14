@@ -17,7 +17,7 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index de34c4e3ee..bb276daa72 100644
+index 61793dd1d..43d760bed 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -42,6 +42,9 @@ index de34c4e3ee..bb276daa72 100644
  
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
 -        long i = SystemUtils.getMonotonicMillis();
+-
+-        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
+-            if (this.awaitingKeepAlive) {
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = SystemUtils.getMonotonicMillis();
@@ -50,6 +53,12 @@ index de34c4e3ee..bb276daa72 100644
 +        if (this.isPendingPing()) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
+                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
+-            } else {
+-                this.awaitingKeepAlive = true;
+-                this.lastKeepAlive = i;
+-                this.h = i;
+-                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
@@ -57,15 +66,7 @@ index de34c4e3ee..bb276daa72 100644
 +                this.setLastPing(currentTime);
 +                this.setKeepAliveID(currentTime);
 +                this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
- 
--        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
--            if (this.awaitingKeepAlive) {
--                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
--            } else {
--                this.awaitingKeepAlive = true;
--                this.lastKeepAlive = i;
--                this.h = i;
--                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
++
              }
          }
 +        // Paper end
