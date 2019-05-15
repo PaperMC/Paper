@@ -664,14 +664,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
-    static NBTTagList createStringList(List<IChatBaseComponent> list) {
+    NBTTagList createStringList(List<IChatBaseComponent> list) {
         if (list == null || list.isEmpty()) {
             return null;
         }
 
         NBTTagList tagList = new NBTTagList();
         for (IChatBaseComponent value : list) {
-            tagList.add(new NBTTagString(CraftChatMessage.toJSON(value)));
+            tagList.add(new NBTTagString(version >= 1803 ? CraftChatMessage.toJSON(value) : CraftChatMessage.fromComponent(value, EnumChatFormat.DARK_PURPLE))); // SPIGOT-4935
         }
 
         return tagList;
