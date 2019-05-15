@@ -1,4 +1,4 @@
-From bc5d4dcd27553b19ebbd6f37ba6281fc26c5f2be Mon Sep 17 00:00:00 2001
+From 2419083c0b4fd0a0f99df2c3c0fbb40cf3530960 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -10,7 +10,7 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index d87b08a49e..c7712d2e71 100644
+index 24d169eee..bf563df53 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1110,9 +1110,8 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -37,7 +37,7 @@ index d87b08a49e..c7712d2e71 100644
          //} // Paper - merge
  
          //for (Entity e : this.g) { // Paper - merge
-@@ -1262,9 +1260,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1261,9 +1259,10 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  j = entity.chunkX;
                  int l = entity.chunkZ;
  
@@ -51,7 +51,7 @@ index d87b08a49e..c7712d2e71 100644
  
                  guardEntityList = false; // Spigot
                  this.entityList.remove(this.tickPosition--); // CraftBukkit - Use field for loop variable
-@@ -1309,7 +1308,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1308,7 +1307,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  BlockPosition blockposition = tileentity.getPosition();
  
                  // Paper start - Skip ticking in chunks scheduled for unload
@@ -60,7 +60,7 @@ index d87b08a49e..c7712d2e71 100644
                  boolean shouldTick = chunk != null;
                  if(this.paperConfig.skipEntityTickingInChunksScheduledForUnload)
                      shouldTick = shouldTick && chunk.scheduledForUnload == null;
-@@ -1345,8 +1344,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -1344,8 +1343,11 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
                  tilesThisCycle--;
                  this.tileEntityListTick.remove(tileTickPosition--);
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
