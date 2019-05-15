@@ -1,6 +1,49 @@
 --- a/net/minecraft/server/ChunkProviderServer.java
 +++ b/net/minecraft/server/ChunkProviderServer.java
-@@ -241,6 +241,17 @@
+@@ -81,7 +81,7 @@
+             for (int l = 0; l < 4; ++l) {
+                 if (k == this.n[l] && chunkstatus == this.o[l]) {
+                     ichunkaccess = this.p[l];
+-                    if (ichunkaccess != null || !flag) {
++                    if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
+                         return ichunkaccess;
+                     }
+                 }
+@@ -125,7 +125,15 @@
+         int l = 33 + ChunkStatus.a(chunkstatus);
+         PlayerChunk playerchunk = this.getChunk(k);
+ 
+-        if (flag) {
++        // CraftBukkit start - don't add new ticket for currently unloading chunk
++        boolean currentlyUnloading = false;
++        if (playerchunk != null) {
++            PlayerChunk.State oldChunkState = PlayerChunk.c(playerchunk.oldTicketLevel); // PAIL getChunkState
++            PlayerChunk.State currentChunkState = PlayerChunk.c(playerchunk.getTicketLevel()); // PAIL getChunkState
++            currentlyUnloading = (oldChunkState.a(PlayerChunk.State.BORDER) && !currentChunkState.a(PlayerChunk.State.BORDER)); // PAIL isAtLeast
++        }
++        if (flag && !currentlyUnloading) {
++            // CraftBukkit end
+             this.chunkMapDistance.a(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
+             if (this.a(playerchunk, l)) {
+                 GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
+@@ -144,14 +152,14 @@
+     }
+ 
+     private boolean a(@Nullable PlayerChunk playerchunk, int i) {
+-        return playerchunk == null || playerchunk.getTicketLevel() > i;
++        return playerchunk == null || playerchunk.oldTicketLevel > i; // CraftBukkit using oldTicketLevel for isLoaded checks
+     }
+ 
+     public boolean isLoaded(int i, int j) {
+         PlayerChunk playerchunk = this.getChunk((new ChunkCoordIntPair(i, j)).pair());
+         int k = 33 + ChunkStatus.a(ChunkStatus.FULL);
+ 
+-        return playerchunk != null && playerchunk.getTicketLevel() <= k ? ((Either) playerchunk.getStatusFuture(ChunkStatus.FULL).getNow(PlayerChunk.UNLOADED_CHUNK_ACCESS)).left().isPresent() : false;
++        return playerchunk != null && playerchunk.oldTicketLevel <= k ? ((Either) playerchunk.getStatusFuture(ChunkStatus.FULL).getNow(PlayerChunk.UNLOADED_CHUNK_ACCESS)).left().isPresent() : false; // CraftBukkit using oldTicketLevel for isLoaded checks
+     }
+ 
+     @Override
+@@ -241,6 +249,18 @@
          this.playerChunkMap.close();
      }
  
@@ -12,13 +55,14 @@
 +        this.world.getMethodProfiler().exitEnter("unload");
 +        this.playerChunkMap.unloadChunks(() -> true);
 +        this.world.getMethodProfiler().exit();
++        this.l(); // PAIL clearCache
 +    }
 +    // CraftBukkit end
 +
      public void tick(BooleanSupplier booleansupplier) {
          this.world.getMethodProfiler().enter("purge");
          this.chunkMapDistance.purgeTickets();
-@@ -260,13 +271,13 @@
+@@ -260,13 +280,13 @@
          this.lastTickTime = i;
          WorldData worlddata = this.world.getWorldData();
          boolean flag = worlddata.getType() == WorldType.DEBUG_ALL_BLOCK_STATES;
@@ -34,7 +78,7 @@
  
              this.world.getMethodProfiler().enter("naturalSpawnCount");
              int l = this.chunkMapDistance.b();
-@@ -299,8 +310,30 @@
+@@ -299,8 +319,30 @@
                              for (int j1 = 0; j1 < i1; ++j1) {
                                  EnumCreatureType enumcreaturetype = aenumcreaturetype1[j1];
  

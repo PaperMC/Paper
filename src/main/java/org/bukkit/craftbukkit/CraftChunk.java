@@ -93,6 +93,9 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Entity[] getEntities() {
+        if (!isLoaded()) {
+            getWorld().getChunkAt(x, z); // Transient load for this tick
+        }
         int count = 0, index = 0;
         net.minecraft.server.Chunk chunk = getHandle();
 
@@ -118,6 +121,9 @@ public class CraftChunk implements Chunk {
 
     @Override
     public BlockState[] getTileEntities() {
+        if (!isLoaded()) {
+            getWorld().getChunkAt(x, z); // Transient load for this tick
+        }
         int index = 0;
         net.minecraft.server.Chunk chunk = getHandle();
 
