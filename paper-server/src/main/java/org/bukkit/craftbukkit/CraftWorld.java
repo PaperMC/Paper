@@ -330,7 +330,7 @@ public class CraftWorld implements World {
     @Override
     public boolean isChunkLoaded(int x, int z) {
         net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
-        return chunk != null && chunk.loaded;
+        return chunk != null;
     }
 
     @Override
@@ -345,8 +345,7 @@ public class CraftWorld implements World {
     @Override
     public Chunk[] getLoadedChunks() {
         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
-
-        return chunks.values().stream().map(PlayerChunk::getChunk).filter(Objects::nonNull).filter((chunk) -> chunk.loaded).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
+        return chunks.values().stream().map(PlayerChunk::getFullChunk).filter(Objects::nonNull).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
     }
 
     @Override
