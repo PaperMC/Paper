@@ -1,4 +1,4 @@
-From 478133b38d9b00a5203c0e6a891435b781d56737 Mon Sep 17 00:00:00 2001
+From fd6e42ad97f51e2656777ae3a4d09cd2e171c48b Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 6 May 2019 12:29:24 -0700
 Subject: [PATCH] Async Chunk placeholder
@@ -6,10 +6,10 @@ Subject: [PATCH] Async Chunk placeholder
 Until we figure out Mojang's ticket system.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 421e92cfa5..1c22926624 100644
+index 421e92cfa5..625f8ade6a 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -118,6 +118,77 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -118,6 +118,86 @@ public class ChunkProviderServer extends IChunkProvider {
          }
      }
  
@@ -41,6 +41,7 @@ index 421e92cfa5..1c22926624 100644
 +        long k = ChunkCoordIntPair.pair(x, z);
 +
 +        IChunkAccess ichunkaccess;
++        ChunkCoordIntPair chunkcoord = new ChunkCoordIntPair(x, z);
 +
 +        // search cache
 +        for (int l = 0; l < 4; ++l) {
@@ -62,22 +63,30 @@ index 421e92cfa5..1c22926624 100644
 +            }
 +        }
 +
++        this.addTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
++
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(x, z, ChunkStatus.FULL, true);
 +        CompletableFuture<Chunk> ret = new CompletableFuture<>();
 +
-+        completablefuture.thenAccept((either) -> {
++        completablefuture.whenComplete((either, throwable) -> {
 +            this.serverThreadQueue.execute(() -> {
 +                // either left -> success
 +                // either right -> failure
 +
++                if (throwable != null) {
++                    throw new RuntimeException(throwable);
++                }
++
 +                Optional<PlayerChunk.Failure> didWeFail = either.right();
 +                if (didWeFail.isPresent()) {
 +                    // we failed
-+                    ret.completeExceptionally(new IllegalStateException("Chunk failed to load: " + didWeFail.get().toString()));
++                    throw new IllegalStateException("Chunk failed to load: " + didWeFail.get().toString());
 +                } else {
 +                    // did not fail
 +                    ret.complete((Chunk)either.left().get());
 +                }
++                this.removeTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
++                this.addTicket(TicketType.UNKNOWN, chunkcoord, 1, chunkcoord);
 +            });
 +        });
 +        return ret;
