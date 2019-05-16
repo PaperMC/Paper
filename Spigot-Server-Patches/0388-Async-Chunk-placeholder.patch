@@ -1,4 +1,4 @@
-From fd6e42ad97f51e2656777ae3a4d09cd2e171c48b Mon Sep 17 00:00:00 2001
+From 1a042e45e374c3683de7c8a9b0f4805725b58499 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 6 May 2019 12:29:24 -0700
 Subject: [PATCH] Async Chunk placeholder
@@ -6,10 +6,10 @@ Subject: [PATCH] Async Chunk placeholder
 Until we figure out Mojang's ticket system.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 421e92cfa5..625f8ade6a 100644
+index 421e92cfa5..cea4e8d952 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -118,6 +118,86 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -118,6 +118,85 @@ public class ChunkProviderServer extends IChunkProvider {
          }
      }
  
@@ -19,11 +19,10 @@ index 421e92cfa5..625f8ade6a 100644
 +            CompletableFuture<Chunk> ret = new CompletableFuture<>();
 +            this.serverThreadQueue.execute(() -> {
 +                this.getChunkAtAsynchronously(x, z, gen).whenComplete((chunk, throwable) -> {
-+                    if (chunk == null) {
-+                        ret.completeExceptionally(throwable);
-+                    } else {
-+                        ret.complete(chunk);
++                    if (throwable != null) {
++                        throw new RuntimeException(throwable);
 +                    }
++                    ret.complete(chunk);
 +                });
 +            });
 +            return ret;
