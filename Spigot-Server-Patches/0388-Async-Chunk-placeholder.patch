@@ -1,12 +1,94 @@
-From 4cf29ed50520132d31997b2949e84a1c49230ee6 Mon Sep 17 00:00:00 2001
+From 478133b38d9b00a5203c0e6a891435b781d56737 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 6 May 2019 12:29:24 -0700
 Subject: [PATCH] Async Chunk placeholder
 
 Until we figure out Mojang's ticket system.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 421e92cfa5..1c22926624 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -118,6 +118,77 @@ public class ChunkProviderServer extends IChunkProvider {
+         }
+     }
+ 
++    // Paper start - async chunk api
++    public CompletableFuture<Chunk> getChunkAtAsynchronously(int x, int z, boolean gen) {
++        if (Thread.currentThread() != this.serverThread) {
++            CompletableFuture<Chunk> ret = new CompletableFuture<>();
++            this.serverThreadQueue.execute(() -> {
++                this.getChunkAtAsynchronously(x, z, gen).whenComplete((chunk, throwable) -> {
++                    if (chunk == null) {
++                        ret.completeExceptionally(throwable);
++                    } else {
++                        ret.complete(chunk);
++                    }
++                });
++            });
++            return ret;
++        }
++        // on main thread
++        // copied from above
++        // if the chunk doesn't exist and we don't want to gen we return immediately
++        try {
++            if (!gen && !this.playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z))) {
++                return CompletableFuture.completedFuture(null);
++            }
++        } catch (IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        long k = ChunkCoordIntPair.pair(x, z);
++
++        IChunkAccess ichunkaccess;
++
++        // search cache
++        for (int l = 0; l < 4; ++l) {
++            if (k == this.n[l] && ChunkStatus.FULL == this.o[l]) {
++                ichunkaccess = this.p[l];
++
++                // move the chunk to first in cache
++                for (int i1 = 3; i1 > 0; --i1) {
++                    this.n[i1] = this.n[i1 - 1];
++                    this.o[i1] = this.o[i1 - 1];
++                    this.p[i1] = this.p[i1 - 1];
++                }
++
++                this.n[0] = k;
++                this.o[0] = ChunkStatus.FULL;
++                this.p[0] = ichunkaccess;
++
++                return CompletableFuture.completedFuture((Chunk)ichunkaccess);
++            }
++        }
++
++        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(x, z, ChunkStatus.FULL, true);
++        CompletableFuture<Chunk> ret = new CompletableFuture<>();
++
++        completablefuture.thenAccept((either) -> {
++            this.serverThreadQueue.execute(() -> {
++                // either left -> success
++                // either right -> failure
++
++                Optional<PlayerChunk.Failure> didWeFail = either.right();
++                if (didWeFail.isPresent()) {
++                    // we failed
++                    ret.completeExceptionally(new IllegalStateException("Chunk failed to load: " + didWeFail.get().toString()));
++                } else {
++                    // did not fail
++                    ret.complete((Chunk)either.left().get());
++                }
++            });
++        });
++        return ret;
++    }
++    // Paper end
++
+     private void l() {
+         Arrays.fill(this.n, ChunkCoordIntPair.a);
+         Arrays.fill(this.o, (Object) null);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e18ae24bf8..a263d8e7fb 100644
+index e18ae24bf8..548dbbd81e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -14,6 +14,7 @@ import java.util.Objects;
@@ -17,7 +99,7 @@ index e18ae24bf8..a263d8e7fb 100644
  import java.util.function.Predicate;
  import net.minecraft.server.AxisAlignedBB;
  import net.minecraft.server.BiomeBase;
-@@ -2118,6 +2119,17 @@ public class CraftWorld implements World {
+@@ -2118,6 +2119,18 @@ public class CraftWorld implements World {
          return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
      }
  
@@ -25,9 +107,10 @@ index e18ae24bf8..a263d8e7fb 100644
 +
 +    @Override
 +    public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
-+        // TODO placeholder
 +        CompletableFuture<Chunk> ret = new CompletableFuture<>();
-+        ret.complete(getChunkAt(x, z));
++        this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen).thenAccept((chunk) -> {
++            ret.complete(chunk == null ? null : chunk.bukkitChunk);
++        });
 +        return ret;
 +    }
 +    // Paper end
