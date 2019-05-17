@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -55,4 +56,22 @@ public interface ZombieVillager extends Zombie {
      */
     @Override
     void setConversionTime(int time);
+
+    /**
+     * Gets the player who initiated the conversion.
+     *
+     * @return the player, or <code>null</code> if the player is unknown or the
+     * entity isn't converting currently
+     */
+    @Nullable
+    OfflinePlayer getConversionPlayer();
+
+    /**
+     * Sets the player who initiated the conversion.
+     * <p>
+     * This has no effect if this entity isn't converting currently.
+     *
+     * @param conversionPlayer the player
+     */
+    void setConversionPlayer(@Nullable OfflinePlayer conversionPlayer);
 }
