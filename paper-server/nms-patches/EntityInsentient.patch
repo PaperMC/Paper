@@ -112,18 +112,14 @@
  
      @Override
      protected LootTableInfo.Builder a(boolean flag, DamageSource damagesource) {
-@@ -462,11 +522,21 @@
+@@ -462,11 +522,17 @@
          ItemStack itemstack1 = this.getEquipment(enumitemslot);
          boolean flag = this.a(itemstack, itemstack1, enumitemslot);
  
 -        if (flag && this.g(itemstack)) {
 +        // CraftBukkit start
 +        boolean canPickup = flag && this.g(itemstack);
-+
-+        EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((LivingEntity) getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity(), 0);
-+        entityEvent.setCancelled(!canPickup);
-+        this.world.getServer().getPluginManager().callEvent(entityEvent);
-+        canPickup = !entityEvent.isCancelled();
++        canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !canPickup).isCancelled();
 +        if (canPickup) {
 +            // CraftBukkit end
              double d0 = (double) this.d(enumitemslot);
@@ -135,7 +131,7 @@
              }
  
              this.setSlot(enumitemslot, itemstack);
-@@ -544,11 +614,11 @@
+@@ -544,11 +610,11 @@
              if (entityhuman != null) {
                  double d0 = entityhuman.h(this);
  
@@ -149,7 +145,7 @@
                      this.die();
                  } else if (d0 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -944,12 +1014,24 @@
+@@ -944,12 +1010,24 @@
          if (!this.isAlive()) {
              return false;
          } else if (this.getLeashHolder() == entityhuman) {
@@ -174,7 +170,7 @@
                  this.setLeashHolder(entityhuman, true);
                  itemstack.subtract(1);
                  return true;
-@@ -995,6 +1077,7 @@
+@@ -995,6 +1073,7 @@
  
          if (this.leashHolder != null) {
              if (!this.isAlive() || !this.leashHolder.isAlive()) {
@@ -182,7 +178,7 @@
                  this.unleash(true, true);
              }
  
-@@ -1010,7 +1093,9 @@
+@@ -1010,7 +1089,9 @@
  
              this.leashHolder = null;
              if (!this.world.isClientSide && flag1) {
@@ -192,7 +188,7 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1079,6 +1164,7 @@
+@@ -1079,6 +1160,7 @@
  
                  this.setLeashHolder(EntityLeash.a(this.world, blockposition), true);
              } else {
@@ -200,7 +196,7 @@
                  this.unleash(false, true);
              }
  
-@@ -1186,7 +1272,14 @@
+@@ -1186,7 +1268,14 @@
          int i = EnchantmentManager.getFireAspectEnchantmentLevel(this);
  
          if (i > 0) {
