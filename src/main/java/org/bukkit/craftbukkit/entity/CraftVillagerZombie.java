@@ -7,6 +7,8 @@ import net.minecraft.server.EntityZombieVillager;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
@@ -62,8 +64,20 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
             getHandle().conversionTime = -1;
             getHandle().getDataWatcher().set(EntityZombieVillager.CONVERTING, false);
             getHandle().persistent = false; // CraftBukkit - SPIGOT-4684 update persistence
+            getHandle().conversionPlayer = null;
         } else {
             getHandle().startConversion((UUID) null, time);
         }
+    }
+
+    @Override
+    public OfflinePlayer getConversionPlayer() {
+        return (getHandle().conversionPlayer == null) ? null : Bukkit.getOfflinePlayer(getHandle().conversionPlayer);
+    }
+
+    @Override
+    public void setConversionPlayer(OfflinePlayer conversionPlayer) {
+        if (!this.isConverting()) return;
+        getHandle().conversionPlayer = (conversionPlayer == null) ? null : conversionPlayer.getUniqueId();
     }
 }
