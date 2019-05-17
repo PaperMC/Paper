@@ -4,7 +4,7 @@ import net.minecraft.server.TileEntityLectern;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Lectern;
-import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.inventory.Inventory;
 
 public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> implements Lectern {
@@ -29,7 +29,7 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
 
     @Override
     public Inventory getSnapshotInventory() {
-        return new CraftInventory(this.getSnapshot().inventory);
+        return new CraftInventoryLectern(this.getSnapshot().inventory);
     }
 
     @Override
@@ -38,6 +38,6 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventory(this.getTileEntity().inventory);
+        return new CraftInventoryLectern(this.getTileEntity().inventory);
     }
 }
