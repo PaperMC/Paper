@@ -12,6 +12,7 @@ import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.loot.LootTables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,6 +132,25 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Villager.Type
      */
     Registry<Villager.Type> VILLAGER_TYPE = new SimpleRegistry<>(Villager.Type.class);
+    /**
+     * Memory Keys.
+     *
+     * @see MemoryKey
+     */
+    Registry<MemoryKey> MEMORY_MODULE_TYPE = new Registry<MemoryKey>() {
+
+        @NotNull
+        @Override
+        public Iterator iterator() {
+            return MemoryKey.values().iterator();
+        }
+
+        @Nullable
+        @Override
+        public MemoryKey get(@NotNull NamespacedKey key) {
+            return MemoryKey.getByKey(key);
+        }
+    };
 
     /**
      * Get the object by its key.

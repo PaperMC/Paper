@@ -9,6 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
+import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -474,4 +475,29 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return collision status
      */
     boolean isCollidable();
+
+    /**
+     * Returns the value of the memory specified.
+     * <p>
+     * Note that the value is null when the specific entity does not have that
+     * value by default.
+     *
+     * @param memoryKey memory to access
+     * @param <T> the type of the return value
+     * @return a instance of the memory section value or null if not present
+     */
+    @Nullable
+    <T> T getMemory(@NotNull MemoryKey<T> memoryKey);
+
+    /**
+     * Sets the value of the memory specified.
+     * <p>
+     * Note that the value will not be persisted when the specific entity does
+     * not have that value by default.
+     *
+     * @param memoryKey the memory to access
+     * @param memoryValue a typed memory value
+     * @param <T> the type of the passed value
+     */
+    <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
 }
