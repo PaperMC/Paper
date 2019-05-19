@@ -46,6 +46,8 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
+import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.Egg;
@@ -69,6 +71,7 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
+import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EntityEquipment;
@@ -581,5 +584,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean isCollidable() {
         return getHandle().collides;
+    }
+
+    @Override
+    public <T> T getMemory(MemoryKey<T> memoryKey) {
+        return (T) getHandle().getBehaviorController().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
+    }
+
+    @Override
+    public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
+        getHandle().getBehaviorController().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
     }
 }
