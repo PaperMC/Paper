@@ -468,12 +468,19 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             case STONECUTTER:
                 openCustomInventory(inventory, player, Containers.STONECUTTER);
                 break;
+            case LOOM:
+                openCustomInventory(inventory, player, Containers.LOOM);
+                break;
+            case CARTOGRAPHY:
+                openCustomInventory(inventory, player, Containers.CARTOGRAPHY);
+                break;
+            case GRINDSTONE:
+                openCustomInventory(inventory, player, Containers.GRINDSTONE);
+                break;
             case CREATIVE:
             case CRAFTING:
             case MERCHANT:
-            case LOOM:
-            case CARTOGRAPHY:
-            case GRINDSTONE:
+            default:
                 throw new IllegalArgumentException("Can't open a " + type + " inventory!");
         }
         if (getHandle().activeContainer == formerContainer) {
