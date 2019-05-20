@@ -72,7 +72,7 @@ public final class NamespacedKey {
         Preconditions.checkArgument(key != null, "Key cannot be null");
 
         this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
-        this.key = key.toLowerCase().toLowerCase(Locale.ROOT);
+        this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
         Preconditions.checkArgument(VALID_NAMESPACE.matcher(this.namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
