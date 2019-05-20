@@ -16,6 +16,7 @@ import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
 import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityFurnace;
+import net.minecraft.server.TileEntityLectern;
 import net.minecraft.server.TileEntityShulkerBox;
 import net.minecraft.server.TileEntitySmoker;
 import org.apache.commons.lang.Validate;
@@ -479,7 +480,7 @@ public class CraftInventory implements Inventory {
             return InventoryType.SHULKER_BOX;
         } else if (inventory instanceof TileEntityBarrel) {
             return InventoryType.BARREL;
-        } else if (this instanceof CraftInventoryLectern) {
+        } else if (inventory instanceof TileEntityLectern.LecternInventory) {
             return InventoryType.LECTERN;
         } else if (this instanceof CraftInventoryLoom) {
             return InventoryType.LOOM;
