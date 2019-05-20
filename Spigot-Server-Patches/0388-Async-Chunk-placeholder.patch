@@ -1,4 +1,4 @@
-From 1a042e45e374c3683de7c8a9b0f4805725b58499 Mon Sep 17 00:00:00 2001
+From b61b8500033f7ef6a43ebaf99be3064ada254f6b Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 6 May 2019 12:29:24 -0700
 Subject: [PATCH] Async Chunk placeholder
@@ -6,33 +6,29 @@ Subject: [PATCH] Async Chunk placeholder
 Until we figure out Mojang's ticket system.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 421e92cfa5..cea4e8d952 100644
+index 421e92cfa5..e438cef0b2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -118,6 +118,85 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -118,6 +118,89 @@ public class ChunkProviderServer extends IChunkProvider {
          }
      }
  
 +    // Paper start - async chunk api
-+    public CompletableFuture<Chunk> getChunkAtAsynchronously(int x, int z, boolean gen) {
++    public void getChunkAtAsynchronously(int x, int z, boolean gen, boolean addPluginTicket, java.util.function.Consumer<Chunk> onLoad) {
 +        if (Thread.currentThread() != this.serverThread) {
-+            CompletableFuture<Chunk> ret = new CompletableFuture<>();
 +            this.serverThreadQueue.execute(() -> {
-+                this.getChunkAtAsynchronously(x, z, gen).whenComplete((chunk, throwable) -> {
-+                    if (throwable != null) {
-+                        throw new RuntimeException(throwable);
-+                    }
-+                    ret.complete(chunk);
-+                });
++                this.getChunkAtAsynchronously(x, z, gen, addPluginTicket, onLoad);
 +            });
-+            return ret;
++            return;
 +        }
++        ChunkCoordIntPair chunkcoord = new ChunkCoordIntPair(x, z);
 +        // on main thread
 +        // copied from above
 +        // if the chunk doesn't exist and we don't want to gen we return immediately
 +        try {
-+            if (!gen && !this.playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z))) {
-+                return CompletableFuture.completedFuture(null);
++            if (!gen && !this.isLoaded(x, z) && !this.playerChunkMap.chunkExists(chunkcoord)) {
++                onLoad.accept(null);
++                return;
 +            }
 +        } catch (IOException ex) {
 +            throw new RuntimeException(ex);
@@ -40,7 +36,6 @@ index 421e92cfa5..cea4e8d952 100644
 +        long k = ChunkCoordIntPair.pair(x, z);
 +
 +        IChunkAccess ichunkaccess;
-+        ChunkCoordIntPair chunkcoord = new ChunkCoordIntPair(x, z);
 +
 +        // search cache
 +        for (int l = 0; l < 4; ++l) {
@@ -58,14 +53,18 @@ index 421e92cfa5..cea4e8d952 100644
 +                this.o[0] = ChunkStatus.FULL;
 +                this.p[0] = ichunkaccess;
 +
-+                return CompletableFuture.completedFuture((Chunk)ichunkaccess);
++                if (addPluginTicket) {
++                    this.addTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
++                }
++
++                onLoad.accept((Chunk)ichunkaccess);
++                return;
 +            }
 +        }
 +
-+        this.addTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
++        this.addTicket(TicketType.ASYNC_LOAD, chunkcoord, 1, Unit.INSTANCE);
 +
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(x, z, ChunkStatus.FULL, true);
-+        CompletableFuture<Chunk> ret = new CompletableFuture<>();
 +
 +        completablefuture.whenComplete((either, throwable) -> {
 +            this.serverThreadQueue.execute(() -> {
@@ -76,27 +75,44 @@ index 421e92cfa5..cea4e8d952 100644
 +                    throw new RuntimeException(throwable);
 +                }
 +
++                if (addPluginTicket) {
++                    this.addTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
++                }
++
++                this.removeTicket(TicketType.ASYNC_LOAD, chunkcoord, 1, Unit.INSTANCE);
++                this.addTicket(TicketType.UNKNOWN, chunkcoord, 1, chunkcoord); // allows it to be unloaded
++
 +                Optional<PlayerChunk.Failure> didWeFail = either.right();
 +                if (didWeFail.isPresent()) {
 +                    // we failed
 +                    throw new IllegalStateException("Chunk failed to load: " + didWeFail.get().toString());
 +                } else {
 +                    // did not fail
-+                    ret.complete((Chunk)either.left().get());
++                    onLoad.accept((Chunk)either.left().get());
 +                }
-+                this.removeTicket(TicketType.PLUGIN, chunkcoord, 1, Unit.INSTANCE);
-+                this.addTicket(TicketType.UNKNOWN, chunkcoord, 1, chunkcoord);
 +            });
 +        });
-+        return ret;
++        return;
 +    }
 +    // Paper end
 +
      private void l() {
          Arrays.fill(this.n, ChunkCoordIntPair.a);
          Arrays.fill(this.o, (Object) null);
+diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
+index 3b1e4ff252..72eb917cf9 100644
+--- a/src/main/java/net/minecraft/server/TicketType.java
++++ b/src/main/java/net/minecraft/server/TicketType.java
+@@ -18,6 +18,7 @@ public class TicketType<T> {
+     public static final TicketType<BlockPosition2D> PORTAL = a("portal", Comparator.comparingLong(BlockPosition2D::b));
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
++    public static final TicketType<Unit> ASYNC_LOAD = a("async_load", (a, b) -> 0); // Paper - Async chunk loading api
+ 
+     public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
+         return new TicketType<>(s, comparator);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e18ae24bf8..548dbbd81e 100644
+index e18ae24bf8..b938f72928 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -14,6 +14,7 @@ import java.util.Objects;
@@ -107,17 +123,25 @@ index e18ae24bf8..548dbbd81e 100644
  import java.util.function.Predicate;
  import net.minecraft.server.AxisAlignedBB;
  import net.minecraft.server.BiomeBase;
-@@ -2118,6 +2119,18 @@ public class CraftWorld implements World {
+@@ -2118,6 +2119,26 @@ public class CraftWorld implements World {
          return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
      }
  
 +    // Paper start
-+
 +    @Override
 +    public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
 +        CompletableFuture<Chunk> ret = new CompletableFuture<>();
-+        this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen).thenAccept((chunk) -> {
-+            ret.complete(chunk == null ? null : chunk.bukkitChunk);
++        this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, true, (nmsChunk) -> {
++            ret.complete(nmsChunk == null ? null : nmsChunk.bukkitChunk);
++        });
++        return ret;
++    }
++
++    @Override
++    public CompletableFuture<Chunk> loadChunkAtAsync(int x, int z, boolean gen) {
++        CompletableFuture<Chunk> ret = new CompletableFuture<>();
++        this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, false, (nmsChunk) -> {
++            ret.complete(nmsChunk == null ? null : nmsChunk.bukkitChunk);
 +        });
 +        return ret;
 +    }
