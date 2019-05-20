@@ -4,7 +4,11 @@ import org.bukkit.Material;
 
 /**
  * Represents a cauldron
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Cauldron extends MaterialData {
     private static final int CAULDRON_FULL = 3;
     private static final int CAULDRON_EMPTY = 0;

@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents an ender chest
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class EnderChest extends DirectionalContainer {
 
     public EnderChest() {

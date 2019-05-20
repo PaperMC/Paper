@@ -132,8 +132,7 @@ public class AnnotationTest {
         }
 
         if (isSubclassOf(clazz, "org/bukkit/material/MaterialData", allClasses)) {
-            // MaterialData is deprecated and all of its subclasses are excluded
-            return false;
+            throw new AssertionError("Subclass of MaterialData must be deprecated: " + clazz.name);
         }
 
         if (isSubclassOf(clazz, "java/lang/Exception", allClasses)

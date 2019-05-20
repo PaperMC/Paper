@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a button
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Button extends SimpleAttachableMaterialData implements Redstone {
     public Button() {
         super(Material.LEGACY_STONE_BUTTON);

@@ -7,7 +7,11 @@ import org.bukkit.TreeSpecies;
  * Represents the different types of Tree block that face a direction.
  *
  * @see Material#LEGACY_SAPLING
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Sapling extends Wood {
 
     /**

@@ -5,7 +5,11 @@ import org.bukkit.Material;
 
 /**
  * Represents textured materials like steps and smooth bricks
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public abstract class TexturedMaterial extends MaterialData {
 
     public TexturedMaterial(Material m) {

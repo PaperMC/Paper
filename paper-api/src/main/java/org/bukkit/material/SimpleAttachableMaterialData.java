@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Simple utility class for attachable MaterialData subclasses
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public abstract class SimpleAttachableMaterialData extends MaterialData implements Attachable {
 
     public SimpleAttachableMaterialData(Material type, BlockFace direction) {

@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents the cocoa plant
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class CocoaPlant extends MaterialData implements Directional, Attachable {
 
     public enum CocoaPlantSize {

@@ -6,7 +6,11 @@ import org.bukkit.block.BlockFace;
 /**
  * This is the superclass for the {@link DetectorRail} and {@link PoweredRail}
  * classes
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class ExtendedRails extends Rails {
 
     public ExtendedRails(final Material type) {

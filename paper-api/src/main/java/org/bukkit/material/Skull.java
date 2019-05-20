@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a skull.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Skull extends MaterialData implements Directional {
     public Skull() {
         super(Material.LEGACY_SKULL);

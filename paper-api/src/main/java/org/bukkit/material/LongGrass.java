@@ -5,7 +5,11 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of long grasses.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class LongGrass extends MaterialData {
     public LongGrass() {
         super(Material.LEGACY_LONG_GRASS);

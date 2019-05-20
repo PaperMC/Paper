@@ -4,7 +4,11 @@ import org.bukkit.Material;
 
 /**
  * Represents redstone wire
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class RedstoneWire extends MaterialData implements Redstone {
     public RedstoneWire() {
         super(Material.LEGACY_REDSTONE_WIRE);

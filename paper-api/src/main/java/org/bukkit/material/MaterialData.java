@@ -1,14 +1,13 @@
 package org.bukkit.material;
 
 import org.bukkit.Material;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Handles specific metadata for certain items or blocks
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
- * Use {@link BlockData}.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
 @Deprecated
 public class MaterialData implements Cloneable {

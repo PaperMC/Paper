@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * MaterialData for torches
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Torch extends SimpleAttachableMaterialData {
     public Torch() {
         super(Material.LEGACY_TORCH);

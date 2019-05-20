@@ -4,7 +4,11 @@ import org.bukkit.Material;
 
 /**
  * Represents a detector rail
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class DetectorRail extends ExtendedRails implements PressureSensor {
     public DetectorRail() {
         super(Material.LEGACY_DETECTOR_RAIL);

@@ -2,6 +2,11 @@ package org.bukkit.material;
 
 import org.bukkit.Material;
 
+/**
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
+ */
+@Deprecated
 public class Cake extends MaterialData {
     public Cake() {
         super(Material.LEGACY_CAKE_BLOCK);

@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Material data for the piston extension block
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class PistonExtensionMaterial extends MaterialData implements Attachable {
 
     public PistonExtensionMaterial(final Material type) {

@@ -5,7 +5,11 @@ import org.bukkit.NetherWartsState;
 
 /**
  * Represents nether wart
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class NetherWarts extends MaterialData {
     public NetherWarts() {
         super(Material.LEGACY_NETHER_WARTS);

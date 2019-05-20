@@ -11,7 +11,11 @@ import org.bukkit.Material;
  * @see Material#LEGACY_POTATO
  * @see Material#LEGACY_BEETROOT_BLOCK
  * @see Material#LEGACY_NETHER_WARTS
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Crops extends MaterialData {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_CROPS;
     protected static final CropState DEFAULT_STATE = CropState.SEEDED;

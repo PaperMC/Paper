@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * MaterialData for signs
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Sign extends MaterialData implements Attachable {
     public Sign() {
         super(Material.LEGACY_SIGN_POST);

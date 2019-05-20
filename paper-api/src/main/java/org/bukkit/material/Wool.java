@@ -5,7 +5,10 @@ import org.bukkit.Material;
 
 /**
  * Represents a Wool/Cloth block
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Wool extends MaterialData implements Colorable {
     public Wool() {
         super(Material.LEGACY_WOOL);

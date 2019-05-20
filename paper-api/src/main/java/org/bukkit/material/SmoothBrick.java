@@ -6,7 +6,11 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of smooth bricks.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class SmoothBrick extends TexturedMaterial {
 
     private static final List<Material> textures = new ArrayList<Material>();

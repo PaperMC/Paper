@@ -4,7 +4,11 @@ import org.bukkit.Material;
 
 /**
  * Represents a powered rail
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class PoweredRail extends ExtendedRails implements Redstone {
     public PoweredRail() {
         super(Material.LEGACY_POWERED_RAIL);

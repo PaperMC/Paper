@@ -5,7 +5,11 @@ import org.bukkit.Material;
 
 /**
  * Represents dye
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Dye extends MaterialData implements Colorable {
     public Dye() {
         super(Material.LEGACY_INK_SACK);

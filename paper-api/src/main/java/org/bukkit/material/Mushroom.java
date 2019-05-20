@@ -13,7 +13,11 @@ import org.bukkit.material.types.MushroomBlockTexture;
  *
  * @see Material#LEGACY_HUGE_MUSHROOM_1
  * @see Material#LEGACY_HUGE_MUSHROOM_2
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Mushroom extends MaterialData {
     private static final byte NORTH_LIMIT = 4;
     private static final byte SOUTH_LIMIT = 6;

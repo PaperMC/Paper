@@ -5,7 +5,11 @@ import org.bukkit.SandstoneType;
 
 /**
  * Represents the different types of sandstone.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Sandstone extends MaterialData {
     public Sandstone() {
         super(Material.LEGACY_SANDSTONE);

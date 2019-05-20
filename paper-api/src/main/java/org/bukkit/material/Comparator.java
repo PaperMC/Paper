@@ -8,7 +8,11 @@ import org.bukkit.block.BlockFace;
  *
  * @see Material#LEGACY_REDSTONE_COMPARATOR_OFF
  * @see Material#LEGACY_REDSTONE_COMPARATOR_ON
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Comparator extends MaterialData implements Directional, Redstone {
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.NORTH;
     protected static final boolean DEFAULT_SUBTRACTION_MODE = false;

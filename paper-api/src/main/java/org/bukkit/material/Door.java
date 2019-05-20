@@ -18,7 +18,11 @@ import org.bukkit.block.BlockFace;
  * @see Material#LEGACY_JUNGLE_DOOR
  * @see Material#LEGACY_ACACIA_DOOR
  * @see Material#LEGACY_DARK_OAK_DOOR
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Door extends MaterialData implements Directional, Openable {
 
     // This class breaks API contracts on Directional and Openable because

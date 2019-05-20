@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a fence gate
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Gate extends MaterialData implements Directional, Openable {
     private static final byte OPEN_BIT = 0x4;
     private static final byte DIR_BIT = 0x3;

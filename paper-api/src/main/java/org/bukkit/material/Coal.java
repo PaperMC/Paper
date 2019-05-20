@@ -5,7 +5,11 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of coals.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Coal extends MaterialData {
     public Coal() {
         super(Material.LEGACY_COAL);

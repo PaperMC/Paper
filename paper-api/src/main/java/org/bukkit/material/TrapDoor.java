@@ -5,7 +5,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a trap door
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
     public TrapDoor() {
         super(Material.LEGACY_TRAP_DOOR);

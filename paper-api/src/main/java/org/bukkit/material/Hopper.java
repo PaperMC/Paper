@@ -8,7 +8,11 @@ import org.bukkit.block.BlockFace;
  * specific direction.
  *
  * @see Material#HOPPER
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Hopper extends MaterialData implements Directional, Redstone {
 
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.DOWN;
