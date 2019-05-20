@@ -177,6 +177,16 @@ public final class CraftMapView implements MapView {
     }
 
     @Override
+    public boolean isTrackingPosition() {
+        return worldMap.track;
+    }
+
+    @Override
+    public void setTrackingPosition(boolean trackingPosition) {
+        worldMap.track = trackingPosition;
+    }
+
+    @Override
     public boolean isUnlimitedTracking() {
         return worldMap.unlimitedTracking;
     }
