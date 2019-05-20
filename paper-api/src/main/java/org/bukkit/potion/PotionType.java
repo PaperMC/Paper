@@ -1,6 +1,5 @@
 package org.bukkit.potion;
 
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -71,29 +70,13 @@ public enum PotionType {
         return extendable;
     }
 
-    /**
-     * @deprecated Non-functional
-     */
-    @Deprecated
-    public int getDamageValue() {
-        return this.ordinal();
-    }
-
     public int getMaxLevel() {
         return upgradeable ? 2 : 1;
     }
 
     /**
-     * @deprecated Non-functional
-     */
-    @Deprecated
-    @Nullable
-    @Contract("_ -> null")
-    public static PotionType getByDamageValue(int damage) {
-        return null;
-    }
-
-    /**
+     * @param effectType the effect to get by
+     * @return the matching potion type
      * @deprecated Misleading
      */
     @Deprecated

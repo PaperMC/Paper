@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * different complex types. This may be useful for the likes of a
  * UUIDItemTagType:
  * <pre>
- * <code>{@code
+ * {@code
  * public class UUIDItemTagType implements ItemTagType<byte[], UUID> {
  *
  *         {@literal @Override}
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
  *             long secondLong = bb.getLong();
  *             return new UUID(firstLong, secondLong);
  *         }
- *     }}</code></pre>
+ *     }}</pre>
  *
  * @param <T> the primary object type that is stored in the given tag
  * @param <Z> the retrieved object type when applying this item tag type

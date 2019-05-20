@@ -34,35 +34,41 @@ public interface Campfire extends TileState {
     void setItem(int index, @Nullable ItemStack item);
 
     /**
-     * Get cook time.This is the amount of time the item has been cooking for.
+     * Get cook time.
      *
-     * @param index
+     * This is the amount of time the item has been cooking for.
+     *
+     * @param index item slot index
      * @return Cook time
      */
     int getCookTime(int index);
 
     /**
-     * Set cook time.This is the amount of time the item has been cooking for.
+     * Set cook time.
      *
-     * @param index
+     * This is the amount of time the item has been cooking for.
+     *
+     * @param index item slot index
      * @param cookTime Cook time
      */
     void setCookTime(int index, int cookTime);
 
     /**
-     * Get cook time total.This is the amount of time the item is required to
-     * cook for.
+     * Get cook time total.
      *
-     * @param index
+     * This is the amount of time the item is required to cook for.
+     *
+     * @param index item slot index
      * @return Cook time total
      */
     int getCookTimeTotal(int index);
 
     /**
-     * Set cook time.This is the amount of time the item is required to cook
-     * for.
+     * Set cook time.
      *
-     * @param index
+     * This is the amount of time the item is required to cook for.
+     *
+     * @param index item slot index
      * @param cookTimeTotal Cook time total
      */
     void setCookTimeTotal(int index, int cookTimeTotal);

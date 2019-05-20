@@ -78,15 +78,6 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
         return items;
     }
 
-    /**
-     * @deprecated very temporary compatibility measure
-     */
-    @Deprecated
-    @NotNull
-    public Item getItem() {
-        return items.get(0);
-    }
-
     @Override
     public boolean isCancelled() {
         return cancel;

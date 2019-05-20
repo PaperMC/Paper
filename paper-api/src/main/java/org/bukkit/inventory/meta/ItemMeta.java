@@ -379,7 +379,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Internal use only! Do not use under any circumstances!
      *
-     * @param version
+     * @param version version
      * @deprecated
      */
     @Deprecated

@@ -132,10 +132,10 @@ public interface ItemFactory {
      * Apply a material change for an item meta. Do not use under any
      * circumstances.
      *
-     * @param meta
-     * @param material
+     * @param meta meta
+     * @param material material
      * @return updated material
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException if bad material or data
      * @deprecated for internal use only
      */
     @Deprecated

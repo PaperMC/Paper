@@ -19,6 +19,7 @@ public interface Skeleton extends Monster {
     public SkeletonType getSkeletonType();
 
     /**
+     * @param type type
      * @deprecated Must spawn a new subtype variant
      */
     @Deprecated

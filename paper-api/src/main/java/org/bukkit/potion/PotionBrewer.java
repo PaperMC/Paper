@@ -37,6 +37,8 @@ public interface PotionBrewer {
      * a potion with the given type.
      *
      * @param type The type of the potion
+     * @param upgraded Whether the potion is upgraded
+     * @param extended Whether the potion is extended
      * @return The list of effects
      */
     @NotNull

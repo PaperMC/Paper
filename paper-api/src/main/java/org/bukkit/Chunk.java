@@ -143,7 +143,7 @@ public interface Chunk {
      * <p>
      * A force loaded chunk will not be unloaded due to lack of player activity.
      *
-     * @param forced
+     * @param forced force load status
      * @see World#setChunkForceLoaded(int, int, boolean)
      */
     void setForceLoaded(boolean forced);

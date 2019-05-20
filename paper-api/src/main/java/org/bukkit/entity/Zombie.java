@@ -32,7 +32,7 @@ public interface Zombie extends Monster {
     public boolean isVillager();
 
     /**
-     * @param flag
+     * @param flag flag
      * @deprecated must spawn {@link ZombieVillager}.
      */
     @Deprecated
@@ -40,7 +40,7 @@ public interface Zombie extends Monster {
     public void setVillager(boolean flag);
 
     /**
-     * @param profession
+     * @param profession profession
      * @see ZombieVillager#getVillagerProfession()
      */
     @Deprecated

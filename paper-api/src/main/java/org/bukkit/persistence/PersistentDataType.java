@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link PersistentDataType} with different complex types. This may be useful
  * for the likes of a UUIDTagType:
  * <pre>
- * <code>{@code
+ * {@code
  * public class UUIDTagType implements PersistentDataType<byte[], UUID> {
  *
  *         {@literal @Override}
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
  *             long secondLong = bb.getLong();
  *             return new UUID(firstLong, secondLong);
  *         }
- *     }}</code></pre>
+ *     }}</pre>
  *
  * @param <T> the primary object type that is stored in the given tag
  * @param <Z> the retrieved object type when applying this tag type

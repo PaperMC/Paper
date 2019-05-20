@@ -154,7 +154,7 @@ public interface Horse extends AbstractHorse {
     public boolean isCarryingChest();
 
     /**
-     * @param chest
+     * @param chest chest
      * @deprecated see {@link ChestedHorse}
      */
     @Deprecated

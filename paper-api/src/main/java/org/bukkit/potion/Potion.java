@@ -26,7 +26,6 @@ public class Potion {
      * water bottle.
      *
      * @param type The potion type
-     * @see #Potion(int)
      */
     public Potion(@NotNull PotionType type) {
         Validate.notNull(type, "Null PotionType");
@@ -75,14 +74,6 @@ public class Potion {
     public Potion(@NotNull PotionType type, int level, boolean splash, boolean extended) {
         this(type, level, splash);
         this.extended = extended;
-    }
-
-    /**
-     * @deprecated
-     */
-    @Deprecated
-    public Potion(int name) {
-        this(PotionType.WATER);
     }
 
     /**

@@ -138,6 +138,7 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Sets the particle which this cloud will be composed of
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the new particle type
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}

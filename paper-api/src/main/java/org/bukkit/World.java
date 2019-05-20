@@ -309,7 +309,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
-     * @param forced
+     * @param forced force load status
      */
     public void setChunkForceLoaded(int x, int z, boolean forced);
 
@@ -1624,6 +1624,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Spawns the particle (the number of times specified by count)
      * at the target location.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param location the location to spawn at
      * @param count the number of particles
@@ -1637,6 +1638,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Spawns the particle (the number of times specified by count)
      * at the target location.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param x the position on the x axis to spawn at
      * @param y the position on the y axis to spawn at
@@ -1685,6 +1687,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param location the location to spawn at
      * @param count the number of particles
@@ -1702,6 +1705,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param x the position on the x axis to spawn at
      * @param y the position on the y axis to spawn at
@@ -1757,6 +1761,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param location the location to spawn at
      * @param count the number of particles
@@ -1776,6 +1781,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param x the position on the x axis to spawn at
      * @param y the position on the y axis to spawn at
@@ -1797,6 +1803,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param location the location to spawn at
      * @param count the number of particles
@@ -1819,6 +1826,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * randomized positively and negatively by the offset parameters
      * on each axis.
      *
+     * @param <T> type of particle data (see {@link Particle#getDataType()}
      * @param particle the particle to spawn
      * @param x the position on the x axis to spawn at
      * @param y the position on the y axis to spawn at

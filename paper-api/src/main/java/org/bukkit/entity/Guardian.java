@@ -12,7 +12,7 @@ public interface Guardian extends Monster {
     public boolean isElder();
 
     /**
-     * @param shouldBeElder
+     * @param shouldBeElder shouldBeElder
      * @deprecated Must spawn a new {@link ElderGuardian}.
      */
     @Deprecated

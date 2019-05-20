@@ -27,7 +27,7 @@ public interface CrossbowMeta extends ItemMeta {
      *
      * Removes all projectiles when given null.
      *
-     * @param projectiles
+     * @param projectiles the projectiles to set
      * @throws IllegalArgumentException if one of the projectiles is not an
      * arrow or firework rocket
      */
