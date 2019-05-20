@@ -159,6 +159,22 @@ public interface MapView {
     public boolean removeRenderer(@Nullable MapRenderer renderer);
 
     /**
+     * Gets whether a position cursor should be shown when the map is near its
+     * center.
+     *
+     * @return tracking status
+     */
+    boolean isTrackingPosition();
+
+    /**
+     * Sets whether a position cursor should be shown when the map is near its
+     * center.
+     *
+     * @param trackingPosition tracking status
+     */
+    void setTrackingPosition(boolean trackingPosition);
+
+    /**
      * Whether the map will show a smaller position cursor (true), or no
      * position cursor (false) when cursor is outside of map's range.
      *
