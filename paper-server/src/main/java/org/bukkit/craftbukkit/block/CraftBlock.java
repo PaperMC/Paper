@@ -578,7 +578,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isLiquid() {
-        return (getType() == Material.WATER) || (getType() == Material.LAVA);
+        return getNMS().getMaterial().isLiquid();
     }
 
     @Override
