@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * The current list of inventories that cannot be created via
  * {@link org.bukkit.Bukkit#createInventory} are:<br>
  * <blockquote>
- *     {@link InventoryType#CREATIVE} and {@link InventoryType#CRAFTING}
+ *     {@link InventoryType#CREATIVE}, {@link InventoryType#CRAFTING} and
+ *     {@link InventoryType#MERCHANT}
  * </blockquote>
  *
  * See {@link org.bukkit.Bukkit#createInventory} for more information.
@@ -104,7 +105,7 @@ public enum InventoryType {
     /**
      * A lectern inventory, with 1 BOOK slot.
      */
-    LECTERN(1, "Lectern", false),
+    LECTERN(1, "Lectern"),
     /**
      * A smoker inventory, with a RESULT slot, a CRAFTING slot, and a FUEL slot.
      */
