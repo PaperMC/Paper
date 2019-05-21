@@ -20,7 +20,7 @@ public class CraftEffect {
             datavalue = ((Potion) data).toDamageValue() & 0x3F;
             break;
         case RECORD_PLAY:
-            Validate.isTrue(((Material) data).isRecord(), "Invalid record type!");
+            Validate.isTrue(data == Material.AIR || ((Material) data).isRecord(), "Invalid record type!");
             datavalue = Item.getId(CraftMagicNumbers.getItem((Material) data));
             break;
         case SMOKE:
