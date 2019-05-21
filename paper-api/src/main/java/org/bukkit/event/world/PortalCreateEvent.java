@@ -3,9 +3,11 @@ package org.bukkit.event.world;
 import java.util.List;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a portal is created
@@ -14,12 +16,19 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private final List<BlockState> blocks;
+    private final Entity entity;
     private final CreateReason reason;
 
+    @Deprecated
     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @NotNull CreateReason reason) {
+        this(blocks, world, null, reason);
+    }
+
+    public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @Nullable Entity entity, @NotNull CreateReason reason) {
         super(world);
 
         this.blocks = blocks;
+        this.entity = entity;
         this.reason = reason;
     }
 
@@ -31,6 +40,16 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     @NotNull
     public List<BlockState> getBlocks() {
         return this.blocks;
+    }
+
+    /**
+     * Returns the Entity that triggered this portal creation (if available)
+     *
+     * @return Entity involved in this event
+     */
+    @Nullable
+    public Entity getEntity() {
+        return entity;
     }
 
     @Override
