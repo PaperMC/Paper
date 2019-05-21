@@ -413,13 +413,13 @@ public class CraftWorld implements World {
 
     @Override
     public boolean isChunkLoaded(int x, int z) {
-        return world.getChunkProvider().isChunkLoaded(x, z);
+        return world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z) != null; // Paper
     }
 
     @Override
     public boolean isChunkGenerated(int x, int z) {
         try {
-            return isChunkLoaded(x, z) || world.getChunkProvider().playerChunkMap.read(new ChunkCoordIntPair(x, z)) != null;
+            return world.getChunkProvider().getChunkAtIfCachedImmediately(x, z) != null || world.getChunkProvider().playerChunkMap.read(new ChunkCoordIntPair(x, z)) != null; // Paper (TODO check if the first part can be removed)
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
