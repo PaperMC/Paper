@@ -1,11 +1,15 @@
-From b38dea63dc59e73147e3786336135b11d2385118 Mon Sep 17 00:00:00 2001
+From 3cf8a9e0a5cb9d0a4c4171d08a243fa7ccf8b732 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Tue, 21 May 2019 02:34:04 +0100
-Subject: [PATCH] stop CraftWorld#isChunkLoaded from loading chunks
+Subject: [PATCH] improve CraftWorld#isChunkLoaded
 
+getChunkAt will request the chunk using vanillas chunk loading system,
+which while we're not going to load the chunk, does involve the server
+waiting for the execution queue to get to our request; We can just query
+the chunk status and get a response now, vs having to wait
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a263d8e7f..4cdc16d5b 100644
+index a263d8e7f..5632d3e3f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -382,8 +382,7 @@ public class CraftWorld implements World {
@@ -14,7 +18,7 @@ index a263d8e7f..4cdc16d5b 100644
      public boolean isChunkLoaded(int x, int z) {
 -        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
 -        return chunk != null && chunk.loaded;
-+        return world.getChunkProvider().playerChunkMap.updatingChunks.containsKey(ChunkCoordIntPair.pair(x, z)); // Paper
++        return world.getChunkProvider().isLoaded(x, z);// Paper
      }
  
      @Override
