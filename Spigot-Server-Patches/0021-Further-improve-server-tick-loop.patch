@@ -1,4 +1,4 @@
-From f3da067cdacebf6d94879911c518955217ef072c Mon Sep 17 00:00:00 2001
+From b4b7ed644739b3d7f7131765ebb7af130ba70248 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2fc8c192b..db60cbc7b 100644
+index 2fc8c192b3..cf7a75b2e2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -150,7 +150,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -91,7 +91,7 @@ index 2fc8c192b..db60cbc7b 100644
      // Spigot End
  
      public void run() {
-@@ -769,7 +820,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -769,30 +820,38 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -99,9 +99,10 @@ index 2fc8c192b..db60cbc7b 100644
 +                long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
 +                lastTick = start - TICK_TIME; // Paper
                  while (this.isRunning) {
-                     long i = (curTime = SystemUtils.getMonotonicMillis()) - this.nextTick;
+-                    long i = (curTime = SystemUtils.getMonotonicMillis()) - this.nextTick;
++                    long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.nextTick; // Paper
  
-@@ -777,22 +829,29 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                     if (i > 5000L && this.nextTick - this.lastOverloadTime >= 30000L) { // CraftBukkit
                          long j = i / 50L;
  
                          if (server.getWarnOnOverload()) // CraftBukkit
@@ -139,7 +140,7 @@ index 2fc8c192b..db60cbc7b 100644
                      if (this.T) {
                          this.T = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 801ea70ac..f9563d038 100644
+index e8a905c815..d97cba9c04 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1923,6 +1923,17 @@ public final class CraftServer implements Server {
@@ -161,7 +162,7 @@ index 801ea70ac..f9563d038 100644
      {
  
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index be2e31dea..6d21c3269 100644
+index be2e31deae..6d21c32692 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -1,8 +1,5 @@
