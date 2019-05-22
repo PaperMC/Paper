@@ -1,4 +1,4 @@
-From 14d985bda1f2c27a8183951306c6e8d345e4126e Mon Sep 17 00:00:00 2001
+From f3da067cdacebf6d94879911c518955217ef072c Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2fc8c192b..3a95b0bf8 100644
+index 2fc8c192b..db60cbc7b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -150,7 +150,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -91,45 +91,27 @@ index 2fc8c192b..3a95b0bf8 100644
      // Spigot End
  
      public void run() {
-@@ -769,30 +820,48 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -769,7 +820,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
 -                long curTime, tickSection = SystemUtils.getMonotonicMillis(), tickCount = 1;
-+                long start = System.nanoTime(), curTime, wait, tickSection = start; // Paper - Further improve server tick loop
++                long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
 +                lastTick = start - TICK_TIME; // Paper
                  while (this.isRunning) {
--                    long i = (curTime = SystemUtils.getMonotonicMillis()) - this.nextTick;
--
--                    if (i > 5000L && this.nextTick - this.lastOverloadTime >= 30000L) { // CraftBukkit
--                        long j = i / 50L;
--
--                        if (server.getWarnOnOverload()) // CraftBukkit
+                     long i = (curTime = SystemUtils.getMonotonicMillis()) - this.nextTick;
+ 
+@@ -777,22 +829,29 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                         long j = i / 50L;
+ 
+                         if (server.getWarnOnOverload()) // CraftBukkit
 -                        MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
--                        this.nextTick += j * 50L;
--                        this.lastOverloadTime = this.nextTick;
-+                    curTime = System.nanoTime();
-+                    // Paper start - Further improve server tick loop
-+                    wait = TICK_TIME - (curTime - lastTick);
-+                    if (wait > 0) {
-+                        if (catchupTime < 2E6) {
-+                            wait += Math.abs(catchupTime);
-+                        } else if (wait < catchupTime) {
-+                            catchupTime -= wait;
-+                            wait = 0;
-+                        } else {
-+                            wait -= catchupTime;
-+                            catchupTime = 0;
-+                        }
-+                    }
-+                    if (wait > 0) {
-+                        Thread.sleep(wait / 1000000);
-+                        curTime = System.nanoTime();
-+                        wait = TICK_TIME - (curTime - lastTick);
++                            MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
+                         this.nextTick += j * 50L;
+                         this.lastOverloadTime = this.nextTick;
                      }
  
 -                    if ( tickCount++ % SAMPLE_INTERVAL == 0 )
-+                    catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
 +                    if ( ++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0 )
                      {
 -                        double currentTps = 1E3 / ( curTime - tickSection ) * SAMPLE_INTERVAL;
@@ -156,16 +138,6 @@ index 2fc8c192b..3a95b0bf8 100644
                      this.nextTick += 50L;
                      if (this.T) {
                          this.T = false;
-@@ -860,8 +929,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-     }
- 
-     private boolean canSleepForTick() {
--        // CraftBukkit start
--        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
-+        return this.forceTicks || System.nanoTime() - lastTick + catchupTime < TICK_TIME; // Paper - improved "are we lagging" check to match our own
-     }
- 
-     private void executeModerately() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 801ea70ac..f9563d038 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
