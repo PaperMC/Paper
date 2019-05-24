@@ -1,0 +1,109 @@
+From b23b3f56f95b7ce8a48677ddb6f09d3cfc9f8a0c Mon Sep 17 00:00:00 2001
+From: i0xHeX <i0xhex@gmail.com>
+Date: Fri, 24 May 2019 15:59:09 +0300
+Subject: [PATCH] Add fast portal search
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 8942a06b..77626722 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -388,4 +388,9 @@ public class PaperConfig {
+         maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
+         maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
+     }
++    
++    public static boolean useFastPortalSearch;
++    private static void setUseFastPortalSearch() {
++        useFastPortalSearch = getBoolean("settings.use-fast-portal-search", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+index 524dc7da..eac4bb41 100644
+--- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
++++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.collect.Maps;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.objects.Object2LongMap;
+@@ -69,29 +70,57 @@ public class PortalTravelAgent {
+                 flag2 = false;
+             } else {
+                 double d2 = Double.MAX_VALUE;
+-
+-                int portalSearchRadius = world.paperConfig.portalSearchRadius; // Paper
+-                for (int i = -portalSearchRadius; i <= portalSearchRadius; ++i) { // Paper
+-                    BlockPosition blockposition2;
+-
+-                    for (int j = -world.paperConfig.portalSearchRadius; j <= world.paperConfig.portalSearchRadius; ++j) { // Paper
+-                        for (BlockPosition blockposition3 = blockposition.b(i, this.world.getHeight() - 1 - blockposition.getY(), j); blockposition3.getY() >= 0; blockposition3 = blockposition2) {
+-                            blockposition2 = blockposition3.down();
+-                            if (this.world.getType(blockposition3).getBlock() == PortalTravelAgent.b) {
+-                                for (blockposition2 = blockposition3.down(); this.world.getType(blockposition2).getBlock() == PortalTravelAgent.b; blockposition2 = blockposition2.down()) {
+-                                    blockposition3 = blockposition2;
++                
++                // Paper start
++                int portalSearchRadius = world.paperConfig.portalSearchRadius;
++                if (PaperConfig.useFastPortalSearch) {
++                    for (int i = -portalSearchRadius; i < portalSearchRadius; i += 2) {
++                        BlockPosition nextPosition;
++        
++                        for (int j = -world.paperConfig.portalSearchRadius; j < world.paperConfig.portalSearchRadius; j += 2) {
++                            for (int k = 0; k <= 1; ++k) {
++                                for (BlockPosition currentPosition = blockposition.b(i + k, this.world.getHeight() - 1 - blockposition.getY(), j + k); currentPosition.getY() >= 0; currentPosition = nextPosition) {
++                                    nextPosition = currentPosition.down(3);
++                                    if (this.world.getType(currentPosition).getBlock() == PortalTravelAgent.b) {
++                                        for (nextPosition = currentPosition.down(); this.world.getType(nextPosition).getBlock() == PortalTravelAgent.b; nextPosition = nextPosition.down()) {
++                                            currentPosition = nextPosition;
++                                        }
++                        
++                                        double d3 = currentPosition.m(blockposition);
++                        
++                                        if (d2 < 0.0D || d3 < d2) {
++                                            d2 = d3;
++                                            blockposition1 = currentPosition;
++                                        }
++                                    }
+                                 }
+-
+-                                double d3 = blockposition3.m(blockposition);
+-
+-                                if (d2 < 0.0D || d3 < d2) {
+-                                    d2 = d3;
+-                                    blockposition1 = blockposition3;
++                            }
++                        }
++                    }
++                } else {
++                    for (int i = -portalSearchRadius; i <= portalSearchRadius; ++i) {
++                        BlockPosition blockposition2;
++        
++                        for (int j = -world.paperConfig.portalSearchRadius; j <= world.paperConfig.portalSearchRadius; ++j) {
++                            for (BlockPosition blockposition3 = blockposition.b(i, this.world.getHeight() - 1 - blockposition.getY(), j); blockposition3.getY() >= 0; blockposition3 = blockposition2) {
++                                blockposition2 = blockposition3.down();
++                                if (this.world.getType(blockposition3).getBlock() == PortalTravelAgent.b) {
++                                    for (blockposition2 = blockposition3.down(); this.world.getType(blockposition2).getBlock() == PortalTravelAgent.b; blockposition2 = blockposition2.down()) {
++                                        blockposition3 = blockposition2;
++                                    }
++                    
++                                    double d3 = blockposition3.m(blockposition);
++                    
++                                    if (d2 < 0.0D || d3 < d2) {
++                                        d2 = d3;
++                                        blockposition1 = blockposition3;
++                                    }
+                                 }
+                             }
+                         }
+                     }
+                 }
++                // Paper end
+             }
+ 
+             if (blockposition1 == null) {
+-- 
+2.17.1.windows.2
+
