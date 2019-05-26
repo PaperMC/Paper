@@ -40,6 +40,7 @@ import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySlime;
 import net.minecraft.server.EntityTypes;
+import net.minecraft.server.EntityVillager;
 import net.minecraft.server.EntityWaterAnimal;
 import net.minecraft.server.EnumDirection;
 import net.minecraft.server.EnumHand;
@@ -103,6 +104,8 @@ import org.bukkit.entity.Sheep;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
@@ -163,6 +166,7 @@ import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.VillagerCareerChangeEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
@@ -460,6 +464,16 @@ public class CraftEventFactory {
         }
 
         EntityShootBowEvent event = new EntityShootBowEvent(shooter, itemInHand, arrow, force);
+        Bukkit.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
+    /**
+     * VillagerCareerChangeEvent
+     */
+    public static VillagerCareerChangeEvent callVillagerCareerChangeEvent(EntityVillager vilager, Profession future, VillagerCareerChangeEvent.ChangeReason reason) {
+        VillagerCareerChangeEvent event = new VillagerCareerChangeEvent((Villager) vilager.getBukkitEntity(), future, reason);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;

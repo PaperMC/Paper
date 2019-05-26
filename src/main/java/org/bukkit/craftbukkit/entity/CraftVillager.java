@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.Locale;
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.IRegistry;
+import net.minecraft.server.VillagerProfession;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -33,13 +34,13 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public Profession getProfession() {
-        return Profession.valueOf(IRegistry.VILLAGER_PROFESSION.getKey(getHandle().getVillagerData().getProfession()).getKey().toUpperCase(Locale.ROOT));
+        return CraftVillager.nmsToBukkitProfession(getHandle().getVillagerData().getProfession());
     }
 
     @Override
     public void setProfession(Profession profession) {
         Validate.notNull(profession);
-        getHandle().setVillagerData(getHandle().getVillagerData().withProfession(IRegistry.VILLAGER_PROFESSION.get(CraftNamespacedKey.toMinecraft(profession.getKey()))));
+        getHandle().setVillagerData(getHandle().getVillagerData().withProfession(CraftVillager.bukkitToNmsProfession(profession)));
     }
 
     @Override
@@ -75,5 +76,13 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkArgument(experience >= 0, "Experience must be positive");
 
         getHandle().t(experience);
+    }
+
+    public static Profession nmsToBukkitProfession(VillagerProfession nms) {
+        return Profession.valueOf(IRegistry.VILLAGER_PROFESSION.getKey(nms).getKey().toUpperCase(Locale.ROOT));
+    }
+
+    public static VillagerProfession bukkitToNmsProfession(Profession bukkit) {
+        return IRegistry.VILLAGER_PROFESSION.get(CraftNamespacedKey.toMinecraft(bukkit.getKey()));
     }
 }
