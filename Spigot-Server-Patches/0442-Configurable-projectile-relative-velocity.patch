@@ -1,0 +1,83 @@
+From 811b4e42f5a03c6fa2e4c1865d91946775cf6118 Mon Sep 17 00:00:00 2001
+From: Lucavon <lucavonlp@gmail.com>
+Date: Sun, 26 May 2019 15:36:04 +0200
+Subject: [PATCH] Configurable projectile relative velocity
+
+This patch adds an option "disable relative projectile velocity", which, when
+nabled, will cause projectiles to ignore the shooter's current velocity,
+like they did in Minecraft 1.8 and prior.
+If a player is falling, for example, their shooting range will be drastically
+reduced, as a downwards velocity is applied to the projectile. This prevents
+players from saving themselves from falling off floating islands, for example,
+as a thrown ender pearl will not make it back to the island, while it would
+have in 1.8.
+
+While this could easily be done with plugins, too, there are multiple problems:
+P1) If multiple plugins cancel the velocity by subtracting the shooter's velocity
+from the projectile's velocity, the projectile's velocity would be different.
+As there's no way to detect whether the projectile's velocity has already been
+adjusted to ignore the player's velocity, plugins can't not do it if it's not
+necessary.
+P2) I've noticed some inconsistencies, e.g. weird velocity when shooting while
+using an elytra. Checking for those inconsistencies is possible, but not as
+efficient as just not applying the velocity in the first place.
+P3) Solutions for 1) and especially 2) might not be future-proof, while this
+server-internal fix makes this change future-proof.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bfd690ecc..b8131abae 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -474,6 +474,11 @@ public class PaperWorldConfig {
+         log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
+     }
+ 
++    public boolean disableRelativeProjectileVelocity;
++    private void disableRelativeProjectileVelocity() {
++        disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
++    }
++
+     public boolean villagesLoadChunks = false;
+     private void villagesLoadChunks() {
+         villagesLoadChunks = getBoolean("game-mechanics.villages-load-chunks", false);
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 6aa518f17..736537b45 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -80,12 +80,13 @@ public abstract class EntityArrow extends Entity implements IProjectile {
+         float f7 = MathHelper.cos(f1 * 0.017453292F) * MathHelper.cos(f * 0.017453292F);
+ 
+         this.shoot((double) f5, (double) f6, (double) f7, f3, f4);
++        if (!entity.world.paperConfig.disableRelativeProjectileVelocity) { // Paper - allow disabling relative velocity
+         this.motX += entity.motX;
+         this.motZ += entity.motZ;
+         if (!entity.onGround) {
+             this.motY += entity.motY;
+         }
+-
++        } // Paper - allow disabling relative velocity
+     }
+ 
+     public void shoot(double d0, double d1, double d2, float f, float f1) {
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index 60ab1c751..5dae5d604 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -44,12 +44,13 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         float f7 = MathHelper.cos(f1 * 0.017453292F) * MathHelper.cos(f * 0.017453292F);
+ 
+         this.shoot((double) f5, (double) f6, (double) f7, f3, f4);
++        if (!entity.world.paperConfig.disableRelativeProjectileVelocity) { // Paper - allow disabling relative velocity
+         this.motX += entity.motX;
+         this.motZ += entity.motZ;
+         if (!entity.onGround) {
+             this.motY += entity.motY;
+         }
+-
++        } // Paper - allow disabling relative velocity
+     }
+ 
+     public void shoot(double d0, double d1, double d2, float f, float f1) {
+-- 
+2.22.0
+
