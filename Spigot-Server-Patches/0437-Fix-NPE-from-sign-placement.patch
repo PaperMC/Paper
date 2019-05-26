@@ -1,0 +1,55 @@
+From 5101cc45bfa0c0bfe7b10ec48a179486dda609b0 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 17 Apr 2019 00:48:59 +0100
+Subject: [PATCH] Fix NPE from sign placement
+
+This fixes issues with upstreams changes to solve a private issue on
+their side, as signs are placed, they may replace existing blocks, e.g.
+grass, which breaks upstreams assumption that the sign is always placed
+adjacent to a surface
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index f5d9b4abc2..fdbe9a2adc 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -70,6 +70,7 @@ public abstract class EntityHuman extends EntityLiving {
+     public EntityFishingHook hookedFish;
+     // Paper start
+     public boolean affectsSpawning = true;
++    public BlockPosition openingSign = null; // Paper - fix NPE when opening signs
+     // Paper end
+     // Paper start - Player view distance API
+     private int viewDistance = -1;
+diff --git a/src/main/java/net/minecraft/server/ItemSign.java b/src/main/java/net/minecraft/server/ItemSign.java
+index 11045ee1e1..7808aed0c0 100644
+--- a/src/main/java/net/minecraft/server/ItemSign.java
++++ b/src/main/java/net/minecraft/server/ItemSign.java
+@@ -16,6 +16,7 @@ public class ItemSign extends ItemBlockWallable {
+         if (!world.isClientSide && !flag && entityhuman != null) {
+             // CraftBukkit start - SPIGOT-4678
+             // entityhuman.openSign((TileEntitySign) world.getTileEntity(blockposition));
++            entityhuman.openingSign = blockposition; // Paper - fix NPE when opening signs
+             ItemSign.openSign = true;
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index f8d82a0276..ccc0826bc6 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -305,7 +305,12 @@ public final class ItemStack {
+                     // SPIGOT-4678
+                     if (this.item instanceof ItemSign && ItemSign.openSign) {
+                         ItemSign.openSign = false;
+-                        entityhuman.openSign((TileEntitySign) world.getTileEntity(new BlockActionContext(itemactioncontext).getClickPosition()));
++                        // Paper start - fix NPE when opening signs
++                        if (entityhuman.openingSign != null) {
++                            entityhuman.openSign((TileEntitySign) world.getTileEntity(entityhuman.openingSign));
++                            entityhuman.openingSign = null;
++                        }
++                        // Paper end
+                     }
+ 
+                     // SPIGOT-1288 - play sound stripped from ItemBlock
+-- 
+2.21.0
+
