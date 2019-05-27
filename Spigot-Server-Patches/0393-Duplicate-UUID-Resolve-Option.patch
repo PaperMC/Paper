@@ -1,4 +1,4 @@
-From 7ec41d55e228cbc6587414d09b1aace8e87f318d Mon Sep 17 00:00:00 2001
+From e59340051a3ce62f821029cde0d969b9dad187c7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -33,7 +33,7 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ef882b897..385b3ac0c 100644
+index ef882b897f..385b3ac0ce 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -449,4 +449,43 @@ public class PaperWorldConfig {
@@ -81,7 +81,7 @@ index ef882b897..385b3ac0c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 1ba855786..1bbac46f6 100644
+index 197c0fe169..ef07f665b7 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -397,6 +397,7 @@ public class Chunk implements IChunkAccess {
@@ -93,7 +93,7 @@ index 1ba855786..1bbac46f6 100644
  
          int k = MathHelper.floor(entity.locY / 16.0D);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7ded9bc6c..3c6dc5ef0 100644
+index 5711cf6647..fffe26939b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2674,6 +2674,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -105,7 +105,7 @@ index 7ded9bc6c..3c6dc5ef0 100644
          this.uniqueID = uuid;
          this.ap = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 21c4b5642..932772331 100644
+index 85e9db8f4b..aaa634b888 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -1,5 +1,6 @@
@@ -115,7 +115,7 @@ index 21c4b5642..932772331 100644
  import com.google.common.collect.ImmutableList;
  import co.aikar.timings.Timing;
  import com.google.common.collect.ComparisonChain;
-@@ -19,11 +20,14 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+@@ -20,12 +21,15 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import java.io.File;
  import java.io.IOException;
  import java.util.ArrayList;
@@ -125,12 +125,13 @@ index 21c4b5642..932772331 100644
 +import java.util.Map; // Paper
  import java.util.Objects;
  import java.util.Optional;
+ import java.util.Queue;
  import java.util.Set;
 +import java.util.UUID; // Paper
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicInteger;
-@@ -489,12 +493,49 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -557,12 +561,49 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                      for (int j = 0; j < i; ++j) {
                          List<Entity> entityslice = aentityslice[j]; // Spigot
@@ -182,9 +183,9 @@ index 21c4b5642..932772331 100644
 -                            if (!(entity instanceof EntityHuman) && !this.world.addEntityChunk(entity)) {
 +                            if (!(entity instanceof EntityHuman) && (entity.dead || !this.world.addEntityChunk(entity))) { // Paper
                                  if (list == null) {
-                                     list = Lists.newArrayList(new Entity[] { entity});
+                                     list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -502,6 +543,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -570,6 +611,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                                  }
                              }
                          }
@@ -193,7 +194,7 @@ index 21c4b5642..932772331 100644
  
                      if (list != null) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index be3ce3f13..3ed12672e 100644
+index e61381221f..e9e5ecf747 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;

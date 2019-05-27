@@ -1,4 +1,4 @@
-From c938f619260d75439a43abea3641d20f383687b9 Mon Sep 17 00:00:00 2001
+From 87c87ad160f47b7171bab823ade46d9be9a2310a Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Optimize redstone algorithm
@@ -19,7 +19,7 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ad793ffa3..ef882b897 100644
+index ad793ffa38..ef882b897f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -439,4 +439,14 @@ public class PaperWorldConfig {
@@ -39,7 +39,7 @@ index ad793ffa3..ef882b897 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 000000000..cf5661f1c
+index 0000000000..cf5661f1c5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 @@ -0,0 +1,912 @@
@@ -956,7 +956,7 @@ index 000000000..cf5661f1c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneWire.java b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
-index da903f74b..aa35e0d06 100644
+index 7ce9cdb853..6b5015ce5f 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 @@ -1,5 +1,7 @@
@@ -967,18 +967,18 @@ index da903f74b..aa35e0d06 100644
  import com.google.common.collect.ImmutableMap;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
-@@ -22,7 +24,10 @@ public class BlockRedstoneWire extends Block {
+@@ -22,8 +24,8 @@ public class BlockRedstoneWire extends Block {
      public static final BlockStateInteger POWER = BlockProperties.as;
      public static final Map<EnumDirection, BlockStateEnum<BlockPropertyRedstoneSide>> f = Maps.newEnumMap(ImmutableMap.of(EnumDirection.NORTH, BlockRedstoneWire.NORTH, EnumDirection.EAST, BlockRedstoneWire.EAST, EnumDirection.SOUTH, BlockRedstoneWire.SOUTH, EnumDirection.WEST, BlockRedstoneWire.WEST));
-     protected static final VoxelShape[] g = new VoxelShape[] { Block.a(3.0D, 0.0D, 3.0D, 13.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 3.0D, 13.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 3.0D, 13.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 3.0D, 13.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 0.0D, 13.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 0.0D, 13.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 0.0D, 13.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 0.0D, 13.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 3.0D, 16.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 3.0D, 16.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 3.0D, 16.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 3.0D, 16.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 0.0D, 16.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 0.0D, 16.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 0.0D, 16.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 0.0D, 16.0D, 1.0D, 16.0D)};
-+    public boolean canProvidePower() { return this.h; } // Paper - OBFHELPER
-+    public void setCanProvidePower(boolean value) { this.h = value; } // Paper - OBFHELPER
-     private boolean h = true;
-+    private Set<BlockPosition> getBlocksNeedingUpdate() { return this.i; } // Paper - OBFHELPER
-     private final Set<BlockPosition> i = Sets.newHashSet();
+     protected static final VoxelShape[] g = new VoxelShape[]{Block.a(3.0D, 0.0D, 3.0D, 13.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 3.0D, 13.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 3.0D, 13.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 3.0D, 13.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 0.0D, 13.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 0.0D, 13.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 0.0D, 13.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 0.0D, 13.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 3.0D, 16.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 3.0D, 16.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 3.0D, 16.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 3.0D, 16.0D, 1.0D, 16.0D), Block.a(3.0D, 0.0D, 0.0D, 16.0D, 1.0D, 13.0D), Block.a(3.0D, 0.0D, 0.0D, 16.0D, 1.0D, 16.0D), Block.a(0.0D, 0.0D, 0.0D, 16.0D, 1.0D, 13.0D), Block.a(0.0D, 0.0D, 0.0D, 16.0D, 1.0D, 16.0D)};
+-    private boolean h = true;
+-    private final Set<BlockPosition> i = Sets.newHashSet();
++    private boolean h = true; public final boolean canProvidePower() { return this.h; } public final void setCanProvidePower(boolean value) { this.h = value; } // Paper - OBFHELPER
++    private final Set<BlockPosition> i = Sets.newHashSet(); private Set<BlockPosition> getBlocksNeedingUpdate() { return this.i; } // Paper - OBFHELPER
  
      public BlockRedstoneWire(Block.Info block_info) {
-@@ -157,6 +162,117 @@ public class BlockRedstoneWire extends Block {
+         super(block_info);
+@@ -157,6 +159,117 @@ public class BlockRedstoneWire extends Block {
          return Block.d(iblockdata1, iworldreader, blockposition1, EnumDirection.UP) || iblockdata1.getBlock() == Blocks.HOPPER;
      }
  
@@ -1096,7 +1096,7 @@ index da903f74b..aa35e0d06 100644
      private IBlockData a(World world, BlockPosition blockposition, IBlockData iblockdata) {
          iblockdata = this.b(world, blockposition, iblockdata);
          List<BlockPosition> list = Lists.newArrayList(this.i);
-@@ -255,7 +371,7 @@ public class BlockRedstoneWire extends Block {
+@@ -255,7 +368,7 @@ public class BlockRedstoneWire extends Block {
      @Override
      public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
          if (iblockdata1.getBlock() != iblockdata.getBlock() && !world.isClientSide) {
@@ -1105,7 +1105,7 @@ index da903f74b..aa35e0d06 100644
              Iterator iterator = EnumDirection.EnumDirectionLimit.VERTICAL.iterator();
  
              EnumDirection enumdirection;
-@@ -302,7 +418,7 @@ public class BlockRedstoneWire extends Block {
+@@ -302,7 +415,7 @@ public class BlockRedstoneWire extends Block {
                      world.applyPhysics(blockposition.shift(enumdirection), this);
                  }
  
@@ -1114,7 +1114,7 @@ index da903f74b..aa35e0d06 100644
                  Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
  
                  EnumDirection enumdirection1;
-@@ -343,7 +459,7 @@ public class BlockRedstoneWire extends Block {
+@@ -343,7 +456,7 @@ public class BlockRedstoneWire extends Block {
      public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
          if (!world.isClientSide) {
              if (iblockdata.canPlace(world, blockposition)) {
@@ -1124,7 +1124,7 @@ index da903f74b..aa35e0d06 100644
                  c(iblockdata, world, blockposition);
                  world.a(blockposition, false);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 163d7f37c..3425f034c 100644
+index d13e4cf735..f811ef8cc8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -556,6 +556,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
