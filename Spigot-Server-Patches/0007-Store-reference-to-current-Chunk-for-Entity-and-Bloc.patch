@@ -1,4 +1,4 @@
-From f505176fb1bc73f7ea0c9406fb349f33d6ab4e27 Mon Sep 17 00:00:00 2001
+From 81c056ba360b52b5661c92d34a72d15812efa9ad Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,10 +8,10 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 6c4dd0b4d3..54b3c59f3f 100644
+index 2cbae8230f..4d1326efb4 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -36,7 +36,7 @@ public class Chunk implements IChunkAccess {
+@@ -29,7 +29,7 @@ public class Chunk implements IChunkAccess {
      private final ChunkSection[] sections;
      private final BiomeBase[] d;
      private final Map<BlockPosition, NBTTagCompound> e;
@@ -20,7 +20,7 @@ index 6c4dd0b4d3..54b3c59f3f 100644
      public final World world;
      public final Map<HeightMap.Type, HeightMap> heightMap;
      private final ChunkConverter i;
-@@ -62,11 +62,36 @@ public class Chunk implements IChunkAccess {
+@@ -55,11 +55,36 @@ public class Chunk implements IChunkAccess {
          this(world, chunkcoordintpair, abiomebase, ChunkConverter.a, TickListEmpty.a(), TickListEmpty.a(), 0L, (ChunkSection[]) null, (Consumer) null);
      }
  
@@ -58,7 +58,7 @@ index 6c4dd0b4d3..54b3c59f3f 100644
          this.l = Maps.newHashMap();
          this.m = Maps.newHashMap();
          this.n = new ShortList[16];
-@@ -373,6 +398,7 @@ public class Chunk implements IChunkAccess {
+@@ -366,6 +391,7 @@ public class Chunk implements IChunkAccess {
          }
  
          entity.inChunk = true;
@@ -66,7 +66,7 @@ index 6c4dd0b4d3..54b3c59f3f 100644
          entity.chunkX = this.loc.x;
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
-@@ -384,6 +410,7 @@ public class Chunk implements IChunkAccess {
+@@ -377,6 +403,7 @@ public class Chunk implements IChunkAccess {
          ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
@@ -74,7 +74,7 @@ index 6c4dd0b4d3..54b3c59f3f 100644
      public void b(Entity entity) {
          this.a(entity, entity.chunkY);
      }
-@@ -396,8 +423,12 @@ public class Chunk implements IChunkAccess {
+@@ -389,8 +416,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
@@ -90,7 +90,7 @@ index 6c4dd0b4d3..54b3c59f3f 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 033cddf8eb..7fc4af5650 100644
+index 84ba4798f7..8936bbbeef 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -133,7 +133,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -102,7 +102,7 @@ index 033cddf8eb..7fc4af5650 100644
      public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
      public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
      public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
-@@ -1678,6 +1678,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1683,6 +1683,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      // Paper start
@@ -163,7 +163,7 @@ index b511fe263f..7546f6690b 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 5b72b3633e..b2a16bb366 100644
+index f22959ee15..a98f6f3389 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -137,6 +137,7 @@ import net.minecraft.server.EntityZombieVillager;
