@@ -90,7 +90,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
             builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
         }
 
-        return builder.build(getHandle().a());
+        return builder.build(getHandle().getLootContextParameterSet());
     }
 
     @Override

@@ -1,14 +1,5 @@
 --- a/net/minecraft/server/PlayerChunk.java
 +++ b/net/minecraft/server/PlayerChunk.java
-@@ -23,7 +23,7 @@
-     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture;
-     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> entityTickingFuture;
-     private CompletableFuture<IChunkAccess> chunkSave;
--    private int oldTicketLevel;
-+    public int oldTicketLevel; // CraftBukkit - public
-     private int ticketLevel;
-     private int n;
-     private final ChunkCoordIntPair location;
 @@ -43,7 +43,7 @@
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -24,7 +15,7 @@
  
 +    // CraftBukkit start
 +    public Chunk getFullChunk() {
-+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFuture(ChunkStatus.FULL);
++        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
 +        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
 +        return either == null ? null : (Chunk) either.left().orElse(null);
 +    }
@@ -33,16 +24,7 @@
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
  
-@@ -62,7 +70,7 @@
-     }
- 
-     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFuture(ChunkStatus chunkstatus) {
--        return b(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
-+        return b(this.oldTicketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE; // CraftBukkit using oldTicketLevel for isLoaded checks
-     }
- 
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
-@@ -76,9 +84,9 @@
+@@ -72,9 +80,9 @@
      @Nullable
      public Chunk getChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
@@ -54,7 +36,7 @@
      }
  
      public CompletableFuture<IChunkAccess> getChunkSave() {
-@@ -201,7 +209,7 @@
+@@ -197,7 +205,7 @@
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(i);
  
          if (completablefuture != null) {
@@ -63,13 +45,13 @@
  
              if (either == null || either.left().isPresent()) {
                  return completablefuture;
-@@ -256,6 +264,21 @@
+@@ -252,6 +260,21 @@
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET;
-         PlayerChunk.State playerchunk_state = c(this.oldTicketLevel);
-         PlayerChunk.State playerchunk_state1 = c(this.ticketLevel);
+         PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
+         PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
 +        // CraftBukkit start
 +        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
-+        if (playerchunk_state.a(PlayerChunk.State.BORDER) && !playerchunk_state1.a(PlayerChunk.State.BORDER)) { // PAIL oldChunkState, newChunkState, isAtLeast
++        if (playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && !playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
 +            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
 +                either.ifLeft((chunkAccess) -> {
 +                    Chunk chunk = (Chunk) chunkAccess;
@@ -82,10 +64,10 @@
 +            });
 +        }
 +        // CraftBukkit end
+         CompletableFuture completablefuture;
  
-         if (flag1) {
-             for (int i = flag ? chunkstatus.c() + 1 : 0; i <= chunkstatus1.c(); ++i) {
-@@ -294,7 +317,7 @@
+         if (flag) {
+@@ -283,7 +306,7 @@
          if (flag2 && !flag3) {
              completablefuture = this.fullChunkFuture;
              this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -94,13 +76,13 @@
                  playerchunkmap.getClass();
                  return either1.ifLeft(playerchunkmap::a);
              }));
-@@ -332,6 +355,17 @@
+@@ -321,6 +344,17 @@
  
          this.w.a(this.location, this::j, this.ticketLevel, this::d);
          this.oldTicketLevel = this.ticketLevel;
 +        // CraftBukkit start
 +        // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
-+        if (!playerchunk_state.a(PlayerChunk.State.BORDER) && playerchunk_state1.a(PlayerChunk.State.BORDER)) { // PAIL oldChunkState, newChunkState, isAtLeast
++        if (!playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
 +            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
 +                either.ifLeft((chunkAccess) -> {
 +                    Chunk chunk = (Chunk) chunkAccess;
@@ -111,4 +93,4 @@
 +        // CraftBukkit end
      }
  
-     public static ChunkStatus b(int i) {
+     public static ChunkStatus getChunkStatus(int i) {
