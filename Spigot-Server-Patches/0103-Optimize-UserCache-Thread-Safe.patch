@@ -1,4 +1,4 @@
-From a712ddf77ea7d2397deccb4fe233072b5926649f Mon Sep 17 00:00:00 2001
+From a29caf1df2a8c7f8a6201b61dd3487c7525829e5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 20:47:41 -0400
 Subject: [PATCH] Optimize UserCache / Thread Safe
@@ -10,7 +10,7 @@ Additionally, move Saving of the User cache to be done async, incase
 the user never changed the default setting for Spigot's save on stop only.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a3c53d9dbf..3b745b2b75 100644
+index d3d8fffeb0..f142ed9a3b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -739,7 +739,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -23,9 +23,20 @@ index a3c53d9dbf..3b745b2b75 100644
          // Spigot end
      }
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 41be5bf64e..cd8a652eb6 100644
+index 41be5bf64e..dc5c0afab4 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -43,8 +43,8 @@ public class UserCache {
+ 
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+     private static boolean c;
+-    private final Map<String, UserCache.UserCacheEntry> d = Maps.newHashMap();
+-    private final Map<UUID, UserCache.UserCacheEntry> e = Maps.newHashMap();
++    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
++    private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
+     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
+     private final GameProfileRepository g;
+     protected final Gson b;
 @@ -108,7 +108,7 @@ public class UserCache {
          this.a(gameprofile, (Date) null);
      }
@@ -55,17 +66,14 @@ index 41be5bf64e..cd8a652eb6 100644
          String s1 = s.toLowerCase(Locale.ROOT);
          UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
  
-@@ -164,8 +165,9 @@ public class UserCache {
+@@ -164,6 +165,7 @@ public class UserCache {
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
      }
  
 +    @Nullable public GameProfile getProfile(UUID uuid) { return a(uuid);  } // Paper - OBFHELPER
      @Nullable
--    public GameProfile a(UUID uuid) {
-+    public synchronized GameProfile a(UUID uuid) { // Paper - synchronize
+     public GameProfile a(UUID uuid) {
          UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
- 
-         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
 @@ -220,8 +222,15 @@ public class UserCache {
  
      }
