@@ -175,6 +175,12 @@ public class EntityAreaEffectCloud extends Entity {
         super.tick();
         boolean flag = this.k();
         float f = this.getRadius();
+        // Paper start - fix MC-114618
+        if (f < 0.0F) {
+            this.die();
+            return;
+        }
+        // Paper end
 
         if (this.world.isClientSide) {
             ParticleParam particleparam = this.getParticle();
