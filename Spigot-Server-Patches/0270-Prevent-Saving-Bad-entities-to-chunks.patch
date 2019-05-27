@@ -1,4 +1,4 @@
-From 46aaf3409c3fd5b6b7e363cb71eba5c3e27eb8f3 Mon Sep 17 00:00:00 2001
+From c6d56145f34a4fbdc515cff02a11e053b63ed3a5 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 26 Jul 2018 00:11:12 -0400
 Subject: [PATCH] Prevent Saving Bad entities to chunks
@@ -18,21 +18,22 @@ an invalid entity.
 This should reduce log occurrences of dupe uuid messages.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 2b8148fbd..9038d17fd 100644
+index 1ebb16f0f6..2f749fe26a 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -332,6 +332,7 @@ public class ChunkRegionLoader {
+@@ -318,6 +318,7 @@ public class ChunkRegionLoader {
+         nbttagcompound1.set("TileEntities", nbttaglist1);
          NBTTagList nbttaglist2 = new NBTTagList();
-         NBTTagCompound nbttagcompound4;
  
 +        java.util.List<Entity> toUpdate = new java.util.ArrayList<>(); // Paper
          if (ichunkaccess.getChunkStatus().getType() == ChunkStatus.Type.LEVELCHUNK) {
              Chunk chunk = (Chunk) ichunkaccess;
  
-@@ -343,6 +344,17 @@ public class ChunkRegionLoader {
+@@ -329,13 +330,29 @@ public class ChunkRegionLoader {
                  while (iterator1.hasNext()) {
                      Entity entity = (Entity) iterator1.next();
- 
+                     NBTTagCompound nbttagcompound3 = new NBTTagCompound();
+-
 +                    // Paper start
 +                    if ((int)Math.floor(entity.locX) >> 4 != chunk.getPos().x || (int)Math.floor(entity.locZ) >> 4 != chunk.getPos().z) {
 +                        LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
@@ -43,11 +44,9 @@ index 2b8148fbd..9038d17fd 100644
 +                        continue;
 +                    }
 +                    // Paper end
-+
-                     nbttagcompound4 = new NBTTagCompound();
-                     if (entity.d(nbttagcompound4)) {
+                     if (entity.d(nbttagcompound3)) {
                          chunk.d(true);
-@@ -350,6 +362,13 @@ public class ChunkRegionLoader {
+                         nbttaglist2.add(nbttagcompound3);
                      }
                  }
              }
