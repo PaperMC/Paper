@@ -6,7 +6,7 @@ Subject: [PATCH] Async Chunk placeholder
 Until we figure out Mojang's ticket system.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 174d2d4ea0..88d179342f 100644
+index 2c6a42d921..63f953617d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ import java.util.Objects;
@@ -22,13 +22,36 @@ index 174d2d4ea0..88d179342f 100644
      }
  
 +    // Paper start
++    private Chunk getChunkAtGen(int x, int z, boolean gen) {
++        // copied from loadChunk()
++        // this function is identical except we do not add a plugin ticket
++        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, gen || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
++
++        // If generate = false, but the chunk already exists, we will get this back.
++        if (chunk instanceof ProtoChunkExtension) {
++            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
++            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
++        }
++
++        if (chunk instanceof net.minecraft.server.Chunk) {
++            return ((net.minecraft.server.Chunk)chunk).bukkitChunk;
++        }
++
++        return null;
++    }
 +
 +    @Override
 +    public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
 +        // TODO placeholder
-+        CompletableFuture<Chunk> ret = new CompletableFuture<>();
-+        ret.complete(getChunkAt(x, z));
-+        return ret;
++        if (Bukkit.isPrimaryThread()) {
++            return CompletableFuture.completedFuture(getChunkAtGen(x, z, gen));
++        } else {
++            CompletableFuture<Chunk> ret = new CompletableFuture<>();
++            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
++                ret.complete(getChunkAtGen(x, z, gen));
++            });
++            return ret;
++        }
 +    }
 +    // Paper end
 +
