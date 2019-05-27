@@ -56,7 +56,7 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
     @Test
     public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailableAndSerializerIsNotPresent() {
         for (MemoryModuleType<?> memoryModuleType : IRegistry.MEMORY_MODULE_TYPE) {
-            if (!memoryModuleType.a().isPresent()) { // PAIL: a() -> getSerializer()
+            if (!memoryModuleType.getSerializer().isPresent()) {
                 MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
                 Assert.assertNull("MemoryModuleType should be null", bukkitNoKey);
             }
@@ -66,7 +66,7 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
     @Test
     public void shouldReturnAnInstanceOfMemoryKeyWhenBukkitRepresentationOfKeyisAvailableAndSerializerIsPresent() {
         for (MemoryModuleType<?> memoryModuleType : IRegistry.MEMORY_MODULE_TYPE) {
-            if (memoryModuleType.a().isPresent()) { // PAIL: a() -> getSerializer()
+            if (memoryModuleType.getSerializer().isPresent()) {
                 MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
                 Assert.assertNotNull("MemoryModuleType should not be null", bukkitNoKey);
             }

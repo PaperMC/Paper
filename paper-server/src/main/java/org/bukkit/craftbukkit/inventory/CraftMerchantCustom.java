@@ -7,6 +7,8 @@ import net.minecraft.server.IMerchant;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.MerchantRecipe;
 import net.minecraft.server.MerchantRecipeList;
+import net.minecraft.server.SoundEffect;
+import net.minecraft.server.SoundEffects;
 import net.minecraft.server.World;
 import org.apache.commons.lang.Validate;
 
@@ -94,6 +96,11 @@ public class CraftMerchantCustom extends CraftMerchant {
         @Override
         public boolean ea() {
             return true;
+        }
+
+        @Override
+        public SoundEffect eb() {
+            return SoundEffects.ENTITY_VILLAGER_YES;
         }
     }
 }

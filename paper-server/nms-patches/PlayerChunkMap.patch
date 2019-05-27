@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/PlayerChunkMap.java
 +++ b/net/minecraft/server/PlayerChunkMap.java
-@@ -35,6 +35,7 @@
+@@ -38,6 +38,7 @@
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -8,7 +8,7 @@
  
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
-@@ -181,9 +182,12 @@
+@@ -186,9 +187,12 @@
  
          return completablefuture1.thenApply((list1) -> {
              List<IChunkAccess> list2 = Lists.newArrayList();
@@ -23,7 +23,7 @@
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -279,7 +283,7 @@
+@@ -286,7 +290,7 @@
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
          } else {
              this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
@@ -32,7 +32,7 @@
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
                      this.saveChunk(ichunkaccess);
-@@ -290,7 +294,6 @@
+@@ -297,7 +301,6 @@
          }
  
      }
@@ -40,16 +40,25 @@
      protected void unloadChunks(BooleanSupplier booleansupplier) {
          GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
-@@ -416,7 +419,7 @@
-                     return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
-                 });
-             }, (runnable) -> {
--                this.mailboxWorldGen.a((Object) ChunkTaskQueueSorter.a(playerchunk, runnable));
-+                this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
+@@ -336,7 +339,7 @@
+ 
+     private void a(long i, PlayerChunk playerchunk) {
+         CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkSave();
+-        Consumer consumer = (ichunkaccess) -> {
++        Consumer<IChunkAccess> consumer = (ichunkaccess) -> { // CraftBukkit - decompile error
+             CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkSave();
+ 
+             if (completablefuture1 != completablefuture) {
+@@ -485,7 +488,7 @@
+                 return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
-         }
+         }, (runnable) -> {
+-            this.mailboxWorldGen.a((Object) ChunkTaskQueueSorter.a(playerchunk, runnable));
++            this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
+         });
      }
-@@ -498,7 +501,7 @@
+ 
+@@ -566,7 +569,7 @@
              long i = playerchunk.h().pair();
  
              playerchunk.getClass();
@@ -58,7 +67,7 @@
          });
      }
  
-@@ -515,7 +518,7 @@
+@@ -583,7 +586,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -67,7 +76,7 @@
          });
  
          completablefuture1.thenAcceptAsync((either) -> {
-@@ -529,7 +532,7 @@
+@@ -597,7 +600,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -76,7 +85,7 @@
          });
          return completablefuture1;
      }
-@@ -543,7 +546,7 @@
+@@ -611,7 +614,7 @@
                  return chunk;
              });
          }, (runnable) -> {
@@ -85,7 +94,7 @@
          });
      }
  
-@@ -607,9 +610,10 @@
+@@ -675,9 +678,10 @@
                  ChunkCoordIntPair chunkcoordintpair = playerchunk.h();
                  Packet<?>[] apacket = new Packet[2];
  
@@ -97,7 +106,7 @@
                      boolean flag1 = i1 <= this.viewDistance;
  
                      this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
-@@ -664,7 +668,7 @@
+@@ -732,7 +736,7 @@
      private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -106,7 +115,7 @@
      }
  
      boolean d(ChunkCoordIntPair chunkcoordintpair) {
-@@ -984,7 +988,7 @@
+@@ -1052,7 +1056,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -115,7 +124,7 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1053,6 +1057,17 @@
+@@ -1121,6 +1125,17 @@
                          }
                      }
  

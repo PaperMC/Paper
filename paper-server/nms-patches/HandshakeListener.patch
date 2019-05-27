@@ -19,52 +19,52 @@
      private final NetworkManager b;
  
 @@ -17,6 +27,41 @@
-             this.b.setProtocol(EnumProtocol.LOGIN);
-             ChatMessage chatmessage;
+                 this.b.setProtocol(EnumProtocol.LOGIN);
+                 ChatMessage chatmessage;
  
-+            // CraftBukkit start - Connection throttle
-+            try {
-+                long currentTime = System.currentTimeMillis();
-+                long connectionThrottle = MinecraftServer.getServer().server.getConnectionThrottle();
-+                InetAddress address = ((java.net.InetSocketAddress) this.b.getSocketAddress()).getAddress();
++                // CraftBukkit start - Connection throttle
++                try {
++                    long currentTime = System.currentTimeMillis();
++                    long connectionThrottle = MinecraftServer.getServer().server.getConnectionThrottle();
++                    InetAddress address = ((java.net.InetSocketAddress) this.b.getSocketAddress()).getAddress();
 +
-+                synchronized (throttleTracker) {
-+                    if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
++                    synchronized (throttleTracker) {
++                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
++                            throttleTracker.put(address, currentTime);
++                            chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
++                            this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
++                            this.b.close(chatmessage);
++                            return;
++                        }
++
 +                        throttleTracker.put(address, currentTime);
-+                        chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
-+                        this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
-+                        this.b.close(chatmessage);
-+                        return;
-+                    }
++                        throttleCounter++;
++                        if (throttleCounter > 200) {
++                            throttleCounter = 0;
 +
-+                    throttleTracker.put(address, currentTime);
-+                    throttleCounter++;
-+                    if (throttleCounter > 200) {
-+                        throttleCounter = 0;
-+
-+                        // Cleanup stale entries
-+                        java.util.Iterator iter = throttleTracker.entrySet().iterator();
-+                        while (iter.hasNext()) {
-+                            java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
-+                            if (entry.getValue() > connectionThrottle) {
-+                                iter.remove();
++                            // Cleanup stale entries
++                            java.util.Iterator iter = throttleTracker.entrySet().iterator();
++                            while (iter.hasNext()) {
++                                java.util.Map.Entry<InetAddress, Long> entry = (java.util.Map.Entry) iter.next();
++                                if (entry.getValue() > connectionThrottle) {
++                                    iter.remove();
++                                }
 +                            }
 +                        }
 +                    }
++                } catch (Throwable t) {
++                    org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +                }
-+            } catch (Throwable t) {
-+                org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
-+            }
-+            // CraftBukkit end
++                // CraftBukkit end
 +
-             if (packethandshakinginsetprotocol.c() > SharedConstants.a().getProtocolVersion()) {
-                 chatmessage = new ChatMessage("multiplayer.disconnect.outdated_server", new Object[] { SharedConstants.a().getName()});
-                 this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
+                 if (packethandshakinginsetprotocol.c() > SharedConstants.a().getProtocolVersion()) {
+                     chatmessage = new ChatMessage("multiplayer.disconnect.outdated_server", new Object[]{SharedConstants.a().getName()});
+                     this.b.sendPacket(new PacketLoginOutDisconnect(chatmessage));
 @@ -27,6 +72,7 @@
-                 this.b.close(chatmessage);
-             } else {
-                 this.b.setPacketListener(new LoginListener(this.a, this.b));
-+                ((LoginListener) this.b.i()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
-             }
-             break;
-         case STATUS:
+                     this.b.close(chatmessage);
+                 } else {
+                     this.b.setPacketListener(new LoginListener(this.a, this.b));
++                    ((LoginListener) this.b.i()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
+                 }
+                 break;
+             case STATUS:
