@@ -1,0 +1,138 @@
+From b0e0b780857cf3a272495b853a22be27ede59428 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 28 Dec 2016 01:18:33 -0500
+Subject: [PATCH] Firework API's
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
+index d6bde129e..5cee161b6 100644
+--- a/src/main/java/net/minecraft/server/EntityFireworks.java
++++ b/src/main/java/net/minecraft/server/EntityFireworks.java
+@@ -3,6 +3,8 @@ package net.minecraft.server;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.OptionalInt;
++import java.util.UUID;
++
+ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+ 
+ public class EntityFireworks extends Entity implements IProjectile {
+@@ -12,7 +14,8 @@ public class EntityFireworks extends Entity implements IProjectile {
+     private static final DataWatcherObject<Boolean> d = DataWatcher.a(EntityFireworks.class, DataWatcherRegistry.i);
+     private int ticksFlown;
+     public int expectedLifespan;
+-    private EntityLiving ridingEntity;
++    private EntityLiving ridingEntity; public final EntityLiving getBoostedEntity() { return this.ridingEntity; } // Paper - OBFHELPER
++    public UUID spawningEntity; // Paper
+ 
+     public EntityFireworks(EntityTypes<? extends EntityFireworks> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -255,6 +258,11 @@ public class EntityFireworks extends Entity implements IProjectile {
+         }
+ 
+         nbttagcompound.setBoolean("ShotAtAngle", (Boolean) this.datawatcher.get(EntityFireworks.d));
++        // Paper start
++        if (this.spawningEntity != null) {
++            nbttagcompound.setUUID("SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -270,7 +278,11 @@ public class EntityFireworks extends Entity implements IProjectile {
+         if (nbttagcompound.hasKey("ShotAtAngle")) {
+             this.datawatcher.set(EntityFireworks.d, nbttagcompound.getBoolean("ShotAtAngle"));
+         }
+-
++        // Paper start
++        if (nbttagcompound.hasUUID("SpawningEntity")) {
++            this.spawningEntity = nbttagcompound.getUUID("SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/ItemFireworks.java b/src/main/java/net/minecraft/server/ItemFireworks.java
+index 37caa79cb..aea46ffae 100644
+--- a/src/main/java/net/minecraft/server/ItemFireworks.java
++++ b/src/main/java/net/minecraft/server/ItemFireworks.java
+@@ -17,6 +17,7 @@ public class ItemFireworks extends Item {
+             ItemStack itemstack = itemactioncontext.getItemStack();
+             Vec3D vec3d = itemactioncontext.j();
+             EntityFireworks entityfireworks = new EntityFireworks(world, vec3d.x, vec3d.y, vec3d.z, itemstack);
++            entityfireworks.spawningEntity = itemactioncontext.getEntity().getUniqueID(); // Paper
+ 
+             world.addEntity(entityfireworks);
+             itemstack.subtract(1);
+@@ -31,7 +32,11 @@ public class ItemFireworks extends Item {
+             ItemStack itemstack = entityhuman.b(enumhand);
+ 
+             if (!world.isClientSide) {
+-                world.addEntity(new EntityFireworks(world, itemstack, entityhuman));
++                // Paper start
++                final EntityFireworks entityfireworks = new EntityFireworks(world, itemstack, entityhuman);
++                entityfireworks.spawningEntity = entityhuman.getUniqueID();
++                world.addEntity(entityfireworks);
++                // Paper end
+                 if (!entityhuman.abilities.canInstantlyBuild) {
+                     itemstack.subtract(1);
+                 }
+diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
+index 3f6d2676e..b1fd18151 100644
+--- a/src/main/java/net/minecraft/server/NBTTagCompound.java
++++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
+@@ -112,7 +112,7 @@ public class NBTTagCompound implements NBTBase {
+         return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
+     }
+ 
+-    public boolean b(String s) {
++    public final boolean hasUUID(String s) { return this.b(s); } public boolean b(String s) { // Paper - OBFHELPER
+         return this.hasKeyOfType(s + "Most", 99) && this.hasKeyOfType(s + "Least", 99);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+index 6b69be742..37374ae5b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import java.util.Random;
+ import net.minecraft.server.EntityFireworks;
++import net.minecraft.server.EntityLiving;
+ import net.minecraft.server.ItemStack;
+ import net.minecraft.server.Items;
+ import org.bukkit.Material;
+@@ -9,8 +10,11 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Firework;
++import org.bukkit.entity.LivingEntity;
+ import org.bukkit.inventory.meta.FireworkMeta;
+ 
++import java.util.UUID;
++
+ public class CraftFirework extends CraftEntity implements Firework {
+ 
+     private final Random random = new Random();
+@@ -68,4 +72,18 @@ public class CraftFirework extends CraftEntity implements Firework {
+     public void detonate() {
+         getHandle().expectedLifespan = 0;
+     }
++
++    // Paper start
++
++    @Override
++    public UUID getSpawningEntity() {
++        return getHandle().spawningEntity;
++    }
++
++    @Override
++    public LivingEntity getBoostedEntity() {
++        EntityLiving boostedEntity = getHandle().getBoostedEntity();
++        return boostedEntity != null ? (LivingEntity) boostedEntity.getBukkitEntity() : null;
++    }
++    // Paper end
+ }
+-- 
+2.21.0
+

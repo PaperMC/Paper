@@ -1,0 +1,68 @@
+From 8027dc71e7d0b0467b17faa47ded3a1972a687ad Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 Mar 2016 23:52:34 -0600
+Subject: [PATCH] Prevent tile entity and entity crashes
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
+index 095ef9ba5..b99bcbf8a 100644
+--- a/src/main/java/net/minecraft/server/TileEntity.java
++++ b/src/main/java/net/minecraft/server/TileEntity.java
+@@ -199,7 +199,12 @@ public abstract class TileEntity implements KeyedObject { // Paper
+             return IRegistry.BLOCK_ENTITY_TYPE.getKey(this.q()) + " // " + this.getClass().getCanonicalName();
+         });
+         if (this.world != null) {
+-            CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.getBlock());
++            // Paper start - Prevent TileEntity and Entity crashes
++            IBlockData block = this.getBlock();
++            if (block != null) {
++                CrashReportSystemDetails.a(crashreportsystemdetails, this.position, block);
++            }
++            // Paper end
+             CrashReportSystemDetails.a(crashreportsystemdetails, this.position, this.world.getType(this.position));
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d659b7613..436957489 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -718,11 +718,13 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+ 
+                         gameprofilerfiller.exit();
+                     } catch (Throwable throwable) {
+-                        CrashReport crashreport = CrashReport.a(throwable, "Ticking block entity");
+-                        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block entity being ticked");
+-
+-                        tileentity.a(crashreportsystemdetails);
+-                        throw new ReportedException(crashreport);
++                        // Paper start - Prevent tile entity and entity crashes
++                        System.err.println("TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ());
++                        throwable.printStackTrace();
++                        tilesThisCycle--;
++                        this.tileEntityListTick.remove(tileTickPosition--);
++                        continue;
++                        // Paper end
+                     }
+                     // Spigot start
+                     finally {
+@@ -791,11 +793,12 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+             // Spigot end
+             consumer.accept(entity);
+         } catch (Throwable throwable) {
+-            CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
+-            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
+-
+-            entity.appendEntityCrashDetails(crashreportsystemdetails);
+-            throw new ReportedException(crashreport);
++            // Paper start - Prevent tile entity and entity crashes
++            System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX + "," + entity.locY + "," + entity.locZ);
++            throwable.printStackTrace();
++            entity.dead = true;
++            return;
++            // Paper end
+         } finally {
+             entity.tickTimer.stopTiming();
+             timings.tickEntities.stopTiming();
+-- 
+2.21.0
+

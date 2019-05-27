@@ -1,0 +1,180 @@
+From b96066e41b3d03c005b1e571dd042769b787725c Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 27 May 2019 01:10:06 -0500
+Subject: [PATCH] Version Command 2.0
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+new file mode 100644
+index 00000000..2a265129
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+@@ -0,0 +1,44 @@
++package com.destroystokyo.paper.util;
++
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
++
++public interface VersionFetcher {
++    /**
++     * Amount of time to cache results for in milliseconds
++     * <p>
++     * Negative values will never cache.
++     *
++     * @return cache time
++     */
++    long getCacheTime();
++
++    /**
++     * Gets the version message to cache and show to command senders. Multiple messages can be sent using newlines (\n)
++     * in the string. The string will be split on these newlines and sent as individual messages.
++     * <p>
++     * NOTE: This is run in a new thread separate from that of the command processing thread
++     *
++     * @param serverVersion the current version of the server (will match {@link Bukkit#getVersion()})
++     * @return the message to show when requesting a version
++     */
++    @NotNull
++    String getVersionMessage(@NotNull String serverVersion);
++
++    class DummyVersionFetcher implements VersionFetcher {
++
++        @Override
++        public long getCacheTime() {
++            return -1;
++        }
++
++        @NotNull
++        @Override
++        public String getVersionMessage(@NotNull String serverVersion) {
++            Bukkit.getLogger().warning("Version provider has not been set, cannot check for updates!");
++            Bukkit.getLogger().info("Override the default implementation of org.bukkit.UnsafeValues#getVersionFetcher()");
++            new Throwable().printStackTrace();
++            return "Unable to check for updates. No version provider set.";
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 72c5501e..c0ff133d 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -76,5 +76,12 @@ public interface UnsafeValues {
+      * @return name
+      */
+     String getTimingsServerName();
++
++    /**
++     * Called once by the version command on first use, then cached.
++     */
++    default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
++        return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index cbce5244..0486abd1 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.command.defaults;
+ 
++import com.destroystokyo.paper.util.VersionFetcher; // Paper - version supplier
+ import com.google.common.base.Charsets;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.io.Resources;
+@@ -26,6 +27,15 @@ import org.bukkit.util.StringUtil;
+ import org.jetbrains.annotations.NotNull;
+ 
+ public class VersionCommand extends BukkitCommand {
++    private VersionFetcher versionFetcher;
++    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
++        if (versionFetcher == null) {
++            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
++        }
++
++        return versionFetcher;
++    }
++
+     public VersionCommand(@NotNull String name) {
+         super(name);
+ 
+@@ -150,18 +160,18 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void sendVersion(@NotNull CommandSender sender) {
+         if (hasVersion) {
+-            if (System.currentTimeMillis() - lastCheck > 21600000) {
++            if (System.currentTimeMillis() - lastCheck > getVersionFetcher().getCacheTime()) { // Paper - use version supplier
+                 lastCheck = System.currentTimeMillis();
+                 hasVersion = false;
+             } else {
+-                sender.sendMessage(versionMessage);
++                sendMessages(versionMessage, sender); // Paper - allow \n for multiple messages
+                 return;
+             }
+         }
+         versionLock.lock();
+         try {
+             if (hasVersion) {
+-                sender.sendMessage(versionMessage);
++                sendMessages(versionMessage, sender); // Paper - allow \n for multiple messages
+                 return;
+             }
+             versionWaiters.add(sender);
+@@ -183,7 +193,12 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void obtainVersion() {
+         String version = Bukkit.getVersion();
+-        if (version == null) version = "Custom";
++        // Paper start
++        if (version.startsWith("null")) { // running from ide?
++            setVersionMessage("Unknown version, custom build?");
++            return;
++        }
++        /*
+         if (version.startsWith("git-Spigot-")) {
+             String[] parts = version.substring("git-Spigot-".length()).split("-");
+             int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
+@@ -213,6 +228,9 @@ public class VersionCommand extends BukkitCommand {
+         } else {
+             setVersionMessage("Unknown version, custom build?");
+         }
++         */
++        setVersionMessage(getVersionFetcher().getVersionMessage(version));
++        // Paper end
+     }
+ 
+     private void setVersionMessage(@NotNull String msg) {
+@@ -222,8 +240,13 @@ public class VersionCommand extends BukkitCommand {
+         try {
+             hasVersion = true;
+             versionTaskStarted = false;
++            // Paper - allow \n for multiple messages
++            String[] messages = versionMessage.split("\n");
+             for (CommandSender sender : versionWaiters) {
+-                sender.sendMessage(versionMessage);
++                for (String message : messages) {
++                    sender.sendMessage(message);
++                }
++                // Paper end
+             }
+             versionWaiters.clear();
+         } finally {
+@@ -231,6 +254,15 @@ public class VersionCommand extends BukkitCommand {
+         }
+     }
+ 
++    // Paper start
++    private void sendMessages(String toSplit, CommandSender target) {
++        String[] messages = toSplit.split("\n");
++        for (String message : messages) {
++            target.sendMessage(message);
++        }
++    }
++    // Paper end
++
+     private static int getDistance(@NotNull String repo, @NotNull String hash) {
+         try {
+             BufferedReader reader = Resources.asCharSource(
+-- 
+2.21.0
+

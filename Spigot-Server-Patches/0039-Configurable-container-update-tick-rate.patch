@@ -1,0 +1,49 @@
+From 02f36547d23e1af8afedf1c7e031c288b8a97a1b Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 23:34:44 -0600
+Subject: [PATCH] Configurable container update tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e4e00e2e1..d663b15ce 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -171,4 +171,9 @@ public class PaperWorldConfig {
+     private void mobSpawnerTickRate() {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
++
++    public int containerUpdateTickRate;
++    private void containerUpdateTickRate() {
++        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index db0a559fe..7eaef7f6b 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -72,6 +72,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public boolean e;
+     public int ping;
+     public boolean viewingCredits;
++    private int containerUpdateDelay; // Paper
+ 
+     // CraftBukkit start
+     public String displayName;
+@@ -349,7 +350,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             --this.noDamageTicks;
+         }
+ 
+-        this.activeContainer.c();
++        // Paper start - Configurable container update tick rate
++        if (--containerUpdateDelay <= 0) {
++            this.activeContainer.c();
++            containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
++        }
++        // Paper end
+         if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
+             this.closeInventory();
+             this.activeContainer = this.defaultContainer;
+-- 
+2.21.0
+

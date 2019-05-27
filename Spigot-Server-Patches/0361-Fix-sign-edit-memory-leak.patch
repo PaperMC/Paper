@@ -1,0 +1,47 @@
+From 52569d04f6fedc9278ab2c566445671539eec8db Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 28 Feb 2019 00:15:28 -0500
+Subject: [PATCH] Fix sign edit memory leak
+
+when a player edits a sign, a reference to their Entity is never cleand up.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index f007290ff..7c9cd1aa4 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2561,7 +2561,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+             TileEntitySign tileentitysign = (TileEntitySign) tileentity;
+ 
+-            if (!tileentitysign.c() || tileentitysign.d() != this.player) {
++            if (!tileentitysign.c() || tileentitysign.signEditor == null || !tileentitysign.signEditor.equals(this.player.getUniqueID())) {
+                 this.minecraftServer.warning("Player " + this.player.getDisplayName().getString() + " just tried to change non-editable sign");
+                 this.sendPacket(tileentity.getUpdatePacket()); // CraftBukkit
+                 return;
+diff --git a/src/main/java/net/minecraft/server/TileEntitySign.java b/src/main/java/net/minecraft/server/TileEntitySign.java
+index 7b5d534f4..daf0aeb43 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySign.java
++++ b/src/main/java/net/minecraft/server/TileEntitySign.java
+@@ -17,6 +17,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+     // Paper start - Strip invalid unicode from signs on load
+     private static final boolean keepInvalidUnicode = Boolean.getBoolean("Paper.keepInvalidUnicode"); // Allow people to keep their bad unicode if they really want it
+     private boolean privateUnicodeRemoved = false;
++    public java.util.UUID signEditor;
+     // Paper end
+ 
+     public TileEntitySign() {
+@@ -141,7 +142,10 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+     }
+ 
+     public void a(EntityHuman entityhuman) {
+-        this.j = entityhuman;
++        // Paper start
++        //this.g = entityhuman;
++        signEditor = entityhuman != null ? entityhuman.getUniqueID() : null;
++        // Paper end
+     }
+ 
+     public EntityHuman d() {
+-- 
+2.21.0
+
