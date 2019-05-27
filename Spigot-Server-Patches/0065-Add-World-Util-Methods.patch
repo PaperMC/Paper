@@ -1,4 +1,4 @@
-From 4c6f083d51eed6eac3103bbab68c9f92857b04c4 Mon Sep 17 00:00:00 2001
+From 23db71afbfe996b7afeed9e005fe8c192eb48cca Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 18 Mar 2016 20:16:03 -0400
 Subject: [PATCH] Add World Util Methods
@@ -6,10 +6,10 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 36023073e9..4248a50142 100644
+index 879a491920..d246970d3e 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -359,6 +359,7 @@ public class Chunk implements IChunkAccess {
+@@ -371,6 +371,7 @@ public class Chunk implements IChunkAccess {
          return this.world.getChunkProvider().getLightEngine();
      }
  
@@ -17,35 +17,8 @@ index 36023073e9..4248a50142 100644
      public int a(BlockPosition blockposition, int i) {
          return this.a(blockposition, i, this.world.getWorldProvider().g());
      }
-diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index 9a98fb4af5..452b2b2d28 100644
---- a/src/main/java/net/minecraft/server/IWorldReader.java
-+++ b/src/main/java/net/minecraft/server/IWorldReader.java
-@@ -38,6 +38,22 @@ public interface IWorldReader extends IIBlockAccess {
-     }
- 
-     int getLightLevel(BlockPosition blockposition, int i);
-+    // Paper start
-+    default @Nullable
-+    IBlockData getTypeIfLoaded(BlockPosition var1) {
-+        return isLoaded(var1) ? getType(var1) : null;
-+    }
-+
-+    default @Nullable
-+    Block getBlockIfLoaded(BlockPosition var1) {
-+        return isLoaded(var1) ? getType(var1).getBlock() : null;
-+    }
-+
-+    default @Nullable
-+    Material getMaterialIfLoaded(BlockPosition var1) {
-+        return isLoaded(var1) ? getType(var1).getMaterial() : null;
-+    }
-+    // Paper end
- 
-     @Nullable
-     IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a50842b13a..d4be7e884d 100644
+index 373d08b23a..e43b1d27c3 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -46,7 +46,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -57,7 +30,7 @@ index a50842b13a..d4be7e884d 100644
      protected int j = (new Random()).nextInt();
      protected final int k = 1013904223;
      protected float lastRainLevel;
-@@ -208,6 +208,84 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -208,6 +208,54 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          return i < 0 || i >= 256;
      }
  
@@ -106,36 +79,6 @@ index a50842b13a..d4be7e884d 100644
 +    //  reduces need to do isLoaded before getType
 +    public IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
 +        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
-+    }
-+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
-+        // CraftBukkit start - tree generation
-+        if (captureTreeGeneration) {
-+            for (CraftBlockState previous : capturedBlockStates) {
-+                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
-+                    return previous.getHandle();
-+                }
-+            }
-+        }
-+        // CraftBukkit end
-+        Chunk chunk = this.getChunkIfLoaded(blockposition);
-+        if (chunk != null) {
-+            return isValidLocation(blockposition) ? chunk.getType(blockposition) : Blocks.AIR.getBlockData();
-+        }
-+        return null;
-+    }
-+    public Block getBlockIfLoaded(BlockPosition blockposition) {
-+        IBlockData type = getTypeIfLoaded(blockposition);
-+        if (type == null) {
-+            return null;
-+        }
-+        return type.getBlock();
-+    }
-+    public Material getMaterialIfLoaded(BlockPosition blockposition) {
-+        IBlockData type = getTypeIfLoaded(blockposition);
-+        if (type == null) {
-+            return null;
-+        }
-+        return type.getBlock().material;
 +    }
 +    // Paper end
 +

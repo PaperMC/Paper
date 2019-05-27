@@ -1,4 +1,4 @@
-From 79e06adaed0644fd436bf25e6ea36698e5327395 Mon Sep 17 00:00:00 2001
+From 455709eb3fa018d50a6fea993e346ae69f8a05ed Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -19,6 +19,29 @@ index 2f2b103641..b1900ba364 100644
      void c(AttributeModifier attributemodifier);
  
      void b(UUID uuid);
+diff --git a/src/main/java/net/minecraft/server/BlockAccessAir.java b/src/main/java/net/minecraft/server/BlockAccessAir.java
+index e8ab5d3221..d7a68a1ef7 100644
+--- a/src/main/java/net/minecraft/server/BlockAccessAir.java
++++ b/src/main/java/net/minecraft/server/BlockAccessAir.java
+@@ -14,6 +14,18 @@ public enum BlockAccessAir implements IBlockAccess {
+         return null;
+     }
+ 
++    // Paper start - If loaded util
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        return this.getFluid(blockposition);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        return this.getType(blockposition);
++    }
++    // Paper end
++
+     @Override
+     public IBlockData getType(BlockPosition blockposition) {
+         return Blocks.AIR.getBlockData();
 diff --git a/src/main/java/net/minecraft/server/BlockDataAbstract.java b/src/main/java/net/minecraft/server/BlockDataAbstract.java
 index b370316574..841c7d1904 100644
 --- a/src/main/java/net/minecraft/server/BlockDataAbstract.java
@@ -69,7 +92,7 @@ index dd47e9cbe4..c927d524a8 100644
              return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
          }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ca73bfbd83..26414a07a2 100644
+index ca73bfbd83..2cbae8230f 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
@@ -81,7 +104,26 @@ index ca73bfbd83..26414a07a2 100644
      private final ChunkSection[] sections;
      private final BiomeBase[] d;
      private final Map<BlockPosition, NBTTagCompound> e;
-@@ -400,6 +400,7 @@ public class Chunk implements IChunkAccess {
+@@ -213,6 +213,18 @@ public class Chunk implements IChunkAccess {
+         }
+     }
+ 
++    // Paper start - If loaded util
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        return this.getFluid(blockposition);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        return this.getType(blockposition);
++    }
++    // Paper end
++
+     @Override
+     public Fluid getFluid(BlockPosition blockposition) {
+         return this.a(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+@@ -400,6 +412,7 @@ public class Chunk implements IChunkAccess {
          return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
      }
  
@@ -89,6 +131,41 @@ index ca73bfbd83..26414a07a2 100644
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
          // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
+index 2c9bf7d00f..ccbc1dde09 100644
+--- a/src/main/java/net/minecraft/server/ChunkCache.java
++++ b/src/main/java/net/minecraft/server/ChunkCache.java
+@@ -47,6 +47,30 @@ public class ChunkCache implements IWorldReader {
+         return this.e.getLightLevel(blockposition, i);
+     }
+ 
++    // Paper start - if loaded util
++    @Nullable
++    @Override
++    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        IChunkAccess chunk = this.getChunkAt(x, z, ChunkStatus.FULL, false);
++        if (chunk instanceof ChunkEmpty) {
++            return null;
++        }
++        return chunk;
++    }
++
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluid(blockposition);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getType(blockposition);
++    }
++    // Paper end
++
+     @Nullable
+     @Override
+     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 index 857b2f8868..bbf136614c 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
@@ -267,6 +344,47 @@ index 4510018d6f..c0d5112444 100644
      public void a(R r0) {
          this.d.add(r0);
          LockSupport.unpark(this.getThread());
+diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
+index 6e365f402c..577b227758 100644
+--- a/src/main/java/net/minecraft/server/IBlockAccess.java
++++ b/src/main/java/net/minecraft/server/IBlockAccess.java
+@@ -9,10 +9,24 @@ public interface IBlockAccess {
+     @Nullable
+     TileEntity getTileEntity(BlockPosition blockposition);
+ 
++    IBlockData getTypeIfLoaded(BlockPosition blockposition); // Paper - if loaded util
+     IBlockData getType(BlockPosition blockposition);
+ 
++    Fluid getFluidIfLoaded(BlockPosition blockposition); // Paper - if loaded util
+     Fluid getFluid(BlockPosition blockposition);
+ 
++    // Paper start - if loaded util
++    default Material getMaterialIfLoaded(BlockPosition blockposition) {
++        IBlockData type = this.getTypeIfLoaded(blockposition);
++        return type == null ? null : type.getMaterial();
++    }
++
++    default Block getBlockIfLoaded(BlockPosition blockposition) {
++        IBlockData type = this.getTypeIfLoaded(blockposition);
++        return type == null ? null : type.getBlock();
++    }
++    // Paper end
++
+     default int h(BlockPosition blockposition) {
+         return this.getType(blockposition).h();
+     }
+diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
+index 9a98fb4af5..17dac8dfa4 100644
+--- a/src/main/java/net/minecraft/server/IWorldReader.java
++++ b/src/main/java/net/minecraft/server/IWorldReader.java
+@@ -39,6 +39,7 @@ public interface IWorldReader extends IIBlockAccess {
+ 
+     int getLightLevel(BlockPosition blockposition, int i);
+ 
++    @Nullable IChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
+     @Nullable
+     IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
+ 
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
 index e975265a28..aa6a58dd88 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
@@ -805,6 +923,60 @@ index b3824898da..bf4172be52 100644
      public static ItemStack a(ItemStack itemstack, PotionRegistry potionregistry) {
          MinecraftKey minecraftkey = IRegistry.POTION.getKey(potionregistry);
  
+diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
+index 6296611f19..807bd68485 100644
+--- a/src/main/java/net/minecraft/server/ProtoChunk.java
++++ b/src/main/java/net/minecraft/server/ProtoChunk.java
+@@ -79,6 +79,18 @@ public class ProtoChunk implements IChunkAccess {
+ 
+     }
+ 
++    // Paper start - If loaded util
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        return this.getFluid(blockposition);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        return this.getType(blockposition);
++    }
++    // Paper end
++
+     @Override
+     public IBlockData getType(BlockPosition blockposition) {
+         int i = blockposition.getY();
+diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
+index 33db1403fe..aff3591ec8 100644
+--- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
++++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
+@@ -106,6 +106,26 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
+         return i >= ichunkaccess.getPos().x && i <= ichunkaccess1.getPos().x && j >= ichunkaccess.getPos().z && j <= ichunkaccess1.getPos().z;
+     }
+ 
++    // Paper start - if loaded util
++    @Nullable
++    @Override
++    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        return this.getChunkAt(x, z, ChunkStatus.FULL, false);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getType(blockposition);
++    }
++
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluid(blockposition);
++    }
++    // Paper end
++
+     @Override
+     public IBlockData getType(BlockPosition blockposition) {
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4).getType(blockposition);
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
 index 4efcb8b595..60948afa4e 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
@@ -831,10 +1003,55 @@ index b3799ab564..5fae5a1233 100644
  
      public static long getTimeMillis() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 923d8e28e7..404d3d8c82 100644
+index 923d8e28e7..541fc0cf94 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -371,8 +371,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -210,6 +210,44 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+     }
+ 
++    // Paper start - if loaded
++    @Nullable
++    @Override
++    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        if (!((ChunkProviderServer)this.chunkProvider).isLoaded(x, z)) {
++            return null;
++        }
++
++        return this.chunkProvider.getChunkAt(x, z, ChunkStatus.FULL, true);
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        // CraftBukkit start - tree generation
++        if (captureTreeGeneration) {
++            for (CraftBlockState previous : capturedBlockStates) {
++                if (previous.getX() == blockposition.getX() && previous.getY() == blockposition.getY() && previous.getZ() == blockposition.getZ()) {
++                    return previous.getHandle();
++                }
++            }
++        }
++        // CraftBukkit end
++        if (!isValidLocation(blockposition)) {
++            return Blocks.AIR.getBlockData();
++        }
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++
++        return chunk == null ? null : chunk.getType(blockposition);
++    }
++
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++
++        return chunk == null ? null : chunk.getFluid(blockposition);
++    }
++    // Paper end
++
+     @Override
+     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
+         IChunkAccess ichunkaccess = this.chunkProvider.getChunkAt(i, j, chunkstatus, flag);
+@@ -371,8 +409,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
@@ -858,6 +1075,33 @@ index 42f7bb0f7d..5d71addb0c 100644
  
      /**
       * Mirror
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+index 755f7f2649..cd910f3dcb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+@@ -201,4 +201,22 @@ public class DummyGeneratorAccess implements GeneratorAccess {
+     public boolean b(BlockPosition blockposition, boolean flag) {
+         throw new UnsupportedOperationException("Not supported yet.");
+     }
++
++    // Paper start - if loaded util
++    @javax.annotation.Nullable
++    @Override
++    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
++
++    @Override
++    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
++
++    @Override
++    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
++    // Paper end
+ }
 -- 
 2.21.0
 
