@@ -110,13 +110,26 @@ public final class Bukkit {
         }
 
         Bukkit.server = server;
-        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ")");
+        // Paper start - add git information
+        server.getLogger().info(getVersionMessage());
+    }
+    /**
+      * Gets message describing the version server is running.
+      *
+      * @return message describing the version server is running
+      */
+    @NotNull
+    public static String getVersionMessage() {
+        final io.papermc.paper.ServerBuildInfo version = io.papermc.paper.ServerBuildInfo.buildInfo();
+        return "This server is running " + getName() + " version " + version.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL) + " (Implementing API version " + getBukkitVersion() + ")";
+        // Paper end
     }
 
     /**
      * Gets the name of this server implementation.
      *
      * @return name of this server implementation
+     * @see io.papermc.paper.ServerBuildInfo#brandName()
      */
     @NotNull
     public static String getName() {
@@ -127,6 +140,7 @@ public final class Bukkit {
      * Gets the version string of this server implementation.
      *
      * @return version of this server implementation
+     * @see io.papermc.paper.ServerBuildInfo
      */
     @NotNull
     public static String getVersion() {
@@ -142,6 +156,20 @@ public final class Bukkit {
     public static String getBukkitVersion() {
         return server.getBukkitVersion();
     }
+
+    // Paper start - expose game version
+    /**
+     * Gets the version of game this server implements
+     *
+     * @return version of game
+     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionId()
+     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionName()
+     */
+    @NotNull
+    public static String getMinecraftVersion() {
+        return server.getMinecraftVersion();
+    }
+    // Paper end
 
     /**
      * Gets a view of all currently logged in players. This {@linkplain

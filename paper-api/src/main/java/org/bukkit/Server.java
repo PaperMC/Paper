@@ -120,6 +120,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     public String getBukkitVersion();
 
+    // Paper start - expose game version
+    /**
+     * Gets the version of game this server implements
+     *
+     * @return version of game
+     */
+    @NotNull
+    String getMinecraftVersion();
+    // Paper end
+
     /**
      * Gets a view of all currently logged in players. This {@linkplain
      * Collections#unmodifiableCollection(Collection) view} is a reused
