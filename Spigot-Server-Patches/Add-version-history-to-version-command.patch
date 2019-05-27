@@ -4,9 +4,44 @@ Date: Thu, 1 Mar 2018 19:37:52 -0600
 Subject: [PATCH] Add version history to version command
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index ded51d042..e0bd79f60 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -0,0 +0,0 @@ public class PaperVersionFetcher implements VersionFetcher {
+     @Override
+     public String getVersionMessage(@Nonnull String serverVersion) {
+         String[] parts = serverVersion.substring("git-Paper-".length()).split("[-\\s]");
+-        return getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
++        String updateMessage = getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
++
++        return getHistory() + "\n" + updateMessage;
+     }
+ 
+     private static @Nullable String getMinecraftVersion() {
+@@ -0,0 +0,0 @@ public class PaperVersionFetcher implements VersionFetcher {
+             return -1;
+         }
+     }
++
++    @Nullable
++    private String getHistory() {
++        final VersionHistoryManager.VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
++        if (data == null) {
++            return null;
++        }
++
++        final String oldVersion = data.getOldVersion();
++        if (oldVersion == null) {
++            return null;
++        }
++
++        return "Previous version: " + oldVersion;
++    }
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
 new file mode 100644
-index 00000000..648b247e
+index 000000000..aac3f66cb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
 @@ -0,0 +0,0 @@
@@ -27,8 +62,9 @@ index 00000000..648b247e
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
 +import org.bukkit.Bukkit;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
 +
 +public enum VersionHistoryManager {
 +    INSTANCE;
@@ -85,7 +121,7 @@ index 00000000..648b247e
 +        }
 +    }
 +
-+    private void writeFile(@NotNull final Path path) {
++    private void writeFile(@Nonnull final Path path) {
 +        try (final BufferedWriter writer = Files.newBufferedWriter(
 +            path,
 +            StandardCharsets.UTF_8,
@@ -154,47 +190,16 @@ index 00000000..648b247e
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index 5a1f9504..a36ab04c 100644
---- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-+++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-@@ -0,0 +0,0 @@ import java.net.HttpURLConnection;
- import org.json.simple.JSONObject;
- import org.json.simple.parser.JSONParser;
- import org.json.simple.parser.ParseException;
-+import com.destroystokyo.paper.VersionHistoryManager;
- // Paper end
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 19e2df309..f0e2250cd 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             return false;
+         }
+         com.destroystokyo.paper.PaperConfig.registerCommands();
++        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         // Paper end
  
- public class VersionCommand extends BukkitCommand {
-@@ -0,0 +0,0 @@ public class VersionCommand extends BukkitCommand {
- 
-         if (args.length == 0) {
-             sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")");
-+            tellHistory(sender); // Paper
-             sendVersion(sender);
-         } else {
-             StringBuilder name = new StringBuilder();
-@@ -0,0 +0,0 @@ public class VersionCommand extends BukkitCommand {
-         return true;
-     }
- 
-+    // Paper start - show version history
-+    private void tellHistory(final CommandSender sender) {
-+        final VersionHistoryManager.VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
-+        if (data == null) {
-+            return;
-+        }
-+
-+        final String oldVersion = data.getOldVersion();
-+        if (oldVersion == null) {
-+            return;
-+        }
-+
-+        sender.sendMessage("Previous version: " + oldVersion);
-+    }
-+    // Paper end
-+
-     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
-         PluginDescriptionFile desc = plugin.getDescription();
-         sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+         this.setSpawnAnimals(dedicatedserverproperties.spawnAnimals);
 --
