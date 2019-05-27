@@ -1,0 +1,27 @@
+From 941a96e870ebf99e170d97cb135929ff7d7bfd3c Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 21 May 2019 02:34:04 +0100
+Subject: [PATCH] improve CraftWorld#isChunkLoaded
+
+getChunkAt will request the chunk using vanillas chunk loading system,
+which while we're not going to load the chunk, does involve the server
+waiting for the execution queue to get to our request; We can just query
+the chunk status and get a response now, vs having to wait
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 63f953617d..c0207694ac 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -382,8 +382,7 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public boolean isChunkLoaded(int x, int z) {
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
+-        return chunk != null;
++        return world.getChunkProvider().isLoaded(x, z);// Paper
+     }
+ 
+     @Override
+-- 
+2.21.0
+
