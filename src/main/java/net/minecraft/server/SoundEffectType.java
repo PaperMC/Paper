@@ -51,10 +51,10 @@ public class SoundEffectType {
     public static final SoundEffectType U = new SoundEffectType(1.0F, 1.0F, SoundEffects.BLOCK_GILDED_BLACKSTONE_BREAK, SoundEffects.BLOCK_GILDED_BLACKSTONE_STEP, SoundEffects.BLOCK_GILDED_BLACKSTONE_PLACE, SoundEffects.BLOCK_GILDED_BLACKSTONE_HIT, SoundEffects.BLOCK_GILDED_BLACKSTONE_FALL);
     public final float V;
     public final float W;
-    private final SoundEffect X;
+    private final SoundEffect X; public final SoundEffect getBreakSound() { return this.X; } // Paper - OBFHELPER
     private final SoundEffect Y;
     private final SoundEffect Z;
-    private final SoundEffect aa;
+    private final SoundEffect aa; public final SoundEffect getHitSound() { return this.aa; } // Paper - OBFHELPER
     private final SoundEffect ab;
 
     public SoundEffectType(float f, float f1, SoundEffect soundeffect, SoundEffect soundeffect1, SoundEffect soundeffect2, SoundEffect soundeffect3, SoundEffect soundeffect4) {
@@ -75,14 +75,17 @@ public class SoundEffectType {
         return this.W;
     }
 
+    public final SoundEffect getStepSound() { return this.d(); } // Paper - OBFHELPER
     public SoundEffect d() {
         return this.Y;
     }
 
+    public final SoundEffect getPlaceSound() { return this.e(); } // Paper - OBFHELPER
     public SoundEffect e() {
         return this.Z;
     }
 
+    public final SoundEffect getFallSound() { return this.g(); } // Paper - OBFHELPER
     public SoundEffect g() {
         return this.ab;
     }
