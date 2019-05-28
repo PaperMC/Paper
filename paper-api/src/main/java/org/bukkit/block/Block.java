@@ -616,4 +616,25 @@ public interface Block extends Metadatable, Translatable {
      * @return <code>true</code> if the block data can be placed here
      */
     boolean canPlace(@NotNull BlockData data);
+
+    // Paper start
+    /**
+     * Gets the {@link com.destroystokyo.paper.block.BlockSoundGroup} for this block.
+     * <p>
+     * This object contains the block, step, place, hit, and fall sounds.
+     *
+     * @return the sound group for this block
+     * @deprecated use {@link #getBlockSoundGroup()}
+     */
+    @NotNull
+    @Deprecated(forRemoval = true, since = "1.18.2")
+    com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup();
+
+    /**
+     * Gets the {@link org.bukkit.SoundGroup} for this block.
+     *
+     * @return the sound group for this block
+     */
+    @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
+    // Paper end
 }
