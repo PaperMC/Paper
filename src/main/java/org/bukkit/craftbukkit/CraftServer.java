@@ -1506,13 +1506,13 @@ public final class CraftServer implements Server {
 
     @Override
     public Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException {
-        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots");
+        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
         return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
     }
 
     @Override
     public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
-        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots");
+        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
         return CraftInventoryCreator.INSTANCE.createInventory(owner, size, title);
     }
 
