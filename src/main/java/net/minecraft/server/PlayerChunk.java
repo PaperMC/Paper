@@ -20,6 +20,7 @@ public class PlayerChunk {
     private static final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> UNLOADED_CHUNK_FUTURE = CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK);
     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.a();
     private static final PlayerChunk.State[] CHUNK_STATES = PlayerChunk.State.values();
+    boolean isUpdateQueued = false; // Paper
     private final AtomicReferenceArray<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> statusFutures;
     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage

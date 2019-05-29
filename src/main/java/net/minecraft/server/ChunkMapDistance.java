@@ -33,7 +33,16 @@ public abstract class ChunkMapDistance {
     private final ChunkMapDistance.a ticketLevelTracker = new ChunkMapDistance.a();
     private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
     private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
-    private final Set<PlayerChunk> pendingChunkUpdates = Sets.newHashSet();
+    // Paper start use a queue, but still keep unique requirement
+    public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
+        @Override
+        public boolean add(PlayerChunk o) {
+            if (o.isUpdateQueued) return true;
+            o.isUpdateQueued = true;
+            return super.add(o);
+        }
+    };
+    // Paper end
     private final ChunkTaskQueueSorter i;
     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
     private final Mailbox<ChunkTaskQueueSorter.b> k;
@@ -94,26 +103,14 @@ public abstract class ChunkMapDistance {
             ;
         }
 
+        // Paper start
         if (!this.pendingChunkUpdates.isEmpty()) {
-            // CraftBukkit start
-            // Iterate pending chunk updates with protection against concurrent modification exceptions
-            java.util.Iterator<PlayerChunk> iter = this.pendingChunkUpdates.iterator();
-            int expectedSize = this.pendingChunkUpdates.size();
-            do {
-                PlayerChunk playerchunk = iter.next();
-                iter.remove();
-                expectedSize--;
-
-                playerchunk.a(playerchunkmap);
-
-                // Reset iterator if set was modified using add()
-                if (this.pendingChunkUpdates.size() != expectedSize) {
-                    expectedSize = this.pendingChunkUpdates.size();
-                    iter = this.pendingChunkUpdates.iterator();
-                }
-            } while (iter.hasNext());
-            // CraftBukkit end
-
+            while(!this.pendingChunkUpdates.isEmpty()) {
+                PlayerChunk remove = this.pendingChunkUpdates.remove();
+                remove.isUpdateQueued = false;
+                remove.a(playerchunkmap);
+            }
+            // Paper end
             return true;
         } else {
             if (!this.l.isEmpty()) {
@@ -366,7 +363,7 @@ public abstract class ChunkMapDistance {
             ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
 
             while (objectiterator.hasNext()) {
-                it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
+                Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (Long2ByteMap.Entry) objectiterator.next(); // Paper - decompile fix
                 byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                 long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
 
