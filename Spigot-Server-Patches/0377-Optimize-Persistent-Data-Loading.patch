@@ -1,0 +1,62 @@
+From e1ed8abcbc9786fcffb960f9f44426bffe13d9f6 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Mar 2019 01:25:11 -0400
+Subject: [PATCH] Optimize Persistent Data Loading
+
+removes Mineshaft loading legacy as we had pre 1.13.2 to avoid managing
+that very large data file from legacy systems.
+
+Previous to 1.13.2 these data files were never loaded to begin with, so they
+effectively do not contain valid/relevant data.
+
+These files take a long time to convert on large worlds and crashes the server.
+
+Additionally, cache the result of a file being missing so we don't keep spam checking it.
+
+diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
+index 47a4ea998..62081349f 100644
+--- a/src/main/java/net/minecraft/server/WorldPersistentData.java
++++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
+@@ -26,6 +26,7 @@ public class WorldPersistentData {
+         this.c = datafixer;
+         this.d = file;
+     }
++    private static final PersistentBase NO_RESULT = new ForcedChunk(); // Paper
+ 
+     private File a(String s) {
+         return new File(this.d, s + ".dat");
+@@ -46,6 +47,7 @@ public class WorldPersistentData {
+ 
+     @Nullable
+     public <T extends PersistentBase> T b(Supplier<T> supplier, String s) {
++        if ("Mineshaft_index".equals(s) || "Mineshaft".equals(s)) return null; // Paper - mineshaft is useless data
+         PersistentBase persistentbase = (PersistentBase) this.data.get(s);
+ 
+         if (persistentbase == null) {
+@@ -58,13 +60,13 @@ public class WorldPersistentData {
+ 
+                     persistentbase.a(nbttagcompound.getCompound("data"));
+                     this.data.put(s, persistentbase);
+-                }
++                } else this.data.put(s, NO_RESULT); // Paper
+             } catch (Exception exception) {
+                 WorldPersistentData.LOGGER.error("Error loading saved data: {}", s, exception);
+             }
+         }
+ 
+-        return (T) persistentbase; // Paper - decompile fix
++        return (T) persistentbase == NO_RESULT ? null : (T) persistentbase; // Paper - decompile fix // Paper
+     }
+ 
+     public void a(PersistentBase persistentbase) {
+@@ -72,6 +74,7 @@ public class WorldPersistentData {
+     }
+ 
+     public NBTTagCompound a(String s, int i) throws IOException {
++        if ("Mineshaft".equals(s) || "Mineshaft_index".equals(s)) return new NBTTagCompound(); // Paper
+         File file = this.a(s);
+         PushbackInputStream pushbackinputstream = new PushbackInputStream(new FileInputStream(file), 2);
+         Throwable throwable = null;
+-- 
+2.21.0
+

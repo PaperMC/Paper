@@ -1,0 +1,85 @@
+From ba09cb8ea6fab09a58a9b4bc23747b715934a83b Mon Sep 17 00:00:00 2001
+From: Mystiflow <mystiflow@gmail.com>
+Date: Fri, 6 Jul 2018 13:21:30 +0100
+Subject: [PATCH] Send nearby packets from world player list not server list
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index e940b4b27..0db1e8334 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -922,8 +922,25 @@ public abstract class PlayerList {
+     }
+ 
+     public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, DimensionManager dimensionmanager, Packet<?> packet) {
+-        for (int i = 0; i < this.players.size(); ++i) {
+-            EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
++        // Paper start - Use world list instead of server list where preferable
++        sendPacketNearby(entityhuman, d0, d1, d2, d3, dimensionmanager, null, packet); // Retained for compatibility
++    }
++
++    public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, WorldServer world, Packet<?> packet) {
++        sendPacketNearby(entityhuman, d0, d1, d2, d3, world.worldProvider.getDimensionManager(), world, packet);
++    }
++
++    public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, DimensionManager dimensionmanager, @Nullable WorldServer world, Packet<?> packet) {
++        if (world == null && entityhuman != null && entityhuman.world instanceof WorldServer) {
++            world = (WorldServer) entityhuman.world;
++        }
++
++        List<? extends EntityHuman> players1 = world == null ? players : world.players;
++        for (int j = 0; j < players1.size(); ++j) {
++            EntityHuman entity = players1.get(j);
++            if (!(entity instanceof EntityPlayer)) continue;
++            EntityPlayer entityplayer = (EntityPlayer) entity;
++            // Paper end
+ 
+             // CraftBukkit start - Test if player receiving packet can see the source of the packet
+             if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
+@@ -931,7 +948,7 @@ public abstract class PlayerList {
+             }
+             // CraftBukkit end
+ 
+-            if (entityplayer != entityhuman && entityplayer.dimension == dimensionmanager) {
++            if (entityplayer != entityhuman && (world != null || entityplayer.dimension == dimensionmanager)) { // Paper
+                 double d4 = d0 - entityplayer.locX;
+                 double d5 = d1 - entityplayer.locY;
+                 double d6 = d2 - entityplayer.locZ;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 168e19b20..d11d01d73 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1179,7 +1179,7 @@ public class WorldServer extends World {
+         }
+         // CraftBukkit end
+         this.globalEntityList.add(entitylightning);
+-        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, 512.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutSpawnEntityWeather(entitylightning));
++        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, 512.0D, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension
+     }
+ 
+     @Override
+@@ -1311,7 +1311,7 @@ public class WorldServer extends World {
+             BlockActionData blockactiondata = (BlockActionData) this.J.removeFirst();
+ 
+             if (this.a(blockactiondata)) {
+-                this.server.getPlayerList().sendPacketNearby((EntityHuman) null, (double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.b(), blockactiondata.c(), blockactiondata.d()));
++                this.server.getPlayerList().sendPacketNearby((EntityHuman) null, (double) blockactiondata.a().getX(), (double) blockactiondata.a().getY(), (double) blockactiondata.a().getZ(), 64.0D, this, new PacketPlayOutBlockAction(blockactiondata.a(), blockactiondata.b(), blockactiondata.c(), blockactiondata.d()));
+             }
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1adced482..1dee89595 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1909,7 +1909,7 @@ public class CraftWorld implements World {
+         double z = loc.getZ();
+ 
+         PacketPlayOutCustomSoundEffect packet = new PacketPlayOutCustomSoundEffect(new MinecraftKey(sound), SoundCategory.valueOf(category.name()), new Vec3D(x, y, z), volume, pitch);
+-        world.getMinecraftServer().getPlayerList().sendPacketNearby(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.getWorldProvider().getDimensionManager(), packet);
++        world.getMinecraftServer().getPlayerList().sendPacketNearby(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world, packet); // Paper - this.world.dimension -> this.world
+     }
+ 
+     @Override
+-- 
+2.21.0
+
