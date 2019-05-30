@@ -811,7 +811,7 @@ public class CraftWorld implements World {
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 // Assuming that bukkitEntity isn't null
-                if (bukkitEntity != null) {
+                if (bukkitEntity != null && bukkitEntity.isValid()) {
                     list.add(bukkitEntity);
                 }
             }
@@ -830,7 +830,7 @@ public class CraftWorld implements World {
                 Entity bukkitEntity = mcEnt.getBukkitEntity();
 
                 // Assuming that bukkitEntity isn't null
-                if (bukkitEntity != null && bukkitEntity instanceof LivingEntity) {
+                if (bukkitEntity != null && bukkitEntity instanceof LivingEntity && bukkitEntity.isValid()) {
                     list.add((LivingEntity) bukkitEntity);
                 }
             }
