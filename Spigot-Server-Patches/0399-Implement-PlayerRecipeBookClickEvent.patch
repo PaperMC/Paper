@@ -1,0 +1,47 @@
+From f84fd883fdceed72fa1b4ab352ce6565c0ed5a58 Mon Sep 17 00:00:00 2001
+From: LordKorea <lk97798@posteo.net>
+Date: Thu, 30 May 2019 20:53:44 +0200
+Subject: [PATCH] Implement PlayerRecipeBookClickEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 01c268a58..3b6a4da30 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -28,6 +28,7 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey; // Paper
+ import org.bukkit.craftbukkit.util.LazyPlayerSet;
+ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.entity.Player;
+@@ -61,6 +62,7 @@ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.util.NumberConversions;
+ import com.destroystokyo.paper.event.player.IllegalPacketEvent; // Paper
+ import com.destroystokyo.paper.event.player.PlayerJumpEvent; // Paper
++import com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent; // Paper
+ import co.aikar.timings.MinecraftTimings; // Paper
+ // CraftBukkit end
+ 
+@@ -2435,9 +2437,14 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         PlayerConnectionUtils.ensureMainThread(packetplayinautorecipe, this, this.player.getWorldServer());
+         this.player.resetIdleTimer();
+         if (!this.player.isSpectator() && this.player.activeContainer.windowId == packetplayinautorecipe.b() && this.player.activeContainer.c(this.player) && this.player.activeContainer instanceof ContainerRecipeBook) {
+-            this.minecraftServer.getCraftingManager().a(packetplayinautorecipe.c()).ifPresent((irecipe) -> {
+-                ((ContainerRecipeBook) this.player.activeContainer).a(packetplayinautorecipe.d(), irecipe, this.player);
+-            });
++            // Paper start - fire event for clicking recipes in the recipe book
++            PlayerRecipeBookClickEvent event = new PlayerRecipeBookClickEvent(player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(packetplayinautorecipe.c()), packetplayinautorecipe.d());
++            if (event.callEvent()) {
++                this.minecraftServer.getCraftingManager().a(CraftNamespacedKey.toMinecraft(event.getRecipe())).ifPresent((irecipe) -> {
++                    ((ContainerRecipeBook) this.player.activeContainer).a(event.isMakeAll(), irecipe, this.player);
++                });
++            }
++            // Paper end
+         }
+     }
+ 
+-- 
+2.21.0
+
