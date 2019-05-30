@@ -1,4 +1,4 @@
-From 34fa65b40e1f673ac19f014c92f5dd72a133d32f Mon Sep 17 00:00:00 2001
+From e27ae28fa9c01ce1867832c3452849b3b05a7290 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 14 Jan 2018 17:36:02 -0500
 Subject: [PATCH] PlayerNaturallySpawnCreaturesEvent
@@ -9,24 +9,23 @@ from triggering monster spawns on a server.
 Also a highly more effecient way to blanket block spawns in a world
 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 6a49251cc7..de50740e62 100644
+index c2f442051..5d6d6a5a5 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -761,12 +761,17 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         int chunkRange = world.spigotConfig.mobSpawnRange;
+@@ -762,11 +762,17 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
          chunkRange = (chunkRange > 8) ? 8 : chunkRange;
--
--        double blockRange = Math.pow(chunkRange << 4, 2);
+ 
+-        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
 +        final int finalChunkRange = chunkRange; // Paper for lambda below
-+        //double blockRange = Math.pow(chunkRange << 4, 2); // Paper - use the range from the event
++        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
          // Spigot end
  
          return this.playerMap.a(chunkcoordintpair.pair()).noneMatch((entityplayer) -> {
 -            return !entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange; // Spigot
 +            // Paper start -
 +            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event
-+                = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte)finalChunkRange);
++                = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) finalChunkRange);
 +            final double blockRange = (double)((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
 +            return event.isCancelled() || (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange); // Spigot
 +            // Paper end
