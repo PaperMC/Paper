@@ -1,4 +1,4 @@
-From 7391eed7fedeca7fd017eb73112b6c04c6cdf240 Mon Sep 17 00:00:00 2001
+From 4e3d2985cd44fe975955a20a3c1b6c54a733a8d4 Mon Sep 17 00:00:00 2001
 From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 8 Oct 2018 14:36:14 -0400
 Subject: [PATCH] Add Velocity IP Forwarding Support
@@ -14,7 +14,7 @@ forwarding, and is integrated into the Minecraft login process by using the 1.13
 login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index e4972e30ce..cac79686d8 100644
+index e4972e30c..cac79686d 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -8,6 +8,7 @@ import java.io.IOException;
@@ -55,7 +55,7 @@ index e4972e30ce..cac79686d8 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
-index 0000000000..fdd8708f97
+index 000000000..fdd8708f9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 @@ -0,0 +1,67 @@
@@ -127,7 +127,7 @@ index 0000000000..fdd8708f97
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index c5801122dd..ca76f2a380 100644
+index c5801122d..ca76f2a38 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -42,6 +42,7 @@ public class LoginListener implements PacketLoginInListener, ITickable {
@@ -203,7 +203,7 @@ index c5801122dd..ca76f2a380 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 4c1110479c..c536979140 100644
+index 4c1110479..c53697914 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -46,7 +46,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -216,7 +216,7 @@ index 4c1110479c..c536979140 100644
      public java.util.UUID spoofedUUID;
      public com.mojang.authlib.properties.Property[] spoofedProfile;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index b95836d443..621aad1503 100644
+index b95836d44..621aad150 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -140,6 +140,7 @@ public class PacketDataSerializer extends ByteBuf {
@@ -244,7 +244,7 @@ index b95836d443..621aad1503 100644
          int j = this.g();
  
 diff --git a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
-index bdac03da43..430445cc6d 100644
+index bdac03da4..430445cc6 100644
 --- a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
 +++ b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
 @@ -4,8 +4,8 @@ import java.io.IOException;
@@ -259,7 +259,7 @@ index bdac03da43..430445cc6d 100644
      public PacketLoginInCustomPayload() {}
  
 diff --git a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
-index 345843a7f2..23c96f44b3 100644
+index 345843a7f..23c96f44b 100644
 --- a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
 +++ b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
 @@ -10,6 +10,14 @@ public class PacketLoginOutCustomPayload implements Packet<PacketLoginOutListene
@@ -277,6 +277,19 @@ index 345843a7f2..23c96f44b3 100644
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.g();
          this.b = packetdataserializer.l();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index af065bd70..c15fc1fb6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -639,7 +639,7 @@ public final class CraftServer implements Server {
+     @Override
+     public long getConnectionThrottle() {
+         // Spigot Start - Automatically set connection throttle for bungee configurations
+-        if (org.spigotmc.SpigotConfig.bungee) {
++        if (org.spigotmc.SpigotConfig.bungee || com.destroystokyo.paper.PaperConfig.velocitySupport) { // Paper - Velocity support
+             return -1;
+         } else {
+             return this.configuration.getInt("settings.connection-throttle");
 -- 
 2.21.0
 
