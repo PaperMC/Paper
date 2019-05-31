@@ -1,13 +1,22 @@
-From 49a84ac1c81e92f2090e5438cfbbf1f3be6d0637 Mon Sep 17 00:00:00 2001
+From 78203ccab7cc30370850c42578162e394a7172fb Mon Sep 17 00:00:00 2001
 From: Brokkonaut <hannos17@gmx.de>
 Date: Tue, 7 Feb 2017 16:55:35 -0600
 Subject: [PATCH] Make targetSize more aggressive in the chunk unload queue
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index ba59c561e8..6a49251cc7 100644
+index ff32fe32ce..74a1b4a852 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -81,7 +81,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.v = new AtomicInteger();
+         this.playerMap = new PlayerMap();
+         this.trackedEntities = new Int2ObjectOpenHashMap();
+-        this.A = Queues.newConcurrentLinkedQueue();
++        this.A = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper
+         this.definedStructureManager = definedstructuremanager;
+         this.x = worldserver.getWorldProvider().getDimensionManager().a(file);
+         this.world = worldserver;
 @@ -324,7 +324,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          // Spigot start
          org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
@@ -17,6 +26,17 @@ index ba59c561e8..6a49251cc7 100644
          // Spigot end
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
+@@ -346,7 +346,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+         Runnable runnable;
+ 
+-        while (booleansupplier.getAsBoolean() && (runnable = (Runnable) this.A.poll()) != null) {
++        int queueTarget = Math.min(this.A.size() - 100, (int) (this.A.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Target this queue as well
++
++        while ((booleansupplier.getAsBoolean() || this.A.size() > queueTarget) && (runnable = (Runnable) this.A.poll()) != null) { // Paper - Target this queue as well
+             runnable.run();
+         }
+ 
 -- 
 2.21.0
 
