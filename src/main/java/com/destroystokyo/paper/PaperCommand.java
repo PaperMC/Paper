@@ -28,14 +28,14 @@ public class PaperCommand extends Command {
     public PaperCommand(String name) {
         super(name);
         this.description = "Paper related commands";
-        this.usageMessage = "/paper [heap | entity | reload | version]";
+        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
         this.setPermission("bukkit.command.paper");
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         if (args.length <= 1)
-            return getListMatchingLast(args, "heap", "entity", "reload", "version");
+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
 
         switch (args[0].toLowerCase(Locale.ENGLISH))
         {
@@ -44,6 +44,21 @@ public class PaperCommand extends Command {
                     return getListMatchingLast(args, "help", "list");
                 if (args.length == 3)
                     return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
+                break;
+            case "debug":
+                if (args.length == 2) {
+                    return getListMatchingLast(args, "help", "chunks");
+                }
+                break;
+            case "chunkinfo":
+                List<String> worldNames = new ArrayList<>();
+                worldNames.add("*");
+                for (org.bukkit.World world : Bukkit.getWorlds()) {
+                    worldNames.add(world.getName());
+                }
+                if (args.length == 2) {
+                    return getListMatchingLast(args, worldNames);
+                }
                 break;
         }
         return Collections.emptyList();
@@ -109,6 +124,12 @@ public class PaperCommand extends Command {
             case "reload":
                 doReload(sender);
                 break;
+            case "debug":
+                doDebug(sender, args);
+                break;
+            case "chunkinfo":
+                doChunkInfo(sender, args);
+                break;
             case "ver":
             case "version":
                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
@@ -123,6 +144,96 @@ public class PaperCommand extends Command {
         }
 
         return true;
+    }
+
+    private void doChunkInfo(CommandSender sender, String[] args) {
+        List<org.bukkit.World> worlds;
+        if (args.length < 2 || args[1].equals("*")) {
+            worlds = Bukkit.getWorlds();
+        } else {
+            worlds = new ArrayList<>(args.length - 1);
+            for (int i = 1; i < args.length; ++i) {
+                org.bukkit.World world = Bukkit.getWorld(args[i]);
+                if (world == null) {
+                    sender.sendMessage(ChatColor.RED + "World '" + args[i] + "' is invalid");
+                    return;
+                }
+                worlds.add(world);
+            }
+        }
+
+        for (org.bukkit.World bukkitWorld : worlds) {
+            WorldServer world = ((CraftWorld)bukkitWorld).getHandle();
+
+            int total = 0;
+            int inactive = 0;
+            int border = 0;
+            int ticking = 0;
+            int entityTicking = 0;
+
+            for (PlayerChunk chunk : world.getChunkProvider().playerChunkMap.updatingChunks.values()) {
+                if (chunk.getFullChunkIfCached() == null) {
+                    continue;
+                }
+
+                ++total;
+
+                PlayerChunk.State state = PlayerChunk.getChunkState(chunk.getTicketLevel());
+
+                switch (state) {
+                    case INACCESSIBLE:
+                        ++inactive;
+                        continue;
+                    case BORDER:
+                        ++border;
+                        continue;
+                    case TICKING:
+                        ++ticking;
+                        continue;
+                    case ENTITY_TICKING:
+                        ++entityTicking;
+                        continue;
+                }
+            }
+
+            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + bukkitWorld.getName() + ChatColor.DARK_AQUA + ":");
+            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + total + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
+                               + inactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + border + ChatColor.BLUE + " Ticking: "
+                               + ChatColor.DARK_AQUA + ticking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + entityTicking);
+        }
+    }
+
+    private void doDebug(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
+            return;
+        }
+
+        String debugType = args[1].toLowerCase(Locale.ENGLISH);
+        switch (debugType) {
+            case "chunks":
+                if (args.length >= 3 && args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
+                    sender.sendMessage(ChatColor.RED + "Use /paper debug chunks to dump loaded chunk information to a file");
+                    break;
+                }
+                File file = new File(new File(new File("."), "debug"),
+                    "chunks-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
+                sender.sendMessage(ChatColor.GREEN + "Writing chunk information dump to " + file.toString());
+                try {
+                    MCUtil.dumpChunks(file);
+                    sender.sendMessage(ChatColor.GREEN + "Successfully written chunk information!");
+                } catch (Throwable thr) {
+                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
+                    sender.sendMessage(ChatColor.RED + "Failed to dump chunk information, see console");
+                }
+
+                break;
+            case "help":
+                // fall through to default
+            default:
+                sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
+                return;
+        }
     }
 
     /*

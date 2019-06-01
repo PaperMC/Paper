@@ -29,7 +29,7 @@ public class PlayerChunk {
     public int oldTicketLevel;
     private int ticketLevel;
     private int n;
-    private final ChunkCoordIntPair location;
+    final ChunkCoordIntPair location; // Paper - private -> package
     private boolean p;
     private final ShortSet[] dirtyBlocks;
     private int r;

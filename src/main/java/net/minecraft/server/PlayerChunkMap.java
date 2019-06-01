@@ -59,7 +59,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new Long2ObjectLinkedOpenHashMap();
     public volatile Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks;
     private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
-    private final LongSet loadedChunks;
+    final LongSet loadedChunks; // Paper - private -> package
     public final WorldServer world;
     private final LightEngineThreaded lightEngine;
     private final IAsyncTaskHandler<Runnable> executor;
