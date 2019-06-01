@@ -1,0 +1,304 @@
+From 89eb59f656129ab4c436f61cc484f6864a5e0b5c Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 1 Jun 2019 13:00:55 -0700
+Subject: [PATCH] Chunk debug command
+
+Prints all chunk information to a text file into the debug
+folder in the root server folder.
+
+Will output server version and all online players to the
+file as well. We do not log anything but the location,
+world and username of the player.
+
+Also logs the value of these config values (note not all are paper's):
+- keep spawn loaded value
+- spawn radius
+- view distance
+
+Each chunk has the following logged:
+- Coordinate
+- Ticket level & its corresponding state
+- Whether it is queued for unload
+- Chunk status (may be unloaded)
+- All tickets on the chunk
+
+Example log:
+https://gist.github.com/Spottedleaf/203bd211020a3a04da0e574fb57dab45
+
+For references on certain keywords (ticket, status, etc), please see:
+
+https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528273
+https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 352a39dcb3..4a7939472d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -28,14 +28,14 @@ public class PaperCommand extends Command {
+     public PaperCommand(String name) {
+         super(name);
+         this.description = "Paper related commands";
+-        this.usageMessage = "/paper [heap | entity | reload | version]";
++        this.usageMessage = "/paper [heap | entity | reload | version | debug]";
+         this.setPermission("bukkit.command.paper");
+     }
+ 
+     @Override
+     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+         if (args.length <= 1)
+-            return getListMatchingLast(args, "heap", "entity", "reload", "version");
++            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug");
+ 
+         switch (args[0].toLowerCase(Locale.ENGLISH))
+         {
+@@ -45,6 +45,10 @@ public class PaperCommand extends Command {
+                 if (args.length == 3)
+                     return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
+                 break;
++            case "debug":
++                if (args.length == 2) {
++                    return getListMatchingLast(args, "help", "chunks");
++                }
+         }
+         return Collections.emptyList();
+     }
+@@ -109,6 +113,9 @@ public class PaperCommand extends Command {
+             case "reload":
+                 doReload(sender);
+                 break;
++            case "debug":
++                doDebug(sender, args);
++                break;
+             case "ver":
+             case "version":
+                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
+@@ -125,6 +132,39 @@ public class PaperCommand extends Command {
+         return true;
+     }
+ 
++    private void doDebug(CommandSender sender, String[] args) {
++        if (args.length < 2) {
++            sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
++            return;
++        }
++
++        String debugType = args[1].toLowerCase(Locale.ENGLISH);
++        switch (debugType) {
++            case "chunks":
++                if (args.length >= 3 && args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
++                    sender.sendMessage(ChatColor.RED + "Use /paper debug chunks to dump loaded chunk information to a file");
++                    break;
++                }
++                File file = new File(new File(new File("."), "debug"),
++                    "chunks-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
++                sender.sendMessage(ChatColor.GREEN + "Writing chunk information dump to " + file.toString());
++                try {
++                    MCUtil.dumpChunks(file);
++                    sender.sendMessage(ChatColor.GREEN + "Successfully written chunk information!");
++                } catch (Throwable thr) {
++                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
++                    sender.sendMessage(ChatColor.RED + "Failed to dump chunk information, see console");
++                }
++
++                break;
++            case "help":
++                // fall through to default
++            default:
++                sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
++                return;
++        }
++    }
++
+     /*
+      * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
+      */
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index d3c2ad3c40..705ca68798 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -33,7 +33,7 @@ public abstract class ChunkMapDistance {
+     private static final int b = 33 + ChunkStatus.a(ChunkStatus.FULL) - 2;
+     private final Long2ObjectMap<ObjectSet<EntityPlayer>> c = new Long2ObjectOpenHashMap();
+     private final Long2ObjectMap<ObjectSet<EntityPlayer>> d = new Long2ObjectOpenHashMap();
+-    private final Long2ObjectOpenHashMap<ObjectSortedSet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
++    final Long2ObjectOpenHashMap<ObjectSortedSet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap(); // Paper -> private -> package
+     private final ChunkMapDistance.a f = new ChunkMapDistance.a();
+     private final ChunkMapDistance.c g = new ChunkMapDistance.c();
+     private int entitydistance;
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 0e941b520f..66736c8ae4 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
+ public class ChunkProviderServer extends IChunkProvider {
+ 
+     private static final int b = (int) Math.pow(17.0D, 2.0D);
+-    private static final List<ChunkStatus> c = ChunkStatus.a();
++    private static final List<ChunkStatus> c = ChunkStatus.a(); static final List<ChunkStatus> getPossibleChunkStati() { return ChunkProviderServer.c; } // Paper - OBFHELPER
+     private final ChunkMapDistance chunkMapDistance;
+     public final ChunkGenerator<?> chunkGenerator;
+     private final WorldServer world;
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index ec3732193f..2e79e2fa20 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -5,6 +5,8 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
+ import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import com.mojang.authlib.GameProfile;
++import com.mojang.datafixers.util.Either;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+ import org.apache.commons.lang.exception.ExceptionUtils;
+ import org.bukkit.Location;
+ import org.bukkit.block.BlockFace;
+@@ -14,7 +16,12 @@ import org.spigotmc.AsyncCatcher;
+ 
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
++import java.io.File;
++import java.io.IOException;
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Queue;
++import java.util.Set;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.ExecutionException;
+ import java.util.concurrent.Executor;
+@@ -354,4 +361,99 @@ public final class MCUtil {
+ 
+         return null;
+     }
++
++    private static ChunkStatus getChunkStatus(PlayerChunk chunk) {
++        List<ChunkStatus> statuses = ChunkProviderServer.getPossibleChunkStati();
++        for (int i = statuses.size() - 1; i >= 0; --i) {
++            ChunkStatus curr = statuses.get(i);
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = chunk.getStatusFutureUnchecked(curr);
++            if (future != PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE) {
++                return curr;
++            }
++        }
++        return null; // unloaded
++    }
++
++    public static void dumpChunks(File file) throws IOException {
++        file.getParentFile().mkdirs();
++        file.createNewFile();
++        List<org.bukkit.World> worlds = org.bukkit.Bukkit.getWorlds();
++        try (java.io.PrintStream out = new java.io.PrintStream(new java.io.FileOutputStream(file), false, "UTF-8")) {
++            // print info
++            out.println("Server version: " + org.bukkit.Bukkit.getVersion());
++            out.println("Total worlds: " + worlds.size());
++            out.println("Worlds: " + worlds.toString());
++            out.println("Total online players: " + org.bukkit.Bukkit.getOnlinePlayers().size());
++            out.println();
++
++            for (org.bukkit.World bukkitWorld : worlds) {
++                WorldServer world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
++                PlayerChunkMap chunkMap = world.getChunkProvider().playerChunkMap;
++                Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = chunkMap.visibleChunks;
++                ChunkMapDistance chunkMapDistance = chunkMap.getChunkMapDistanceManager();
++                List<PlayerChunk> allChunks = new ArrayList<>(visibleChunks.values());
++                List<EntityPlayer> players = world.players;
++
++                int fullLoadedChunks = 0;
++
++                for (PlayerChunk chunk : allChunks) {
++                    if (chunk.getFullChunk() != null) {
++                        ++fullLoadedChunks;
++                    }
++                }
++
++                // sorting by coordinate makes the log easier to read
++                allChunks.sort((PlayerChunk v1, PlayerChunk v2) -> {
++                    if (v1.location.x != v2.location.x) {
++                        return Integer.compare(v1.location.x, v2.location.x);
++                    }
++                    return Integer.compare(v1.location.z, v2.location.z);
++                });
++
++                out.println("World: " + world.getWorldData().getName());
++                out.println("Keep spawn loaded: " + world.keepSpawnInMemory);
++                out.println("Keep spawn loaded range: " + world.paperConfig.keepLoadedRange);
++                out.println("View distance: " + world.spigotConfig.viewDistance);
++                out.println("Visible chunk count: " + visibleChunks.size());
++                out.println("Loaded chunk size: " + chunkMap.loadedChunks.size());
++                out.println("Fully loaded chunks: " + fullLoadedChunks);
++                out.println("Player count: " + players.size());
++                if (players.size() != 0) {
++                    out.println("Players:");
++                    out.println();
++
++                    // dump player info first
++
++                    for (EntityPlayer player : players) {
++                        double x = player.locX;
++                        double y = player.locY;
++                        double z = player.locZ;
++                        int chunkX = (int) Math.floor(x) >> 4;
++                        int chunkZ = (int) Math.floor(z) >> 4;
++                        out.println(player.getName() + ": pos(" + x + "," + y + "," + z + ") chunk(" + chunkX + "," + chunkZ + ")");
++                    }
++                    out.println();
++                }
++
++                if (allChunks.size() != 0) {
++                    out.println("Chunks:");
++                    out.println();
++
++
++                    // dump chunk info
++
++                    for (PlayerChunk playerChunk : allChunks) {
++                        Set<Ticket<?>> tickets = chunkMapDistance.tickets.get(playerChunk.location.pair());
++                        ChunkStatus status = getChunkStatus(playerChunk);
++                        out.printf("x:%-7d z:%-7d ticket_level:%-3d state:%-15s queued_unload:%-7s status:%-45s tickets:%s%n", playerChunk.location.x,
++                            playerChunk.location.z, playerChunk.getTicketLevel(), PlayerChunk.getChunkState(playerChunk.getTicketLevel()),
++                            chunkMap.unloadQueue.contains(playerChunk.location.pair()),
++                            status == null ? "unloaded" : status.toString(), tickets == null ? "{}" : tickets.toString());
++                    }
++                }
++                out.println();
++            }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 0d8cddeb62..22739ad8a1 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -26,7 +26,7 @@ public class PlayerChunk {
+     public int oldTicketLevel;
+     private int ticketLevel;
+     private int n;
+-    private final ChunkCoordIntPair location;
++    final ChunkCoordIntPair location; // Paper - private -> package
+     private final short[] dirtyBlocks;
+     private int dirtyCount;
+     private int r;
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 276a365ff5..ef921005c5 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -53,7 +53,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new Long2ObjectLinkedOpenHashMap();
+     public volatile Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks;
+     private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
+-    private final LongSet loadedChunks;
++    final LongSet loadedChunks; // Paper - private -> package
+     public final WorldServer world;
+     private final LightEngineThreaded lightEngine;
+     private final IAsyncTaskHandler<Runnable> executor;
+@@ -66,7 +66,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxWorldGen;
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxMain;
+     public final WorldLoadListener worldLoadListener;
+-    private final PlayerChunkMap.a u;
++    private final PlayerChunkMap.a u; public final PlayerChunkMap.a getChunkMapDistanceManager() { return this.u; } // Paper - OBFHELPER
+     private final AtomicInteger v;
+     private final DefinedStructureManager definedStructureManager;
+     private final File x;
+-- 
+2.21.0
+
