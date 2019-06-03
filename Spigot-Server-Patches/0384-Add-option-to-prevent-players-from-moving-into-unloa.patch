@@ -1,0 +1,69 @@
+From 252d777181440ac9c14bbbb85a26bcc42f498fb2 Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Mon, 22 Oct 2018 17:34:10 +0200
+Subject: [PATCH] Add option to prevent players from moving into unloaded
+ chunks #1551
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 319b5b95d..897bb49b4 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -593,4 +593,10 @@ public class PaperWorldConfig {
+         this.villageSiegesEnabled = getBoolean("game-mechanics.village-sieges-enabled", this.villageSiegesEnabled);
+         log("Village sieges are " + (this.villageSiegesEnabled ? "enabled" : "disabled"));
+     }
++
++    public boolean preventMovingIntoUnloadedChunks = false;
++    private void preventMovingIntoUnloadedChunks() {
++        preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
++        log("Prevent players from moving into unloaded chunks: " + (this.preventMovingIntoUnloadedChunks ? "enabled" : "disabled"));
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 8c20bcd14..59d526329 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -343,6 +343,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                 }
+                 speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
+ 
++                // Paper start - Prevent moving into unloaded chunks
++                if (player.world.paperConfig.preventMovingIntoUnloadedChunks && !worldserver.isChunkLoaded((int) Math.floor(packetplayinvehiclemove.getX()) >> 4, (int) Math.floor(packetplayinvehiclemove.getZ()) >> 4, false)) {
++                    this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
++                    return;
++                }
++                // Paper end
++
+                 if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && (!this.minecraftServer.R() || !this.minecraftServer.Q().equals(entity.getName()))) { // Spigot
+                 // CraftBukkit end
+                     PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getName(), this.player.getName(), Double.valueOf(d6), Double.valueOf(d7), Double.valueOf(d8));
+@@ -539,9 +546,9 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                         double d1 = this.player.locY;
+                         double d2 = this.player.locZ;
+                         double d3 = this.player.locY;
+-                        double d4 = packetplayinflying.a(this.player.locX);
++                        double d4 = packetplayinflying.a(this.player.locX); double toX = d4; // Paper - OBFHELPER
+                         double d5 = packetplayinflying.b(this.player.locY);
+-                        double d6 = packetplayinflying.c(this.player.locZ);
++                        double d6 = packetplayinflying.c(this.player.locZ); double toZ = d6; // Paper - OBFHELPER
+                         float f = packetplayinflying.a(this.player.yaw);
+                         float f1 = packetplayinflying.b(this.player.pitch);
+                         double d7 = d4 - this.l;
+@@ -581,6 +588,13 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
+ 
++                            // Paper start - Prevent moving into unloaded chunks
++                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX != toX || this.player.locZ != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4, false)) {
++                                this.internalTeleport(this.player.locX, this.player.locY, this.player.locZ, this.player.yaw, this.player.pitch, Collections.emptySet());
++                                return;
++                            }
++                            // Paper end
++
+                             if (!this.player.L() && (!this.player.x().getGameRules().getBoolean("disableElytraMovementCheck") || !this.player.cP())) {
+                                 float f2 = this.player.cP() ? 300.0F : 100.0F;
+ 
+-- 
+2.21.0
+
