@@ -1,10 +1,15 @@
 package com.destroystokyo.paper;
 
 import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.spigotmc.SpigotWorldConfig;
 
@@ -497,5 +502,53 @@ public class PaperWorldConfig {
     public boolean disableRelativeProjectileVelocity;
     private void disableRelativeProjectileVelocity() {
         disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
+    }
+
+    public boolean altItemDespawnRateEnabled;
+    public Map<Material, Integer> altItemDespawnRateMap;
+    private void altItemDespawnRate() {
+        String path = "alt-item-despawn-rate";
+
+        altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
+
+        Map<Material, Integer> altItemDespawnRateMapDefault = new EnumMap<>(Material.class);
+        altItemDespawnRateMapDefault.put(Material.COBBLESTONE, 300);
+        for (Material key : altItemDespawnRateMapDefault.keySet()) {
+            config.addDefault("world-settings.default." + path + ".items." + key, altItemDespawnRateMapDefault.get(key));
+        }
+
+        Map<String, Integer> rawMap = new HashMap<>();
+        try {
+            ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
+            if (mapSection == null) {
+                mapSection = config.getConfigurationSection("world-settings.default." + path + ".items");
+            }
+            for (String key : mapSection.getKeys(false)) {
+                int val = mapSection.getInt(key);
+                rawMap.put(key, val);
+            }
+        }
+        catch (Exception e) {
+            logError("alt-item-despawn-rate was malformatted");
+            altItemDespawnRateEnabled = false;
+        }
+
+        altItemDespawnRateMap = new EnumMap<>(Material.class);
+        if (!altItemDespawnRateEnabled) {
+            return;
+        }
+
+        for(String key : rawMap.keySet()) {
+            try {
+                altItemDespawnRateMap.put(Material.valueOf(key), rawMap.get(key));
+            } catch (Exception e) {
+                logError("Could not add item " + key + " to altItemDespawnRateMap: " + e.getMessage());
+            }
+        }
+        if(altItemDespawnRateEnabled) {
+            for(Material key : altItemDespawnRateMap.keySet()) {
+                log("Alternative item despawn rate of " + key + ": " + altItemDespawnRateMap.get(key));
+            }
+        }
     }
 }
