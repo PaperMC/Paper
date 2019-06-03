@@ -16,7 +16,7 @@ which results in a hard crash.
 This change removes the synchronize and adds some protection around enable/disable
 
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index adca48f1..2d3cee14 100644
+index adca48f18..2d3cee140 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ index adca48f1..2d3cee14 100644
       *
       * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index da3cd63b..583f8ee4 100644
+index da3cd63ba..5eefb4b5b 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
@@ -88,7 +88,9 @@ index da3cd63b..583f8ee4 100644
 -            }
 +        // Paper - replace callEvent by merging to below method
 +        if (event.isAsynchronous() && server.isPrimaryThread()) {
-+            throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
++            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
++        } else if (!event.isAsynchronous() && !server.isPrimaryThread()) {
++            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
 -    }
  
@@ -97,7 +99,7 @@ index da3cd63b..583f8ee4 100644
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
  
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index 17dbe913..bae26ce7 100644
+index 17dbe9139..bae26ce73 100644
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 @@ -0,0 +0,0 @@ public class PluginManagerTest {
