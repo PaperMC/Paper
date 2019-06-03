@@ -55,16 +55,17 @@
  
  public class ItemEntity extends Entity implements TraceableEntity {
  
-@@ -52,6 +60,8 @@
+@@ -52,6 +60,9 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
 +    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
 +    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
++    private int despawnRate = -1; // Paper - Alternative item-despawn-rate
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -133,12 +143,15 @@
+@@ -133,12 +144,15 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -84,7 +85,7 @@
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -162,7 +175,7 @@
+@@ -162,7 +176,7 @@
                  }
              }
  
@@ -93,7 +94,7 @@
                  this.move(MoverType.SELF, this.getDeltaMovement());
                  this.applyEffectsFromBlocks();
                  float f = 0.98F;
-@@ -188,9 +201,11 @@
+@@ -188,9 +202,11 @@
                  this.mergeWithNeighbours();
              }
  
@@ -105,13 +106,13 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,14 +216,42 @@
+@@ -201,14 +217,42 @@
                  }
              }
  
 -            if (!this.level().isClientSide && this.age >= 6000) {
 -                this.discard();
-+            if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++            if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
@@ -134,7 +135,7 @@
 +        this.lastTick = MinecraftServer.currentTick;
 +        // CraftBukkit end
 +
-+        if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
 +            // CraftBukkit start - fire ItemDespawnEvent
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                this.age = 0;
@@ -150,7 +151,7 @@
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
          return this.getOnPos(0.999999F);
      }
-@@ -229,7 +272,10 @@
+@@ -229,7 +273,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -162,7 +163,16 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -259,7 +305,7 @@
+@@ -251,7 +298,7 @@
+     private boolean isMergable() {
+         ItemStack itemstack = this.getItem();
+ 
+-        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < 6000 && itemstack.getCount() < itemstack.getMaxStackSize();
++        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < this.despawnRate && itemstack.getCount() < itemstack.getMaxStackSize(); // Paper - Alternative item-despawn-rate
+     }
+ 
+     private void tryToMerge(ItemEntity other) {
+@@ -259,7 +306,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -171,7 +181,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +333,16 @@
+@@ -287,11 +334,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -189,7 +199,7 @@
          }
  
      }
-@@ -320,12 +371,17 @@
+@@ -320,12 +372,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -208,7 +218,7 @@
              }
  
              return true;
-@@ -382,22 +438,86 @@
+@@ -382,22 +439,86 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -225,7 +235,7 @@
              ItemStack itemstack = this.getItem();
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
-+
+ 
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
@@ -263,7 +273,7 @@
 +                    // Paper end
 +                    return;
 +                }
- 
++
 +                // Call newer event afterwards
 +                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
@@ -298,12 +308,20 @@
                      itemstack.setCount(i);
                  }
  
-@@ -492,7 +612,7 @@
+@@ -438,6 +559,7 @@
+ 
+     public void setItem(ItemStack stack) {
+         this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
++        this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), this.level().spigotConfig.itemDespawnRate) : this.level().spigotConfig.itemDespawnRate; // Paper - Alternative item-despawn-rate
+     }
+ 
+     @Override
+@@ -492,7 +614,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
 -        this.age = 5999;
-+        this.age = this.level().spigotConfig.itemDespawnRate - 1; // Spigot
++        this.age = this.despawnRate - 1; // Spigot // Paper - Alternative item-despawn-rate
      }
  
      public static float getSpin(float f, float f1) {
