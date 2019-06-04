@@ -1,0 +1,45 @@
+From cb02730d7ada720df6a87b5ffe8a51e5150dc37e Mon Sep 17 00:00:00 2001
+From: simpleauthority <jacob@algorithmjunkie.com>
+Date: Tue, 4 Jun 2019 02:11:52 -0700
+Subject: [PATCH] Implement open book api
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 691a2d094..5be72dc06 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1185,8 +1185,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.activeContainer.addSlotListener(this);
+     }
+ 
+-    @Override
+-    public void a(ItemStack itemstack, EnumHand enumhand) {
++    public final void openBook(ItemStack itemstack, EnumHand enumhand) { this.a(itemstack, enumhand); } // Paper - OBFHELPER
++    @Override public void a(ItemStack itemstack, EnumHand enumhand) {
+         Item item = itemstack.getItem();
+ 
+         if (item == Items.WRITTEN_BOOK) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 9f267414d..ff3b59c34 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1972,6 +1972,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void setViewDistance(int viewDistance) {
+         throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
+     }
++
++    @Override
++    public void openBook(org.bukkit.inventory.ItemStack book) {
++        Preconditions.checkArgument(book != null, "book");
++        Preconditions.checkState(book.getType() == Material.WRITTEN_BOOK, "Book must be Material.WRITTEN_BOOK");
++        org.bukkit.inventory.ItemStack oldHand = this.getInventory().getItemInMainHand();
++        this.getInventory().setItemInMainHand(book);
++        getHandle().openBook(net.minecraft.server.ItemStack.fromBukkitCopy(book), net.minecraft.server.EnumHand.MAIN_HAND);
++        this.getInventory().setItemInMainHand(oldHand);
++    }
+     //Paper end
+ 
+     // Spigot start
+-- 
+2.19.2
+
