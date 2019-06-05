@@ -56,5 +56,22 @@ public class PlayerInventoryTest extends AbstractTestingBase {
         assertEquals(1, inventory.canHold(itemStack1Coal));
         assertEquals(2, inventory.canHold(itemStack32Coal));
         assertEquals(2, inventory.canHold(itemStack64Coal));
+
+        // free space for 32 items in non-empty off-hand slot
+        inventory.setItem(inventory.items.size() - 1, itemStackApple);
+        inventory.setItem(inventory.items.size() - 2, itemStackApple);
+        inventory.setItem(inventory.items.size() + inventory.armor.size(), itemStack32Coal);
+
+        assertEquals(1, inventory.canHold(itemStack1Coal));
+        assertEquals(32, inventory.canHold(itemStack32Coal));
+        assertEquals(32, inventory.canHold(itemStack64Coal));
+
+        // free space for 1 item in non-empty off-hand slot and another slot
+        inventory.setItem(inventory.items.size() - 1, itemStack63Coal);
+        inventory.setItem(inventory.items.size() + inventory.armor.size(), itemStack63Coal);
+
+        assertEquals(1, inventory.canHold(itemStack1Coal));
+        assertEquals(2, inventory.canHold(itemStack32Coal));
+        assertEquals(2, inventory.canHold(itemStack64Coal));
     }
 }
