@@ -1,4 +1,4 @@
-From 53ad330eb173779d8cd27564a7723dd578b96201 Mon Sep 17 00:00:00 2001
+From 5123c163149447057fe331ea348cf81040fc8db2 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 26 Nov 2017 13:19:58 -0500
 Subject: [PATCH] AsyncTabCompleteEvent
@@ -14,7 +14,7 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 43d760bed..49dd552e1 100644
+index 22dca3fe68..b0275fc14d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -520,10 +520,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -30,7 +30,7 @@ index 43d760bed..49dd552e1 100644
              return;
          }
          // CraftBukkit end
-@@ -533,12 +533,35 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -533,12 +533,37 @@ public class PlayerConnection implements PacketListenerPlayIn {
              stringreader.skip();
          }
  
@@ -47,6 +47,7 @@ index 43d760bed..49dd552e1 100644
 +        if (!event.isHandled()) {
 +            if (!event.isCancelled()) {
 +                // Paper end - async tab completion
++                this.minecraftServer.scheduleOnMain(() -> { // Paper - This needs to be on main
 +            ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
  
          this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
@@ -55,6 +56,7 @@ index 43d760bed..49dd552e1 100644
 -        });
 +                this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
 +            });
++        }); // Paper - This needs to be on main
 +            }
 +        // Paper start - async tab completion
 +        } else if (!completions.isEmpty()) {
@@ -70,7 +72,7 @@ index 43d760bed..49dd552e1 100644
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8f7fd3490..746d2888d 100644
+index 455f52e3ea..5e9e601bf4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1662,7 +1662,7 @@ public final class CraftServer implements Server {
@@ -83,7 +85,7 @@ index 8f7fd3490..746d2888d 100644
  
          return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 5510266fb..a51202ed5 100644
+index 5510266fb1..a51202ed53 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -28,6 +28,39 @@ public class ConsoleCommandCompleter implements Completer {
