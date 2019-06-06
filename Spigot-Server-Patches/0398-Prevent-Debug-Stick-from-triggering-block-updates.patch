@@ -1,0 +1,50 @@
+From 7136b4165e744867236ce9c86c69fd39d9e730bd Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Thu, 6 Jun 2019 18:04:13 -0400
+Subject: [PATCH] Prevent Debug Stick from triggering block updates
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemDebugStick.java b/src/main/java/net/minecraft/server/ItemDebugStick.java
+index 351040a7..e8e1632c 100644
+--- a/src/main/java/net/minecraft/server/ItemDebugStick.java
++++ b/src/main/java/net/minecraft/server/ItemDebugStick.java
+@@ -53,7 +53,7 @@ public class ItemDebugStick extends Item {
+ 
+                     IBlockData iblockdata1 = a(iblockdata, iblockstate, entityhuman.isSneaking());
+ 
+-                    generatoraccess.setTypeAndData(blockposition, iblockdata1, 18);
++                    ((World)generatoraccess).setTypeAndData(blockposition, iblockdata1, 18, false); // Paper
+                     a(entityhuman, (IChatBaseComponent) (new ChatMessage(this.getName() + ".update", new Object[]{iblockstate.a(), a(iblockdata1, iblockstate)})));
+                 } else {
+                     iblockstate = (IBlockState) a((Iterable) collection, (Object) iblockstate, entityhuman.isSneaking());
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 7e01731f..ed1183f3 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -337,8 +337,14 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         }
+     }
+ 
++    // Paper start
+     @Override
+     public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
++        return setTypeAndData(blockposition, iblockdata, i, true);
++    }
++
++    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i, boolean doUpdate) {
++    // Paper end
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
+             CraftBlockState blockstate = null;
+@@ -369,7 +375,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+ 
+             // CraftBukkit start - capture blockstates
+             CraftBlockState blockstate = null;
+-            if (this.captureBlockStates) {
++            if (this.captureBlockStates && doUpdate) { // Paper
+                 blockstate = (CraftBlockState) world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
+                 this.capturedBlockStates.add(blockstate);
+             }
+-- 
+2.19.0
+
