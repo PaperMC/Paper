@@ -68,14 +68,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public int getVillagerExperience() {
-        return getHandle().dV();
+        return getHandle().getExperience();
     }
 
     @Override
     public void setVillagerExperience(int experience) {
         Preconditions.checkArgument(experience >= 0, "Experience must be positive");
 
-        getHandle().t(experience);
+        getHandle().setExperience(experience);
     }
 
     public static Profession nmsToBukkitProfession(VillagerProfession nms) {
