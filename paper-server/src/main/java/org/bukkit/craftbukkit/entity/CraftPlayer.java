@@ -108,6 +108,7 @@ import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.InventoryView.Property;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
@@ -1637,5 +1638,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
 
         getHandle().server.getCommandDispatcher().a(getHandle());
+    }
+
+    @Override
+    public void openBook(ItemStack book) {
+        Validate.isTrue(book != null, "book == null");
+        Validate.isTrue(book.getType() == Material.WRITTEN_BOOK, "Book must be Material.WRITTEN_BOOK");
+
+        ItemStack hand = getInventory().getItemInMainHand();
+        getInventory().setItemInMainHand(book);
+        getHandle().a(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.server.EnumHand.MAIN_HAND); // PAIL rename openBook
+        getInventory().setItemInMainHand(hand);
     }
 }
