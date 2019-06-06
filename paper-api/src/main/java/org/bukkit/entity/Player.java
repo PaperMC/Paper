@@ -19,6 +19,7 @@ import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
@@ -1471,4 +1472,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * after permission changes are done.
      */
     public void updateCommands();
+
+    /**
+     * Open a {@link Material#WRITTEN_BOOK} for a Player
+     *
+     * @param book The book to open for this player
+     */
+    public void openBook(@NotNull ItemStack book);
 }
