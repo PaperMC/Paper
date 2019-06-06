@@ -9,7 +9,7 @@ from triggering monster spawns on a server.
 Also a highly more effecient way to blanket block spawns in a world
 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 74a1b4a852..81b82aeeef 100644
+index fba9f4b8a1..f5e62b0418 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -24,10 +24,15 @@ index 74a1b4a852..81b82aeeef 100644
          return this.playerMap.a(chunkcoordintpair.pair()).noneMatch((entityplayer) -> {
 -            return !entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange; // Spigot
 +            // Paper start -
-+            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event
-+                = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) finalChunkRange);
-+            final double blockRange = (double)((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
-+            return event.isCancelled() || (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange); // Spigot
++            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
++            double blockRange = 16384.0D;
++            if (reducedRange) {
++                event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) finalChunkRange);
++                blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
++                if (event.isCancelled()) return true;
++            }
++
++            return (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange); // Spigot
 +            // Paper end
          });
      }
