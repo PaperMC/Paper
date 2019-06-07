@@ -596,9 +596,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         IMerchant mcMerchant;
         IChatBaseComponent name;
+        int level = 0;
         if (merchant instanceof CraftVillager) {
             mcMerchant = ((CraftVillager) merchant).getHandle();
             name = ((CraftVillager) merchant).getHandle().getScoreboardDisplayName();
+            level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
         } else if (merchant instanceof CraftMerchantCustom) {
             mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
             name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();
@@ -607,7 +609,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         mcMerchant.setTradingPlayer(this.getHandle());
-        mcMerchant.openTrade(this.getHandle(), name, 0);
+        mcMerchant.openTrade(this.getHandle(), name, level);
 
         return this.getHandle().activeContainer.getBukkitView();
     }
