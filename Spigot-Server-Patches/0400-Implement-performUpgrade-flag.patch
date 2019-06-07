@@ -1,0 +1,116 @@
+From fe11d626251621c8134b975e87c5f65419fdb14a Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Fri, 7 Jun 2019 18:54:35 -0400
+Subject: [PATCH] Implement performUpgrade flag
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 184f1b00..1f3f7dd3 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -141,6 +141,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     private final CircularTimer ap;
+     private boolean aq;
+     private boolean forceUpgrade;
++    private boolean performUpgrade; // Paper
+     private boolean eraseCache;
+     private float at;
+     public final Executor executorService;
+@@ -167,6 +168,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public final double[] recentTps = new double[ 3 ];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
++    String worldMetaFile = "papermeta.yml"; // Paper
+ 
+     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
+         super("Server");
+@@ -263,7 +265,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             });
+         }
+ 
+-        if (this.forceUpgrade) {
++        if (this.forceUpgrade || (this.performUpgrade && !this.isForceUpgradeDone(s))) { // Paper
+             MinecraftServer.LOGGER.info("Forcing world upgrade! {}", s); // CraftBukkit
+             WorldData worlddata = this.getConvertable().b(s); // CraftBukkit
+ 
+@@ -298,10 +300,39 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                     }
+                 }
+             }
++            recordForceUpgradeDone(s); // Paper
+         }
+ 
+     }
+ 
++    // Paper start
++    private boolean isForceUpgradeDone(String world){
++        try {
++            File file = new File(world + "/" + worldMetaFile);
++            file.createNewFile();
++            org.bukkit.configuration.file.YamlConfiguration metaConfig = new org.bukkit.configuration.file.YamlConfiguration();
++            metaConfig.load(file);
++            return this.getVersion().equals(metaConfig.getString("forceUpgradeVersion"));
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        return false;
++    }
++
++    private void recordForceUpgradeDone(String world){
++        try {
++            File file = new File(world + "/" + worldMetaFile);
++            file.createNewFile();
++            org.bukkit.configuration.file.YamlConfiguration metaConfig = new org.bukkit.configuration.file.YamlConfiguration();
++            metaConfig.load(file);
++            metaConfig.set("forceUpgradeVersion", this.getVersion());
++            metaConfig.save(file);
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++    // Paper end
++
+     protected synchronized void b(IChatBaseComponent ichatbasecomponent) {
+         this.S = ichatbasecomponent;
+     }
+@@ -1326,6 +1357,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 dedicatedserver.setForceUpgrade(true);
+             }
+ 
++            // Paper start
++            if (optionset.has("performUpgrade")) {
++                dedicatedserver.setPerformUpgrade(true);
++            }
++            // Paper end
++
+             if (optionset.has("eraseCache")) {
+                 dedicatedserver.setEraseCache(true);
+             }
+@@ -1346,6 +1383,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.forceUpgrade = flag;
+     }
+ 
++    // Paper start
++    protected void setPerformUpgrade(boolean flag) {
++        this.performUpgrade = flag;
++    }
++    // Paper end
++
+     protected void setEraseCache(boolean flag) {
+         this.eraseCache = flag;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 405ea5c4..82960b10 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -111,6 +111,7 @@ public class Main {
+                         .describedAs("Yml file");
+ 
+                 acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
++                acceptsAll(asList("performUpgrade"), "Performs a world upgrade if not done in this version");
+                 acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
+ 
+                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
+-- 
+2.19.0
+
