@@ -1,0 +1,42 @@
+From 0bdd5f7f9d7e44814d3c88ed922fbd334566aa34 Mon Sep 17 00:00:00 2001
+From: MTM123 <matiss234@gmail.com>
+Date: Sun, 9 Jun 2019 12:45:30 +0300
+Subject: [PATCH] Add damaged slot to PlayerItemDamageEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index dec58946..6a1b05b6 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -405,7 +405,27 @@ public final class ItemStack {
+                 i -= k;
+                 // CraftBukkit start
+                 if (entityplayer != null) {
+-                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(entityplayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), i);
++
++                    //Paper start - getting slot that was damaged
++                    int slot = -1;
++                    if (entityplayer.getItemInMainHand() == this) {
++                        slot = entityplayer.inventory.itemInHandIndex;
++                    } else if (entityplayer.getItemInOffHand() == this) {
++                        slot = 104; //Shield slot: (last armor slot + 1)
++                    } else {
++                        int w = 100; //First armor slot. Based on https://bukkit.org/threads/inventory-slots.431469/
++                        for (ItemStack armorItem : entityplayer.getArmorItems()) {
++                            if(armorItem == this) {
++                                slot = w;
++                                break;
++                            }
++                            w++;
++                        }
++                    }
++
++                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(entityplayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), i, slot);
++                    //Paper end
++
+                     event.getPlayer().getServer().getPluginManager().callEvent(event);
+ 
+                     if (i != event.getDamage() || event.isCancelled()) {
+-- 
+2.19.0.windows.1
+
