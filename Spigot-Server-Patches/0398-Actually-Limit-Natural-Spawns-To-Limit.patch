@@ -1,24 +1,25 @@
-From 4476be102ffcfe715d35f767098a99ae10a1bd49 Mon Sep 17 00:00:00 2001
+From a8992efca09ce35ba035907057f365248f6f4f65 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Sun, 2 Jun 2019 01:22:02 -0400
 Subject: [PATCH] Actually-Limit-Natural-Spawns-To-Limit
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 0e941b52..282e9997 100644
+index 0e941b52..887966f7 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -360,8 +360,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -360,8 +360,13 @@ public class ChunkProviderServer extends IChunkProvider {
                                  if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
                                      int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
 -                                    if (object2intmap.getInt(enumcreaturetype) <= k1) {
 -                                        SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition);
 +                                    // Paper start - only allow spawns upto the limit per chunk and update count afterwards
-+                                    int difference = k1 - object2intmap.getInt(enumcreaturetype);
++                                    int currEntityCount = object2intmap.getInt(enumcreaturetype);
++                                    int difference = k1 - currEntityCount;
 +                                    if (difference > 0) {
-+                                        int tmp = SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition, difference);
-+                                        object2intmap.put(enumcreaturetype, object2intmap.getInt(enumcreaturetype) + tmp);
++                                        int numSpawned = SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition, difference);
++                                        object2intmap.put(enumcreaturetype, currEntityCount + numSpawned);
 +                                    // Paper end
                                      }
                                  }
