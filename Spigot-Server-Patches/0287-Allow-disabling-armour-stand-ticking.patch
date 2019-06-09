@@ -1,11 +1,11 @@
-From 4b8bf06f1a563ca1dc940e356e0d7c3430b69aaa Mon Sep 17 00:00:00 2001
+From 86d3b5085d8613be4f8c55c30b4472162025cdb4 Mon Sep 17 00:00:00 2001
 From: kashike <kashike@vq.lc>
 Date: Wed, 15 Aug 2018 01:26:09 -0700
 Subject: [PATCH] Allow disabling armour stand ticking
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index f06bb3ae1..a5b4f9990 100644
+index f06bb3ae..a5b4f999 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -391,4 +391,10 @@ public class PaperWorldConfig {
@@ -20,22 +20,18 @@ index f06bb3ae1..a5b4f9990 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index b5b763191..9157dace1 100644
+index b5b76319..0e0ec50c 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
-@@ -44,6 +44,11 @@ public class EntityArmorStand extends EntityLiving {
+@@ -44,6 +44,7 @@ public class EntityArmorStand extends EntityLiving {
      public Vector3f leftLegPose;
      public Vector3f rightLegPose;
      public boolean canMove = true; // Paper
-+    // Paper start - Allow ArmorStands not to tick
-+    public boolean canTick = true;
-+    private boolean noTickPoseDirty = false;
-+    private boolean noTickEquipmentDirty = false;
-+    // Paper end
++    public boolean canTick = true; // Paper - Allow ArmorStands not to tick
  
      public EntityArmorStand(EntityTypes<? extends EntityArmorStand> entitytypes, World world) {
          super(entitytypes, world);
-@@ -55,6 +60,7 @@ public class EntityArmorStand extends EntityLiving {
+@@ -55,6 +56,7 @@ public class EntityArmorStand extends EntityLiving {
          this.rightArmPose = EntityArmorStand.bx;
          this.leftLegPose = EntityArmorStand.by;
          this.rightLegPose = EntityArmorStand.bz;
@@ -43,15 +39,15 @@ index b5b763191..9157dace1 100644
          this.K = 0.0F;
      }
  
-@@ -135,6 +141,7 @@ public class EntityArmorStand extends EntityLiving {
+@@ -135,6 +137,7 @@ public class EntityArmorStand extends EntityLiving {
                  this.armorItems.set(enumitemslot.b(), itemstack);
          }
  
-+        this.noTickEquipmentDirty = true; // Paper - Allow equipment to be updated even when tick disabled
++        if (!this.canTick) { this.updateEntityEquipment(); } // Paper - Allow equipment to be updated even when tick disabled
      }
  
      @Override
-@@ -215,6 +222,7 @@ public class EntityArmorStand extends EntityLiving {
+@@ -215,6 +218,7 @@ public class EntityArmorStand extends EntityLiving {
          }
  
          nbttagcompound.set("Pose", this.B());
@@ -59,7 +55,7 @@ index b5b763191..9157dace1 100644
      }
  
      @Override
-@@ -246,6 +254,11 @@ public class EntityArmorStand extends EntityLiving {
+@@ -246,6 +250,11 @@ public class EntityArmorStand extends EntityLiving {
          this.setBasePlate(nbttagcompound.getBoolean("NoBasePlate"));
          this.setMarker(nbttagcompound.getBoolean("Marker"));
          this.noclip = !this.A();
@@ -71,25 +67,11 @@ index b5b763191..9157dace1 100644
          NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Pose");
  
          this.g(nbttagcompound1);
-@@ -584,7 +597,29 @@ public class EntityArmorStand extends EntityLiving {
+@@ -584,7 +593,15 @@ public class EntityArmorStand extends EntityLiving {
  
      @Override
      public void tick() {
-+        // Paper start
-+        if (!this.canTick) {
-+            if (this.noTickPoseDirty) {
-+                this.noTickPoseDirty = false;
-+                this.updatePose();
-+            }
-+
-+            if (this.noTickEquipmentDirty) {
-+                this.noTickEquipmentDirty = false;
-+                this.updateEntityEquipment();
-+            }
-+
-+            return;
-+        }
-+        // Paper end
++        if (!this.canTick) { return; } // Paper
 +
          super.tick();
 +        // Paper start - Split into separate method
@@ -101,46 +83,46 @@ index b5b763191..9157dace1 100644
          Vector3f vector3f = (Vector3f) this.datawatcher.get(EntityArmorStand.c);
  
          if (!this.headPose.equals(vector3f)) {
-@@ -700,31 +735,37 @@ public class EntityArmorStand extends EntityLiving {
+@@ -700,31 +717,37 @@ public class EntityArmorStand extends EntityLiving {
      public void setHeadPose(Vector3f vector3f) {
          this.headPose = vector3f;
          this.datawatcher.set(EntityArmorStand.c, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public void setBodyPose(Vector3f vector3f) {
          this.bodyPose = vector3f;
          this.datawatcher.set(EntityArmorStand.d, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public void setLeftArmPose(Vector3f vector3f) {
          this.leftArmPose = vector3f;
          this.datawatcher.set(EntityArmorStand.e, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public void setRightArmPose(Vector3f vector3f) {
          this.rightArmPose = vector3f;
          this.datawatcher.set(EntityArmorStand.f, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public void setLeftLegPose(Vector3f vector3f) {
          this.leftLegPose = vector3f;
          this.datawatcher.set(EntityArmorStand.g, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public void setRightLegPose(Vector3f vector3f) {
          this.rightLegPose = vector3f;
          this.datawatcher.set(EntityArmorStand.bs, vector3f);
-+        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
++        if (!this.canTick) { this.updatePose(); } // Paper - Allow updates when not ticking
      }
  
      public Vector3f r() {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 38ca6d6ba..bcbfffb6e 100644
+index 38ca6d6b..bcbfffb6 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -2265,52 +2265,7 @@ public abstract class EntityLiving extends Entity {
@@ -256,7 +238,7 @@ index 38ca6d6ba..bcbfffb6e 100644
          float f2 = MathHelper.g(f - this.aK);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
-index 9f5c3b92e..07ce93f17 100644
+index 9f5c3b92..07ce93f1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 @@ -297,5 +297,15 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
@@ -276,5 +258,5 @@ index 9f5c3b92e..07ce93f17 100644
      // Paper end
  }
 -- 
-2.21.0
+2.19.0
 
