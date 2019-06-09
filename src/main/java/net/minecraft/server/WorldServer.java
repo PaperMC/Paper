@@ -771,11 +771,43 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         return !this.server.a(this, blockposition, entityhuman) && this.getWorldBorder().a(blockposition);
     }
 
+    // Paper start - derived from below
+    public void saveIncrementally(boolean doFull) {
+        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
+
+        if (doFull) {
+            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld()));
+        }
+
+        try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) {
+            if (doFull) {
+                this.saveData();
+            }
+
+            timings.worldSaveChunks.startTiming(); // Paper
+            if (!this.isSavingDisabled()) chunkproviderserver.saveIncrementally();
+            timings.worldSaveChunks.stopTiming(); // Paper
+
+
+            // Copied from save()
+            // CraftBukkit start - moved from MinecraftServer.saveChunks
+            if (doFull) { // Paper
+                WorldServer worldserver1 = this;
+
+                worldDataServer.a(worldserver1.getWorldBorder().t());
+                worldDataServer.setCustomBossEvents(this.server.getBossBattleCustomData().save());
+                convertable.a(this.server.customRegistry, this.worldDataServer, this.server.getPlayerList().save());
+            }
+            // CraftBukkit end
+        }
+    }
+    // Paper end
+
     public void save(@Nullable IProgressUpdate iprogressupdate, boolean flag, boolean flag1) {
         ChunkProviderServer chunkproviderserver = this.getChunkProvider();
 
         if (!flag1) {
-            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
+            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper
             try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
             if (iprogressupdate != null) {
                 iprogressupdate.a(new ChatMessage("menu.savingLevel"));
@@ -801,6 +833,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         // CraftBukkit end
     }
 
+    private void saveData() { this.ai(); } // Paper - OBFHELPER
     private void ai() {
         if (this.dragonBattle != null) {
             this.worldDataServer.a(this.dragonBattle.a()); // CraftBukkit

@@ -47,6 +47,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -333,6 +334,64 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     }
 
+    // Paper start - incremental autosave
+    final ObjectRBTreeSet<PlayerChunk> autoSaveQueue = new ObjectRBTreeSet<>((playerchunk1, playerchunk2) -> {
+        int timeCompare =  Long.compare(playerchunk1.lastAutoSaveTime, playerchunk2.lastAutoSaveTime);
+        if (timeCompare != 0) {
+            return timeCompare;
+        }
+
+        return Long.compare(MCUtil.getCoordinateKey(playerchunk1.location), MCUtil.getCoordinateKey(playerchunk2.location));
+    });
+
+    protected void saveIncrementally() {
+        int savedThisTick = 0;
+        // optimized since we search far less chunks to hit ones that need to be saved
+        List<PlayerChunk> reschedule = new java.util.ArrayList<>(this.world.paperConfig.maxAutoSaveChunksPerTick);
+        long currentTick = this.world.getTime();
+        long maxSaveTime = currentTick - this.world.paperConfig.autoSavePeriod;
+
+        for (Iterator<PlayerChunk> iterator = this.autoSaveQueue.iterator(); iterator.hasNext();) {
+            PlayerChunk playerchunk = iterator.next();
+            if (playerchunk.lastAutoSaveTime > maxSaveTime) {
+                break;
+            }
+
+            iterator.remove();
+
+            IChunkAccess ichunkaccess = playerchunk.getChunkSave().getNow(null);
+            if (ichunkaccess instanceof Chunk) {
+                boolean shouldSave = ((Chunk)ichunkaccess).lastSaved <= maxSaveTime;
+
+                if (shouldSave && this.saveChunk(ichunkaccess)) {
+                    ++savedThisTick;
+
+                    if (!playerchunk.setHasBeenLoaded()) {
+                        // do not fall through to reschedule logic
+                        playerchunk.inactiveTimeStart = currentTick;
+                        if (savedThisTick >= this.world.paperConfig.maxAutoSaveChunksPerTick) {
+                            break;
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            reschedule.add(playerchunk);
+
+            if (savedThisTick >= this.world.paperConfig.maxAutoSaveChunksPerTick) {
+                break;
+            }
+        }
+
+        for (int i = 0, len = reschedule.size(); i < len; ++i) {
+            PlayerChunk playerchunk = reschedule.get(i);
+            playerchunk.lastAutoSaveTime = this.world.getTime();
+            this.autoSaveQueue.add(playerchunk);
+        }
+    }
+    // Paper end
+
     protected void save(boolean flag) {
         if (flag) {
             List<PlayerChunk> list = (List) this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList());
@@ -443,6 +502,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
                         this.world.unloadChunk(chunk);
                     }
+                    this.autoSaveQueue.remove(playerchunk); // Paper
 
                     this.lightEngine.a(ichunkaccess.getPos());
                     this.lightEngine.queueUpdate();
@@ -634,6 +694,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                     chunk = new Chunk(this.world, (ProtoChunk) ichunkaccess);
                     playerchunk.a(new ProtoChunkExtension(chunk));
                 }
+
+                chunk.setLastSaved(this.world.getTime() - 1); // Paper - avoid autosaving newly generated/loaded chunks
 
                 chunk.a(() -> {
                     return PlayerChunk.getChunkState(playerchunk.getTicketLevel());

@@ -152,6 +152,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     public static int currentTick = 0; // Paper - Further improve tick loop
     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
     public int autosavePeriod;
+    public boolean serverAutoSave = false; // Paper
     public CommandDispatcher vanillaCommandDispatcher;
     private boolean forceTicks;
     // CraftBukkit end
@@ -1141,14 +1142,24 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.serverPing.b().a(agameprofile);
         }
 
-        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
-            MinecraftServer.LOGGER.debug("Autosave started");
+        //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
+            //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
+            serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
             this.methodProfiler.enter("save");
+            if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // Paper
             this.playerList.savePlayers();
-            this.saveChunks(true, false, false);
+            }// Paper
+            // Paper start
+            for (WorldServer world : getWorlds()) {
+                if (world.paperConfig.autoSavePeriod > 0) {
+                    world.saveIncrementally(serverAutoSave);
+                }
+            }
+            // Paper end
+
             this.methodProfiler.exit();
-            MinecraftServer.LOGGER.debug("Autosave finished");
-        }
+            //MinecraftServer.LOGGER.debug("Autosave finished"); // Paper
+        //} // Paper
 
         this.methodProfiler.enter("snooper");
         if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot

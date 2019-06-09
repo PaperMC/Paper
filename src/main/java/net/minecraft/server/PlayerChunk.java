@@ -42,6 +42,9 @@ public class PlayerChunk {
 
     private final PlayerChunkMap chunkMap; // Paper
 
+    long lastAutoSaveTime; // Paper - incremental autosave
+    long inactiveTimeStart; // Paper - incremental autosave
+
     public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
         this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -393,7 +396,19 @@ public class PlayerChunk {
         boolean flag2 = playerchunk_state.isAtLeast(PlayerChunk.State.BORDER);
         boolean flag3 = playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER);
 
+        boolean prevHasBeenLoaded = this.hasBeenLoaded; // Paper
         this.hasBeenLoaded |= flag3;
+        // Paper start - incremental autosave
+        if (this.hasBeenLoaded & !prevHasBeenLoaded) {
+            long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
+            if (timeSinceAutoSave < 0) {
+                // safest bet is to assume autosave is needed here
+                timeSinceAutoSave = this.chunkMap.world.paperConfig.autoSavePeriod;
+            }
+            this.lastAutoSaveTime = this.chunkMap.world.getTime() - timeSinceAutoSave;
+            this.chunkMap.autoSaveQueue.add(this);
+        }
+        // Paper end
         if (!flag2 && flag3) {
             // Paper start - cache ticking ready status
             int expectCreateCount = ++this.fullChunkCreateCount;
@@ -513,8 +528,32 @@ public class PlayerChunk {
     }
 
     public void m() {
+        boolean prev = this.hasBeenLoaded; // Paper
         this.hasBeenLoaded = getChunkState(this.ticketLevel).isAtLeast(PlayerChunk.State.BORDER);
+        // Paper start - incremental autosave
+        if (prev != this.hasBeenLoaded) {
+            if (this.hasBeenLoaded) {
+                long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
+                if (timeSinceAutoSave < 0) {
+                    // safest bet is to assume autosave is needed here
+                    timeSinceAutoSave = this.chunkMap.world.paperConfig.autoSavePeriod;
+                }
+                this.lastAutoSaveTime = this.chunkMap.world.getTime() - timeSinceAutoSave;
+                this.chunkMap.autoSaveQueue.add(this);
+            } else {
+                this.inactiveTimeStart = this.chunkMap.world.getTime();
+                this.chunkMap.autoSaveQueue.remove(this);
+            }
+        }
+        // Paper end
     }
+
+    // Paper start - incremental autosave
+    public boolean setHasBeenLoaded() {
+        this.hasBeenLoaded = getChunkState(this.ticketLevel).isAtLeast(PlayerChunk.State.BORDER);
+        return this.hasBeenLoaded;
+    }
+    // Paper end
 
     public void a(ProtoChunkExtension protochunkextension) {
         for (int i = 0; i < this.statusFutures.length(); ++i) {

@@ -439,4 +439,19 @@ public class PaperWorldConfig {
         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
         log( "Keep Spawn Loaded Range: " + (keepLoadedRange/16));
     }
+
+    public int autoSavePeriod = -1;
+    private void autoSavePeriod() {
+        autoSavePeriod = getInt("auto-save-interval", -1);
+        if (autoSavePeriod > 0) {
+            log("Auto Save Interval: " +autoSavePeriod + " (" + (autoSavePeriod / 20) + "s)");
+        } else if (autoSavePeriod < 0) {
+            autoSavePeriod = net.minecraft.server.MinecraftServer.getServer().autosavePeriod;
+        }
+    }
+
+    public int maxAutoSaveChunksPerTick = 24;
+    private void maxAutoSaveChunksPerTick() {
+        maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+    }
 }

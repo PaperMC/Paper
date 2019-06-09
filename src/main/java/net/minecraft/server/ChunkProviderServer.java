@@ -536,6 +536,15 @@ public class ChunkProviderServer extends IChunkProvider {
         } // Paper - Timings
     }
 
+    // Paper start - duplicate save, but call incremental
+    public void saveIncrementally() {
+        this.tickDistanceManager();
+        try (co.aikar.timings.Timing timed = world.timings.chunkSaveData.startTiming()) { // Paper - Timings
+            this.playerChunkMap.saveIncrementally();
+        } // Paper - Timings
+    }
+    // Paper end
+
     @Override
     public void close() throws IOException {
         // CraftBukkit start
