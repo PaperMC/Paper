@@ -163,7 +163,14 @@ public interface IDispenseBehavior {
                     }
                 }
 
+                try { // Paper
                 entitytypes.spawnCreature(isourceblock.getWorld(), itemstack, (EntityHuman) null, isourceblock.getBlockPosition().shift(enumdirection), EnumMobSpawn.DISPENSER, enumdirection != EnumDirection.UP, false);
+                    // Paper start
+                } catch (Exception ex){
+                    MinecraftServer.LOGGER.warn("An exception occurred dispensing entity at {}[{}]", worldserver.getWorld().getName(), isourceblock.getBlockPosition(), ex);
+                }
+                // Paper end
+
                 // itemstack.subtract(1); // Handled during event processing
                 // CraftBukkit end
                 return itemstack;
