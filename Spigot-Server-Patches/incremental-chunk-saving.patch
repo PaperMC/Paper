@@ -42,7 +42,7 @@ index ef07f665b7..d89ad4e390 100644
      private long t;
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 184f1b00f0..13e862aa9f 100644
+index 184f1b00f0..3dbe83c7ea 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -67,8 +67,14 @@ index 184f1b00f0..13e862aa9f 100644
 -            this.saveChunks(true, false, false);
 +            }// Paper
 +            // Paper start
-+            for (World world : getWorlds()) {
-+                if (world.paperConfig.autoSavePeriod > 0) world.getWorld().save(false);
++            for (WorldServer world : getWorlds()) {
++                if (world.paperConfig.autoSavePeriod > 0) {
++                    try {
++                        world.save(null, false, world.isSavingDisabled());
++                    } catch (ExceptionWorldConflict exceptionWorldConflict) {
++                        MinecraftServer.LOGGER.warn(exceptionWorldConflict.getMessage());
++                    }
++                }
 +            }
 +            // Paper end
 +
@@ -137,29 +143,4 @@ index 92aad060ef..c650f40b0d 100644
  
              timings.worldSaveChunks.startTiming(); // Paper
              chunkproviderserver.save(flag);
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0c53795306..4e60931cd8 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -0,0 +0,0 @@ public class CraftWorld implements World {
-     // Paper end
- 
-     @Override
-+    // Paper start
-     public void save() {
-+        save(true);
-+    }
-+
-+    public void save(boolean forceSave) {
-+        // Paper end
-         this.server.checkSaveState();
-         try {
-             boolean oldSave = world.savingDisabled;
- 
-             world.savingDisabled = false;
--            world.save(null, false, false);
-+            world.save(null, forceSave, false); // Paper
- 
-             world.savingDisabled = oldSave;
-         } catch (ExceptionWorldConflict ex) {
 --
