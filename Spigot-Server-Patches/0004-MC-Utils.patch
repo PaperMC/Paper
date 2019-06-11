@@ -1,4 +1,4 @@
-From 412fe7b001625806a64ebd7a3dea1f662c325b17 Mon Sep 17 00:00:00 2001
+From 8dbe084873df655de066118b90ebe479bcf299cd Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -181,6 +181,49 @@ index 857b2f8868..bbf136614c 100644
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
  
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index dcf2d38df5..ea73e4baba 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -66,6 +66,38 @@ public class ChunkProviderServer extends IChunkProvider {
+         return this.playerChunkMap.c();
+     }
+ 
++    // Paper start - "real" get chunk if loaded
++    // Note: Partially copied from the getChunkAt method below
++    @Nullable
++    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
++        if (Thread.currentThread() != this.serverThread) {
++            return CompletableFuture.supplyAsync(() -> {
++               return this.getChunkAtIfLoadedImmediately(x, z);
++            }).join();
++        }
++
++        long k = ChunkCoordIntPair.pair(x, z);
++
++        IChunkAccess ichunkaccess;
++
++        for (int l = 0; l < 4; ++l) {
++            if (k == this.cachePos[l] && ChunkStatus.FULL == this.cacheStatus[l]) {
++                ichunkaccess = this.cacheChunk[l];
++                if (ichunkaccess instanceof Chunk) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
++                    return (Chunk)ichunkaccess;
++                }
++            }
++        }
++
++        PlayerChunk playerChunk = this.getChunk(k);
++        if (playerChunk == null) {
++            return null;
++        }
++
++        return playerChunk.getFullChunk();
++    }
++    // Paper end
++
+     @Nullable
+     @Override
+     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
 index 8bda055159..409dc837c6 100644
 --- a/src/main/java/net/minecraft/server/DataBits.java
@@ -899,7 +942,7 @@ index 58f9946455..ae194b981f 100644
      private volatile int chatThrottle;
      private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
 diff --git a/src/main/java/net/minecraft/server/PlayerInventory.java b/src/main/java/net/minecraft/server/PlayerInventory.java
-index a5dba62caf..a088658ae0 100644
+index 2fe3d5d4c2..4aee712a6f 100644
 --- a/src/main/java/net/minecraft/server/PlayerInventory.java
 +++ b/src/main/java/net/minecraft/server/PlayerInventory.java
 @@ -17,7 +17,7 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
@@ -1003,10 +1046,10 @@ index b3799ab564..5fae5a1233 100644
  
      public static long getTimeMillis() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 91e50ccea1..69c704a429 100644
+index 91e50ccea1..a2b1aba49f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -210,6 +210,44 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -210,6 +210,40 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
      }
  
@@ -1014,11 +1057,7 @@ index 91e50ccea1..69c704a429 100644
 +    @Nullable
 +    @Override
 +    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
-+        if (!((ChunkProviderServer)this.chunkProvider).isLoaded(x, z)) {
-+            return null;
-+        }
-+
-+        return this.chunkProvider.getChunkAt(x, z, ChunkStatus.FULL, true);
++        return ((ChunkProviderServer)this.chunkProvider).getChunkAtIfLoadedImmediately(x, z);
 +    }
 +
 +    @Override
@@ -1051,7 +1090,7 @@ index 91e50ccea1..69c704a429 100644
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
          IChunkAccess ichunkaccess = this.chunkProvider.getChunkAt(i, j, chunkstatus, flag);
-@@ -371,8 +409,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -371,8 +405,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
