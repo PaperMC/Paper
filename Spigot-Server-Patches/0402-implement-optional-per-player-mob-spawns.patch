@@ -1,4 +1,4 @@
-From 7dfe3e2eaab5c1445f233cbb315484b3839b8896 Mon Sep 17 00:00:00 2001
+From dff9c077960801881476018aeab82d7c3232d4e9 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Tue, 11 Jun 2019 22:22:16 -0400
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,7 +19,7 @@ index 58109e13..01f5979f 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index b6fcb393..6c3d1b78 100644
+index b6fcb393..17b4d9b2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
@@ -39,7 +39,7 @@ index b6fcb393..6c3d1b78 100644
 +                                    // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +                                    int currEntityCount = object2intmap.getInt(enumcreaturetype);
 +                                    int difference = k1 - currEntityCount;
-+                                    if(difference > 0 && this.world.paperConfig.perPlayerMobSpawns){
++                                    if(this.world.paperConfig.perPlayerMobSpawns){
 +                                        final int[] min = {Integer.MAX_VALUE};
 +                                        final int finalLimit = limit;
 +                                        this.getPlayers(chunk.getPos(), this.world.spigotConfig.mobSpawnRange)
@@ -160,7 +160,7 @@ index 94d7bca0..b77b308a 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1c3815a9..c3daf693 100644
+index 1c3815a9..23e73cc3 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -17,6 +17,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -188,7 +188,7 @@ index 1c3815a9..c3daf693 100644
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
-@@ -854,16 +858,50 @@ public class WorldServer extends World {
+@@ -854,16 +858,52 @@ public class WorldServer extends World {
                  EnumCreatureType enumcreaturetype = entity.getEntityType().d();
  
                  if (enumcreaturetype != EnumCreatureType.MISC && this.getChunkProvider().a(entity)) {
@@ -200,13 +200,15 @@ index 1c3815a9..c3daf693 100644
              }
          }
 +        // Paper start
-+        this.playerMobTypeMap = new HashMap<>();
++        if(this.paperConfig.perPlayerMobSpawns) {
++            this.playerMobTypeMap = new HashMap<>();
  
-+        for(EntityPlayer player : this.players){
-+            Map<EnumCreatureType, Integer> enummap = new Object2IntOpenHashMap();
-+            this.playerMobTypeMap.put(player, enummap);
++            for (EntityPlayer player : this.players) {
++                Map<EnumCreatureType, Integer> enummap = new Object2IntOpenHashMap();
++                this.playerMobTypeMap.put(player, enummap);
++            }
++            updatePlayerMobTypeMap(filteredEntities);
 +        }
-+        updatePlayerMobTypeMap(filteredEntities);
 +        // Paper end
          return object2intmap;
      }
