@@ -9,12 +9,13 @@
          this.dirtyBlocks = new short[64];
          this.location = chunkcoordintpair;
          this.lightEngine = lightengine;
-@@ -55,6 +55,14 @@
+@@ -55,6 +55,15 @@
          this.a(i);
      }
  
 +    // CraftBukkit start
 +    public Chunk getFullChunk() {
++        if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
 +        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
 +        return either == null ? null : (Chunk) either.left().orElse(null);
@@ -24,7 +25,7 @@
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
  
-@@ -72,9 +80,9 @@
+@@ -72,9 +81,9 @@
      @Nullable
      public Chunk getChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
@@ -36,7 +37,7 @@
      }
  
      public CompletableFuture<IChunkAccess> getChunkSave() {
-@@ -197,7 +205,7 @@
+@@ -197,7 +206,7 @@
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(i);
  
          if (completablefuture != null) {
@@ -45,7 +46,7 @@
  
              if (either == null || either.left().isPresent()) {
                  return completablefuture;
-@@ -252,6 +260,21 @@
+@@ -252,6 +261,21 @@
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET;
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
@@ -67,7 +68,7 @@
          CompletableFuture completablefuture;
  
          if (flag) {
-@@ -283,7 +306,7 @@
+@@ -283,7 +307,7 @@
          if (flag2 && !flag3) {
              completablefuture = this.fullChunkFuture;
              this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -76,7 +77,7 @@
                  playerchunkmap.getClass();
                  return either1.ifLeft(playerchunkmap::a);
              }));
-@@ -321,6 +344,17 @@
+@@ -321,6 +345,17 @@
  
          this.w.a(this.location, this::j, this.ticketLevel, this::d);
          this.oldTicketLevel = this.ticketLevel;
