@@ -1,4 +1,4 @@
-From 295d1e39bef98846870587d7eac310e80581972b Mon Sep 17 00:00:00 2001
+From e8e3373ac76fade3f09bc29305cd5b94d57922eb Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -182,10 +182,10 @@ index 857b2f8868..bbf136614c 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index dcf2d38df5..600217427b 100644
+index dcf2d38df5..24222fa1f8 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -66,6 +66,38 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -66,6 +66,58 @@ public class ChunkProviderServer extends IChunkProvider {
          return this.playerChunkMap.c();
      }
  
@@ -195,7 +195,7 @@ index dcf2d38df5..600217427b 100644
 +    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
 +        if (Thread.currentThread() != this.serverThread) {
 +            return CompletableFuture.supplyAsync(() -> {
-+               return this.getChunkAtIfLoadedImmediately(x, z);
++                return this.getChunkAtIfLoadedImmediately(x, z);
 +            }, this.serverThreadQueue).join();
 +        }
 +
@@ -211,6 +211,26 @@ index dcf2d38df5..600217427b 100644
 +                }
 +            }
 +        }
++
++        PlayerChunk playerChunk = this.getChunk(k);
++        if (playerChunk == null) {
++            return null;
++        }
++
++        return playerChunk.getFullChunkIfCached();
++    }
++
++    @Nullable
++    public Chunk getChunkAtTickingImmediately(int x, int z) {
++        if (Thread.currentThread() != this.serverThread) {
++            return CompletableFuture.supplyAsync(() -> {
++                return this.getChunkAtTickingImmediately(x, z);
++            }, this.serverThreadQueue).join();
++        }
++
++        long k = ChunkCoordIntPair.pair(x, z);
++
++        // Note: Bypass cache since we need to check ticket level
 +
 +        PlayerChunk playerChunk = this.getChunk(k);
 +        if (playerChunk == null) {
@@ -924,6 +944,25 @@ index 4e20cfba41..363ab5da12 100644
      public int a(PacketDataSerializer packetdataserializer, Chunk chunk, int i) {
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 67c8a5efc7..78dca8932f 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -63,6 +63,14 @@ public class PlayerChunk {
+         return either == null ? null : (Chunk) either.left().orElse(null);
+     }
+     // CraftBukkit end
++    // Paper start - "real" get full chunk immediately
++    public Chunk getFullChunkIfCached() {
++        // Note: Copied from above without ticket level check
++        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
++        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
++        return either == null ? null : (Chunk) either.left().orElse(null);
++    }
++    // Paper end
+ 
+     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 58f9946455..ae194b981f 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -1103,7 +1142,7 @@ index 91e50ccea1..a2b1aba49f 100644
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 42f7bb0f7d..5d71addb0c 100644
+index 2a9e2ab58a..4eb7438f25 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -85,6 +85,7 @@ public final class CraftItemStack extends ItemStack {
