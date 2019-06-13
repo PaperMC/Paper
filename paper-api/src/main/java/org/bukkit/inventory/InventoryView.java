@@ -329,7 +329,9 @@ public abstract class InventoryView {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
         if (slot >= 0 && slot < this.getTopInventory().getSize()) {
             switch(this.getType()) {
+            case BLAST_FURNACE:
             case FURNACE:
+            case SMOKER:
                 if (slot == 2) {
                     type = InventoryType.SlotType.RESULT;
                 } else if(slot == 1) {
@@ -356,6 +358,12 @@ public abstract class InventoryView {
                     type = InventoryType.SlotType.CRAFTING;
                 }
                 break;
+            case BEACON:
+                type = InventoryType.SlotType.CRAFTING;
+                break;
+            case ANVIL:
+            case CARTOGRAPHY:
+            case GRINDSTONE:
             case MERCHANT:
                 if (slot == 2) {
                     type = InventoryType.SlotType.RESULT;
@@ -363,11 +371,15 @@ public abstract class InventoryView {
                     type = InventoryType.SlotType.CRAFTING;
                 }
                 break;
-            case BEACON:
-                type = InventoryType.SlotType.CRAFTING;
+            case STONECUTTER:
+                if (slot == 1) {
+                    type = InventoryType.SlotType.RESULT;
+                } else {
+                    type = InventoryType.SlotType.CRAFTING;
+                }
                 break;
-            case ANVIL:
-                if (slot == 2) {
+            case LOOM:
+                if (slot == 3) {
                     type = InventoryType.SlotType.RESULT;
                 } else {
                     type = InventoryType.SlotType.CRAFTING;

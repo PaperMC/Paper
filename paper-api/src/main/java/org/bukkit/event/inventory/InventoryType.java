@@ -54,7 +54,7 @@ public enum InventoryType {
      */
     ENCHANTING(2,"Enchanting"),
     /**
-     * A brewing stand inventory, with one FUEL slot and three CRAFTING slots.
+     * A brewing stand inventory, with one FUEL slot and four CRAFTING slots.
      */
     BREWING(5,"Brewing"),
     /**
@@ -70,7 +70,7 @@ public enum InventoryType {
      */
     CREATIVE(9,"Creative", false),
     /**
-     * The merchant inventory, with 2 TRADE-IN slots, and 1 RESULT slot.
+     * The merchant inventory, with 2 CRAFTING slots, and 1 RESULT slot.
      */
     MERCHANT(3,"Villager", false),
     /**
@@ -111,19 +111,19 @@ public enum InventoryType {
      */
     SMOKER(3, "Smoker"),
     /**
-     * Loom inventory, with 3 INPUT slots, and 1 RESULT slot.
+     * Loom inventory, with 3 CRAFTING slots, and 1 RESULT slot.
      */
     LOOM(4, "Loom"),
     /**
-     * Cartography inventory with 2 INPUT slots, and 1 RESULT slot.
+     * Cartography inventory with 2 CRAFTING slots, and 1 RESULT slot.
      */
     CARTOGRAPHY(3, "Cartography Table"),
     /**
-     * Grindstone inventory with 2 INPUT slots, and 1 RESULT slot.
+     * Grindstone inventory with 2 CRAFTING slots, and 1 RESULT slot.
      */
     GRINDSTONE(3, "Repair & Disenchant"),
     /**
-     * Stonecutter inventory with 1 INPUT slot, and 1 RESULT slot.
+     * Stonecutter inventory with 1 CRAFTING slot, and 1 RESULT slot.
      */
     STONECUTTER(2, "Stonecutter")
     ;
@@ -167,9 +167,7 @@ public enum InventoryType {
          */
         RESULT,
         /**
-         * A slot in the crafting matrix, or the input slot in a furnace
-         * inventory, the potion slot in the brewing stand, or the enchanting
-         * slot.
+         * A slot in the crafting matrix, or an 'input' slot.
          */
         CRAFTING,
         /**
