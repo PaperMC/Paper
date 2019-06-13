@@ -10,7 +10,6 @@ import net.minecraft.server.InventoryEnderChest;
 import net.minecraft.server.InventoryMerchant;
 import net.minecraft.server.PlayerInventory;
 import net.minecraft.server.TileEntityBarrel;
-import net.minecraft.server.TileEntityBeacon;
 import net.minecraft.server.TileEntityBlastFurnace;
 import net.minecraft.server.TileEntityBrewingStand;
 import net.minecraft.server.TileEntityDispenser;
