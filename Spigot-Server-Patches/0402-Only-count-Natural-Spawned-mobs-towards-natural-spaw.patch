@@ -1,0 +1,60 @@
+From 13cdbbfbad353171b8f8b20f1d9785f24246de96 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Wed, 12 Jun 2019 21:47:44 -0400
+Subject: [PATCH] Only count Natural Spawned mobs towards natural spawn mob
+ limit
+
+Comments below are from original patch by Aikar.
+
+This resolves the super common complaint about mobs not spawning.
+
+This was ultimately a flaw in the vanilla count algorithim that allows
+spawners and other misc mobs to count against the mob limit, which are
+not bounded, and can prevent the entire world from spawning new.
+
+I believe Bukkits changes around persistence may of actually made it
+worse than vanilla.
+
+This should fully solve all of the issues around it so that only natural
+influences natural spawns.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 58109e13..92d66b1d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -509,4 +509,14 @@ public class PaperWorldConfig {
+     private void maxAutoSaveChunksPerTick() {
+         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+     }
++
++    public boolean countAllMobsForSpawning = false;
++    private void countAllMobsForSpawning() {
++        countAllMobsForSpawning = getBoolean("count-all-mobs-for-spawning", false);
++        if (countAllMobsForSpawning) {
++            log("Counting all mobs for spawning. Mob farms may reduce natural spawns elsewhere in world.");
++        } else {
++            log("Using improved mob spawn limits (Only Natural Spawns impact spawn limits for more natural spawns)");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 1c3815a9..8376ae48 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -854,6 +854,13 @@ public class WorldServer extends World {
+                 EnumCreatureType enumcreaturetype = entity.getEntityType().d();
+ 
+                 if (enumcreaturetype != EnumCreatureType.MISC && this.getChunkProvider().a(entity)) {
++                    // Paper start - Only count natural spawns so that mob
++                    if (!this.paperConfig.countAllMobsForSpawning &&
++                        !(entity.spawnReason == CreatureSpawnEvent.SpawnReason.NATURAL ||
++                        entity.spawnReason == CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
++                        continue;
++                    }
++                    // Paper end
+                     object2intmap.computeInt(enumcreaturetype, (enumcreaturetype1, integer) -> {
+                         return 1 + (integer == null ? 0 : integer);
+                     });
+-- 
+2.19.0
+
