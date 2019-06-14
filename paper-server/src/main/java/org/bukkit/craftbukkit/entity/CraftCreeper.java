@@ -65,6 +65,16 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     }
 
     @Override
+    public void explode() {
+        getHandle().eb();
+    }
+
+    @Override
+    public void ignite() {
+        getHandle().dY(); // PAIL rename ignite
+    }
+
+    @Override
     public EntityCreeper getHandle() {
         return (EntityCreeper) entity;
     }
