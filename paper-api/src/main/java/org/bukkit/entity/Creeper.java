@@ -50,4 +50,23 @@ public interface Creeper extends Monster {
      * @return the explosion radius
      */
     public int getExplosionRadius();
+
+    /**
+     * Makes this Creeper explode instantly.
+     *
+     * The resulting explosion can be cancelled by an
+     * {@link ExplosionPrimeEvent} and obeys the mob griefing gamerule.
+     */
+    public void explode();
+
+    /**
+     * Ignites this Creeper, beginning its fuse.
+     *
+     * The amount of time the Creeper takes to explode will depend on what
+     * {@link #setMaxFuseTicks} is set as.
+     *
+     * The resulting explosion can be cancelled by an
+     * {@link ExplosionPrimeEvent} and obeys the mob griefing gamerule.
+     */
+    public void ignite();
 }
