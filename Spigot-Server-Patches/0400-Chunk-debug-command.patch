@@ -1,4 +1,4 @@
-From 2fc4e030df0fe70a70ab6fa8575d8024ad89f651 Mon Sep 17 00:00:00 2001
+From 878ec799f4aadb09f197f1148d474ae97c5d17f0 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 1 Jun 2019 13:00:55 -0700
 Subject: [PATCH] Chunk debug command
@@ -32,7 +32,7 @@ https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlass
 https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 352a39dcb3..4a7939472d 100644
+index 352a39dcb3..c808adaddf 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -28,14 +28,14 @@ public class PaperCommand extends Command {
@@ -40,7 +40,7 @@ index 352a39dcb3..4a7939472d 100644
          super(name);
          this.description = "Paper related commands";
 -        this.usageMessage = "/paper [heap | entity | reload | version]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug]";
++        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
          this.setPermission("bukkit.command.paper");
      }
  
@@ -48,11 +48,11 @@ index 352a39dcb3..4a7939472d 100644
      public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
          if (args.length <= 1)
 -            return getListMatchingLast(args, "heap", "entity", "reload", "version");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug");
++            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
  
          switch (args[0].toLowerCase(Locale.ENGLISH))
          {
-@@ -45,6 +45,10 @@ public class PaperCommand extends Command {
+@@ -45,6 +45,21 @@ public class PaperCommand extends Command {
                  if (args.length == 3)
                      return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
                  break;
@@ -60,23 +60,94 @@ index 352a39dcb3..4a7939472d 100644
 +                if (args.length == 2) {
 +                    return getListMatchingLast(args, "help", "chunks");
 +                }
++                break;
++            case "chunkinfo":
++                List<String> worldNames = new ArrayList<>();
++                worldNames.add("*");
++                for (org.bukkit.World world : Bukkit.getWorlds()) {
++                    worldNames.add(world.getName());
++                }
++                if (args.length == 2) {
++                    return getListMatchingLast(args, worldNames);
++                }
++                break;
          }
          return Collections.emptyList();
      }
-@@ -109,6 +113,9 @@ public class PaperCommand extends Command {
+@@ -109,6 +124,12 @@ public class PaperCommand extends Command {
              case "reload":
                  doReload(sender);
                  break;
 +            case "debug":
 +                doDebug(sender, args);
 +                break;
++            case "chunkinfo":
++                doChunkInfo(sender, args);
++                break;
              case "ver":
              case "version":
                  Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -125,6 +132,39 @@ public class PaperCommand extends Command {
+@@ -125,6 +146,96 @@ public class PaperCommand extends Command {
          return true;
      }
  
++    private void doChunkInfo(CommandSender sender, String[] args) {
++        List<org.bukkit.World> worlds;
++        if (args.length < 2 || args[1].equals("*")) {
++            worlds = Bukkit.getWorlds();
++        } else {
++            worlds = new ArrayList<>(args.length - 1);
++            for (int i = 1; i < args.length; ++i) {
++                org.bukkit.World world = Bukkit.getWorld(args[i]);
++                if (world == null) {
++                    sender.sendMessage(ChatColor.RED + "World '" + args[i] + "' is invalid");
++                    return;
++                }
++                worlds.add(world);
++            }
++        }
++
++        for (org.bukkit.World bukkitWorld : worlds) {
++            WorldServer world = ((CraftWorld)bukkitWorld).getHandle();
++
++            int total = 0;
++            int inactive = 0;
++            int border = 0;
++            int ticking = 0;
++            int entityTicking = 0;
++
++            for (PlayerChunk chunk : world.getChunkProvider().playerChunkMap.updatingChunks.values()) {
++                if (chunk.getFullChunkIfCached() == null) {
++                    continue;
++                }
++
++                ++total;
++
++                PlayerChunk.State state = PlayerChunk.getChunkState(chunk.getTicketLevel());
++
++                switch (state) {
++                    case INACCESSIBLE:
++                        ++inactive;
++                        continue;
++                    case BORDER:
++                        ++border;
++                        continue;
++                    case TICKING:
++                        ++ticking;
++                        continue;
++                    case ENTITY_TICKING:
++                        ++entityTicking;
++                        continue;
++                }
++            }
++
++            sender.sendMessage(ChatColor.BLUE + "Chunk information for world " + ChatColor.GREEN + bukkitWorld.getName() + ChatColor.DARK_AQUA + ":");
++            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + total + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
++                               + inactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + border + ChatColor.BLUE + " Ticking: "
++                               + ChatColor.DARK_AQUA + ticking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + entityTicking);
++        }
++    }
++
 +    private void doDebug(CommandSender sender, String[] args) {
 +        if (args.length < 2) {
 +            sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
@@ -127,7 +198,7 @@ index d3c2ad3c40..705ca68798 100644
      private final ChunkMapDistance.c g = new ChunkMapDistance.c();
      private int entitydistance;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 760be2f15e..86e3c26304 100644
+index ca1e4b90ba..d83eec0d76 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
@@ -341,7 +412,7 @@ index ec3732193f..fa0763cd9c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 0d8cddeb62..22739ad8a1 100644
+index 78dca8932f..806d225aaa 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -26,7 +26,7 @@ public class PlayerChunk {
