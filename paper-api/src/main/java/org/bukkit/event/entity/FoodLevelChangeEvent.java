@@ -3,7 +3,9 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a human entity's food level changes
@@ -12,16 +14,32 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private int level;
+    private final ItemStack item;
 
     public FoodLevelChangeEvent(@NotNull final HumanEntity what, final int level) {
+        this(what, level, null);
+    }
+
+    public FoodLevelChangeEvent(@NotNull final HumanEntity what, final int level, @Nullable final ItemStack item) {
         super(what);
         this.level = level;
+        this.item = item;
     }
 
     @NotNull
     @Override
     public HumanEntity getEntity() {
         return (HumanEntity) entity;
+    }
+
+    /**
+     * Gets the item that triggered this event, if any.
+     *
+     * @return an ItemStack for the item being consumed
+     */
+    @Nullable
+    public ItemStack getItem() {
+        return (item == null) ? null : item.clone();
     }
 
     /**
