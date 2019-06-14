@@ -1,4 +1,4 @@
-From e7f166fd8af18e6b9863722bc7afe021fba47bf7 Mon Sep 17 00:00:00 2001
+From c8bfbe6ace15838a1856624bdf4cf6c4ec0ae007 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 13 Sep 2014 23:14:43 -0400
 Subject: [PATCH] Configurable Keep Spawn Loaded range per world
@@ -103,28 +103,76 @@ index 3868572aed..ae77805f71 100644
      @Override
      public void a(ChunkCoordIntPair chunkcoordintpair) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index e9e5ecf747..92aad060ef 100644
+index e9e5ecf747..40b3d96edd 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1487,13 +1487,37 @@ public class WorldServer extends World {
+@@ -1487,13 +1487,85 @@ public class WorldServer extends World {
          return ((PersistentIdCounts) this.getMinecraftServer().getWorldServer(DimensionManager.OVERWORLD).getWorldPersistentData().a(PersistentIdCounts::new, "idcounts")).a();
      }
  
 +    // Paper start - helper function for configurable spawn radius
 +    public void addTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
++        // In order to respect vanilla behavior, which is ensuring everything but the spawn border can tick, we add tickets
++        // with level 31 for the non-border spawn chunks
 +        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
-+        for (int x = -radiusInBlocks; x <= radiusInBlocks; x+= 16) {
-+            for (int z = -radiusInBlocks; z <= radiusInBlocks; z += 16) {
-+                chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 1, Unit.INSTANCE);
++        int tickRadius = radiusInBlocks - 16;
++
++        // add ticking chunks
++        for (int x = -tickRadius; x <= tickRadius; x += 16) {
++            for (int z = -tickRadius; z <= tickRadius; z += 16) {
++                // radius of 2 will have the current chunk be level 31
++                chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 2, Unit.INSTANCE);
 +            }
++        }
++
++        // add border chunks
++
++        // add border along x axis (including corner chunks)
++        for (int x = -radiusInBlocks; x <= radiusInBlocks; x += 16) {
++            // top
++            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, radiusInBlocks)), 1, Unit.INSTANCE); // level 32
++            // bottom
++            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, -radiusInBlocks)), 1, Unit.INSTANCE); // level 32
++        }
++
++        // add border along z axis (excluding corner chunks)
++        for (int z = -radiusInBlocks + 16; z < radiusInBlocks; z += 16) {
++            // right
++            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
++            // left
++            chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(-radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
 +        }
 +    }
 +    public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
++        // In order to respect vanilla behavior, which is ensuring everything but the spawn border can tick, we added tickets
++        // with level 31 for the non-border spawn chunks
 +        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
-+        for (int x = -radiusInBlocks; x <= radiusInBlocks; x+= 16) {
-+            for (int z = -radiusInBlocks; z <= radiusInBlocks; z += 16) {
-+                chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 1, Unit.INSTANCE);
++        int tickRadius = radiusInBlocks - 16;
++
++        // remove ticking chunks
++        for (int x = -tickRadius; x <= tickRadius; x += 16) {
++            for (int z = -tickRadius; z <= tickRadius; z += 16) {
++                // radius of 2 will have the current chunk be level 31
++                chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, z)), 2, Unit.INSTANCE);
 +            }
++        }
++
++        // remove border chunks
++
++        // remove border along x axis (including corner chunks)
++        for (int x = -radiusInBlocks; x <= radiusInBlocks; x += 16) {
++            // top
++            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, radiusInBlocks)), 1, Unit.INSTANCE); // level 32
++            // bottom
++            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(x, 0, -radiusInBlocks)), 1, Unit.INSTANCE); // level 32
++        }
++
++        // remove border along z axis (excluding corner chunks)
++        for (int z = -radiusInBlocks + 16; z < radiusInBlocks; z += 16) {
++            // right
++            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
++            // left
++            chunkproviderserver.removeTicket(TicketType.START, new ChunkCoordIntPair(spawn.add(-radiusInBlocks, 0, z)), 1, Unit.INSTANCE); // level 32
 +        }
 +    }
 +    // Paper end
@@ -148,7 +196,7 @@ index e9e5ecf747..92aad060ef 100644
  
      public LongSet getForceLoadedChunks() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 7b17a634c2..0c53795306 100644
+index d467631590..3f72583e26 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1748,15 +1748,21 @@ public class CraftWorld implements World {
