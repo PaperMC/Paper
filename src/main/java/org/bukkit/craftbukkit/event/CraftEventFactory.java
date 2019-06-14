@@ -980,7 +980,11 @@ public class CraftEventFactory {
     }
 
     public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level) {
-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level);
+        return callFoodLevelChangeEvent(entity, level, null);
+    }
+
+    public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level, ItemStack item) {
+        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item));
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
