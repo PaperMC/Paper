@@ -30,7 +30,7 @@ public class ChunkProviderServer extends IChunkProvider {
     private final WorldServer world;
     public final Thread serverThread; // Paper - private -> public
     private final LightEngineThreaded lightEngine;
-    private final ChunkProviderServer.a serverThreadQueue;
+    public final ChunkProviderServer.a serverThreadQueue; // Paper private -> public
     public final PlayerChunkMap playerChunkMap;
     private final WorldPersistentData worldPersistentData;
     private long lastTickTime;
@@ -295,6 +295,21 @@ public class ChunkProviderServer extends IChunkProvider {
         } while (!this.loadedChunkMapSeqLock.tryReleaseRead(readlock));
 
         return ret;
+    }
+
+    @Nullable
+    public IChunkAccess getChunkAtImmediately(int x, int z) {
+        long k = ChunkCoordIntPair.pair(x, z);
+
+        // Note: Bypass cache to make this MT-Safe
+
+        PlayerChunk playerChunk = this.getChunk(k);
+        if (playerChunk == null) {
+            return null;
+        }
+
+        return playerChunk.getAvailableChunkNow();
+
     }
     // Paper end
 

@@ -182,6 +182,7 @@ public class ChunkStatus {
         return this.s;
     }
 
+    public ChunkStatus getPreviousStatus() { return this.e(); } // Paper - OBFHELPER
     public ChunkStatus e() {
         return this.u;
     }
@@ -202,6 +203,17 @@ public class ChunkStatus {
         return this.y;
     }
 
+    // Paper start
+    public static ChunkStatus getStatus(String name) {
+        try {
+            // We need this otherwise we return EMPTY for invalid names
+            MinecraftKey key = new MinecraftKey(name);
+            return IRegistry.CHUNK_STATUS.getOptional(key).orElse(null);
+        } catch (Exception ex) {
+            return null; // invalid name
+        }
+    }
+    // Paper end
     public static ChunkStatus a(String s) {
         return (ChunkStatus) IRegistry.CHUNK_STATUS.get(MinecraftKey.a(s));
     }

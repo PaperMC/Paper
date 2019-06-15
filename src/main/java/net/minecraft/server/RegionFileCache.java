@@ -21,7 +21,14 @@ public final class RegionFileCache implements AutoCloseable {
         this.c = flag;
     }
 
-    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+
+    // Paper start
+    public RegionFile getRegionFileIfLoaded(ChunkCoordIntPair chunkcoordintpair) {
+        return this.cache.getAndMoveToFirst(ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
+    }
+
+    // Paper end
+    public RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public
         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
         RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
 
@@ -168,6 +175,7 @@ public final class RegionFileCache implements AutoCloseable {
 
         try {
             NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+            regionfile.setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
             regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
         } catch (Throwable throwable1) {
             throwable = throwable1;

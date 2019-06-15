@@ -113,6 +113,19 @@ public class PlayerChunk {
         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
         return either == null ? null : (Chunk) either.left().orElse(null);
     }
+
+    public IChunkAccess getAvailableChunkNow() {
+        // TODO can we just getStatusFuture(EMPTY)?
+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
+            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
+            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
+            if (either == null || !either.left().isPresent()) {
+                continue;
+            }
+            return either.left().get();
+        }
+        return null;
+    }
     // Paper end
 
     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {

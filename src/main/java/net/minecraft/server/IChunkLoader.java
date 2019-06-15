@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 public class IChunkLoader implements AutoCloseable {
 
-    private final IOWorker a;
+    private final IOWorker a; public IOWorker getIOWorker() { return a; } // Paper - OBFHELPER
     protected final DataFixer b;
     @Nullable
     private PersistentStructureLegacy c;

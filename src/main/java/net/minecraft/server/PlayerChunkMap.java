@@ -938,11 +938,60 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     }
 
     @Nullable
-    private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+    public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
         NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
+        // Paper start - Cache chunk status on disk
+        if (nbttagcompound == null) {
+            return null;
+        }
 
-        return nbttagcompound == null ? null : this.getChunkData(this.world.getTypeKey(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
+        nbttagcompound = this.getChunkData(this.world.getTypeKey(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
+        if (nbttagcompound == null) {
+            return null;
+        }
+
+        this.updateChunkStatusOnDisk(chunkcoordintpair, nbttagcompound);
+
+        return nbttagcompound;
+        // Paper end
     }
+
+    // Paper start - chunk status cache "api"
+    public ChunkStatus getChunkStatusOnDiskIfCached(ChunkCoordIntPair chunkPos) {
+        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getRegionFileIfLoaded(chunkPos);
+
+        return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+    }
+
+    public ChunkStatus getChunkStatusOnDisk(ChunkCoordIntPair chunkPos) throws IOException {
+        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, true);
+
+        if (regionFile == null || !regionFile.chunkExists(chunkPos)) {
+            return null;
+        }
+
+        ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+
+        if (status != null) {
+            return status;
+        }
+
+        this.readChunkData(chunkPos);
+
+        return regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+    }
+
+    public void updateChunkStatusOnDisk(ChunkCoordIntPair chunkPos, @Nullable NBTTagCompound compound) throws IOException {
+        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, false);
+
+        regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkRegionLoader.getStatus(compound));
+    }
+
+    public IChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
+        PlayerChunk chunkHolder = this.pendingUnload.get(ChunkCoordIntPair.pair(chunkX, chunkZ));
+        return chunkHolder == null ? null : chunkHolder.getAvailableChunkNow();
+    }
+    // Paper end
 
     boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
         // Spigot start

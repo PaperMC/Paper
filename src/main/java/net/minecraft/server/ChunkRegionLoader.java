@@ -407,6 +407,17 @@ public class ChunkRegionLoader {
     }
     // Paper end
 
+    // Paper start
+    public static ChunkStatus getStatus(NBTTagCompound compound) {
+        if (compound == null) {
+            return null;
+        }
+
+        // Note: Copied from below
+        return ChunkStatus.getStatus(compound.getCompound("Level").getString("Status"));
+    }
+    // Paper end
+
     public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
         if (nbttagcompound != null) {
             ChunkStatus chunkstatus = ChunkStatus.a(nbttagcompound.getCompound("Level").getString("Status"));
