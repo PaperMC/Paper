@@ -861,7 +861,7 @@ public class CraftWorld implements World {
 
                 Class<?> bukkitClass = bukkitEntity.getClass();
 
-                if (clazz.isAssignableFrom(bukkitClass)) {
+                if (clazz.isAssignableFrom(bukkitClass) && bukkitEntity.isValid()) {
                     list.add((T) bukkitEntity);
                 }
             }
@@ -885,7 +885,7 @@ public class CraftWorld implements World {
                 Class<?> bukkitClass = bukkitEntity.getClass();
 
                 for (Class<?> clazz : classes) {
-                    if (clazz.isAssignableFrom(bukkitClass)) {
+                    if (clazz.isAssignableFrom(bukkitClass) && bukkitEntity.isValid()) {
                         list.add(bukkitEntity);
                         break;
                     }
