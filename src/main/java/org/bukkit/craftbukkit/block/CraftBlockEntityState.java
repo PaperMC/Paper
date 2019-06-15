@@ -19,6 +19,8 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
     public CraftBlockEntityState(Block block, Class<T> tileEntityClass) {
         super(block);
 
+        try {// Paper - show location on failure
+
         this.tileEntityClass = tileEntityClass;
 
         // get tile entity from block:
@@ -36,6 +38,14 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         // copy tile entity data:
         if(this.snapshot != null) {
             this.load(this.snapshot);
+        }
+        // Paper end
+        // Paper start - show location on failure
+        } catch (Throwable thr) {
+            if (thr instanceof ThreadDeath) {
+                throw (ThreadDeath)thr;
+            }
+            throw new RuntimeException("Failed to read BlockState at: world: " + block.getWorld().getName() + " location: (" + block.getX() + ", " + block.getY() + ", " + block.getZ() + ")", thr);
         }
         // Paper end
     }
