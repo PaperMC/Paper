@@ -1,4 +1,4 @@
-From 791ed6af800862358a52c40fd558633030773249 Mon Sep 17 00:00:00 2001
+From d2ad29c24b26837e0918ce16f080ece9081be54d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 15 Jun 2019 08:54:33 -0700
 Subject: [PATCH] Fix World#isChunkGenerated calls
@@ -164,10 +164,10 @@ index 86831c3526..f4bdb2eda3 100644
  
      // Spigot Start
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 2e14d84657..b6dc7a2862 100644
+index 2e14d84657..7d064a8471 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -31,6 +31,40 @@ public class RegionFile implements AutoCloseable {
+@@ -31,6 +31,47 @@ public class RegionFile implements AutoCloseable {
      private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
      private final List<Boolean> e; private List<Boolean> getFreeSectors() { return this.e; } // Paper - OBFHELPER
  
@@ -178,15 +178,27 @@ index 2e14d84657..b6dc7a2862 100644
 +    private boolean closed;
 +
 +    public void setStatus(int x, int z, ChunkStatus status) {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new IllegalStateException("RegionFile is closed");
++        }
 +        this.statuses[this.getChunkLocation(new ChunkCoordIntPair(x, z))] = status;
 +    }
 +
 +    public ChunkStatus getStatusIfCached(int x, int z) {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new IllegalStateException("RegionFile is closed");
++        }
 +        final int location = this.getChunkLocation(new ChunkCoordIntPair(x, z));
 +        return this.statuses[location];
 +    }
 +
 +    public ChunkStatus getStatus(int x, int z, PlayerChunkMap playerChunkMap) throws IOException {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new java.io.EOFException("RegionFile is closed");
++        }
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
 +        int location = this.getChunkLocation(chunkPos);
 +        ChunkStatus cached = this.statuses[location];
@@ -196,11 +208,6 @@ index 2e14d84657..b6dc7a2862 100644
 +
 +        playerChunkMap.readChunkData(chunkPos); // This will set our status (yes it's disgusting)
 +
-+        if (this.closed) {
-+            // We've used an invalid region file.
-+            throw new java.io.EOFException();
-+        }
-+
 +        return this.statuses[location];
 +    }
 +    // Paper end
@@ -208,7 +215,7 @@ index 2e14d84657..b6dc7a2862 100644
      public RegionFile(File file) throws IOException {
          this.b = new RandomAccessFile(file, "rw");
          this.file = file; // Spigot // Paper - We need this earlier
-@@ -299,6 +333,7 @@ public class RegionFile implements AutoCloseable {
+@@ -299,6 +340,7 @@ public class RegionFile implements AutoCloseable {
          this.writeInt(i); // Paper - Avoid 3 io write calls
      }
  
@@ -216,7 +223,7 @@ index 2e14d84657..b6dc7a2862 100644
      private int f(ChunkCoordIntPair chunkcoordintpair) {
          return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
      }
-@@ -312,6 +347,7 @@ public class RegionFile implements AutoCloseable {
+@@ -312,6 +354,7 @@ public class RegionFile implements AutoCloseable {
      }
  
      public void close() throws IOException {
