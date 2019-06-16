@@ -1,4 +1,4 @@
-From 519fe16d93c2cf2eb19778d0861ba80cd47e45d9 Mon Sep 17 00:00:00 2001
+From 4747e4a3b55ddd39bc9c803c7430bdddd700ba8e Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Tue, 11 Jun 2019 22:22:16 -0400
 Subject: [PATCH] implement optional per player mob spawns
@@ -160,7 +160,7 @@ index 01c41c73..4b18c3bb 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 135ec94c..57de2fa7 100644
+index 135ec94c..638708f1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -17,6 +17,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -188,7 +188,7 @@ index 135ec94c..57de2fa7 100644
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
-@@ -854,16 +858,53 @@ public class WorldServer extends World {
+@@ -854,16 +858,49 @@ public class WorldServer extends World {
                  EnumCreatureType enumcreaturetype = entity.getEntityType().d();
  
                  if (enumcreaturetype != EnumCreatureType.MISC && this.getChunkProvider().a(entity)) {
@@ -199,14 +199,10 @@ index 135ec94c..57de2fa7 100644
                  }
              }
          }
+-
 +        // Paper start
 +        if(this.paperConfig.perPlayerMobSpawns) {
 +            this.playerMobTypeMap = new HashMap<>();
- 
-+            for (EntityPlayer player : this.players) {
-+                Map<EnumCreatureType, Integer> enummap = new Object2IntOpenHashMap();
-+                this.playerMobTypeMap.put(player, enummap);
-+            }
 +            updatePlayerMobTypeMap(filteredEntities);
 +        }
 +        // Paper end
@@ -218,6 +214,7 @@ index 135ec94c..57de2fa7 100644
 +        if (this.playerMobTypeMap == null) { return; }
 +        for (Entity entity : entities) {
 +            ((ChunkProviderServer) this.chunkProvider).getPlayers(entity.getChunkAtLocation().getPos(), this.spigotConfig.mobSpawnRange).forEach( (player) -> {
++                if (!this.playerMobTypeMap.containsKey(player)) { this.playerMobTypeMap.put(player, new Object2IntOpenHashMap()); }
 +                Map<EnumCreatureType, Integer> tmpMap = this.playerMobTypeMap.get(player);
 +                EnumCreatureType enumType = entity.getEntityType().d();
 +                tmpMap.put(
