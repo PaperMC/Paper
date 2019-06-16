@@ -1,4 +1,4 @@
-From 5bf3d28cd2937d996cd183466545b3c098f08a7f Mon Sep 17 00:00:00 2001
+From 0b8109d70dce130297bf090e7af8090c483bc3e1 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
@@ -90,7 +90,7 @@ index 271406f8bb..85b450c054 100644
                  int newPower = Math.max(0, Math.min(15, this.viewingCount));
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index 340dd1dafe..422b124a6c 100644
+index 340dd1dafe..14598d7ee9 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -1,6 +1,6 @@
@@ -131,23 +131,43 @@ index 340dd1dafe..422b124a6c 100644
  
          if (this.c > 0 && this.a == 0.0F) {
              double d1 = (double) i + 0.5D;
-@@ -30,7 +40,15 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+@@ -30,8 +40,17 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
              d0 = (double) k + 0.5D;
              this.world.a((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.BLOCK_ENDER_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
          }
 +        // Paper start
 +    }
  
+-        if (this.c == 0 && this.a > 0.0F || this.c > 0 && this.a < 1.0F) {
 +    private void doCloseLogic() {
 +        int i = this.position.getX();
 +        int j = this.position.getY();
 +        int k = this.position.getZ();
 +        double d0;
++
++        if (this.c == 0) { /* && this.a > 0.0F || this.c > 0 && this.a < 1.0F) {
 +        // Paper end
-         if (this.c == 0 && this.a > 0.0F || this.c > 0 && this.a < 1.0F) {
              float f1 = this.a;
  
-@@ -79,11 +97,13 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+             if (this.c > 0) {
+@@ -47,11 +66,15 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+             float f2 = 0.5F;
+ 
+             if (this.a < 0.5F && f1 >= 0.5F) {
++            // Paper start
++            */
+                 d0 = (double) i + 0.5D;
+                 double d2 = (double) k + 0.5D;
+ 
++            MCUtil.scheduleTask(10, () -> {
+                 this.world.a((EntityHuman) null, d0, (double) j + 0.5D, d2, SoundEffects.BLOCK_ENDER_CHEST_CLOSE, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+-            }
++            });
++            // Paper end
+ 
+             if (this.a < 0.0F) {
+                 this.a = 0.0F;
+@@ -79,11 +102,13 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
      public void d() {
          ++this.c;
          this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.c);
@@ -162,5 +182,5 @@ index 340dd1dafe..422b124a6c 100644
  
      public boolean a(EntityHuman entityhuman) {
 -- 
-2.21.0
+2.22.0
 
