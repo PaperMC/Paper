@@ -1,4 +1,4 @@
-From e24824ad9e290cc0f08b3bcc12ae79aecac2e19c Mon Sep 17 00:00:00 2001
+From 72c9924c43d2d39544698b14e6332ce719556754 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Tue, 1 Mar 2016 14:14:15 -0600
 Subject: [PATCH] Drop falling block and tnt entities at the specified height
@@ -36,23 +36,26 @@ index c348d6bec3..f5647a171d 100644
      public EntityItem a(ItemStack itemstack, float f) {
          if (itemstack.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index c9c903367f..55591fbe05 100644
+index c9c903367f..fee5e67877 100644
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-@@ -105,11 +105,13 @@ public class EntityFallingBlock extends Entity {
+@@ -88,6 +88,16 @@ public class EntityFallingBlock extends Entity {
+             }
  
-                 if (!this.onGround && !flag1) {
-                     if (!this.world.isClientSide && (this.ticksLived > 100 && (blockposition.getY() < 1 || blockposition.getY() > 256) || this.ticksLived > 600)) {
-+                        if (this.world.paperConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperConfig.fallingBlockHeightNerf) { // Paper - Configurable EntityFallingBlock height nerf
-                         if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
-                             this.a((IMaterial) block);
-                         }
- 
-                         this.die();
-+                    } // Paper
-                     }
-                 } else {
-                     IBlockData iblockdata = this.world.getType(blockposition);
+             this.move(EnumMoveType.SELF, this.getMot());
++
++            // Paper start - Configurable EntityFallingBlock height nerf
++            if (this.world.paperConfig.fallingBlockHeightNerf != 0 && this.locY > this.world.paperConfig.fallingBlockHeightNerf) {
++                if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
++                    this.a(block);
++                }
++
++                this.die();
++            }
++            // Paper end
+             if (!this.world.isClientSide) {
+                 blockposition = new BlockPosition(this);
+                 boolean flag = this.block.getBlock() instanceof BlockConcretePowder;
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 index ba86a07344..e3001570f9 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
@@ -70,5 +73,5 @@ index ba86a07344..e3001570f9 100644
          if (this.onGround) {
              this.setMot(this.getMot().d(0.7D, -0.5D, 0.7D));
 -- 
-2.21.0
+2.22.0
 
