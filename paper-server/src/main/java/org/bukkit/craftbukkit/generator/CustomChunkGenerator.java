@@ -13,6 +13,9 @@ import net.minecraft.server.GeneratorSettingsDefault;
 import net.minecraft.server.HeightMap;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.ITileEntity;
+import net.minecraft.server.MobSpawnerCat;
+import net.minecraft.server.MobSpawnerPatrol;
+import net.minecraft.server.MobSpawnerPhantom;
 import net.minecraft.server.RegionLimitedWorldAccess;
 import net.minecraft.server.StructureGenerator;
 import net.minecraft.server.TileEntity;
@@ -33,6 +36,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     private final long seed;
     private final Random random;
     private final StructureGenerator strongholdGen = WorldGenerator.STRONGHOLD;
+    private final MobSpawnerPhantom mobSpawnerPhantom = new MobSpawnerPhantom();
+    private final MobSpawnerPatrol mobSpawnerPatrol = new MobSpawnerPatrol();
+    private final MobSpawnerCat mobSpawnerCat = new MobSpawnerCat();
 
     private static class CustomBiomeGrid implements BiomeGrid {
         BiomeBase[] biome;
@@ -151,6 +157,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
     @Override
     public void doMobSpawning(WorldServer worldserver, boolean flag, boolean flag1) {
+        this.mobSpawnerPhantom.a(worldserver, flag, flag1);
+        this.mobSpawnerPatrol.a(worldserver, flag, flag1);
+        this.mobSpawnerCat.a(worldserver, flag, flag1);
     }
 
     @Override
