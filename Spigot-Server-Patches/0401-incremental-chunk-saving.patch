@@ -1,4 +1,4 @@
-From 8a7bd2adcb94574ef8d8d22d1a34e142d2403eda Mon Sep 17 00:00:00 2001
+From 6a4af6a95a364d2804bdec0453be09cdc7590ad5 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
 Subject: [PATCH] incremental chunk saving
@@ -86,10 +86,10 @@ index 184f1b00f0..3dbe83c7ea 100644
          this.methodProfiler.enter("snooper");
          if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7d48b580ac..86831c3526 100644
+index 7d48b580ac..b71f98b0c5 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -295,15 +295,29 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -295,15 +295,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              });
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
          } else {
@@ -103,28 +103,32 @@ index 7d48b580ac..86831c3526 100644
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
 -                    this.saveChunk(ichunkaccess);
+-                    playerchunk.l();
+-                }
 +                    // paper start
 +                    boolean shouldSave = true;
-+
+ 
+-            });
 +                    if (ichunkaccess instanceof Chunk) {
 +                        shouldSave = ((Chunk) ichunkaccess).lastSaved + world.paperConfig.autoSavePeriod <= world.getTime();
 +                    }
 +
-+                    if (shouldSave && this.saveChunk(ichunkaccess)) ++savedThisTick;
-                     playerchunk.l();
++                    if (shouldSave && this.saveChunk(ichunkaccess)) {
++                        ++savedThisTick;
++                        playerchunk.l();
++                    }
++
 +                    if (savedThisTick >= world.paperConfig.maxAutoSaveChunksPerTick) {
 +                        return;
 +                    }
-                 }
--
--            });
++                }
 +            };
 +            // paper end
          }
  
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 92aad060ef..1c3815a9c4 100644
+index 40b3d96edd..135ec94c6f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -755,8 +755,9 @@ public class WorldServer extends World {
