@@ -55,7 +55,8 @@ public interface Creeper extends Monster {
      * Makes this Creeper explode instantly.
      *
      * The resulting explosion can be cancelled by an
-     * {@link ExplosionPrimeEvent} and obeys the mob griefing gamerule.
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
      */
     public void explode();
 
@@ -66,7 +67,8 @@ public interface Creeper extends Monster {
      * {@link #setMaxFuseTicks} is set as.
      *
      * The resulting explosion can be cancelled by an
-     * {@link ExplosionPrimeEvent} and obeys the mob griefing gamerule.
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
      */
     public void ignite();
 }
