@@ -1,0 +1,36 @@
+From 68d6b0d6609f28d3c5729340a9d4118587088877 Mon Sep 17 00:00:00 2001
+From: AgentTroll <woodyc40@gmail.com>
+Date: Mon, 17 Jun 2019 12:40:25 -0700
+Subject: [PATCH] Switch for-loop to use unboxed LongIterator
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 53d4f46d4..3ccb9a545 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -16,6 +16,10 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.function.Predicate;
++
++import it.unimi.dsi.fastutil.longs.LongIterable;
++import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.longs.LongSet;
+ import net.minecraft.server.AxisAlignedBB;
+ import net.minecraft.server.BiomeBase;
+ import net.minecraft.server.BlockChorusFlower;
+@@ -547,7 +551,10 @@ public class CraftWorld implements World {
+     public Collection<Chunk> getForceLoadedChunks() {
+         Set<Chunk> chunks = new HashSet<>();
+ 
+-        for (long coord : getHandle().getForceLoadedChunks()) {
++        // Paper - switch to unboxed iteration
++        for (LongIterator it = getHandle().getForceLoadedChunks().iterator(); it.hasNext(); ) {
++            long coord = it.nextLong();
++            // Paper end
+             chunks.add(getChunkAt(ChunkCoordIntPair.getX(coord), ChunkCoordIntPair.getZ(coord)));
+         }
+ 
+-- 
+2.20.1 (Apple Git-117)
+
