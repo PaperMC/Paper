@@ -1,0 +1,336 @@
+From c51e28b104b1df742a48f6ad8cbe6e655bd714bb Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 15 Jun 2019 08:54:33 -0700
+Subject: [PATCH] Fix World#isChunkGenerated calls
+
+Optimize World#loadChunk() too
+This patch also adds a chunk status cache on region files (note that
+its only purpose is to cache the status on DISK)
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index d83eec0d76..459bd619ee 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -29,7 +29,7 @@ public class ChunkProviderServer extends IChunkProvider {
+     private final WorldServer world;
+     private final Thread serverThread;
+     private final LightEngineThreaded lightEngine;
+-    private final ChunkProviderServer.a serverThreadQueue;
++    public final ChunkProviderServer.a serverThreadQueue; // Paper private -> public
+     public final PlayerChunkMap playerChunkMap;
+     private final WorldPersistentData worldPersistentData;
+     private long lastTickTime;
+@@ -119,6 +119,36 @@ public class ChunkProviderServer extends IChunkProvider {
+ 
+         return playerChunk.getFullChunk();
+     }
++
++    @Nullable
++    public IChunkAccess getChunkAtImmediately(int x, int z) {
++        if (Thread.currentThread() != this.serverThread) {
++            return CompletableFuture.supplyAsync(() -> {
++                return this.getChunkAtImmediately(x, z);
++            }, this.serverThreadQueue).join();
++        }
++
++        long k = ChunkCoordIntPair.pair(x, z);
++
++        IChunkAccess ichunkaccess;
++
++        for (int l = 0; l < 4; ++l) {
++            if (k == this.cachePos[l]) {
++                ichunkaccess = this.cacheChunk[l];
++                if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
++                    return ichunkaccess;
++                }
++            }
++        }
++
++        PlayerChunk playerChunk = this.getChunk(k);
++        if (playerChunk == null) {
++            return null;
++        }
++
++        return playerChunk.getAvailableChunkNow();
++
++    }
+     // Paper end
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 2f749fe26a..4906530d83 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -409,6 +409,17 @@ public class ChunkRegionLoader {
+         return nbttagcompound;
+     }
+ 
++    // Paper start
++    public static ChunkStatus getStatus(NBTTagCompound compound) {
++        if (compound == null) {
++            return null;
++        }
++
++        // Note: Copied from below
++        return ChunkStatus.getStatus(compound.getCompound("Level").getString("Status"));
++    }
++    // Paper end
++
+     public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
+         if (nbttagcompound != null) {
+             ChunkStatus chunkstatus = ChunkStatus.a(nbttagcompound.getCompound("Level").getString("Status"));
+diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
+index dd1822d6ff..e324989b46 100644
+--- a/src/main/java/net/minecraft/server/ChunkStatus.java
++++ b/src/main/java/net/minecraft/server/ChunkStatus.java
+@@ -176,6 +176,7 @@ public class ChunkStatus {
+         return this.s;
+     }
+ 
++    public ChunkStatus getPreviousStatus() { return this.e(); } // Paper - OBFHELPER
+     public ChunkStatus e() {
+         return this.u;
+     }
+@@ -196,6 +197,17 @@ public class ChunkStatus {
+         return this.y;
+     }
+ 
++    // Paper start
++    public static ChunkStatus getStatus(String name) {
++        try {
++            // We need this otherwise we return EMPTY for invalid names
++            MinecraftKey key = new MinecraftKey(name);
++            return IRegistry.CHUNK_STATUS.getOptional(key).orElse(null);
++        } catch (Exception ex) {
++            return null; // invalid name
++        }
++    }
++    // Paper end
+     public static ChunkStatus a(String s) {
+         return (ChunkStatus) IRegistry.CHUNK_STATUS.get(MinecraftKey.a(s));
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 806d225aaa..97040528a0 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -70,6 +70,19 @@ public class PlayerChunk {
+         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
+         return either == null ? null : (Chunk) either.left().orElse(null);
+     }
++
++    public IChunkAccess getAvailableChunkNow() {
++        // TODO can we just getStatusFuture(EMPTY)?
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
++            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
++            if (either == null || !either.left().isPresent()) {
++                continue;
++            }
++            return either.left().get();
++        }
++        return null;
++    }
+     // Paper end
+ 
+     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 86831c3526..f4bdb2eda3 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -808,10 +808,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     @Nullable
+-    private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++    public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
+         NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
+ 
+-        return nbttagcompound == null ? null : this.getChunkData(this.world.getWorldProvider().getDimensionManager(), this.m, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
++        // Paper start - Cache chunk status on disk
++        if (nbttagcompound == null) {
++            return null;
++        }
++
++        nbttagcompound = this.getChunkData(this.world.getWorldProvider().getDimensionManager(), this.m, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
++        if (nbttagcompound == null) {
++            return null;
++        }
++
++        this.getRegionFile(chunkcoordintpair, false).setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound));
++
++        return nbttagcompound;
++        // Paper end
+     }
+ 
+     // Spigot Start
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index 2e14d84657..d610253b95 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -31,6 +31,47 @@ public class RegionFile implements AutoCloseable {
+     private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
+     private final List<Boolean> e; private List<Boolean> getFreeSectors() { return this.e; } // Paper - OBFHELPER
+ 
++    // Paper start - Cache chunk status
++    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
++
++    private boolean closed;
++
++    // invoked on write/read
++    public void setStatus(int x, int z, ChunkStatus status) {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new IllegalStateException("RegionFile is closed");
++        }
++        this.statuses[this.getChunkLocation(new ChunkCoordIntPair(x, z))] = status;
++    }
++
++    public ChunkStatus getStatusIfCached(int x, int z) {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new IllegalStateException("RegionFile is closed");
++        }
++        final int location = this.getChunkLocation(new ChunkCoordIntPair(x, z));
++        return this.statuses[location];
++    }
++
++    public ChunkStatus getStatus(int x, int z, PlayerChunkMap playerChunkMap) throws IOException {
++        if (this.closed) {
++            // We've used an invalid region file.
++            throw new java.io.EOFException("RegionFile is closed");
++        }
++        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
++        int location = this.getChunkLocation(chunkPos);
++        ChunkStatus cached = this.statuses[location];
++        if (cached != null) {
++            return cached;
++        }
++
++        playerChunkMap.readChunkData(chunkPos); // This will set our status (yes it's disgusting)
++
++        return this.statuses[location];
++    }
++    // Paper end
++
+     public RegionFile(File file) throws IOException {
+         this.b = new RandomAccessFile(file, "rw");
+         this.file = file; // Spigot // Paper - We need this earlier
+@@ -299,6 +340,7 @@ public class RegionFile implements AutoCloseable {
+         this.writeInt(i); // Paper - Avoid 3 io write calls
+     }
+ 
++    private final int getChunkLocation(ChunkCoordIntPair chunkcoordintpair) { return this.f(chunkcoordintpair); } // Paper - OBFHELPER
+     private int f(ChunkCoordIntPair chunkcoordintpair) {
+         return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
+     }
+@@ -312,6 +354,7 @@ public class RegionFile implements AutoCloseable {
+     }
+ 
+     public void close() throws IOException {
++        this.closed = true; // Paper
+         this.b.close();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index 6f34d8aea0..d1323891fa 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -110,6 +110,7 @@ public abstract class RegionFileCache implements AutoCloseable {
+         try {
+             NBTCompressedStreamTools.writeNBT(nbttagcompound, out);
+             out.close();
++            regionfile.setStatus(chunk.x, chunk.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
+             regionfile.setOversized(chunkX, chunkZ, false);
+         } catch (RegionFile.ChunkTooLargeException ignored) {
+             printOversizedLog("ChunkTooLarge! Someone is trying to duplicate.", regionfile.file, chunkX, chunkZ);
+@@ -127,6 +128,7 @@ public abstract class RegionFileCache implements AutoCloseable {
+                     if (SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD) {
+                         resetFilterThresholds();
+                     }
++                    regionfile.setStatus(chunk.x, chunk.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
+                 } catch (RegionFile.ChunkTooLargeException e) {
+                     printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
+                     // Eek, major fail. We have retry logic, so reduce threshholds and fall back
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0cdf723480..4026edabc2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -387,8 +387,20 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public boolean isChunkGenerated(int x, int z) {
++        // Paper start - Fix this method
++        if (!Bukkit.isPrimaryThread()) {
++            return CompletableFuture.supplyAsync(() -> {
++                return CraftWorld.this.isChunkGenerated(x, z);
++            }, world.getChunkProvider().serverThreadQueue).join();
++        }
++        IChunkAccess chunk = world.getChunkProvider().getChunkAtImmediately(x, z);
++        if (chunk != null) {
++            return chunk instanceof ProtoChunkExtension || chunk instanceof net.minecraft.server.Chunk;
++        }
+         try {
+-            return world.getChunkProvider().getChunkAtIfCachedImmediately(x, z) != null || world.getChunkProvider().playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z)); // Paper
++            return world.getChunkProvider().playerChunkMap.getRegionFile(new ChunkCoordIntPair(x, z), false)
++                .getStatus(x, z, world.getChunkProvider().playerChunkMap) == ChunkStatus.FULL;
++            // Paper end
+         } catch (IOException ex) {
+             throw new RuntimeException(ex);
+         }
+@@ -500,20 +512,14 @@ public class CraftWorld implements World {
+     @Override
+     public boolean loadChunk(int x, int z, boolean generate) {
+         org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
+-        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
+-
+-        // If generate = false, but the chunk already exists, we will get this back.
+-        if (chunk instanceof ProtoChunkExtension) {
+-            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
+-            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
+-        }
+-
+-        if (chunk instanceof net.minecraft.server.Chunk) {
+-            world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
+-            return true;
++        // Paper - Optimize this method
++        if (!generate && !isChunkGenerated(x, z)) {
++            return false;
+         }
+-
+-        return false;
++        world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
++        world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
++        return true;
++        // Paper end
+     }
+ 
+     @Override
+@@ -2125,21 +2131,11 @@ public class CraftWorld implements World {
+ 
+     // Paper start
+     private Chunk getChunkAtGen(int x, int z, boolean gen) {
+-        // copied from loadChunk()
+-        // this function is identical except we do not add a plugin ticket
+-        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, gen || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
+-
+-        // If generate = false, but the chunk already exists, we will get this back.
+-        if (chunk instanceof ProtoChunkExtension) {
+-            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
+-            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
+-        }
+-
+-        if (chunk instanceof net.minecraft.server.Chunk) {
+-            return ((net.minecraft.server.Chunk)chunk).bukkitChunk;
++        // Note: Copied from loadChunk()
++        if (!gen && !isChunkGenerated(x, z)) {
++            return null;
+         }
+-
+-        return null;
++        return ((net.minecraft.server.Chunk)world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true)).bukkitChunk;
+     }
+ 
+     @Override
+-- 
+2.21.0
+
