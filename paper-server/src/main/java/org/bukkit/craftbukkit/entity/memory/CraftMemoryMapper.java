@@ -22,7 +22,9 @@ public final class CraftMemoryMapper {
     }
 
     public static Object toNms(Object object) {
-        if (object instanceof Location) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof Location) {
             return toNms((Location) object);
         }
 
