@@ -1,4 +1,4 @@
-From a1302f191f49bae1d19fa8cf1104b81acb83472b Mon Sep 17 00:00:00 2001
+From bcaf4cf40854a592f4e895201ffc7a8d2cea074b Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 1 Apr 2019 18:57:32 -0700
 Subject: [PATCH] Make region files more reliable to write to
@@ -37,7 +37,7 @@ affect save performance if the startup flag is used (especially on
 HDDs).
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 82f7af46f8..e5659980b3 100644
+index 82f7af46f8..cf71924961 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -29,7 +29,7 @@ public class RegionFile {
@@ -130,27 +130,31 @@ index 82f7af46f8..e5659980b3 100644
          this.c.write(abyte, 0, j);
      }
  
-@@ -311,16 +315,17 @@ public class RegionFile {
+@@ -311,16 +315,19 @@ public class RegionFile {
          return this.getOffset(i, j) != 0;
      }
  
 +    private void updateChunkHeader(final int x, final int z, final int offset) throws IOException { this.a(x, z, offset); } // Paper - OBFHELPER
      private void a(int i, int j, int k) throws IOException {
-         this.d[i + j * 32] = k;
+-        this.d[i + j * 32] = k;
++        // Paper - move this to after the write
          this.c.seek((long) ((i + j * 32) * 4));
 -        this.c.writeInt(k);
 +        this.writeInt(k); // Paper - Avoid 3 io write calls
++        this.d[i + j * 32] = k; // Paper - move this to after the write
      }
  
      private void b(int i, int j, int k) throws IOException {
-         this.e[i + j * 32] = k;
+-        this.e[i + j * 32] = k;
++        // Paper - move this to after the write
          this.c.seek((long) (4096 + (i + j * 32) * 4));
 -        this.c.writeInt(k);
 +        this.writeInt(k); // Paper - Avoid 3 io write calls
++        this.e[i + j * 32] = k; // Paper - move this to after the write
      }
  
      public void close() throws IOException {
-@@ -331,6 +336,40 @@ public class RegionFile {
+@@ -331,6 +338,40 @@ public class RegionFile {
      }
  
      // Paper start
