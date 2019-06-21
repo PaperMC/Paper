@@ -1904,7 +1904,9 @@ public class CraftWorld implements World {
 
         if (!isGameRule(rule)) return false;
 
-        getHandle().getGameRules().get(getGameRulesNMS().get(rule)).b(null, value);
+        GameRules.GameRuleValue<?> handle = getHandle().getGameRules().get(getGameRulesNMS().get(rule));
+        handle.setValue(value);
+        handle.a(getHandle().getMinecraftServer());
         return true;
     }
 
@@ -1938,7 +1940,9 @@ public class CraftWorld implements World {
 
         if (!isGameRule(rule.getName())) return false;
 
-        getHandle().getGameRules().get(getGameRulesNMS().get(rule.getName())).b(null, newValue.toString());
+        GameRules.GameRuleValue<?> handle = getHandle().getGameRules().get(getGameRulesNMS().get(rule.getName()));
+        handle.setValue(newValue.toString());
+        handle.a(getHandle().getMinecraftServer());
         return true;
     }
 
