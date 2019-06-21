@@ -1,8 +1,8 @@
 package org.bukkit;
 
 import java.util.Map;
-import java.util.TreeMap;
 import net.minecraft.server.GameRules;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,12 +21,12 @@ public class GameRuleTest {
 
     @Test
     public void testMinecraftRules() {
-        TreeMap<String, GameRules.GameRuleDefinition> minecraftRules = GameRules.getGameRules();
+        Map<String, GameRules.GameRuleKey<?>> minecraftRules = CraftWorld.getGameRulesNMS();
 
-        for (Map.Entry<String, GameRules.GameRuleDefinition> entry : minecraftRules.entrySet()) {
+        for (Map.Entry<String, GameRules.GameRuleKey<?>> entry : minecraftRules.entrySet()) {
             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());
 
-            Assert.assertNotNull(bukkitRule);
+            Assert.assertNotNull("Missing " + entry.getKey(), bukkitRule);
             Assert.assertEquals("Invalid GameRule Name", bukkitRule.getName(), entry.getKey());
         }
     }

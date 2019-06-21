@@ -20,7 +20,7 @@
      private static final Logger LOGGER = LogManager.getLogger();
 @@ -38,8 +49,10 @@
      @Nullable
-     private ServerGUI q;
+     private ServerGUI p;
  
 -    public DedicatedServer(File file, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
 -        super(file, Proxy.NO_PROXY, datafixer, new CommandDispatcher(true), yggdrasilauthenticationservice, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory, s);
@@ -136,7 +136,7 @@
  
              if (this.getMaxTickTime() > 0L) {
 @@ -301,6 +362,7 @@
-             this.l.b();
+             this.remoteStatusListener.b();
          }
  
 +        System.exit(0); // CraftBukkit
@@ -160,7 +160,7 @@
          }
  
      }
-@@ -529,14 +599,61 @@
+@@ -529,14 +599,45 @@
  
      @Override
      public String getPlugins() {
@@ -193,40 +193,22 @@
  
      @Override
      public String executeRemoteCommand(String s) {
--        this.remoteControlCommandListener.clearMessages();
--        this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
--        return this.remoteControlCommandListener.getMessages();
-+        // CraftBukkit start - fire RemoteServerCommandEvent
-+        Waitable<String> waitable = new Waitable<String>() {
-+            @Override
-+            protected String evaluate() {
-+                remoteControlCommandListener.clearMessages();
-+                // Event changes start
-+                RemoteServerCommandEvent event = new RemoteServerCommandEvent(remoteConsole, s);
-+                server.getPluginManager().callEvent(event);
-+                if (event.isCancelled()) {
-+                    return "";
-+                }
-+                // Event change end
-+                ServerCommand serverCommand = new ServerCommand(event.getCommand(), remoteControlCommandListener.f());
-+                server.dispatchServerCommand(remoteConsole, serverCommand);
-+                return remoteControlCommandListener.getMessages();
+         this.remoteControlCommandListener.clearMessages();
+         this.executeSync(() -> {
+-            this.getCommandDispatcher().a(this.remoteControlCommandListener.f(), s);
++            // CraftBukkit start - fire RemoteServerCommandEvent
++            RemoteServerCommandEvent event = new RemoteServerCommandEvent(remoteConsole, s);
++            server.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
 +            }
-+        };
-+        processQueue.add(waitable);
-+        try {
-+            return waitable.get();
-+        } catch (java.util.concurrent.ExecutionException e) {
-+            throw new RuntimeException("Exception processing rcon command " + s, e.getCause());
-+        } catch (InterruptedException e) {
-+            Thread.currentThread().interrupt(); // Maintain interrupted state
-+            throw new RuntimeException("Interrupted processing rcon command " + s, e);
-+        }
-+        // CraftBukkit end
++            ServerCommand serverCommand = new ServerCommand(event.getCommand(), remoteControlCommandListener.f());
++            server.dispatchServerCommand(remoteConsole, serverCommand);
++            // CraftBukkit end
+         });
+         return this.remoteControlCommandListener.getMessages();
      }
- 
-     public void setHasWhitelist(boolean flag) {
-@@ -555,4 +672,16 @@
+@@ -557,4 +658,16 @@
      public boolean b(GameProfile gameprofile) {
          return false;
      }
