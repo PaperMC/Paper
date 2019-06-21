@@ -1,4 +1,4 @@
-From bcaf4cf40854a592f4e895201ffc7a8d2cea074b Mon Sep 17 00:00:00 2001
+From ffd5b014fe5efbd4d91bf92ac965c5a5d2dc39b8 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 1 Apr 2019 18:57:32 -0700
 Subject: [PATCH] Make region files more reliable to write to
@@ -37,7 +37,7 @@ affect save performance if the startup flag is used (especially on
 HDDs).
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 82f7af46f8..cf71924961 100644
+index 82f7af46f8..91e2df610d 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -29,7 +29,7 @@ public class RegionFile {
@@ -100,7 +100,7 @@ index 82f7af46f8..cf71924961 100644
                  } else {
                      this.c.seek(this.c.length());
                      i1 = this.f.size();
-@@ -280,9 +279,14 @@ public class RegionFile {
+@@ -280,22 +279,27 @@ public class RegionFile {
                      }
  
                      this.g += 4096 * k1;
@@ -116,8 +116,11 @@ index 82f7af46f8..cf71924961 100644
 +                // Paper end
              }
  
-             this.b(i, j, (int) (SystemUtils.getTimeMillis() / 1000L));
-@@ -292,10 +296,10 @@ public class RegionFile {
+-            this.b(i, j, (int) (SystemUtils.getTimeMillis() / 1000L));
++            // Paper - move this into writeChunkData
+         } catch (IOException ioexception) {
+             com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
+         }
  
      }
  
@@ -130,7 +133,7 @@ index 82f7af46f8..cf71924961 100644
          this.c.write(abyte, 0, j);
      }
  
-@@ -311,16 +315,19 @@ public class RegionFile {
+@@ -311,16 +315,20 @@ public class RegionFile {
          return this.getOffset(i, j) != 0;
      }
  
@@ -144,6 +147,7 @@ index 82f7af46f8..cf71924961 100644
 +        this.d[i + j * 32] = k; // Paper - move this to after the write
      }
  
++    private void updateChunkTime(final int x, final int z, final int time) throws IOException { this.b(x, z, time); } // Paper - OBFHELPER
      private void b(int i, int j, int k) throws IOException {
 -        this.e[i + j * 32] = k;
 +        // Paper - move this to after the write
@@ -154,7 +158,7 @@ index 82f7af46f8..cf71924961 100644
      }
  
      public void close() throws IOException {
-@@ -331,6 +338,40 @@ public class RegionFile {
+@@ -331,6 +339,49 @@ public class RegionFile {
      }
  
      // Paper start
@@ -186,10 +190,19 @@ index 82f7af46f8..cf71924961 100644
 +
 +    private void writeChunk(final int x, final int z, final int chunkHeaderData,
 +                            final int chunkOffset, final byte[] chunkData, final int chunkDataLength) throws IOException {
++        final int location = (x & 31) | ((z & 31) << 5);
++        final int prevOffset = this.offsets[location];
++
 +        this.writeChunkData(chunkOffset, chunkData, chunkDataLength);
 +        this.syncRegionFile(); // Sync is required to ensure the previous data is written successfully
 +        this.updateChunkHeader(x, z, chunkHeaderData);
-+        this.syncRegionFile(); // Ensure header changes go through
++        try {
++            this.updateChunkTime(x, z, (int) (SystemUtils.getTimeMillis() / 1000L));
++            this.syncRegionFile(); // Ensure header changes go through
++        } catch (IOException ex) {
++            this.offsets[location] = prevOffset; // fail write
++            throw ex;
++        }
 +    }
 +
      public synchronized void deleteChunk(int j1) {
