@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -80,9 +82,6 @@ import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
 import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldNBTStorage;
-import net.minecraft.server.WorldProviderHell;
-import net.minecraft.server.WorldProviderNormal;
-import net.minecraft.server.WorldProviderTheEnd;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.BlockChangeDelegate;
@@ -702,7 +701,7 @@ public class CraftWorld implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().playerConnection == null) continue;
 
-            cp.getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime(), cp.getHandle().world.getGameRules().getBoolean("doDaylightCycle")));
+            cp.getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateTime(cp.getHandle().world.getTime(), cp.getHandle().getPlayerTime(), cp.getHandle().world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)));
         }
     }
 
@@ -1853,6 +1852,40 @@ public class CraftWorld implements World {
         world.getMinecraftServer().getPlayerList().sendPacketNearby(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.getWorldProvider().getDimensionManager(), packet);
     }
 
+    private static Map<String, GameRules.GameRuleKey<?>> gamerules;
+    public static synchronized Map<String, GameRules.GameRuleKey<?>> getGameRulesNMS() {
+        if (gamerules != null) {
+            return gamerules;
+        }
+
+        Map<String, GameRules.GameRuleKey<?>> gamerules = new HashMap<>();
+        GameRules.a(new GameRules.GameRuleVisitor() {
+            @Override
+            public <T extends GameRules.GameRuleValue<T>> void a(GameRules.GameRuleKey<T> gamerules_gamerulekey, GameRules.GameRuleDefinition<T> gamerules_gameruledefinition) {
+                gamerules.put(gamerules_gamerulekey.a(), gamerules_gamerulekey);
+            }
+        });
+
+        return CraftWorld.gamerules = gamerules;
+    }
+
+    private static Map<String, GameRules.GameRuleDefinition<?>> gameruleDefinitions;
+    public static synchronized Map<String, GameRules.GameRuleDefinition<?>> getGameRuleDefinitions() {
+        if (gameruleDefinitions != null) {
+            return gameruleDefinitions;
+        }
+
+        Map<String, GameRules.GameRuleDefinition<?>> gameruleDefinitions = new HashMap<>();
+        GameRules.a(new GameRules.GameRuleVisitor() {
+            @Override
+            public <T extends GameRules.GameRuleValue<T>> void a(GameRules.GameRuleKey<T> gamerules_gamerulekey, GameRules.GameRuleDefinition<T> gamerules_gameruledefinition) {
+                gameruleDefinitions.put(gamerules_gamerulekey.a(), gamerules_gameruledefinition);
+            }
+        });
+
+        return CraftWorld.gameruleDefinitions = gameruleDefinitions;
+    }
+
     @Override
     public String getGameRuleValue(String rule) {
         // In method contract for some reason
@@ -1860,8 +1893,8 @@ public class CraftWorld implements World {
             return null;
         }
 
-        GameRules.GameRuleValue value = getHandle().getGameRules().get(rule);
-        return value != null ? value.getValue() : "";
+        GameRules.GameRuleValue<?> value = getHandle().getGameRules().get(getGameRulesNMS().get(rule));
+        return value != null ? value.toString() : "";
     }
 
     @Override
@@ -1871,31 +1904,31 @@ public class CraftWorld implements World {
 
         if (!isGameRule(rule)) return false;
 
-        getHandle().getGameRules().set(rule, value, getHandle().getMinecraftServer());
+        getHandle().getGameRules().get(getGameRulesNMS().get(rule)).b(null, value);
         return true;
     }
 
     @Override
     public String[] getGameRules() {
-        return GameRules.getGameRules().keySet().toArray(new String[GameRules.getGameRules().size()]);
+        return getGameRulesNMS().keySet().toArray(new String[getGameRulesNMS().size()]);
     }
 
     @Override
     public boolean isGameRule(String rule) {
         Validate.isTrue(rule != null && !rule.isEmpty(), "Rule cannot be null nor empty");
-        return GameRules.getGameRules().containsKey(rule);
+        return getGameRulesNMS().containsKey(rule);
     }
 
     @Override
     public <T> T getGameRuleValue(GameRule<T> rule) {
         Validate.notNull(rule, "GameRule cannot be null");
-        return convert(rule, getHandle().getGameRules().get(rule.getName()));
+        return convert(rule, getHandle().getGameRules().get(getGameRulesNMS().get(rule.getName())));
     }
 
     @Override
     public <T> T getGameRuleDefault(GameRule<T> rule) {
         Validate.notNull(rule, "GameRule cannot be null");
-        return convert(rule, GameRules.getGameRules().get(rule.getName()).a());
+        return convert(rule, getGameRuleDefinitions().get(rule.getName()).a());
     }
 
     @Override
@@ -1905,22 +1938,21 @@ public class CraftWorld implements World {
 
         if (!isGameRule(rule.getName())) return false;
 
-        getHandle().getGameRules().set(rule.getName(), newValue.toString(), getHandle().getMinecraftServer());
+        getHandle().getGameRules().get(getGameRulesNMS().get(rule.getName())).b(null, newValue.toString());
         return true;
     }
 
-    private <T> T convert(GameRule<T> rule, GameRules.GameRuleValue value) {
+    private <T> T convert(GameRule<T> rule, GameRules.GameRuleValue<?> value) {
         if (value == null) {
             return null;
         }
 
-        switch (value.getType()) {
-            case BOOLEAN_VALUE:
-                return rule.getType().cast(value.getBooleanValue());
-            case NUMERICAL_VALUE:
-                return rule.getType().cast(value.getIntValue());
-            default:
-                throw new IllegalArgumentException("Invalid GameRule type (" + value.getType() + ") for GameRule " + rule.getName());
+        if (value instanceof GameRules.GameRuleBoolean) {
+            return rule.getType().cast(((GameRules.GameRuleBoolean) value).a());
+        } else if (value instanceof GameRules.GameRuleInt) {
+            return rule.getType().cast(value.getIntValue());
+        } else {
+            throw new IllegalArgumentException("Invalid GameRule type (" + value + ") for GameRule " + rule.getName());
         }
     }
 

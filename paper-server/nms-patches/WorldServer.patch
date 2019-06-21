@@ -27,7 +27,7 @@
 +    // Add env and gen to constructor
 +    public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
          super(worlddata, dimensionmanager, (world, worldprovider) -> {
--            return new ChunkProviderServer((WorldServer) world, worldnbtstorage.getDirectory(), worldnbtstorage.getDataFixer(), worldnbtstorage.f(), executor, worldprovider.getChunkGenerator(), minecraftserver.getPlayerList().getViewDistance(), minecraftserver.getPlayerList().getViewDistance() - 2, worldloadlistener, () -> {
+-            return new ChunkProviderServer((WorldServer) world, worldnbtstorage.getDirectory(), worldnbtstorage.getDataFixer(), worldnbtstorage.f(), executor, worldprovider.getChunkGenerator(), minecraftserver.getPlayerList().getViewDistance(), worldloadlistener, () -> {
 +            // CraftBukkit start
 +            ChunkGenerator<?> chunkGenerator;
 +
@@ -37,7 +37,7 @@
 +                chunkGenerator = worldprovider.getChunkGenerator();
 +            }
 +
-+            return new ChunkProviderServer((WorldServer) world, worldnbtstorage.getDirectory(), worldnbtstorage.getDataFixer(), worldnbtstorage.f(), executor, chunkGenerator, minecraftserver.getPlayerList().getViewDistance(), minecraftserver.getPlayerList().getViewDistance() - 2, worldloadlistener, () -> {
++            return new ChunkProviderServer((WorldServer) world, worldnbtstorage.getDirectory(), worldnbtstorage.getDataFixer(), worldnbtstorage.f(), executor, chunkGenerator, minecraftserver.getPlayerList().getViewDistance(), worldloadlistener, () -> {
                  return minecraftserver.getWorldServer(DimensionManager.OVERWORLD).getWorldPersistentData();
              });
 -        }, gameprofilerfiller, false);
@@ -102,7 +102,7 @@
 +            return !entityplayer.isSpectator() && !entityplayer.isDeeplySleeping() && !entityplayer.fauxSleeping; // CraftBukkit
          })) {
              this.D = false;
-             if (this.getGameRules().getBoolean("doDaylightCycle")) {
+             if (this.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
 @@ -225,7 +274,7 @@
          this.ae();
          this.ticking = false;
@@ -266,8 +266,8 @@
 +                // CraftBukkit end
                  EnumCreatureType enumcreaturetype = entity.getEntityType().d();
  
-                 if (enumcreaturetype != EnumCreatureType.MISC && this.getChunkProvider().a(entity)) {
-@@ -732,11 +826,24 @@
+                 if (enumcreaturetype != EnumCreatureType.MISC && this.getChunkProvider().b(entity)) {
+@@ -730,11 +824,24 @@
  
      @Override
      public boolean addEntity(Entity entity) {
@@ -294,7 +294,7 @@
      }
  
      public void addEntityTeleport(Entity entity) {
-@@ -786,13 +893,18 @@
+@@ -784,13 +891,18 @@
          this.registerEntity(entityplayer);
      }
  
@@ -315,7 +315,7 @@
              IChunkAccess ichunkaccess = this.getChunkAt(MathHelper.floor(entity.locX / 16.0D), MathHelper.floor(entity.locZ / 16.0D), ChunkStatus.FULL, entity.attachedToPlayer);
  
              if (!(ichunkaccess instanceof Chunk)) {
-@@ -820,7 +932,7 @@
+@@ -818,7 +930,7 @@
          if (entity1 == null) {
              return false;
          } else {
@@ -324,7 +324,7 @@
              return true;
          }
      }
-@@ -875,6 +987,7 @@
+@@ -873,6 +985,7 @@
              this.I.remove(((EntityInsentient) entity).getNavigation());
          }
  
@@ -332,7 +332,7 @@
      }
  
      private void registerEntity(Entity entity) {
-@@ -898,6 +1011,7 @@
+@@ -896,6 +1009,7 @@
              if (entity instanceof EntityInsentient) {
                  this.I.add(((EntityInsentient) entity).getNavigation());
              }
@@ -340,7 +340,7 @@
          }
  
      }
-@@ -928,6 +1042,18 @@
+@@ -926,6 +1040,18 @@
      }
  
      public void strikeLightning(EntityLightning entitylightning) {
@@ -359,7 +359,7 @@
          this.globalEntityList.add(entitylightning);
          this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX, entitylightning.locY, entitylightning.locZ, 512.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutSpawnEntityWeather(entitylightning));
      }
-@@ -936,6 +1062,12 @@
+@@ -934,6 +1060,12 @@
      public void a(int i, BlockPosition blockposition, int j) {
          Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
  
@@ -372,7 +372,7 @@
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
-@@ -944,6 +1076,12 @@
+@@ -942,6 +1074,12 @@
                  double d1 = (double) blockposition.getY() - entityplayer.locY;
                  double d2 = (double) blockposition.getZ() - entityplayer.locZ;
  
@@ -385,7 +385,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.playerConnection.sendPacket(new PacketPlayOutBlockBreakAnimation(i, blockposition, j));
                  }
-@@ -1004,6 +1142,14 @@
+@@ -1002,6 +1140,14 @@
  
      @Override
      public Explosion createExplosion(@Nullable Entity entity, DamageSource damagesource, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
@@ -400,7 +400,7 @@
          Explosion explosion = new Explosion(this, entity, d0, d1, d2, f, flag, explosion_effect);
  
          if (damagesource != null) {
-@@ -1012,6 +1158,8 @@
+@@ -1010,6 +1156,8 @@
  
          explosion.a();
          explosion.a(false);
@@ -409,7 +409,7 @@
          if (explosion_effect == Explosion.Effect.NONE) {
              explosion.clearBlocks();
          }
-@@ -1076,13 +1224,20 @@
+@@ -1074,13 +1222,20 @@
      }
  
      public <T extends ParticleParam> int a(T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
@@ -432,7 +432,7 @@
                  ++j;
              }
          }
-@@ -1165,7 +1320,13 @@
+@@ -1163,7 +1318,13 @@
      @Override
      public WorldMap a(String s) {
          return (WorldMap) this.getMinecraftServer().getWorldServer(DimensionManager.OVERWORLD).getWorldPersistentData().b(() -> {

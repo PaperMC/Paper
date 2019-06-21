@@ -26,6 +26,8 @@ public final class CraftMemoryMapper {
             return null;
         } else if (object instanceof Location) {
             return toNms((Location) object);
+        } else if (object instanceof Long) {
+            return object;
         }
 
         throw new UnsupportedOperationException("Do not know how to map " + object);

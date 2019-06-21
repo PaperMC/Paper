@@ -34,11 +34,11 @@ public class CraftPainting extends CraftHanging implements Painting {
         EntityPainting painting = this.getHandle();
         Paintings oldArt = painting.art;
         painting.art = CraftArt.BukkitToNotch(art);
-        painting.setDirection(painting.direction);
+        painting.setDirection(painting.getDirection());
         if (!force && !painting.survives()) {
             // Revert painting since it doesn't fit
             painting.art = oldArt;
-            painting.setDirection(painting.direction);
+            painting.setDirection(painting.getDirection());
             return false;
         }
         this.update();
@@ -60,7 +60,7 @@ public class CraftPainting extends CraftHanging implements Painting {
         EntityPainting painting = EntityTypes.PAINTING.a(world);
         painting.blockPosition = getHandle().blockPosition;
         painting.art = getHandle().art;
-        painting.setDirection(getHandle().direction);
+        painting.setDirection(getHandle().getDirection());
         getHandle().die();
         getHandle().velocityChanged = true; // because this occurs when the painting is broken, so it might be important
         world.addEntity(painting);
