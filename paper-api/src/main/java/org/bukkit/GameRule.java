@@ -116,6 +116,11 @@ public final class GameRule<T> {
      */
     public static final GameRule<Boolean> SPECTATORS_GENERATE_CHUNKS = new GameRule<>("spectatorsGenerateChunks", Boolean.class);
 
+    /**
+     * Whether pillager raids are enabled or not.
+     */
+    public static final GameRule<Boolean> DISABLE_RAIDS = new GameRule<>("disableRaids", Boolean.class);
+
     // Numerical rules
     /**
      * How often a random block tick occurs (such as plant growth, leaf decay,
