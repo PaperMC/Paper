@@ -596,11 +596,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         IMerchant mcMerchant;
         IChatBaseComponent name;
-        int level = 0;
-        if (merchant instanceof CraftVillager) {
-            mcMerchant = ((CraftVillager) merchant).getHandle();
-            name = ((CraftVillager) merchant).getHandle().getScoreboardDisplayName();
-            level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
+        int level = 1; // note: using level 0 with active 'is-regular-villager'-flag allows hiding the name suffix
+        if (merchant instanceof CraftAbstractVillager) {
+            mcMerchant = ((CraftAbstractVillager) merchant).getHandle();
+            name = ((CraftAbstractVillager) merchant).getHandle().getScoreboardDisplayName();
+            if (merchant instanceof CraftVillager) {
+                level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
+            }
         } else if (merchant instanceof CraftMerchantCustom) {
             mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
             name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();

@@ -95,7 +95,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         @Override
         public boolean eb() {
-            return true;
+            return false; // is-regular-villager flag (hides some gui elements: xp bar, name suffix)
         }
 
         @Override
