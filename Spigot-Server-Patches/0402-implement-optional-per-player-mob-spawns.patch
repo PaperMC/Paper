@@ -1,4 +1,4 @@
-From accc43241aae78a4db3d5e2f599fa9df54f1f6d2 Mon Sep 17 00:00:00 2001
+From f6ab0bae99f01995af818ef09643897d52f3c5a0 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Tue, 11 Jun 2019 22:22:16 -0400
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,7 +19,7 @@ index 58109e13..01f5979f 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e635d17d..99d82a7a 100644
+index e635d17d..cbd8656b 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -412,8 +412,23 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -34,7 +34,7 @@ index e635d17d..99d82a7a 100644
 +                                    if(this.world.paperConfig.perPlayerMobSpawns){
 +                                        final int[] min = {Integer.MAX_VALUE};
 +                                        final int finalLimit = limit;
-+                                        this.getPlayers(chunk.getPos(), this.world.spigotConfig.mobSpawnRange)
++                                        this.getPlayersNear(chunk.getPos(), this.world.spigotConfig.mobSpawnRange)
 +                                            .forEach((entityplayer) -> min[0] = Math.min(
 +                                                finalLimit - ((WorldServer)chunk.getWorld()).getEntityCount(entityplayer, enumcreaturetype),
 +                                                min[0]));
@@ -52,30 +52,53 @@ index e635d17d..99d82a7a 100644
          this.playerChunkMap.g();
      }
  
-+    public java.util.stream.Stream<EntityPlayer> getPlayers(ChunkCoordIntPair coordIntPair, int rangeChunks){ return this.playerChunkMap.getPlayers(coordIntPair, rangeChunks); } // Paper
++    public java.util.stream.Stream<EntityPlayer> getPlayersNear(ChunkCoordIntPair coordIntPair, int rangeChunks) { return this.playerChunkMap.getPlayersNear(coordIntPair, rangeChunks); } // Paper
 +
      @Override
      public String getName() {
          return "ServerChunkCache: " + this.g();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 86831c35..a32c1aab 100644
+index 86831c35..d38a1d4d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -974,6 +974,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -107,6 +107,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.setViewDistance(i, j);
+     }
+ 
++    private static double squareDist(ChunkCoordIntPair chunkcoordintpair, Entity entity) { return a(chunkcoordintpair, entity); } // Paper - OBFHELPER
++
+     private static double a(ChunkCoordIntPair chunkcoordintpair, Entity entity) {
+         double d0 = (double) (chunkcoordintpair.x * 16 + 8);
+         double d1 = (double) (chunkcoordintpair.z * 16 + 8);
+@@ -974,6 +976,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          });
      }
  
-+    // Paper start - OBFHELPER
-+    public Stream<EntityPlayer> getPlayers(ChunkCoordIntPair chunkcoordintpair, int range) {
-+        int blockRange = ((range << 4) * (range << 4));
-+        return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) ->
-+            (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange));
++    // Paper start
++    public Stream<EntityPlayer> getPlayersNear(ChunkCoordIntPair coordIntPair, int rangeChunks) {
++        int squareRangeBlocks = ((rangeChunks << 4) * (rangeChunks << 4));
++
++        return this.playerMap.getPlayers(coordIntPair.pair()).filter( (entityplayer) ->
++            (!entityplayer.isSpectator() && squareDist(coordIntPair, entityplayer) < squareRangeBlocks));
 +    }
 +    // Paper end
 +
      protected void addEntity(Entity entity) {
          org.spigotmc.AsyncCatcher.catchOp( "entity track"); // Spigot
          if (!(entity instanceof EntityComplexPart)) {
+diff --git a/src/main/java/net/minecraft/server/PlayerMap.java b/src/main/java/net/minecraft/server/PlayerMap.java
+index e19ea354..029673fb 100644
+--- a/src/main/java/net/minecraft/server/PlayerMap.java
++++ b/src/main/java/net/minecraft/server/PlayerMap.java
+@@ -11,6 +11,8 @@ public final class PlayerMap {
+ 
+     public PlayerMap() {}
+ 
++    public Stream<EntityPlayer> getPlayers(long chunkCoordPair) { return this.a(chunkCoordPair); } // Paper - OBFHELPER
++
+     public Stream<EntityPlayer> a(long i) {
+         return this.a.stream();
+     }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
 index 01c41c73..4b18c3bb 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
@@ -148,7 +171,7 @@ index 01c41c73..4b18c3bb 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 135ec94c..c53bfa77 100644
+index 135ec94c..7361c1fc 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -17,6 +17,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -201,7 +224,7 @@ index 135ec94c..c53bfa77 100644
 +    public void updatePlayerMobTypeMap(List<Entity> entities) {
 +        if (this.playerMobTypeMap == null) { return; }
 +        for (Entity entity : entities) {
-+            ((ChunkProviderServer) this.chunkProvider).getPlayers(entity.getChunkAtLocation().getPos(), this.spigotConfig.mobSpawnRange).forEach( (player) -> {
++            ((ChunkProviderServer) this.chunkProvider).getPlayersNear(entity.getChunkAtLocation().getPos(), this.spigotConfig.mobSpawnRange).forEach( (player) -> {
 +                if (!this.playerMobTypeMap.containsKey(player.uniqueID)) { this.playerMobTypeMap.put(player.uniqueID, new Object2IntOpenHashMap()); }
 +                Map<EnumCreatureType, Integer> tmpMap = this.playerMobTypeMap.get(player.uniqueID);
 +                EnumCreatureType enumType = entity.getEntityType().d();
