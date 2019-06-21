@@ -1,4 +1,4 @@
-From ffd5b014fe5efbd4d91bf92ac965c5a5d2dc39b8 Mon Sep 17 00:00:00 2001
+From 3c3d45bf524de7a3a1ee661ed6389415cefc1c89 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 1 Apr 2019 18:57:32 -0700
 Subject: [PATCH] Make region files more reliable to write to
@@ -37,7 +37,7 @@ affect save performance if the startup flag is used (especially on
 HDDs).
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 82f7af46f8..91e2df610d 100644
+index 82f7af46f8..c754e5b2c9 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -29,7 +29,7 @@ public class RegionFile {
@@ -158,7 +158,7 @@ index 82f7af46f8..91e2df610d 100644
      }
  
      public void close() throws IOException {
-@@ -331,6 +339,49 @@ public class RegionFile {
+@@ -331,6 +339,41 @@ public class RegionFile {
      }
  
      // Paper start
@@ -190,19 +190,11 @@ index 82f7af46f8..91e2df610d 100644
 +
 +    private void writeChunk(final int x, final int z, final int chunkHeaderData,
 +                            final int chunkOffset, final byte[] chunkData, final int chunkDataLength) throws IOException {
-+        final int location = (x & 31) | ((z & 31) << 5);
-+        final int prevOffset = this.offsets[location];
-+
 +        this.writeChunkData(chunkOffset, chunkData, chunkDataLength);
 +        this.syncRegionFile(); // Sync is required to ensure the previous data is written successfully
++        this.updateChunkTime(x, z, (int) (SystemUtils.getTimeMillis() / 1000L));
 +        this.updateChunkHeader(x, z, chunkHeaderData);
-+        try {
-+            this.updateChunkTime(x, z, (int) (SystemUtils.getTimeMillis() / 1000L));
-+            this.syncRegionFile(); // Ensure header changes go through
-+        } catch (IOException ex) {
-+            this.offsets[location] = prevOffset; // fail write
-+            throw ex;
-+        }
++        this.syncRegionFile(); // Ensure header changes go through
 +    }
 +
      public synchronized void deleteChunk(int j1) {
