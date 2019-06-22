@@ -36,6 +36,7 @@ import net.minecraft.server.Entity;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EnumChatFormat;
+import net.minecraft.server.EnumColor;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.MapIcon;
@@ -68,6 +69,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Achievement;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
+import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Instrument;
@@ -523,6 +525,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendSignChange(Location loc, String[] lines) {
+       sendSignChange(loc, lines, DyeColor.BLACK);
+    }
+
+    @Override
+    public void sendSignChange(Location loc, String[] lines, DyeColor dyeColor) {
         if (getHandle().playerConnection == null) {
             return;
         }
@@ -532,6 +539,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         Validate.notNull(loc, "Location can not be null");
+        Validate.notNull(dyeColor, "DyeColor can not be null");
         if (lines.length < 4) {
             throw new IllegalArgumentException("Must have at least 4 lines");
         }
@@ -539,6 +547,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
         TileEntitySign sign = new TileEntitySign();
         sign.setPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+        sign.setColor(EnumColor.fromColorIndex(dyeColor.getWoolData()));
         System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
 
         getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
