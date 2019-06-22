@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
 import org.bukkit.Achievement;
+import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Instrument;
@@ -413,6 +414,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      */
     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+
+
+    /**
+     * Send a sign change. This fakes a sign change packet for a user at
+     * a certain location. This will not actually change the world in any way.
+     * This method will use a sign at the location's block or a faked sign
+     * sent via
+     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
+     * <p>
+     * If the client does not have a sign at the given location it will
+     * display an error message to the user.
+     *
+     * @param loc the location of the sign
+     * @param lines the new text on the sign or null to clear it
+     * @param  dyeColor the color of the sign
+     * @throws IllegalArgumentException if location is null
+     * @throws IllegalArgumentException if dyeColor is null
+     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+     */
+    public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
 
     /**
      * Render a map and send it to the player in its entirety. This may be
