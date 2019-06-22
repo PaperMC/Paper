@@ -1,4 +1,4 @@
-From e723c0ee1bfff0b62d6996d7f9dbcf608abcf629 Mon Sep 17 00:00:00 2001
+From 6b6191a14bd3c49c0b53c276a8d47f635fa66d75 Mon Sep 17 00:00:00 2001
 From: Hugo Manrique <hugmanrique@gmail.com>
 Date: Mon, 23 Jul 2018 14:22:26 +0200
 Subject: [PATCH] Vanished players don't have rights
@@ -17,48 +17,20 @@ index 291a8029ed..fe9881fdf2 100644
      public final List<Entity> passengers;
      protected int j;
      private Entity vehicle;
-diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index ee22bb0387..e5a013ffd2 100644
---- a/src/main/java/net/minecraft/server/IEntityAccess.java
-+++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -22,9 +22,18 @@ public interface IEntityAccess {
-         return this.getEntities(entity, axisalignedbb, IEntitySelector.f);
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index 0f4aa698aa..1f78993375 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -142,6 +142,7 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return this.b(iblockaccess, blockposition, VoxelShapeCollision.a());
      }
  
-+    // Paper start
-     default boolean a(@Nullable Entity entity, VoxelShape voxelshape) {
-+        return this.checkEntityCollision(entity, voxelshape, false);
-+    }
-+    default boolean checkEntityCollision(Entity entity, VoxelShape voxelshape, boolean checkCanSee) {
-         return voxelshape.isEmpty() ? true : this.getEntities(entity, voxelshape.getBoundingBox()).stream().filter((entity1) -> {
-+            if (entity instanceof EntityPlayer && entity1 instanceof EntityPlayer
-+                && !((EntityPlayer)entity).getBukkitEntity().canSee(((EntityPlayer)entity1).getBukkitEntity())) {
-+                return false;
-+            }
-             return !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
-+            // Paper end
-         }).noneMatch((entity1) -> {
-             return VoxelShapes.c(voxelshape, VoxelShapes.a(entity1.getBoundingBox()), OperatorBoolean.AND);
-         });
-diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index 7308c0c319..ed3f793f20 100644
---- a/src/main/java/net/minecraft/server/IWorldReader.java
-+++ b/src/main/java/net/minecraft/server/IWorldReader.java
-@@ -84,7 +84,12 @@ public interface IWorldReader extends IIBlockAccess {
-         return ChunkStatus.EMPTY;
++    public final VoxelShape getCollisionShape(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) { return this.b(iblockaccess, blockposition, voxelshapecollision); } // Paper - OBFHELPER
+     public VoxelShape b(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
+         return this.getBlock().b(this, iblockaccess, blockposition, voxelshapecollision);
      }
- 
-+    // Paper start
-     default boolean a(IBlockData iblockdata, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
-+        return this.checkEntityCollision(iblockdata, blockposition, voxelshapecollision, false);
-+    }
-+    default boolean checkEntityCollision(IBlockData iblockdata, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision, boolean checkCanSee) {
-+        // Paper end
-         VoxelShape voxelshape = iblockdata.b((IBlockAccess) this, blockposition, voxelshapecollision);
- 
-         return voxelshape.isEmpty() || this.a((Entity) null, voxelshape.a((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()));
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index 59b1e6ce2e..b90cc6652b 100644
+index 59b1e6ce2e..9f29e714b8 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
 @@ -126,7 +126,8 @@ public class ItemBlock extends Item {
@@ -66,11 +38,96 @@ index 59b1e6ce2e..b90cc6652b 100644
          VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a((Entity) entityhuman);
          // CraftBukkit start - store default return
 -        boolean defaultReturn = (!this.d() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
-+        final World world = blockactioncontext.getWorld(); // Paper
-+        boolean defaultReturn = (!this.d() || iblockdata.canPlace(world, blockactioncontext.getClickPosition())) && world.checkEntityCollision(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision, true); // Paper
++        World world = blockactioncontext.getWorld(); // Paper
++        boolean defaultReturn = (!this.d() || iblockdata.canPlace(world, blockactioncontext.getClickPosition())) && world.checkEntityCollision(iblockdata, entityhuman, voxelshapecollision, blockactioncontext.getClickPosition(), true); // Paper
          org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
  
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
+diff --git a/src/main/java/net/minecraft/server/VoxelShape.java b/src/main/java/net/minecraft/server/VoxelShape.java
+index 6bfbc3616e..7bed2d208f 100644
+--- a/src/main/java/net/minecraft/server/VoxelShape.java
++++ b/src/main/java/net/minecraft/server/VoxelShape.java
+@@ -46,6 +46,7 @@ public abstract class VoxelShape {
+         return this.a.a();
+     }
+ 
++    public final VoxelShape offset(double x, double y, double z) { return this.a(x, y, z); } // Paper - OBFHELPER
+     public VoxelShape a(double d0, double d1, double d2) {
+         return (VoxelShape) (this.isEmpty() ? VoxelShapes.a() : new VoxelShapeArray(this.a, new DoubleListOffset(this.a(EnumDirection.EnumAxis.X), d0), new DoubleListOffset(this.a(EnumDirection.EnumAxis.Y), d1), new DoubleListOffset(this.a(EnumDirection.EnumAxis.Z), d2)));
+     }
+diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
+index 811841d110..5c393f11d7 100644
+--- a/src/main/java/net/minecraft/server/VoxelShapes.java
++++ b/src/main/java/net/minecraft/server/VoxelShapes.java
+@@ -33,6 +33,7 @@ public final class VoxelShapes {
+         return a(new AxisAlignedBB(d0, d1, d2, d3, d4, d5));
+     }
+ 
++    public static final VoxelShape of(AxisAlignedBB axisAlignedbb) { return VoxelShapes.a(axisAlignedbb); } // Paper - OBFHELPER
+     public static VoxelShape a(AxisAlignedBB axisalignedbb) {
+         int i = a(axisalignedbb.minX, axisalignedbb.maxX);
+         int j = a(axisalignedbb.minY, axisalignedbb.maxY);
+@@ -127,6 +128,7 @@ public final class VoxelShapes {
+         }
+     }
+ 
++    public static final boolean applyOperation(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) { return VoxelShapes.c(voxelshape, voxelshape1, operatorboolean); } // Paper - OBFHELPER
+     public static boolean c(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) {
+         if (operatorboolean.apply(false, false)) {
+             throw new IllegalArgumentException();
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d205ec01ac..05c7a49a4a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -164,6 +164,48 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
+     }
+ 
++    // Paper start
++    // ret true if no collision
++    public final boolean checkEntityCollision(IBlockData data, Entity source, VoxelShapeCollision voxelshapedcollision,
++                                        BlockPosition position, boolean checkCanSee) {
++        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
++        VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
++        if (voxelshape.isEmpty()) {
++            return true;
++        }
++
++        voxelshape = voxelshape.offset((double) position.getX(), (double) position.getY(), (double) position.getZ());
++
++        if (voxelshape.isEmpty()) {
++            return true;
++        }
++
++        List<Entity> entities = this.getEntities(null, voxelshape.getBoundingBox());
++
++        for (int i = 0, len = entities.size(); i < len; ++i) {
++            Entity entity = entities.get(i);
++
++            if (checkCanSee && source instanceof EntityPlayer && entity instanceof EntityPlayer
++                && !((EntityPlayer)source).getBukkitEntity().canSee(((EntityPlayer)entity).getBukkitEntity())) {
++                continue;
++            }
++
++            // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
++            // elide the last check since vanilla calls with entity = null
++            // only we care about the source for the canSee check
++            if (entity.dead || !entity.blocksEntitySpawning()) {
++                continue;
++            }
++
++            if (VoxelShapes.applyOperation(voxelshape, VoxelShapes.of(entity.getBoundingBox()), OperatorBoolean.AND)) {
++                return false;
++            }
++        }
++
++        return true;
++    }
++    // Paper end
++
+     @Override
+     public BiomeBase getBiome(BlockPosition blockposition) {
+         IChunkProvider ichunkprovider = this.getChunkProvider();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 80b0fb8c11..dd25a8ad29 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
@@ -91,5 +148,5 @@ index 80b0fb8c11..dd25a8ad29 100644
          return event;
      }
 -- 
-2.22.0
+2.21.0
 
