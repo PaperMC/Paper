@@ -232,9 +232,22 @@ index 2e14d84657..d610253b95 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 6f34d8aea0..d1323891fa 100644
+index 6f34d8aea0..d2b3289450 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
+         // Paper start
+     }
+ 
++    // Paper start
++    public RegionFile getRegionFileIfLoaded(ChunkCoordIntPair chunkcoordintpair) {
++        return this.cache.getAndMoveToFirst(ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
++    }
++    // Paper end
++
+     public RegionFile getRegionFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { return this.a(chunkcoordintpair, existingOnly); } // Paper - OBFHELPER
+     private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
 @@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
          try {
              NBTCompressedStreamTools.writeNBT(nbttagcompound, out);
@@ -252,7 +265,7 @@ index 6f34d8aea0..d1323891fa 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e0d89cc533..53d4f46d45 100644
+index e0d89cc533..9bb1ad077a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
@@ -288,13 +301,22 @@ index e0d89cc533..53d4f46d45 100644
 -            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
 -            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
 -        }
--
++        // Paper - Optimize this method
++        if (!generate) {
++            net.minecraft.server.RegionFile file = world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(new ChunkCoordIntPair(x, z));
++            if (file != null && file.getStatusIfCached(x, z) != ChunkStatus.FULL) {
++                return false;
++            }
+ 
 -        if (chunk instanceof net.minecraft.server.Chunk) {
 -            world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
 -            return true;
-+        // Paper - Optimize this method
-+        if (!generate && !isChunkGenerated(x, z)) {
-+            return false;
++            IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.EMPTY, true);
++            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
++                return false;
++            }
++            // fall through to load
++            // we do this so we do not re-read the chunk data on disk
          }
 -
 -        return false;
@@ -322,8 +344,17 @@ index e0d89cc533..53d4f46d45 100644
 -        if (chunk instanceof net.minecraft.server.Chunk) {
 -            return ((net.minecraft.server.Chunk)chunk).bukkitChunk;
 +        // Note: Copied from loadChunk()
-+        if (!gen && !isChunkGenerated(x, z)) {
-+            return null;
++        if (!gen) {
++            net.minecraft.server.RegionFile file = world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(new ChunkCoordIntPair(x, z));
++            if (file != null && file.getStatusIfCached(x, z) != ChunkStatus.FULL) {
++                return null;
++            }
++            IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.EMPTY, true);
++            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
++                return null;
++            }
++            // fall through to load
++            // we do this so we do not re-read the chunk data on disk
          }
 -
 -        return null;
