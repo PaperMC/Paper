@@ -1,4 +1,4 @@
-From 16195dec72954ef5f6192e35ba8fdd451a097ecb Mon Sep 17 00:00:00 2001
+From 6a4a86c8afd583b7bdeaf3b93595924f84c5da6a Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000..b5f318c00d
+index 000000000..5626ae4e3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,241 @@
+@@ -0,0 +1,244 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -227,11 +227,14 @@ index 0000000000..b5f318c00d
 +    }
 +
 +    private void dumpHeap(CommandSender sender) {
-+        File file = new File(new File(new File("."), "dumps"),
-+                "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + "-server.hprof");
-+        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data to " + file);
-+        if (CraftServer.dumpHeap(file)) {
-+            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump complete");
++        java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
++        String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
++
++        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data...");
++
++        java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
++        if (file != null) {
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump saved to " + file);
 +        } else {
 +            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
 +        }
@@ -253,7 +256,7 @@ index 0000000000..b5f318c00d
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000..db79fe41b9
+index 000000000..db79fe41b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +1,184 @@
@@ -443,7 +446,7 @@ index 0000000000..db79fe41b9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000..a738657394
+index 000000000..a73865739
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +1,67 @@
@@ -515,7 +518,7 @@ index 0000000000..a738657394
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index e1ba833f3e..b60956218d 100644
+index e1ba833f3..b60956218 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -152,6 +152,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
@@ -535,7 +538,7 @@ index e1ba833f3e..b60956218d 100644
          this.setSpawnAnimals(dedicatedserverproperties.spawnAnimals);
          this.setSpawnNPCs(dedicatedserverproperties.spawnNpcs);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3495d8ecdc..45e2ce618a 100644
+index 3495d8ecd..45e2ce618 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -134,9 +134,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
@@ -552,7 +555,7 @@ index 3495d8ecdc..45e2ce618a 100644
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 659e0ea50a..8c918d0d68 100644
+index 659e0ea50..8c918d0d6 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -4,6 +4,7 @@ import com.mojang.datafixers.DataFixUtils;
@@ -575,7 +578,7 @@ index 659e0ea50a..8c918d0d68 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index a8ac7be82b..91e50ccea1 100644
+index a8ac7be82..91e50ccea 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -86,6 +86,8 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -596,7 +599,7 @@ index a8ac7be82b..91e50ccea1 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 95deac5b97..4413066eea 100644
+index 95deac5b9..3a8e64aa7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -751,6 +751,7 @@ public final class CraftServer implements Server {
@@ -623,35 +626,44 @@ index 95deac5b97..4413066eea 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
          ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -1953,4 +1956,26 @@ public final class CraftServer implements Server {
+@@ -1953,4 +1956,35 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }
 +
 +    // Paper start
 +    @SuppressWarnings({"rawtypes", "unchecked"})
-+    public static boolean dumpHeap(File file) {
++    public static java.nio.file.Path dumpHeap(java.nio.file.Path dir, String name) {
 +        try {
-+            if (file.getParentFile() != null) {
-+                file.getParentFile().mkdirs();
++            java.nio.file.Files.createDirectories(dir);
++
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            java.nio.file.Path file;
++
++            try {
++                Class clazz = Class.forName("openj9.lang.management.OpenJ9DiagnosticsMXBean");
++                Object openj9Mbean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "openj9.lang.management:type=OpenJ9Diagnostics", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("triggerDumpToFile", String.class, String.class);
++                file = dir.resolve(name + ".phd");
++                m.invoke(openj9Mbean, "heap", file.toString());
++            } catch (ClassNotFoundException e) {
++                Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++                Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++                file = dir.resolve(name + ".hprof");
++                m.invoke(hotspotMBean, file.toString(), true);
 +            }
 +
-+            Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
-+            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
-+            Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
-+            java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
-+            m.invoke(hotspotMBean, file.getPath(), true);
-+            return true;
++            return file;
 +        } catch (Throwable t) {
-+            Bukkit.getLogger().severe("Could not write heap to " + file);
-+            t.printStackTrace();
-+            return false;
++            Bukkit.getLogger().log(Level.SEVERE, "Could not write heap", t);
++            return null;
 +        }
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index e17d914185..f406464ef8 100644
+index e17d91418..f406464ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -128,6 +128,14 @@ public class Main {
@@ -670,7 +682,7 @@ index e17d914185..f406464ef8 100644
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 3949e659e8..7f0adb70d1 100644
+index 3949e659e..7f0adb70d 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -39,36 +39,36 @@ public class SpigotWorldConfig
@@ -717,5 +729,5 @@ index 3949e659e8..7f0adb70d1 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.21.0
+2.22.0.windows.1
 
