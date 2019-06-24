@@ -1,4 +1,4 @@
-From b6acf5d97d05f6b9d8c544a1760eafd5643cc027 Mon Sep 17 00:00:00 2001
+From dceca76b8863b3839a4c54698701d67ccc8951a1 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -107,13 +107,15 @@ index 0000000000..1ba8477bf9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000..e3da35b6ba
+index 0000000000..d1da1fd2d0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,684 @@
+@@ -0,0 +1,691 @@
 +package com.destroystokyo.paper.antixray;
 +
++import java.util.ArrayList;
 +import java.util.HashSet;
++import java.util.List;
 +import java.util.Set;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
@@ -176,7 +178,10 @@ index 0000000000..e3da35b6ba
 +            executorService = null;
 +        }
 +
++        List<String> toObfuscate;
++
 +        if (engineMode == EngineMode.HIDE) {
++            toObfuscate = paperWorldConfig.hiddenBlocks;
 +            predefinedBlockData = null;
 +            predefinedBlockDataStone = new IBlockData[] {Blocks.STONE.getBlockData()};
 +            predefinedBlockDataNetherrack = new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
@@ -186,12 +191,14 @@ index 0000000000..e3da35b6ba
 +            predefinedBlockDataBitsNetherrackGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.NETHERRACK.getBlockData())};
 +            predefinedBlockDataBitsEndStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.END_STONE.getBlockData())};
 +        } else {
++            toObfuscate = new ArrayList<>(paperWorldConfig.replacementBlocks);
 +            Set<IBlockData> predefinedBlockDataSet = new HashSet<IBlockData>();
 +
 +            for (String id : paperWorldConfig.hiddenBlocks) {
 +                Block block = IRegistry.BLOCK.get(new MinecraftKey(id));
 +
 +                if (block != null && !block.isTileEntity()) {
++                    toObfuscate.add(id);
 +                    predefinedBlockDataSet.add(block.getBlockData());
 +                }
 +            }
@@ -211,7 +218,7 @@ index 0000000000..e3da35b6ba
 +            predefinedBlockDataBitsEndStoneGlobal = null;
 +        }
 +
-+        for (String id : (engineMode == EngineMode.HIDE) ? paperWorldConfig.hiddenBlocks : paperWorldConfig.replacementBlocks) {
++        for (String id : toObfuscate) {
 +            Block block = IRegistry.BLOCK.get(new MinecraftKey(id));
 +
 +            if (block != null) {
@@ -1534,7 +1541,7 @@ index 16e3469d01..e4c0cc6a33 100644
  
              if (enumskyblock == EnumSkyBlock.SKY) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b007eb36c7..14f419deb8 100644
+index 7b7152c06c..79dea3c858 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,6 +1,8 @@
