@@ -1,0 +1,339 @@
+From 22baa6be4daa8a11770411b50f1fbf545196407d Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 14:35:27 -0600
+Subject: [PATCH] Add player view distance API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+index 9b2ac3c6..53b5059c 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
++++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+@@ -572,7 +572,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
+                 // Paper start
+                 //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
+                 for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
+-                    final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
++                    final int viewDistance = player.getViewDistance(); // Paper - apply view distance api patch
+                     // Paper end
+                     double deltaX = this.locX - player.locX;
+                     double deltaZ = this.locZ - player.locZ;
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index f709e7d8..ed2da4c3 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -72,6 +72,14 @@ public abstract class EntityHuman extends EntityLiving {
+     public EntityFishingHook hookedFish;
+     // Paper start
+     public boolean affectsSpawning = true;
++    // Player view distance API
++    private int viewDistance = -1;
++    public int getViewDistance() {
++        return viewDistance == -1 ? ((WorldServer) world).getChunkProvider().playerChunkMap.getViewDistance() : viewDistance;
++    }
++    public void setViewDistance(int viewDistance) {
++        this.viewDistance = viewDistance;
++    }
+     // Paper end
+ 
+     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/EntityWither.java b/src/main/java/net/minecraft/server/EntityWither.java
+index e3feb39a..bc6f19ff 100644
+--- a/src/main/java/net/minecraft/server/EntityWither.java
++++ b/src/main/java/net/minecraft/server/EntityWither.java
+@@ -210,7 +210,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
+                 // Paper start
+                 //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
+                 for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
+-                    final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
++                    final int viewDistance = player.getViewDistance(); // Paper - apply view distance api patch
+                     // Paper end
+                     double deltaX = this.locX - player.locX;
+                     double deltaZ = this.locZ - player.locZ;
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index fba1639a..42f91a5f 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -743,6 +743,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         }
+     }
+ 
++    public int getViewDistance() { return this.viewDistance; } // Paper
+     protected void setViewDistance(int i, int j) {
+         int k = MathHelper.clamp(i + 1, 3, 33);
+         int l;
+@@ -753,20 +754,25 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             this.u.b(this.viewDistance);
+             ObjectIterator objectiterator = this.updatingChunks.values().iterator();
+ 
+-            while (objectiterator.hasNext()) {
+-                PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
+-                ChunkCoordIntPair chunkcoordintpair = playerchunk.h();
+-                Packet<?>[] apacket = new Packet[2];
+-
+-                int finall = l; // CraftBukkit - decompile error
+-                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
+-                    int i1 = b(chunkcoordintpair, entityplayer, true);
+-                    boolean flag = i1 <= finall; // CraftBukkit - decompile error
+-                    boolean flag1 = i1 <= this.viewDistance;
+-
+-                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
+-                });
++            // Paper start - Separate into two methods
++            if(this.world.players != null) {
++                new ArrayList<>(this.world.players).forEach((player) -> this.setViewDistance(player, k));
+             }
++//            while (objectiterator.hasNext()) {
++//                PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
++//                ChunkCoordIntPair chunkcoordintpair = playerchunk.h();
++//                Packet<?>[] apacket = new Packet[2];
++//
++//                int finall = l; // CraftBukkit - decompile error
++//                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
++//                    int i1 = b(chunkcoordintpair, entityplayer, true);
++//                    boolean flag = i1 <= finall; // CraftBukkit - decompile error
++//                    boolean flag1 = i1 <= this.viewDistance;
++//
++//                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
++//                });
++//            }
++            // Paper end
+         }
+ 
+         l = MathHelper.clamp(j + 1, 1, 16);
+@@ -777,6 +783,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     }
+ 
++    // Paper start - separate method
++    public void setViewDistance(EntityPlayer entityplayer, int i) {
++        for (int x = entityplayer.chunkX - i; x <= entityplayer.chunkX + i; ++x) {
++            for (int z = entityplayer.chunkY - i; z <= entityplayer.chunkX + i; ++z) {
++                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(x, z);
++                Packet<?>[] apacket = new Packet[2];
++                int i1 = b(chunkcoordintpair, entityplayer, true);
++                boolean flag = i1 <= entityplayer.getViewDistance();
++                boolean flag1 = i1 <= i;
++                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
++            }
++        }
++    }
++    // Paper end
++
+     protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
+         if (entityplayer.world == this.world) {
+             if (flag1 && !flag) {
+@@ -834,20 +855,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     // Spigot Start
+     boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair, boolean reducedRange) {
+-        int chunkRange = world.spigotConfig.mobSpawnRange;
+-        chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
+-        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
++        // Paper start - apply view distance api patch
++//        int chunkRange = world.spigotConfig.mobSpawnRange;
++//        chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
++//        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
++        // Paper end
+ 
+-        final int finalChunkRange = chunkRange; // Paper for lambda below
+         //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
+         // Spigot end
+ 
+         return this.playerMap.a(chunkcoordintpair.pair()).noneMatch((entityplayer) -> {
+             // Paper start -
++            int playerChunkRange = world.spigotConfig.mobSpawnRange;
++            playerChunkRange = (playerChunkRange > entityplayer.getViewDistance()) ? (byte) entityplayer.getViewDistance() : playerChunkRange;
++            playerChunkRange = (playerChunkRange > 8) ? 8 : playerChunkRange;
+             com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
+             double blockRange = 16384.0D;
+             if (reducedRange) {
+-                event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) finalChunkRange);
++                event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) playerChunkRange);
+                 event.callEvent();
+                 blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
+                 if (event.isCancelled()) return true;
+@@ -882,8 +907,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+         }
+ 
+-        for (int k = i - this.viewDistance; k <= i + this.viewDistance; ++k) {
+-            for (int l = j - this.viewDistance; l <= j + this.viewDistance; ++l) {
++        // Paper start - Player view distance API
++        int viewDistance = entityplayer.getViewDistance();
++        for (int k = i - viewDistance; k <= i + viewDistance; ++k) {
++            for (int l = j - viewDistance; l <= j + viewDistance; ++l) {
++                // Paper end
+                 ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
+ 
+                 this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag && !flag2, flag && !flag1);
+@@ -941,17 +969,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             int k1;
+             int l1;
+ 
+-            if (Math.abs(i1 - i) <= this.viewDistance * 2 && Math.abs(j1 - j) <= this.viewDistance * 2) {
+-                k1 = Math.min(i, i1) - this.viewDistance;
+-                l1 = Math.min(j, j1) - this.viewDistance;
+-                int i2 = Math.max(i, i1) + this.viewDistance;
+-                int j2 = Math.max(j, j1) + this.viewDistance;
++            // Paper - apply view distance api patch
++            int viewDistance = entityplayer.getViewDistance();
++            if (Math.abs(i1 - i) <= viewDistance * 2 && Math.abs(j1 - j) <= viewDistance * 2) {
++                k1 = Math.min(i, i1) - viewDistance;
++                l1 = Math.min(j, j1) - viewDistance;
++                int i2 = Math.max(i, i1) + viewDistance;
++                int j2 = Math.max(j, j1) + viewDistance;
++                // Paper end
+ 
+                 for (int k2 = k1; k2 <= i2; ++k2) {
+                     for (int l2 = l1; l2 <= j2; ++l2) {
+                         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k2, l2);
+-                        boolean flag3 = !flag && a(chunkcoordintpair, i1, j1) <= this.viewDistance;
+-                        boolean flag4 = !flag1 && a(chunkcoordintpair, i, j) <= this.viewDistance;
++                        boolean flag3 = !flag && a(chunkcoordintpair, i1, j1) <= viewDistance; // Paper - apply view distance api patch
++                        boolean flag4 = !flag1 && a(chunkcoordintpair, i, j) <= viewDistance; // Paper - apply view distance api patch
+ 
+                         this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
+                     }
+@@ -961,8 +992,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 boolean flag5;
+                 boolean flag6;
+ 
+-                for (k1 = i1 - this.viewDistance; k1 <= i1 + this.viewDistance; ++k1) {
+-                    for (l1 = j1 - this.viewDistance; l1 <= j1 + this.viewDistance; ++l1) {
++                for (k1 = i1 - viewDistance; k1 <= i1 + viewDistance; ++k1) { // Paper - apply view distance api patch
++                    for (l1 = j1 - viewDistance; l1 <= j1 + viewDistance; ++l1) { // Paper - apply view distance api patch
+                         chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
+                         flag5 = !flag;
+                         flag6 = false;
+@@ -970,8 +1001,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     }
+                 }
+ 
+-                for (k1 = i - this.viewDistance; k1 <= i + this.viewDistance; ++k1) {
+-                    for (l1 = j - this.viewDistance; l1 <= j + this.viewDistance; ++l1) {
++                for (k1 = i - viewDistance; k1 <= i + viewDistance; ++k1) { // Paper - apply view distance api patch
++                    for (l1 = j - viewDistance; l1 <= j + viewDistance; ++l1) { // Paper - apply view distance api patch
+                         chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
+                         flag5 = false;
+                         flag6 = !flag1;
+@@ -988,7 +1019,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
+             int i = b(chunkcoordintpair, entityplayer, true);
+ 
+-            return i > this.viewDistance ? false : !flag || i == this.viewDistance;
++            return i > entityplayer.getViewDistance() ? false : !flag || i == entityplayer.getViewDistance(); // Paper - apply view distance api patch
+         });
+     }
+ 
+@@ -1237,7 +1268,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             org.spigotmc.AsyncCatcher.catchOp( "player tracker update"); // Spigot
+             if (entityplayer != this.tracker) {
+                 Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // Paper - prevent de-sync issues
+-                int i = Math.min(this.trackingDistance, (PlayerChunkMap.this.viewDistance - 1) * 16);
++                int i = Math.min(this.trackingDistance, (entityplayer.getViewDistance() - 1) * 16); // Paper - Use player view distance API
+                 boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
+ 
+                 if (flag) {
+@@ -1248,7 +1279,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
+ 
+                         if (playerchunk != null && playerchunk.getChunk() != null) {
+-                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= PlayerChunkMap.this.viewDistance;
++                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= entityplayer.getViewDistance(); // Paper - Use player view distance API
+                         }
+                     }
+ 
+@@ -1308,4 +1339,27 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             return PlayerChunkMap.this.a(i, j, playerchunk, k);
+         }
+     }
++
++    // Paper start - Player view distance API
++    public void updateViewDistance(EntityPlayer player, int distanceIn) {
++        final int oldViewDistance = player.getViewDistance();
++        // This represents the view distance that we will set on the player
++        // It can exist as a negative value
++        int playerViewDistance = MathHelper.clamp(distanceIn, 3, 32);
++        // This value is the one we actually use to update the chunk map
++        // We don't ever want this to be a negative
++        int toSet = playerViewDistance;
++        if (distanceIn < 0) {
++            playerViewDistance = -1;
++            toSet = this.getViewDistance();
++        }
++        if (toSet != oldViewDistance) {
++            // Order matters
++            this.setViewDistance(player, toSet);
++            player.setViewDistance(playerViewDistance);
++            //Force update entity trackers
++            if(player.tracker != null) { player.tracker.updatePlayer(player); }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 0a733df7..6685bdf2 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -155,7 +155,7 @@ public abstract class PlayerList {
+ 
+         // CraftBukkit - getType()
+         // Spigot - view distance
+-        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.spigotConfig.viewDistance, worldserver.getGameRules().getBoolean("reducedDebugInfo")));
++        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), entityplayer.getViewDistance(), worldserver.getGameRules().getBoolean("reducedDebugInfo"))); // Paper - apply view distance api patch
+         entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
+         playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.a, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
+         playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
+@@ -697,7 +697,7 @@ public abstract class PlayerList {
+         WorldData worlddata = worldserver.getWorldData();
+ 
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.worldProvider.getDimensionManager().getType(), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
+-        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver.spigotConfig.viewDistance)); // Spigot
++        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(entityplayer1.getViewDistance())); // Spigot // Paper - apply view distance api patch
+         entityplayer1.spawnIn(worldserver);
+         entityplayer1.dead = false;
+         entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 484b21f4..5833670b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1974,6 +1974,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             super.remove();
+         }
+     }
++    @Override
++    public int getViewDistance() {
++        return getHandle().getViewDistance();
++    }
++
++    @Override
++    public void setViewDistance(int viewDistance) {
++        ((WorldServer) getHandle().world).getChunkProvider().playerChunkMap.updateViewDistance(getHandle(), viewDistance);
++    }
+     //Paper end
+ 
+     // Spigot start
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 7341dc2c..6548f3e8 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -122,13 +122,14 @@ public class ActivationRange
+         int maxRange = Math.max( monsterActivationRange, animalActivationRange );
+         maxRange = Math.max( maxRange, raiderActivationRange );
+         maxRange = Math.max( maxRange, miscActivationRange );
+-        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
++//        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange ); // Paper - Use player view distance API below instead
+ 
+         for ( EntityHuman player : world.getPlayers() )
+         {
+ 
++            int playerMaxRange = maxRange = Math.min( ( player.getViewDistance() << 4 ) - 8, maxRange ); // Paper - Use player view distance API
+             player.activatedTick = MinecraftServer.currentTick;
+-            maxBB = player.getBoundingBox().grow( maxRange, 256, maxRange );
++            maxBB = player.getBoundingBox().grow( playerMaxRange, 256, playerMaxRange ); // Paper - apply view distance api patch
+             ActivationType.MISC.boundingBox = player.getBoundingBox().grow( miscActivationRange, 256, miscActivationRange );
+             ActivationType.RAIDER.boundingBox = player.getBoundingBox().grow( raiderActivationRange, 256, raiderActivationRange );
+             ActivationType.ANIMAL.boundingBox = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
+-- 
+2.19.0
+
