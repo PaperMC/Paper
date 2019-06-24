@@ -1,4 +1,4 @@
-From cc816d3a76029cb78e56a85a0d040a2789f7a91e Mon Sep 17 00:00:00 2001
+From 43881865d6d00ffa28c426548fb6f4ff0a0839b4 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Thu, 21 Sep 2017 00:38:47 +0200
 Subject: [PATCH] Anti-Xray
@@ -91,13 +91,15 @@ index 0000000000..6833cfad25
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000..2dc0655a93
+index 0000000000..558188fa1d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,640 @@
+@@ -0,0 +1,647 @@
 +package com.destroystokyo.paper.antixray;
 +
++import java.util.ArrayList;
 +import java.util.HashSet;
++import java.util.List;
 +import java.util.Set;
 +import java.util.concurrent.Executors;
 +import java.util.concurrent.ExecutorService;
@@ -153,7 +155,10 @@ index 0000000000..2dc0655a93
 +            executorService = null;
 +        }
 +
++        List<Object> toObfuscate;
++
 +        if (engineMode == EngineMode.HIDE) {
++            toObfuscate = paperWorldConfig.hiddenBlocks;
 +            predefinedBlockData = null;
 +            predefinedBlockDataStone = new IBlockData[] {Blocks.STONE.getBlockData()};
 +            predefinedBlockDataNetherrack = new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
@@ -164,12 +169,14 @@ index 0000000000..2dc0655a93
 +            predefinedBlockDataBitsNetherrackGlobal = new int[] {Block.REGISTRY_ID.getId(Blocks.NETHERRACK.getBlockData())};
 +            predefinedBlockDataBitsEndStoneGlobal = new int[] {Block.REGISTRY_ID.getId(Blocks.END_STONE.getBlockData())};
 +        } else {
++            toObfuscate = new ArrayList<>(paperWorldConfig.replacementBlocks);
 +            Set<IBlockData> predefinedBlockDataSet = new HashSet<IBlockData>();
 +
 +            for (Object id : paperWorldConfig.hiddenBlocks) {
 +                Block block = Block.getByName(String.valueOf(id));
 +
 +                if (block != null && !block.isTileEntity()) {
++                    toObfuscate.add(id);
 +                    predefinedBlockDataSet.add(block.getBlockData());
 +                }
 +            }
@@ -192,7 +199,7 @@ index 0000000000..2dc0655a93
 +            predefinedBlockDataBitsEndStoneGlobal = null;
 +        }
 +
-+        for (Object id : (engineMode == EngineMode.HIDE) ? paperWorldConfig.hiddenBlocks : paperWorldConfig.replacementBlocks) {
++        for (Object id : toObfuscate) {
 +            Block block = Block.getByName(String.valueOf(id));
 +
 +            if (block != null) {
@@ -1008,7 +1015,7 @@ index 0000000000..8ea2beb597
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 663a41e9e7..0226b96f30 100644
+index 663a41e9e7..0226b96f30 100755
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -158,7 +158,7 @@ public class Chunk {
@@ -1039,7 +1046,7 @@ index 663a41e9e7..0226b96f30 100644
              this.initLighting();
          }
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 14f88e91db..bcce5e8b7e 100644
+index 14f88e91db..bcce5e8b7e 100755
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -416,7 +416,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
@@ -1052,7 +1059,7 @@ index 14f88e91db..bcce5e8b7e 100644
              NibbleArray nibblearray = new NibbleArray(nbttagcompound1.getByteArray("Data"));
              NibbleArray nibblearray1 = nbttagcompound1.hasKeyOfType("Add", 7) ? new NibbleArray(nbttagcompound1.getByteArray("Add")) : null;
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index afdc4a779a..aae227fdb0 100644
+index afdc4a779a..aae227fdb0 100755
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -9,9 +9,15 @@ public class ChunkSection {
@@ -1092,7 +1099,7 @@ index afdc4a779a..aae227fdb0 100644
              int xx = i & 15;
              int yy = (i >> 8) & 15;
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
-index fa0fd8a9c8..401dc7cdc5 100644
+index fa0fd8a9c8..401dc7cdc5 100755
 --- a/src/main/java/net/minecraft/server/DataBits.java
 +++ b/src/main/java/net/minecraft/server/DataBits.java
 @@ -51,6 +51,7 @@ public class DataBits {
@@ -1104,7 +1111,7 @@ index fa0fd8a9c8..401dc7cdc5 100644
          return this.a;
      }
 diff --git a/src/main/java/net/minecraft/server/DataPalette.java b/src/main/java/net/minecraft/server/DataPalette.java
-index 5765b25888..d522611ecb 100644
+index 5765b25888..d522611ecb 100755
 --- a/src/main/java/net/minecraft/server/DataPalette.java
 +++ b/src/main/java/net/minecraft/server/DataPalette.java
 @@ -4,8 +4,10 @@ import javax.annotation.Nullable;
@@ -1119,7 +1126,7 @@ index 5765b25888..d522611ecb 100644
      IBlockData a(int i);
  
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 2cb462b8e3..67784b4a67 100644
+index 2cb462b8e3..67784b4a67 100755
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -2,22 +2,55 @@ package net.minecraft.server;
@@ -1227,7 +1234,7 @@ index 2cb462b8e3..67784b4a67 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
-index d0b67d8fd6..eeaa625d2f 100644
+index d0b67d8fd6..eeaa625d2f 100755
 --- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
 @@ -74,6 +74,7 @@ public class EntityFallingBlock extends Entity {
@@ -1247,7 +1254,7 @@ index d0b67d8fd6..eeaa625d2f 100644
                                  if (block instanceof BlockFalling) {
                                      ((BlockFalling) block).a(this.world, blockposition, this.block, iblockdata);
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index e148901e53..61fbdeb6ac 100644
+index e148901e53..61fbdeb6ac 100755
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
 @@ -228,6 +228,7 @@ public class Explosion {
@@ -1259,7 +1266,7 @@ index e148901e53..61fbdeb6ac 100644
                  if (flag) {
                      double d0 = (double) ((float) blockposition.getX() + this.world.random.nextFloat());
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index d583cced66..2eddb68d7b 100644
+index d583cced66..2eddb68d7b 100755
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -62,7 +62,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -1358,7 +1365,7 @@ index d583cced66..2eddb68d7b 100644
          public QueuedPacket(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>>... agenericfuturelistener) {
              this.a = packet;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index c1273e988e..d71734df81 100644
+index c1273e988e..d71734df81 100755
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -33,6 +33,7 @@ public class PacketDataSerializer extends ByteBuf {
@@ -1370,7 +1377,7 @@ index c1273e988e..d71734df81 100644
          for (int j = 1; j < 5; ++j) {
              if ((i & -1 << j * 7) == 0) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index d16669bcc3..306a6b7cd3 100644
+index d16669bcc3..306a6b7cd3 100755
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -8,6 +8,10 @@ import java.util.Iterator;
@@ -1463,7 +1470,7 @@ index d16669bcc3..306a6b7cd3 100644
                  if (flag) {
                      packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 48a008e0a7..395386f295 100644
+index 48a008e0a7..395386f295 100755
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -134,6 +134,8 @@ public class PlayerChunk {
@@ -1493,7 +1500,7 @@ index 48a008e0a7..395386f295 100644
                  } else {
                      this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index a49b5c81a8..5ec7f5819f 100644
+index a49b5c81a8..5ec7f5819f 100755
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -200,6 +200,8 @@ public class PlayerInteractManager {
@@ -1506,7 +1513,7 @@ index a49b5c81a8..5ec7f5819f 100644
  
      public void a(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 03894df54c..76f6f35bb9 100644
+index 03894df54c..76f6f35bb9 100755
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
 +++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
 @@ -47,6 +47,7 @@ public class RegistryBlockID<T> implements Registry<T> {
@@ -1518,7 +1525,7 @@ index 03894df54c..76f6f35bb9 100644
          return this.a.size();
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 90f946e57a..ea67b61b2b 100644
+index 90f946e57a..ea67b61b2b 100755
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -35,6 +35,8 @@ import org.bukkit.generator.ChunkGenerator;
@@ -1595,5 +1602,5 @@ index 9942f0c750..2da6edc63e 100644
                          }
                      }
 -- 
-2.18.0
+2.21.0
 
