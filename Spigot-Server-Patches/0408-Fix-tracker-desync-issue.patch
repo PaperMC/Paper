@@ -1,0 +1,34 @@
+From 78aa506dfa23255e89d4706f45086acc4d6eef89 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 23 Jun 2019 19:11:27 -0700
+Subject: [PATCH] Fix tracker desync issue
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index fae57a0998..3804d0a949 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -3205,6 +3205,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.f.j();
+     }
+ 
++    public Vec3D getPositionVector() { return this.ch(); } // Paper - OBFHELPER
+     public Vec3D ch() {
+         return new Vec3D(this.locX, this.locY, this.locZ);
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 89649e73e5..fba1639a85 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1236,7 +1236,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         public void updatePlayer(EntityPlayer entityplayer) {
+             org.spigotmc.AsyncCatcher.catchOp( "player tracker update"); // Spigot
+             if (entityplayer != this.tracker) {
+-                Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.trackerEntry.b());
++                Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // Paper - prevent de-sync issues
+                 int i = Math.min(this.trackingDistance, (PlayerChunkMap.this.viewDistance - 1) * 16);
+                 boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
+ 
+-- 
+2.21.0
+
