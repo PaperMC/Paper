@@ -29,7 +29,7 @@ index b854061983..58109e1308 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ef07f665b7..d89ad4e390 100644
+index 5bf781bb63..e2a48695df 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -42,7 +42,7 @@ index ef07f665b7..d89ad4e390 100644
      private long t;
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 184f1b00f0..3dbe83c7ea 100644
+index b401ff7695..485725c0ae 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -86,7 +86,7 @@ index 184f1b00f0..3dbe83c7ea 100644
          this.methodProfiler.enter("snooper");
          if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7d48b580ac..b71f98b0c5 100644
+index d85220b66c..c4ad039ffd 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -103,21 +103,19 @@ index 7d48b580ac..b71f98b0c5 100644
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
 -                    this.saveChunk(ichunkaccess);
--                    playerchunk.l();
--                }
 +                    // paper start
 +                    boolean shouldSave = true;
- 
--            });
++
 +                    if (ichunkaccess instanceof Chunk) {
 +                        shouldSave = ((Chunk) ichunkaccess).lastSaved + world.paperConfig.autoSavePeriod <= world.getTime();
 +                    }
 +
 +                    if (shouldSave && this.saveChunk(ichunkaccess)) {
 +                        ++savedThisTick;
-+                        playerchunk.l();
-+                    }
-+
+                     playerchunk.m();
+                 }
+ 
+-            });
 +                    if (savedThisTick >= world.paperConfig.maxAutoSaveChunksPerTick) {
 +                        return;
 +                    }
@@ -128,7 +126,7 @@ index 7d48b580ac..b71f98b0c5 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 40b3d96edd..135ec94c6f 100644
+index d086af67f9..52523789b2 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
