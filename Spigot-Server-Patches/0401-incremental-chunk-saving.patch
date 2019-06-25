@@ -1,4 +1,4 @@
-From 6a4af6a95a364d2804bdec0453be09cdc7590ad5 Mon Sep 17 00:00:00 2001
+From e5b657f6a3940622223dde4160f3e80066eba540 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
 Subject: [PATCH] incremental chunk saving
@@ -29,7 +29,7 @@ index b854061983..58109e1308 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ef07f665b7..d89ad4e390 100644
+index 5bf781bb63..e2a48695df 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -42,7 +42,7 @@ public class Chunk implements IChunkAccess {
@@ -42,10 +42,10 @@ index ef07f665b7..d89ad4e390 100644
      private long t;
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 184f1b00f0..3dbe83c7ea 100644
+index b401ff7695..485725c0ae 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -156,6 +156,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -155,6 +155,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public static int currentTick = 0; // Paper - Further improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
@@ -53,7 +53,7 @@ index 184f1b00f0..3dbe83c7ea 100644
      public File bukkitDataPackFolder;
      public CommandDispatcher vanillaCommandDispatcher;
      private boolean forceTicks;
-@@ -1072,14 +1073,28 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1071,14 +1072,28 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.serverPing.b().a(agameprofile);
          }
  
@@ -86,10 +86,10 @@ index 184f1b00f0..3dbe83c7ea 100644
          this.methodProfiler.enter("snooper");
          if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7d48b580ac..b71f98b0c5 100644
+index d85220b66c..c4ad039ffd 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -295,15 +295,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -293,15 +293,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              });
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
          } else {
@@ -103,21 +103,19 @@ index 7d48b580ac..b71f98b0c5 100644
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
 -                    this.saveChunk(ichunkaccess);
--                    playerchunk.l();
--                }
 +                    // paper start
 +                    boolean shouldSave = true;
- 
--            });
++
 +                    if (ichunkaccess instanceof Chunk) {
 +                        shouldSave = ((Chunk) ichunkaccess).lastSaved + world.paperConfig.autoSavePeriod <= world.getTime();
 +                    }
 +
 +                    if (shouldSave && this.saveChunk(ichunkaccess)) {
 +                        ++savedThisTick;
-+                        playerchunk.l();
-+                    }
-+
+                     playerchunk.m();
+                 }
+ 
+-            });
 +                    if (savedThisTick >= world.paperConfig.maxAutoSaveChunksPerTick) {
 +                        return;
 +                    }
@@ -128,7 +126,7 @@ index 7d48b580ac..b71f98b0c5 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 40b3d96edd..135ec94c6f 100644
+index d086af67f9..52523789b2 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -755,8 +755,9 @@ public class WorldServer extends World {
@@ -151,5 +149,5 @@ index 40b3d96edd..135ec94c6f 100644
              timings.worldSaveChunks.startTiming(); // Paper
              chunkproviderserver.save(flag);
 -- 
-2.21.0
+2.22.0
 

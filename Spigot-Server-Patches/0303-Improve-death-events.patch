@@ -1,4 +1,4 @@
-From 8586cf5d11612c96160a4e2886412ee2f45da753 Mon Sep 17 00:00:00 2001
+From e258830906f96b0c910558963d98251753285c78 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:39:35 +0100
 Subject: [PATCH] Improve death events
@@ -27,10 +27,10 @@ index 84c3ea9d00..f563a7b630 100644
          int i = this.f ? 300 : 100;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 8a95e0f117..3a41137298 100644
+index c32ed855bd..a92489e62a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1467,6 +1467,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1516,6 +1516,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          return false;
      }
  
@@ -38,7 +38,7 @@ index 8a95e0f117..3a41137298 100644
      public void a(Entity entity, int i, DamageSource damagesource) {
          if (entity instanceof EntityPlayer) {
              CriterionTriggers.c.a((EntityPlayer) entity, this, damagesource);
-@@ -2360,6 +2361,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -2409,6 +2410,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          this.fallDistance = 0.0F;
      }
  
@@ -47,7 +47,7 @@ index 8a95e0f117..3a41137298 100644
  
      protected void i(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index 9157dace14..235ca47e16 100644
+index 19eb40db93..ac56217227 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
 @@ -676,7 +676,8 @@ public class EntityArmorStand extends EntityLiving {
@@ -61,7 +61,7 @@ index 9157dace14..235ca47e16 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityFox.java b/src/main/java/net/minecraft/server/EntityFox.java
-index 5184e52626..b363e9ce99 100644
+index 301659d9bf..f9ba3b8561 100644
 --- a/src/main/java/net/minecraft/server/EntityFox.java
 +++ b/src/main/java/net/minecraft/server/EntityFox.java
 @@ -597,15 +597,25 @@ public class EntityFox extends EntityAnimal {
@@ -94,7 +94,7 @@ index 5184e52626..b363e9ce99 100644
  
      public static boolean a(EntityFox entityfox, EntityLiving entityliving) {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 19e7114cbb..c357339c26 100644
+index c80278ede0..86d3c516ba 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -85,7 +85,7 @@ public abstract class EntityLiving extends Entity {
@@ -123,10 +123,10 @@ index 19e7114cbb..c357339c26 100644
 +                    //SoundEffect soundeffect = this.getSoundDeath();
  
 -                    if (flag1 && soundeffect != null) {
--                        this.a(soundeffect, this.getSoundVolume(), this.cU());
+-                        this.a(soundeffect, this.getSoundVolume(), this.cV());
 -                    }
 +                    //if (flag1 && soundeffect != null) {
-+                    //    this.a(soundeffect, this.getSoundVolume(), this.cU());
++                    //    this.a(soundeffect, this.getSoundVolume(), this.cV());
 +                    //}
 +                    this.silentDeath = !flag1; // mark entity as dying silently
 +                    // Paper end
@@ -136,35 +136,20 @@ index 19e7114cbb..c357339c26 100644
                  }
              } else if (flag1) {
                  this.c(damagesource);
-@@ -1329,22 +1334,40 @@ public abstract class EntityLiving extends Entity {
+@@ -1329,6 +1334,7 @@ public abstract class EntityLiving extends Entity {
              Entity entity = damagesource.getEntity();
              EntityLiving entityliving = this.getKillingEntity();
  
--            if (this.aY >= 0 && entityliving != null) {
--                entityliving.a(this, this.aY, damagesource);
--            }
--
--            if (entity != null) {
--                entity.b(this);
--            }
--
--            if (this.isSleeping()) {
--                this.dy();
--            }
--
-+            // Paper start - move down to make death event cancellable
-+            //if (this.aY >= 0 && entityliving != null) {
-+            //    entityliving.a(this, this.aY, damagesource);
-+            //}
-+            //
-+            //if (entity != null) {
-+            //    entity.b(this);
-+            //}
-+            //
-+            //if (this.isSleeping()) {
-+            //    this.dy();
-+            //}
-+            //
++            /* // Paper - move down to make death event cancellable
+             if (this.aY >= 0 && entityliving != null) {
+                 entityliving.a(this, this.aY, damagesource);
+             }
+@@ -1340,11 +1346,29 @@ public abstract class EntityLiving extends Entity {
+             if (this.isSleeping()) {
+                 this.dz();
+             }
++            */ // Paper
+ 
              this.killed = true;
 -            this.getCombatTracker().g();
 +            //this.getCombatTracker().g();
@@ -179,7 +164,7 @@ index 19e7114cbb..c357339c26 100644
 +                        entity.onKill(this);
 +                    }
 +                    if (this.isSleeping()) {
-+                        this.dy();
++                        this.dz();
 +                    }
 +                    this.getCombatTracker().reset();
 +                } else {
@@ -191,23 +176,22 @@ index 19e7114cbb..c357339c26 100644
                  boolean flag = false;
  
                  if (entityliving instanceof EntityWither) {
-@@ -1371,7 +1394,8 @@ public abstract class EntityLiving extends Entity {
+@@ -1371,7 +1395,8 @@ public abstract class EntityLiving extends Entity {
          }
      }
  
 -    protected void d(DamageSource damagesource) {
-+    protected org.bukkit.event.entity.EntityDeathEvent processDeath(DamageSource damagesource) { return d(damagesource); }
++    protected org.bukkit.event.entity.EntityDeathEvent processDeath(DamageSource damagesource) { return d(damagesource); } // Paper - OBFHELPER
 +    protected org.bukkit.event.entity.EntityDeathEvent d(DamageSource damagesource) { // Paper
          Entity entity = damagesource.getEntity();
          int i;
  
-@@ -1382,19 +1406,20 @@ public abstract class EntityLiving extends Entity {
-         }
+@@ -1383,18 +1408,20 @@ public abstract class EntityLiving extends Entity {
  
          boolean flag = this.lastDamageByPlayerTime > 0;
--
+ 
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent = null; // Paper
-         if (this.isDropExperience() && this.world.getGameRules().getBoolean("doMobLoot")) {
+         if (this.isDropExperience() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
              this.a(damagesource, flag);
              this.dropDeathLoot(damagesource, i, flag);
              // CraftBukkit start - Call death event
@@ -221,13 +205,13 @@ index 19e7114cbb..c357339c26 100644
              // CraftBukkit end
          }
  
--        this.cE();
-+        if (!deathEvent.isCancelled()) this.cE(); // Paper
+-        this.cF();
++        if (!deathEvent.isCancelled()) this.cF();; // Paper
 +        return deathEvent; // Paper
      }
  
-     protected void cE() {}
-@@ -1448,6 +1473,7 @@ public abstract class EntityLiving extends Entity {
+     protected void cF() {}
+@@ -1448,6 +1475,7 @@ public abstract class EntityLiving extends Entity {
          return SoundEffects.ENTITY_GENERIC_HURT;
      }
  
@@ -235,7 +219,7 @@ index 19e7114cbb..c357339c26 100644
      @Nullable
      protected SoundEffect getSoundDeath() {
          return SoundEffects.ENTITY_GENERIC_DEATH;
-@@ -1897,10 +1923,12 @@ public abstract class EntityLiving extends Entity {
+@@ -1897,10 +1925,12 @@ public abstract class EntityLiving extends Entity {
  
      }
  
@@ -244,12 +228,12 @@ index 19e7114cbb..c357339c26 100644
          return 1.0F;
      }
  
-+    public float getSoundPitch() { return cU();} // Paper - OBFHELPER
-     protected float cU() {
++    public float getSoundPitch() { return cV();} // Paper - OBFHELPER
+     protected float cV() {
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 7519827a88..a0f27f1bcb 100644
+index 2ce6063221..418a2cf0f4 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -75,6 +75,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -263,7 +247,7 @@ index 7519827a88..a0f27f1bcb 100644
  
      // CraftBukkit start
      public String displayName;
-@@ -531,6 +535,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -533,6 +537,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
          String deathmessage = defaultMessage.getString();
          org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
@@ -279,7 +263,7 @@ index 7519827a88..a0f27f1bcb 100644
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.activeContainer != this.defaultContainer) {
-@@ -684,8 +697,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -686,8 +699,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                          }
                      }
                  }
@@ -327,10 +311,10 @@ index 73cb64e09d..9f317ff2e8 100644
          this.minecraftKey = minecraftKey;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 7e2d4f4527..bd87a1cf2c 100644
+index 672f92f85a..3dd0ae0ca8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1713,7 +1713,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1722,7 +1722,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      public void sendHealthUpdate() {

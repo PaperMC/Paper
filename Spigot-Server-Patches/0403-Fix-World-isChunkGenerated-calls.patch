@@ -1,4 +1,4 @@
-From 23a4b689721fa3621f748f7f49390748eb82cf15 Mon Sep 17 00:00:00 2001
+From b7ab62b17e1d6a232c8a792e16f26537e6abf4fc Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 15 Jun 2019 08:54:33 -0700
 Subject: [PATCH] Fix World#isChunkGenerated calls
@@ -8,10 +8,10 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index d83eec0d76..459bd619ee 100644
+index 630feec163..42b97ba86b 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -29,7 +29,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -27,7 +27,7 @@ public class ChunkProviderServer extends IChunkProvider {
      private final WorldServer world;
      private final Thread serverThread;
      private final LightEngineThreaded lightEngine;
@@ -20,7 +20,7 @@ index d83eec0d76..459bd619ee 100644
      public final PlayerChunkMap playerChunkMap;
      private final WorldPersistentData worldPersistentData;
      private long lastTickTime;
-@@ -119,6 +119,36 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -117,6 +117,36 @@ public class ChunkProviderServer extends IChunkProvider {
  
          return playerChunk.getFullChunk();
      }
@@ -58,10 +58,10 @@ index d83eec0d76..459bd619ee 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 2f749fe26a..4906530d83 100644
+index cf33965082..287f113581 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -409,6 +409,17 @@ public class ChunkRegionLoader {
+@@ -410,6 +410,17 @@ public class ChunkRegionLoader {
          return nbttagcompound;
      }
  
@@ -110,7 +110,7 @@ index dd1822d6ff..e324989b46 100644
          return (ChunkStatus) IRegistry.CHUNK_STATUS.get(MinecraftKey.a(s));
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 806d225aaa..97040528a0 100644
+index 0daf5f99e3..761cd1355b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -70,6 +70,19 @@ public class PlayerChunk {
@@ -134,10 +134,10 @@ index 806d225aaa..97040528a0 100644
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b71f98b0c5..e89738a08d 100644
+index c4ad039ffd..3f41072f72 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -811,10 +811,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -802,10 +802,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      @Nullable
@@ -265,10 +265,10 @@ index 6f34d8aea0..d2b3289450 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e0d89cc533..9bb1ad077a 100644
+index 3444c19b0f..3e55033d3c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -387,8 +387,20 @@ public class CraftWorld implements World {
+@@ -386,8 +386,20 @@ public class CraftWorld implements World {
  
      @Override
      public boolean isChunkGenerated(int x, int z) {
@@ -290,7 +290,7 @@ index e0d89cc533..9bb1ad077a 100644
          } catch (IOException ex) {
              throw new RuntimeException(ex);
          }
-@@ -500,20 +512,24 @@ public class CraftWorld implements World {
+@@ -499,20 +511,24 @@ public class CraftWorld implements World {
      @Override
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
@@ -327,7 +327,7 @@ index e0d89cc533..9bb1ad077a 100644
      }
  
      @Override
-@@ -2127,21 +2143,20 @@ public class CraftWorld implements World {
+@@ -2163,21 +2179,20 @@ public class CraftWorld implements World {
  
      // Paper start
      private Chunk getChunkAtGen(int x, int z, boolean gen) {
@@ -363,5 +363,5 @@ index e0d89cc533..9bb1ad077a 100644
  
      @Override
 -- 
-2.21.0
+2.22.0
 

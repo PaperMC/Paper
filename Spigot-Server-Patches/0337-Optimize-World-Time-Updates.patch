@@ -1,4 +1,4 @@
-From b897d9a8974a3012d302df916e4a374b7be1ae99 Mon Sep 17 00:00:00 2001
+From ab477a2841453fbb8110b45953360c08f760ae77 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 2 Nov 2018 23:11:51 -0400
 Subject: [PATCH] Optimize World Time Updates
@@ -8,7 +8,7 @@ the updates per world, so that we can re-use the same packet
 object for every player unless they have per-player time enabled.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2bd1e73702..99306781f7 100644
+index 2198b4fbc9..252c50bb72 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1110,12 +1110,24 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -18,10 +18,10 @@ index 2bd1e73702..99306781f7 100644
 -        if (this.ticks % 20 == 0) {
 -            for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
 -                EntityPlayer entityplayer = (EntityPlayer) this.getPlayerList().players.get(i);
--                entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean("doDaylightCycle"))); // Add support for per player time
+-                entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE))); // Add support for per player time
 +        // Paper start - optimize time updates
 +        for (final WorldServer world : this.getWorlds()) {
-+            final boolean doDaylight = world.getGameRules().getBoolean("doDaylightCycle");
++            final boolean doDaylight = world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE);
 +            final long dayTime = world.getDayTime();
 +            long worldTime = world.getTime();
 +            final PacketPlayOutUpdateTime worldPacket = new PacketPlayOutUpdateTime(worldTime, dayTime, doDaylight);
@@ -39,7 +39,7 @@ index 2bd1e73702..99306781f7 100644
 +        // Paper end
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
-         // WorldServer worldserver; // CraftBukkit - dropped down
+         while (iterator.hasNext()) {
 -- 
-2.21.0
+2.22.0
 
