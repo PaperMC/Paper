@@ -1,0 +1,71 @@
+From 444bad1047061baffb84f0597a9913bbf953c8b9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 12 Sep 2018 21:47:01 -0400
+Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
+
+Uses an EnumMap as well as a Set paired List for O(1) contains calls.
+
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index 9a839d6540..72eb669c50 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -38,7 +38,7 @@ public abstract class BiomeBase {
+     protected final Map<WorldGenStage.Decoration, List<WorldGenFeatureConfigured<?>>> r = Maps.newHashMap();
+     protected final List<WorldGenFeatureConfigured<?>> s = Lists.newArrayList();
+     protected final Map<StructureGenerator<?>, WorldGenFeatureConfiguration> t = Maps.newHashMap();
+-    private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> u = Maps.newHashMap();
++    private final java.util.EnumMap<EnumCreatureType, List<BiomeBase.BiomeMeta>> u = Maps.newEnumMap(EnumCreatureType.class); // Paper
+ 
+     @Nullable
+     public static BiomeBase a(BiomeBase biomebase) {
+@@ -85,7 +85,7 @@ public abstract class BiomeBase {
+             for (j = 0; j < i; ++j) {
+                 EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
+ 
+-                this.u.put(enumcreaturetype, Lists.newArrayList());
++                this.u.put(enumcreaturetype, new MobList()); // Paper
+             }
+ 
+         } else {
+@@ -283,6 +283,38 @@ public abstract class BiomeBase {
+         return this.m;
+     }
+ 
++    // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++    public static class MobList extends java.util.ArrayList<BiomeMeta> {
++        java.util.Set<BiomeMeta> biomes = new java.util.HashSet<>();
++
++        @Override
++        public boolean contains(Object o) {
++            return biomes.contains(o);
++        }
++
++        @Override
++        public boolean add(BiomeMeta biomeMeta) {
++            biomes.add(biomeMeta);
++            return super.add(biomeMeta);
++        }
++
++        @Override
++        public BiomeMeta remove(int index) {
++            BiomeMeta removed = super.remove(index);
++            if (removed != null) {
++                biomes.remove(removed);
++            }
++            return removed;
++        }
++
++        @Override
++        public void clear() {
++            biomes.clear();
++            super.clear();
++        }
++    }
++    // Paper end
++
+     public static class a {
+ 
+         @Nullable
+-- 
+2.22.0
+

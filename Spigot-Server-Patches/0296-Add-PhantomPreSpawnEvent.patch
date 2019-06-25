@@ -1,0 +1,90 @@
+From ef3e2ff988268e420a2359e8149ea9b16dcfb980 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Aug 2018 19:56:51 -0500
+Subject: [PATCH] Add PhantomPreSpawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPhantom.java b/src/main/java/net/minecraft/server/EntityPhantom.java
+index 3554410746..b672ac5c2a 100644
+--- a/src/main/java/net/minecraft/server/EntityPhantom.java
++++ b/src/main/java/net/minecraft/server/EntityPhantom.java
+@@ -129,6 +129,11 @@ public class EntityPhantom extends EntityFlying implements IMonster {
+         }
+ 
+         this.setSize(nbttagcompound.getInt("Size"));
++        // Paper start
++        if (nbttagcompound.hasUUID("Paper.SpawningEntity")) {
++            this.spawningEntity = nbttagcompound.getUUID("Paper.SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -138,6 +143,11 @@ public class EntityPhantom extends EntityFlying implements IMonster {
+         nbttagcompound.setInt("AY", this.d.getY());
+         nbttagcompound.setInt("AZ", this.d.getZ());
+         nbttagcompound.setInt("Size", this.getSize());
++        // Paper start
++        if (this.spawningEntity != null) {
++            nbttagcompound.setUUID("Paper.SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -184,6 +194,14 @@ public class EntityPhantom extends EntityFlying implements IMonster {
+         return entitysize.a(f);
+     }
+ 
++    // Paper start
++    java.util.UUID spawningEntity;
++
++    public java.util.UUID getSpawningEntity() {
++        return spawningEntity;
++    }
++    // Paper end
++
+     class b extends PathfinderGoal {
+ 
+         private final PathfinderTargetCondition b;
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+index 9f64d81c64..1818e7c384 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+@@ -50,8 +50,17 @@ public class MobSpawnerPhantom {
+                                             int k = 1 + random.nextInt(difficultydamagescaler.a().a() + 1);
+ 
+                                             for (int l = 0; l < k; ++l) {
++                                                // Paper start
++                                                com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent event = new com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent(MCUtil.toLocation(worldserver, blockposition1), ((EntityPlayer) entityhuman).getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
++                                                if (!event.callEvent()) {
++                                                    if (event.shouldAbortSpawn()) {
++                                                        break;
++                                                    }
++                                                    continue;
++                                                }
++                                                // Paper end
+                                                 EntityPhantom entityphantom = (EntityPhantom) EntityTypes.PHANTOM.a((World) worldserver);
+-
++                                                entityphantom.spawningEntity = entityhuman.uniqueID; // Paper
+                                                 entityphantom.setPositionRotation(blockposition1, 0.0F, 0.0F);
+                                                 groupdataentity = entityphantom.prepare(worldserver, difficultydamagescaler, EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
+                                                 worldserver.addEntity(entityphantom, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index 9f9ee92390..2b97313694 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -35,4 +35,10 @@ public class CraftPhantom extends CraftFlying implements Phantom {
+     public EntityType getType() {
+         return EntityType.PHANTOM;
+     }
++
++    // Paper start
++    public java.util.UUID getSpawningEntity() {
++        return getHandle().getSpawningEntity();
++    }
++    // Paper end
+ }
+-- 
+2.22.0
+
