@@ -1,0 +1,102 @@
+From 157c060e8b929f22ff86400308741af965a75ddc Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 20:16:03 -0400
+Subject: [PATCH] Add World Util Methods
+
+Methods that can be used for other patches to help improve logic.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index ec64391a4a..4aaf20dfcb 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -371,6 +371,7 @@ public class Chunk implements IChunkAccess {
+         return this.world.getChunkProvider().getLightEngine();
+     }
+ 
++    public final int getLightSubtracted(BlockPosition blockposition, int i) { return this.a(blockposition, i); } // Paper - OBFHELPER
+     public int a(BlockPosition blockposition, int i) {
+         return this.a(blockposition, i, this.world.getWorldProvider().g());
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index f3f10ca60e..769d59271a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -46,7 +46,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+     protected final java.util.Set<TileEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet(); // Paper
+     private final long b = 16777215L;
+     private final Thread serverThread;
+-    private int d;
++    private int d; public int getSkylightSubtracted() { return this.d; } public void setSkylightSubtracted(int value) { this.d = value;} // Paper - OBFHELPER
+     protected int j = (new Random()).nextInt();
+     protected final int k = 1013904223;
+     protected float lastRainLevel;
+@@ -208,6 +208,54 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         return i < 0 || i >= 256;
+     }
+ 
++    // Paper start
++    public boolean isLoadedAndInBounds(BlockPosition blockposition) {
++        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++    }
++    public Chunk getChunkIfLoaded(BlockPosition blockposition) {
++        return getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++    }
++    // test if meets light level, return faster
++    // logic copied from below
++    public boolean isLightLevel(BlockPosition blockposition, int level) {
++        return this.getLightLevel(blockposition) >= level; // TODO
++//        if (isValidLocation(blockposition)) {
++//            if (this.getType(blockposition).c(this, blockposition)) { // use neighbour brightness (where did this go)
++//                int sky = getSkylightSubtracted();
++//                if (this.getLightLevel(blockposition.up(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.east(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.west(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.south(), sky) >= level) {
++//                    return true;
++//                }
++//                if (this.getLightLevel(blockposition.north(), sky) >= level) {
++//                    return true;
++//                }
++//                return false;
++//            } else {
++//                if (blockposition.getY() >= 256) {
++//                    blockposition = new BlockPosition(blockposition.getX(), 255, blockposition.getZ());
++//                }
++//
++//                Chunk chunk = this.getChunkAtWorldCoords(blockposition);
++//                return chunk.getLightSubtracted(blockposition, this.getSkylightSubtracted()) >= level;
++//            }
++//        } else {
++//            return true;
++//        }
++    }
++    //  reduces need to do isLoaded before getType
++    public IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
++        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
++    }
++    // Paper end
++
+     public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index 4cf31207e0..1388610a7b 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -19,6 +19,7 @@ public class WorldBorder {
+ 
+     public WorldBorder() {}
+ 
++    public final boolean isInBounds(BlockPosition blockposition) { return this.a(blockposition); } // Paper - OBFHELPER
+     public boolean a(BlockPosition blockposition) {
+         return (double) (blockposition.getX() + 1) > this.c() && (double) blockposition.getX() < this.e() && (double) (blockposition.getZ() + 1) > this.d() && (double) blockposition.getZ() < this.f();
+     }
+-- 
+2.22.0
+
