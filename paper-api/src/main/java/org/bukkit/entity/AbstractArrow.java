@@ -44,6 +44,22 @@ public interface AbstractArrow extends Projectile {
     public void setDamage(double damage);
 
     /**
+     * Gets the number of times this arrow can pierce through an entity.
+     *
+     * @return pierce level
+     */
+    public int getPierceLevel();
+
+    /**
+     * Sets the number of times this arrow can pierce through an entity.
+     *
+     * Must be between 0 and 127 times.
+     *
+     * @param pierceLevel new pierce level
+     */
+    public void setPierceLevel(int pierceLevel);
+
+    /**
      * Gets whether this arrow is critical.
      * <p>
      * Critical arrows have increased damage and cause particle effects.
