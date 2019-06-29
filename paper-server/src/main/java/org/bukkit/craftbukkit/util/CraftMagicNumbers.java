@@ -8,8 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.Dynamic;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -245,14 +247,29 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return file.delete();
     }
 
+    private static final List<String> SUPPORTED_API = Arrays.asList("1.13", "1.14");
+
     @Override
     public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {
+        String minimumVersion = MinecraftServer.getServer().server.minimumAPI;
+        int minimumIndex = SUPPORTED_API.indexOf(minimumVersion);
+
         if (pdf.getAPIVersion() != null) {
-            if (!pdf.getAPIVersion().equals("1.13") && !pdf.getAPIVersion().equals("1.14")) {
+            int pluginIndex = SUPPORTED_API.indexOf(pdf.getAPIVersion());
+
+            if (pluginIndex == -1) {
                 throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
             }
+
+            if (pluginIndex < minimumIndex) {
+                throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+            }
         } else {
-            Bukkit.getLogger().log(Level.WARNING, "Plugin " + pdf.getFullName() + " does not specify an api-version.");
+            if (minimumIndex == -1) {
+                Bukkit.getLogger().log(Level.WARNING, "Plugin " + pdf.getFullName() + " does not specify an api-version.");
+            } else {
+                throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+            }
         }
     }
 

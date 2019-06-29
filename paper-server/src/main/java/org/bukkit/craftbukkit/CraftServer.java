@@ -220,6 +220,7 @@ public final class CraftServer implements Server {
     private int ambientSpawn = -1;
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
+    public String minimumAPI;
     public CraftScoreboardManager scoreboardManager;
     public boolean playerCommandState;
     private boolean printSaveWarning;
@@ -305,6 +306,7 @@ public final class CraftServer implements Server {
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
+        minimumAPI = configuration.getString("settings.minimum-api");
         loadIcon();
     }
 
@@ -714,6 +716,7 @@ public final class CraftServer implements Server {
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
+        minimumAPI = configuration.getString("settings.minimum-api");
         printSaveWarning = false;
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         loadIcon();
