@@ -450,6 +450,8 @@ public final class CraftItemStack extends ItemStack {
             case ZOMBIE_SPAWN_EGG:
             case ZOMBIE_VILLAGER_SPAWN_EGG:
                 return new CraftMetaSpawnEgg(item.getTag());
+            case ARMOR_STAND:
+                return new CraftMetaArmorStand(item.getTag());
             case KNOWLEDGE_BOOK:
                 return new CraftMetaKnowledgeBook(item.getTag());
             case FURNACE:
