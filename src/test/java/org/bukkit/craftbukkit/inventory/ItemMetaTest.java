@@ -12,6 +12,7 @@ import net.minecraft.server.ITileEntity;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemBlock;
 import net.minecraft.server.ItemBlockWallable;
+import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -341,6 +342,15 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CrossbowMeta meta = (CrossbowMeta) cleanStack.getItemMeta();
                     meta.addChargedProjectile(new ItemStack(Material.ARROW));
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.ARMOR_STAND) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
+                    meta.entityTag = new NBTTagCompound();
+                    meta.entityTag.setBoolean("Small", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
