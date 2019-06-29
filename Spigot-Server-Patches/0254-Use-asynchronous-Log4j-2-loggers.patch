@@ -1,11 +1,11 @@
-From e73db9e760fe68b5eb791fc1b6b784c210e93f69 Mon Sep 17 00:00:00 2001
+From 4c724f0548007a283243a22448e4b1696a7b474b Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Tue, 17 Jul 2018 16:42:17 +0200
 Subject: [PATCH] Use asynchronous Log4j 2 loggers
 
 
 diff --git a/pom.xml b/pom.xml
-index 4ead093278..1f3571dd0f 100644
+index 4ead09327..1f3571dd0 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -74,6 +74,13 @@
@@ -22,13 +22,38 @@ index 4ead093278..1f3571dd0f 100644
          <dependency>
              <groupId>org.ow2.asm</groupId>
              <artifactId>asm</artifactId>
+diff --git a/src/main/java/com/destroystokyo/paper/log/LogFullPolicy.java b/src/main/java/com/destroystokyo/paper/log/LogFullPolicy.java
+new file mode 100644
+index 000000000..db652a1f7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/log/LogFullPolicy.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.log;
++
++import org.apache.logging.log4j.Level;
++import org.apache.logging.log4j.core.async.AsyncQueueFullPolicy;
++import org.apache.logging.log4j.core.async.EventRoute;
++
++public final class LogFullPolicy implements AsyncQueueFullPolicy {
++
++    /*
++     * Prevents log calls being logged out of order when the log queue is full.
++     */
++
++    @Override
++    public EventRoute getRoute(final long backgroundThreadId, final Level level) {
++        return EventRoute.ENQUEUE;
++    }
++}
 diff --git a/src/main/resources/log4j2.component.properties b/src/main/resources/log4j2.component.properties
 new file mode 100644
-index 0000000000..ee7c90784c
+index 000000000..f72f7425c
 --- /dev/null
 +++ b/src/main/resources/log4j2.component.properties
-@@ -0,0 +1 @@
+@@ -0,0 +1,2 @@
 +Log4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
++log4j2.AsyncQueueFullPolicy="com.destroystokyo.paper.log.LogFullPolicy"
+\ No newline at end of file
 -- 
-2.22.0
+2.21.0
 
