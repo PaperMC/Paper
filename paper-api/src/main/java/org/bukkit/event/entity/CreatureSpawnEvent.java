@@ -158,6 +158,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         SHEARED,
         /**
+         * When eg an effect cloud is spawned as a result of a creeper exploding
+         */
+        EXPLOSION,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
