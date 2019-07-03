@@ -14,16 +14,18 @@
  
 +    // CraftBukkit start - data containers
 +    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
-+    public final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    public CraftPersistentDataContainer persistentDataContainer;
 +    // CraftBukkit end
      private static final Logger LOGGER = LogManager.getLogger();
      private final TileEntityTypes<?> b;
      @Nullable
-@@ -37,6 +46,12 @@
+@@ -37,6 +46,14 @@
  
      public void load(NBTTagCompound nbttagcompound) {
          this.position = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
 +        // CraftBukkit start - read container
++        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++
 +        NBTTagCompound persistentDataTag = nbttagcompound.getCompound("PublicBukkitValues");
 +        if (persistentDataTag != null) {
 +            this.persistentDataContainer.putAll(persistentDataTag);
@@ -32,12 +34,12 @@
      }
  
      public NBTTagCompound save(NBTTagCompound nbttagcompound) {
-@@ -53,12 +68,24 @@
+@@ -53,12 +70,24 @@
              nbttagcompound.setInt("x", this.position.getX());
              nbttagcompound.setInt("y", this.position.getY());
              nbttagcompound.setInt("z", this.position.getZ());
 +            // CraftBukkit start - store container
-+            if (!this.persistentDataContainer.isEmpty()) {
++            if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
 +                nbttagcompound.set("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
 +            }
 +            // CraftBukkit end
@@ -57,7 +59,7 @@
          String s = nbttagcompound.getString("id");
  
          return (TileEntity) IRegistry.BLOCK_ENTITY_TYPE.getOptional(new MinecraftKey(s)).map((tileentitytypes) -> {
-@@ -70,6 +97,7 @@
+@@ -70,6 +99,7 @@
              }
          }).map((tileentity) -> {
              try {
@@ -65,7 +67,7 @@
                  tileentity.load(nbttagcompound);
                  return tileentity;
              } catch (Throwable throwable) {
-@@ -168,4 +196,13 @@
+@@ -168,4 +198,13 @@
                      }, this::getPosition});
          }
      }
