@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.server.BlockBannerAbstract;
 import net.minecraft.server.EnumColor;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NBTTagList;
@@ -31,9 +32,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void load(TileEntityBanner banner) {
         super.load(banner);
 
-        if (banner.color != null) {
-            base = DyeColor.getByWoolData((byte) banner.color.getColorIndex());
-        }
+        base = DyeColor.getByWoolData((byte) ((BlockBannerAbstract) this.data.getBlock()).b().getColorIndex()); // PAIL
         patterns = new ArrayList<Pattern>();
 
         if (banner.patterns != null) {
