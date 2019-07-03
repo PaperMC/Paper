@@ -49,7 +49,6 @@ import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BossBattleCustom;
 import net.minecraft.server.CommandDispatcher;
 import net.minecraft.server.CommandListenerWrapper;
-import net.minecraft.server.CraftingManager;
 import net.minecraft.server.DedicatedPlayerList;
 import net.minecraft.server.DedicatedServer;
 import net.minecraft.server.DedicatedServerProperties;
@@ -70,6 +69,7 @@ import net.minecraft.server.MobEffects;
 import net.minecraft.server.PlayerList;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.TagsServer;
+import net.minecraft.server.TicketType;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldData;
 import net.minecraft.server.WorldMap;
@@ -306,6 +306,7 @@ public final class CraftServer implements Server {
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
+        TicketType.PLUGIN.setLoadPeriod(configuration.getInt("chunk-gc.period-in-ticks"));
         minimumAPI = configuration.getString("settings.minimum-api");
         loadIcon();
     }
@@ -716,6 +717,7 @@ public final class CraftServer implements Server {
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
+        TicketType.PLUGIN.setLoadPeriod(configuration.getInt("chunk-gc.period-in-ticks"));
         minimumAPI = configuration.getString("settings.minimum-api");
         printSaveWarning = false;
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
