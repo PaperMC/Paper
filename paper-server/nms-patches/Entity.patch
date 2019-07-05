@@ -573,9 +573,8 @@
 +                this.setOnFire(entityCombustEvent.getDuration(), false);
 +            }
 +            // CraftBukkit end
-         }
- 
--        this.damageEntity(DamageSource.LIGHTNING, 5.0F);
++        }
++
 +        // CraftBukkit start
 +        if (thisBukkitEntity instanceof Hanging) {
 +            HangingBreakByEntityEvent hangingEvent = new HangingBreakByEntityEvent((Hanging) thisBukkitEntity, stormBukkitEntity);
@@ -584,8 +583,9 @@
 +            if (hangingEvent.isCancelled()) {
 +                return;
 +            }
-+        }
-+
+         }
+ 
+-        this.damageEntity(DamageSource.LIGHTNING, 5.0F);
 +        if (this.isFireProof()) {
 +            return;
 +        }
@@ -652,25 +652,28 @@
                      d0 *= 8.0D;
                      d1 *= 8.0D;
                  }
-@@ -2088,6 +2442,25 @@
+@@ -2088,6 +2442,28 @@
                  vec3d = shapedetector_shape.velocity;
                  f = (float) shapedetector_shape.yaw;
              }
 +        } // CraftBukkit
 +
 +            // CraftBukkit start
-+            Location enter = this.getBukkitEntity().getLocation();
-+            Location exit = new Location(worldserver1.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            // SPIGOT-5136 - don't fire event for CraftEntity.teleport
++            if (location == null) {
++                Location enter = this.getBukkitEntity().getLocation();
++                Location exit = new Location(worldserver1.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +
-+            EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit);
-+            event.getEntity().getServer().getPluginManager().callEvent(event);
-+            if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !this.isAlive()) {
-+                return null;
++                EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit);
++                event.getEntity().getServer().getPluginManager().callEvent(event);
++                if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !this.isAlive()) {
++                    return null;
++                }
++
++                exit = event.getTo();
++                worldserver1 = ((CraftWorld) exit.getWorld()).getHandle();
++                blockposition = new BlockPosition(exit.getX(), exit.getY(), exit.getZ());
 +            }
-+
-+            exit = event.getTo();
-+            worldserver1 = ((CraftWorld) exit.getWorld()).getHandle();
-+            blockposition = new BlockPosition(exit.getX(), exit.getY(), exit.getZ());
 +
 +            this.dimension = dimensionmanager;
 +            this.decouple();
@@ -678,7 +681,7 @@
  
              this.world.getMethodProfiler().exitEnter("reloading");
              Entity entity = this.getEntityType().a((World) worldserver1);
-@@ -2097,6 +2470,14 @@
+@@ -2097,6 +2473,14 @@
                  entity.setPositionRotation(blockposition, entity.yaw + f, entity.pitch);
                  entity.setMot(vec3d);
                  worldserver1.addEntityTeleport(entity);
@@ -693,7 +696,7 @@
              }
  
              this.dead = true;
-@@ -2298,7 +2679,26 @@
+@@ -2298,7 +2682,26 @@
      }
  
      public void a(AxisAlignedBB axisalignedbb) {
