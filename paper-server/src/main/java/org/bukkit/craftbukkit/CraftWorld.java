@@ -80,6 +80,7 @@ import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
+import net.minecraft.server.WorldGenHugeMushroomConfiguration;
 import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldNBTStorage;
 import net.minecraft.server.WorldServer;
@@ -571,8 +572,9 @@ public class CraftWorld implements World {
         BlockPosition pos = new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         net.minecraft.server.WorldGenerator gen;
+        net.minecraft.server.WorldGenFeatureConfiguration conf = new WorldGenFeatureEmptyConfiguration();
         switch (type) {
-        case BIG_TREE:
+            case BIG_TREE:
             gen = WorldGenerator.FANCY_TREE;
             break;
         case BIRCH:
@@ -598,9 +600,11 @@ public class CraftWorld implements World {
             break;
         case RED_MUSHROOM:
             gen = WorldGenerator.HUGE_RED_MUSHROOM;
+            conf = new WorldGenHugeMushroomConfiguration(true);
             break;
         case BROWN_MUSHROOM:
             gen = WorldGenerator.HUGE_BROWN_MUSHROOM;
+            conf = new WorldGenHugeMushroomConfiguration(true);
             break;
         case SWAMP:
             gen = WorldGenerator.SWAMP_TREE;
@@ -626,7 +630,7 @@ public class CraftWorld implements World {
             break;
         }
 
-        return gen.generate(world, world.worldProvider.getChunkGenerator(), rand, pos, new WorldGenFeatureEmptyConfiguration());
+        return gen.generate(world, world.worldProvider.getChunkGenerator(), rand, pos, conf);
     }
 
     @Override
