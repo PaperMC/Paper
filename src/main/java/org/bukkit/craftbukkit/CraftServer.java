@@ -1110,7 +1110,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void resetRecipes() {
-        // throw new UnsupportedOperationException("Not supported yet.");
+        console.reload(); // Not ideal but hard to reload a subset of a resource pack
     }
 
     @Override
