@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player joins a server
@@ -11,7 +12,7 @@ public class PlayerJoinEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private String joinMessage;
 
-    public PlayerJoinEvent(@NotNull final Player playerJoined, @NotNull final String joinMessage) {
+    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
         super(playerJoined);
         this.joinMessage = joinMessage;
     }
@@ -19,9 +20,9 @@ public class PlayerJoinEvent extends PlayerEvent {
     /**
      * Gets the join message to send to all online players
      *
-     * @return string join message
+     * @return string join message. Can be null
      */
-    @NotNull
+    @Nullable
     public String getJoinMessage() {
         return joinMessage;
     }
@@ -29,9 +30,9 @@ public class PlayerJoinEvent extends PlayerEvent {
     /**
      * Sets the join message to send to all online players
      *
-     * @param joinMessage join message
+     * @param joinMessage join message. If null, no message will be sent
      */
-    public void setJoinMessage(@NotNull String joinMessage) {
+    public void setJoinMessage(@Nullable String joinMessage) {
         this.joinMessage = joinMessage;
     }
 
