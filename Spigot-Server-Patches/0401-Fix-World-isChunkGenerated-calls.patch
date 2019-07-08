@@ -1,4 +1,4 @@
-From 9f8d67e1b05822dd5a4a5901de2d9eb8e43e68b7 Mon Sep 17 00:00:00 2001
+From ad47bdf32e883902230efa85bb9577dc7ae885f3 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 15 Jun 2019 08:54:33 -0700
 Subject: [PATCH] Fix World#isChunkGenerated calls
@@ -164,7 +164,7 @@ index c4ad039ffd..3f41072f72 100644
  
      // Spigot Start
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 2e14d84657..d610253b95 100644
+index 2e14d84657..135eed4deb 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -31,6 +31,47 @@ public class RegionFile implements AutoCloseable {
@@ -215,7 +215,15 @@ index 2e14d84657..d610253b95 100644
      public RegionFile(File file) throws IOException {
          this.b = new RandomAccessFile(file, "rw");
          this.file = file; // Spigot // Paper - We need this earlier
-@@ -299,6 +340,7 @@ public class RegionFile implements AutoCloseable {
+@@ -286,6 +327,7 @@ public class RegionFile implements AutoCloseable {
+         return this.c[this.f(chunkcoordintpair)];
+     }
+ 
++    public final boolean chunkExists(ChunkCoordIntPair chunkPos) { return this.d(chunkPos); } // Paper - OBFHELPER
+     public boolean d(ChunkCoordIntPair chunkcoordintpair) {
+         return this.getOffset(chunkcoordintpair) != 0;
+     }
+@@ -299,6 +341,7 @@ public class RegionFile implements AutoCloseable {
          this.writeInt(i); // Paper - Avoid 3 io write calls
      }
  
@@ -223,7 +231,7 @@ index 2e14d84657..d610253b95 100644
      private int f(ChunkCoordIntPair chunkcoordintpair) {
          return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
      }
-@@ -312,6 +354,7 @@ public class RegionFile implements AutoCloseable {
+@@ -312,6 +355,7 @@ public class RegionFile implements AutoCloseable {
      }
  
      public void close() throws IOException {
@@ -265,7 +273,7 @@ index 6f34d8aea0..d2b3289450 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3444c19b0f..9ac160ea75 100644
+index 3444c19b0f..cb532c7aea 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -386,8 +386,20 @@ public class CraftWorld implements World {
@@ -290,7 +298,7 @@ index 3444c19b0f..9ac160ea75 100644
          } catch (IOException ex) {
              throw new RuntimeException(ex);
          }
-@@ -499,20 +511,25 @@ public class CraftWorld implements World {
+@@ -499,20 +511,46 @@ public class CraftWorld implements World {
      @Override
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
@@ -301,34 +309,53 @@ index 3444c19b0f..9ac160ea75 100644
 -            // We then cycle through again to get the full chunk immediately, rather than after the ticket addition
 -            chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
 -        }
-+        // Paper - Optimize this method
-+        if (!generate) {
-+            net.minecraft.server.RegionFile file = world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(new ChunkCoordIntPair(x, z));
-+            ChunkStatus status;
-+            if (file != null && (status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL) {
-+                return false;
-+            }
++        // Paper start - Optimize this method
++        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
  
 -        if (chunk instanceof net.minecraft.server.Chunk) {
 -            world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
--            return true;
-+            IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.EMPTY, true);
-+            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
-+                return false;
-+            }
-+            // fall through to load
-+            // we do this so we do not re-read the chunk data on disk
++        net.minecraft.server.Chunk immediate = world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
++        if (immediate != null) {
++            world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
+             return true;
          }
--
+ 
 -        return false;
-+        world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
++        if (!generate) {
++            net.minecraft.server.RegionFile file = world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(chunkPos);
++            ChunkStatus status;
++            if (file != null) {
++                if (!file.chunkExists(chunkPos) || ((status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL)) {
++                    return false; // not on disk or cached status says not full status
++                }
++                // full status on disk, fall through to load
++            } else {
++
++                try {
++                    if (!world.getChunkProvider().playerChunkMap.getRegionFile(chunkPos, false).chunkExists(chunkPos)) {
++                        return false; // does not exist on disk
++                    }
++                } catch (IOException ex) {
++                    throw new RuntimeException(ex);
++                }
++
++                IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.EMPTY, true);
++                if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
++                    return false;
++                }
++
++                // fall through to load
++                // we do this so we do not re-read the chunk data on disk
++            }
++        }
++        world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
 +        world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
 +        return true;
 +        // Paper end
      }
  
      @Override
-@@ -2163,21 +2180,20 @@ public class CraftWorld implements World {
+@@ -2163,21 +2201,20 @@ public class CraftWorld implements World {
  
      // Paper start
      private Chunk getChunkAtGen(int x, int z, boolean gen) {
