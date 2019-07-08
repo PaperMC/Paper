@@ -1,0 +1,249 @@
+From e6c4fed8494c47a80a4fff995603c4f9aa750f47 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 03:24:59 -0700
+Subject: [PATCH] Asynchronous chunk loading api
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 42b97ba86b..e5f2360340 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -147,6 +147,137 @@ public class ChunkProviderServer extends IChunkProvider {
+         return playerChunk.getAvailableChunkNow();
+ 
+     }
++
++    private long asyncLoadSeqCounter;
++
++    public void getChunkAtAsynchronously(int x, int z, boolean gen, java.util.function.Consumer<Chunk> onComplete) {
++        if (Thread.currentThread() != this.serverThread) {
++            this.serverThreadQueue.execute(() -> {
++                this.getChunkAtAsynchronously(x, z, gen, onComplete);
++            });
++            return;
++        }
++
++        long k = ChunkCoordIntPair.pair(x, z);
++        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
++
++        IChunkAccess ichunkaccess;
++
++        // try cache
++        for (int l = 0; l < 4; ++l) {
++            if (k == this.cachePos[l] && ChunkStatus.FULL == this.cacheStatus[l]) {
++                ichunkaccess = this.cacheChunk[l];
++                if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
++
++                    // move to first in cache
++
++                    for (int i1 = 3; i1 > 0; --i1) {
++                        this.cachePos[i1] = this.cachePos[i1 - 1];
++                        this.cacheStatus[i1] = this.cacheStatus[i1 - 1];
++                        this.cacheChunk[i1] = this.cacheChunk[i1 - 1];
++                    }
++
++                    this.cachePos[0] = k;
++                    this.cacheStatus[0] = ChunkStatus.FULL;
++                    this.cacheChunk[0] = ichunkaccess;
++
++                    onComplete.accept((Chunk)ichunkaccess);
++
++                    return;
++                }
++            }
++        }
++
++        if (gen) {
++            this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
++            return;
++        }
++
++        IChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
++        if (current != null) {
++            if (!(current instanceof ProtoChunkExtension) && !(current instanceof net.minecraft.server.Chunk)) {
++                onComplete.accept(null); // the chunk is not gen'd
++                return;
++            }
++            // we know the chunk is at full status here (either in read-only mode or the real thing)
++            this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
++            return;
++        } else {
++            RegionFile file = this.world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(chunkPos);
++            ChunkStatus status = null;
++            if (file != null) {
++                if (!file.chunkExists(chunkPos) || ((status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL)) {
++                    onComplete.accept(null); // cached status says not generated, or data does not exist on disk
++                    return;
++                }
++            }
++
++            if (status == ChunkStatus.FULL) {
++                // at this stage we know it is fully generated, but is on disk
++                this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
++                return;
++            }
++
++            // at this stage we don't know what status the chunk is in
++        }
++
++        // here we don't know what status it is and we're not supposed to generate
++        // so we asynchronously load empty status
++
++        try {
++            // we'll be loading now, so make sure we try to load something off disk
++            if (!this.world.getChunkProvider().playerChunkMap.getRegionFile(chunkPos, false).chunkExists(chunkPos)) {
++                onComplete.accept(null);
++                return;
++            }
++        } catch (IOException ex) {
++            throw new RuntimeException(ex);
++        }
++
++
++        this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.EMPTY, (IChunkAccess chunk) -> {
++            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
++                // the chunk on disk was not a full status chunk
++                onComplete.accept(null);
++                return;
++            }
++            this.bringToFullStatusAsync(x, z, chunkPos, onComplete); // bring to full status if required
++        });
++    }
++
++    private void bringToFullStatusAsync(int x, int z, ChunkCoordIntPair chunkPos, java.util.function.Consumer<Chunk> onComplete) {
++        this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.FULL, (java.util.function.Consumer)onComplete);
++    }
++
++
++    private void bringToStatusAsync(int x, int z, ChunkCoordIntPair chunkPos, ChunkStatus status, java.util.function.Consumer<IChunkAccess> onComplete) {
++        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getChunkFutureMainThread(x, z, status, true);
++        long identifier = this.asyncLoadSeqCounter++;
++        int ticketLevel = MCUtil.getTicketLevelFor(status);
++        this.addTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
++
++        future.whenCompleteAsync((Either<IChunkAccess, PlayerChunk.Failure> either, Throwable throwable) -> {
++            // either left -> success
++            // either right -> failure
++
++            if (throwable != null) {
++                throw new RuntimeException(throwable);
++            }
++
++            this.removeTicket(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
++            this.addTicket(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos); // allow unloading
++
++            Optional<PlayerChunk.Failure> failure = either.right();
++
++            if (failure.isPresent()) {
++                // failure
++                throw new IllegalStateException("Chunk failed to load: " + failure.get().toString());
++            }
++
++            onComplete.accept(either.left().get());
++
++        }, this.serverThreadQueue);
++    }
+     // Paper end
+ 
+     @Nullable
+@@ -519,6 +650,16 @@ public class ChunkProviderServer extends IChunkProvider {
+         this.chunkMapDistance.removeTicket(tickettype, chunkcoordintpair, i, t0);
+     }
+ 
++    // Paper start
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
++
++    }
++
++    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
++
++    }
++    // Paper end
++
+     @Override
+     public void a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
+         this.chunkMapDistance.a(chunkcoordintpair, flag);
+diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
+index e324989b46..abb0d69d2f 100644
+--- a/src/main/java/net/minecraft/server/ChunkStatus.java
++++ b/src/main/java/net/minecraft/server/ChunkStatus.java
+@@ -153,6 +153,7 @@ public class ChunkStatus {
+         return ChunkStatus.q.size();
+     }
+ 
++    public static int getTicketLevelOffset(ChunkStatus status) { return ChunkStatus.a(status); } // Paper - OBFHELPER
+     public static int a(ChunkStatus chunkstatus) {
+         return ChunkStatus.r.getInt(chunkstatus.c());
+     }
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 23d1935dd5..14f8b61042 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -530,4 +530,9 @@ public final class MCUtil {
+             out.print(fileData);
+         }
+     }
++
++    public static int getTicketLevelFor(ChunkStatus status) {
++        // TODO make sure the constant `33` is correct on future updates. See getChunkAt(int, int, ChunkStatus, boolean)
++        return 33 + ChunkStatus.getTicketLevelOffset(status);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index d610253b95..18f218e971 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -327,6 +327,7 @@ public class RegionFile implements AutoCloseable {
+         return this.c[this.f(chunkcoordintpair)];
+     }
+ 
++    public boolean chunkExists(ChunkCoordIntPair chunkPos) { return this.d(chunkPos); } // Paper - OBFHELPER
+     public boolean d(ChunkCoordIntPair chunkcoordintpair) {
+         return this.getOffset(chunkcoordintpair) != 0;
+     }
+diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
+index 0096762f22..3b1b673a12 100644
+--- a/src/main/java/net/minecraft/server/TicketType.java
++++ b/src/main/java/net/minecraft/server/TicketType.java
+@@ -20,6 +20,7 @@ public class TicketType<T> {
+     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
++    public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
+ 
+     public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
+         return new TicketType<>(s, comparator, 0L);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 3e55033d3c..c89d58c128 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2197,16 +2197,17 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
+-        // TODO placeholder
+-        if (Bukkit.isPrimaryThread()) {
+-            return CompletableFuture.completedFuture(getChunkAtGen(x, z, gen));
+-        } else {
+-            CompletableFuture<Chunk> ret = new CompletableFuture<>();
+-            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
+-                ret.complete(getChunkAtGen(x, z, gen));
+-            });
+-            return ret;
++        net.minecraft.server.Chunk immediate = this.world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
++        if (immediate != null) {
++            return CompletableFuture.completedFuture(immediate.bukkitChunk);
+         }
++
++        CompletableFuture<Chunk> ret = new CompletableFuture<>();
++        this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, (net.minecraft.server.Chunk chunk) -> {
++            ret.complete(chunk == null ? null : chunk.bukkitChunk);
++        });
++
++        return ret;
+     }
+     // Paper end
+ 
+-- 
+2.22.0
+
