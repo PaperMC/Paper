@@ -1,4 +1,4 @@
-From 4f5c8e39a041d746a7ba6a18b9839c3b811f0bf0 Mon Sep 17 00:00:00 2001
+From 5a6ac2574a72aca6611ad1c416a65c6ec393569a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -1001,7 +1001,7 @@ index 2efaf516ff..22a8ea916a 100644
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 32981c4422..0e09adf7dc 100644
+index 32981c4422..2f608305f7 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,5 +1,7 @@
@@ -1038,7 +1038,7 @@ index 32981c4422..0e09adf7dc 100644
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
-@@ -773,21 +774,26 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -773,15 +774,14 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          }
  
          timings.tileEntityPending.stopTiming(); // Spigot
@@ -1050,23 +1050,11 @@ index 32981c4422..0e09adf7dc 100644
      public void a(Consumer<Entity> consumer, Entity entity) {
          try {
 -            SpigotTimings.tickEntityTimer.startTiming(); // Spigot
-+            timings.tickEntities.startTiming();
-+            entity.tickTimer.startTiming();
-+            // Spigot end
              consumer.accept(entity);
 -            SpigotTimings.tickEntityTimer.stopTiming(); // Spigot
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
- 
-             entity.appendEntityCrashDetails(crashreportsystemdetails);
-             throw new ReportedException(crashreport);
-+        } finally {
-+            entity.tickTimer.stopTiming();
-+            timings.tickEntities.stopTiming();
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index df518ff633..229cff562f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
