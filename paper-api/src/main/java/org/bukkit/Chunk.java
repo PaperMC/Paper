@@ -1,8 +1,10 @@
 package org.bukkit;
 
+import java.util.Collection;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -147,4 +149,53 @@ public interface Chunk {
      * @see World#setChunkForceLoaded(int, int, boolean)
      */
     void setForceLoaded(boolean forced);
+
+    /**
+     * Adds a plugin ticket for this chunk, loading this chunk if it is not
+     * already loaded.
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param plugin Plugin which owns the ticket
+     * @return {@code true} if a plugin ticket was added, {@code false} if the
+     * ticket already exists for the plugin
+     * @throws IllegalStateException If the specified plugin is not enabled
+     * @see World#addPluginChunkTicket(int, int, Plugin)
+     */
+    boolean addPluginChunkTicket(@NotNull Plugin plugin);
+
+    /**
+     * Removes the specified plugin's ticket for this chunk
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param plugin Plugin which owns the ticket
+     * @return {@code true} if the plugin ticket was removed, {@code false} if
+     * there is no plugin ticket for the chunk
+     * @see World#removePluginChunkTicket(int, int, Plugin)
+     */
+    boolean removePluginChunkTicket(@NotNull Plugin plugin);
+
+    /**
+     * Retrieves a collection specifying which plugins have tickets for this
+     * chunk. This collection is not updated when plugin tickets are added or
+     * removed to this chunk.
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @return unmodifiable collection containing which plugins have tickets for
+     * this chunk
+     * @see World#getPluginChunkTickets(int, int)
+     */
+    @NotNull
+    Collection<Plugin> getPluginChunkTickets();
 }

@@ -24,6 +24,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Consumer;
@@ -322,6 +323,94 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     @NotNull
     public Collection<Chunk> getForceLoadedChunks();
+
+    /**
+     * Adds a plugin ticket for the specified chunk, loading the chunk if it is
+     * not already loaded.
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param plugin Plugin which owns the ticket
+     * @return {@code true} if a plugin ticket was added, {@code false} if the
+     * ticket already exists for the plugin
+     * @throws IllegalStateException If the specified plugin is not enabled
+     * @see #removePluginChunkTicket(int, int, Plugin)
+     */
+    public boolean addPluginChunkTicket(int x, int z, @NotNull Plugin plugin);
+
+    /**
+     * Removes the specified plugin's ticket for the specified chunk
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param plugin Plugin which owns the ticket
+     * @return {@code true} if the plugin ticket was removed, {@code false} if
+     * there is no plugin ticket for the chunk
+     * @see #addPluginChunkTicket(int, int, Plugin)
+     */
+    public boolean removePluginChunkTicket(int x, int z, @NotNull Plugin plugin);
+
+    /**
+     * Removes all plugin tickets for the specified plugin
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param plugin Specified plugin
+     * @see #addPluginChunkTicket(int, int, Plugin)
+     * @see #removePluginChunkTicket(int, int, Plugin)
+     */
+    public void removePluginChunkTickets(@NotNull Plugin plugin);
+
+    /**
+     * Retrieves a collection specifying which plugins have tickets for the
+     * specified chunk. This collection is not updated when plugin tickets are
+     * added or removed to the chunk.
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return unmodifiable collection containing which plugins have tickets for
+     * the chunk
+     * @see #addPluginChunkTicket(int, int, Plugin)
+     * @see #removePluginChunkTicket(int, int, Plugin)
+     */
+    @NotNull
+    public Collection<Plugin> getPluginChunkTickets(int x, int z);
+
+    /**
+     * Returns a map of which plugins have tickets for what chunks. The returned
+     * map is not updated when plugin tickets are added or removed to chunks. If
+     * a plugin has no tickets, it will be absent from the map.
+     * <p>
+     * A plugin ticket will prevent a chunk from unloading until it is
+     * explicitly removed. A plugin instance may only have one ticket per chunk,
+     * but each chunk can have multiple plugin tickets.
+     * </p>
+     *
+     * @return unmodifiable map containing which plugins have tickets for what
+     * chunks
+     * @see #addPluginChunkTicket(int, int, Plugin)
+     * @see #removePluginChunkTicket(int, int, Plugin)
+     */
+    @NotNull
+    public Map<Plugin, Collection<Chunk>> getPluginChunkTickets();
 
     /**
      * Drops an item at the specified {@link Location}
