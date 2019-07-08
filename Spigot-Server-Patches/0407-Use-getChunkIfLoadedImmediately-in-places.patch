@@ -1,0 +1,61 @@
+From 159628ed6677f526f521cd3fae8a66a24bb4b1c8 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 00:13:36 -0700
+Subject: [PATCH] Use getChunkIfLoadedImmediately in places
+
+This prevents us from hitting chunk loads for chunks at or less-than
+ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
+load in that case).
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0a2c9a9f85..ef5b547f54 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -199,7 +199,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
+     public boolean isChunkLoaded() {
+-        return world.isChunkLoaded((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4);
++        return world.getChunkIfLoadedImmediately((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4) != null; // Paper
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index f0e8acdd1a..db7b8796f3 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -270,12 +270,12 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+     }
+ 
+     public boolean isLoaded(BlockPosition blockposition) {
+-        return getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null; // Paper
++        return getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null; // Paper
+     }
+ 
+     // Paper start
+     public boolean isLoadedAndInBounds(BlockPosition blockposition) {
+-        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
+     }
+     public Chunk getChunkIfLoaded(BlockPosition blockposition) {
+         return getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 7341dc2c1c..a2cfaf551d 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -143,9 +143,10 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
++                    Chunk chunk = (Chunk) world.getChunkIfLoadedImmediately( i1, j1 );
++                    if ( chunk != null )
+                     {
+-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
++                        activateChunkEntities( chunk );
+                     }
+                 }
+             }
+-- 
+2.22.0
+
