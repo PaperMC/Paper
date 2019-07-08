@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +19,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockChorusFlower;
@@ -24,6 +28,7 @@ import net.minecraft.server.BlockDiodeAbstract;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.ChunkCoordIntPair;
+import net.minecraft.server.ChunkMapDistance;
 import net.minecraft.server.ChunkStatus;
 import net.minecraft.server.EntityAreaEffectCloud;
 import net.minecraft.server.EntityArmorStand;
@@ -76,6 +81,7 @@ import net.minecraft.server.PlayerChunk;
 import net.minecraft.server.ProtoChunkExtension;
 import net.minecraft.server.RayTrace;
 import net.minecraft.server.SoundCategory;
+import net.minecraft.server.Ticket;
 import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
@@ -469,6 +475,82 @@ public class CraftWorld implements World {
     public void loadChunk(Chunk chunk) {
         loadChunk(chunk.getX(), chunk.getZ());
         ((CraftChunk) getChunkAt(chunk.getX(), chunk.getZ())).getHandle().bukkitChunk = chunk;
+    }
+
+    @Override
+    public boolean addPluginChunkTicket(int x, int z, Plugin plugin) {
+        Preconditions.checkArgument(plugin != null, "null plugin");
+        Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
+
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+
+        if (chunkDistanceManager.addTicketAtLevel(TicketType.PLUGIN_TICKET, new ChunkCoordIntPair(x, z), 31, plugin)) { // keep in-line with force loading, add at level 31
+            this.getChunkAt(x, z); // ensure loaded
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean removePluginChunkTicket(int x, int z, Plugin plugin) {
+        Preconditions.checkNotNull(plugin, "null plugin");
+
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        return chunkDistanceManager.removeTicketAtLevel(TicketType.PLUGIN_TICKET, new ChunkCoordIntPair(x, z), 31, plugin); // keep in-line with force loading, remove at level 31
+    }
+
+    @Override
+    public void removePluginChunkTickets(Plugin plugin) {
+        Preconditions.checkNotNull(plugin, "null plugin");
+
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        chunkDistanceManager.removeAllTicketsFor(TicketType.PLUGIN_TICKET, 31, plugin); // keep in-line with force loading, remove at level 31
+    }
+
+    @Override
+    public Collection<Plugin> getPluginChunkTickets(int x, int z) {
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ObjectSortedSet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkCoordIntPair.pair(x, z));
+
+        if (tickets == null) {
+            return Collections.emptyList();
+        }
+
+        ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getTicketType() == TicketType.PLUGIN_TICKET) {
+                ret.add((Plugin) ticket.c);
+            }
+        }
+
+        return ret.build();
+    }
+
+    @Override
+    public Map<Plugin, Collection<Chunk>> getPluginChunkTickets() {
+        Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+
+        for (Long2ObjectMap.Entry<ObjectSortedSet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
+            long chunkKey = chunkTickets.getLongKey();
+            ObjectSortedSet<Ticket<?>> tickets = chunkTickets.getValue();
+
+            Chunk chunk = null;
+            for (Ticket<?> ticket : tickets) {
+                if (ticket.getTicketType() != TicketType.PLUGIN_TICKET) {
+                    continue;
+                }
+
+                if (chunk == null) {
+                    chunk = this.getChunkAt(ChunkCoordIntPair.getX(chunkKey), ChunkCoordIntPair.getZ(chunkKey));
+                }
+
+                ret.computeIfAbsent((Plugin) ticket.c, (key) -> ImmutableList.builder()).add(chunk);
+            }
+        }
+
+        return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
     }
 
     @Override

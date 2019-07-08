@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.Collection;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
@@ -27,6 +28,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
+import org.bukkit.plugin.Plugin;
 
 public class CraftChunk implements Chunk {
     private WeakReference<net.minecraft.server.Chunk> weakChunk;
@@ -180,6 +182,21 @@ public class CraftChunk implements Chunk {
     @Override
     public void setForceLoaded(boolean forced) {
         getWorld().setChunkForceLoaded(getX(), getZ(), forced);
+    }
+
+    @Override
+    public boolean addPluginChunkTicket(Plugin plugin) {
+        return getWorld().addPluginChunkTicket(getX(), getZ(), plugin);
+    }
+
+    @Override
+    public boolean removePluginChunkTicket(Plugin plugin) {
+        return getWorld().removePluginChunkTicket(getX(), getZ(), plugin);
+    }
+
+    @Override
+    public Collection<Plugin> getPluginChunkTickets() {
+        return getWorld().getPluginChunkTickets(getX(), getZ());
     }
 
     @Override
