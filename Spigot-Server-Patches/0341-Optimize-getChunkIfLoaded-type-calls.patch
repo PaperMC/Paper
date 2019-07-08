@@ -1,4 +1,4 @@
-From 368ac6d9fa82a95c89036c5496a65826897a8995 Mon Sep 17 00:00:00 2001
+From d2c0b20945ab11e5f3d11ee7bda4d9354a38ae03 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 29 Aug 2018 21:59:22 -0400
 Subject: [PATCH] Optimize getChunkIfLoaded type calls
@@ -10,7 +10,7 @@ Will improve inlining across many hot methods.
 Improve getBrightness to not do double chunk map lookups.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 41926a361..186cfda7e 100644
+index 41926a361b..029f5fc9ed 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -379,7 +379,7 @@ public class ChunkProviderServer implements IChunkProvider {
@@ -18,12 +18,12 @@ index 41926a361..186cfda7e 100644
                  }
  
 -                Chunk neighbor = this.getChunkAt(chunk.locX + x, chunk.locZ + z, false, false);
-+                Chunk neighbor = this.chunks.get(chunk.chunkKey); // Paper
++                Chunk neighbor = this.chunks.get(ChunkCoordIntPair.asLong(chunk.locX + x, chunk.locZ + z)); // Paper
                  if (neighbor != null) {
                      neighbor.setNeighborUnloaded(-x, -z);
                      chunk.setNeighborUnloaded(x, z);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 79dea3c85..6d60262c6 100644
+index 79dea3c858..6d60262c6e 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -162,7 +162,7 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
@@ -55,7 +55,7 @@ index 79dea3c85..6d60262c6 100644
              return chunk != null && !chunk.isEmpty();
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 72eb8ed4f..7e52859c1 100644
+index 72eb8ed4f4..7e52859c1d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -218,7 +218,7 @@ public class CraftWorld implements World {
@@ -77,5 +77,5 @@ index 72eb8ed4f..7e52859c1 100644
              return true;
          }
 -- 
-2.21.0
+2.22.0
 
