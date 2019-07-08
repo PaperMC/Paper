@@ -1,4 +1,4 @@
-From 8ec38f6eb4de25ddb05562621e41e3abb073b949 Mon Sep 17 00:00:00 2001
+From 9f8d67e1b05822dd5a4a5901de2d9eb8e43e68b7 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 15 Jun 2019 08:54:33 -0700
 Subject: [PATCH] Fix World#isChunkGenerated calls
@@ -265,7 +265,7 @@ index 6f34d8aea0..d2b3289450 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3444c19b0f..3e55033d3c 100644
+index 3444c19b0f..9ac160ea75 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -386,8 +386,20 @@ public class CraftWorld implements World {
@@ -290,7 +290,7 @@ index 3444c19b0f..3e55033d3c 100644
          } catch (IOException ex) {
              throw new RuntimeException(ex);
          }
-@@ -499,20 +511,24 @@ public class CraftWorld implements World {
+@@ -499,20 +511,25 @@ public class CraftWorld implements World {
      @Override
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
@@ -304,7 +304,8 @@ index 3444c19b0f..3e55033d3c 100644
 +        // Paper - Optimize this method
 +        if (!generate) {
 +            net.minecraft.server.RegionFile file = world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(new ChunkCoordIntPair(x, z));
-+            if (file != null && file.getStatusIfCached(x, z) != ChunkStatus.FULL) {
++            ChunkStatus status;
++            if (file != null && (status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL) {
 +                return false;
 +            }
  
@@ -327,7 +328,7 @@ index 3444c19b0f..3e55033d3c 100644
      }
  
      @Override
-@@ -2163,21 +2179,20 @@ public class CraftWorld implements World {
+@@ -2163,21 +2180,20 @@ public class CraftWorld implements World {
  
      // Paper start
      private Chunk getChunkAtGen(int x, int z, boolean gen) {
