@@ -143,9 +143,10 @@ public class ActivationRange
             {
                 for ( int j1 = k; j1 <= l; ++j1 )
                 {
-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
+                    Chunk chunk = (Chunk) world.getChunkIfLoadedImmediately( i1, j1 );
+                    if ( chunk != null )
                     {
-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
+                        activateChunkEntities( chunk );
                     }
                 }
             }

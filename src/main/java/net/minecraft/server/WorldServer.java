@@ -91,7 +91,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
 
     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-        return this.chunkProvider.getChunkAt(x, z, false);
+        return this.chunkProvider.getChunkAtIfLoadedImmediately(x, z); // Paper
     }
 
     // Paper start - Asynchronous IO

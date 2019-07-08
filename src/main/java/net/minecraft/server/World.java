@@ -104,6 +104,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         return (CraftServer) Bukkit.getServer();
     }
 
+    // Paper start
+    @Override
+    public boolean isChunkLoaded(int x, int z) {
+        return ((WorldServer)this).getChunkIfLoaded(x, z) != null;
+    }
+    // Paper end
+
     public ResourceKey<DimensionManager> getTypeKey() {
         return typeKey;
     }
@@ -998,14 +1005,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     }
 
     public boolean p(BlockPosition blockposition) {
-        return isOutsideWorld(blockposition) ? false : this.getChunkProvider().b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+        return isOutsideWorld(blockposition) ? false : isChunkLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
     }
 
     public boolean a(BlockPosition blockposition, Entity entity, EnumDirection enumdirection) {
         if (isOutsideWorld(blockposition)) {
             return false;
         } else {
-            IChunkAccess ichunkaccess = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
+            IChunkAccess ichunkaccess = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
 
             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity, enumdirection);
         }
@@ -1126,7 +1133,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
         for (int i1 = i; i1 < j; ++i1) {
             for (int j1 = k; j1 < l; ++j1) {
-                Chunk chunk = ichunkprovider.a(i1, j1);
+                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
 
                 if (chunk != null) {
                     chunk.a(oclass, axisalignedbb, list, predicate);
