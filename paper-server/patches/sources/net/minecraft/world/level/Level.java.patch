@@ -69,7 +69,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -121,23 +145,74 @@
+@@ -121,23 +145,81 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -114,6 +114,13 @@
 +    public CraftServer getCraftServer() {
 +        return (CraftServer) Bukkit.getServer();
 +    }
++    // Paper start - Use getChunkIfLoadedImmediately
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
++    }
++    // Paper end - Use getChunkIfLoadedImmediately
++
 +
 +    public abstract ResourceKey<LevelStem> getTypeKey();
 +
@@ -153,7 +160,7 @@
                  }
              };
          } else {
-@@ -145,13 +220,90 @@
+@@ -145,13 +227,90 @@
          }
  
          this.thread = Thread.currentThread();
@@ -249,7 +256,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -163,6 +315,13 @@
+@@ -163,6 +322,13 @@
          return null;
      }
  
@@ -263,7 +270,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +338,73 @@
+@@ -179,18 +345,73 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -281,7 +288,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-     @Override
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -334,13 +341,13 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-+    @Override
+     @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +421,18 @@
+@@ -207,6 +428,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -359,7 +366,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,44 +440,124 @@
+@@ -214,45 +447,125 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -444,10 +451,10 @@
 +                // CraftBukkit end
 +
                  return true;
-+            }
-+        }
-+    }
-+
+             }
+         }
+     }
+ 
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
 +    public void notifyAndUpdatePhysics(BlockPos blockposition, LevelChunk chunk, BlockState oldBlock, BlockState newBlock, BlockState actualBlock, int i, int j) {
 +        BlockState iblockdata = newBlock;
@@ -486,20 +493,21 @@
 +                // CraftBukkit end
 +                iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
 +                iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
-             }
++            }
 +
 +            // CraftBukkit start - SPIGOT-5710
 +            if (!this.preventPoiUpdated) {
 +                this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
 +            }
 +            // CraftBukkit end
-         }
-     }
++        }
++    }
 +    // CraftBukkit end
- 
++
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
-@@ -270,9 +576,26 @@
+     @Override
+@@ -270,9 +583,26 @@
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
@@ -528,7 +536,7 @@
              }
  
              if (drop) {
-@@ -340,10 +663,18 @@
+@@ -340,10 +670,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -548,7 +556,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,34 +777,53 @@
+@@ -446,34 +784,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -600,18 +608,18 @@
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
          }
-     }
++    }
 +    // Paper start - Option to prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
 +        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
 +        return LevelAccessor.super.noCollision(entity, box);
-+    }
+     }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +860,32 @@
+@@ -510,13 +867,32 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -645,7 +653,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +1012,7 @@
+@@ -643,7 +1019,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -654,7 +662,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1281,7 @@
+@@ -912,7 +1288,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
