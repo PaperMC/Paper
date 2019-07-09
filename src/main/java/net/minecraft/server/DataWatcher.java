@@ -21,8 +21,8 @@ public class DataWatcher {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Map<Class<? extends Entity>, Integer> b = Maps.newHashMap();
     private final Entity entity;
-    private final Map<Integer, DataWatcher.Item<?>> entries = Maps.newHashMap();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<DataWatcher.Item<?>> entries = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(); // Spigot - use better map // PAIL
+    // private final ReadWriteLock lock = new ReentrantReadWriteLock(); // Spigot - not required
     private boolean f = true;
     private boolean g;
 
@@ -70,7 +70,9 @@ public class DataWatcher {
         }
     }
 
+    boolean registrationLocked; // Spigot
     public <T> void register(DataWatcherObject<T> datawatcherobject, T t0) {
+        if (this.registrationLocked) throw new IllegalStateException("Registering datawatcher object after entity initialization"); // Spigot
         int i = datawatcherobject.a();
 
         if (i > 254) {
@@ -87,13 +89,15 @@ public class DataWatcher {
     private <T> void registerObject(DataWatcherObject<T> datawatcherobject, T t0) {
         DataWatcher.Item<T> datawatcher_item = new DataWatcher.Item<>(datawatcherobject, t0);
 
-        this.lock.writeLock().lock();
+        // this.lock.writeLock().lock(); // Spigot - not required
         this.entries.put(datawatcherobject.a(), datawatcher_item);
         this.f = false;
-        this.lock.writeLock().unlock();
+        // this.lock.writeLock().unlock(); // Spigot - not required
     }
 
     private <T> DataWatcher.Item<T> b(DataWatcherObject<T> datawatcherobject) {
+        // Spigot start
+        /*
         this.lock.readLock().lock();
 
         DataWatcher.Item datawatcher_item;
@@ -111,6 +115,9 @@ public class DataWatcher {
         }
 
         return datawatcher_item;
+        */
+        return (DataWatcher.Item) this.entries.get(datawatcherobject.a());
+        // Spigot end
     }
 
     public <T> T get(DataWatcherObject<T> datawatcherobject) {
@@ -157,7 +164,7 @@ public class DataWatcher {
         List<DataWatcher.Item<?>> list = null;
 
         if (this.g) {
-            this.lock.readLock().lock();
+            // this.lock.readLock().lock(); // Spigot - not required
             Iterator iterator = this.entries.values().iterator();
 
             while (iterator.hasNext()) {
@@ -173,7 +180,7 @@ public class DataWatcher {
                 }
             }
 
-            this.lock.readLock().unlock();
+            // this.lock.readLock().unlock(); // Spigot - not required
         }
 
         this.g = false;
@@ -184,7 +191,7 @@ public class DataWatcher {
     public List<DataWatcher.Item<?>> c() {
         List<DataWatcher.Item<?>> list = null;
 
-        this.lock.readLock().lock();
+        // this.lock.readLock().lock(); // Spigot - not required
 
         DataWatcher.Item datawatcher_item;
 
@@ -195,7 +202,7 @@ public class DataWatcher {
             }
         }
 
-        this.lock.readLock().unlock();
+        // this.lock.readLock().unlock(); // Spigot - not required
         return list;
     }
 
@@ -246,7 +253,7 @@ public class DataWatcher {
 
     public void e() {
         this.g = false;
-        this.lock.readLock().lock();
+        // this.lock.readLock().lock(); // Spigot - not required
         Iterator iterator = this.entries.values().iterator();
 
         while (iterator.hasNext()) {
@@ -255,7 +262,7 @@ public class DataWatcher {
             datawatcher_item.a(false);
         }
 
-        this.lock.readLock().unlock();
+        // this.lock.readLock().unlock(); // Spigot - not required
     }
 
     public static class Item<T> {
