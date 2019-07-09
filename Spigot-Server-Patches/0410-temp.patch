@@ -1,0 +1,278 @@
+From 514a6a58565136992b774b709b38c6a3cd9bc797 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 10 Jul 2019 02:56:08 -0700
+Subject: [PATCH] temp
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
+index 21b9301b8e..e01045dfbf 100644
+--- a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
++++ b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
+@@ -469,6 +469,11 @@ public final class ConcreteFileIOThread extends QueueExecutorThread<PrioritizedT
+             this.taskController = taskController;
+         }
+ 
++        @Override
++        public String toString() {
++            return "Task for world " + this.world.getWorld().getName() + " at " + this.x + ", " + this.z + " poi: " + (this.taskController == this.world.poiDataController);
++        }
++
+         /*
+          *
+          * IO thread will perform reads before writes
+@@ -489,7 +494,7 @@ public final class ConcreteFileIOThread extends QueueExecutorThread<PrioritizedT
+ 
+         void reschedule(final int priority) {
+             // priority is checked before this stage
+-            this.queue = null;
++            this.queue.lazySet(null);
+             this.inProgressWrite.wrote = new CompletableFuture<>(); // Hack
+             this.priority.lazySet(priority);
+             ConcreteFileIOThread.Holder.INSTANCE.queueTask(this);
+@@ -585,7 +590,7 @@ public final class ConcreteFileIOThread extends QueueExecutorThread<PrioritizedT
+                             returnFailWrite[0] = true;
+                         }
+                         // Hack start
+-                        valueInMap.inProgressWrite.wrote.complete(null);
++                        valueInMap.inProgressWrite.wrote.complete(ConcreteFileIOThread.FAILURE_VALUE);
+                         return valueInMap;
+                     }
+                     if (valueInMap.inProgressWrite.writeCounter == writeCounter) {
+diff --git a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
+index ddf5935dd3..28ac6b76f0 100644
+--- a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
++++ b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
+@@ -3,6 +3,7 @@ package com.destroystokyo.paper.io;
+ import java.util.concurrent.ConcurrentLinkedQueue;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicReference;
+ 
+ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask> {
+ 
+@@ -116,7 +117,7 @@ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask
+ 
+     public abstract static class PrioritizedTask {
+ 
+-        protected PrioritizedTaskQueue queue;
++        protected final AtomicReference<PrioritizedTaskQueue> queue = new AtomicReference<>();
+ 
+         protected final AtomicInteger priority;
+ 
+@@ -149,7 +150,7 @@ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask
+                     return curr;
+                 }
+ 
+-                if (curr == (curr = this.compareAndExchangePriorityVolatile(curr, minPriority))) {
++                if (curr == (curr = this.compareAndExchangePriorityVolatile(curr, COMPLETING_PRIORITY))) {
+                     return curr;
+                 }
+                 continue;
+@@ -174,7 +175,7 @@ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask
+                 throw new IllegalArgumentException("Invalid priority");
+             }
+ 
+-            final PrioritizedTaskQueue queue = this.queue;
++            final PrioritizedTaskQueue queue = this.queue.get();
+ 
+             if (queue == null) {
+                 throw new IllegalStateException("Not queued");
+@@ -207,7 +208,7 @@ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask
+                 throw new IllegalArgumentException("Invalid priority");
+             }
+ 
+-            final PrioritizedTaskQueue queue = this.queue;
++            final PrioritizedTaskQueue queue = this.queue.get();
+ 
+             if (queue == null) {
+                 throw new IllegalStateException("Not queued");
+@@ -231,10 +232,9 @@ public class PrioritizedTaskQueue<T extends PrioritizedTaskQueue.PrioritizedTask
+         }
+ 
+         void onQueue(final PrioritizedTaskQueue queue) {
+-            if (this.queue != null) {
++            if (this.queue.getAndSet(queue) != null) {
+                 throw new IllegalStateException("Already queued!");
+             }
+-            this.queue = queue;
+         }
+ 
+         /* priority */
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index b2dd48c4c9..f29a0532d7 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -309,7 +309,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         shouldSave = ((Chunk) ichunkaccess).lastSaved + world.paperConfig.autoSavePeriod <= world.getTime();
+                     }
+ 
+-                    if (shouldSave && this.saveChunk(ichunkaccess)) {
++                    if (shouldSave && this.saveChunk(ichunkaccess, true)) { // Paper - async chunk io
+                         ++savedThisTick;
+                     playerchunk.m();
+                 }
+@@ -387,7 +387,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         ((Chunk) ichunkaccess).setLoaded(false);
+                     }
+ 
+-                    this.saveChunk(ichunkaccess);
++                    this.saveChunk(ichunkaccess, true); // Paper - async chunk io
+                     if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
+                         Chunk chunk = (Chunk) ichunkaccess;
+ 
+@@ -721,11 +721,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     // Paper start - async chunk io
+-    private boolean writeDataAsync(ChunkCoordIntPair chunkPos, NBTTagCompound poiData, NBTTagCompound chunkData, boolean wait) {
++    private boolean writeDataAsync(ChunkCoordIntPair chunkPos, NBTTagCompound poiData, NBTTagCompound chunkData, boolean async) {
+         com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkPos.x, chunkPos.z,
+-            poiData, chunkData, wait ? com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY : com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
++            poiData, chunkData, !async ? com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY : com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
+ 
+-        if (!wait) {
++        if (async) {
+             return true;
+         }
+         Boolean successPoi = com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE.waitForIOToComplete(this.world, chunkPos.x, chunkPos.z, true, true);
+@@ -742,9 +742,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     // Paper end
+ 
+     public boolean saveChunk(IChunkAccess ichunkaccess) {
++        // Paper start - async param
+         return this.saveChunk(ichunkaccess, false);
+     }
+-    public boolean saveChunk(IChunkAccess ichunkaccess, boolean async) { // TODO
++    public boolean saveChunk(IChunkAccess ichunkaccess, boolean async) {
++        // Paper end
+         NBTTagCompound poiData = this.n.getData(ichunkaccess.getPos()); // Paper
+         //this.n.a(ichunkaccess.getPos()); // Delay
+         if (!ichunkaccess.isNeedsSaving()) {
+@@ -762,7 +764,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+                 if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
+                     // Paper start - Optimize save by using status cache
+-                    ChunkStatus statusOnDisk = this.getRegionFile(ichunkaccess.getPos(), false).getStatus(ichunkaccess.getPos().x, ichunkaccess.getPos().z, this);
++                    ChunkStatus statusOnDisk = this.getChunkStatus(chunkcoordintpair, true); // Paper - Async chunk io
+                     if (statusOnDisk != null && statusOnDisk.getType() == ChunkStatus.Type.LEVELCHUNK) {
+                         // Paper end
+                         this.writeDataAsync(ichunkaccess.getPos(), poiData, null, async); // Paper - Async chunk io
+@@ -777,8 +779,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+                 nbttagcompound = ChunkRegionLoader.saveChunk(this.world, ichunkaccess);
+                 return this.writeDataAsync(ichunkaccess.getPos(), poiData, nbttagcompound, async); // Paper - Async chunk io
+-                //return true; // Paper - delay
+-
++                //return true; // Paper
+             } catch (Exception exception) {
+                 PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
+                 com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
+@@ -883,6 +884,26 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         }
+         super.write(chunkcoordintpair, nbttagcompound);
+     }
++
++    public ChunkStatus getChunkStatus(ChunkCoordIntPair chunkPos, boolean load) throws IOException {
++        synchronized (this) {
++            // we enter a synchronized block here so that we do not potentially use a closed regionfile
++            RegionFile regionFile = this.getRegionFile(chunkPos, false);
++            ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
++
++            if (!load || status != null) {
++                return status;
++            }
++
++            // at this stage we need to load chunk data, however it's best we do that outside of the synchronized block
++        }
++
++        NBTTagCompound compound = this.readChunkData(chunkPos);
++
++        // In order to avoid a race condition where a regionfile is re-loaded concurrently we directly use the status in
++        // the returned compound. readChunkData will update the regionfile
++        return compound == null ? null : ChunkRegionLoader.getStatus(compound);
++    }
+     // Paper end
+ 
+     @Nullable
+@@ -899,8 +920,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             return null;
+         }
+ 
+-        this.getRegionFile(chunkcoordintpair, false).setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound));
+-
++        synchronized (this) { // Async chunk io - Synchronize so we do not potentially get and use a closed region file
++            this.getRegionFile(chunkcoordintpair, false).setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound));
++        }
+         return nbttagcompound;
+         // Paper end
+     }
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index c6c28700b1..2f10152404 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -55,20 +55,7 @@ public class RegionFile implements AutoCloseable {
+     }
+ 
+     public ChunkStatus getStatus(int x, int z, PlayerChunkMap playerChunkMap) throws IOException {
+-        if (this.closed) {
+-            // We've used an invalid region file.
+-            throw new java.io.EOFException("RegionFile is closed");
+-        }
+-        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
+-        int location = this.getChunkLocation(chunkPos);
+-        ChunkStatus cached = this.statuses[location];
+-        if (cached != null) {
+-            return cached;
+-        }
+-
+-        playerChunkMap.readChunkData(chunkPos); // This will set our status (yes it's disgusting)
+-
+-        return this.statuses[location];
++        return playerChunkMap.getChunkStatus(new ChunkCoordIntPair(x, z), true);
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
+index f0232060ad..7a26139b4b 100644
+--- a/src/main/java/net/minecraft/server/RegionFileSection.java
++++ b/src/main/java/net/minecraft/server/RegionFileSection.java
+@@ -24,7 +24,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     private final Long2ObjectMap<Optional<R>> b = new Long2ObjectOpenHashMap();
+-    private final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet();
++    protected final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet(); // Paper
+     private final BiFunction<Runnable, Dynamic<?>, R> e;
+     private final Function<Runnable, R> f;
+     private final DataFixer g;
+diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
+index beb320fd06..6474702cc1 100644
+--- a/src/main/java/net/minecraft/server/VillagePlace.java
++++ b/src/main/java/net/minecraft/server/VillagePlace.java
+@@ -136,8 +136,21 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+ 
+     @Override
+     public void a(BooleanSupplier booleansupplier) {
+-        super.a(booleansupplier);
+-        this.a.a();
++        // Paper start - async chunk io
++        if (this.world == null) {
++            super.a(booleansupplier);
++        } else {
++            //super.a(booleansupplier); // re-implement below
++            while (!((RegionFileSection)this).d.isEmpty() && booleansupplier.getAsBoolean()) {
++                ChunkCoordIntPair chunkcoordintpair = SectionPosition.a(((RegionFileSection)this).d.firstLong()).u();
++
++                NBTTagCompound data = this.getData(chunkcoordintpair);
++                com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
++                    chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
++            }
++        }
++        // Paper end
++            this.a.a();
+     }
+ 
+     @Override
+-- 
+2.22.0
+
