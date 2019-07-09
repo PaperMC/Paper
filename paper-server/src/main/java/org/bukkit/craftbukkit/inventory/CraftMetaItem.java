@@ -41,6 +41,7 @@ import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumItemSlot;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
+import net.minecraft.server.ItemBlock;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTCompressedStreamTools;
 import net.minecraft.server.NBTTagCompound;
@@ -263,7 +264,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private IChatBaseComponent locName;
     private List<IChatBaseComponent> lore;
     private Integer customModelData;
-    private String blockData;
+    private NBTTagCompound blockData;
     private Map<Enchantment, Integer> enchantments;
     private Multimap<Attribute, AttributeModifier> attributeModifiers;
     private int repairCost;
@@ -356,8 +357,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         if (tag.hasKeyOfType(CUSTOM_MODEL_DATA.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
             customModelData = tag.getInt(CUSTOM_MODEL_DATA.NBT);
         }
-        if (tag.hasKeyOfType(BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
-            blockData = tag.getString(BLOCK_DATA.NBT);
+        if (tag.hasKeyOfType(BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+            blockData = tag.getCompound(BLOCK_DATA.NBT);
         }
 
         this.enchantments = buildEnchantments(tag, ENCHANTMENTS);
@@ -484,9 +485,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             setCustomModelData(customModelData);
         }
 
-        String blockData = SerializableMeta.getObject(String.class, map, BLOCK_DATA.BUKKIT, true);
+        Map blockData = SerializableMeta.getObject(Map.class, map, BLOCK_DATA.BUKKIT, true);
         if (blockData != null) {
-            this.blockData = blockData;
+            this.blockData = (NBTTagCompound) CraftNBTTagConfigSerializer.deserialize(blockData);
         }
 
         enchantments = buildEnchantments(map, ENCHANTMENTS);
@@ -627,7 +628,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (hasBlockData()) {
-            itemTag.setString(BLOCK_DATA.NBT, blockData);
+            itemTag.set(BLOCK_DATA.NBT, blockData);
         }
 
         if (hideFlag != 0) {
@@ -919,7 +920,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public BlockData getBlockData(Material material) {
-        return CraftBlockData.newData(material, '[' + blockData + ']');
+        return CraftBlockData.fromData(ItemBlock.getBlockState(CraftMagicNumbers.getBlock(material).getBlockData(), blockData));
     }
 
     @Override
@@ -1225,7 +1226,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             builder.put(CUSTOM_MODEL_DATA.BUKKIT, customModelData);
         }
         if (hasBlockData()) {
-            builder.put(BLOCK_DATA.BUKKIT, blockData);
+            builder.put(BLOCK_DATA.BUKKIT, CraftNBTTagConfigSerializer.serialize(blockData));
         }
 
         serializeEnchantments(enchantments, builder, ENCHANTMENTS);

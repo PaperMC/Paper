@@ -22,6 +22,7 @@ import net.minecraft.server.IBlockData;
 import net.minecraft.server.IBlockState;
 import net.minecraft.server.INamable;
 import net.minecraft.server.IRegistry;
+import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -275,8 +276,16 @@ public class CraftBlockData implements BlockData {
         return stateString.toString();
     }
 
-    public String toStates() {
-        return ((BlockDataAbstract) state).getStateMap().entrySet().stream().map(BlockDataAbstract.STATE_TO_VALUE).collect(Collectors.joining(",")).toString();
+    public NBTTagCompound toStates() {
+        NBTTagCompound compound = new NBTTagCompound();
+
+        for (Map.Entry<IBlockState<?>, Comparable<?>> entry : state.getStateMap().entrySet()) {
+            IBlockState iblockstate = (IBlockState) entry.getKey();
+
+            compound.setString(iblockstate.a(), iblockstate.a(entry.getValue()));
+        }
+
+        return compound;
     }
 
     @Override
