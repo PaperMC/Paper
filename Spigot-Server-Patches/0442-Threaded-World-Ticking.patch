@@ -1,0 +1,444 @@
+From a722e4649f9bb0de59df0faeb1663df83326e7d7 Mon Sep 17 00:00:00 2001
+From: cryptite <cryptite@gmail.com>
+Date: Tue, 9 Jul 2019 12:07:27 -0500
+Subject: [PATCH] Threaded World Ticking
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8db5c6a3..0021fe86 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
++
+ import java.awt.GraphicsEnvironment;
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+@@ -43,21 +44,17 @@ import java.util.Queue;
+ import java.util.Random;
+ import java.util.Set;
+ import java.util.UUID;
+-import java.util.concurrent.Callable;
+-import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.ExecutionException;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.FutureTask;
+-import java.util.concurrent.TimeUnit;
+-import java.util.concurrent.TimeoutException;
++import java.util.concurrent.*;
+ import java.util.function.BooleanSupplier;
+ import javax.annotation.Nullable;
+ import javax.imageio.ImageIO;
++
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ // CraftBukkit start
+ import joptsimple.OptionSet;
++import org.apache.logging.log4j.core.util.ExecutorServices;
+ import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.Main;
+@@ -156,10 +153,12 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     public static final int TPS = 20;
+     public static final int TICK_TIME = 1000000000 / TPS;
+     private static final int SAMPLE_INTERVAL = 20; // Paper
+-    public final double[] recentTps = new double[ 3 ];
++    public final double[] recentTps = new double[3];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
+ 
++    private ExecutorService worldTickExecutor = Executors.newFixedThreadPool(3);
++
+     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache) {
+         SERVER = this; // Paper - better singleton
+         this.commandDispatcher = commanddispatcher; // CraftBukkit
+@@ -231,7 +230,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             this.getConvertable().convert(s, new IProgressUpdate() {
+                 private long b = SystemUtils.getMonotonicMillis();
+ 
+-                public void a(IChatBaseComponent ichatbasecomponent) {}
++                public void a(IChatBaseComponent ichatbasecomponent) {
++                }
+ 
+                 public void a(int i) {
+                     if (SystemUtils.getMonotonicMillis() - this.b >= 1000L) {
+@@ -241,7 +241,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+                 }
+ 
+-                public void c(IChatBaseComponent ichatbasecomponent) {}
++                public void c(IChatBaseComponent ichatbasecomponent) {
++                }
+             });
+         }
+ 
+@@ -458,11 +459,11 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         if (!mcMeta.exists()) {
+             try {
+                 com.google.common.io.Files.write("{\n"
+-                        + "    \"pack\": {\n"
+-                        + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
+-                        + "        \"pack_format\": 1\n"
+-                        + "    }\n"
+-                        + "}", mcMeta, com.google.common.base.Charsets.UTF_8);
++                    + "    \"pack\": {\n"
++                    + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
++                    + "        \"pack_format\": 1\n"
++                    + "    }\n"
++                    + "}", mcMeta, com.google.common.base.Charsets.UTF_8);
+             } catch (IOException ex) {
+                 throw new RuntimeException("Could not initialize Bukkit datapack", ex);
+             }
+@@ -507,7 +508,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             }
+ 
+             BlockPosition blockposition = worldserver.getSpawn();
+-            List<ChunkCoordIntPair> list = worldserver.getChunkProvider().getSpiralOutChunks(blockposition,  worldserver.paperConfig.keepLoadedRange >> 4); // Paper
++            List<ChunkCoordIntPair> list = worldserver.getChunkProvider().getSpiralOutChunks(blockposition, worldserver.paperConfig.keepLoadedRange >> 4); // Paper
+             Set<ChunkCoordIntPair> set = Sets.newConcurrentHashSet();
+ 
+             // Paper - remove arraylist creation, call spiral above
+@@ -538,7 +539,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                     }
+                 }
+ 
+-                if (waitForChunks) this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
++                if (waitForChunks)
++                    this.a(new ChatMessage("menu.preparingSpawn", new Object[0]), set.size() * 100 / expected); // Paper
+             }
+         }
+ 
+@@ -558,7 +560,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                 LongIterator longiterator = forcedchunk.a().iterator();
+ 
+                 while (longiterator.hasNext()) {
+-                    this.a(new ChatMessage("menu.loadingForcedChunks", new Object[] { dimensionmanager}), forcedchunk.a().size() * 100 / 625);
++                    this.a(new ChatMessage("menu.loadingForcedChunks", new Object[]{dimensionmanager}), forcedchunk.a().size() * 100 / 625);
+                     long k = longiterator.nextLong();
+                     ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k);
+ 
+@@ -639,7 +641,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+     public void stop() throws ExceptionWorldConflict { // CraftBukkit - added throws
+         // CraftBukkit start - prevent double stopping on multiple threads
+-        synchronized(stopLock) {
++        synchronized (stopLock) {
+             if (hasStopped) return;
+             hasStopped = true;
+         }
+@@ -660,7 +662,10 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             MinecraftServer.LOGGER.info("Saving players");
+             this.playerList.savePlayers();
+             this.playerList.u(isRestarting); // Paper
+-            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
++            try {
++                Thread.sleep(100);
++            } catch (InterruptedException ex) {
++            } // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+         }
+ 
+         MinecraftServer.LOGGER.info("Saving worlds");
+@@ -725,9 +730,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     }
+ 
+     // Spigot Start
+-    private static double calcTps(double avg, double exp, double tps)
+-    {
+-        return ( avg * exp ) + ( tps * ( 1 - exp ) );
++    private static double calcTps(double avg, double exp, double tps) {
++        return (avg * exp) + (tps * (1 - exp));
+     }
+ 
+     // Paper start - Further improve server tick loop
+@@ -762,6 +766,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         private static java.math.BigDecimal dec(long t) {
+             return new java.math.BigDecimal(t);
+         }
++
+         public void add(java.math.BigDecimal x, long t) {
+             time -= times[index];
+             total = total.subtract(samples[index].multiply(dec(times[index])));
+@@ -778,6 +783,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
+         }
+     }
++
+     private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
+     // Paper End
+     // Spigot End
+@@ -792,7 +798,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+                 // Spigot start
+                 org.spigotmc.WatchdogThread.hasStarted = true; // Paper
+-                Arrays.fill( recentTps, 20 );
++                Arrays.fill(recentTps, 20);
+                 long start = System.nanoTime(), curTime, wait, tickSection = start; // Paper - Further improve server tick loop
+                 lastTick = start - TICK_TIME; // Paper
+                 while (this.isRunning) {
+@@ -817,8 +823,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                     }
+ 
+                     catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
+-                    if ( ++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0 )
+-                    {
++                    if (++MinecraftServer.currentTick % SAMPLE_INTERVAL == 0) {
+                         final long diff = curTime - tickSection;
+                         java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
+                         tps1.add(currentTps, diff);
+@@ -845,9 +850,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         } catch (Throwable throwable) {
+             MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
+             // Spigot Start
+-            if ( throwable.getCause() != null )
+-            {
+-                MinecraftServer.LOGGER.error( "\tCause of unexpected exception was", throwable.getCause() );
++            if (throwable.getCause() != null) {
++                MinecraftServer.LOGGER.error("\tCause of unexpected exception was", throwable.getCause());
+             }
+             // Spigot End
+             CrashReport crashreport;
+@@ -920,15 +924,18 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         return new File(".");
+     }
+ 
+-    protected void a(CrashReport crashreport) {}
++    protected void a(CrashReport crashreport) {
++    }
+ 
+-    public void t() {}
++    public void t() {
++    }
+ 
+     protected void a(BooleanSupplier booleansupplier) {
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
+         this.slackActivityAccountant.tickStarted(); // Spigot
+-        long i = SystemUtils.getMonotonicNanos(); long startTime = i; // Paper
+-        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.ticks+1).callEvent(); // Paper
++        long i = SystemUtils.getMonotonicNanos();
++        long startTime = i; // Paper
++        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.ticks + 1).callEvent(); // Paper
+ 
+         ++this.ticks;
+         if (this.S) {
+@@ -952,7 +959,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             this.m.b().a(agameprofile);
+         }
+ 
+-            this.methodProfiler.enter("save");
++        this.methodProfiler.enter("save");
+ 
+         serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
+         int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
+@@ -964,17 +971,18 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             // Spigot Start
+         } // Paper - Incremental Auto Saving
+ 
+-            // We replace this with saving each individual world as this.saveChunks(...) is broken,
+-            // and causes the main thread to sleep for random amounts of time depending on chunk activity
+-            // Also pass flag to only save modified chunks
+-            server.playerCommandState = true;
+-            for (World world : getWorlds()) {
+-                if (world.paperConfig.autoSavePeriod > 0) world.getWorld().save(false); // Paper - Incremental / Configurable Auto Saving
+-            }
+-            server.playerCommandState = false;
+-            // this.saveChunks(true);
+-            // Spigot End
+-            this.methodProfiler.exit();
++        // We replace this with saving each individual world as this.saveChunks(...) is broken,
++        // and causes the main thread to sleep for random amounts of time depending on chunk activity
++        // Also pass flag to only save modified chunks
++        server.playerCommandState = true;
++        for (World world : getWorlds()) {
++            if (world.paperConfig.autoSavePeriod > 0)
++                world.getWorld().save(false); // Paper - Incremental / Configurable Auto Saving
++        }
++        server.playerCommandState = false;
++        // this.saveChunks(true);
++        // Spigot End
++        this.methodProfiler.exit();
+         //} // Paper - Incremental Auto Saving
+ 
+         this.methodProfiler.enter("snooper");
+@@ -1000,16 +1008,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         // Paper start
+         long endTime = System.nanoTime();
+         long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
+-        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.ticks, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.ticks, ((double) (endTime - lastTick) / 1000000D), remaining).callEvent();
+         // Paper end
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
+ 
+     public void b(BooleanSupplier booleansupplier) {
+-        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Paper
++//        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Paper
+         this.server.getScheduler().mainThreadHeartbeat(this.ticks); // CraftBukkit
+-        MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Paper
+-        MinecraftTimings.minecraftSchedulerTimer.startTiming(); // Paper
++//        MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Paper
++//        MinecraftTimings.minecraftSchedulerTimer.startTiming(); // Paper
+         this.methodProfiler.enter("jobs");
+ 
+         FutureTask futuretask;
+@@ -1018,27 +1026,27 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             SystemUtils.a(futuretask, MinecraftServer.LOGGER);
+         }
+         PaperAsyncChunkProvider.processMainThreadQueue(this); // Paper
+-        MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
++//        MinecraftTimings.minecraftSchedulerTimer.stopTiming(); // Paper
+ 
+         this.methodProfiler.exitEnter("commandFunctions");
+-        MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot
++//        MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot
+         this.getFunctionData().tick();
+-        MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot
++//        MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot
+         this.methodProfiler.exitEnter("levels");
+ 
+         // CraftBukkit start
+         // Run tasks that are waiting on processing
+-        MinecraftTimings.processQueueTimer.startTiming(); // Spigot
++//        MinecraftTimings.processQueueTimer.startTiming(); // Spigot
+         while (!processQueue.isEmpty()) {
+             processQueue.remove().run();
+         }
+-        MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
++//        MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
+ 
+-        MinecraftTimings.chunkIOTickTimer.startTiming(); // Spigot
++//        MinecraftTimings.chunkIOTickTimer.startTiming(); // Spigot
+         org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.tick();
+-        MinecraftTimings.chunkIOTickTimer.stopTiming(); // Spigot
++//        MinecraftTimings.chunkIOTickTimer.stopTiming(); // Spigot
+ 
+-        MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot
++//        MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot
+         // Send time updates to everyone, it will get the right time from the world the player is in.
+         // Paper start - optimize time updates
+         for (final WorldServer world : this.getWorlds()) {
+@@ -1060,26 +1068,15 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot
+ 
+-        // WorldServer worldserver; // CraftBukkit - dropped down
+-        long i;
+ 
+         // CraftBukkit - dropTickTime
+-        for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext();) {
+-             WorldServer worldserver = (WorldServer) iterator.next();
++        for (Iterator iterator = this.getWorlds().iterator(); iterator.hasNext(); ) {
++            WorldServer worldserver = (WorldServer) iterator.next();
+             PaperAsyncChunkProvider.processMainThreadQueue(worldserver); // Paper
+-            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
++            worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+-            i = SystemUtils.getMonotonicNanos();
+-            if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
+-                this.methodProfiler.a(() -> {
+-                    return "dim-" + worldserver.worldProvider.getDimensionManager().getDimensionID();
+-                });
+-                /* Drop global time updates
+-                if (this.ticks % 20 == 0) {
+-                    this.methodProfiler.enter("timeSync");
+-                    this.playerList.a((Packet) (new PacketPlayOutUpdateTime(worldserver.getTime(), worldserver.getDayTime(), worldserver.getGameRules().getBoolean("doDaylightCycle"))), worldserver.worldProvider.getDimensionManager());
+-                    this.methodProfiler.exit();
+-                }
++            if (worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
++                this.methodProfiler.a(() -> "dim-" + worldserver.worldProvider.getDimensionManager().getDimensionID());
+                 // CraftBukkit end */
+ 
+                 this.methodProfiler.enter("tick");
+@@ -1087,14 +1084,14 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                 CrashReport crashreport;
+ 
+                 try {
+-                    worldserver.timings.doTick.startTiming(); // Spigot
++//                    worldserver.timings.doTick.startTiming(); // Spigot
+                     worldserver.doTick(booleansupplier);
+-                    worldserver.timings.doTick.stopTiming(); // Spigot
++//                    worldserver.timings.doTick.stopTiming(); // Spigot
+                 } catch (Throwable throwable) {
+                     // Spigot Start
+                     try {
+-                    crashreport = CrashReport.a(throwable, "Exception ticking world");
+-                    } catch (Throwable t){
++                        crashreport = CrashReport.a(throwable, "Exception ticking world");
++                    } catch (Throwable t) {
+                         throw new RuntimeException("Error generating crash report", t);
+                     }
+                     // Spigot End
+@@ -1103,14 +1100,14 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+                 }
+ 
+                 try {
+-                    worldserver.timings.tickEntities.startTiming(); // Spigot
++//                    worldserver.timings.tickEntities.startTiming(); // Spigot
+                     worldserver.tickEntities();
+-                    worldserver.timings.tickEntities.stopTiming(); // Spigot
++//                    worldserver.timings.tickEntities.stopTiming(); // Spigot
+                 } catch (Throwable throwable1) {
+                     // Spigot Start
+                     try {
+-                    crashreport = CrashReport.a(throwable1, "Exception ticking world entities");
+-                    } catch (Throwable t){
++                        crashreport = CrashReport.a(throwable1, "Exception ticking world entities");
++                    } catch (Throwable t) {
+                         throw new RuntimeException("Error generating crash report", t);
+                     }
+                     // Spigot End
+@@ -1120,7 +1117,8 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+ 
+                 this.methodProfiler.exit();
+                 this.methodProfiler.enter("tracker");
+-                if (playerList.players.size() > 0) worldserver.getTracker().updatePlayers(); // Paper - No players, why spend time tracking them? (See patch)
++                if (!playerList.players.isEmpty()) //isEmpty is cheaper/better than size() > 0
++                    worldserver.getTracker().updatePlayers(); // Paper - No players, why spend time tracking them? (See patch)
+                 this.methodProfiler.exit();
+                 this.methodProfiler.exit();
+                 worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+@@ -1128,20 +1126,20 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         }
+ 
+         this.methodProfiler.exitEnter("connection");
+-        MinecraftTimings.connectionTimer.startTiming(); // Spigot
++//        MinecraftTimings.connectionTimer.startTiming(); // Spigot
+         this.getServerConnection().c();
+-        MinecraftTimings.connectionTimer.stopTiming(); // Spigot
++//        MinecraftTimings.connectionTimer.stopTiming(); // Spigot
+         this.methodProfiler.exitEnter("players");
+-        MinecraftTimings.playerListTimer.startTiming(); // Spigot
++//        MinecraftTimings.playerListTimer.startTiming(); // Spigot
+         this.playerList.tick();
+-        MinecraftTimings.playerListTimer.stopTiming(); // Spigot
++//        MinecraftTimings.playerListTimer.stopTiming(); // Spigot
+         this.methodProfiler.exitEnter("tickables");
+ 
+-        MinecraftTimings.tickablesTimer.startTiming(); // Spigot
++//        MinecraftTimings.tickablesTimer.startTiming(); // Spigot
+         for (int j = 0; j < this.k.size(); ++j) {
+-            ((ITickable) this.k.get(j)).tick();
++            this.k.get(j).tick();
+         }
+-        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot
++//        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot
+ 
+         this.methodProfiler.exit();
+     }
+@@ -1658,7 +1656,10 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         this.G = i;
+     }
+ 
+-    public MinecraftSessionService getSessionService() { return ap(); } // Paper - OBFHELPER
++    public MinecraftSessionService getSessionService() {
++        return ap();
++    } // Paper - OBFHELPER
++
+     public MinecraftSessionService ap() {
+         return this.V;
+     }
+-- 
+2.21.0.windows.1
+
