@@ -21,18 +21,52 @@
                      itemstack.subtract(1);
                      return EnumInteractionResult.SUCCESS;
                  }
-@@ -120,8 +125,15 @@
+@@ -89,6 +94,21 @@
+ 
+         if (nbttagcompound != null) {
+             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("BlockStateTag");
++            // CraftBukkit start
++            iblockdata1 = getBlockState(iblockdata1, nbttagcompound1);
++        }
++
++        if (iblockdata1 != iblockdata) {
++            world.setTypeAndData(blockposition, iblockdata1, 2);
++        }
++
++        return iblockdata1;
++    }
++
++    public static IBlockData getBlockState(IBlockData iblockdata, NBTTagCompound nbttagcompound1) {
++        IBlockData iblockdata1 = iblockdata;
++        {
++            // CraftBukkit end
+             BlockStateList<Block, IBlockData> blockstatelist = iblockdata.getBlock().getStates();
+             Iterator iterator = nbttagcompound1.getKeys().iterator();
+ 
+@@ -103,11 +123,6 @@
+                 }
+             }
+         }
+-
+-        if (iblockdata1 != iblockdata) {
+-            world.setTypeAndData(blockposition, iblockdata1, 2);
+-        }
+-
+         return iblockdata1;
+     }
+ 
+@@ -120,8 +135,15 @@
      protected boolean b(BlockActionContext blockactioncontext, IBlockData iblockdata) {
          EntityHuman entityhuman = blockactioncontext.getEntity();
          VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a((Entity) entityhuman);
 +        // CraftBukkit start - store default return
 +        boolean defaultReturn = (!this.d() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
 +        org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
- 
--        return (!this.d() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
++
 +        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
 +        blockactioncontext.getWorld().getServer().getPluginManager().callEvent(event);
-+
+ 
+-        return (!this.d() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
 +        return event.isBuildable();
 +        // CraftBukkit end
      }
