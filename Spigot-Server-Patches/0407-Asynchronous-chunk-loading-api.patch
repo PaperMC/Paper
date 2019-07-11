@@ -1,26 +1,29 @@
-From 35eff9738595f303d3f70b6decc6f592f46bf593 Mon Sep 17 00:00:00 2001
+From 6f561595fd1618b9521d5dd7502fb982922d3f60 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 8 Jul 2019 03:24:59 -0700
 Subject: [PATCH] Asynchronous chunk loading api
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 9bb711a9db..6762f3e13d 100644
+index 757b505eaf..4949456d25 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -174,10 +174,12 @@ public abstract class ChunkMapDistance {
-         this.e.b(i, this.a(objectsortedset), false);
+@@ -178,6 +178,7 @@ public abstract class ChunkMapDistance {
+         return removed; // CraftBukkit
      }
  
 +    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) { this.a(ticketType, chunkPos, ticketLevel, identifier); } // Paper - OBFHELPER
      public <T> void a(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-         this.a(chunkcoordintpair.pair(), new Ticket<>(tickettype, i, t0, this.currentTick));
+         // CraftBukkit start
+         this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
+@@ -187,6 +188,7 @@ public abstract class ChunkMapDistance {
+         // CraftBukkit end
      }
  
 +    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) { this.b(ticketType, chunkPos, ticketLevel, identifier); } // Paper - OBFHELPER
      public <T> void b(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-         Ticket<T> ticket = new Ticket<>(tickettype, i, t0, this.currentTick);
- 
+         // CraftBukkit start
+         this.removeTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 42b97ba86b..aa2c21a706 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -205,22 +208,22 @@ index d610253b95..18f218e971 100644
          return this.getOffset(chunkcoordintpair) != 0;
      }
 diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
-index 1ba85edd17..86ee494cc4 100644
+index 5acb0732c3..0ed2d2fbf9 100644
 --- a/src/main/java/net/minecraft/server/TicketType.java
 +++ b/src/main/java/net/minecraft/server/TicketType.java
-@@ -21,6 +21,7 @@ public class TicketType<T> {
-     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+@@ -22,6 +22,7 @@ public class TicketType<T> {
      public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = a("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // Craftbukkit
      public static final TicketType<Integer> ANTIXRAY = a("antixray", Integer::compareTo); // Paper - Anti-Xray
 +    public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
  
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3e55033d3c..c89d58c128 100644
+index ece1a68c16..703b33aec2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2197,16 +2197,17 @@ public class CraftWorld implements World {
+@@ -2283,16 +2283,17 @@ public class CraftWorld implements World {
  
      @Override
      public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
