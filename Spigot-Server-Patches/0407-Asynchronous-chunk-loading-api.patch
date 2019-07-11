@@ -1,14 +1,31 @@
-From e6c4fed8494c47a80a4fff995603c4f9aa750f47 Mon Sep 17 00:00:00 2001
+From c9b73a7666a2ab1a75c3c6e1aeec46c271270e59 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 8 Jul 2019 03:24:59 -0700
 Subject: [PATCH] Asynchronous chunk loading api
 
 
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 9bb711a9db..6762f3e13d 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -174,10 +174,12 @@ public abstract class ChunkMapDistance {
+         this.e.b(i, this.a(objectsortedset), false);
+     }
+ 
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) { this.a(ticketType, chunkPos, ticketLevel, identifier); } // Paper - OBFHELPER
+     public <T> void a(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
+         this.a(chunkcoordintpair.pair(), new Ticket<>(tickettype, i, t0, this.currentTick));
+     }
+ 
++    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) { this.b(ticketType, chunkPos, ticketLevel, identifier); } // Paper - OBFHELPER
+     public <T> void b(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
+         Ticket<T> ticket = new Ticket<>(tickettype, i, t0, this.currentTick);
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 42b97ba86b..e5f2360340 100644
+index 42b97ba86b..aa2c21a706 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -147,6 +147,137 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -147,6 +147,140 @@ public class ChunkProviderServer extends IChunkProvider {
          return playerChunk.getAvailableChunkNow();
  
      }
@@ -68,14 +85,20 @@ index 42b97ba86b..e5f2360340 100644
 +            this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
 +            return;
 +        } else {
-+            RegionFile file = this.world.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(chunkPos);
-+            ChunkStatus status = null;
-+            if (file != null) {
-+                if (!file.chunkExists(chunkPos) || ((status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL)) {
-+                    onComplete.accept(null); // cached status says not generated, or data does not exist on disk
-+                    return;
-+                }
++            RegionFile file;
++
++            try {
++                file = this.world.getChunkProvider().playerChunkMap.getRegionFile(chunkPos, false);
++            } catch (IOException ex) {
++                throw new RuntimeException(ex);
 +            }
++
++            ChunkStatus status;
++            if (!file.chunkExists(chunkPos) || ((status = file.getStatusIfCached(x, z)) != null && status != ChunkStatus.FULL)) {
++                onComplete.accept(null); // cached status says not generated, or data does not exist on disk
++                return;
++            }
++
 +
 +            if (status == ChunkStatus.FULL) {
 +                // at this stage we know it is fully generated, but is on disk
@@ -88,17 +111,6 @@ index 42b97ba86b..e5f2360340 100644
 +
 +        // here we don't know what status it is and we're not supposed to generate
 +        // so we asynchronously load empty status
-+
-+        try {
-+            // we'll be loading now, so make sure we try to load something off disk
-+            if (!this.world.getChunkProvider().playerChunkMap.getRegionFile(chunkPos, false).chunkExists(chunkPos)) {
-+                onComplete.accept(null);
-+                return;
-+            }
-+        } catch (IOException ex) {
-+            throw new RuntimeException(ex);
-+        }
-+
 +
 +        this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.EMPTY, (IChunkAccess chunk) -> {
 +            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
@@ -129,8 +141,8 @@ index 42b97ba86b..e5f2360340 100644
 +                throw new RuntimeException(throwable);
 +            }
 +
-+            this.removeTicket(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
-+            this.addTicket(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos); // allow unloading
++            this.removeTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
++            this.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos); // allow unloading
 +
 +            Optional<PlayerChunk.Failure> failure = either.right();
 +
@@ -143,26 +155,17 @@ index 42b97ba86b..e5f2360340 100644
 +
 +        }, this.serverThreadQueue);
 +    }
-     // Paper end
- 
-     @Nullable
-@@ -519,6 +650,16 @@ public class ChunkProviderServer extends IChunkProvider {
-         this.chunkMapDistance.removeTicket(tickettype, chunkcoordintpair, i, t0);
-     }
- 
-+    // Paper start
-+    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
 +
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
++        this.chunkMapDistance.addTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
 +    }
 +
 +    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
-+
++        this.chunkMapDistance.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
 +    }
-+    // Paper end
-+
-     @Override
-     public void a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
-         this.chunkMapDistance.a(chunkcoordintpair, flag);
+     // Paper end
+ 
+     @Nullable
 diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
 index e324989b46..abb0d69d2f 100644
 --- a/src/main/java/net/minecraft/server/ChunkStatus.java
