@@ -1,4 +1,4 @@
-From 4c1669165ff4dc1dfe881f4120662e89d5eb2ec8 Mon Sep 17 00:00:00 2001
+From 5b2410adc02b577c2b5c152715c14420213df7c1 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Tue, 9 Jul 2019 03:38:23 -0700
 Subject: [PATCH] Asynchronous chunk IO
@@ -6,15 +6,17 @@ Subject: [PATCH] Asynchronous chunk IO
 
 diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 new file mode 100644
-index 0000000000..78a07bb90c
+index 0000000000..c23991e6bb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
-@@ -0,0 +1,616 @@
+@@ -0,0 +1,642 @@
 +package com.destroystokyo.paper.io;
 +
++import net.minecraft.server.ChunkCoordIntPair;
 +import net.minecraft.server.ExceptionWorldConflict;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NBTTagCompound;
++import net.minecraft.server.RegionFile;
 +import net.minecraft.server.WorldServer;
 +import org.apache.logging.log4j.Logger;
 +
@@ -23,6 +25,7 @@ index 0000000000..78a07bb90c
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.atomic.AtomicLong;
 +import java.util.function.Consumer;
++import java.util.function.Function;
 +
 +/**
 + * Prioritized singleton thread responsible for all chunk IO that occurs in a minecraft server.
@@ -43,7 +46,7 @@ index 0000000000..78a07bb90c
 + *
 + * @see Holder#INSTANCE
 + * @see #scheduleSave(WorldServer, int, int, NBTTagCompound, NBTTagCompound, int)
-+ * @see #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean)
++ * @see #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean, boolean)
 + */
 +public final class ConcreteFileIOThread extends QueueExecutorThread<PrioritizedTaskQueue.PrioritizedTask> {
 +
@@ -260,7 +263,7 @@ index 0000000000..78a07bb90c
 +    }
 +
 +    /**
-+     * Same as {@link #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean)}, except this function returns
++     * Same as {@link #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean, boolean)}, except this function returns
 +     * a {@link CompletableFuture} which is potentially completed <b>ASYNCHRONOUSLY ON THE FILE IO THREAD</b> when the load task
 +     * has completed.
 +     * <p>
@@ -268,9 +271,10 @@ index 0000000000..78a07bb90c
 +     * </p>
 +     */
 +    public CompletableFuture<ChunkData> loadChunkDataAsyncFuture(final WorldServer world, final int chunkX, final int chunkZ,
-+                                                                 final int priority, final boolean readPoiData, final boolean readChunkData) {
++                                                                 final int priority, final boolean readPoiData, final boolean readChunkData,
++                                                                 final boolean intendingToBlock) {
 +        final CompletableFuture<ChunkData> future = new CompletableFuture<>();
-+        this.loadChunkDataAsync(world, chunkX, chunkZ, priority, future::complete, readPoiData, readChunkData);
++        this.loadChunkDataAsync(world, chunkX, chunkZ, priority, future::complete, readPoiData, readChunkData, intendingToBlock);
 +        return future;
 +    }
 +
@@ -303,7 +307,8 @@ index 0000000000..78a07bb90c
 +     */
 +    public void loadChunkDataAsync(final WorldServer world, final int chunkX, final int chunkZ,
 +                                   final int priority, final Consumer<ChunkData> onComplete,
-+                                   final boolean readPoiData, final boolean readChunkData) {
++                                   final boolean readPoiData, final boolean readChunkData,
++                                   final boolean intendingToBlock) {
 +        if (!PrioritizedTaskQueue.validPriority(priority)) {
 +            throw new IllegalArgumentException("Invalid priority: " + priority);
 +        }
@@ -331,7 +336,7 @@ index 0000000000..78a07bb90c
 +                if (finished) {
 +                    onComplete.accept(complete);
 +                }
-+            }, priority);
++            }, priority, intendingToBlock);
 +        }
 +
 +        if (readChunkData) {
@@ -350,17 +355,35 @@ index 0000000000..78a07bb90c
 +                if (finished) {
 +                    onComplete.accept(complete);
 +                }
-+            }, priority);
++            }, priority, intendingToBlock);
 +        }
 +
 +    }
 +
 +    // Note: the onComplete may be called asynchronously or synchronously here.
 +    private void scheduleRead(final ChunkDataController dataController, final WorldServer world,
-+                              final int chunkX, final int chunkZ, final Consumer<NBTTagCompound> onComplete, final int priority) {
++                              final int chunkX, final int chunkZ, final Consumer<NBTTagCompound> onComplete, final int priority,
++                              final boolean intendingToBlock) {
++
++        Function<RegionFile, Boolean> tryLoadFunction = (final RegionFile file) -> {
++            if (file == null) {
++                return Boolean.TRUE;
++            }
++            return Boolean.valueOf(file.chunkExists(new ChunkCoordIntPair(chunkX, chunkZ)));
++        };
++
 +        dataController.tasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkDataTask running) -> {
 +            if (running == null) {
 +                // not scheduled
++
++                final Boolean shouldSchedule = intendingToBlock ? dataController.computeForRegionFile(chunkX, chunkZ, tryLoadFunction) :
++                    dataController.computeForRegionFileIfLoaded(chunkX, chunkZ, tryLoadFunction);
++
++                if (shouldSchedule == Boolean.FALSE) {
++                    // not on disk
++                    onComplete.accept(null);
++                    return null;
++                }
 +
 +                // set up task
 +                final ChunkDataTask newTask = new ChunkDataTask(priority, world, chunkX, chunkZ, dataController);
@@ -387,13 +410,13 @@ index 0000000000..78a07bb90c
 +    }
 +
 +    /**
-+     * Same as {@link #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean)}, except this function returns
++     * Same as {@link #loadChunkDataAsync(WorldServer, int, int, int, Consumer, boolean, boolean, boolean)}, except this function returns
 +     * the {@link ChunkData} associated with the specified chunk when the task is complete.
 +     * @return The chunk data, or {@code null} if the chunk failed to load.
 +     */
 +    public ChunkData loadChunkData(final WorldServer world, final int chunkX, final int chunkZ, final int priority,
 +                                   final boolean readPoiData, final boolean readChunkData) {
-+        return this.loadChunkDataAsyncFuture(world, chunkX, chunkZ, priority, readPoiData, readChunkData).join();
++        return this.loadChunkDataAsyncFuture(world, chunkX, chunkZ, priority, readPoiData, readChunkData, true).join();
 +    }
 +
 +    /**
@@ -448,6 +471,9 @@ index 0000000000..78a07bb90c
 +
 +        public abstract void writeData(final int x, final int z, final NBTTagCompound compound) throws IOException;
 +        public abstract NBTTagCompound readData(final int x, final int z) throws IOException;
++
++        public abstract <T> T computeForRegionFile(final int chunkX, final int chunkZ, final Function<RegionFile, T> function);
++        public abstract <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final Function<RegionFile, T> function);
 +
 +        public static final class InProgressWrite {
 +            public long writeCounter;
@@ -1201,7 +1227,7 @@ index 2b99fdc630..5cffe64b37 100644
  
      public String getServerIp() {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index f486331118..b5d93839ab 100644
+index f486331118..a5429c3807 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -57,7 +57,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -1293,7 +1319,7 @@ index f486331118..b5d93839ab 100644
 +
 +                    ret.complete(callable.apply(throwable != null ? null : chunkData, throwable));
 +                });
-+            }, true, true);
++            }, true, true, false);
 +        return ret;
 +        // Paper end
      }
@@ -1384,7 +1410,7 @@ index f486331118..b5d93839ab 100644
 +        if (Thread.currentThread() != com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE) {
 +            NBTTagCompound ret = com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE
 +                .loadChunkDataAsyncFuture(this.world, chunkcoordintpair.x, chunkcoordintpair.z, com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread(),
-+                    false, true).join().chunkData;
++                    false, true, true).join().chunkData;
 +
 +            if (ret == com.destroystokyo.paper.io.ConcreteFileIOThread.FAILURE_VALUE) {
 +                throw new IOException("See logs for further detail");
@@ -1418,7 +1444,7 @@ index f486331118..b5d93839ab 100644
 +            RegionFile regionFile = this.getRegionFile(chunkPos, false);
 +            ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
 +
-+            if (!load || status != null) {
++            if (!load || status != null || !regionFile.chunkExists(chunkPos)) {
 +                return status;
 +            }
 +
@@ -1623,7 +1649,7 @@ index bf533d62cf..246209c847 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index 48b9d3abbe..1d1bcfa707 100644
+index 48b9d3abbe..d66c2e52ba 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
 @@ -20,8 +20,16 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
@@ -1676,7 +1702,7 @@ index 48b9d3abbe..1d1bcfa707 100644
 +        if (this.world != null && Thread.currentThread() != com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE) {
 +            NBTTagCompound ret = com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE
 +                .loadChunkDataAsyncFuture(this.world, chunkcoordintpair.x, chunkcoordintpair.z, com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread(),
-+                    true, false).join().poiData;
++                    true, false, true).join().poiData;
 +
 +            if (ret == com.destroystokyo.paper.io.ConcreteFileIOThread.FAILURE_VALUE) {
 +                throw new java.io.IOException("See logs for further detail");
@@ -1709,10 +1735,18 @@ index 48b9d3abbe..1d1bcfa707 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c646393eb0..2ca43e281a 100644
+index c646393eb0..5c35fa34cf 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -75,6 +75,31 @@ public class WorldServer extends World {
+@@ -28,6 +28,7 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.Executor;
+ import java.util.function.BooleanSupplier;
++import java.util.function.Function;
+ import java.util.function.Predicate;
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+@@ -75,6 +76,78 @@ public class WorldServer extends World {
          return new Throwable(entity + " Added to world at " + new java.util.Date());
      }
  
@@ -1727,7 +1761,31 @@ index c646393eb0..2ca43e281a 100644
 +        public NBTTagCompound readData(int x, int z) throws java.io.IOException {
 +            return WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().read(new ChunkCoordIntPair(x, z));
 +        }
++
++        @Override
++        public <T> T computeForRegionFile(int chunkX, int chunkZ, Function<RegionFile, T> function) {
++            synchronized (WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace()) {
++                RegionFile file;
++
++                try {
++                    file = WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().getRegionFile(new ChunkCoordIntPair(chunkX, chunkZ), false);
++                } catch (java.io.IOException ex) {
++                    throw new RuntimeException(ex);
++                }
++
++                return function.apply(file);
++            }
++        }
++
++        @Override
++        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, Function<RegionFile, T> function) {
++            synchronized (WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace()) {
++                RegionFile file = WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().getRegionFileIfLoaded(new ChunkCoordIntPair(chunkX, chunkZ));
++                return function.apply(file);
++            }
++        }
 +    };
++
 +    public final com.destroystokyo.paper.io.ConcreteFileIOThread.ChunkDataController chunkDataController = new com.destroystokyo.paper.io.ConcreteFileIOThread.ChunkDataController() {
 +        @Override
 +        public void writeData(int x, int z, NBTTagCompound compound) throws java.io.IOException {
@@ -1737,6 +1795,29 @@ index c646393eb0..2ca43e281a 100644
 +        @Override
 +        public NBTTagCompound readData(int x, int z) throws java.io.IOException {
 +            return WorldServer.this.getChunkProvider().playerChunkMap.read(new ChunkCoordIntPair(x, z));
++        }
++
++        @Override
++        public <T> T computeForRegionFile(int chunkX, int chunkZ, Function<RegionFile, T> function) {
++            synchronized (WorldServer.this.getChunkProvider().playerChunkMap) {
++                RegionFile file;
++
++                try {
++                    file = WorldServer.this.getChunkProvider().playerChunkMap.getRegionFile(new ChunkCoordIntPair(chunkX, chunkZ), false);
++                } catch (java.io.IOException ex) {
++                    throw new RuntimeException(ex);
++                }
++
++                return function.apply(file);
++            }
++        }
++
++        @Override
++        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, Function<RegionFile, T> function) {
++            synchronized (WorldServer.this.getChunkProvider().playerChunkMap) {
++                RegionFile file = WorldServer.this.getChunkProvider().playerChunkMap.getRegionFileIfLoaded(new ChunkCoordIntPair(chunkX, chunkZ));
++                return function.apply(file);
++            }
 +        }
 +    };
 +    // Paper end
