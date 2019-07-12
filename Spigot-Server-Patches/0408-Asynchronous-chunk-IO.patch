@@ -1,4 +1,4 @@
-From 3db05ef8dc7db82e8297e35fdef36edd6937127a Mon Sep 17 00:00:00 2001
+From 7f902a9f663c56efc560326e6cd91d9b0d38e99e Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Tue, 9 Jul 2019 03:38:23 -0700
 Subject: [PATCH] Asynchronous chunk IO
@@ -6,7 +6,7 @@ Subject: [PATCH] Asynchronous chunk IO
 
 diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 new file mode 100644
-index 0000000000..c23991e6bb
+index 000000000..c23991e6b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 @@ -0,0 +1,642 @@
@@ -654,7 +654,7 @@ index 0000000000..c23991e6bb
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/IOUtil.java b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
 new file mode 100644
-index 0000000000..5af0ac3d9e
+index 000000000..5af0ac3d9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
 @@ -0,0 +1,62 @@
@@ -722,7 +722,7 @@ index 0000000000..5af0ac3d9e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 new file mode 100644
-index 0000000000..28ac6b76f0
+index 000000000..28ac6b76f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 @@ -0,0 +1,257 @@
@@ -985,7 +985,7 @@ index 0000000000..28ac6b76f0
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 new file mode 100644
-index 0000000000..7890f90658
+index 000000000..7890f9065
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 @@ -0,0 +1,199 @@
@@ -1189,7 +1189,7 @@ index 0000000000..7890f90658
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index aa2c21a706..0dbcc2430a 100644
+index b6381ec2d..b904d0e00 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -286,6 +286,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -1200,22 +1200,19 @@ index aa2c21a706..0dbcc2430a 100644
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -307,6 +308,13 @@ public class ChunkProviderServer extends IChunkProvider {
-             world.timings.syncChunkLoadTimer.startTiming(); // Spigot
+@@ -307,6 +308,10 @@ public class ChunkProviderServer extends IChunkProvider {
              CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
  
-+            // Paper start - async chunk io
-+            if (!completablefuture.isDone()) {
+             if (!completablefuture.isDone()) { // Paper
++                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.ConcreteFileIOThread.Holder.INSTANCE.bumpPriority(this.world, x, z,
 +                    com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
-+            }
-+            // Paper end
-+
++                // Paper end
+                 this.world.timings.chunkAwait.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
-             world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
-             ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
+                 this.world.timings.chunkAwait.stopTiming(); // Paper
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2b99fdc630..5cffe64b37 100644
+index 2b99fdc63..5cffe64b3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -764,6 +764,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -1227,7 +1224,7 @@ index 2b99fdc630..5cffe64b37 100644
  
      public String getServerIp() {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7e8b0811bb..fa4f79a3d8 100644
+index f5b35b95b..b81149b4a 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -57,7 +57,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -1274,7 +1271,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
                      if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
                          Chunk chunk = (Chunk) ichunkaccess;
  
-@@ -462,10 +463,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -462,13 +463,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          }
      }
  
@@ -1288,18 +1285,20 @@ index 7e8b0811bb..fa4f79a3d8 100644
 -        return CompletableFuture.supplyAsync(() -> {
 +        // Paper start - Async chunk io
 +        final java.util.function.BiFunction<com.destroystokyo.paper.io.ConcreteFileIOThread.ChunkData, Throwable, Either<IChunkAccess, PlayerChunk.Failure>> callable = (chunkData, ioThrowable) -> {
-             try {
--                NBTTagCompound nbttagcompound = this.readChunkData(chunkcoordintpair);
+             try (Timing ignored = this.world.timings.syncChunkLoadTimer.startTimingIfSync()) { // Paper
+-                NBTTagCompound nbttagcompound; // Paper
+-                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper
+-                nbttagcompound = this.readChunkData(chunkcoordintpair);
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.io.IOUtil.rethrow(ioThrowable);
-+                }
+                 }
 +                this.n.loadInData(chunkcoordintpair, chunkData.poiData);
 +                NBTTagCompound nbttagcompound = this.completeChunkData(chunkData.chunkData, chunkcoordintpair);
 +                // Paper end
  
                  if (nbttagcompound != null) {
                      boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
-@@ -492,7 +505,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -495,7 +505,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              }
  
              return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.world)); // Paper - Anti-Xray
@@ -1325,7 +1324,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
      }
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> b(PlayerChunk playerchunk, ChunkStatus chunkstatus) {
-@@ -696,18 +726,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -701,18 +728,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return this.v.get();
      }
  
@@ -1373,7 +1372,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
  
              ichunkaccess.setLastSaved(this.world.getTime());
              ichunkaccess.setNeedsSaving(false);
-@@ -719,20 +770,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -724,20 +772,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                  if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
                      // Paper start - Optimize save by using status cache
@@ -1399,7 +1398,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
              } catch (Exception exception) {
                  PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
                  com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
-@@ -803,6 +856,62 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -808,6 +858,62 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return Iterables.unmodifiableIterable(this.visibleChunks.values());
      }
  
@@ -1462,7 +1461,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
      @Nullable
      public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
-@@ -817,8 +926,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -822,8 +928,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              return null;
          }
  
@@ -1474,7 +1473,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
          return nbttagcompound;
          // Paper end
      }
-@@ -1160,6 +1270,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1165,6 +1272,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
@@ -1483,7 +1482,7 @@ index 7e8b0811bb..fa4f79a3d8 100644
          return this.n;
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 18f218e971..2f10152404 100644
+index 18f218e97..2f1015240 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -55,20 +55,7 @@ public class RegionFile implements AutoCloseable {
@@ -1518,7 +1517,7 @@ index 18f218e971..2f10152404 100644
          this.b.close();
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index d2b3289450..d3d6107422 100644
+index d2b328945..d3d610742 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -48,13 +48,13 @@ public abstract class RegionFileCache implements AutoCloseable {
@@ -1547,7 +1546,7 @@ index d2b3289450..d3d6107422 100644
          RegionFile regionfile = a(pos, true);
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index bf533d62cf..246209c847 100644
+index bf533d62c..246209c84 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
 +++ b/src/main/java/net/minecraft/server/RegionFileSection.java
 @@ -24,7 +24,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
@@ -1649,7 +1648,7 @@ index bf533d62cf..246209c847 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index 48b9d3abbe..d66c2e52ba 100644
+index 48b9d3abb..d66c2e52b 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
 @@ -20,8 +20,16 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
@@ -1735,7 +1734,7 @@ index 48b9d3abbe..d66c2e52ba 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c646393eb0..d63790eb10 100644
+index c646393eb..d63790eb1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -75,6 +75,78 @@ public class WorldServer extends World {
