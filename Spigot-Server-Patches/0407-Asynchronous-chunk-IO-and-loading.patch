@@ -1,4 +1,4 @@
-From f5f811ccfbfbfa92cb38580dc433c4903fccdf4e Mon Sep 17 00:00:00 2001
+From 8175616d0cce2b4ab35210bff89df8fc96f55aeb Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -2198,7 +2198,7 @@ index d2b3289450..d3d6107422 100644
          RegionFile regionfile = a(pos, true);
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index bf533d62cf..246209c847 100644
+index a343a7b31d..7584174eb7 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
 +++ b/src/main/java/net/minecraft/server/RegionFileSection.java
 @@ -24,7 +24,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
@@ -2221,6 +2221,18 @@ index bf533d62cf..246209c847 100644
  
              this.d(chunkcoordintpair);
          }
+@@ -82,9 +82,9 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+         Optional<R> optional = this.d(i);
+ 
+         if (optional.isPresent()) {
+-            return (MinecraftSerializable) optional.get();
++            return optional.get(); // Paper - decompile fix
+         } else {
+-            R r0 = (MinecraftSerializable) this.f.apply(() -> {
++            R r0 = this.f.apply(() -> {  // Paper - decompile fix
+                 this.a(i);
+             });
+ 
 @@ -94,7 +94,12 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
      }
  
@@ -2235,6 +2247,15 @@ index bf533d62cf..246209c847 100644
      }
  
      @Nullable
+@@ -123,7 +128,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+             for (int l = 0; l < 16; ++l) {
+                 long i1 = SectionPosition.a(chunkcoordintpair, l).v();
+                 Optional<R> optional = optionaldynamic.get(Integer.toString(l)).get().map((dynamic2) -> {
+-                    return (MinecraftSerializable) this.e.apply(() -> {
++                    return this.e.apply(() -> { // Paper - decompile fix
+                         this.a(i1);
+                     }, dynamic2);
+                 });
 @@ -142,7 +147,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
      }
  
@@ -2312,7 +2333,7 @@ index 5acb0732c3..0ed2d2fbf9 100644
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index 48b9d3abbe..32541cd965 100644
+index 7bc473e1ef..8e82326c47 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
 @@ -20,8 +20,16 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
@@ -2357,6 +2378,15 @@ index 48b9d3abbe..32541cd965 100644
          this.a.a();
      }
  
+@@ -164,7 +188,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+     }
+ 
+     private static boolean a(ChunkSection chunksection) {
+-        Stream stream = VillagePlaceType.e();
++        Stream<IBlockData> stream = VillagePlaceType.e();  // Paper - decompile fix
+ 
+         chunksection.getClass();
+         return stream.anyMatch(chunksection::a);
 @@ -214,6 +238,42 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
          }
      }
@@ -2400,6 +2430,15 @@ index 48b9d3abbe..32541cd965 100644
      public static enum Occupancy {
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
+@@ -222,7 +282,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+ 
+         private final Predicate<? super VillagePlaceRecord> d;
+ 
+-        private Occupancy(Predicate predicate) {
++        private Occupancy(Predicate<? super VillagePlaceRecord> predicate) { // Paper - decompile fix
+             this.d = predicate;
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index c646393eb0..5ad908536b 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
