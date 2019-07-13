@@ -1,4 +1,4 @@
-From c6ae28d37d224de554ea82b7546b0fb345877f53 Mon Sep 17 00:00:00 2001
+From 680be66cc768316daf1fd7a879b78f8d34051b87 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -52,6 +52,76 @@ index 5942c3438e..ee0bde29dd 100644
 +        }
 +    }
  }
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+index 9d8bee5cac..c2dd59f573 100644
+--- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
++++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+@@ -150,6 +150,12 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+ 
+     private final AtomicInteger xrayRequests = new AtomicInteger();
+ 
++    // Paper start - async chunk api
++    private Integer nextTicketHold() {
++        return Integer.valueOf(this.xrayRequests.getAndIncrement());
++    }
++    // Paper end
++
+     private Integer addXrayTickets(final int x, final int z, final ChunkProviderServer chunkProvider) {
+         final Integer hold = Integer.valueOf(this.xrayRequests.getAndIncrement());
+ 
+@@ -181,6 +187,33 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+         chunk.world.getChunkAt(locX, locZ + 1);
+     }
+ 
++    // Paper start - async chunk api
++    private void loadNeighbourAsync(ChunkProviderServer chunkProvider, int chunkX, int chunkZ, int[] counter, java.util.function.Consumer<Chunk> onNeighourLoad, Runnable onAllNeighboursLoad) {
++        chunkProvider.getChunkAtAsynchronously(chunkX, chunkZ, true, (Chunk neighbour) -> {
++            onNeighourLoad.accept(neighbour);
++            if (++counter[0] == 4) {
++                onAllNeighboursLoad.run();
++            }
++        });
++    }
++
++    private void loadNeighboursAsync(Chunk chunk, java.util.function.Consumer<Chunk> onNeighourLoad, Runnable onAllNeighboursLoad) {
++        int[] loaded = new int[1];
++
++        int locX = chunk.getPos().x;
++        int locZ = chunk.getPos().z;
++
++        onNeighourLoad.accept(chunk);
++
++        ChunkProviderServer chunkProvider = ((WorldServer)chunk.world).getChunkProvider();
++
++        this.loadNeighbourAsync(chunkProvider, locX - 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, locX + 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, locX, locZ - 1, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, locX, locZ + 1, loaded, onNeighourLoad, onAllNeighboursLoad);
++    }
++    // Paper end
++
+     @Override
+     public boolean onChunkPacketCreate(Chunk chunk, int chunkSectionSelector, boolean force) {
+         int locX = chunk.getPos().x;
+@@ -256,11 +289,15 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+ 
+             if (chunks[0] == null || chunks[1] == null || chunks[2] == null || chunks[3] == null) {
+                 // we need to load
+-                MinecraftServer.getServer().scheduleOnMain(() -> {
+-                    Integer ticketHold = this.addXrayTickets(locX, locZ, world.getChunkProvider());
+-                    this.loadNeighbours(chunk);
++                // Paper start - async chunk api
++                Integer ticketHold = this.nextTicketHold();
++                this.loadNeighboursAsync(chunk, (Chunk neighbour) -> { // when a neighbour is loaded
++                        ((WorldServer)neighbour.world).getChunkProvider().addTicket(TicketType.ANTIXRAY, neighbour.getPos(), 0, ticketHold);
++                },
++                () -> { // once neighbours get loaded
+                     this.modifyBlocks(packetPlayOutMapChunk, chunkPacketInfo, false, ticketHold);
+                 });
++                // Paper end
+                 return;
+             }
+ 
 diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 new file mode 100644
 index 0000000000..8cbe522f23
