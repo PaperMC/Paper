@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import it.unimi.dsi.fastutil.shorts.ShortListIterator;
+import java.util.ArrayDeque; // Paper
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.EnumSet;
@@ -23,7 +24,29 @@ public class ChunkRegionLoader {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
+    // Paper start
+    public static final class InProgressChunkHolder {
+
+        public final ProtoChunk protoChunk;
+        public final ArrayDeque<Runnable> tasks;
+
+        public NBTTagCompound poiData;
+
+        public InProgressChunkHolder(final ProtoChunk protoChunk, final ArrayDeque<Runnable> tasks) {
+            this.protoChunk = protoChunk;
+            this.tasks = tasks;
+        }
+    }
+
     public static ProtoChunk loadChunk(WorldServer worldserver, DefinedStructureManager definedstructuremanager, VillagePlace villageplace, ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+        InProgressChunkHolder holder = loadChunk(worldserver, definedstructuremanager, villageplace, chunkcoordintpair, nbttagcompound, true);
+        holder.tasks.forEach(Runnable::run);
+        return holder.protoChunk;
+    }
+
+    public static InProgressChunkHolder loadChunk(WorldServer worldserver, DefinedStructureManager definedstructuremanager, VillagePlace villageplace, ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound, boolean distinguish) {
+        ArrayDeque<Runnable> tasksToExecuteOnMain = new ArrayDeque<>();
+        // Paper end
         ChunkGenerator chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
         WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level");
@@ -50,7 +73,9 @@ public class ChunkRegionLoader {
         LightEngine lightengine = chunkproviderserver.getLightEngine();
 
         if (flag) {
-            lightengine.b(chunkcoordintpair, true);
+            tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+                lightengine.b(chunkcoordintpair, true);
+            }); // Paper - delay this task since we're executing off-main
         }
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
@@ -66,16 +91,28 @@ public class ChunkRegionLoader {
                     achunksection[b0] = chunksection;
                 }
 
-                villageplace.a(chunkcoordintpair, chunksection);
+                tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+                    villageplace.a(chunkcoordintpair, chunksection);
+                }); // Paper - delay this task since we're executing off-main
             }
 
             if (flag) {
                 if (nbttagcompound2.hasKeyOfType("BlockLight", 7)) {
-                    lightengine.a(EnumSkyBlock.BLOCK, SectionPosition.a(chunkcoordintpair, b0), new NibbleArray(nbttagcompound2.getByteArray("BlockLight")), true);
+                    // Paper start - delay this task since we're executing off-main
+                    NibbleArray blockLight = new NibbleArray(nbttagcompound2.getByteArray("BlockLight"));
+                    tasksToExecuteOnMain.add(() -> {
+                        lightengine.a(EnumSkyBlock.BLOCK, SectionPosition.a(chunkcoordintpair, b0), blockLight, true);
+                    });
+                    // Paper end - delay this task since we're executing off-main
                 }
 
                 if (flag2 && nbttagcompound2.hasKeyOfType("SkyLight", 7)) {
-                    lightengine.a(EnumSkyBlock.SKY, SectionPosition.a(chunkcoordintpair, b0), new NibbleArray(nbttagcompound2.getByteArray("SkyLight")), true);
+                    // Paper start - delay this task since we're executing off-main
+                    NibbleArray skyLight = new NibbleArray(nbttagcompound2.getByteArray("SkyLight"));
+                    tasksToExecuteOnMain.add(() -> {
+                        lightengine.a(EnumSkyBlock.SKY, SectionPosition.a(chunkcoordintpair, b0), skyLight, true);
+                    });
+                    // Paper end - delay this task since we're executing off-main
                 }
             }
         }
@@ -178,7 +215,7 @@ public class ChunkRegionLoader {
         }
 
         if (chunkstatus_type == ChunkStatus.Type.LEVELCHUNK) {
-            return new ProtoChunkExtension((Chunk) object);
+            return new InProgressChunkHolder(new ProtoChunkExtension((Chunk) object), tasksToExecuteOnMain); // Paper - Async chunk loading
         } else {
             ProtoChunk protochunk1 = (ProtoChunk) object;
 
@@ -217,11 +254,83 @@ public class ChunkRegionLoader {
                 protochunk1.a(worldgenstage_features, BitSet.valueOf(nbttagcompound5.getByteArray(s1)));
             }
 
-            return protochunk1;
+            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
         }
     }
 
+    // Paper start - async chunk save for unload
+    public static final class AsyncSaveData {
+        public final NibbleArray[] blockLight; // null or size of 17 (for indices -1 through 15)
+        public final NibbleArray[] skyLight;
+
+        public final NBTTagList blockTickList; // non-null if we had to go to the server's tick list
+        public final NBTTagList fluidTickList; // non-null if we had to go to the server's tick list
+
+        public final long worldTime;
+
+        public AsyncSaveData(NibbleArray[] blockLight, NibbleArray[] skyLight, NBTTagList blockTickList, NBTTagList fluidTickList,
+                             long worldTime) {
+            this.blockLight = blockLight;
+            this.skyLight = skyLight;
+            this.blockTickList = blockTickList;
+            this.fluidTickList = fluidTickList;
+            this.worldTime = worldTime;
+        }
+    }
+
+    // must be called sync
+    public static AsyncSaveData getAsyncSaveData(WorldServer world, IChunkAccess chunk) {
+        org.spigotmc.AsyncCatcher.catchOp("preparation of chunk data for async save");
+        ChunkCoordIntPair chunkPos = chunk.getPos();
+
+        LightEngineThreaded lightenginethreaded = world.getChunkProvider().getLightEngine();
+
+        NibbleArray[] blockLight = new NibbleArray[17 - (-1)];
+        NibbleArray[] skyLight = new NibbleArray[17 - (-1)];
+
+        for (int i = -1; i < 17; ++i) {
+            NibbleArray blockArray = lightenginethreaded.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkPos, i));
+            NibbleArray skyArray = lightenginethreaded.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkPos, i));
+
+            // copy data for safety
+            if (blockArray != null) {
+                blockArray = blockArray.copy();
+            }
+            if (skyArray != null) {
+                skyArray = skyArray.copy();
+            }
+
+            // apply offset of 1 for -1 starting index
+            blockLight[i + 1] = blockArray;
+            skyLight[i + 1] = skyArray;
+        }
+
+        TickList<Block> blockTickList = chunk.n();
+
+        NBTTagList blockTickListSerialized;
+        if (blockTickList instanceof ProtoChunkTickList || blockTickList instanceof TickListChunk) {
+            blockTickListSerialized = null;
+        } else {
+            blockTickListSerialized = world.getBlockTickList().a(chunkPos);
+        }
+
+        TickList<FluidType> fluidTickList = chunk.o();
+
+        NBTTagList fluidTickListSerialized;
+        if (fluidTickList instanceof ProtoChunkTickList || fluidTickList instanceof TickListChunk) {
+            fluidTickListSerialized = null;
+        } else {
+            fluidTickListSerialized = world.getFluidTickList().a(chunkPos);
+        }
+
+        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, world.getTime());
+    }
+
     public static NBTTagCompound saveChunk(WorldServer worldserver, IChunkAccess ichunkaccess) {
+        return saveChunk(worldserver, ichunkaccess, null);
+    }
+    public static NBTTagCompound saveChunk(WorldServer worldserver, IChunkAccess ichunkaccess, AsyncSaveData asyncsavedata) {
+        // Paper end
         ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
         NBTTagCompound nbttagcompound = new NBTTagCompound();
         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
@@ -230,7 +339,7 @@ public class ChunkRegionLoader {
         nbttagcompound.set("Level", nbttagcompound1);
         nbttagcompound1.setInt("xPos", chunkcoordintpair.x);
         nbttagcompound1.setInt("zPos", chunkcoordintpair.z);
-        nbttagcompound1.setLong("LastUpdate", worldserver.getTime());
+        nbttagcompound1.setLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : worldserver.getTime()); // Paper - async chunk unloading
         nbttagcompound1.setLong("InhabitedTime", ichunkaccess.getInhabitedTime());
         nbttagcompound1.setString("Status", ichunkaccess.getChunkStatus().d());
         ChunkConverter chunkconverter = ichunkaccess.p();
@@ -246,14 +355,22 @@ public class ChunkRegionLoader {
 
         NBTTagCompound nbttagcompound2;
 
-        for (int i = -1; i < 17; ++i) {
+        for (int i = -1; i < 17; ++i) { // Paper - conflict on loop parameter change
             int finalI = i;
             ChunkSection chunksection = (ChunkSection) Arrays.stream(achunksection).filter((chunksection1) -> {
                 return chunksection1 != null && chunksection1.getYPosition() >> 4 == finalI;
             }).findFirst().orElse(Chunk.a);
-            NibbleArray nibblearray = lightenginethreaded.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkcoordintpair, i));
-            NibbleArray nibblearray1 = lightenginethreaded.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkcoordintpair, i));
-
+            // Paper start - async chunk save for unload
+            NibbleArray nibblearray; // block light
+            NibbleArray nibblearray1; // sky light
+            if (asyncsavedata == null) {
+                nibblearray = lightenginethreaded.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkcoordintpair, i)); /// Paper - diff on method change (see getAsyncSaveData)
+                nibblearray1 = lightenginethreaded.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkcoordintpair, i)); // Paper - diff on method change (see getAsyncSaveData)
+            } else {
+                nibblearray = asyncsavedata.blockLight[i + 1]; // +1 to offset the -1 starting index
+                nibblearray1 = asyncsavedata.skyLight[i + 1]; // +1 to offset the -1 starting index
+            }
+            // Paper end
             if (chunksection != Chunk.a || nibblearray != null || nibblearray1 != null) {
                 nbttagcompound2 = new NBTTagCompound();
                 nbttagcompound2.setByte("Y", (byte) (i & 255));
@@ -314,7 +431,7 @@ public class ChunkRegionLoader {
                     Entity entity = (Entity) iterator1.next();
                     NBTTagCompound nbttagcompound4 = new NBTTagCompound();
                     // Paper start
-                    if ((int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
+                    if (asyncsavedata == null && !entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
                         toUpdate.add(entity);
                         continue;
                     }
@@ -357,24 +474,32 @@ public class ChunkRegionLoader {
         }
 
         nbttagcompound1.set("Entities", nbttaglist2);
-        TickList<Block> ticklist = ichunkaccess.n();
+        TickList<Block> ticklist = ichunkaccess.n(); // Paper - diff on method change (see getAsyncSaveData)
 
         if (ticklist instanceof ProtoChunkTickList) {
             nbttagcompound1.set("ToBeTicked", ((ProtoChunkTickList) ticklist).b());
         } else if (ticklist instanceof TickListChunk) {
             nbttagcompound1.set("TileTicks", ((TickListChunk) ticklist).b());
+            // Paper start - async chunk save for unload
+        } else if (asyncsavedata != null) {
+            nbttagcompound1.set("TileTicks", asyncsavedata.blockTickList);
+            // Paper end
         } else {
-            nbttagcompound1.set("TileTicks", worldserver.getBlockTickList().a(chunkcoordintpair));
+            nbttagcompound1.set("TileTicks", worldserver.getBlockTickList().a(chunkcoordintpair)); // Paper - diff on method change (see getAsyncSaveData)
         }
 
-        TickList<FluidType> ticklist1 = ichunkaccess.o();
+        TickList<FluidType> ticklist1 = ichunkaccess.o(); // Paper - diff on method change (see getAsyncSaveData)
 
         if (ticklist1 instanceof ProtoChunkTickList) {
             nbttagcompound1.set("LiquidsToBeTicked", ((ProtoChunkTickList) ticklist1).b());
         } else if (ticklist1 instanceof TickListChunk) {
             nbttagcompound1.set("LiquidTicks", ((TickListChunk) ticklist1).b());
+            // Paper start - async chunk save for unload
+        } else if (asyncsavedata != null) {
+            nbttagcompound1.set("LiquidTicks", asyncsavedata.fluidTickList);
+            // Paper end
         } else {
-            nbttagcompound1.set("LiquidTicks", worldserver.getFluidTickList().a(chunkcoordintpair));
+            nbttagcompound1.set("LiquidTicks", worldserver.getFluidTickList().a(chunkcoordintpair)); // Paper - diff on method change (see getAsyncSaveData)
         }
 
         nbttagcompound1.set("PostProcessing", a(ichunkaccess.l()));

@@ -22,6 +22,7 @@ public class TicketType<T> {
     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = a("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // CraftBukkit
     public static final TicketType<Long> FUTURE_AWAIT = a("future_await", Long::compareTo); // Paper
+    public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
 
     public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
         return new TicketType<>(s, comparator, 0L);

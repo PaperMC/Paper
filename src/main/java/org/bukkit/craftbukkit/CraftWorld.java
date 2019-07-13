@@ -75,6 +75,7 @@ import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MovingObjectPosition;
 import net.minecraft.server.PacketPlayOutCustomSoundEffect;
 import net.minecraft.server.PacketPlayOutUpdateTime;
@@ -563,22 +564,23 @@ public class CraftWorld implements World {
                 return true;
             }
 
-            net.minecraft.server.RegionFile file;
-            try {
-                file = world.getChunkProvider().playerChunkMap.getIOWorker().getRegionFileCache().getFile(chunkPos, false);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            ChunkStatus status = world.getChunkProvider().playerChunkMap.getStatusOnDiskNoLoad(x, z); // Paper - async io - move to own method
 
-            ChunkStatus status = file.getStatusIfCached(x, z);
-            if (!file.chunkExists(chunkPos) || (status != null && status != ChunkStatus.FULL)) {
+            // Paper start - async io
+            if (status == ChunkStatus.EMPTY) {
+                // does not exist on disk
                 return false;
             }
 
+            if (status == null) { // at this stage we don't know what it is on disk
             IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.EMPTY, true);
             if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof net.minecraft.server.Chunk)) {
                 return false;
             }
+            } else if (status != ChunkStatus.FULL) {
+                return false; // not full status on disk
+            }
+            // Paper end
 
             // fall through to load
             // we do this so we do not re-read the chunk data on disk
@@ -2467,6 +2469,34 @@ public class CraftWorld implements World {
     public DragonBattle getEnderDragonBattle() {
         return (getHandle().getDragonBattle() == null) ? null : new CraftDragonBattle(getHandle().getDragonBattle());
     }
+    // Paper start
+    @Override
+    public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
+        if (Bukkit.isPrimaryThread()) {
+            net.minecraft.server.Chunk immediate = this.world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
+            if (immediate != null) {
+                return CompletableFuture.completedFuture(immediate.getBukkitChunk());
+            }
+        } else {
+            CompletableFuture<Chunk> future = new CompletableFuture<Chunk>();
+            world.getMinecraftServer().execute(() -> {
+                getChunkAtAsync(x, z, gen, urgent).whenComplete((chunk, err) -> {
+                    if (err != null) {
+                        future.completeExceptionally(err);
+                    } else {
+                        future.complete(chunk);
+                    }
+                });
+            });
+            return future;
+        }
+
+        return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
+            net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) either.left().orElse(null);
+            return CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());
+        }, MinecraftServer.getServer());
+    }
+    // Paper end
 
     // Spigot start
     @Override

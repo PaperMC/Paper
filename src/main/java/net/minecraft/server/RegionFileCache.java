@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.annotation.Nullable;
 
-public final class RegionFileCache implements AutoCloseable {
+public class RegionFileCache implements AutoCloseable { // Paper - no final
 
     public final Long2ObjectLinkedOpenHashMap<RegionFile> cache = new Long2ObjectLinkedOpenHashMap();
     private final File b;
@@ -23,16 +23,27 @@ public final class RegionFileCache implements AutoCloseable {
 
 
     // Paper start
-    public RegionFile getRegionFileIfLoaded(ChunkCoordIntPair chunkcoordintpair) {
+    public synchronized RegionFile getRegionFileIfLoaded(ChunkCoordIntPair chunkcoordintpair) { // Paper - synchronize for async io
         return this.cache.getAndMoveToFirst(ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
     }
 
     // Paper end
-    public RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public
+    public synchronized RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public, synchronize
+        // Paper start - add lock parameter
+        return this.getFile(chunkcoordintpair, existingOnly, false);
+    }
+    public synchronized RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
+        // Paper end
         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
         RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
 
         if (regionfile != null) {
+            // Paper start
+            if (lock) {
+                // must be in this synchronized block
+                regionfile.fileLock.lock();
+            }
+            // Paper end
             return regionfile;
         } else {
             if (this.cache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
@@ -48,6 +59,12 @@ public final class RegionFileCache implements AutoCloseable {
             RegionFile regionfile1 = new RegionFile(file, this.b, this.c);
 
             this.cache.putAndMoveToFirst(i, regionfile1);
+            // Paper start
+            if (lock) {
+                // must be in this synchronized block
+                regionfile1.fileLock.lock();
+            }
+            // Paper end
             return regionfile1;
         }
     }
@@ -123,11 +140,12 @@ public final class RegionFileCache implements AutoCloseable {
     @Nullable
     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-        RegionFile regionfile = this.getFile(chunkcoordintpair, true);
+        RegionFile regionfile = this.getFile(chunkcoordintpair, true, true); // Paper
         if (regionfile == null) {
             return null;
         }
         // CraftBukkit end
+        try { // Paper
         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
         // Paper start
         if (regionfile.isOversized(chunkcoordintpair.x, chunkcoordintpair.z)) {
@@ -165,10 +183,14 @@ public final class RegionFileCache implements AutoCloseable {
         }
 
         return nbttagcompound;
+        } finally { // Paper start
+            regionfile.fileLock.unlock();
+        } // Paper end
     }
 
     protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
-        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
+        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // CraftBukkit // Paper
+        try { // Paper
         int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
         DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
         Throwable throwable = null;
@@ -207,9 +229,12 @@ public final class RegionFileCache implements AutoCloseable {
             MinecraftServer.LOGGER.error("Failed to save chunk", laste);
         }
         // Paper end
+        } finally { // Paper start
+            regionfile.fileLock.unlock();
+        } // Paper end
     }
 
-    public void close() throws IOException {
+    public synchronized void close() throws IOException { // Paper -> synchronized
         ExceptionSuppressor<IOException> exceptionsuppressor = new ExceptionSuppressor<>();
         ObjectIterator objectiterator = this.cache.values().iterator();
 
@@ -236,4 +261,12 @@ public final class RegionFileCache implements AutoCloseable {
         }
 
     }
+
+    // CraftBukkit start
+    public synchronized boolean chunkExists(ChunkCoordIntPair pos) throws IOException { // Paper - synchronize
+        RegionFile regionfile = getFile(pos, true);
+
+        return regionfile != null ? regionfile.chunkExists(pos) : false;
+    }
+    // CraftBukkit end
 }

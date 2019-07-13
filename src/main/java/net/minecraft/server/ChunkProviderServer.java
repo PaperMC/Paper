@@ -311,11 +311,138 @@ public class ChunkProviderServer extends IChunkProvider {
         return playerChunk.getAvailableChunkNow();
 
     }
+
+    private long asyncLoadSeqCounter;
+
+    public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+        if (Thread.currentThread() != this.serverThread) {
+            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = new CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>();
+            this.serverThreadQueue.execute(() -> {
+                this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
+                    if (ex != null) {
+                        future.completeExceptionally(ex);
+                    } else {
+                        future.complete(chunk);
+                    }
+                });
+            });
+            return future;
+        }
+
+        if (!com.destroystokyo.paper.PaperConfig.asyncChunks) {
+            world.getWorld().loadChunk(x, z, gen);
+            Chunk chunk = getChunkAtIfLoadedMainThread(x, z);
+            return CompletableFuture.completedFuture(chunk != null ? Either.left(chunk) : PlayerChunk.UNLOADED_CHUNK_ACCESS);
+        }
+
+        long k = ChunkCoordIntPair.pair(x, z);
+        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
+
+        IChunkAccess ichunkaccess;
+
+        // try cache
+        for (int l = 0; l < 4; ++l) {
+            if (k == this.cachePos[l] && ChunkStatus.FULL == this.cacheStatus[l]) {
+                ichunkaccess = this.cacheChunk[l];
+                if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
+
+                    // move to first in cache
+
+                    for (int i1 = 3; i1 > 0; --i1) {
+                        this.cachePos[i1] = this.cachePos[i1 - 1];
+                        this.cacheStatus[i1] = this.cacheStatus[i1 - 1];
+                        this.cacheChunk[i1] = this.cacheChunk[i1 - 1];
+                    }
+
+                    this.cachePos[0] = k;
+                    this.cacheStatus[0] = ChunkStatus.FULL;
+                    this.cacheChunk[0] = ichunkaccess;
+
+                    return CompletableFuture.completedFuture(Either.left(ichunkaccess));
+                }
+            }
+        }
+
+        if (gen) {
+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
+        }
+
+        IChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
+        if (current != null) {
+            if (!(current instanceof ProtoChunkExtension) && !(current instanceof net.minecraft.server.Chunk)) {
+                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
+            }
+            // we know the chunk is at full status here (either in read-only mode or the real thing)
+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
+        }
+
+        ChunkStatus status = world.getChunkProvider().playerChunkMap.getStatusOnDiskNoLoad(x, z);
+
+        if (status != null && status != ChunkStatus.FULL) {
+            // does not exist on disk
+            return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
+        }
+
+        if (status == ChunkStatus.FULL) {
+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
+        }
+
+        // status is null here
+
+        // here we don't know what status it is and we're not supposed to generate
+        // so we asynchronously load empty status
+        return this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.EMPTY, isUrgent).thenCompose((either) -> {
+            IChunkAccess chunk = either.left().orElse(null);
+            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof Chunk)) {
+                // the chunk on disk was not a full status chunk
+                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
+            }
+            ; // bring to full status if required
+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
+        });
+    }
+
+    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> bringToFullStatusAsync(int x, int z, ChunkCoordIntPair chunkPos, boolean isUrgent) {
+        return this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.FULL, isUrgent);
+    }
+
+    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> bringToStatusAsync(int x, int z, ChunkCoordIntPair chunkPos, ChunkStatus status, boolean isUrgent) {
+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getChunkFutureMainThread(x, z, status, true, isUrgent);
+        Long identifier = Long.valueOf(this.asyncLoadSeqCounter++);
+        int ticketLevel = MCUtil.getTicketLevelFor(status);
+        this.addTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
+
+        return future.thenComposeAsync((Either<IChunkAccess, PlayerChunk.Failure> either) -> {
+            // either left -> success
+            // either right -> failure
+
+            this.removeTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
+            this.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos); // allow unloading
+
+            Optional<PlayerChunk.Failure> failure = either.right();
+
+            if (failure.isPresent()) {
+                // failure
+                throw new IllegalStateException("Chunk failed to load: " + failure.get().toString());
+            }
+
+            return CompletableFuture.completedFuture(either);
+        }, this.serverThreadQueue);
+    }
+
+    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
+        this.chunkMapDistance.addTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
+    }
+
+    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
+        this.chunkMapDistance.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
+    }
     // Paper end
 
     @Nullable
     @Override
     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
+        final int x = i; final int z = j; // Paper - conflict on variable change
         if (Thread.currentThread() != this.serverThread) {
             return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                 return this.getChunkAt(i, j, chunkstatus, flag);
@@ -338,11 +465,16 @@ public class ChunkProviderServer extends IChunkProvider {
             }
 
             gameprofilerfiller.c("getChunkCacheMiss");
-            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
+            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag, true); // Paper
 
             if (!completablefuture.isDone()) { // Paper
+                // Paper start - async chunk io/loading
+                this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
+                com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
+                // Paper end
                 this.world.timings.syncChunkLoad.startTiming(); // Paper
             this.serverThreadQueue.awaitTasks(completablefuture::isDone);
+                com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                 this.world.timings.syncChunkLoad.stopTiming(); // Paper
             } // Paper
             ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
@@ -408,6 +540,11 @@ public class ChunkProviderServer extends IChunkProvider {
     }
 
     private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
+        // Paper start - add isUrgent - old sig left in place for dirty nms plugins
+        return getChunkFutureMainThread(i, j, chunkstatus, flag, false);
+    }
+    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag, boolean isUrgent) {
+        // Paper end
         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
         long k = chunkcoordintpair.pair();
         int l = 33 + ChunkStatus.a(chunkstatus);
@@ -807,11 +944,12 @@ public class ChunkProviderServer extends IChunkProvider {
         protected boolean executeNext() {
         // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
         try {
+            boolean execChunkTask = com.destroystokyo.paper.io.chunk.ChunkTaskManager.pollChunkWaitQueue() || ChunkProviderServer.this.world.asyncChunkTaskManager.pollNextChunkTask(); // Paper
             if (ChunkProviderServer.this.tickDistanceManager()) {
                 return true;
             } else {
                 ChunkProviderServer.this.lightEngine.queueUpdate();
-                return super.executeNext();
+                return super.executeNext() || execChunkTask; // Paper
             }
         } finally {
             playerChunkMap.callbackExecutor.run();

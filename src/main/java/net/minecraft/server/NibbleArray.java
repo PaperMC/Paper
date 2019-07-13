@@ -71,6 +71,7 @@ public class NibbleArray {
         return this.a;
     }
 
+    public NibbleArray copy() { return this.b(); } // Paper - OBFHELPER
     public NibbleArray b() {
         return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
     }

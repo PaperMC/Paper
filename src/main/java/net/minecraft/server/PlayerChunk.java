@@ -129,6 +129,18 @@ public class PlayerChunk {
         }
         return null;
     }
+
+    public ChunkStatus getChunkHolderStatus() {
+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
+            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
+            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
+            if (either == null || !either.left().isPresent()) {
+                continue;
+            }
+            return curr;
+        }
+        return null;
+    }
     // Paper end
 
     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
@@ -347,7 +359,7 @@ public class PlayerChunk {
         ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
         ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
         boolean flag = this.oldTicketLevel <= PlayerChunkMap.GOLDEN_TICKET;
-        boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET;
+        boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
         PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
         PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
         // CraftBukkit start
@@ -382,6 +394,12 @@ public class PlayerChunk {
                     return "Unloaded ticket level " + PlayerChunk.this.location.toString();
                 }
             });
+
+            // Paper start
+            if (!flag1) {
+                playerchunkmap.world.asyncChunkTaskManager.cancelChunkLoad(this.location.x, this.location.z);
+            }
+            // Paper end
 
             for (int i = flag1 ? chunkstatus1.c() + 1 : 0; i <= chunkstatus.c(); ++i) {
                 completablefuture = (CompletableFuture) this.statusFutures.get(i);

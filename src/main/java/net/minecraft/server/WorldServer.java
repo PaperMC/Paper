@@ -94,6 +94,79 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         return this.chunkProvider.getChunkAt(x, z, false);
     }
 
+    // Paper start - Asynchronous IO
+    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController poiDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
+        @Override
+        public void writeData(int x, int z, NBTTagCompound compound) throws java.io.IOException {
+            WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().write(new ChunkCoordIntPair(x, z), compound);
+        }
+
+        @Override
+        public NBTTagCompound readData(int x, int z) throws java.io.IOException {
+            return WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().read(new ChunkCoordIntPair(x, z));
+        }
+
+        @Override
+        public <T> T computeForRegionFile(int chunkX, int chunkZ, java.util.function.Function<RegionFile, T> function) {
+            synchronized (WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace()) {
+                RegionFile file;
+
+                try {
+                    file = WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().getFile(new ChunkCoordIntPair(chunkX, chunkZ), false);
+                } catch (java.io.IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                return function.apply(file);
+            }
+        }
+
+        @Override
+        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, java.util.function.Function<RegionFile, T> function) {
+            synchronized (WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace()) {
+                RegionFile file = WorldServer.this.getChunkProvider().playerChunkMap.getVillagePlace().getRegionFileIfLoaded(new ChunkCoordIntPair(chunkX, chunkZ));
+                return function.apply(file);
+            }
+        }
+    };
+
+    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController chunkDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
+        @Override
+        public void writeData(int x, int z, NBTTagCompound compound) throws java.io.IOException {
+            WorldServer.this.getChunkProvider().playerChunkMap.write(new ChunkCoordIntPair(x, z), compound);
+        }
+
+        @Override
+        public NBTTagCompound readData(int x, int z) throws java.io.IOException {
+            return WorldServer.this.getChunkProvider().playerChunkMap.read(new ChunkCoordIntPair(x, z));
+        }
+
+        @Override
+        public <T> T computeForRegionFile(int chunkX, int chunkZ, java.util.function.Function<RegionFile, T> function) {
+            synchronized (WorldServer.this.getChunkProvider().playerChunkMap) {
+                RegionFile file;
+
+                try {
+                    file = WorldServer.this.getChunkProvider().playerChunkMap.regionFileCache.getFile(new ChunkCoordIntPair(chunkX, chunkZ), false);
+                } catch (java.io.IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                return function.apply(file);
+            }
+        }
+
+        @Override
+        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, java.util.function.Function<RegionFile, T> function) {
+            synchronized (WorldServer.this.getChunkProvider().playerChunkMap) {
+                RegionFile file = WorldServer.this.getChunkProvider().playerChunkMap.regionFileCache.getRegionFileIfLoaded(new ChunkCoordIntPair(chunkX, chunkZ));
+                return function.apply(file);
+            }
+        }
+    };
+    public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
+    // Paper end
+
     // Add env and gen to constructor, WorldData -> WorldDataServer
     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
@@ -141,6 +214,8 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             this.dragonBattle = null;
         }
         this.getServer().addWorld(this.getWorld()); // CraftBukkit
+
+        this.asyncChunkTaskManager = new com.destroystokyo.paper.io.chunk.ChunkTaskManager(this); // Paper
     }
 
     // CraftBukkit start
@@ -1615,7 +1690,10 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         }
 
         MCUtil.getSpiralOutChunks(spawn, radiusInBlocks >> 4).forEach(pair -> {
-            getChunkProvider().getChunkAtMainThread(pair.x, pair.z);
+            getChunkProvider().getChunkAtAsynchronously(pair.x, pair.z, true, false).exceptionally((ex) -> {
+                ex.printStackTrace();
+                return null;
+            });
         });
     }
     public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {

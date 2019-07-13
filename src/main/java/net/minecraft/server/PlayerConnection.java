@@ -539,6 +539,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
             minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
             return;
         }
+        // Paper start
+        String str = packetplayintabcomplete.c(); int index = -1;
+        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
+            minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+            return;
+        }
+        // Paper end
         // CraftBukkit end
         StringReader stringreader = new StringReader(packetplayintabcomplete.c());
 

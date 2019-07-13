@@ -3,37 +3,50 @@ package net.minecraft.server;
 import com.mojang.datafixers.DataFixer;
 import java.io.File;
 import java.io.IOException;
+// Paper start
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+// Paper end
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 public class IChunkLoader implements AutoCloseable {
 
-    private final IOWorker a; public IOWorker getIOWorker() { return a; } // Paper - OBFHELPER
+    // Paper - OBFHELPER - nuke IOWorker
     protected final DataFixer b;
     @Nullable
-    private PersistentStructureLegacy c;
+    private volatile PersistentStructureLegacy c; // Paper - async chunk loading
+
+    private final Object persistentDataLock = new Object(); // Paper
+    protected final RegionFileCache regionFileCache;
 
     public IChunkLoader(File file, DataFixer datafixer, boolean flag) {
+        this.regionFileCache = new RegionFileCache(file, flag); // Paper - nuke IOWorker
         this.b = datafixer;
-        this.a = new IOWorker(file, flag, "chunk");
+        // Paper - nuke IOWorker
     }
 
     // CraftBukkit start
     private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
         ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
         if (cps != null) {
-            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
-            if (cps.isLoaded(x, z)) {
+            //com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread"); // Paper - this function is now MT-Safe
+            if (cps.getChunkAtIfCachedImmediately(x, z) != null) { // Paper - isLoaded is a ticket level check, not a chunk loaded check!
                 return true;
             }
         }
 
-        NBTTagCompound nbt = read(pos);
-        if (nbt != null) {
-            NBTTagCompound level = nbt.getCompound("Level");
-            if (level.getBoolean("TerrainPopulated")) {
-                return true;
-            }
+
+            // Paper start - prioritize
+            NBTTagCompound nbt = cps == null ? read(pos) :
+                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.loadChunkData((WorldServer)cps.getWorld(), x, z,
+                    com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHER_PRIORITY, false, true).chunkData;
+            // Paper end
+            if (nbt != null) {
+                NBTTagCompound level = nbt.getCompound("Level");
+                if (level.getBoolean("TerrainPopulated")) {
+                    return true;
+                }
 
             ChunkStatus status = ChunkStatus.a(level.getString("Status"));
             if (status != null && status.b(ChunkStatus.FEATURES)) {
@@ -64,11 +77,13 @@ public class IChunkLoader implements AutoCloseable {
         if (i < 1493) {
             nbttagcompound = GameProfileSerializer.a(this.b, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
             if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
+                synchronized (this.persistentDataLock) { // Paper - Async chunk loading
                 if (this.c == null) {
                     this.c = PersistentStructureLegacy.a(resourcekey, (WorldPersistentData) supplier.get());
                 }
 
                 nbttagcompound = this.c.a(nbttagcompound);
+                } // Paper - Async chunk loading
             }
         }
 
@@ -86,22 +101,20 @@ public class IChunkLoader implements AutoCloseable {
 
     @Nullable
     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
-        return this.a.a(chunkcoordintpair);
+        return this.regionFileCache.read(chunkcoordintpair);
     }
 
-    public void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
-        this.a.a(chunkcoordintpair, nbttagcompound);
+    public void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { write(chunkcoordintpair, nbttagcompound); } // Paper OBFHELPER
+    public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { // Paper - OBFHELPER - (Switched around for safety)
+        this.regionFileCache.write(chunkcoordintpair, nbttagcompound);
         if (this.c != null) {
+            synchronized (this.persistentDataLock) { // Paper - Async chunk loading
             this.c.a(chunkcoordintpair.pair());
+            } // Paper - Async chunk loading}
         }
-
-    }
-
-    public void i() {
-        this.a.a().join();
     }
 
     public void close() throws IOException {
-        this.a.close();
+        this.regionFileCache.close();
     }
 }

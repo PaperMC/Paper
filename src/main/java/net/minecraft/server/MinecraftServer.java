@@ -805,7 +805,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.getUserCache().b(false); // Paper
         }
         // Spigot end
-
+        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
     }
 
     public String getServerIp() {

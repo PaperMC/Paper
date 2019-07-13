@@ -91,7 +91,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
 
     }
 
-    protected void executeAll() {
+    public void executeAll() { // Paper - protected -> public
         while (this.executeNext()) {
             ;
         }

@@ -1,5 +1,6 @@
 package com.destroystokyo.paper;
 
+import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
 import com.google.common.base.Functions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -28,14 +29,14 @@ public class PaperCommand extends Command {
     public PaperCommand(String name) {
         super(name);
         this.description = "Paper related commands";
-        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo]";
         this.setPermission("bukkit.command.paper");
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         if (args.length <= 1)
-            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo");
 
         switch (args[0].toLowerCase(Locale.ENGLISH))
         {
@@ -126,6 +127,9 @@ public class PaperCommand extends Command {
                 break;
             case "debug":
                 doDebug(sender, args);
+                break;
+            case "dumpwaiting":
+                ChunkTaskManager.dumpAllChunkLoadInfo();
                 break;
             case "chunkinfo":
                 doChunkInfo(sender, args);

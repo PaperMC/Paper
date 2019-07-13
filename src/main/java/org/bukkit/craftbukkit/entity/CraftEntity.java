@@ -501,6 +501,28 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.setHeadRotation(yaw);
     }
 
+    @Override// Paper start
+    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, @javax.annotation.Nonnull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
+        net.minecraft.server.PlayerChunkMap playerChunkMap = ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().playerChunkMap;
+        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
+
+        loc.getWorld().getChunkAtAsyncUrgently(loc).thenCompose(chunk -> {
+            net.minecraft.server.ChunkCoordIntPair pair = new net.minecraft.server.ChunkCoordIntPair(chunk.getX(), chunk.getZ());
+            ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().addTicketAtLevel(net.minecraft.server.TicketType.POST_TELEPORT, pair, 31, 0);
+            net.minecraft.server.PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pair.pair());
+            if (updatingChunk != null) {
+                return updatingChunk.getEntityTickingFuture();
+            } else {
+                return java.util.concurrent.CompletableFuture.completedFuture(com.mojang.datafixers.util.Either.left(((org.bukkit.craftbukkit.CraftChunk)chunk).getHandle()));
+            }
+        }).thenAccept((chunk) -> future.complete(teleport(loc, cause))).exceptionally(ex -> {
+            future.completeExceptionally(ex);
+            return null;
+        });
+        return future;
+    }
+    // Paper end
+
     @Override
     public boolean teleport(Location location) {
         return teleport(location, TeleportCause.PLUGIN);

@@ -12,7 +12,7 @@ public class PacketPlayInTabComplete implements Packet<PacketListenerPlayIn> {
     @Override
     public void a(PacketDataSerializer packetdataserializer) throws IOException {
         this.a = packetdataserializer.i();
-        this.b = packetdataserializer.e(32500);
+        this.b = packetdataserializer.e(2048);
     }
 
     @Override

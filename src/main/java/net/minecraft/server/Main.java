@@ -172,6 +172,7 @@ public class Main {
 
             convertable_conversionsession.a((IRegistryCustom) iregistrycustom_dimension, (SaveData) object);
             */
+            Class.forName("net.minecraft.server.VillagerTrades");// Paper - load this sync so it won't fail later async
             final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.a((thread) -> {
                 DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.a(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
 

@@ -697,4 +697,9 @@ public final class MCUtil {
             out.print(fileData);
         }
     }
+
+    public static int getTicketLevelFor(ChunkStatus status) {
+        // TODO make sure the constant `33` is correct on future updates. See getChunkAt(int, int, ChunkStatus, boolean)
+        return 33 + ChunkStatus.getTicketLevelOffset(status);
+    }
 }

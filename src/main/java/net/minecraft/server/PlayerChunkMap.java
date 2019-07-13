@@ -65,7 +65,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     private final LightEngineThreaded lightEngine;
     private final IAsyncTaskHandler<Runnable> executor;
     public final ChunkGenerator chunkGenerator;
-    private final Supplier<WorldPersistentData> l;
+    private final Supplier<WorldPersistentData> l; public final Supplier<WorldPersistentData> getWorldPersistentDataSupplier() { return this.l; } // Paper - OBFHELPER
     private final VillagePlace m;
     public final LongSet unloadQueue;
     private boolean updatingChunksModified;
@@ -75,7 +75,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     public final WorldLoadListener worldLoadListener;
     public final PlayerChunkMap.a chunkDistanceManager;
     private final AtomicInteger u;
-    private final DefinedStructureManager definedStructureManager;
+    public final DefinedStructureManager definedStructureManager; // Paper - private -> public
     private final File w;
     private final PlayerMap playerMap;
     public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
@@ -158,7 +158,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         this.lightEngine = new LightEngineThreaded(ilightaccess, this, this.world.getDimensionManager().hasSkyLight(), threadedmailbox1, this.p.a(threadedmailbox1, false));
         this.chunkDistanceManager = new PlayerChunkMap.a(executor, iasynctaskhandler);
         this.l = supplier;
-        this.m = new VillagePlace(new File(this.w, "poi"), datafixer, flag);
+        this.m = new VillagePlace(new File(this.w, "poi"), datafixer, flag, this.world); // Paper
         this.setViewDistance(i);
     }
 
@@ -200,12 +200,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     }
 
     @Nullable
-    protected PlayerChunk getUpdatingChunk(long i) {
+    public PlayerChunk getUpdatingChunk(long i) { // Paper
         return (PlayerChunk) this.updatingChunks.get(i);
     }
 
     @Nullable
-    protected PlayerChunk getVisibleChunk(long i) {
+    public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
         return (PlayerChunk) this.visibleChunks.get(i);
     }
 
@@ -327,6 +327,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     public void close() throws IOException {
         try {
             this.p.close();
+            this.world.asyncChunkTaskManager.close(true); // Paper - Required since we're closing regionfiles in the next line
             this.m.close();
         } finally {
             super.close();
@@ -418,7 +419,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             this.b(() -> {
                 return true;
             });
-            this.i();
+            this.world.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
+//            this.i(); // Paper - nuke IOWorker
             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.w.getName());
         } else {
             this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
@@ -434,16 +436,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     }
 
-    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.96; // Spigot
+    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
 
     protected void unloadChunks(BooleanSupplier booleansupplier) {
         GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
 
+        try (Timing ignored = this.world.timings.poiUnload.startTiming()) { // Paper
         gameprofilerfiller.enter("poi");
         this.m.a(booleansupplier);
+        } // Paper
         gameprofilerfiller.exitEnter("chunk_unload");
         if (!this.world.isSavingDisabled()) {
+            try (Timing ignored = this.world.timings.chunkUnload.startTiming()) { // Paper
             this.b(booleansupplier);
+            }// Paper
         }
 
         gameprofilerfiller.exit();
@@ -464,12 +470,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             if (playerchunk != null) {
                 this.pendingUnload.put(j, playerchunk);
                 this.updatingChunksModified = true;
+                this.a(j, playerchunk); // Paper - Move up - don't leak chunks
                 // Spigot start
                 if (!booleansupplier.getAsBoolean() && this.unloadQueue.size() <= targetSize && activityAccountant.activityTimeIsExhausted()) {
                     break;
                 }
                 // Spigot end
-                this.a(j, playerchunk);
+                //this.a(j, playerchunk); // Paper - move up because spigot did a dumb
             }
         }
         activityAccountant.endActivity(); // Spigot
@@ -482,6 +489,60 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         }
 
     }
+
+    // Paper start - async chunk save for unload
+    // Note: This is very unsafe to call if the chunk is still in use.
+    // This is also modeled after PlayerChunkMap#saveChunk(IChunkAccess, boolean), with the intentional difference being
+    // serializing the chunk is left to a worker thread.
+    private void asyncSave(IChunkAccess chunk) {
+        ChunkCoordIntPair chunkPos = chunk.getPos();
+        NBTTagCompound poiData;
+        try (Timing ignored = this.world.timings.chunkUnloadPOISerialization.startTiming()) {
+            poiData = this.getVillagePlace().getData(chunk.getPos());
+        }
+
+        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkPos.x, chunkPos.z,
+            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
+
+        if (!chunk.isNeedsSaving()) {
+            return;
+        }
+
+        ChunkStatus chunkstatus = chunk.getChunkStatus();
+
+        // Copied from PlayerChunkMap#saveChunk(IChunkAccess, boolean)
+        if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
+            try (co.aikar.timings.Timing ignored1 = this.world.timings.chunkSaveOverwriteCheck.startTiming()) { // Paper
+                // Paper start - Optimize save by using status cache
+                try {
+                    ChunkStatus statusOnDisk = this.getChunkStatusOnDisk(chunkPos);
+                    if (statusOnDisk != null && statusOnDisk.getType() == ChunkStatus.Type.LEVELCHUNK) {
+                        // Paper end
+                        return;
+                    }
+
+                    if (chunkstatus == ChunkStatus.EMPTY && chunk.h().values().stream().noneMatch(StructureStart::e)) {
+                        return;
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+            }
+        }
+
+        ChunkRegionLoader.AsyncSaveData asyncSaveData;
+        try (Timing ignored = this.world.timings.chunkUnloadPrepareSave.startTiming()) {
+            asyncSaveData = ChunkRegionLoader.getAsyncSaveData(this.world, chunk);
+        }
+
+        this.world.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY,
+            asyncSaveData, chunk);
+
+        chunk.setLastSaved(this.world.getTime());
+        chunk.setNeedsSaving(false);
+    }
+    // Paper end
 
     private void a(long i, PlayerChunk playerchunk) {
         CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkSave();
@@ -496,13 +557,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                         ((Chunk) ichunkaccess).setLoaded(false);
                     }
 
-                    this.saveChunk(ichunkaccess);
+                    //this.saveChunk(ichunkaccess);// Paper - delay
                     if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
                         Chunk chunk = (Chunk) ichunkaccess;
 
                         this.world.unloadChunk(chunk);
                     }
                     this.autoSaveQueue.remove(playerchunk); // Paper
+
+                    try {
+                        this.asyncSave(ichunkaccess); // Paper - async chunk saving
+                    } catch (Throwable ex) {
+                        LOGGER.fatal("Failed to prepare async save, attempting synchronous save", ex);
+                        this.saveChunk(ichunkaccess);
+                    }
 
                     this.lightEngine.a(ichunkaccess.getPos());
                     this.lightEngine.queueUpdate();
@@ -574,19 +642,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     }
 
     private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> f(ChunkCoordIntPair chunkcoordintpair) {
-        return CompletableFuture.supplyAsync(() -> {
+        // Paper start - Async chunk io
+        final java.util.function.BiFunction<ChunkRegionLoader.InProgressChunkHolder, Throwable, Either<IChunkAccess, PlayerChunk.Failure>> syncLoadComplete = (chunkHolder, ioThrowable) -> {
             try (Timing ignored = this.world.timings.chunkLoad.startTimingIfSync()) { // Paper
                 this.world.getMethodProfiler().c("chunkLoad");
-                NBTTagCompound nbttagcompound; // Paper
-                try (Timing ignored2 = this.world.timings.chunkIO.startTimingIfSync()) { // Paper start - timings
-                    nbttagcompound = this.readChunkData(chunkcoordintpair);
-                } // Paper end
+                // Paper start
+                if (ioThrowable != null) {
+                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
+                }
 
-                if (nbttagcompound != null) {try (Timing ignored2 = this.world.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
-                    boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
+                this.getVillagePlace().loadInData(chunkcoordintpair, chunkHolder.poiData);
+                chunkHolder.tasks.forEach(Runnable::run);
+                // Paper end
 
-                    if (flag) {
-                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
+                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.world.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
+
+                    if (true) {
+                        ProtoChunk protochunk = chunkHolder.protoChunk;
 
                         protochunk.setLastSaved(this.world.getTime());
                         this.a(chunkcoordintpair, protochunk.getChunkStatus().getType());
@@ -610,7 +682,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
             this.g(chunkcoordintpair);
             return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.world)); // Paper - Anti-Xray - Add parameter
-        }, this.executor);
+            // Paper start - Async chunk io
+        };
+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> ret = new CompletableFuture<>();
+
+        Consumer<ChunkRegionLoader.InProgressChunkHolder> chunkHolderConsumer = (ChunkRegionLoader.InProgressChunkHolder holder) -> {
+            // Go into the chunk load queue and not server task queue so we can be popped out even faster.
+            com.destroystokyo.paper.io.chunk.ChunkTaskManager.queueChunkWaitTask(() -> {
+                try {
+                    ret.complete(syncLoadComplete.apply(holder, null));
+                } catch (Exception e) {
+                    ret.completeExceptionally(e);
+                }
+            });
+        };
+
+        CompletableFuture<NBTTagCompound> chunkSaveFuture = this.world.asyncChunkTaskManager.getChunkSaveFuture(chunkcoordintpair.x, chunkcoordintpair.z);
+        if (chunkSaveFuture != null) {
+            this.world.asyncChunkTaskManager.scheduleChunkLoad(chunkcoordintpair.x, chunkcoordintpair.z,
+                com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY, chunkHolderConsumer, false, chunkSaveFuture);
+            this.world.asyncChunkTaskManager.raisePriority(chunkcoordintpair.x, chunkcoordintpair.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY);
+        } else {
+            this.world.asyncChunkTaskManager.scheduleChunkLoad(chunkcoordintpair.x, chunkcoordintpair.z,
+                com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY, chunkHolderConsumer, false);
+        }
+        return ret;
+        // Paper end
     }
 
     private void g(ChunkCoordIntPair chunkcoordintpair) {
@@ -837,6 +934,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     }
 
     public boolean saveChunk(IChunkAccess ichunkaccess) {
+        try (co.aikar.timings.Timing ignored = this.world.timings.chunkSave.startTiming()) { // Paper
         this.m.a(ichunkaccess.getPos());
         if (!ichunkaccess.isNeedsSaving()) {
             return false;
@@ -849,6 +947,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                 ChunkStatus chunkstatus = ichunkaccess.getChunkStatus();
 
                 if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
+                    try (co.aikar.timings.Timing ignored1 = this.world.timings.chunkSaveOverwriteCheck.startTiming()) { // Paper
                     if (this.h(chunkcoordintpair)) {
                         return false;
                     }
@@ -856,12 +955,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                     if (chunkstatus == ChunkStatus.EMPTY && ichunkaccess.h().values().stream().noneMatch(StructureStart::e)) {
                         return false;
                     }
+                    } // Paper
                 }
 
                 this.world.getMethodProfiler().c("chunkSave");
-                NBTTagCompound nbttagcompound = ChunkRegionLoader.saveChunk(this.world, ichunkaccess);
+                NBTTagCompound nbttagcompound;
+                try (co.aikar.timings.Timing ignored1 = this.world.timings.chunkSaveDataSerialization.startTiming()) { // Paper
+                    nbttagcompound = ChunkRegionLoader.saveChunk(this.world, ichunkaccess);
+                } // Paper
 
-                this.a(chunkcoordintpair, nbttagcompound);
+
+                // Paper start - async chunk io
+                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkcoordintpair.x, chunkcoordintpair.z,
+                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
+                // Paper end - async chunk io
                 this.a(chunkcoordintpair, chunkstatus.getType());
                 return true;
             } catch (Exception exception) {
@@ -870,6 +977,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                 return false;
             }
         }
+        } // Paper
     }
 
     private boolean h(ChunkCoordIntPair chunkcoordintpair) {
@@ -999,6 +1107,35 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         }
     }
 
+    // Paper start - Asynchronous chunk io
+    @Nullable
+    @Override
+    public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+        if (Thread.currentThread() != com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE) {
+            NBTTagCompound ret = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
+                .loadChunkDataAsyncFuture(this.world, chunkcoordintpair.x, chunkcoordintpair.z, com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread(),
+                    false, true, true).join().chunkData;
+
+            if (ret == com.destroystokyo.paper.io.PaperFileIOThread.FAILURE_VALUE) {
+                throw new IOException("See logs for further detail");
+            }
+            return ret;
+        }
+        return super.read(chunkcoordintpair);
+    }
+
+    @Override
+    public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
+        if (Thread.currentThread() != com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE) {
+            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(
+                this.world, chunkcoordintpair.x, chunkcoordintpair.z, null, nbttagcompound,
+                com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread());
+            return;
+        }
+        super.write(chunkcoordintpair, nbttagcompound);
+    }
+    // Paper end
+
     @Nullable
     public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
         NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
@@ -1020,33 +1157,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     // Paper start - chunk status cache "api"
     public ChunkStatus getChunkStatusOnDiskIfCached(ChunkCoordIntPair chunkPos) {
-        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getRegionFileIfLoaded(chunkPos);
+        synchronized (this) { // Paper
+        RegionFile regionFile = this.regionFileCache.getRegionFileIfLoaded(chunkPos);
 
         return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+        } // Paper
     }
 
     public ChunkStatus getChunkStatusOnDisk(ChunkCoordIntPair chunkPos) throws IOException {
-        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, true);
+        // Paper start - async chunk save for unload
+        IChunkAccess unloadingChunk = this.world.asyncChunkTaskManager.getChunkInSaveProgress(chunkPos.x, chunkPos.z);
+        if (unloadingChunk != null) {
+            return unloadingChunk.getChunkStatus();
+        }
+        // Paper end
+        // Paper start - async io
+        NBTTagCompound inProgressWrite = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
+                                             .getPendingWrite(this.world, chunkPos.x, chunkPos.z, false);
 
-        if (regionFile == null || !regionFile.chunkExists(chunkPos)) {
-            return null;
+        if (inProgressWrite != null) {
+            return ChunkRegionLoader.getStatus(inProgressWrite);
+        }
+        // Paper end
+        synchronized (this) { // Paper - async io
+            RegionFile regionFile = this.regionFileCache.getFile(chunkPos, true);
+
+            if (regionFile == null || !regionFile.chunkExists(chunkPos)) {
+                return null;
+            }
+
+            ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+
+            if (status != null) {
+                return status;
+            }
+            // Paper start - async io
         }
 
-        ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+        NBTTagCompound compound = this.readChunkData(chunkPos);
 
-        if (status != null) {
-            return status;
-        }
-
-        this.readChunkData(chunkPos);
-
-        return regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+        return ChunkRegionLoader.getStatus(compound);
+        // Paper end
     }
 
     public void updateChunkStatusOnDisk(ChunkCoordIntPair chunkPos, @Nullable NBTTagCompound compound) throws IOException {
-        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, false);
+        synchronized (this) {
+            RegionFile regionFile = this.regionFileCache.getFile(chunkPos, false);
 
-        regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkRegionLoader.getStatus(compound));
+            regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkRegionLoader.getStatus(compound));
+        }
     }
 
     public IChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
@@ -1054,6 +1213,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         return chunkHolder == null ? null : chunkHolder.getAvailableChunkNow();
     }
     // Paper end
+
+
+    // Paper start - async io
+    // this function will not load chunk data off disk to check for status
+    // ret null for unknown, empty for empty status on disk or absent from disk
+    public ChunkStatus getStatusOnDiskNoLoad(int x, int z) {
+        // Paper start - async chunk save for unload
+        IChunkAccess unloadingChunk = this.world.asyncChunkTaskManager.getChunkInSaveProgress(x, z);
+        if (unloadingChunk != null) {
+            return unloadingChunk.getChunkStatus();
+        }
+        // Paper end
+        // Paper start - async io
+        net.minecraft.server.NBTTagCompound inProgressWrite = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
+            .getPendingWrite(this.world, x, z, false);
+
+        if (inProgressWrite != null) {
+            return net.minecraft.server.ChunkRegionLoader.getStatus(inProgressWrite);
+        }
+        // Paper end
+        // variant of PlayerChunkMap#getChunkStatusOnDisk that does not load data off disk, but loads the region file
+        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
+        synchronized (world.getChunkProvider().playerChunkMap) {
+            net.minecraft.server.RegionFile file;
+            try {
+                file = world.getChunkProvider().playerChunkMap.regionFileCache.getFile(chunkPos, false);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
+            return !file.chunkExists(chunkPos) ? ChunkStatus.EMPTY : file.getStatusIfCached(x, z);
+        }
+    }
 
     boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
         // Spigot start
@@ -1400,6 +1592,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     }
 
+    public VillagePlace getVillagePlace() { return this.h(); } // Paper - OBFHELPER
     protected VillagePlace h() {
         return this.m;
     }

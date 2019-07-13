@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 public class NextTickListEntry<T> {
 
-    private static long d;
+    private static final java.util.concurrent.atomic.AtomicLong COUNTER = new java.util.concurrent.atomic.AtomicLong(); // Paper - async chunk loading
     private final T e;
     public final BlockPosition a;
     public final long b;
@@ -16,7 +16,7 @@ public class NextTickListEntry<T> {
     }
 
     public NextTickListEntry(BlockPosition blockposition, T t0, long i, TickListPriority ticklistpriority) {
-        this.f = (long) (NextTickListEntry.d++);
+        this.f = (long) (NextTickListEntry.COUNTER.getAndIncrement()); // Paper - async chunk loading
         this.a = blockposition.immutableCopy();
         this.e = t0;
         this.b = i;
