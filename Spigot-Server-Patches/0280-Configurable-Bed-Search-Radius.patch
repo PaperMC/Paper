@@ -1,4 +1,4 @@
-From f1cf963f3f14757f6fb2f07fe26fdd50e8201883 Mon Sep 17 00:00:00 2001
+From fbc5aa049c925955355972e08ce896e10c5b4d3e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 15:22:06 -0400
 Subject: [PATCH] Configurable Bed Search Radius
@@ -10,7 +10,7 @@ player at their bed should it of became obstructed.
 Defaults to vanilla 1.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index aa2be2ede6..f5b2e88f3b 100644
+index aa2be2ed..f5b2e88f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -452,4 +452,15 @@ public class PaperWorldConfig {
@@ -30,69 +30,120 @@ index aa2be2ede6..f5b2e88f3b 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
-index 06f627002c..d81a2db6cd 100644
+index 06f62700..0ab2112c 100644
 --- a/src/main/java/net/minecraft/server/BlockBed.java
 +++ b/src/main/java/net/minecraft/server/BlockBed.java
-@@ -187,6 +187,52 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+@@ -187,6 +187,10 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
      @Nullable
      public static BlockPosition a(IBlockAccess iblockaccess, BlockPosition blockposition, int i) {
          EnumDirection enumdirection = (EnumDirection) iblockaccess.getType(blockposition).get(BlockBed.FACING);
-+        // Paper - replace whole method
-+        World world = (World) iblockaccess;
-+        int radius = world.paperConfig.bedSearchRadius;
-+        for (int r = 1; r <= radius; r++) {
-+            int x = -r;
-+            int z = r;
-+
-+            // Iterates the edge of half of the box; then negates for other half.
-+            while (x <= r && z > -r) {
-+                for (int y = -1; y <= 1; y++) {
-+                    BlockPosition pos = blockposition.add(x, y, z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
-+                        }
-+                    }
-+                    pos = blockposition.add(-x, y, -z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
-+                        }
-+                    }
-+
-+                    pos = blockposition.add(enumdirection.getAdjacentX() + x, y, enumdirection.getAdjacentZ() + z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
-+                        }
-+                    }
-+
-+                    pos = blockposition.add(enumdirection.getAdjacentX() - x, y, enumdirection.getAdjacentZ() - z);
-+                    if (isSafeRespawn(world, pos)) {
-+                        if (i-- <= 0) {
-+                            return pos;
-+                        }
-+                    }
-+                }
-+                if (x < r) {
-+                    x++;
-+                } else {
-+                    z--;
-+                }
-+            }
-+        }
-+
-+        return null; /* // Paper comment out
++        // Paper start - replace whole method
++        return findSafePosition((World)iblockaccess, enumdirection, blockposition);
++    }
++        /* // Paper comment out
          int j = blockposition.getX();
          int k = blockposition.getY();
          int l = blockposition.getZ();
-@@ -212,9 +258,12 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+@@ -212,9 +216,106 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
              }
          }
  
--        return null;
-+        return null;*/ // Paper
++        return null;
++    }*/ // Paper comment out
++
++    private static BlockPosition findSafePosition(World world, EnumDirection updirection, BlockPosition blockposition){
++        int radius = world.paperConfig.bedSearchRadius;
++        double angle = Math.PI / 2;
++        int tmpX = (int)(updirection.getAdjacentX() * Math.cos(angle) - updirection.getAdjacentZ() * Math.sin(angle));
++        int tmpZ = (int)(updirection.getAdjacentX() * Math.sin(angle) + updirection.getAdjacentZ() * Math.cos(angle));
++
++        EnumDirection rightDirection = EnumDirection.a(tmpX, 0, tmpZ);
++        EnumDirection downDirection = updirection.opposite();
++        EnumDirection leftDirection = rightDirection.opposite();
++
++        EnumDirection[] corePositionOutDirection = new EnumDirection[6];
++        corePositionOutDirection[0] = updirection;
++        corePositionOutDirection[1] = leftDirection;
++        corePositionOutDirection[2] = leftDirection;
++        corePositionOutDirection[3] = downDirection;
++        corePositionOutDirection[4] = rightDirection;
++        corePositionOutDirection[5] = rightDirection;
++
++        BlockPosition[] corePosition = new BlockPosition[6];
++        corePosition[0] = blockposition.add(updirection.getAdjacentX(), 0, updirection.getAdjacentZ());
++        corePosition[1] = blockposition.add(leftDirection.getAdjacentX(), 0, leftDirection.getAdjacentZ());
++        corePosition[2] = corePosition[1].add(downDirection.getAdjacentX(), 0, downDirection.getAdjacentZ());
++        corePosition[3] = blockposition.add(2 * downDirection.getAdjacentX(), 0, 2 * downDirection.getAdjacentZ());
++        corePosition[5] = blockposition.add(rightDirection.getAdjacentX(), 0, rightDirection.getAdjacentZ());
++        corePosition[4] = corePosition[5].add(downDirection.getAdjacentX(), 0, downDirection.getAdjacentZ());
++
++        BlockPosition[] tmpPosition = new BlockPosition[8];
++        EnumDirection[] tmpPositionDirection = new EnumDirection[8];
++        tmpPositionDirection[0] = rightDirection;
++        tmpPositionDirection[1] = leftDirection;
++        tmpPositionDirection[2] = updirection;
++        tmpPositionDirection[3] = downDirection;
++        tmpPositionDirection[4] = leftDirection;
++        tmpPositionDirection[5] = rightDirection;
++        tmpPositionDirection[6] = downDirection;
++        tmpPositionDirection[7] = updirection;
++
++        BlockPosition pos;
++        boolean foundPosition;
++        for (int r = 1; r <= radius; r++) {
++            int h = 0;
++            while (h <= 1) {
++                int numIterated = 0;
++                for (int index = (int)(Math.random() * corePosition.length); numIterated < corePosition.length; index = (index+1) % corePosition.length) {
++                    numIterated++;
++
++                    pos = corePosition[index].add(0, h, 0);
++                    foundPosition = isSafeRespawn(world, pos);
++                    if (foundPosition) {
++                        return pos;
++                    }
++                }
++                tmpPosition[0] = corePosition[0].add(0, h, 0);
++                tmpPosition[1] = corePosition[0].add(0, h, 0);
++                tmpPosition[2] = corePosition[1].add(0, h, 0);
++                tmpPosition[3] = corePosition[2].add(0, h, 0);
++                tmpPosition[4] = corePosition[3].add(0, h, 0);
++                tmpPosition[5] = corePosition[3].add(0, h, 0);
++                tmpPosition[6] = corePosition[4].add(0, h, 0);
++                tmpPosition[7] = corePosition[5].add(0, h, 0);
++                for (int rr = 1; rr <= r; rr++){
++                    numIterated = 0;
++                    for (int index = (int)(Math.random() * tmpPosition.length); numIterated < tmpPosition.length; index = (index+1) % tmpPosition.length) {
++                        numIterated++;
++                        tmpPosition[index] = tmpPosition[index].add(tmpPositionDirection[index].getAdjacentX(), 0, tmpPositionDirection[index].getAdjacentZ());
++                        pos = tmpPosition[index];
++
++                        foundPosition = isSafeRespawn(world, pos);
++                        if (foundPosition) {
++                            return pos;
++                        }
++                    }
++                }
++                switch (h) {
++                    case -1:
++                        h = 1;
++                        break;
++                    case 0:
++                        h = -1;
++                        break;
++                    case 1:
++                        h = Integer.MAX_VALUE;
++                        break;
++                }
++            }
++            for (int index = 0; index < corePosition.length; index++) {
++                EnumDirection tmp = corePositionOutDirection[index];
++                corePosition[index] = corePosition[index].add(tmp.getAdjacentX(), 0, tmp.getAdjacentZ());
++            }
++        }
+         return null;
      }
++    // Paper end
  
 +    protected static boolean isSafeRespawn(IBlockAccess iblockaccess, BlockPosition blockposition) { // Paper - OBFHELPER + behavior improvement
 +        return a(iblockaccess, blockposition) && iblockaccess.getType(blockposition.down()).getMaterial().isBuildable(); // Paper - ensure solid block
@@ -101,5 +152,5 @@ index 06f627002c..d81a2db6cd 100644
          return iblockaccess.getType(blockposition.down()).q() && !iblockaccess.getType(blockposition).getMaterial().isBuildable() && !iblockaccess.getType(blockposition.up()).getMaterial().isBuildable();
      }
 -- 
-2.21.0
+2.19.0
 
