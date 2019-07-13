@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkMapDistance.java
 +++ b/net/minecraft/server/ChunkMapDistance.java
-@@ -32,7 +32,7 @@
+@@ -32,11 +32,11 @@
      private static final Logger LOGGER = LogManager.getLogger();
      private static final int b = 33 + ChunkStatus.a(ChunkStatus.FULL) - 2;
      private final Long2ObjectMap<ObjectSet<EntityPlayer>> c = new Long2ObjectOpenHashMap();
@@ -9,6 +9,11 @@
      private final ChunkMapDistance.a e = new ChunkMapDistance.a();
      private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
      private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
+-    private final Set<PlayerChunk> h = Sets.newHashSet();
++    private final Set<PlayerChunk> h = Sets.newHashSet(); // PAIL pendingChunkUpdates
+     private final PlayerChunk.c i;
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
+     private final Mailbox<ChunkTaskQueueSorter.b> k;
 @@ -61,7 +61,7 @@
          while (objectiterator.hasNext()) {
              Entry<ObjectSortedSet<Ticket<?>>> entry = (Entry) objectiterator.next();
@@ -18,7 +23,36 @@
                  return ticket.a(this.currentTick);
              })) {
                  this.e.b(entry.getLongKey(), this.a((ObjectSortedSet) entry.getValue()), false);
-@@ -124,7 +124,7 @@
+@@ -99,10 +99,25 @@
+         }
+ 
+         if (!this.h.isEmpty()) {
+-            this.h.forEach((playerchunk) -> {
++            // CraftBukkit start
++            // Iterate pending chunk updates with protection against concurrent modification exceptions
++            java.util.Iterator<PlayerChunk> iter = this.h.iterator();
++            int expectedSize = this.h.size();
++            do {
++                PlayerChunk playerchunk = iter.next();
++                iter.remove();
++                expectedSize--;
++
+                 playerchunk.a(playerchunkmap);
+-            });
+-            this.h.clear();
++
++                // Reset iterator if set was modified using add()
++                if (this.h.size() != expectedSize) {
++                    expectedSize = this.h.size();
++                    iter = this.h.iterator();
++                }
++            } while (iter.hasNext());
++            // CraftBukkit end
++
+             return true;
+         } else {
+             if (!this.l.isEmpty()) {
+@@ -124,7 +139,7 @@
  
                          completablefuture.thenAccept((either) -> {
                              this.m.execute(() -> {
@@ -27,7 +61,7 @@
                                  }, j, false));
                              });
                          });
-@@ -138,7 +138,7 @@
+@@ -138,7 +153,7 @@
          }
      }
  
@@ -36,7 +70,7 @@
          ObjectSortedSet<Ticket<?>> objectsortedset = this.e(i);
          ObjectBidirectionalIterator<Ticket<?>> objectbidirectionaliterator = objectsortedset.iterator();
          int j;
-@@ -149,21 +149,24 @@
+@@ -149,21 +164,24 @@
              j = PlayerChunkMap.GOLDEN_TICKET + 1;
          }
  
@@ -64,7 +98,7 @@
          }
  
          if (objectsortedset.isEmpty()) {
-@@ -171,16 +174,27 @@
+@@ -171,16 +189,27 @@
          }
  
          this.e.b(i, this.a(objectsortedset), false);
@@ -95,7 +129,7 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -247,6 +261,21 @@
+@@ -247,6 +276,21 @@
          return this.f.a.containsKey(i);
      }
  
@@ -117,7 +151,7 @@
      class a extends ChunkMap {
  
          public a() {
-@@ -333,7 +362,7 @@
+@@ -333,7 +377,7 @@
                  Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i), ChunkMapDistance.this.currentTick);
  
                  if (flag1) {
@@ -126,7 +160,7 @@
                          ChunkMapDistance.this.m.execute(() -> {
                              ChunkMapDistance.this.a(i, ticket);
                              ChunkMapDistance.this.l.add(i);
-@@ -342,7 +371,7 @@
+@@ -342,7 +386,7 @@
                          return j;
                      }));
                  } else {
