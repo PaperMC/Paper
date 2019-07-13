@@ -46,14 +46,14 @@
  
              if (either == null || either.left().isPresent()) {
                  return completablefuture;
-@@ -256,6 +265,21 @@
+@@ -256,6 +265,24 @@
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET;
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
 +        // CraftBukkit start
 +        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
 +        if (playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && !playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
-+            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAcceptAsync((either) -> {
 +                either.ifLeft((chunkAccess) -> {
 +                    Chunk chunk = (Chunk) chunkAccess;
 +                    // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
@@ -62,13 +62,16 @@
 +                    chunk.setNeedsSaving(true);
 +                    chunk.unloadCallback();
 +                });
-+            });
++            }, playerchunkmap.callbackExecutor);
++
++            // Run callback right away if the future was already done
++            playerchunkmap.callbackExecutor.run();
 +        }
 +        // CraftBukkit end
          CompletableFuture completablefuture;
  
          if (flag) {
-@@ -287,7 +311,7 @@
+@@ -287,7 +314,7 @@
          if (flag2 && !flag3) {
              completablefuture = this.fullChunkFuture;
              this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -77,19 +80,22 @@
                  playerchunkmap.getClass();
                  return either1.ifLeft(playerchunkmap::a);
              }));
-@@ -325,6 +349,17 @@
+@@ -325,6 +352,20 @@
  
          this.w.a(this.location, this::k, this.ticketLevel, this::d);
          this.oldTicketLevel = this.ticketLevel;
 +        // CraftBukkit start
 +        // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
 +        if (!playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
-+            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAcceptAsync((either) -> {
 +                either.ifLeft((chunkAccess) -> {
 +                    Chunk chunk = (Chunk) chunkAccess;
 +                    chunk.loadCallback();
 +                });
-+            });
++            }, playerchunkmap.callbackExecutor);
++
++            // Run callback right away if the future was already done
++            playerchunkmap.callbackExecutor.run();
 +        }
 +        // CraftBukkit end
      }
