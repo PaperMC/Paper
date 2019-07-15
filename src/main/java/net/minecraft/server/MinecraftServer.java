@@ -509,12 +509,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         } else if (flag1) {
             iworlddataserver.setSpawn(BlockPosition.ZERO.up(), 0.0F);
         } else {
-            WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
-            Random random = new Random(worldserver.getSeed());
-            BlockPosition blockposition = worldchunkmanager.a(0, worldserver.getSeaLevel(), 0, 256, (biomebase) -> {
-                return biomebase.b().b();
-            }, random);
-            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
+            // Paper start - moved down
             // CraftBukkit start
             if (worldserver.generator != null) {
                 Random rand = new Random(worldserver.getSeed());
@@ -530,6 +525,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 }
             }
             // CraftBukkit end
+            // Paper start - if the generator created a spawn for us, then there is no need for us to also create a spawn -
+            // only do it if the generator did not
+            WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
+            Random random = new Random(worldserver.getSeed());
+            BlockPosition blockposition = worldchunkmanager.a(0, worldserver.getSeaLevel(), 0, 256, (biomebase) -> {
+                return biomebase.b().b();
+            }, random);
+            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
+            // Paper end
 
             if (blockposition == null) {
                 MinecraftServer.LOGGER.warn("Unable to find spawn biome");
