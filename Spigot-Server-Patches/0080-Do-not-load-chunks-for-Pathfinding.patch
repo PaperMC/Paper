@@ -1,0 +1,94 @@
+From 3a28632a712e12127804f4157859dc49c0f32b36 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 31 Mar 2016 19:17:58 -0400
+Subject: [PATCH] Do not load chunks for Pathfinding
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
+index ccbc1dde0..34e743716 100644
+--- a/src/main/java/net/minecraft/server/ChunkCache.java
++++ b/src/main/java/net/minecraft/server/ChunkCache.java
+@@ -25,7 +25,7 @@ public class ChunkCache implements IWorldReader {
+ 
+         for (k = this.a; k <= i; ++k) {
+             for (l = this.b; l <= j; ++l) {
+-                this.c[k - this.a][l - this.b] = world.getChunkAt(k, l, ChunkStatus.FULL, false);
++                this.c[k - this.a][l - this.b] = world.getChunkIfLoadedImmediately(k, l); // Paper
+             }
+         }
+ 
+@@ -91,7 +91,7 @@ public class ChunkCache implements IWorldReader {
+         int k = i - this.a;
+         int l = j - this.b;
+ 
+-        return k >= 0 && k < this.c.length && l >= 0 && l < this.c[k].length;
++        return k >= 0 && k < this.c.length && l >= 0 && l < this.c[k].length && this.c[k][l] != null; // Paper - We don't always load chunks
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index a9f17b031..8b05b8acd 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -22,7 +22,7 @@ public abstract class NavigationAbstract {
+     protected long n;
+     protected PathfinderAbstract o;
+     private BlockPosition q;
+-    private Pathfinder r;
++    private Pathfinder r; public Pathfinder getPathfinder() { return r; } // Paper - OBFHELPER
+ 
+     public NavigationAbstract(EntityInsentient entityinsentient, World world) {
+         this.g = Vec3D.a;
+diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
+index 359d9a11c..262fa5585 100644
+--- a/src/main/java/net/minecraft/server/Pathfinder.java
++++ b/src/main/java/net/minecraft/server/Pathfinder.java
+@@ -12,7 +12,7 @@ public class Pathfinder {
+     private final Set<PathPoint> b = Sets.newHashSet();
+     private final PathPoint[] c = new PathPoint[32];
+     private final int d;
+-    private PathfinderAbstract e;
++    private PathfinderAbstract e; public PathfinderAbstract getPathfinder() { return this.e; }  // Paper - OBFHELPER
+ 
+     public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {
+         this.e = pathfinderabstract;
+diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
+index 593f13af4..80fcb66e3 100644
+--- a/src/main/java/net/minecraft/server/PathfinderNormal.java
++++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
+@@ -355,7 +355,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+         PathType pathtype = this.b(iblockaccess, i, j, k);
+ 
+         if (pathtype == PathType.OPEN && j >= 1) {
+-            Block block = iblockaccess.getType(new BlockPosition(i, j - 1, k)).getBlock();
++            Block block = iblockaccess.getBlockIfLoaded(new BlockPosition(i, j - 1, k)); // Paper
++            if (block == null) return PathType.BLOCKED; // Paper
+             PathType pathtype1 = this.b(iblockaccess, i, j - 1, k);
+ 
+             pathtype = pathtype1 != PathType.WALKABLE && pathtype1 != PathType.OPEN && pathtype1 != PathType.WATER && pathtype1 != PathType.LAVA ? PathType.WALKABLE : PathType.OPEN;
+@@ -385,9 +386,10 @@ public class PathfinderNormal extends PathfinderAbstract {
+                 for (int l = -1; l <= 1; ++l) {
+                     for (int i1 = -1; i1 <= 1; ++i1) {
+                         if (l != 0 || i1 != 0) {
+-                            Block block = iblockaccess.getType(blockposition_pooledblockposition.d(l + i, j, i1 + k)).getBlock();
++                            Block block = iblockaccess.getBlockIfLoaded(blockposition_pooledblockposition.d(l + i, j, i1 + k)); // Paper
+ 
+-                            if (block == Blocks.CACTUS) {
++                            if (block == null) pathtype = PathType.BLOCKED; // Paper
++                            else if (block == Blocks.CACTUS) { // Paper
+                                 pathtype = PathType.DANGER_CACTUS;
+                             } else if (block == Blocks.FIRE) {
+                                 pathtype = PathType.DANGER_FIRE;
+@@ -421,7 +423,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+ 
+     protected PathType b(IBlockAccess iblockaccess, int i, int j, int k) {
+         BlockPosition blockposition = new BlockPosition(i, j, k);
+-        IBlockData iblockdata = iblockaccess.getType(blockposition);
++        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition); // Paper
++        if (iblockdata == null) return PathType.BLOCKED; // Paper
+         Block block = iblockdata.getBlock();
+         Material material = iblockdata.getMaterial();
+ 
+-- 
+2.22.0
+
