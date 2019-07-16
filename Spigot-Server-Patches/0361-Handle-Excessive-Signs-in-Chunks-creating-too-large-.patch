@@ -1,0 +1,90 @@
+From d2140ba4accc710336ec38125f9119a5bdccd8c5 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 2 Mar 2019 14:55:01 -0500
+Subject: [PATCH] Handle Excessive Signs in Chunks creating too large of
+ packets
+
+Also adds a limit to stop sending Sign data to client after 500
+signs per chunk to limit client lag.
+
+Use -DPaper.excessiveSignsLimit=500 to configure that limit, or -1
+to disable the limit and let your players be abused.
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 23fcdea17..ba23d2833 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -220,6 +220,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+             });
+         }
+ 
++        // Paper start
++        java.util.List<Packet> extraPackets = packet.getExtraPackets();
++        if (extraPackets != null && !extraPackets.isEmpty()) {
++            for (Packet extraPacket : extraPackets) {
++                this.dispatchPacket(extraPacket, genericfuturelistener);
++            }
++        }
++        // Paper end
++
+     }
+ 
+     private void sendPacketQueue() { this.o(); } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
+index 2d8e6a2f4..8d0965a05 100644
+--- a/src/main/java/net/minecraft/server/Packet.java
++++ b/src/main/java/net/minecraft/server/Packet.java
+@@ -11,6 +11,7 @@ public interface Packet<T extends PacketListener> {
+     void a(T t0);
+ 
+     // Paper start
++    default java.util.List<Packet> getExtraPackets() { return null; }
+     default boolean packetTooLarge(NetworkManager manager) {
+         return false;
+     }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+index 58eccd9c6..ef71a1feb 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+@@ -20,6 +20,15 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+ 
+     public PacketPlayOutMapChunk() {}
+ 
++    // Paper start
++    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
++    private static final int SKIP_EXCESSIVE_SIGNS_LIMIT = Integer.getInteger("Paper.excessiveSignsLimit", 500);
++
++    @Override
++    public java.util.List<Packet> getExtraPackets() {
++        return extraPackets;
++    }
++    // Paper end
+     public PacketPlayOutMapChunk(Chunk chunk, int i) {
+         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
+ 
+@@ -42,6 +51,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         this.c = this.a(new PacketDataSerializer(this.i()), chunk, i);
+         this.f = Lists.newArrayList();
+         iterator = chunk.getTileEntities().entrySet().iterator();
++        int totalSigns = 0; // Paper
+ 
+         while (iterator.hasNext()) {
+             entry = (Entry) iterator.next();
+@@ -50,6 +60,14 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+             int j = blockposition.getY() >> 4;
+ 
+             if (this.f() || (i & 1 << j) != 0) {
++                // Paper start - send signs separately
++                if (tileentity instanceof TileEntitySign) {
++                    if (SKIP_EXCESSIVE_SIGNS_LIMIT < 0 || ++totalSigns < SKIP_EXCESSIVE_SIGNS_LIMIT) {
++                        this.extraPackets.add(tileentity.getUpdatePacket());
++                    }
++                    continue;
++                }
++                // Paper end
+                 NBTTagCompound nbttagcompound = tileentity.b();
+                 if (tileentity instanceof TileEntitySkull) { TileEntitySkull.sanitizeTileEntityUUID(nbttagcompound); } // Paper
+ 
+-- 
+2.22.0
+
