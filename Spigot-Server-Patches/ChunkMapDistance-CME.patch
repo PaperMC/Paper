@@ -5,15 +5,15 @@ Subject: [PATCH] ChunkMapDistance CME
 
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index ed4e8d69ca..a116826490 100644
+index a116ee128..8572eeba1 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
      private final ChunkMapDistance.a e = new ChunkMapDistance.a();
      private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
      private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
--    private final Set<PlayerChunk> h = Sets.newHashSet();
-+    private final java.util.Queue<PlayerChunk> h = new java.util.LinkedList<>(); // Paper - use a queue
+-    private final Set<PlayerChunk> h = Sets.newHashSet(); // PAIL pendingChunkUpdates
++    private final java.util.Queue<PlayerChunk> h = new java.util.LinkedList<>(); // PAIL pendingChunkUpdates // Paper - use a queue
      private final PlayerChunk.c i;
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
      private final Mailbox<ChunkTaskQueueSorter.b> k;
@@ -23,10 +23,25 @@ index ed4e8d69ca..a116826490 100644
  
 +        // Paper start
          if (!this.h.isEmpty()) {
--            this.h.forEach((playerchunk) -> {
+-            // CraftBukkit start
+-            // Iterate pending chunk updates with protection against concurrent modification exceptions
+-            java.util.Iterator<PlayerChunk> iter = this.h.iterator();
+-            int expectedSize = this.h.size();
+-            do {
+-                PlayerChunk playerchunk = iter.next();
+-                iter.remove();
+-                expectedSize--;
+-
 -                playerchunk.a(playerchunkmap);
--            });
--            this.h.clear();
+-
+-                // Reset iterator if set was modified using add()
+-                if (this.h.size() != expectedSize) {
+-                    expectedSize = this.h.size();
+-                    iter = this.h.iterator();
+-                }
+-            } while (iter.hasNext());
+-            // CraftBukkit end
+-
 +            while(!this.h.isEmpty()) {
 +                this.h.remove().a(playerchunkmap);
 +            }
