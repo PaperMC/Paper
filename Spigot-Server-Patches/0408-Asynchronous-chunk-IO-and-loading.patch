@@ -1,4 +1,4 @@
-From 9d91e6d610aba17f078635228a8f6865dbdc4b09 Mon Sep 17 00:00:00 2001
+From 26436ed089b2806e44ddf21f5db8d46c5d7346ae Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -116,10 +116,10 @@ index 9d8bee5cac..c2dd59f573 100644
  
 diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 new file mode 100644
-index 0000000000..5647c9bd65
+index 0000000000..19f4b89a98
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
-@@ -0,0 +1,663 @@
+@@ -0,0 +1,664 @@
 +package com.destroystokyo.paper.io;
 +
 +import net.minecraft.server.ChunkCoordIntPair;
@@ -199,7 +199,8 @@ index 0000000000..5647c9bd65
 +     * If write in progress while scheduling write (ignore read in progress), overwrite the write in progress data
 +     *
 +     * This allows the reads and writes to act as if they occur synchronously to the thread scheduling them, however
-+     * it fails to properly propagate write failures
++     * it fails to properly propagate write failures. When writes fail the data is kept so future reads will actually
++     * read the failed write data. This should hopefully act as a way to prevent data loss for spurious fails for writing data.
 +     *
 +     */
 +
@@ -1117,10 +1118,10 @@ index 0000000000..c3ca3c4a1c
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 new file mode 100644
-index 0000000000..afe5dd8a46
+index 0000000000..8651f64f3f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
-@@ -0,0 +1,221 @@
+@@ -0,0 +1,242 @@
 +package com.destroystokyo.paper.io;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -1138,9 +1139,14 @@ index 0000000000..afe5dd8a46
 +    protected final long spinWaitTime;
 +
 +    protected volatile boolean closed;
++
 +    protected final AtomicBoolean parked = new AtomicBoolean();
 +
-+    protected final ConcurrentLinkedQueue<Thread> flushQueue = new ConcurrentLinkedQueue<>();
++    protected volatile ConcurrentLinkedQueue<Thread> flushQueue = new ConcurrentLinkedQueue<>();
++
++    // this is required to synchronize LockSupport#park()
++    // LockSupport explicitly states that it will only follow ordering with respect to volatile access
++    // see flush() for more details
 +    protected volatile int flushCounter;
 +
 +    public QueueExecutorThread(final PrioritizedTaskQueue<T> queue) {
@@ -1169,6 +1175,7 @@ index 0000000000..afe5dd8a46
 +                LockSupport.parkNanos("Spinwaiting on tasks", 1000L); // 1us
 +
 +                if (this.pollTasks()) {
++                    // restart loop, found tasks
 +                    continue main_loop;
 +                }
 +
@@ -1187,11 +1194,25 @@ index 0000000000..afe5dd8a46
 +
 +            this.parked.set(true);
 +            // We need to parse here to avoid a race condition where a thread queues a task before we set parked to true
++            // (i.e it will not notify us)
++
++            // it also resolves race condition where we've overriden a concurrent thread's flush call which set parked to false
++            // the important ordering: (volatile guarantees we cannot re-order the below events)
++            // us: parked -> true, parse tasks -> writeCounter + 1 -> drain flush queue
++            // them: read write counter -> add to flush queue -> write parked to false -> park loop
++
++            // if we overwrite their set parked to false call then they're in the park loop or about to be, and we're about to
++            // drain the flush queue
 +            if (this.pollTasks()) {
 +                this.parked.set(false);
 +                continue;
 +            }
++            if (this.handleClose()) {
++                return;
++            }
 +
++            // we don't need to check parked before sleeping, but we do need to check parked in a do-while loop
++            // LockSupport.park() can fail for any reason
 +            do {
 +                Thread.interrupted();
 +                LockSupport.park("Waiting on tasks");
@@ -1220,7 +1241,7 @@ index 0000000000..afe5dd8a46
 +                if (throwable instanceof ThreadDeath) {
 +                    throw (ThreadDeath)throwable;
 +                }
-+                LOGGER.fatal("Exception thrown from prioritized runnable task in thread " + this.getName() + ": " + IOUtil.genericToString(task), throwable);
++                LOGGER.fatal("Exception thrown from prioritized runnable task in thread '" + this.getName() + "': " + IOUtil.genericToString(task), throwable);
 +            }
 +        }
 +
@@ -1230,21 +1251,26 @@ index 0000000000..afe5dd8a46
 +    }
 +
 +    protected void handleFlushThreads(final boolean shutdown) {
++        final ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue; // Note: this can be a plain read
++        if (shutdown) {
++            this.flushQueue = null; // Note: this can be a release write
++        }
++
 +        //noinspection NonAtomicOperationOnVolatileField
-+        ++this.flushCounter;
++        ++this.flushCounter; // Note: can be plain read + volatile write
++        // increment flush counter so threads will wake up after being unparked()
 +
 +        Thread current;
 +
-+        while ((current = this.flushQueue.poll()) != null) {
++        while ((current = flushQueue.poll()) != null) {
 +            LockSupport.unpark(current);
 +        }
-+
 +    }
 +
-+    public boolean isWaitingForTasks() {
-+        return this.parked.get();
-+    }
-+
++    /**
++     * Notify's this thread that a task has been added to its queue
++     * @return {@code true} if this thread was waiting for tasks, {@code false} if it is executing tasks
++     */
 +    public boolean notifyTasks() {
 +        if (this.parked.get() && this.parked.getAndSet(false)) {
 +            LockSupport.unpark(this);
@@ -1253,15 +1279,9 @@ index 0000000000..afe5dd8a46
 +        return false;
 +    }
 +
-+    public void onTaskQueue() {
-+        if (this.parked.get() && this.parked.getAndSet(false)) {
-+            LockSupport.unpark(this);
-+        }
-+    }
-+
 +    protected void queueTask(final T task) {
 +        this.queue.add(task);
-+        this.onTaskQueue();
++        this.notifyTasks();
 +    }
 +
 +
@@ -1274,35 +1294,37 @@ index 0000000000..afe5dd8a46
 +        final Thread currentThread = Thread.currentThread();
 +
 +        if (currentThread == this) {
++            // avoid deadlock
 +            throw new IllegalStateException("Cannot flush the queue executor thread while on the queue executor thread");
 +        }
 +
 +        // order is important
 +
-+        if (this.closed) {
-+            return;
-+        }
-+
-+        if (this.parked.get()) {
-+            return; // no tasks queued
-+        }
-+
 +        int flushCounter = this.flushCounter;
 +
-+        this.flushQueue.add(currentThread);
++        ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue;
 +
-+        if (this.closed) {
-+            return;
++        // it's important to read the flush queue after the flush counter to ensure that if we proceed from here
++        // we have a flush counter that would be different from the final flush counter if the queue executor shuts down
++        // the double read of the flush queue is not enough to account for this since
++        if (flushQueue == null) {
++            return; // queue executor has received shutdown and emptied queue
 +        }
 +
-+        // re-check parked status
-+        if (this.parked.get()) {
++        flushQueue.add(currentThread);
++
++        // re-check null flush queue, we need to guarantee the executor is not shutting down before parking
++
++        if (this.flushQueue == null) {
++            // cannot guarantee state of flush queue now, the executor is done though
 +            return;
 +        }
 +
 +        // force a response from the IO thread, we're not sure of its state currently
 +        this.parked.set(false);
 +        LockSupport.unpark(this);
++
++        // Note: see the run() function for handling of a race condition where the queue executor overwrites our parked write
 +
 +        boolean interrupted = false; // preserve interrupted status
 +
@@ -1344,10 +1366,10 @@ index 0000000000..afe5dd8a46
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000..5d56bd049a
+index 0000000000..7e2c72b23a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,113 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1416,6 +1438,19 @@ index 0000000000..5d56bd049a
 +        try (Timing ignored = this.world.timings.chunkIOStage1.startTimingIfSync()) {
 +            final ChunkRegionLoader.InProgressChunkHolder chunkHolder;
 +
++            // apply fixes
++
++            try {
++                if (chunkData.poiData != null) {
++                    chunkData.poiData = chunkData.poiData.clone(); // clone data for safety, file IO thread does not clone
++                }
++                chunkData.chunkData = chunkManager.getChunkData(this.world.getWorldProvider().getDimensionManager(),
++                    chunkManager.getWorldPersistentDataSupplier(), chunkData.chunkData.clone(), chunkPos, this.world); // clone data for safety, file IO thread does not clone
++            } catch (final Throwable ex) {
++                ConcreteFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
++                this.complete(ChunkLoadTask.createEmptyHolder());
++            }
++
 +            try {
 +                chunkHolder = ChunkRegionLoader.loadChunk(this.world,
 +                    chunkManager.definedStructureManager, chunkManager.getVillagePlace(), chunkPos,
@@ -1424,16 +1459,6 @@ index 0000000000..5d56bd049a
 +                ConcreteFileIOThread.LOGGER.error("Could not de-serialize chunk data for task: " + this.toString(), ex);
 +                this.complete(ChunkLoadTask.createEmptyHolder());
 +                return;
-+            }
-+
-+            // apply fixes
-+
-+            try {
-+                chunkData.chunkData = chunkManager.getChunkData(this.world.getWorldProvider().getDimensionManager(),
-+                    chunkManager.getWorldPersistentDataSupplier(), chunkData.chunkData, chunkPos, this.world);
-+            } catch (final Throwable ex) {
-+                ConcreteFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
-+                this.complete(ChunkLoadTask.createEmptyHolder());
 +            }
 +
 +            this.complete(chunkHolder);
@@ -1460,10 +1485,10 @@ index 0000000000..5d56bd049a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 new file mode 100644
-index 0000000000..ee2bb66f56
+index 0000000000..66761409b0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,111 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1531,7 +1556,9 @@ index 0000000000..ee2bb66f56
 +
 +    @Override
 +    public boolean raisePriority(final int priority) {
-+        boolean ret = super.raisePriority(priority);
++        if (!PrioritizedTaskQueue.validPriority(priority)) {
++            throw new IllegalStateException("Invalid priority: " + priority);
++        }
 +
 +        // we know priority is valid here
 +        for (int curr = this.attemptedPriority.get();;) {
@@ -1544,15 +1571,16 @@ index 0000000000..ee2bb66f56
 +            curr = this.attemptedPriority.get();
 +        }
 +
-+        return ret;
++        return super.raisePriority(priority);
 +    }
 +
 +    @Override
 +    public boolean updatePriority(final int priority) {
-+        boolean ret = super.updatePriority(priority);
-+        // we know priority is valid here
++        if (!PrioritizedTaskQueue.validPriority(priority)) {
++            throw new IllegalStateException("Invalid priority: " + priority);
++        }
 +        this.attemptedPriority.set(priority);
-+        return ret;
++        return super.updatePriority(priority);
 +    }
 +
 +    private void complete(final NBTTagCompound compound) {
@@ -1620,10 +1648,10 @@ index 0000000000..400fae5d09
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..09d8f77bc7
+index 0000000000..b347074554
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,277 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.ConcreteFileIOThread;
@@ -1633,17 +1661,16 @@ index 0000000000..09d8f77bc7
 +import net.minecraft.server.ChunkRegionLoader;
 +import net.minecraft.server.IAsyncTaskHandler;
 +import net.minecraft.server.IChunkAccess;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NBTTagCompound;
 +import net.minecraft.server.WorldServer;
++import org.bukkit.Bukkit;
 +import org.spigotmc.AsyncCatcher;
 +
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.function.Consumer;
 +
-+/**
-+ *
-+ */
 +public final class ChunkTaskManager {
 +
 +    private final QueueExecutorThread<ChunkTask>[] workers;
@@ -1655,6 +1682,13 @@ index 0000000000..09d8f77bc7
 +    final ConcurrentHashMap<Long, ChunkLoadTask> chunkLoadTasks = new ConcurrentHashMap<>(64, 0.5f);
 +    final ConcurrentHashMap<Long, ChunkSaveTask> chunkSaveTasks = new ConcurrentHashMap<>(64, 0.5f);
 +
++    /**
++     * Creates this chunk task manager to operate off the specified number of threads. If the specified number of threads is
++     * less-than or equal to 0, then this chunk task manager will operate off of the world's chunk task queue.
++     * @param world Specified world.
++     * @param threads Specified number of threads.
++     * @see net.minecraft.server.ChunkProviderServer#serverThreadQueue
++     */
 +    public ChunkTaskManager(final WorldServer world, final int threads) {
 +        this.world = world;
 +        this.workers = threads <= 0 ? null : new QueueExecutorThread[threads];
@@ -1673,6 +1707,13 @@ index 0000000000..09d8f77bc7
 +        }
 +    }
 +
++    /**
++     * Creates the chunk task manager to work from the specified workers and specified queue. When {@link #close(boolean)} is invoked,
++     * the queue is not shutdown. If {@code workers} is {@code null}, then this task manager will schedule tasks to the world's chunk
++     * executor queue, and the {@code queue} parameter is ignored.
++     * @param world The world that this task manager is responsible for
++     * @see net.minecraft.server.ChunkProviderServer#serverThreadQueue
++     */
 +    public ChunkTaskManager(final WorldServer world, final QueueExecutorThread<ChunkTask>[] workers, final PrioritizedTaskQueue<ChunkTask> queue) {
 +        this.world = world;
 +        this.workers = workers;
@@ -1680,10 +1721,13 @@ index 0000000000..09d8f77bc7
 +        this.perWorldQueue = false;
 +    }
 +
++    /**
++     * The exact same as {@link #scheduleChunkLoad(int, int, int, Consumer, boolean)}, except that the chunk data is provided as
++     * the {@code data} parameter.
++     */
 +    public ChunkLoadTask scheduleChunkLoad(final int chunkX, final int chunkZ, final int priority,
 +                                           final Consumer<ChunkRegionLoader.InProgressChunkHolder> onComplete,
 +                                           final boolean intendingToBlock, final NBTTagCompound data) {
-+        AsyncCatcher.catchOp("chunk load schedule");
 +        final WorldServer world = this.world;
 +
 +        return this.chunkLoadTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkLoadTask valueInMap) -> {
@@ -1703,10 +1747,20 @@ index 0000000000..09d8f77bc7
 +        });
 +    }
 +
++    /**
++     * Schedules an asynchronous chunk load for the specified coordinates. The onComplete parameter may be invoked asynchronously
++     * on a worker thread or on the world's chunk executor queue. As such the code that is executed for the parameter should be
++     * carefully chosen.
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     * @param priority Priority for this task
++     * @param onComplete The consumer to invoke with the {@link net.minecraft.server.ChunkRegionLoader.InProgressChunkHolder} object once this task is complete
++     * @param intendingToBlock Whether the caller is intending to block on this task completing (this is a performance tune, and has no adverse side-effects)
++     * @return The {@link ChunkLoadTask} associated with
++     */
 +    public ChunkLoadTask scheduleChunkLoad(final int chunkX, final int chunkZ, final int priority,
 +                                           final Consumer<ChunkRegionLoader.InProgressChunkHolder> onComplete,
 +                                           final boolean intendingToBlock) {
-+        AsyncCatcher.catchOp("chunk load schedule");
 +        final WorldServer world = this.world;
 +
 +        return this.chunkLoadTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkLoadTask valueInMap) -> {
@@ -1725,6 +1779,16 @@ index 0000000000..09d8f77bc7
 +        });
 +    }
 +
++    /**
++     * Schedules an async save for the specified chunk. The chunk, at the beginning of this call, must be completely unloaded
++     * from the world.
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     * @param priority Priority for this task
++     * @param asyncSaveData Async save data. See {@link ChunkRegionLoader#getAsyncSaveData(WorldServer, IChunkAccess)}
++     * @param chunk Chunk to save
++     * @return The {@link ChunkSaveTask} associated with the save task.
++     */
 +    public ChunkSaveTask scheduleChunkSave(final int chunkX, final int chunkZ, final int priority,
 +                                           final ChunkRegionLoader.AsyncSaveData asyncSaveData,
 +                                           final IChunkAccess chunk) {
@@ -1745,6 +1809,12 @@ index 0000000000..09d8f77bc7
 +        });
 +    }
 +
++    /**
++     * Returns a completable future which will be completed with the <b>un-copied</b> chunk data for an in progress async save.
++     * Returns {@code null} if no save is in progress.
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     */
 +    public CompletableFuture<NBTTagCompound> getChunkSaveFuture(final int chunkX, final int chunkZ) {
 +        final ChunkSaveTask chunkSaveTask = this.chunkSaveTasks.get(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)));
 +        if (chunkSaveTask == null) {
@@ -1753,6 +1823,13 @@ index 0000000000..09d8f77bc7
 +        return chunkSaveTask.onComplete;
 +    }
 +
++    /**
++     * Returns the chunk object being used to serialize data async for an unloaded chunk. Note that modifying this chunk
++     * is not safe to do as another thread is handling its save. The chunk is also not loaded into the world.
++     * @param chunkX Chunk's x coordinate
++     * @param chunkZ Chunk's z coordinate
++     * @return Chunk object for an in-progress async save, or {@code null} if no save is in progress
++     */
 +    public IChunkAccess getChunkInSaveProgress(final int chunkX, final int chunkZ) {
 +        final ChunkSaveTask chunkSaveTask = this.chunkSaveTasks.get(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)));
 +        if (chunkSaveTask == null) {
@@ -1762,9 +1839,19 @@ index 0000000000..09d8f77bc7
 +    }
 +
 +    public void flush() {
++        // flush here since we schedule tasks on the IO thread that can schedule tasks here
 +        ConcreteFileIOThread.Holder.INSTANCE.flush();
 +
 +        if (this.workers == null) {
++            if (Bukkit.isPrimaryThread()) {
++                ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).awaitTasks(() -> false);
++            } else {
++                CompletableFuture<Void> wait = new CompletableFuture<>();
++                MinecraftServer.getServer().scheduleOnMain(() -> {
++                    ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).awaitTasks(() -> false);
++                });
++                wait.join();
++            }
 +            return;
 +        }
 +
@@ -1772,13 +1859,19 @@ index 0000000000..09d8f77bc7
 +            worker.flush();
 +        }
 +
++        // flush again since tasks we execute async saves
 +        ConcreteFileIOThread.Holder.INSTANCE.flush();
 +    }
 +
 +    public void close(final boolean wait) {
++        // flush here since we schedule tasks on the IO thread that can schedule tasks to this task manager
++        // we do this regardless of the wait param since after we invoke close no tasks can be queued
 +        ConcreteFileIOThread.Holder.INSTANCE.flush();
 +
 +        if (this.workers == null) {
++            if (wait) {
++                this.flush();
++            }
 +            return;
 +        }
 +
@@ -1798,6 +1891,7 @@ index 0000000000..09d8f77bc7
 +        if (chunkSaveTask != null) {
 +            chunkSaveTask.raisePriority(priority);
 +            if (chunkSaveTask.isScheduled() && chunkSaveTask.getPriority() != PrioritizedTaskQueue.COMPLETING_PRIORITY) {
++                // only notify if we're in queue to be executed
 +                this.internalScheduleNotify();
 +            }
 +        }
@@ -1806,6 +1900,7 @@ index 0000000000..09d8f77bc7
 +        if (chunkLoadTask != null) {
 +            chunkLoadTask.raisePriority(priority);
 +            if (chunkLoadTask.isScheduled() && chunkLoadTask.getPriority() != PrioritizedTaskQueue.COMPLETING_PRIORITY) {
++                // only notify if we're in queue to be executed
 +                this.internalScheduleNotify();
 +            }
 +        }
@@ -1813,11 +1908,13 @@ index 0000000000..09d8f77bc7
 +
 +    protected void internalSchedule(final ChunkTask task) {
 +        if (this.workers == null) {
++            // execute() will execute immediately if we're main
 +            ((IAsyncTaskHandler<Runnable>)this.world.getChunkProvider().serverThreadQueue).addTask(task);
 +            return;
 +        }
 +
-+        // It's important we order the task to be executed before notifying.
++        // It's important we order the task to be executed before notifying. Avoid a race condition where the worker thread
++        // wakes up and goes to sleep before we actually schedule (or it's just about to sleep)
 +        this.queue.add(task);
 +        this.internalScheduleNotify();
 +    }
@@ -1825,6 +1922,7 @@ index 0000000000..09d8f77bc7
 +    protected void internalScheduleNotify() {
 +        for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
 +            if (worker.notifyTasks()) {
++                // break here since we only want to wake up one worker for scheduling one task
 +                break;
 +            }
 +        }
