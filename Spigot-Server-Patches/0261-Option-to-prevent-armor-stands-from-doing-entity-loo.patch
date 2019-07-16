@@ -1,0 +1,44 @@
+From c515ea6b352d6c5f5d4b4d551e8064024956c647 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index fc0455934..09607fb44 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -321,6 +321,11 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean armorStandEntityLookups = true;
++    private void armorStandEntityLookups() {
++        armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
++    }
++
+     public int maxCollisionsPerEntity;
+     private void maxEntityCollision() {
+         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 23d5555d9..0d73a53f6 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -867,6 +867,14 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         }
+     }
+ 
++    // Paper start - Prevent armor stands from doing entity lookups
++    @Override
++    public boolean getCubes(@Nullable Entity entity, AxisAlignedBB axisAlignedBB) {
++        if (entity instanceof EntityArmorStand && !entity.world.paperConfig.armorStandEntityLookups) return false;
++        return GeneratorAccess.super.getCubes(entity, axisAlignedBB);
++    }
++    // Paper end
++
+     public boolean a(AxisAlignedBB axisalignedbb) {
+         int i = MathHelper.floor(axisalignedbb.minX);
+         int j = MathHelper.f(axisalignedbb.maxX);
+-- 
+2.22.0
+
