@@ -1,4 +1,4 @@
-From 26436ed089b2806e44ddf21f5db8d46c5d7346ae Mon Sep 17 00:00:00 2001
+From 2908b991e49d46184037d3496bccccb22e999b8d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -44,6 +44,82 @@ index 366de66657..2b8f064ba3 100644
      }
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 5942c3438e..61eeb6747a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper;
+ 
++import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
+ import com.google.common.base.Strings;
+ import com.google.common.base.Throwables;
+ 
+@@ -388,4 +389,64 @@ public class PaperConfig {
+         maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
+         maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
+     }
++
++    public static boolean asyncChunks = false;
++    //public static boolean asyncChunkGeneration = true; // Leave out for now until we can control this
++    //public static boolean asyncChunkGenThreadPerWorld = true; // Leave out for now until we can control this
++    public static int asyncChunkLoadThreads = -1;
++    private static void asyncChunks() {
++        if (version < 15) {
++            boolean enabled = config.getBoolean("settings.async-chunks", true);
++            ConfigurationSection section = config.createSection("settings.async-chunks");
++            section.set("enable", enabled);
++            section.set("load-threads", -1);
++            section.set("generation", true);
++            section.set("thread-per-world-generation", true);
++        }
++
++        // TODO load threads now control async chunk save for unloading chunks, look into renaming this?
++
++        asyncChunks = getBoolean("settings.async-chunks.enable", true);
++        //asyncChunkGeneration = getBoolean("settings.async-chunks.generation", true); // Leave out for now until we can control this
++        //asyncChunkGenThreadPerWorld = getBoolean("settings.async-chunks.thread-per-world-generation", true); // Leave out for now until we can control this
++        asyncChunkLoadThreads = getInt("settings.async-chunks.load-threads", -1);
++        if (asyncChunkLoadThreads <= 0) {
++            asyncChunkLoadThreads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
++        }
++
++        // Let Shared Host set some limits
++        String sharedHostEnvGen = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_GEN");
++        String sharedHostEnvLoad = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_LOAD");
++        /* Ignore temporarily - we cannot control the gen threads (for now)
++        if ("1".equals(sharedHostEnvGen)) {
++            log("Async Chunks - Generation: Your host has requested to use a single thread world generation");
++            asyncChunkGenThreadPerWorld = false;
++        } else if ("2".equals(sharedHostEnvGen)) {
++            log("Async Chunks - Generation: Your host has disabled async world generation - You will experience lag from world generation");
++            asyncChunkGeneration = false;
++        }
++         */
++
++        if (sharedHostEnvLoad != null) {
++            try {
++                asyncChunkLoadThreads = Math.max(1, Math.min(asyncChunkLoadThreads, Integer.parseInt(sharedHostEnvLoad)));
++            } catch (NumberFormatException ignored) {}
++        }
++
++        if (!asyncChunks) {
++            log("Async Chunks: Disabled - Chunks will be managed synchronosuly, and will cause tremendous lag.");
++        } else {
++            ChunkTaskManager.initGlobalLoadThreads(asyncChunkLoadThreads);
++            log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
++            /* Ignore temporarily - we cannot control the gen threads (for now)
++            if (!asyncChunkGeneration) {
++                log("Async Chunks - Generation: Disabled - Chunks will be generated synchronosuly, and will cause tremendous lag.");
++            } else if (asyncChunkGenThreadPerWorld) {
++                log("Async Chunks - Generation: Enabled - Chunks will be generated much faster, without lag.");
++            } else {
++                log("Async Chunks - Generation: Enabled (Single Thread) - Chunks will be generated much faster, without lag.");
++            }
++            */
++        }
++    }
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 index 9d8bee5cac..c2dd59f573 100644
 --- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
@@ -1648,10 +1724,10 @@ index 0000000000..400fae5d09
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..b347074554
+index 0000000000..921cc59145
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,303 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.ConcreteFileIOThread;
@@ -1682,6 +1758,30 @@ index 0000000000..b347074554
 +    final ConcurrentHashMap<Long, ChunkLoadTask> chunkLoadTasks = new ConcurrentHashMap<>(64, 0.5f);
 +    final ConcurrentHashMap<Long, ChunkSaveTask> chunkSaveTasks = new ConcurrentHashMap<>(64, 0.5f);
 +
++    // used if async chunks are disabled in config
++    protected static QueueExecutorThread<ChunkTask>[] globalWorkers;
++    protected static PrioritizedTaskQueue<ChunkTask> globalQueue;
++
++    public static void initGlobalLoadThreads(int threads) {
++        if (threads <= 0) {
++            return;
++        }
++
++        globalWorkers = new QueueExecutorThread[threads];
++        globalQueue = new PrioritizedTaskQueue<>();
++
++        for (int i = 0; i < threads; ++i) {
++            globalWorkers[i] = new QueueExecutorThread<>(globalQueue, (long)0.10e6); //0.1ms
++            globalWorkers[i].setName("Async chunk loader thread #" + i);
++            globalWorkers[i].setPriority(Thread.NORM_PRIORITY - 1);
++            globalWorkers[i].setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
++                ConcreteFileIOThread.LOGGER.fatal("Thread '" + thread.getName() + "' threw an uncaught exception!", throwable);
++            });
++
++            globalWorkers[i].start();
++        }
++    }
++
 +    /**
 +     * Creates this chunk task manager to operate off the specified number of threads. If the specified number of threads is
 +     * less-than or equal to 0, then this chunk task manager will operate off of the world's chunk task queue.
@@ -1697,7 +1797,7 @@ index 0000000000..b347074554
 +
 +        for (int i = 0; i < threads; ++i) {
 +            this.workers[i] = new QueueExecutorThread<>(this.queue, (long)0.10e6); //0.1ms
-+            this.workers[i].setName("Async chunk loader thread for world: " + world.getWorldData().getName());
++            this.workers[i].setName("Async chunk loader thread #" + i +  " for world: " + world.getWorldData().getName());
 +            this.workers[i].setPriority(Thread.NORM_PRIORITY - 1);
 +            this.workers[i].setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
 +                ConcreteFileIOThread.LOGGER.fatal("Thread '" + thread.getName() + "' threw an uncaught exception!", throwable);
@@ -1708,16 +1808,16 @@ index 0000000000..b347074554
 +    }
 +
 +    /**
-+     * Creates the chunk task manager to work from the specified workers and specified queue. When {@link #close(boolean)} is invoked,
-+     * the queue is not shutdown. If {@code workers} is {@code null}, then this task manager will schedule tasks to the world's chunk
-+     * executor queue, and the {@code queue} parameter is ignored.
++     * Creates the chunk task manager to work from the global workers. When {@link #close(boolean)} is invoked,
++     * the global queue is not shutdown. If the global workers is configured to be disabled or use 0 threads, then
++     * this chunk task manager will operate off of the world's chunk task queue.
 +     * @param world The world that this task manager is responsible for
 +     * @see net.minecraft.server.ChunkProviderServer#serverThreadQueue
 +     */
-+    public ChunkTaskManager(final WorldServer world, final QueueExecutorThread<ChunkTask>[] workers, final PrioritizedTaskQueue<ChunkTask> queue) {
++    public ChunkTaskManager(final WorldServer world) {
 +        this.world = world;
-+        this.workers = workers;
-+        this.queue = queue;
++        this.workers = globalWorkers;
++        this.queue = globalQueue;
 +        this.perWorldQueue = false;
 +    }
 +
@@ -1875,8 +1975,10 @@ index 0000000000..b347074554
 +            return;
 +        }
 +
-+        for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
-+            worker.close(false, this.perWorldQueue);
++        if (this.workers != globalWorkers) {
++            for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
++                worker.close(false, this.perWorldQueue);
++            }
 +        }
 +
 +        if (wait) {
@@ -3203,7 +3305,7 @@ index 7bc473e1ef..8e82326c47 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 959fc99bb8..2d8b1279a4 100644
+index 959fc99bb8..56fd797d47 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,9 +1,9 @@
@@ -3297,11 +3399,12 @@ index 959fc99bb8..2d8b1279a4 100644
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
          super(worlddata, dimensionmanager, (world, worldprovider) -> {
-@@ -119,6 +192,7 @@ public class WorldServer extends World {
+@@ -119,6 +192,8 @@ public class WorldServer extends World {
  
          this.mobSpawnerTrader = this.worldProvider.getDimensionManager().getType() == DimensionManager.OVERWORLD ? new MobSpawnerTrader(this) : null; // CraftBukkit - getType()
          this.getServer().addWorld(this.getWorld()); // CraftBukkit
-+        this.asyncChunkTaskManager = new ChunkTaskManager(this, 4); // todo CONFIGURABLE // Paper
++
++        this.asyncChunkTaskManager = new ChunkTaskManager(this); // Paper
      }
  
      public void doTick(BooleanSupplier booleansupplier) {
