@@ -1,4 +1,4 @@
-From f911a7678c6b6a1b0755e52ef757b469d62a90de Mon Sep 17 00:00:00 2001
+From dccfe385bdb0bf42a31d0ba20ee79ced8519abbf Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -121,10 +121,18 @@ index 5942c3438e..61eeb6747a 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-index 9d8bee5cac..c2dd59f573 100644
+index 9d8bee5cac..dc59b6431b 100644
 --- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -150,6 +150,12 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.Supplier;
+ 
++import com.destroystokyo.paper.io.PrioritizedTaskQueue;
+ import net.minecraft.server.*;
+ import org.bukkit.Bukkit;
+ import org.bukkit.World.Environment;
+@@ -150,6 +151,12 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
  
      private final AtomicInteger xrayRequests = new AtomicInteger();
  
@@ -137,18 +145,19 @@ index 9d8bee5cac..c2dd59f573 100644
      private Integer addXrayTickets(final int x, final int z, final ChunkProviderServer chunkProvider) {
          final Integer hold = Integer.valueOf(this.xrayRequests.getAndIncrement());
  
-@@ -181,6 +187,33 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+@@ -181,6 +188,35 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
          chunk.world.getChunkAt(locX, locZ + 1);
      }
  
 +    // Paper start - async chunk api
-+    private void loadNeighbourAsync(ChunkProviderServer chunkProvider, int chunkX, int chunkZ, int[] counter, java.util.function.Consumer<Chunk> onNeighourLoad, Runnable onAllNeighboursLoad) {
++    private void loadNeighbourAsync(ChunkProviderServer chunkProvider, WorldServer world, int chunkX, int chunkZ, int[] counter, java.util.function.Consumer<Chunk> onNeighourLoad, Runnable onAllNeighboursLoad) {
 +        chunkProvider.getChunkAtAsynchronously(chunkX, chunkZ, true, (Chunk neighbour) -> {
 +            onNeighourLoad.accept(neighbour);
 +            if (++counter[0] == 4) {
 +                onAllNeighboursLoad.run();
 +            }
 +        });
++        world.asyncChunkTaskManager.raisePriority(chunkX, chunkZ, PrioritizedTaskQueue.HIGHER_PRIORITY);
 +    }
 +
 +    private void loadNeighboursAsync(Chunk chunk, java.util.function.Consumer<Chunk> onNeighourLoad, Runnable onAllNeighboursLoad) {
@@ -156,22 +165,23 @@ index 9d8bee5cac..c2dd59f573 100644
 +
 +        int locX = chunk.getPos().x;
 +        int locZ = chunk.getPos().z;
++        WorldServer world = ((WorldServer)chunk.world);
 +
 +        onNeighourLoad.accept(chunk);
 +
-+        ChunkProviderServer chunkProvider = ((WorldServer)chunk.world).getChunkProvider();
++        ChunkProviderServer chunkProvider = world.getChunkProvider();
 +
-+        this.loadNeighbourAsync(chunkProvider, locX - 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
-+        this.loadNeighbourAsync(chunkProvider, locX + 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
-+        this.loadNeighbourAsync(chunkProvider, locX, locZ - 1, loaded, onNeighourLoad, onAllNeighboursLoad);
-+        this.loadNeighbourAsync(chunkProvider, locX, locZ + 1, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, world, locX - 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, world, locX + 1, locZ, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, world, locX, locZ - 1, loaded, onNeighourLoad, onAllNeighboursLoad);
++        this.loadNeighbourAsync(chunkProvider, world, locX, locZ + 1, loaded, onNeighourLoad, onAllNeighboursLoad);
 +    }
 +    // Paper end
 +
      @Override
      public boolean onChunkPacketCreate(Chunk chunk, int chunkSectionSelector, boolean force) {
          int locX = chunk.getPos().x;
-@@ -256,11 +289,15 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
+@@ -256,11 +292,15 @@ public class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockControll
  
              if (chunks[0] == null || chunks[1] == null || chunks[2] == null || chunks[3] == null) {
                  // we need to load
