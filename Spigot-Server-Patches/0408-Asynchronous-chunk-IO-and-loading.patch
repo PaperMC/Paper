@@ -1,4 +1,4 @@
-From 2908b991e49d46184037d3496bccccb22e999b8d Mon Sep 17 00:00:00 2001
+From 60124e1d18bd0a9cbcfe5f81fc67e25c042e7054 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1194,10 +1194,10 @@ index 0000000000..c3ca3c4a1c
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 new file mode 100644
-index 0000000000..8651f64f3f
+index 0000000000..f127ef236e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
-@@ -0,0 +1,242 @@
+@@ -0,0 +1,244 @@
 +package com.destroystokyo.paper.io;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -1223,7 +1223,7 @@ index 0000000000..8651f64f3f
 +    // this is required to synchronize LockSupport#park()
 +    // LockSupport explicitly states that it will only follow ordering with respect to volatile access
 +    // see flush() for more details
-+    protected volatile int flushCounter;
++    protected volatile long flushCounter;
 +
 +    public QueueExecutorThread(final PrioritizedTaskQueue<T> queue) {
 +        this(queue, (int)(1.e6)); // 1.0ms
@@ -1239,7 +1239,7 @@ index 0000000000..8651f64f3f
 +        final long spinWaitTime = this.spinWaitTime;
 +        main_loop:
 +        for (;;) {
-+            this.pollTasks();
++            this.pollTasks(true);
 +
 +            // spinwait
 +
@@ -1250,7 +1250,7 @@ index 0000000000..8651f64f3f
 +                Thread.interrupted();
 +                LockSupport.parkNanos("Spinwaiting on tasks", 1000L); // 1us
 +
-+                if (this.pollTasks()) {
++                if (this.pollTasks(true)) {
 +                    // restart loop, found tasks
 +                    continue main_loop;
 +                }
@@ -1279,7 +1279,7 @@ index 0000000000..8651f64f3f
 +
 +            // if we overwrite their set parked to false call then they're in the park loop or about to be, and we're about to
 +            // drain the flush queue
-+            if (this.pollTasks()) {
++            if (this.pollTasks(true)) {
 +                this.parked.set(false);
 +                continue;
 +            }
@@ -1298,14 +1298,14 @@ index 0000000000..8651f64f3f
 +
 +    protected boolean handleClose() {
 +        if (this.closed) {
-+            this.pollTasks(); // this ensures we've emptied the queue
++            this.pollTasks(true); // this ensures we've emptied the queue
 +            this.handleFlushThreads(true);
 +            return true;
 +        }
 +        return false;
 +    }
 +
-+    protected boolean pollTasks() {
++    protected boolean pollTasks(boolean flushTasks) {
 +        Runnable task;
 +        boolean ret = false;
 +
@@ -1321,7 +1321,9 @@ index 0000000000..8651f64f3f
 +            }
 +        }
 +
-+        this.handleFlushThreads(false);
++        if (flushTasks) {
++            this.handleFlushThreads(false);
++        }
 +
 +        return ret;
 +    }
@@ -1332,13 +1334,13 @@ index 0000000000..8651f64f3f
 +            this.flushQueue = null; // Note: this can be a release write
 +        }
 +
-+        //noinspection NonAtomicOperationOnVolatileField
-+        ++this.flushCounter; // Note: can be plain read + volatile write
-+        // increment flush counter so threads will wake up after being unparked()
-+
 +        Thread current;
 +
 +        while ((current = flushQueue.poll()) != null) {
++            this.pollTasks(false);
++            // increment flush counter so threads will wake up after being unparked()
++            //noinspection NonAtomicOperationOnVolatileField
++            ++this.flushCounter; // may be plain read plain write if we order before poll() (also would need to re-order pollTasks)
 +            LockSupport.unpark(current);
 +        }
 +    }
@@ -1376,7 +1378,7 @@ index 0000000000..8651f64f3f
 +
 +        // order is important
 +
-+        int flushCounter = this.flushCounter;
++        long flushCounter = this.flushCounter;
 +
 +        ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue;
 +
