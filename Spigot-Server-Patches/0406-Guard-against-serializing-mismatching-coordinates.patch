@@ -1,4 +1,4 @@
-From 078faf3831b2ded5a4a3bec195c93af580f1fa9d Mon Sep 17 00:00:00 2001
+From a34148d6751544bcff7f19738b4cea698e378567 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Wed, 17 Jul 2019 03:55:30 -0700
 Subject: [PATCH] Guard against serializing mismatching coordinates
@@ -32,16 +32,18 @@ index f88e3d957f..99dfe8e7c9 100644
          if (!Objects.equals(chunkcoordintpair, chunkcoordintpair1)) {
              ChunkRegionLoader.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkcoordintpair, chunkcoordintpair, chunkcoordintpair1);
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 3f14392e6e..4c4df4951a 100644
+index 3f14392e6e..a12b270a86 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
-@@ -87,6 +87,11 @@ public class IChunkLoader extends RegionFileCache {
+@@ -87,6 +87,13 @@ public class IChunkLoader extends RegionFileCache {
  
      @Override
      public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
 +        // Paper start
 +        if (!chunkcoordintpair.equals(ChunkRegionLoader.getChunkCoordinate(nbttagcompound))) {
-+            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates");
++            String world = (this instanceof PlayerChunkMap) ? ((PlayerChunkMap)this).world.getWorld().getName() : null;
++            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkcoordintpair.toString()
++                + " but compound says coordinate is " + ChunkRegionLoader.getChunkCoordinate(nbttagcompound) + (world == null ? " for an unknown world" : (" for world: " + world)));
 +        }
 +        // Paper end
          super.write(chunkcoordintpair, nbttagcompound);
