@@ -1,4 +1,4 @@
-From f94db924dd3897f0ee508db24b776960a0987b16 Mon Sep 17 00:00:00 2001
+From 078faf3831b2ded5a4a3bec195c93af580f1fa9d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Wed, 17 Jul 2019 03:55:30 -0700
 Subject: [PATCH] Guard against serializing mismatching coordinates
@@ -6,10 +6,21 @@ Subject: [PATCH] Guard against serializing mismatching coordinates
 Check the coordinate in the compound before writing
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index f88e3d957f..66bed45151 100644
+index f88e3d957f..99dfe8e7c9 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -25,8 +25,8 @@ public class ChunkRegionLoader {
+@@ -22,11 +22,19 @@ public class ChunkRegionLoader {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+ 
++    // Paper start
++    // TODO this needs to be re-checked each update
++    public static ChunkCoordIntPair getChunkCoordinate(NBTTagCompound chunkData) {
++        NBTTagCompound levelData = chunkData.getCompound("Level");
++        return new ChunkCoordIntPair(levelData.getInt("xPos"), levelData.getInt("zPos"));
++    }
++    // Paper end
++
      public static ProtoChunk loadChunk(WorldServer worldserver, DefinedStructureManager definedstructuremanager, VillagePlace villageplace, ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
          ChunkGenerator<?> chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
          WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
@@ -20,17 +31,6 @@ index f88e3d957f..66bed45151 100644
  
          if (!Objects.equals(chunkcoordintpair, chunkcoordintpair1)) {
              ChunkRegionLoader.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkcoordintpair, chunkcoordintpair, chunkcoordintpair1);
-@@ -545,4 +545,10 @@ public class ChunkRegionLoader {
- 
-         return nbttaglist;
-     }
-+
-+    // TODO this needs to be re-checked each update
-+    public static ChunkCoordIntPair getChunkCoordinate(NBTTagCompound chunkData) {
-+        NBTTagCompound levelData = chunkData.getCompound("Level");
-+        return new ChunkCoordIntPair(levelData.getInt("xPos"), levelData.getInt("zPos"));
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
 index 3f14392e6e..4c4df4951a 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
