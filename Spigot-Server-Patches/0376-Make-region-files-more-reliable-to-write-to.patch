@@ -1,4 +1,4 @@
-From 2f08771d032a5ee74cd9f9edb463001f8be57f75 Mon Sep 17 00:00:00 2001
+From 237f1e292b142b49e80b11c5cd10fcc26f5d2014 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 1 Apr 2019 18:57:32 -0700
 Subject: [PATCH] Make region files more reliable to write to
@@ -37,7 +37,7 @@ affect save performance if the startup flag is used (especially on
 HDDs).
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index ed2ccebb2..2e14d8465 100644
+index ed2ccebb23..b0ec9edf67 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -29,7 +29,7 @@ public class RegionFile implements AutoCloseable {
@@ -101,7 +101,7 @@ index ed2ccebb2..2e14d8465 100644
                  } else {
                      this.b.seek(this.b.length());
                      k = this.e.size();
-@@ -259,9 +258,14 @@ public class RegionFile implements AutoCloseable {
+@@ -259,22 +258,27 @@ public class RegionFile implements AutoCloseable {
                          this.e.add(false);
                      }
  
@@ -117,8 +117,11 @@ index ed2ccebb2..2e14d8465 100644
 +                // Paper end
              }
  
-             this.b(chunkcoordintpair, (int) (SystemUtils.getTimeMillis() / 1000L));
-@@ -271,10 +275,10 @@ public class RegionFile implements AutoCloseable {
+-            this.b(chunkcoordintpair, (int) (SystemUtils.getTimeMillis() / 1000L));
++            // Paper - move this into writeChunkData
+         } catch (IOException ioexception) {
+             com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
+         }
  
      }
  
@@ -131,7 +134,7 @@ index ed2ccebb2..2e14d8465 100644
          this.b.write(abyte, 0, j);
      }
  
-@@ -286,12 +290,13 @@ public class RegionFile implements AutoCloseable {
+@@ -286,24 +290,28 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(chunkcoordintpair) != 0;
      }
  
@@ -139,23 +142,32 @@ index ed2ccebb2..2e14d8465 100644
      private void a(ChunkCoordIntPair chunkcoordintpair, int i) throws IOException {
          int j = this.f(chunkcoordintpair);
  
-         this.c[j] = i;
+-        this.c[j] = i;
++        //this.c[j] = i; // Paper - move this to after the write
          this.b.seek((long) (j * 4));
 -        this.b.writeInt(i);
 +        this.writeInt(i); // Paper - Avoid 3 io write calls
++        this.c[j] = i; // Paper - move this to after the write
      }
  
      private int f(ChunkCoordIntPair chunkcoordintpair) {
-@@ -303,7 +308,7 @@ public class RegionFile implements AutoCloseable {
+         return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
+     }
  
-         this.d[j] = i;
++    private final void updateChunkTime(ChunkCoordIntPair chunkPos, final int time) throws IOException { this.b(chunkPos, time); } // Paper - OBFHELPER
+     private void b(ChunkCoordIntPair chunkcoordintpair, int i) throws IOException {
+         int j = this.f(chunkcoordintpair);
+ 
+-        this.d[j] = i;
++        //this.d[j] = i; // Paper - move this to after the write
          this.b.seek((long) (4096 + j * 4));
 -        this.b.writeInt(i);
 +        this.writeInt(i); // Paper - Avoid 3 io write calls
++        this.d[j] = i; // Paper - move this to after the write
      }
  
      public void close() throws IOException {
-@@ -311,6 +316,40 @@ public class RegionFile implements AutoCloseable {
+@@ -311,6 +319,41 @@ public class RegionFile implements AutoCloseable {
      }
  
      // Paper start
@@ -189,6 +201,7 @@ index ed2ccebb2..2e14d8465 100644
 +                            final int chunkOffset, final byte[] chunkData, final int chunkDataLength) throws IOException {
 +        this.writeChunkData(chunkOffset, chunkData, chunkDataLength);
 +        this.syncRegionFile(); // Sync is required to ensure the previous data is written successfully
++        this.updateChunkTime(chunk, (int)(SystemUtils.getTimeMillis() / 1000L));
 +        this.updateChunkHeader(chunk, chunkHeaderData);
 +        this.syncRegionFile(); // Ensure header changes go through
 +    }
