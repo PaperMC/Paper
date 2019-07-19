@@ -11,7 +11,6 @@ import net.minecraft.server.ChunkStatus;
 import net.minecraft.server.DifficultyDamageScaler;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EnumDirection;
 import net.minecraft.server.EnumSkyBlock;
 import net.minecraft.server.Fluid;
 import net.minecraft.server.FluidType;
@@ -83,7 +82,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public void a(EntityHuman eh, BlockPosition bp, SoundEffect se, SoundCategory sc, float f, float f1) {
+    public void playSound(EntityHuman eh, BlockPosition bp, SoundEffect se, SoundCategory sc, float f, float f1) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

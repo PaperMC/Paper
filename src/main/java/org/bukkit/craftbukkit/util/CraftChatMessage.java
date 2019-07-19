@@ -210,7 +210,7 @@ public final class CraftChatMessage {
                 ChatModifier modifier = text.getChatModifier() != null ?
                         text.getChatModifier() : new ChatModifier();
                 List<IChatBaseComponent> extras = new ArrayList<IChatBaseComponent>();
-                List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.a());
+                List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.getSiblings());
                 component = text = new ChatComponentText("");
 
                 int pos = 0;
@@ -245,21 +245,21 @@ public final class CraftChatMessage {
             }
         }
 
-        List extras = component.a();
+        List<IChatBaseComponent> extras = component.getSiblings();
         for (int i = 0; i < extras.size(); i++) {
-            IChatBaseComponent comp = (IChatBaseComponent) extras.get(i);
-            if (comp.getChatModifier() != null && comp.getChatModifier().h() == null) {
+            IChatBaseComponent comp = extras.get(i);
+            if (comp.getChatModifier() != null && comp.getChatModifier().getClickEvent() == null) {
                 extras.set(i, fixComponent(comp, matcher));
             }
         }
 
         if (component instanceof ChatMessage) {
-            Object[] subs = ((ChatMessage) component).l();
+            Object[] subs = ((ChatMessage) component).getArgs();
             for (int i = 0; i < subs.length; i++) {
                 Object comp = subs[i];
                 if (comp instanceof IChatBaseComponent) {
                     IChatBaseComponent c = (IChatBaseComponent) comp;
-                    if (c.getChatModifier() != null && c.getChatModifier().h() == null) {
+                    if (c.getChatModifier() != null && c.getChatModifier().getClickEvent() == null) {
                         subs[i] = fixComponent(c, matcher);
                     }
                 } else if (comp instanceof String && matcher.reset((String)comp).find()) {

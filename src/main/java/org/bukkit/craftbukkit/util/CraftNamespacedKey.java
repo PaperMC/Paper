@@ -21,7 +21,7 @@ public final class CraftNamespacedKey {
     }
 
     public static NamespacedKey fromMinecraft(MinecraftKey minecraft) {
-        return new NamespacedKey(minecraft.b(), minecraft.getKey());
+        return new NamespacedKey(minecraft.getNamespace(), minecraft.getKey());
     }
 
     public static MinecraftKey toMinecraft(NamespacedKey key) {

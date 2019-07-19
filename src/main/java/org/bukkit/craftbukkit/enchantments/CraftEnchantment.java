@@ -183,7 +183,7 @@ public class CraftEnchantment extends Enchantment {
             return false;
         }
         CraftEnchantment ench = (CraftEnchantment) other;
-        return !target.b(ench.target);
+        return !target.isCompatible(ench.target);
     }
 
     public net.minecraft.server.Enchantment getHandle() {

@@ -76,7 +76,7 @@ public class CraftBlockData implements BlockData {
     protected <B extends Enum<B>> Set<B> getValues(BlockStateEnum<?> nms, Class<B> bukkit) {
         ImmutableSet.Builder<B> values = ImmutableSet.builder();
 
-        for (Enum<?> e : nms.d()) {
+        for (Enum<?> e : nms.getValues()) {
             values.add(toBukkit(e, bukkit));
         }
 

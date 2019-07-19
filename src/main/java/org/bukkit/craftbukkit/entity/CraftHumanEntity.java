@@ -645,7 +645,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public boolean hasCooldown(Material material) {
         Preconditions.checkArgument(material != null, "material");
 
-        return getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material));
+        return getHandle().getCooldownTracker().hasCooldown(CraftMagicNumbers.getItem(material));
     }
 
     @Override

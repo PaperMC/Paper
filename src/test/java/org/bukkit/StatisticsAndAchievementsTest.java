@@ -32,16 +32,16 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
     public void verifyStatisticMapping() throws Throwable {
         HashMultiset<Statistic> statistics = HashMultiset.create();
         for (StatisticWrapper wrapper : IRegistry.STATS) {
-            for (Object child : wrapper.a()) {
+            for (Object child : wrapper.getRegistry()) {
                 net.minecraft.server.Statistic<?> statistic = wrapper.b(child);
                 String message = String.format("org.bukkit.Statistic is missing: '%s'", statistic);
 
                 Statistic subject = CraftStatistic.getBukkitStatistic(statistic);
                 assertThat(message, subject, is(not(nullValue())));
 
-                if (wrapper.a() == IRegistry.BLOCK || wrapper.a() == IRegistry.ITEM) {
-                    assertNotNull("Material type map missing for " + wrapper.a().getKey(child), CraftStatistic.getMaterialFromStatistic(statistic));
-                } else if (wrapper.a() == IRegistry.ENTITY_TYPE) {
+                if (wrapper.getRegistry() == IRegistry.BLOCK || wrapper.getRegistry() == IRegistry.ITEM) {
+                    assertNotNull("Material type map missing for " + wrapper.getRegistry().getKey(child), CraftStatistic.getMaterialFromStatistic(statistic));
+                } else if (wrapper.getRegistry() == IRegistry.ENTITY_TYPE) {
                     assertNotNull("Entity type map missing for " + EntityTypes.getName((EntityTypes<?>) child), CraftStatistic.getEntityTypeFromStatistic((net.minecraft.server.Statistic<EntityTypes<?>>) statistic));
                 }
 

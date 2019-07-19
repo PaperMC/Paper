@@ -94,12 +94,12 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public boolean eb() {
+        public boolean ea() {
             return false; // is-regular-villager flag (hides some gui elements: xp bar, name suffix)
         }
 
         @Override
-        public SoundEffect ec() {
+        public SoundEffect eb() {
             return SoundEffects.ENTITY_VILLAGER_YES;
         }
     }

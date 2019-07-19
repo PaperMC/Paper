@@ -482,7 +482,7 @@ public class CraftWorld implements World {
         Preconditions.checkArgument(plugin != null, "null plugin");
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
-        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
 
         if (chunkDistanceManager.addTicketAtLevel(TicketType.PLUGIN_TICKET, new ChunkCoordIntPair(x, z), 31, plugin)) { // keep in-line with force loading, add at level 31
             this.getChunkAt(x, z); // ensure loaded
@@ -496,7 +496,7 @@ public class CraftWorld implements World {
     public boolean removePluginChunkTicket(int x, int z, Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
         return chunkDistanceManager.removeTicketAtLevel(TicketType.PLUGIN_TICKET, new ChunkCoordIntPair(x, z), 31, plugin); // keep in-line with force loading, remove at level 31
     }
 
@@ -504,13 +504,13 @@ public class CraftWorld implements World {
     public void removePluginChunkTickets(Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
         chunkDistanceManager.removeAllTicketsFor(TicketType.PLUGIN_TICKET, 31, plugin); // keep in-line with force loading, remove at level 31
     }
 
     @Override
     public Collection<Plugin> getPluginChunkTickets(int x, int z) {
-        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
         ObjectSortedSet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkCoordIntPair.pair(x, z));
 
         if (tickets == null) {
@@ -520,7 +520,7 @@ public class CraftWorld implements World {
         ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
         for (Ticket<?> ticket : tickets) {
             if (ticket.getTicketType() == TicketType.PLUGIN_TICKET) {
-                ret.add((Plugin) ticket.c);
+                ret.add((Plugin) ticket.identifier);
             }
         }
 
@@ -530,7 +530,7 @@ public class CraftWorld implements World {
     @Override
     public Map<Plugin, Collection<Chunk>> getPluginChunkTickets() {
         Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
-        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.u;
+        ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
 
         for (Long2ObjectMap.Entry<ObjectSortedSet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
             long chunkKey = chunkTickets.getLongKey();
@@ -546,7 +546,7 @@ public class CraftWorld implements World {
                     chunk = this.getChunkAt(ChunkCoordIntPair.getX(chunkKey), ChunkCoordIntPair.getZ(chunkKey));
                 }
 
-                ret.computeIfAbsent((Plugin) ticket.c, (key) -> ImmutableList.builder()).add(chunk);
+                ret.computeIfAbsent((Plugin) ticket.identifier, (key) -> ImmutableList.builder()).add(chunk);
             }
         }
 
@@ -1923,7 +1923,7 @@ public class CraftWorld implements World {
         double y = loc.getY();
         double z = loc.getZ();
 
-        getHandle().a(null, x, y, z, CraftSound.getSoundEffect(CraftSound.getSound(sound)), SoundCategory.valueOf(category.name()), volume, pitch); // PAIL: rename
+        getHandle().playSound(null, x, y, z, CraftSound.getSoundEffect(CraftSound.getSound(sound)), SoundCategory.valueOf(category.name()), volume, pitch);
     }
 
     @Override
@@ -1992,7 +1992,7 @@ public class CraftWorld implements World {
 
         GameRules.GameRuleValue<?> handle = getHandle().getGameRules().get(getGameRulesNMS().get(rule));
         handle.setValue(value);
-        handle.a(getHandle().getMinecraftServer());
+        handle.onChange(getHandle().getMinecraftServer());
         return true;
     }
 
@@ -2016,7 +2016,7 @@ public class CraftWorld implements World {
     @Override
     public <T> T getGameRuleDefault(GameRule<T> rule) {
         Validate.notNull(rule, "GameRule cannot be null");
-        return convert(rule, getGameRuleDefinitions().get(rule.getName()).a());
+        return convert(rule, getGameRuleDefinitions().get(rule.getName()).getValue());
     }
 
     @Override
@@ -2028,7 +2028,7 @@ public class CraftWorld implements World {
 
         GameRules.GameRuleValue<?> handle = getHandle().getGameRules().get(getGameRulesNMS().get(rule.getName()));
         handle.setValue(newValue.toString());
-        handle.a(getHandle().getMinecraftServer());
+        handle.onChange(getHandle().getMinecraftServer());
         return true;
     }
 
