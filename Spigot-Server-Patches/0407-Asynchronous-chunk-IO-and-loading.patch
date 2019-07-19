@@ -1,4 +1,4 @@
-From e804b106bac7c58e754ff61f731ebd14842f57dd Mon Sep 17 00:00:00 2001
+From a82f85934120f0328dcbcfd3e2bcdce42ceed9d2 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1570,10 +1570,10 @@ index 0000000000..f127ef236e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000..7e2c72b23a
+index 0000000000..24f231bf45
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,120 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1653,6 +1653,13 @@ index 0000000000..7e2c72b23a
 +            } catch (final Throwable ex) {
 +                ConcreteFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
 +                this.complete(ChunkLoadTask.createEmptyHolder());
++            }
++
++            try {
++                this.world.getChunkProvider().playerChunkMap.updateChunkStatusOnDisk(chunkPos, chunkData.chunkData);
++            } catch (final Throwable ex) {
++                ConcreteFileIOThread.LOGGER.warn("Failed to update chunk status cache for task: " + this.toString(), ex);
++                // non-fatal, continue
 +            }
 +
 +            try {
