@@ -1,8 +1,124 @@
-From ced83de4d7c80a9f08f70ff4c1a37588eb09c7b8 Mon Sep 17 00:00:00 2001
+From e804b106bac7c58e754ff61f731ebd14842f57dd Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
 
+This patch re-adds a file IO thread as well as shoving de-serializing
+chunk NBT data onto worker threads. This patch also will shove
+chunk data serialization onto the same worker threads when the chunk
+is unloaded - this cannot be done for regular saves since that's unsafe.
+
+The file IO Thread
+
+Unlike 1.13 and below, the file IO thread is prioritized - IO tasks can
+be reoredered, however they are "stuck" to a world & coordinate.
+
+Scheduling IO tasks works as follows, given a world & coordinate - location:
+
+The IO thread has been designed to ensure that reads and writes appear to
+occur synchronously for a given location, however the implementation also
+has the unfortunate side-effect of making every write appear as if
+they occur without failure.
+
+The IO thread has also been designed to accomodate Mojang's decision to
+store chunk data and POI data separately. It can independently schedule
+tasks for each.
+
+However threads can wait for writes to complete and check if:
+ - The write was overwriten by another scheduler
+ - The write failed (however it does not indicate whether it was overwritten by another scheduler)
+
+Scheduling reads:
+
+ - If a write task is in progress, the task is not scheduled and returns the in-progress write data
+    This means that readers cannot modify the NBTTagCompound returned and must clone if it they wish to write
+ - If a write task is not in progress but a read task is in progress, then the read task is simply chained
+    This means that again, readers cannot modify the NBTTagCompound returned
+
+Scheduling writes:
+
+ - If a read task is in progress, ignore the read task and schedule the write
+    We cannot complete the read task since we assume it wants old data - not current
+ - If a write task is pending, overwrite the write data
+    The file IO thread does correctly handle cases where the data is overwritten when it
+    is writing data (before completing a task it will check if the data was overwritten and
+    will retry).
+
+When the file IO thread executes a task for a location, the it will
+execute the read task first (if it exists), then it will execute the
+write task. This ensures that, even when scheduling at different
+priorities, that reads/writes for a location act synchronously.
+
+The downside of the file IO thread is that write failure can only be
+indicated to the scheduling thread if:
+
+- No other thread decides to schedule another write for the location
+concurrently
+- The scheduling thread blocks on the write to complete (however the
+current implementation can be modified to indicate success
+asynchronously)
+
+The file io thread can be modified easily to provide indications
+of write failure and write overwriting if needed.
+
+The upside of the file IO thread is that if a write failures, then
+chunk data is not lost until server restart. This leaves more room
+for spurious failure.
+
+Finally, the io thread will indicate to the console when reads
+or writes fail - with relevant detail.
+
+Asynchronous chunk data serialization for unloading chunks
+
+When chunks unload they make a call to PlayerChunkMap#saveChunk(IChunkAccess).
+Even if I make the IO asynchronous for this call, the data serialization
+still hits pretty hard. And given that now the chunk system will
+aggressively unload chunks more often (queued immediately at
+ticket level 45 or higher), unloads occur more often, and
+combined with our changes to the unload queue to make it
+significantly more aggresive - chunk unloads can hit pretty hard.
+Especially players running around with elytras and fireworks.
+
+For serializing chunk data off main, there are some tasks which cannot be
+done asynchronously. Lighting data must be saved beforehand as well as
+potentially some tick lists. These are completed before scheduling the
+asynchronous save.
+
+However serializing chunk data off of the main thread is still risky.
+Even though this patch schedules the save to occur after ALL references
+of the chunk are removed from the world, plugins can still technically
+access entities inside the chunks. For this, if the serialization task
+fails for any reason, it will be re-scheduled to be serialized on the
+main thread - with the hopes that the reason it failed was due to a plugin
+and not an error with the save code itself. Like vanilla code - if the
+serialization fails, the chunk data is lost.
+
+Asynchronous chunk io/loading
+
+Mojang's current implementation for loading chunk data off disk is
+to return a CompletableFuture that will be completed by scheduling a
+task to be executed on the world's chunk queue (which is only drained
+on the main thread). This task will read the IO off disk and it will
+apply data conversions & deserialization synchronously. Obviously
+all 3 of these operations are expensive however all can be completed
+asynchronously instead.
+
+The solution this patch uses is as follows:
+
+0. If an asynchronous chunk save is in progress (see above), wait
+for that task to complete. It will use the serialized NBTTagCompound
+created by the task. If the task fails to complete, then we would continue
+with step 1. If it does not, we skip step 1. (Note: We actually load
+POI data no matter what in this case).
+1. Schedule an IO task to read chunk & poi data off disk.
+2. The IO task will schedule a chunk load task.
+3. The chunk load task executes on the async chunk loader threads
+and will apply datafixers & de-serialize the chunk into a ProtoChunk
+or ProtoChunkExtension.
+4. The in progress chunk is then passed on to the world's chunk queue
+to complete the ComletableFuture and execute any of the synchronous
+tasks required to be executed by the chunk load task (i.e lighting
+and some poi tasks).
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 index 366de66657..2b8f064ba3 100644
