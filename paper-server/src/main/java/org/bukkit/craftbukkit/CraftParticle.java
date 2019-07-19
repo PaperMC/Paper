@@ -151,7 +151,7 @@ public enum CraftParticle {
     }
 
     public static Particle toBukkit(net.minecraft.server.ParticleParam nms) {
-        return toBukkit(nms.b());
+        return toBukkit(nms.getParticle());
     }
 
     public static Particle toBukkit(net.minecraft.server.Particle nms) {

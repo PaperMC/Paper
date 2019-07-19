@@ -1,8 +1,9 @@
 --- a/net/minecraft/server/PlayerInteractManager.java
 +++ b/net/minecraft/server/PlayerInteractManager.java
-@@ -1,5 +1,15 @@
- package net.minecraft.server;
+@@ -2,6 +2,15 @@
  
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import org.bukkit.craftbukkit.block.CraftBlock;
@@ -12,11 +13,10 @@
 +import org.bukkit.event.block.Action;
 +import org.bukkit.event.player.PlayerInteractEvent;
 +// CraftBukkit end
-+
+ 
  public class PlayerInteractManager {
  
-     public WorldServer world;
-@@ -26,7 +36,7 @@
+@@ -30,7 +39,7 @@
          this.gamemode = enumgamemode;
          enumgamemode.a(this.player.abilities);
          this.player.updateAbilities();
@@ -25,107 +25,102 @@
          this.world.everyoneSleeping();
      }
  
-@@ -51,7 +61,7 @@
+@@ -55,7 +64,7 @@
      }
  
      public void a() {
 -        ++this.currentTick;
 +        this.currentTick = MinecraftServer.currentTick; // CraftBukkit;
-         float f;
-         int i;
+         IBlockData iblockdata;
  
-@@ -96,6 +106,19 @@
-     }
+         if (this.i) {
+@@ -111,10 +120,32 @@
  
-     public void a(BlockPosition blockposition, EnumDirection enumdirection) {
-+        // CraftBukkit start
-+        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
-+        if (event.isCancelled()) {
-+            // Let the client know the block still exists
-+            ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+            // Update any tile entity data for this block
-+            TileEntity tileentity = this.world.getTileEntity(blockposition);
-+            if (tileentity != null) {
-+                this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
-+            }
-+            return;
-+        }
-+        // CraftBukkit end
-         if (this.isCreative()) {
-             if (!this.world.douseFire((EntityHuman) null, blockposition, enumdirection)) {
-                 this.breakBlock(blockposition);
-@@ -122,15 +145,49 @@
+             if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
+                 if (!this.world.a((EntityHuman) this.player, blockposition)) {
++                    // CraftBukkit start - fire PlayerInteractEvent
++                    CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
+                     this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    // Update any tile entity data for this block
++                    TileEntity tileentity = world.getTileEntity(blockposition);
++                    if (tileentity != null) {
++                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++                    }
++                    // CraftBukkit end
+                     return;
                  }
-             }
  
--            this.world.douseFire((EntityHuman) null, blockposition, enumdirection);
-+            // this.world.douseFire((EntityHuman) null, blockposition, enumdirection); // CraftBukkit - Moved down
-             this.lastDigTick = this.currentTick;
-             float f = 1.0F;
-             IBlockData iblockdata = this.world.getType(blockposition);
- 
--            if (!iblockdata.isAir()) {
-+            // CraftBukkit start - Swings at air do *NOT* exist.
-+            if (event.useInteractedBlock() == Event.Result.DENY) {
-+                // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
-+                IBlockData data = this.world.getType(blockposition);
-+                if (data.getBlock() instanceof BlockDoor) {
-+                    // For some reason *BOTH* the bottom/top part have to be marked updated.
-+                    boolean bottom = data.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, bottom ? blockposition.up() : blockposition.down()));
-+                } else if (data.getBlock() instanceof BlockTrapdoor) {
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                // CraftBukkit start
++                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
++                if (event.isCancelled()) {
++                    // Let the client know the block still exists
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    // Update any tile entity data for this block
++                    TileEntity tileentity = this.world.getTileEntity(blockposition);
++                    if (tileentity != null) {
++                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++                    }
++                    return;
 +                }
-+            } else if (!iblockdata.isAir()) {
-                 iblockdata.attack(this.world, blockposition, this.player);
-                 f = iblockdata.getDamage(this.player, this.player.world, blockposition);
-+                // Allow fire punching to be blocked
-+                this.world.douseFire((EntityHuman) null, blockposition, enumdirection);
-+            }
++                // CraftBukkit end
 +
-+            if (event.useItemInHand() == Event.Result.DENY) {
-+                // If we 'insta destroyed' then the client needs to be informed.
-+                if (f > 1.0f) {
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+                }
-+                return;
-+            }
-+            org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.player.inventory.getItemInHand(), f >= 1.0f);
-+
-+            if (blockEvent.isCancelled()) {
-+                // Let the client know the block still exists
-+                ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+                return;
-+            }
-+
-+            if (blockEvent.getInstaBreak()) {
-+                f = 2.0f;
-             }
-+            // CraftBukkit end
- 
-             if (!iblockdata.isAir() && f >= 1.0F) {
-                 this.breakBlock(blockposition);
-@@ -149,6 +206,7 @@
- 
-     public void a(BlockPosition blockposition) {
-         if (blockposition.equals(this.f)) {
-+            this.currentTick = MinecraftServer.currentTick; // CraftBukkit
-             int i = this.currentTick - this.lastDigTick;
-             IBlockData iblockdata = this.world.getType(blockposition);
- 
-@@ -166,6 +224,10 @@
-                     this.j = this.lastDigTick;
+                 if (this.isCreative()) {
+                     if (!this.world.douseFire((EntityHuman) null, blockposition, enumdirection)) {
+                         this.a(blockposition, packetplayinblockdig_enumplayerdigtype);
+@@ -130,16 +161,50 @@
+                     return;
                  }
-             }
-+        // CraftBukkit start - Force block reset to client
-+        } else {
-+            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+            // CraftBukkit end
-         }
  
-     }
-@@ -190,10 +252,66 @@
+-                this.world.douseFire((EntityHuman) null, blockposition, enumdirection);
++                // this.world.douseFire((EntityHuman) null, blockposition, enumdirection); // CraftBukkit - Moved down
+                 this.lastDigTick = this.currentTick;
+                 float f = 1.0F;
+ 
+                 iblockdata = this.world.getType(blockposition);
+-                if (!iblockdata.isAir()) {
++                // CraftBukkit start - Swings at air do *NOT* exist.
++                if (event.useInteractedBlock() == Event.Result.DENY) {
++                    // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
++                    IBlockData data = this.world.getType(blockposition);
++                    if (data.getBlock() instanceof BlockDoor) {
++                        // For some reason *BOTH* the bottom/top part have to be marked updated.
++                        boolean bottom = data.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, bottom ? blockposition.up() : blockposition.down()));
++                    } else if (data.getBlock() instanceof BlockTrapdoor) {
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    }
++                } else if (!iblockdata.isAir()) {
+                     iblockdata.attack(this.world, blockposition, this.player);
+                     f = iblockdata.getDamage(this.player, this.player.world, blockposition);
++                    // Allow fire punching to be blocked
++                    this.world.douseFire((EntityHuman) null, blockposition, enumdirection);
+                 }
+ 
++                if (event.useItemInHand() == Event.Result.DENY) {
++                    // If we 'insta destroyed' then the client needs to be informed.
++                    if (f > 1.0f) {
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    }
++                    return;
++                }
++                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.player.inventory.getItemInHand(), f >= 1.0f);
++
++                if (blockEvent.isCancelled()) {
++                    // Let the client know the block still exists
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    return;
++                }
++
++                if (blockEvent.getInstaBreak()) {
++                    f = 2.0f;
++                }
++                // CraftBukkit end
++
+                 if (!iblockdata.isAir() && f >= 1.0F) {
+                     this.a(blockposition, packetplayinblockdig_enumplayerdigtype);
+                 } else {
+@@ -196,10 +261,66 @@
  
      public boolean breakBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.world.getType(blockposition);
@@ -142,7 +137,7 @@
 +            if (world.getTileEntity(blockposition) == null && !isSwordNoBreak) {
 +                PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(this.world, blockposition);
 +                packet.block = Blocks.AIR.getBlockData();
-+                ((EntityPlayer) this.player).playerConnection.sendPacket(packet);
++                this.player.playerConnection.sendPacket(packet);
 +            }
 +
 +            event = new BlockBreakEvent(bblock, this.player.getBukkitEntity());
@@ -168,11 +163,11 @@
 +                    return false;
 +                }
 +                // Let the client know the block still exists
-+                ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +
 +                // Brute force all possible updates
 +                for (EnumDirection dir : EnumDirection.values()) {
-+                    ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
 +                }
 +
 +                // Update any tile entity data for this block
@@ -193,47 +188,55 @@
              TileEntity tileentity = this.world.getTileEntity(blockposition);
              Block block = iblockdata.getBlock();
  
-@@ -221,6 +339,10 @@
-                     }
-                 }
- 
+@@ -209,6 +330,10 @@
+             } else if (this.player.a((World) this.world, blockposition, this.gamemode)) {
+                 return false;
+             } else {
 +                // CraftBukkit start
 +                org.bukkit.block.BlockState state = bblock.getState();
 +                world.captureDrops = new ArrayList<>();
 +                // CraftBukkit end
-                 boolean flag = this.c(blockposition);
+                 block.a((World) this.world, blockposition, iblockdata, (EntityHuman) this.player);
+                 boolean flag = this.world.a(blockposition, false);
  
-                 if (!this.isCreative()) {
-@@ -228,13 +350,27 @@
-                     boolean flag1 = this.player.hasBlock(iblockdata);
- 
-                     itemstack1.a(this.world, iblockdata, blockposition, this.player);
--                    if (flag && flag1) {
-+                    // CraftBukkit start - Check if block should drop items
-+                    if (flag && flag1 && event.isDropItems()) {
-                         ItemStack itemstack2 = itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack();
- 
-                         iblockdata.getBlock().a(this.world, this.player, blockposition, iblockdata, tileentity, itemstack2);
-                     }
-+                    // CraftBukkit end
+@@ -217,20 +342,33 @@
                  }
  
+                 if (this.isCreative()) {
+-                    return true;
++                    // return true; // CraftBukkit
+                 } else {
+                     ItemStack itemstack = this.player.getItemInMainHand();
+                     boolean flag1 = this.player.hasBlock(iblockdata);
+ 
+                     itemstack.a(this.world, iblockdata, blockposition, this.player);
+-                    if (flag && flag1) {
++                    if (flag && flag1 && event.isDropItems()) { // CraftBukkit - Check if block should drop items
+                         ItemStack itemstack1 = itemstack.isEmpty() ? ItemStack.a : itemstack.cloneItemStack();
+ 
+                         block.a(this.world, this.player, blockposition, iblockdata, tileentity, itemstack1);
+                     }
+ 
+-                    return true;
++                    // return true; // CraftBukkit
++                }
++                // CraftBukkit start
 +                if (event.isDropItems()) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, world.captureDrops);
 +                }
 +                world.captureDrops = null;
-+                // CraftBukkit end
 +
-+                // CraftBukkit start - Drop event experience
++                // Drop event experience
 +                if (flag && event != null) {
 +                    iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop());
-+                }
-+                // CraftBukkit end
+                 }
 +
-                 return flag;
++                return true;
++                // CraftBukkit end
              }
          }
-@@ -277,12 +413,41 @@
+     }
+@@ -272,12 +410,41 @@
          }
      }
  
@@ -252,7 +255,7 @@
 +            cancelledBlock = !(itileinventory instanceof ITileInventory);
 +        }
 +
-+        if (entityhuman.getCooldownTracker().a(itemstack.getItem())) {
++        if (entityhuman.getCooldownTracker().hasCooldown(itemstack.getItem())) {
 +            cancelledBlock = true;
 +        }
 +
@@ -275,13 +278,13 @@
  
              if (itileinventory != null) {
                  entityhuman.openContainer(itileinventory);
-@@ -294,24 +459,26 @@
+@@ -289,24 +456,26 @@
              boolean flag = !entityhuman.getItemInMainHand().isEmpty() || !entityhuman.getItemInOffHand().isEmpty();
              boolean flag1 = entityhuman.isSneaking() && flag;
  
 -            if (!flag1 && iblockdata.interact(world, entityhuman, enumhand, movingobjectpositionblock)) {
 -                return EnumInteractionResult.SUCCESS;
--            } else if (!itemstack.isEmpty() && !entityhuman.getCooldownTracker().a(itemstack.getItem())) {
+-            } else if (!itemstack.isEmpty() && !entityhuman.getCooldownTracker().hasCooldown(itemstack.getItem())) {
 +            if (!flag1) {
 +                enuminteractionresult = iblockdata.interact(world, entityhuman, enumhand, movingobjectpositionblock) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.FAIL;
 +            }

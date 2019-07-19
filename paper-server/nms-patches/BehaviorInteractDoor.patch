@@ -1,26 +1,9 @@
 --- a/net/minecraft/server/BehaviorInteractDoor.java
 +++ b/net/minecraft/server/BehaviorInteractDoor.java
-@@ -23,7 +23,7 @@
-         Set<BlockPosition> set = this.a(worldserver, list, list1);
-         int j = pathentity.f() - 1;
- 
--        this.a(worldserver, list1, set, j);
-+        this.a(worldserver, list1, set, j, entityliving); // CraftBukkit - add entity
-     }
- 
-     private Set<BlockPosition> a(WorldServer worldserver, List<GlobalPos> list, List<BlockPosition> list1) {
-@@ -35,13 +35,20 @@
-         return (Set) stream.filter(list1::contains).collect(Collectors.toSet());
-     }
- 
--    private void a(WorldServer worldserver, List<BlockPosition> list, Set<BlockPosition> set, int i) {
-+    private void a(WorldServer worldserver, List<BlockPosition> list, Set<BlockPosition> set, int i, EntityLiving entityliving) { // CraftBukkit - add entity
-         set.forEach((blockposition) -> {
-             int j = list.indexOf(blockposition);
-             IBlockData iblockdata = worldserver.getType(blockposition);
-             Block block = iblockdata.getBlock();
- 
+@@ -46,11 +46,18 @@
              if (TagsBlock.WOODEN_DOORS.isTagged(block) && block instanceof BlockDoor) {
+                 boolean flag = j >= i;
+ 
 +                // CraftBukkit start - entities opening doors
 +                org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entityliving.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(entityliving.world, blockposition));
 +                entityliving.world.getServer().getPluginManager().callEvent(event);
@@ -28,6 +11,12 @@
 +                    return;
 +                }
 +                // CaftBukkit end
-                 ((BlockDoor) block).setDoor(worldserver, blockposition, j >= i);
-             }
+                 ((BlockDoor) block).setDoor(worldserver, blockposition, flag);
+                 GlobalPos globalpos = GlobalPos.create(worldserver.getWorldProvider().getDimensionManager(), blockposition);
  
+                 if (!behaviorcontroller.getMemory(MemoryModuleType.OPENED_DOORS).isPresent() && flag) {
+-                    behaviorcontroller.setMemory(MemoryModuleType.OPENED_DOORS, (Object) Sets.newHashSet(new GlobalPos[]{globalpos}));
++                    behaviorcontroller.setMemory(MemoryModuleType.OPENED_DOORS, Sets.newHashSet(new GlobalPos[]{globalpos})); // CraftBukkit - decompile error
+                 } else {
+                     behaviorcontroller.getMemory(MemoryModuleType.OPENED_DOORS).ifPresent((set1) -> {
+                         if (flag) {

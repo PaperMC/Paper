@@ -32,7 +32,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void load(TileEntityBanner banner) {
         super.load(banner);
 
-        base = DyeColor.getByWoolData((byte) ((BlockBannerAbstract) this.data.getBlock()).b().getColorIndex()); // PAIL
+        base = DyeColor.getByWoolData((byte) ((BlockBannerAbstract) this.data.getBlock()).getColor().getColorIndex());
         patterns = new ArrayList<Pattern>();
 
         if (banner.patterns != null) {

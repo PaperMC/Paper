@@ -19,6 +19,7 @@ import net.minecraft.server.MobSpawnerPhantom;
 import net.minecraft.server.RegionLimitedWorldAccess;
 import net.minecraft.server.StructureGenerator;
 import net.minecraft.server.TileEntity;
+import net.minecraft.server.VillageSiege;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldGenFeatureConfiguration;
 import net.minecraft.server.WorldGenStage;
@@ -39,6 +40,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     private final MobSpawnerPhantom mobSpawnerPhantom = new MobSpawnerPhantom();
     private final MobSpawnerPatrol mobSpawnerPatrol = new MobSpawnerPatrol();
     private final MobSpawnerCat mobSpawnerCat = new MobSpawnerCat();
+    private final VillageSiege villageSiege = new VillageSiege();
 
     private static class CustomBiomeGrid implements BiomeGrid {
         BiomeBase[] biome;
@@ -160,6 +162,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         this.mobSpawnerPhantom.a(worldserver, flag, flag1);
         this.mobSpawnerPatrol.a(worldserver, flag, flag1);
         this.mobSpawnerCat.a(worldserver, flag, flag1);
+        this.villageSiege.a(worldserver, flag, flag1);
     }
 
     @Override

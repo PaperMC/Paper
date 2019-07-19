@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ChunkMapDistance.java
 +++ b/net/minecraft/server/ChunkMapDistance.java
-@@ -32,11 +32,11 @@
+@@ -32,7 +32,7 @@
      private static final Logger LOGGER = LogManager.getLogger();
      private static final int b = 33 + ChunkStatus.a(ChunkStatus.FULL) - 2;
      private final Long2ObjectMap<ObjectSet<EntityPlayer>> c = new Long2ObjectOpenHashMap();
@@ -9,12 +9,7 @@
      private final ChunkMapDistance.a e = new ChunkMapDistance.a();
      private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
      private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
--    private final Set<PlayerChunk> h = Sets.newHashSet();
-+    private final Set<PlayerChunk> h = Sets.newHashSet(); // PAIL pendingChunkUpdates
-     private final PlayerChunk.c i;
-     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
-     private final Mailbox<ChunkTaskQueueSorter.b> k;
-@@ -61,7 +61,7 @@
+@@ -62,7 +62,7 @@
          while (objectiterator.hasNext()) {
              Entry<ObjectSortedSet<Ticket<?>>> entry = (Entry) objectiterator.next();
  
@@ -23,15 +18,15 @@
                  return ticket.a(this.currentTick);
              })) {
                  this.e.b(entry.getLongKey(), this.a((ObjectSortedSet) entry.getValue()), false);
-@@ -99,10 +99,25 @@
+@@ -100,10 +100,25 @@
          }
  
-         if (!this.h.isEmpty()) {
--            this.h.forEach((playerchunk) -> {
+         if (!this.pendingChunkUpdates.isEmpty()) {
+-            this.pendingChunkUpdates.forEach((playerchunk) -> {
 +            // CraftBukkit start
 +            // Iterate pending chunk updates with protection against concurrent modification exceptions
-+            java.util.Iterator<PlayerChunk> iter = this.h.iterator();
-+            int expectedSize = this.h.size();
++            java.util.Iterator<PlayerChunk> iter = this.pendingChunkUpdates.iterator();
++            int expectedSize = this.pendingChunkUpdates.size();
 +            do {
 +                PlayerChunk playerchunk = iter.next();
 +                iter.remove();
@@ -39,12 +34,12 @@
 +
                  playerchunk.a(playerchunkmap);
 -            });
--            this.h.clear();
+-            this.pendingChunkUpdates.clear();
 +
 +                // Reset iterator if set was modified using add()
-+                if (this.h.size() != expectedSize) {
-+                    expectedSize = this.h.size();
-+                    iter = this.h.iterator();
++                if (this.pendingChunkUpdates.size() != expectedSize) {
++                    expectedSize = this.pendingChunkUpdates.size();
++                    iter = this.pendingChunkUpdates.iterator();
 +                }
 +            } while (iter.hasNext());
 +            // CraftBukkit end
@@ -52,7 +47,7 @@
              return true;
          } else {
              if (!this.l.isEmpty()) {
-@@ -124,7 +139,7 @@
+@@ -125,7 +140,7 @@
  
                          completablefuture.thenAccept((either) -> {
                              this.m.execute(() -> {
@@ -61,16 +56,16 @@
                                  }, j, false));
                              });
                          });
-@@ -138,7 +153,7 @@
+@@ -139,7 +154,7 @@
          }
      }
  
--    private void a(long i, Ticket<?> ticket) {
-+    private boolean a(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean // PAIL addTicket
+-    private void addTicket(long i, Ticket<?> ticket) {
++    private boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
          ObjectSortedSet<Ticket<?>> objectsortedset = this.e(i);
          ObjectBidirectionalIterator<Ticket<?>> objectbidirectionaliterator = objectsortedset.iterator();
          int j;
-@@ -149,21 +164,24 @@
+@@ -150,21 +165,24 @@
              j = PlayerChunkMap.GOLDEN_TICKET + 1;
          }
  
@@ -87,8 +82,8 @@
 +        return ret; // CraftBukkit
      }
  
--    private void b(long i, Ticket<?> ticket) {
-+    private boolean b(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean // PAIL removeTicket
+-    private void removeTicket(long i, Ticket<?> ticket) {
++    private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
          ObjectSortedSet<Ticket<?>> objectsortedset = this.e(i);
  
 +        boolean removed = false; // CraftBukkit
@@ -98,7 +93,7 @@
          }
  
          if (objectsortedset.isEmpty()) {
-@@ -171,16 +189,27 @@
+@@ -172,16 +190,29 @@
          }
  
          this.e.b(i, this.a(objectsortedset), false);
@@ -106,12 +101,13 @@
      }
  
      public <T> void a(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
--        this.a(chunkcoordintpair.pair(), new Ticket<>(tickettype, i, t0, this.currentTick));
+-        this.addTicket(chunkcoordintpair.pair(), new Ticket<>(tickettype, i, t0, this.currentTick));
 +        // CraftBukkit start
 +        this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
 +    }
-+    public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int level, T identifier) {
-+        return this.a(chunkPos.pair(), new Ticket<>(ticketType, level, identifier, this.currentTick));
++
++    public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
++        return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier, this.currentTick));
 +        // CraftBukkit end
      }
  
@@ -120,17 +116,18 @@
 +        // CraftBukkit start
 +        this.removeTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
 +    }
-+    public <T> boolean removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int level, T identifier) {
-+        Ticket<T> ticket = new Ticket<>(ticketType, level, identifier, this.currentTick);
  
--        this.b(chunkcoordintpair.pair(), ticket);
-+        return this.b(chunkPos.pair(), ticket);
+-        this.removeTicket(chunkcoordintpair.pair(), ticket);
++    public <T> boolean removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
++        Ticket<T> ticket = new Ticket<>(ticketType, level, identifier, this.currentTick);
++
++        return this.removeTicket(chunkcoordintpair.pair(), ticket);
 +        // CraftBukkit end
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -247,6 +276,21 @@
-         return this.f.a.containsKey(i);
+@@ -265,6 +296,21 @@
+         return this.i.a();
      }
  
 +    // CraftBukkit start
@@ -151,21 +148,28 @@
      class a extends ChunkMap {
  
          public a() {
-@@ -333,7 +377,7 @@
+@@ -351,13 +397,13 @@
                  Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i), ChunkMapDistance.this.currentTick);
  
                  if (flag1) {
 -                    ChunkMapDistance.this.j.a((Object) ChunkTaskQueueSorter.a(() -> {
 +                    ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
-                             ChunkMapDistance.this.a(i, ticket);
-                             ChunkMapDistance.this.l.add(i);
-@@ -342,7 +386,7 @@
+                             if (this.c(this.c(i))) {
+                                 ChunkMapDistance.this.addTicket(i, ticket);
+                                 ChunkMapDistance.this.l.add(i);
+                             } else {
+-                                ChunkMapDistance.this.k.a((Object) ChunkTaskQueueSorter.a(() -> {
++                                ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
+                                 }, i, false));
+                             }
+ 
+@@ -366,7 +412,7 @@
                          return j;
                      }));
                  } else {
 -                    ChunkMapDistance.this.k.a((Object) ChunkTaskQueueSorter.a(() -> {
 +                    ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
-                             ChunkMapDistance.this.b(i, ticket);
+                             ChunkMapDistance.this.removeTicket(i, ticket);
                          });

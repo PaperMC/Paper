@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -47,6 +47,13 @@
+@@ -56,6 +56,13 @@
  import org.apache.commons.lang3.Validate;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -14,7 +14,7 @@
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable, Runnable {
  
-@@ -65,7 +72,7 @@
+@@ -75,7 +82,7 @@
      public final DataFixer dataConverterManager;
      private String serverIp;
      private int serverPort = -1;
@@ -23,18 +23,18 @@
      private PlayerList playerList;
      private volatile boolean isRunning = true;
      private boolean isStopped;
-@@ -103,7 +110,7 @@
+@@ -113,7 +120,7 @@
      private final GameProfileRepository gameProfileRepository;
      private final UserCache userCache;
-     private long Y;
+     private long Z;
 -    public final Thread serverThread = (Thread) SystemUtils.a((Object) (new Thread(this, "Server thread")), (thread) -> {
 +    public final Thread serverThread = (Thread) SystemUtils.a((new Thread(this, "Server thread")), (thread) -> { // CraftBukkit - decompile error
          thread.setUncaughtExceptionHandler((thread1, throwable) -> {
              MinecraftServer.LOGGER.error(throwable);
          });
-@@ -132,7 +139,21 @@
+@@ -142,7 +149,21 @@
      @Nullable
-     private String au;
+     private String av;
  
 -    public MinecraftServer(File file, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
 +    // CraftBukkit start
@@ -53,11 +53,11 @@
 +
 +    public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
          super("Server");
-         this.ad = new ResourceManager(EnumResourcePackType.SERVER_DATA, this.serverThread);
+         this.ae = new ResourceManager(EnumResourcePackType.SERVER_DATA, this.serverThread);
          this.resourcePackRepository = new ResourcePackRepository<>(ResourcePackLoader::new);
-@@ -145,15 +166,15 @@
-         this.an = new CustomFunctionData(this);
-         this.ao = new CircularTimer();
+@@ -155,15 +176,15 @@
+         this.ao = new CustomFunctionData(this);
+         this.ap = new CircularTimer();
          this.proxy = proxy;
 -        this.commandDispatcher = commanddispatcher;
 +        this.commandDispatcher = this.vanillaCommandDispatcher = commanddispatcher; // CraftBukkit
@@ -73,12 +73,12 @@
 -        this.convertable = new Convertable(file.toPath(), file.toPath().resolve("../backups"), datafixer);
 +        // this.convertable = new Convertable(file.toPath(), file.toPath().resolve("../backups"), datafixer); // CraftBukkit - moved to DedicatedServer.init
          this.dataConverterManager = datafixer;
-         this.ad.a((IReloadListener) this.ai);
-         this.ad.a((IReloadListener) this.ah);
-@@ -162,7 +183,32 @@
-         this.ad.a((IReloadListener) this.am);
+         this.ae.a((IReloadListener) this.aj);
+         this.ae.a((IReloadListener) this.ai);
+@@ -172,7 +193,32 @@
+         this.ae.a((IReloadListener) this.an);
          this.executorService = SystemUtils.e();
-         this.J = s;
+         this.K = s;
 +        // CraftBukkit start
 +        this.options = options;
 +        // Try to see if we're actually running in a terminal, disable jline if not
@@ -108,7 +108,7 @@
  
      private void initializeScoreboards(WorldPersistentData worldpersistentdata) {
          PersistentScoreboard persistentscoreboard = (PersistentScoreboard) worldpersistentdata.a(PersistentScoreboard::new, "scoreboard");
-@@ -198,11 +244,11 @@
+@@ -208,11 +254,11 @@
          }
  
          if (this.forceUpgrade) {
@@ -123,7 +123,7 @@
                  IChatBaseComponent ichatbasecomponent = null;
  
                  while (!worldupgrader.b()) {
-@@ -241,8 +287,9 @@
+@@ -251,8 +297,9 @@
      }
  
      protected void a(String s, String s1, long i, WorldType worldtype, JsonElement jsonelement) {
@@ -134,7 +134,7 @@
          WorldNBTStorage worldnbtstorage = this.getConvertable().a(s, this);
  
          this.a(this.getWorld(), worldnbtstorage);
-@@ -267,24 +314,134 @@
+@@ -277,24 +324,134 @@
          }
  
          this.a(worldnbtstorage.getDirectory(), worlddata);
@@ -158,10 +158,7 @@
 +                    continue;
 +                }
 +            }
- 
--    protected void a(WorldNBTStorage worldnbtstorage, WorldData worlddata, WorldSettings worldsettings, WorldLoadListener worldloadlistener) {
--        if (this.isDemoMode()) {
--            worlddata.a(MinecraftServer.c);
++
 +            if (j == 2) {
 +                if (server.getAllowEnd()) {
 +                    dimension = 1;
@@ -231,7 +228,10 @@
 +                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
 +                    }
 +                }
-+
+ 
+-    protected void a(WorldNBTStorage worldnbtstorage, WorldData worlddata, WorldSettings worldsettings, WorldLoadListener worldloadlistener) {
+-        if (this.isDemoMode()) {
+-            worlddata.a(MinecraftServer.c);
 +                WorldNBTStorage worldnbtstorage = new WorldNBTStorage(server.getWorldContainer(), name, this, this.dataConverterManager);
 +                // world =, b0 to dimension, s1 to name, added Environment and gen
 +                worlddata = worldnbtstorage.getWorldData();
@@ -282,7 +282,7 @@
  
          if (!worlddata.u()) {
              try {
-@@ -308,23 +465,8 @@
+@@ -318,23 +475,8 @@
  
              worlddata.d(true);
          }
@@ -307,7 +307,7 @@
  
      private void a(WorldData worlddata) {
          worlddata.f(false);
-@@ -343,6 +485,25 @@
+@@ -353,6 +495,25 @@
      protected void a(File file, WorldData worlddata) {
          this.resourcePackRepository.a((ResourcePackSource) (new ResourcePackSourceVanilla()));
          this.resourcePackFolder = new ResourcePackSourceFolder(new File(file, "datapacks"));
@@ -333,7 +333,7 @@
          this.resourcePackRepository.a((ResourcePackSource) this.resourcePackFolder);
          this.resourcePackRepository.a();
          List<ResourcePackLoader> list = Lists.newArrayList();
-@@ -363,11 +524,18 @@
+@@ -373,11 +534,18 @@
          this.b(worlddata);
      }
  
@@ -355,7 +355,7 @@
          BlockPosition blockposition = worldserver.getSpawn();
  
          worldloadlistener.a(new ChunkCoordIntPair(blockposition));
-@@ -378,17 +546,21 @@
+@@ -388,17 +556,21 @@
          chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
  
          while (chunkproviderserver.b() != 441) {
@@ -386,7 +386,7 @@
  
              if (forcedchunk != null) {
                  WorldServer worldserver1 = this.getWorldServer(dimensionmanager);
-@@ -403,10 +575,16 @@
+@@ -413,10 +585,16 @@
              }
          }
  
@@ -405,7 +405,7 @@
      }
  
      protected void a(String s, WorldNBTStorage worldnbtstorage) {
-@@ -451,12 +629,16 @@
+@@ -463,12 +641,16 @@
              }
          }
  
@@ -422,7 +422,7 @@
          return flag3;
      }
  
-@@ -465,8 +647,29 @@
+@@ -477,8 +659,29 @@
          this.stop();
      }
  
@@ -452,7 +452,7 @@
          if (this.getServerConnection() != null) {
              this.getServerConnection().b();
          }
-@@ -475,6 +678,7 @@
+@@ -487,6 +690,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
              this.playerList.shutdown();
@@ -460,7 +460,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -544,14 +748,16 @@
+@@ -556,14 +760,16 @@
                  while (this.isRunning) {
                      long i = SystemUtils.getMonotonicMillis() - this.nextTick;
  
@@ -476,9 +476,9 @@
  
 +                    MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
                      this.nextTick += 50L;
-                     if (this.S) {
-                         this.S = false;
-@@ -598,6 +804,12 @@
+                     if (this.T) {
+                         this.T = false;
+@@ -610,6 +816,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -491,13 +491,13 @@
                  this.exit();
              }
  
-@@ -606,8 +818,15 @@
+@@ -618,8 +830,15 @@
      }
  
      private boolean canSleepForTick() {
--        return this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ab ? this.aa : this.nextTick);
+-        return this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
 +        // CraftBukkit start
-+        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ab ? this.aa : this.nextTick);
++        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
 +    }
 +
 +    private void executeModerately() {
@@ -508,7 +508,7 @@
  
      protected void sleepForTick() {
          this.executeAll();
-@@ -708,7 +927,7 @@
+@@ -720,7 +939,7 @@
              this.serverPing.b().a(agameprofile);
          }
  
@@ -517,7 +517,7 @@
              MinecraftServer.LOGGER.debug("Autosave started");
              this.methodProfiler.enter("save");
              this.playerList.savePlayers();
-@@ -738,23 +957,40 @@
+@@ -750,23 +969,40 @@
      }
  
      protected void b(BooleanSupplier booleansupplier) {
@@ -559,7 +559,7 @@
  
                  this.methodProfiler.enter("tick");
  
-@@ -793,7 +1029,8 @@
+@@ -805,7 +1041,8 @@
          this.tickables.add(runnable);
      }
  
@@ -569,7 +569,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -816,15 +1053,17 @@
+@@ -828,15 +1065,17 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -589,7 +589,7 @@
                  MinecraftServer.LOGGER.info("Initialized '" + java_nio_file_path.toAbsolutePath().toString() + "' and '" + java_nio_file_path1.toAbsolutePath().toString() + "'");
                  return;
              }
-@@ -836,14 +1075,15 @@
+@@ -848,14 +1087,15 @@
  
              DispenserRegistry.init();
              DispenserRegistry.c();
@@ -608,7 +608,7 @@
              dedicatedserver.i((String) optionset.valueOf(optionspec7));
              dedicatedserver.setPort((Integer) optionset.valueOf(optionspec10));
              dedicatedserver.e(optionset.has(optionspec2));
-@@ -866,6 +1106,29 @@
+@@ -878,6 +1118,29 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -638,7 +638,7 @@
          } catch (Exception exception) {
              MinecraftServer.LOGGER.fatal("Failed to start the minecraft server", exception);
          }
-@@ -885,7 +1148,9 @@
+@@ -897,7 +1160,9 @@
      }
  
      public void startServerThread() {
@@ -648,7 +648,7 @@
      }
  
      public File d(String s) {
-@@ -940,7 +1205,7 @@
+@@ -952,7 +1217,7 @@
      }
  
      public String getServerModName() {
@@ -657,19 +657,19 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -979,7 +1244,7 @@
+@@ -991,7 +1256,7 @@
      }
  
-     public boolean E() {
+     public boolean F() {
 -        return this.universe != null;
 +        return true; // CraftBukkit
      }
  
      @Override
-@@ -1482,4 +1747,16 @@
-     }
+@@ -1690,4 +1955,16 @@
+         }
  
-     public abstract boolean b(GameProfile gameprofile);
+     }
 +
 +    // CraftBukkit start
 +    @Override

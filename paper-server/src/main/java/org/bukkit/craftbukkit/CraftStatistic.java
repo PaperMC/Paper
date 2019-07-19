@@ -113,8 +113,8 @@ public enum CraftStatistic {
     }
 
     public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.server.Statistic<?> statistic) {
-        IRegistry statRegistry = statistic.a().a();
-        MinecraftKey nmsKey = IRegistry.STATS.getKey(statistic.a());
+        IRegistry statRegistry = statistic.getWrapper().getRegistry();
+        MinecraftKey nmsKey = IRegistry.STATS.getKey(statistic.getWrapper());
 
         if (statRegistry == IRegistry.CUSTOM_STAT) {
             nmsKey = (MinecraftKey) statistic.b();

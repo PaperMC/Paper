@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/PlayerChunkMap.java
 +++ b/net/minecraft/server/PlayerChunkMap.java
-@@ -37,6 +37,7 @@
+@@ -42,6 +42,7 @@
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -8,16 +8,7 @@
  
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
-@@ -58,7 +59,7 @@
-     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxWorldGen;
-     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxMain;
-     public final WorldLoadListener worldLoadListener;
--    private final PlayerChunkMap.a u;
-+    public final PlayerChunkMap.a u; // CraftBukkit - private -> public // PAIL chunkDistanceManager
-     private final AtomicInteger v;
-     private final DefinedStructureManager definedStructureManager;
-     private final File x;
-@@ -67,6 +68,31 @@
+@@ -72,6 +73,31 @@
      private final Queue<Runnable> A;
      private int viewDistance;
  
@@ -49,7 +40,7 @@
      public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
          super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
          this.visibleChunks = this.updatingChunks.clone();
-@@ -184,9 +210,12 @@
+@@ -191,9 +217,12 @@
  
          return completablefuture1.thenApply((list1) -> {
              List<IChunkAccess> list2 = Lists.newArrayList();
@@ -64,7 +55,7 @@
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -284,7 +313,7 @@
+@@ -291,7 +320,7 @@
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
          } else {
              this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
@@ -73,7 +64,7 @@
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
                      this.saveChunk(ichunkaccess);
-@@ -295,7 +324,6 @@
+@@ -302,7 +331,6 @@
          }
  
      }
@@ -81,7 +72,7 @@
      protected void unloadChunks(BooleanSupplier booleansupplier) {
          GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
-@@ -334,7 +362,7 @@
+@@ -341,7 +369,7 @@
  
      private void a(long i, PlayerChunk playerchunk) {
          CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkSave();
@@ -90,7 +81,7 @@
              CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkSave();
  
              if (completablefuture1 != completablefuture) {
-@@ -483,7 +511,7 @@
+@@ -490,7 +518,7 @@
                  return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
          }, (runnable) -> {
@@ -99,7 +90,7 @@
          });
      }
  
-@@ -564,7 +592,7 @@
+@@ -571,7 +599,7 @@
              long i = playerchunk.i().pair();
  
              playerchunk.getClass();
@@ -108,7 +99,7 @@
          });
      }
  
-@@ -581,7 +609,7 @@
+@@ -588,7 +616,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -117,7 +108,7 @@
          });
  
          completablefuture1.thenAcceptAsync((either) -> {
-@@ -595,7 +623,7 @@
+@@ -602,7 +630,7 @@
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -126,7 +117,7 @@
          });
          return completablefuture1;
      }
-@@ -609,7 +637,7 @@
+@@ -616,7 +644,7 @@
                  return chunk;
              });
          }, (runnable) -> {
@@ -135,7 +126,26 @@
          });
      }
  
-@@ -724,7 +752,7 @@
+@@ -740,7 +768,8 @@
+                 return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
+             });
+ 
+-            csvwriter.a(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getChunkStatus).orElse((Object) null), optional1.map(Chunk::getState).orElse((Object) null), a(playerchunk.c()), a(playerchunk.a()), a(playerchunk.b()), this.chunkDistanceManager.c(entry.getLongKey()), !this.isOutsideOfRange(chunkcoordintpair), optional1.map((chunk) -> {
++            // Craftbukkit - decompile error
++            csvwriter.a(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getChunkStatus).orElse(null), optional1.map(Chunk::getState).orElse(null), a(playerchunk.c()), a(playerchunk.a()), a(playerchunk.b()), this.chunkDistanceManager.c(entry.getLongKey()), !this.isOutsideOfRange(chunkcoordintpair), optional1.map((chunk) -> {
+                 return Stream.of(chunk.getEntitySlices()).mapToInt(EntitySlice::size).sum();
+             }).orElse(0), optional1.map((chunk) -> {
+                 return chunk.getTileEntities().size();
+@@ -751,7 +780,7 @@
+ 
+     private static String a(CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture) {
+         try {
+-            Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow((Object) null);
++            Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // Craftbukkit - decompile error
+ 
+             return either != null ? (String) either.map((chunk) -> {
+                 return "done";
+@@ -769,7 +798,7 @@
      private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -144,7 +154,7 @@
      }
  
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1056,7 +1084,7 @@
+@@ -1101,7 +1130,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -153,16 +163,16 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1109,7 +1137,7 @@
+@@ -1154,7 +1183,7 @@
  
          public void updatePlayer(EntityPlayer entityplayer) {
              if (entityplayer != this.tracker) {
 -                Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.trackerEntry.b());
-+                Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.ci()); // MC-155077, SPIGOT-5113 // PAIL getPositionVector
++                Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
                  int i = Math.min(this.trackingDistance, (PlayerChunkMap.this.viewDistance - 1) * 16);
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
  
-@@ -1125,6 +1153,17 @@
+@@ -1170,6 +1199,17 @@
                          }
                      }
  

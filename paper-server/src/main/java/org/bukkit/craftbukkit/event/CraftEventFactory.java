@@ -1232,7 +1232,7 @@ public class CraftEventFactory {
         c.setChatModifier(modi);
         if (c instanceof ChatMessage) {
             ChatMessage cm = (ChatMessage) c;
-            Object[] oo = cm.l();
+            Object[] oo = cm.getArgs();
             for (int i = 0; i < oo.length; i++) {
                 Object o = oo[i];
                 if (o instanceof IChatBaseComponent) {
@@ -1240,7 +1240,7 @@ public class CraftEventFactory {
                 }
             }
         }
-        List<IChatBaseComponent> ls = c.a();
+        List<IChatBaseComponent> ls = c.getSiblings();
         if (ls != null) {
             for (int i = 0; i < ls.size(); i++) {
                 ls.set(i, stripEvents(ls.get(i)));

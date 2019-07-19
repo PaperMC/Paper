@@ -51,7 +51,7 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
             }
             getHandle().effects.remove(existing);
         }
-        getHandle().a(CraftPotionUtil.fromBukkit(effect));
+        getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
         getHandle().refreshEffects();
         return true;
     }

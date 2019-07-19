@@ -151,7 +151,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
             }
             getHandle().effects.remove(existing);
         }
-        getHandle().a(CraftPotionUtil.fromBukkit(effect));
+        getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
         getHandle().refreshEffects();
         return true;
     }
