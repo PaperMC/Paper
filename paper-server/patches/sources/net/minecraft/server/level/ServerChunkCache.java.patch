@@ -14,12 +14,10 @@
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
-@@ -93,8 +100,66 @@
-         this.distanceManager = this.chunkMap.getDistanceManager();
-         this.distanceManager.updateSimulationDistance(simulationDistance);
+@@ -95,6 +102,64 @@
          this.clearCache();
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - properly implement isChunkLoaded
 +    public boolean isChunkLoaded(int chunkX, int chunkZ) {
 +        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(ChunkPos.asLong(chunkX, chunkZ));
@@ -50,8 +48,8 @@
 +
 +    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
 +        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
-     }
- 
++    }
++
 +    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
 +        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
 +    }
@@ -90,16 +88,18 @@
                          return ichunkaccess;
                      }
                  }
-@@ -151,7 +216,7 @@
+@@ -150,8 +215,9 @@
+ 
              Objects.requireNonNull(completablefuture);
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
++            // com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
              ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
 -            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse((Object) null);
 +            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
              if (ichunkaccess1 == null && create) {
                  throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("Chunk not there when requested: " + chunkresult.getError()));
-@@ -231,7 +296,15 @@
+@@ -231,7 +297,15 @@
          int l = ChunkLevel.byStatus(leastStatus);
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(k);
  
@@ -116,7 +116,7 @@
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = Profiler.get();
-@@ -250,7 +323,7 @@
+@@ -250,7 +324,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
@@ -125,7 +125,7 @@
      }
  
      @Override
-@@ -279,7 +352,7 @@
+@@ -279,7 +353,7 @@
          return this.mainThreadProcessor.pollTask();
      }
  
@@ -134,7 +134,7 @@
          boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
          boolean flag1 = this.chunkMap.promoteChunkMap();
  
-@@ -309,18 +382,40 @@
+@@ -309,18 +383,40 @@
  
      @Override
      public void close() throws IOException {
@@ -177,7 +177,7 @@
              this.distanceManager.purgeStaleTickets();
          }
  
-@@ -401,14 +496,22 @@
+@@ -401,14 +497,22 @@
  
          this.lastSpawnState = spawnercreature_d;
          profiler.popPush("spawnAndTick");
@@ -203,7 +203,7 @@
          } else {
              list1 = List.of();
          }
-@@ -420,7 +523,7 @@
+@@ -420,7 +524,7 @@
              ChunkPos chunkcoordintpair = chunk.getPos();
  
              chunk.incrementInhabitedTime(timeDelta);
@@ -212,7 +212,7 @@
                  NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, list1);
              }
  
-@@ -541,10 +644,16 @@
+@@ -541,10 +645,16 @@
  
      @Override
      public void setSpawnSettings(boolean spawnMonsters) {
@@ -231,7 +231,7 @@
      public String getChunkDebugData(ChunkPos pos) {
          return this.chunkMap.getChunkDebugData(pos);
      }
-@@ -618,14 +727,20 @@
+@@ -618,14 +728,20 @@
          }
  
          @Override

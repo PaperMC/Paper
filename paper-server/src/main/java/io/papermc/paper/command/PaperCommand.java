@@ -38,6 +38,7 @@ public final class PaperCommand extends Command {
         commands.put(Set.of("reload"), new ReloadCommand());
         commands.put(Set.of("version"), new VersionCommand());
         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
+        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
 
         return commands.entrySet().stream()
             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
