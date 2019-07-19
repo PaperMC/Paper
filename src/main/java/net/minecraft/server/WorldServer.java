@@ -166,6 +166,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     };
     public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
     // Paper end
+    // Paper start
+    @Override
+    public boolean isChunkLoaded(int x, int z) {
+        return this.getChunkProvider().getChunkAtIfLoadedImmediately(x, z) != null;
+    }
+    // Paper end
 
     // Add env and gen to constructor, WorldData -> WorldDataServer
     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {

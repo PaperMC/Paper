@@ -472,6 +472,7 @@ public class ChunkProviderServer extends IChunkProvider {
                 this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                 // Paper end
+                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.world, x, z); // Paper - sync load info
                 this.world.timings.syncChunkLoad.startTiming(); // Paper
             this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug

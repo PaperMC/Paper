@@ -1,10 +1,14 @@
 package com.destroystokyo.paper;
 
 import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
+import com.destroystokyo.paper.io.SyncLoadFinder;
 import com.google.common.base.Functions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonObject;
+import com.google.gson.internal.Streams;
+import com.google.gson.stream.JsonWriter;
 import net.minecraft.server.*;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -19,6 +23,9 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -29,14 +36,14 @@ public class PaperCommand extends Command {
     public PaperCommand(String name) {
         super(name);
         this.description = "Paper related commands";
-        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo]";
+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo]";
         this.setPermission("bukkit.command.paper");
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         if (args.length <= 1)
-            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo");
+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo");
 
         switch (args[0].toLowerCase(Locale.ENGLISH))
         {
@@ -134,6 +141,9 @@ public class PaperCommand extends Command {
             case "chunkinfo":
                 doChunkInfo(sender, args);
                 break;
+            case "syncloadinfo":
+                this.doSyncLoadInfo(sender, args);
+                break;
             case "ver":
             case "version":
                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
@@ -148,6 +158,40 @@ public class PaperCommand extends Command {
         }
 
         return true;
+    }
+
+    private void doSyncLoadInfo(CommandSender sender, String[] args) {
+        if (!SyncLoadFinder.ENABLED) {
+            sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
+            return;
+        }
+        File file = new File(new File(new File("."), "debug"),
+            "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
+        file.getParentFile().mkdirs();
+        sender.sendMessage(ChatColor.GREEN + "Writing sync load info to " + file.toString());
+
+
+        try {
+            final JsonObject data = SyncLoadFinder.serialize();
+
+            StringWriter stringWriter = new StringWriter();
+            JsonWriter jsonWriter = new JsonWriter(stringWriter);
+            jsonWriter.setIndent(" ");
+            jsonWriter.setLenient(false);
+            Streams.write(data, jsonWriter);
+
+            String fileData = stringWriter.toString();
+
+            try (
+                PrintStream out = new PrintStream(new FileOutputStream(file), false, "UTF-8")
+            ) {
+                out.print(fileData);
+            }
+            sender.sendMessage(ChatColor.GREEN + "Successfully written sync load information!");
+        } catch (Throwable thr) {
+            sender.sendMessage(ChatColor.RED + "Failed to write sync load information");
+            thr.printStackTrace();
+        }
     }
 
     private void doChunkInfo(CommandSender sender, String[] args) {
