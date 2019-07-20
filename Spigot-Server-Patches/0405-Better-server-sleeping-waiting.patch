@@ -1,0 +1,176 @@
+From 809683d3881bc499a0cf61ab612defa3d8247f66 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 20 Jul 2019 15:20:04 -0700
+Subject: [PATCH] Better server sleeping/waiting
+
+Vanilla's sleep behaviour was to use LockSupport#parkNanos, however
+they never backed off and entered a full park, so the scheduler
+could potentially keep the server thread running when we really
+did not want that.
+
+We also introduce a method to wait for a completable future, which
+is common when waiting for sync loads to complete.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 775b5f7fe..c0ecfa53d 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -187,7 +187,7 @@ public class ChunkProviderServer extends IChunkProvider {
+ 
+             if (!completablefuture.isDone()) { // Paper
+                 this.world.timings.chunkAwait.startTiming(); // Paper
+-            this.serverThreadQueue.awaitTasks(completablefuture::isDone);
++            this.serverThreadQueue.waitFor(completablefuture); // Paper - better waiting
+                 this.world.timings.chunkAwait.stopTiming(); // Paper
+             } // Paper
+             ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
+diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+index d521d25cf..a038718fa 100644
+--- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
++++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+@@ -91,6 +91,101 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
+ 
+     }
+ 
++    // Paper start - better waiting
++    public void waitFor(final long time) { // time in ns
++        final long start = System.nanoTime();
++
++        ++this.e;
++
++        try {
++            while ((System.nanoTime() - start) < time) {
++                if (this.executeNext()) {
++                    // re-check condition
++                    continue;
++                }
++
++                // no tasks to execute
++                final long timeUsed = System.nanoTime() - start;
++                final long budget = time - timeUsed;
++
++                if (budget <= 50_000L) { // 50us, this can be tuned, even to 0
++                    // this is a presumption that park does not have the precision to sleep
++                    // for under 50us and we would oversleep, although this branch is not very
++                    // neccessary for this to work
++                    break;
++                }
++
++                // In order to avoid thread scheduling potentially waking up us
++                // late we aim to wake up a millisecond early
++                final long budgetWithPreempt = budget - (int)(1.0e6);
++
++                if (budgetWithPreempt <= 0) {
++                    // we don't have a millisecond to spare
++                    LockSupport.parkNanos("short park for timed wait", 50_000L);
++                    continue;
++                }
++
++                // Optionally before entering the long park we could spinwait a bit here,
++                // alternatively, we could spinwait for longer periods instead of one park
++
++
++                LockSupport.parkNanos("long park for timed wait", budgetWithPreempt);
++                // additions to the queue will unpark us
++            }
++        } finally {
++            --this.e;
++        }
++    }
++
++    public <T> void waitFor(final CompletableFuture<T> future) {
++        if (future.isDone()) {
++            return;
++        }
++
++        future.whenComplete((T result, Throwable thr) -> {
++            LockSupport.unpark(IAsyncTaskHandler.this.getThread());
++        });
++
++        ++this.e;
++
++
++        try {
++            main_loop:
++            while (!future.isDone()) {
++                if (this.executeNext()) {
++                    // re-check condition
++                    continue;
++                }
++
++                // spin wait for 0.1ms
++                final long start = System.nanoTime();
++                do {
++                    LockSupport.parkNanos("spinwaiting for tasks", 1000);
++
++                    if (future.isDone()) {
++                        break main_loop;
++                    }
++
++                    if (this.executeNext()) {
++                        if (future.isDone()) {
++                            break main_loop;
++                        } else {
++                            continue main_loop;
++                        }
++                    }
++
++                } while ((System.nanoTime() - start) < (int)(0.1e6));
++
++
++                LockSupport.park("blocking for completable future");
++                // additions to the queue will unpark us, or completion of the future
++            }
++        } finally {
++            --this.e;
++        }
++    }
++    // Paper end
++
+     protected void executeAll() {
+         while (this.executeNext()) {
+             ;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index eb1006dda..cda28cd53 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -988,9 +988,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     protected void sleepForTick() {
+         this.executeAll();
+-        this.awaitTasks(() -> {
+-            return !this.canSleepForTick();
+-        });
++        // Paper start - improve wait
++        // ac will be false here given that flag is set depending on the last value of executeNext, which will be false
++        // after executing all tasks
++        this.waitFor((this.nextTick * 1000 * 1000) - System.nanoTime());
++        // Paper end
+     }
+ 
+     @Override
+@@ -1859,7 +1861,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         });
+         CompletableFuture<Unit> completablefuture = this.ae.a(this.executorService, this, list1, MinecraftServer.i);
+ 
+-        this.awaitTasks(completablefuture::isDone);
++        this.waitFor(completablefuture); // Paper - better timing
+ 
+         try {
+             completablefuture.get();
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index e698e1c93..3c9dd40bc 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -309,7 +309,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+                     do {
+                         completablefuture = playerchunk.getChunkSave();
+-                        this.executor.awaitTasks(completablefuture::isDone);
++                        this.executor.waitFor(completablefuture); // Paper - better timing
+                     } while (completablefuture != playerchunk.getChunkSave());
+ 
+                     return (IChunkAccess) completablefuture.join();
+-- 
+2.22.0
+
